@@ -31,6 +31,7 @@ from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
     from .beds.base import BedController
+    from .beds.octo import OctoController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -138,7 +139,7 @@ def _switch_entities_for(
         # complete record set. Keep previously registered switches available to
         # HA as offline entity rows, while the entity availability gate below
         # prevents writes until live discovery provides authoritative records.
-        return [
+        entities = [
             AdjustableBedSwitch(coordinator, description)
             for description in SWITCH_DESCRIPTIONS
             if registry.async_get_entity_id(
@@ -148,9 +149,41 @@ def _switch_entities_for(
             )
             is not None
         ]
+        if octo.legacy_light_fallback and not any(
+            entity.entity_description.key == "under_bed_lights" for entity in entities
+        ):
+            entities.append(
+                AdjustableBedSwitch(
+                    coordinator,
+                    next(
+                        description
+                        for description in SWITCH_DESCRIPTIONS
+                        if description.key == "under_bed_lights"
+                    ),
+                )
+            )
+        return entities
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
+        if octo is not None and description.key == "under_bed_lights":
+            existing = registry.async_get_entity_id(
+                "switch",
+                DOMAIN,
+                coordinator.entity_unique_id(description.key),
+            )
+            if existing is not None and not octo.supports_lights:
+                registry.async_remove(existing)
+                existing = None
+            if (
+                existing is not None
+                or octo.legacy_light_fallback
+                or (octo.supports_discrete_light_control and not octo.supports_light_color_control)
+            ):
+                entities.append(AdjustableBedSwitch(coordinator, description))
+            # OCTO keeps this legacy switch identity. Color surfaces use the
+            # light platform without deleting a user's existing switch row.
+            continue
         if (
             description.key == "under_bed_lights"
             and controller is not None
@@ -209,9 +242,21 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         """Keep Octo setting switches unavailable while its PIN gate is locked."""
         controller = self._coordinator.capability_controller
         octo = octo_controller(controller)
-        return super().available and (
-            octo is None
-            or octo.controller_entity_discovery_complete
+        if octo is None:
+            return super().available
+        if self.entity_description.key == "under_bed_lights":
+            return (
+                super().available
+                and octo.normal_controls_available
+                and (
+                    octo.legacy_light_fallback
+                    or octo.controller_entity_discovery_complete
+                    and octo.supports_discrete_light_control
+                )
+            )
+        return (
+            super().available
+            and octo.controller_entity_discovery_complete
             and octo.normal_controls_available
         )
 
@@ -261,6 +306,14 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         )
         # Timer handle for auto-off state updates (e.g., Octo lights turn off after 5 min)
         self._auto_off_timer: asyncio.TimerHandle | None = None
+        self._octo_light_auto_off_generation = 0
+        octo = octo_controller(controller)
+        self._octo_light_auto_off_seconds = (
+            octo.light_auto_off_seconds
+            if octo is not None
+            and (octo.controller_entity_discovery_complete or octo.legacy_light_fallback)
+            else None
+        )
         self._state_unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -278,6 +331,10 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
     @callback
     def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
         """Update the switch when the controller publishes light state."""
+        if self.entity_description.key == "under_bed_lights" and "octo_light_duration" in state:
+            octo = self._current_octo_timer_controller()
+            if octo is not None:
+                self._schedule_octo_auto_off_timer(octo)
         state_key = (
             "light_level"
             if self._app_floor_intent
@@ -303,12 +360,60 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
 
     def _cancel_auto_off_timer(self) -> None:
         """Cancel any pending auto-off timer."""
+        self._octo_light_auto_off_generation += 1
         if self._auto_off_timer is not None:
             self._auto_off_timer.cancel()
             self._auto_off_timer = None
             _LOGGER.debug("Cancelled auto-off timer for %s", self.entity_description.key)
 
-    def _schedule_auto_off_timer(self) -> None:
+    def _current_octo_timer_controller(self) -> OctoController | None:
+        """Return this switch's current authoritative or legacy OCTO controller."""
+        controller = self._coordinator.controller or self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        if octo is None or not (
+            octo.controller_entity_discovery_complete or octo.legacy_light_fallback
+        ):
+            return None
+        return octo
+
+    def _schedule_octo_auto_off_timer(
+        self, octo: OctoController, *, reset_deadline: bool = False
+    ) -> None:
+        """Preserve the hardware expiry across equivalent OCTO controller handoff."""
+        auto_off_seconds = octo.light_auto_off_seconds
+        if auto_off_seconds != self._octo_light_auto_off_seconds:
+            self._cancel_auto_off_timer()
+            self._octo_light_auto_off_seconds = auto_off_seconds
+        if auto_off_seconds is None or not self._attr_is_on:
+            self._cancel_auto_off_timer()
+            return
+        if self._auto_off_timer is not None and not reset_deadline:
+            return
+        if reset_deadline:
+            self._cancel_auto_off_timer()
+
+        generation = self._octo_light_auto_off_generation
+
+        def auto_off_callback() -> None:
+            """Publish the expected expiry through the current controller."""
+            if generation != self._octo_light_auto_off_generation:
+                return
+            current = self._current_octo_timer_controller()
+            if (
+                current is None
+                or current.light_auto_off_seconds != auto_off_seconds
+                or not self._attr_is_on
+            ):
+                return
+            self._auto_off_timer = None
+            self._octo_light_auto_off_generation += 1
+            self._attr_is_on = False
+            current.on_light_auto_off()
+            self.async_write_ha_state()
+
+        self._auto_off_timer = self.hass.loop.call_later(auto_off_seconds, auto_off_callback)
+
+    def _schedule_auto_off_timer(self, *, reset_octo_deadline: bool = False) -> None:
         """Schedule auto-off timer if controller reports a light auto-off timeout.
 
         Some beds (e.g., Octo) have hardware-enforced light timeouts where the
@@ -316,6 +421,11 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         schedules a timer to update the HA state to reflect the hardware behavior.
         """
         if self.entity_description.key != "under_bed_lights":
+            return
+
+        octo = self._current_octo_timer_controller()
+        if octo is not None:
+            self._schedule_octo_auto_off_timer(octo, reset_deadline=reset_octo_deadline)
             return
 
         controller = self._coordinator.controller
@@ -376,7 +486,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 self._attr_is_on = True
                 self.async_write_ha_state()
                 # Schedule auto-off timer if the bed has hardware auto-off
-                self._schedule_auto_off_timer()
+                self._schedule_auto_off_timer(reset_octo_deadline=True)
             else:
                 _LOGGER.debug(
                     "Toggle-only controller - state tracking unreliable for %s",

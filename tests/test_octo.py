@@ -20,6 +20,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds import octo as octo_module
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.octo import (
     OCTO_FEATURE_END,
@@ -83,6 +84,7 @@ from custom_components.adjustable_bed.light import (
 from custom_components.adjustable_bed.switch import (
     SWITCH_DESCRIPTIONS,
     AdjustableBedSwitch,
+    _switch_entities_for,
 )
 
 _REAL_OCTO_DISCOVER_FEATURES = OctoController.discover_features
@@ -659,7 +661,10 @@ class TestOctoOrderedSession:
         self,
         info: bytes,
         records: tuple[OctoCapabilityRecord, ...] = (),
-    ) -> tuple[OctoController, list[bytes]]:
+        *,
+        missing_response: str | None = None,
+        malformed_response: str | None = None,
+    ) -> tuple[OctoController, list[bytes], list[str | None]]:
         coordinator = MagicMock()
         coordinator.motor_count = 2
         coordinator.entry.data = {}
@@ -676,51 +681,73 @@ class TestOctoOrderedSession:
         client.start_notify = AsyncMock(side_effect=start_notify)
         coordinator.client = client
         writes: list[bytes] = []
+        active_stage: list[str | None] = [None]
 
         async def write_command(packet: bytes, *_args: object) -> None:
             nonlocal notification_callback
             writes.append(packet)
             assert notification_callback is not None
             if packet == controller._build_packet([0x20, 0x7F]):
-                notification_callback(
-                    MagicMock(),
-                    bytearray(_build_octo_response(controller, (0x21, 0x7F))),
-                )
+                active_stage[0] = "ping"
+                if missing_response != "ping":
+                    data = [1] if malformed_response == "ping" else []
+                    notification_callback(
+                        MagicMock(),
+                        bytearray(_build_octo_response(controller, (0x21, 0x7F), data)),
+                    )
             elif packet == controller._build_packet([0x20, 0x70]):
-                notification_callback(
-                    MagicMock(),
-                    bytearray(_build_octo_response(controller, (0x21, 0x70), list(info))),
-                )
-            elif packet == controller._build_packet([0x20, 0x71]):
-                for record in records:
+                active_stage[0] = "device_info"
+                if missing_response != "device_info":
+                    response_info = bytes(9) if malformed_response == "device_info" else info
                     notification_callback(
                         MagicMock(),
                         bytearray(
-                            _build_octo_response(
-                                controller,
-                                (0x21, 0x71),
-                                self._feature_data(record),
-                            )
+                            _build_octo_response(controller, (0x21, 0x70), list(response_info))
                         ),
                     )
-                notification_callback(
-                    MagicMock(),
-                    bytearray(
-                        _build_octo_response(
-                            controller,
-                            (0x21, 0x71),
-                            [0xFF, 0xFF, 0xFF, 0, 0, 0],
+            elif packet == controller._build_packet([0x20, 0x71]):
+                active_stage[0] = "capabilities"
+                if missing_response != "capabilities":
+                    if malformed_response == "capabilities":
+                        capability_data = [1, 2]
+                        notification_callback(
+                            MagicMock(),
+                            bytearray(
+                                _build_octo_response(controller, (0x21, 0x71), capability_data)
+                            ),
                         )
-                    ),
-                )
+                    else:
+                        for record in records:
+                            notification_callback(
+                                MagicMock(),
+                                bytearray(
+                                    _build_octo_response(
+                                        controller,
+                                        (0x21, 0x71),
+                                        self._feature_data(record),
+                                    )
+                                ),
+                            )
+                        notification_callback(
+                            MagicMock(),
+                            bytearray(
+                                _build_octo_response(
+                                    controller,
+                                    (0x21, 0x71),
+                                    [0xFF, 0xFF, 0xFF, 0, 0, 0],
+                                )
+                            ),
+                        )
 
         controller.write_command = AsyncMock(side_effect=write_command)
-        return controller, writes
+        coordinator.motor_pulse_count = 1
+        coordinator.motor_pulse_delay_ms = 1
+        return controller, writes, active_stage
 
     async def test_ordered_ping_info_caps_session_and_high_bit_device_info(self) -> None:
         info = bytes((0x80, 0x01, 0x02, 0x03, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06))
         motor_record = _capability(OCTO_FEATURE_MOTORCOUNT, b"\x04", b"\x00")
-        controller, writes = await self._controller_with_responder(info, (motor_record,))
+        controller, writes, _stage = await self._controller_with_responder(info, (motor_record,))
 
         assert await controller.discover_features() is True
         assert writes == [
@@ -741,7 +768,7 @@ class TestOctoOrderedSession:
     async def test_invalid_device_info_length_blocks_capability_request(
         self, info_length: int
     ) -> None:
-        controller, writes = await self._controller_with_responder(bytes(info_length))
+        controller, writes, _stage = await self._controller_with_responder(bytes(info_length))
 
         assert await controller.discover_features() is False
         assert writes == [
@@ -751,9 +778,163 @@ class TestOctoOrderedSession:
         assert controller._session_ready is False
         assert controller._features_complete.is_set() is False
 
+    @pytest.mark.parametrize("missing_response", ("ping", "device_info", "capabilities"))
+    async def test_absent_session_reply_keeps_legacy_controls_available(
+        self,
+        missing_response: str,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        controller, writes, active_stage = await self._controller_with_responder(
+            bytes(10), missing_response=missing_response
+        )
+
+        async def no_protocol_wait(awaitable, *, timeout: float):
+            del timeout
+            if active_stage[0] == missing_response:
+                close = getattr(awaitable, "close", None)
+                if close is not None:
+                    close()
+                raise TimeoutError
+            return await awaitable
+
+        monkeypatch.setattr(octo_module.asyncio, "wait_for", no_protocol_wait)
+
+        assert await controller.discover_features() is True
+        assert writes[:3] == [
+            controller._build_packet([0x20, 0x7F]),
+            controller._build_packet([0x20, 0x70]),
+            controller._build_packet([0x20, 0x71]),
+        ]
+        assert controller._session_ready is True
+
+        if missing_response == "capabilities":
+            assert controller.legacy_light_fallback is True
+            assert controller.controller_entity_discovery_complete is False
+            assert controller.supports_lights is True
+            assert controller._capability_records == {}
+            await controller.lights_on()
+            assert writes[-1] == controller._build_packet(
+                [0x20, 0x72], [0x00, 0x01, 0x02, 0x00, 0x01, 0x01, 0x01, 0x01]
+            )
+
+        writes.clear()
+        await controller.move_back_up()
+        assert writes == [
+            controller._build_packet([0x02, 0x70], [0x02]),
+            controller._build_packet([0x02, 0x73]),
+        ]
+
+    @pytest.mark.parametrize("malformed_response", ("ping", "device_info", "capabilities"))
+    async def test_malformed_session_reply_remains_strict(
+        self,
+        malformed_response: str,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        controller, _writes, active_stage = await self._controller_with_responder(
+            bytes(10), malformed_response=malformed_response
+        )
+
+        async def no_protocol_wait(awaitable, *, timeout: float):
+            del timeout
+            if malformed_response == "capabilities" and active_stage[0] == "capabilities":
+                close = getattr(awaitable, "close", None)
+                if close is not None:
+                    close()
+                raise TimeoutError
+            return await awaitable
+
+        monkeypatch.setattr(octo_module.asyncio, "wait_for", no_protocol_wait)
+
+        assert await controller.discover_features() is False
+        assert controller._session_ready is False
+        assert controller.controller_entity_discovery_complete is False
+
 
 class TestOctoPinAuth:
     """Test Octo PIN authentication flow."""
+
+    async def test_periodic_pin_keepalive_uses_command_lane_and_disconnect_generation(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        coordinator = MagicMock()
+        coordinator.entry.data = {}
+        coordinator.client = MagicMock(is_connected=True)
+        controller = OctoController(coordinator, pin="1234")
+        controller._session_ready = True
+        controller._write_octo_command = AsyncMock()
+
+        sleep_started = asyncio.Event()
+        release_sleep = asyncio.Event()
+        command_started = asyncio.Event()
+        hold_command = asyncio.Event()
+        intervals: list[float] = []
+
+        async def fake_sleep(delay: float) -> None:
+            intervals.append(delay)
+            sleep_started.set()
+            await release_sleep.wait()
+
+        async def execute(command, **kwargs) -> None:
+            await command(controller)
+            coordinator.keepalive_options = kwargs
+            command_started.set()
+            await hold_command.wait()
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        monkeypatch.setattr(octo_module.asyncio, "sleep", fake_sleep)
+
+        await controller.start_keepalive()
+        task = controller._keepalive_task
+        assert task is not None
+        await sleep_started.wait()
+        release_sleep.set()
+        await command_started.wait()
+
+        assert intervals == [25]
+        assert coordinator.keepalive_options == {
+            "cancel_running": False,
+            "skip_disconnect": True,
+            "read_positions_after_operation": False,
+        }
+        controller._write_octo_command.assert_awaited_once()
+        assert controller._write_octo_command.await_args.args[:2] == (
+            [0x20, 0x43],
+            [1, 2, 3, 4],
+        )
+
+        controller.on_disconnect()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert controller._keepalive_task is None
+
+    async def test_periodic_pin_keepalive_does_not_start_without_configured_pin(self) -> None:
+        coordinator = MagicMock()
+        coordinator.entry.data = {}
+        coordinator.client = MagicMock(is_connected=True)
+        controller = OctoController(coordinator)
+        controller._session_ready = True
+
+        await controller.start_keepalive()
+
+        assert controller._keepalive_task is None
+
+    async def test_coordinator_starts_keepalive_after_octo_session(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+        mock_octo_ready_transport,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        start_keepalive = AsyncMock()
+        monkeypatch.setattr(OctoController, "start_keepalive", start_keepalive, raising=False)
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+
+        try:
+            await coordinator.async_connect()
+            start_keepalive.assert_awaited_once()
+        finally:
+            await coordinator.async_disconnect()
 
     async def test_runtime_reconnect_waits_for_session_pin_acceptance_before_command(
         self,
@@ -1015,6 +1196,21 @@ class TestOctoPinAuth:
 
 class TestOctoCommands:
     """Test Octo motor, light, and stop commands."""
+
+    def test_rtv_auto_layout_is_fallback_behind_discovery_and_override(self) -> None:
+        coordinator = MagicMock()
+        coordinator.motor_count = 2
+        coordinator.ble_device_name = "RTV Lift"
+        coordinator.entry.data = {CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto"}
+        controller = OctoController(coordinator)
+
+        assert controller.effective_motor_count == 1
+
+        controller._discovered_motor_count = 4
+        assert controller.effective_motor_count == 4
+
+        coordinator.entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = "3"
+        assert controller.effective_motor_count == 3
 
     def test_effective_motor_count_tracks_caps_and_octo_override(self) -> None:
         coordinator = MagicMock()
@@ -1591,10 +1787,8 @@ class TestOctoRGBWIFeatureDetection:
         controller._has_rgbwi = True
         controller._rgbwi_value_type = 0x07
 
-        # discover_features will time out (no real BLE), but should reset state first
-        monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_SESSION_RESPONSE_TIMEOUT", 0.01
-        )
+        # All absent replies use deterministic fake time, not protocol waits.
+        monkeypatch.setattr(octo_module.asyncio, "wait_for", _raise_timeout)
         await _REAL_OCTO_DISCOVER_FEATURES(controller)
 
         # Failed rediscovery preserves the prior complete capability state.
@@ -1828,6 +2022,7 @@ class TestOctoRGBWILightEntity:
         _activate_capabilities(controller, rgb_record)
 
         light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
         assert light.supported_color_modes == {ColorMode.RGB}
         assert light.color_mode == ColorMode.RGB
         assert light.rgb_color == (10, 20, 30)
@@ -1845,6 +2040,7 @@ class TestOctoRGBWILightEntity:
         )
         assert light.color_mode == ColorMode.RGB
         assert light.rgb_color == (40, 50, 60)
+        light._cancel_light_auto_off_timer()
 
     async def test_both_modes_switch_to_the_requested_independent_record(
         self,
@@ -1876,6 +2072,7 @@ class TestOctoRGBWILightEntity:
         )
 
         light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
         assert light.supported_color_modes == {ColorMode.RGB, ColorMode.RGBW}
         assert light.color_mode == ColorMode.RGBW
         assert light.rgb_color == (1, 2, 3)
@@ -1911,6 +2108,7 @@ class TestOctoRGBWILightEntity:
         assert light.rgb_color == (40, 50, 60)
         assert light.rgbw_color == (100, 110, 120, 130)
         assert light.brightness == 140
+        light._cancel_light_auto_off_timer()
 
     async def test_rgbwi_intensity_zero_survives_initial_state_updates_and_writes(
         self,
@@ -1933,6 +2131,7 @@ class TestOctoRGBWILightEntity:
         )
 
         light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
         assert light.brightness == 0
         light.async_write_ha_state = MagicMock()
         light._attr_brightness = 9
@@ -1951,6 +2150,7 @@ class TestOctoRGBWILightEntity:
             OCTO_CHAR_UUID, expected, response=False
         )
         assert light.brightness == 0
+        light._cancel_light_auto_off_timer()
 
     async def test_pin_only_state_transitions_publish_light_availability(
         self,
@@ -2234,6 +2434,7 @@ class TestOctoRGBWILightEntity:
         )
 
         light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
 
         mock_bleak_client.write_gatt_char.reset_mock()
         with patch.object(light, "async_write_ha_state"):
@@ -2254,6 +2455,7 @@ class TestOctoRGBWILightEntity:
 
         assert light.is_on is True
         assert light.rgbw_color == (100, 150, 200, 50)
+        light._cancel_light_auto_off_timer()
 
     async def test_light_entity_turn_on_uses_previous_rgbw_color(
         self,
@@ -2278,6 +2480,7 @@ class TestOctoRGBWILightEntity:
         )
 
         light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
         # Set a specific color first
         light._attr_rgbw_color = (10, 20, 30, 40)
 
@@ -2292,6 +2495,7 @@ class TestOctoRGBWILightEntity:
         )
         calls = mock_bleak_client.write_gatt_char.call_args_list
         assert calls[-1][0][1] == expected_packet
+        light._cancel_light_auto_off_timer()
 
     async def test_light_entity_turn_off(
         self,
@@ -2511,7 +2715,8 @@ class TestOctoCapabilityControls:
         controller._session_ready = True
         controller.write_command = AsyncMock()
         record = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05")
-        controller._capability_records = {record.feature_id: record}
+        light = _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00")
+        controller._capability_records = {record.feature_id: record, light.feature_id: light}
         controller._apply_capability_records(controller._capability_records)
 
         assert controller.light_auto_off_seconds == 300
@@ -2527,6 +2732,247 @@ class TestOctoCapabilityControls:
             == 0
         )
 
+    def test_light_duration_absence_uses_legacy_five_minute_default(self) -> None:
+        coordinator = MagicMock(motor_count=2)
+        coordinator.entry.data = {}
+        controller = OctoController(coordinator)
+        light = _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00")
+        controller._capability_records = {light.feature_id: light}
+        controller._apply_capability_records(controller._capability_records)
+
+        assert controller.light_auto_off_seconds == 300
+
+    @pytest.mark.parametrize("malformed_duration", (b"\x05", b"\x00\x3d"))
+    def test_malformed_light_duration_does_not_become_legacy_default(
+        self, malformed_duration: bytes
+    ) -> None:
+        coordinator = MagicMock(motor_count=2)
+        coordinator.entry.data = {}
+        controller = OctoController(coordinator)
+        light = _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00")
+        duration = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", malformed_duration)
+        controller._capability_records = {light.feature_id: light, duration.feature_id: duration}
+        controller._apply_capability_records(controller._capability_records)
+
+        assert controller.light_auto_off_seconds is None
+
+    async def test_onoff_only_light_keeps_legacy_switch_entity_identity(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+        mock_octo_ready_transport,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        from homeassistant.helpers import entity_registry as er
+
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        await coordinator.async_connect()
+        controller = cast(OctoController, coordinator.controller)
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
+        )
+        registry = er.async_get(hass)
+        unique_id = coordinator.entity_unique_id("under_bed_lights")
+        legacy_row = registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            unique_id,
+            config_entry=mock_octo_config_entry,
+            suggested_object_id="octo_under_bed_lights",
+        )
+
+        switches = _switch_entities_for(hass, coordinator)
+        legacy_switches = [
+            entity for entity in switches if entity.entity_description.key == "under_bed_lights"
+        ]
+        assert legacy_switches, "the legacy OCTO switch entity must remain registered"
+        legacy_switch = legacy_switches[0]
+
+        assert isinstance(legacy_switch, AdjustableBedSwitch)
+        assert legacy_switch.unique_id == unique_id
+        assert registry.async_get_entity_id("switch", DOMAIN, unique_id) == legacy_row.entity_id
+        assert _light_entities_for(hass, coordinator) == []
+
+        controller.lights_on = AsyncMock()
+
+        async def execute(command, **_kwargs):
+            await command(controller)
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        legacy_switch.hass = hass
+        legacy_switch.async_write_ha_state = MagicMock()
+        await legacy_switch.async_added_to_hass()
+        timers: list[tuple[float, Callable[[], None], MagicMock]] = []
+
+        def capture_auto_off(
+            delay: float,
+            callback: Callable[..., None],
+            *args: object,
+        ) -> object:
+            handle = MagicMock()
+            timers.append((delay, lambda: callback(*args), handle))
+            return handle
+
+        try:
+            with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
+                await legacy_switch.async_turn_on()
+                assert len(timers) == 1 and timers[0][0] == 300
+
+                light_record = controller._capability_records[OCTO_FEATURE_LIGHT]
+                controller._capability_records[OCTO_FEATURE_LIGHT] = light_record.with_value(
+                    b"\x01"
+                )
+                controller._publish_capability_state()
+                assert len(timers) == 1 and not timers[0][2].cancel.called
+
+                # A deliberate repeated ON restarts the bed's hardware timeout;
+                # identical state telemetry above leaves that deadline alone.
+                await legacy_switch.async_turn_on()
+                assert len(timers) == 2 and timers[0][2].cancel.called
+                assert timers[1][0] == 300 and not timers[1][2].cancel.called
+                controller._publish_capability_state()
+                assert len(timers) == 2 and not timers[1][2].cancel.called
+
+                records = dict(controller._capability_records)
+                duration = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x02")
+                records[duration.feature_id] = duration
+                controller._capability_records = records
+                controller._apply_capability_records(records)
+                controller._publish_capability_state()
+                assert len(timers) == 3 and timers[1][2].cancel.called
+                assert timers[2][0] == 120 and not timers[2][2].cancel.called
+                controller._publish_capability_state()
+                assert len(timers) == 3 and not timers[2][2].cancel.called
+
+                await legacy_switch.async_turn_on()
+                assert len(timers) == 4 and timers[2][2].cancel.called
+                assert timers[3][0] == 120 and not timers[3][2].cancel.called
+
+                replacement = OctoController(
+                    coordinator, capability_snapshot=controller.capability_snapshot()
+                )
+                replacement._session_ready = True
+                coordinator._controller = replacement
+                coordinator._offline_controller = replacement
+                replacement._publish_capability_state()
+                assert len(timers) == 4, (
+                    [delay for delay, _callback, _handle in timers],
+                    replacement.light_auto_off_seconds,
+                    legacy_switch._octo_light_auto_off_seconds,
+                )
+                assert not timers[3][2].cancel.called
+
+                writes_before_expiry = mock_bleak_client.write_gatt_char.call_count
+                for _delay, stale_callback, _handle in timers[:3]:
+                    stale_callback()
+                assert legacy_switch.is_on is True
+                assert replacement._capability_records[OCTO_FEATURE_LIGHT].value == b"\x01"
+                timers[3][1]()
+
+            assert legacy_switch.is_on is False
+            assert replacement._capability_records[OCTO_FEATURE_LIGHT].value == b"\x00"
+            assert mock_bleak_client.write_gatt_char.call_count == writes_before_expiry
+        finally:
+            await legacy_switch.async_will_remove_from_hass()
+            await controller.stop_keepalive()
+
+    async def test_missing_capability_fallback_exposes_legacy_light_switch(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+    ) -> None:
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        controller = OctoController(coordinator)
+        coordinator._controller = controller
+        controller._session_ready = True
+        controller._legacy_assumed_lights = True
+        controller._has_lights = True
+
+        switches = _switch_entities_for(hass, coordinator)
+        under_bed_switches = [
+            entity for entity in switches if entity.entity_description.key == "under_bed_lights"
+        ]
+        assert under_bed_switches, "missing OCTO capabilities retain the legacy light switch"
+        under_bed_switch = under_bed_switches[0]
+
+        assert isinstance(under_bed_switch, AdjustableBedSwitch)
+        assert under_bed_switch.unique_id == coordinator.entity_unique_id("under_bed_lights")
+        assert controller._capability_records == {}
+        assert _light_entities_for(hass, coordinator) == []
+
+    @pytest.mark.parametrize("finish", ["expire", "off", "remove", "failed_off"])
+    async def test_color_light_tracks_hardware_timeout(self, hass, finish):
+        coordinator = MagicMock(motor_count=2)
+        coordinator.entry.data = {}
+        controller = OctoController(coordinator)
+        coordinator.controller = coordinator.capability_controller = controller
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_RGB, b"\x01", bytes((12, 34, 56)), value_type=0x03),
+        )
+        controller.lights_on = AsyncMock()
+        controller.lights_off = AsyncMock()
+        controller.set_light_color = AsyncMock()
+
+        async def execute(command, **_kwargs):
+            await command(controller)
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
+        timer = MagicMock()
+        with (
+            patch.object(hass.loop, "call_later", return_value=timer) as schedule,
+            patch.object(light, "async_write_ha_state"),
+            patch.object(controller, "on_light_auto_off") as expired,
+        ):
+            await light.async_turn_on()
+            assert light.is_on is True
+            assert schedule.call_args.args[0] == 300
+            expire = schedule.call_args.args[1]
+            if finish == "off":
+                await light.async_turn_off()
+                assert light.is_on is False
+                timer.cancel.assert_called_once()
+                expired.assert_not_called()
+            elif finish == "remove":
+                await light.async_will_remove_from_hass()
+                timer.cancel.assert_called_once()
+                expired.assert_not_called()
+            else:
+                if finish == "failed_off":
+                    controller.lights_off.side_effect = RuntimeError("disconnected")
+                    with pytest.raises(RuntimeError, match="disconnected"):
+                        await light.async_turn_off()
+                    assert light.is_on is True
+                    timer.cancel.assert_not_called()
+                expire()
+                assert light.is_on is False
+                expired.assert_called_once()
+            assert light._light_auto_off_timer is None
+
+    def test_light_auto_off_updates_readonly_observation_without_granting_write_access(self):
+        coordinator = MagicMock(motor_count=2)
+        coordinator.entry.data = {}
+        controller = OctoController(coordinator)
+        controller.write_command = AsyncMock()
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x01", readonly=1),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+        )
+
+        assert controller.supports_discrete_light_control is False
+        controller.on_light_auto_off()
+
+        record = controller._capability_records[OCTO_FEATURE_LIGHT]
+        assert record.readonly == 1
+        assert record.value == b"\x00"
+        controller.write_command.assert_not_awaited()
+
     async def test_remote_lock_switch_ignores_light_auto_off_timer(
         self,
         hass: HomeAssistant,
@@ -2539,6 +2985,7 @@ class TestOctoCapabilityControls:
         controller = cast(OctoController, coordinator.controller)
         _activate_capabilities(
             controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
             _capability(OCTO_FEATURE_PIN, b"\x01", b"\x00\x01"),
             _capability(OCTO_FEATURE_REMOTE_CONTROL_LOCK, b"\x01", b"\x00"),
             _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
@@ -2614,6 +3061,7 @@ class TestOctoCapabilityControls:
             controller,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
             _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_RGB, b"\x01", bytes((12, 34, 56)), value_type=0x03),
         )
         from homeassistant.helpers import entity_registry as er
 
@@ -2627,7 +3075,7 @@ class TestOctoCapabilityControls:
         )
         lights = _light_entities_for(hass, coordinator)
         assert len(lights) == 1 and isinstance(lights[0], AdjustableBedLight)
-        assert registry.async_get_entity_id("switch", DOMAIN, light_unique_id) is None
+        assert registry.async_get_entity_id("switch", DOMAIN, light_unique_id) is not None
         light = lights[0]
         light.hass = hass
         await light.async_added_to_hass()
@@ -2712,6 +3160,12 @@ class TestOctoCapabilityControls:
         _activate_capabilities(
             original,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
+            _capability(
+                OCTO_FEATURE_LIGHT_RGB,
+                b"\x01",
+                bytes((10, 20, 30)),
+                value_type=0x03,
+            ),
             _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
         )
         lights = _light_entities_for(hass, coordinator)
@@ -2764,6 +3218,7 @@ class TestOctoCapabilityControls:
                 assert mock_bleak_client.write_gatt_char.call_count == writes_before_expiry
         finally:
             await light.async_will_remove_from_hass()
+            await original.stop_keepalive()
 
     async def test_confirmed_reset_packet_disconnects_after_five_seconds(
         self, monkeypatch: pytest.MonkeyPatch
@@ -3354,9 +3809,7 @@ class TestOctoPinLockDiagnostics:
         controller = OctoController(coordinator, pin="1234")
 
         # A second discovery attempt gets no reply and must not guess state.
-        monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_SESSION_RESPONSE_TIMEOUT", 0.01
-        )
+        monkeypatch.setattr(octo_module.asyncio, "wait_for", _raise_timeout)
         await _REAL_OCTO_DISCOVER_FEATURES(controller)
         state = controller.protocol_diagnostics
         assert state["feature_discovery_complete"] is False

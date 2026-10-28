@@ -27,8 +27,8 @@ release.
 | R030-POST-002 | ALREADY_IMPLEMENTED | One P1 protocol; no CID/PID/HW/FW/branding/locale/name protocol branch; Star2 is not selected by this app. Existing factory/detection selection; `tests/test_octo.py::TestOctoVariantSelection`. |
 | R030-POST-003 | EXCLUDED | App list filtering, local labels, and resource-only locale/density splits are companion-app presentation. The received artifact inventory proves the supplied splits contain resources only, and does not authenticate absent locales or all deliveries. No HA bed feature is inferred from this UI. |
 | R030-POST-004 | EXCLUDED | Cordova permissions, `autoConnect=false`, 7-second plugin timeout, CCCD choice, reconnect/retry, and RSSI polling are mobile transport policy. HA Bluetooth owns connection lifecycle; the existing Octo no-response write mode is retained. |
-| R030-POST-005 | IMPLEMENTED | Added ordered Standard P1 ping and exact reply gate before device-info/capability discovery, PIN, and readiness. `beds/octo.py`, `coordinator.py`; `tests/test_octo.py::TestOctoOrderedSession`, `TestOctoRequiredStartupDiscovery`. |
-| R030-POST-006 | IMPLEMENTED | Added exact 10-byte SYSTEM 70 parsing (CID/FW/PID/HW, big-endian) and capability request only after a valid reply. `beds/octo.py`, `octo_auth.py`; `tests/test_octo.py::TestOctoOrderedSession`. |
+| R030-POST-005 | IMPLEMENTED | When replies arrive, Standard follows the app's ordered P1 ping, exact reply validation, device-info and capability sequence before PIN/readiness. A missing reply alone can use the established field fallback; malformed replies remain strict. `beds/octo.py`, `coordinator.py`; `tests/test_octo.py::TestOctoOrderedSession`, `TestOctoRequiredStartupDiscovery`, `test_absent_session_reply_keeps_legacy_controls_available`, `test_malformed_session_reply_remains_strict`. |
+| R030-POST-006 | IMPLEMENTED | Parses exact 10-byte SYSTEM 70 replies (CID/FW/PID/HW, big-endian). A missing reply permits the next ordered request but does not fabricate device information; capability fallback remains non-authoritative. `beds/octo.py`, `octo_auth.py`; `tests/test_octo.py::TestOctoOrderedSession`, `test_absent_session_reply_keeps_legacy_controls_available`. |
 | R030-POST-007 | ALREADY_IMPLEMENTED | P1 delimiter, length, checksum, escaping, direction and no-response writes match accepted vectors. `beds/octo.py`; `tests/test_octo.py::TestOctoCommands`, `TestOctoRGBWICommands`, `TestOctoNotificationStream`. |
 | R030-POST-008 | ALREADY_IMPLEMENTED | Fragmented/multiple notification framing, resynchronization, bounds and lifecycle clearing match accepted behavior. `beds/octo.py`; `tests/test_octo.py::TestOctoNotificationStream`. |
 | R030-POST-009 | IMPLEMENTED | Normalize valid six-byte destination/source address fields for flags 08/04 before dispatch. `beds/octo.py`; `tests/test_octo.py::TestOctoNotificationStream`. |
@@ -36,7 +36,7 @@ release.
 | R030-POST-011 | EXCLUDED | The source strips partial flagged address fields, but no valid vector demonstrates a short address. Rejecting short fields prevents payload bytes shifting into command, PIN or capability state. |
 | R030-POST-012 | IMPLEMENTED | Preserve full typed capability records (ID, read-only flag, characteristic, type, value); writes alter only value bytes. `beds/octo.py`; `tests/test_octo.py::TestOctoRGBWIFeatureValuePair`, `TestOctoCapabilityControls`. |
 | R030-POST-013 | ALREADY_IMPLEMENTED | End sentinel controls completion; incomplete discovery is not persisted as a real snapshot. `beds/octo.py`; `tests/test_octo.py::TestCapabilitySnapshot`, `TestOctoRequiredStartupDiscovery`. |
-| R030-POST-014 | IMPLEMENTED | Auto motor layout reads CAP_MOTORCOUNT characteristic[0]; explicit 1–4 override remains available, invalid advertised counts do not create motor surfaces. New OCTO setup uses its own override selector. `beds/octo.py`, `config_flow.py`, `app_profiles.py`; `tests/test_octo.py::TestOctoCapabilityControls`, `TestOctoDynamicEntities`, `tests/test_config_flow.py` Octo motor-count cases. |
+| R030-POST-014 | IMPLEMENTED | Auto motor layout reads CAP_MOTORCOUNT characteristic[0]; explicit 1–4 override remains available, invalid advertised counts do not create motor surfaces. With no discovered count, the established RTV-name fallback selects one motor; valid discovery or explicit override wins. New OCTO setup uses its own override selector. `beds/octo.py`, `config_flow.py`, `app_profiles.py`; `tests/test_octo.py::TestOctoCapabilityControls`, `TestOctoDynamicEntities`, `tests/test_config_flow.py::test_rtv_octo_config_flow_uses_name_when_motor_count_is_unadvertised`. |
 | R030-POST-015 | ALREADY_IMPLEMENTED | Motor command IDs/masks match; movement cleanup sends fresh-event STOP in `finally`. `beds/octo.py`; `tests/test_octo.py::TestOctoCommands`, `TestMemPosRelease`. |
 | R030-POST-016 | IMPLEMENTED | Card motor hold uses the existing bounded `hold_control` contract and Octo-declared cadence; release/cancel routes side STOP, and delayed callbacks are generation guarded. `beds/base.py`, `beds/octo.py`, `button.py`, `frontend/src/hold.ts`; `tests/test_octo.py::TestOctoCapabilityControls`, `tests/test_octo_services.py::test_combined_motor_button_keeps_controller_hold_metadata`, `frontend/src/hold.test.ts`. |
 | R030-POST-017 | IMPLEMENTED | CAP_MEMCOUNT/MEMINFO characteristic fields determine effective slots; expose all advertised slots with dynamic entities and runtime service bounds. `beds/octo.py`, `button.py`, `services.py`, `services.yaml`; `tests/test_octo.py::TestOctoMemoryInfoAndCombinedStep`, `TestOctoDynamicEntities`, `tests/test_octo_services.py`. |
@@ -45,11 +45,11 @@ release.
 | R030-POST-020 | IMPLEMENTED | Added card-held memory recall using bounded existing service calls; refreshes while held, side-scoped STOP on release/cancel, and generation/ownership checks prevent stale callbacks. `frontend/src/hold.ts`, `adjustable-bed-card.ts`; `frontend/src/hold.test.ts`. |
 | R030-POST-021 | IMPLEMENTED | Capability and live PIN states now follow the complete PIN notification state machine; locked state gates normal controls while STOP remains available. `beds/octo.py`, `octo_auth.py`, entity platforms; `tests/test_octo.py::TestOctoPinAuth`, `TestPinReauth`, `TestOctoCapabilityControls`. |
 | R030-POST-022 | ALREADY_IMPLEMENTED | Four-digit validated unlock uses SYSTEM 43 raw digit bytes; setup verification waits for PIN_STATE=1 and does not move the bed. `beds/octo.py`, `octo_auth.py`; `tests/test_octo.py::TestOctoPinAuth`, config-flow PIN verification tests. |
-| R030-POST-023 | IMPLEMENTED | PIN_LOCK retry waits exactly 1000 ms, validates four ASCII digits, and does not use periodic 25-second writes. `beds/octo.py`; `tests/test_octo.py::TestPinReauth`. |
+| R030-POST-023 | IMPLEMENTED | The app's PIN_LOCK retry waits exactly 1000 ms and validates four ASCII digits. Separately, established-field compatibility restores main's periodic 25-second keepalive for a configured PIN on a held link; it is serialized and lifecycle-bound, and coexists with the reactive retry. The interval is host behavior, not an app timing claim. `beds/octo.py`, `coordinator.py`, `const.py`; `tests/test_octo.py::TestPinReauth`, `TestOctoPinAuth::test_periodic_pin_keepalive_uses_command_lane_and_disconnect_generation`, `test_coordinator_starts_keepalive_after_octo_session`. |
 | R030-POST-024 | IMPLEMENTED | Added explicit four-digit PIN enrollment with confirmation, correct SYSTEM 41 record and optional secret persistence. `octo_auth.py`, `services.py`, `services.yaml`; `tests/test_octo_services.py` enrollment cases. |
 | R030-POST-025 | IMPLEMENTED | CAP_SYNCHRO availability/state use advertised characteristic/value and metadata-preserving SYSTEM 72 writes. `beds/octo.py`, `switch.py`; `tests/test_octo.py::TestOctoCapabilityControls`. |
 | R030-POST-026 | IMPLEMENTED | Added PIN-gated remote-lock state and record-preserving writer. `beds/octo.py`, `switch.py`; `tests/test_octo.py::TestOctoCapabilityControls`. |
-| R030-POST-027 | IMPLEMENTED | Light availability/on-state use active CAP_LIGHT record; absent/inactive discovery does not fabricate a light. Color writes turn light on first when needed. `beds/octo.py`, `light.py`; `tests/test_octo.py::TestOctoRGBWILightEntity`. |
+| R030-POST-027 | IMPLEMENTED | Complete discovery uses active CAP_LIGHT/color records for authoritative light controls. Only a missing/incomplete capability reply uses the established assumed-light switch path, without fabricating writable records; on/off-only receivers retain the legacy switch ID. Color writes turn light on first when needed. `beds/octo.py`, `light.py`, `switch.py`; `tests/test_octo.py::TestOctoRGBWILightEntity`, `TestOctoCapabilityControls::test_onoff_only_light_keeps_legacy_switch_entity_identity`, `TestOctoOrderedSession::test_absent_session_reply_keeps_legacy_controls_available`. |
 | R030-POST-028 | IMPLEMENTED | Added CAP_LIGHT_DURATION number (0–60 minutes, zero permanent), preserving advertised metadata. `beds/octo.py`, `number.py`; `tests/test_octo.py::TestOctoCapabilityControls`. |
 | R030-POST-029 | IMPLEMENTED | Added active-gated automatic-light switch using its capability value and exact record. `beds/octo.py`, `switch.py`; `tests/test_octo.py::TestOctoCapabilityControls`. |
 | R030-POST-030 | IMPLEMENTED | Added light sensitivity select for the advertised 6/35/85 values, encoded as big-endian two-byte values. `beds/octo.py`, `select.py`; `tests/test_octo.py::TestOctoCapabilityControls`. |
@@ -102,6 +102,39 @@ snapshot with no open or new findings. There are no disagreements or scope cuts.
 | S030-15 | CLOSED_VERIFIED | Octo RGBWI intensity zero is preserved on initialization, update and write without changing legacy level semantics; `tests/test_octo.py::TestOctoRGBWILightEntity::test_rgbwi_intensity_zero_survives_initial_state_updates_and_writes`. |
 | S030-16 | CLOSED_VERIFIED | Auto-detect ownership is compared against the confidently detected profile, preserving Star2 variant and pulse defaults without rebuilding the same form; `tests/test_starcode_setup_discovery.py::test_private_star2_auto_preserves_receiver_and_pulse_defaults[manual]` and `[bluetooth_full_list]`. |
 
+## Established field compatibility (separate from APK behavior)
+
+The following compatibility paths preserve prior field-verified behavior from
+closed issues. They do not add claims about the accepted app artifact or change
+any of the 53 ledger IDs/dispositions:
+
+- [Issue #176](https://github.com/kristofferR/ha-adjustable-bed/issues/176): an
+  advertised positive duration uses its minutes, explicit zero means permanent
+  lighting, and an absent duration uses the established 300-second fallback.
+  On/off-only OCTO lights keep the existing `under_bed_lights` switch unique ID;
+  color/intensity capabilities may add the light entity without deleting that
+  switch. A deliberate ON restarts its expiry, while identical telemetry and an
+  equivalent reconnect preserve the existing deadline. Focused proofs:
+  `tests/test_octo.py::TestOctoCapabilityControls::test_light_duration_reports_positive_timeout_and_permanent_zero`,
+  `test_light_duration_absence_uses_legacy_five_minute_default`, and
+  `test_onoff_only_light_keeps_legacy_switch_entity_identity`.
+- [Issue #29](https://github.com/kristofferR/ha-adjustable-bed/issues/29): the
+  configured-PIN keepalive runs every 25 seconds while the OCTO link is held,
+  through the serialized coordinator command lane, alongside the app's reactive
+  one-second PIN_LOCK retry. The periodic cadence is host compatibility policy.
+- [Issues #499](https://github.com/kristofferR/ha-adjustable-bed/issues/499)
+  and [#64](https://github.com/kristofferR/ha-adjustable-bed/issues/64): a
+  receiver that answers follows the app's strict ordered session. Missing
+  ping/device-info replies continue, and an absent/incomplete capability list
+  uses main's legacy defaults, including assume-lights, without marking the
+  records authoritative or retiring known entities. Malformed replies remain
+  strict failures. Focused proofs are the absent-reply and malformed-reply
+  cases in `tests/test_octo.py::TestOctoOrderedSession`.
+- [Issue #440](https://github.com/kristofferR/ha-adjustable-bed/issues/440):
+  an RTV name selects the one-motor fallback only when no motor count was
+  discovered; an advertised count or explicit override takes precedence.
+  Focused proof: `tests/test_config_flow.py::TestBluetoothDiscoveryFlow::test_rtv_octo_config_flow_uses_name_when_motor_count_is_unadvertised`.
+
 ## Validation boundary
 
 Focused controller, coordinator startup, setup, paired-routing, service, light,
@@ -113,9 +146,23 @@ unverified for user beta/release validation.
 
 ## Completed source validation
 
-The reviewed implementation passed 19,848 full Python tests with zero failures.
-The independent repair review also passed 205 focused Python tests, 102 frontend
-tests, TypeScript checking, and actual coordinator/card probes. Ruff and Pyright
-passed. All 53 dispositions remain: 25 implemented, 9 already implemented, and
-19 excluded. Physical BLE behavior remains unverified for user beta/release
-validation; publication and deployment are separate steps.
+The earlier reviewed implementation passed 19,848 full Python tests with zero
+failures. The published PR checkpoint `3df3a4fd2a59ed5df252da189810ff3e65d49ae1`
+later passed 19,849 full tests. These are historical results and do not cover
+the pending merge and compatibility changes described below.
+
+## Current pending candidate validation
+
+The uncommitted merge candidate passed 172 OCTO/controller/service tests, 268
+config-flow tests, and 101 paired, assumed-light, RMControl and RTV-entity tests.
+The card's Bun suite passed 147 tests with 587 assertions, and TypeScript
+checking plus bundle generation passed. Scoped Ruff and full-project Pyright
+passed; `git diff --check` passed. On an isolated archive of published commit
+`6c2c50d7c3e40cb77ce341b339cbd16eea5d9701`, seven compatibility regression
+cases failed at their intended assertions; all eight candidate cases passed.
+The eighth case confirms advertised positive and explicit-zero duration
+semantics and passes on both revisions. The negative controls had no
+collection, import or setup failures.
+This candidate still awaits the root's distinct review and exclusive full
+suite. Physical BLE behavior remains unverified for user beta/release
+validation.

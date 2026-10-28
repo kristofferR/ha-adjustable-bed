@@ -29,6 +29,8 @@ from bleak.exc import BleakError
 from ..const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     OCTO_CHAR_UUID,
+    OCTO_LIGHT_AUTO_OFF_SECONDS,
+    OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_STAR2_CHAR_UUID,
 )
 from .base import (
@@ -77,6 +79,7 @@ OCTO_SYSTEM_FROM_DEVICE = 0x21
 OCTO_SYSTEM_PIN_NEED = 0x40
 OCTO_SYSTEM_PIN_SET = 0x41
 OCTO_SYSTEM_PIN_CLEARED = 0x42
+OCTO_SYSTEM_PIN_AUTH = 0x43
 OCTO_SYSTEM_PIN_STATE = 0x43  # data[0] == 1 -> unlocked
 OCTO_SYSTEM_PIN_LOCK = 0x44  # delayed one second, then retry PIN
 OCTO_SYSTEM_GET_DEVICEINFO = 0x70
@@ -424,6 +427,9 @@ class OctoController(BedController, OctoPacketCodec):
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._pin: str = pin
+        self._keepalive_task: asyncio.Task[None] | None = None
+        self._keepalive_generation = 0
+        self._keepalive_session_generation = 0
         self._pin_resend_task: asyncio.Task[None] | None = None
         self._notifications_started: bool = False  # Track if BLE notifications are active
         OctoPacketCodec.__init__(self)
@@ -434,8 +440,10 @@ class OctoController(BedController, OctoPacketCodec):
         self._pending_capability_records: dict[int, OctoCapabilityRecord] = {}
         self._device_info: dict[str, int] | None = None
         self._ping_event = asyncio.Event()
+        self._ping_invalid = False
         self._device_info_event = asyncio.Event()
         self._device_info_invalid = False
+        self._capability_response_invalid = False
         self._feature_discovery_event = asyncio.Event()
         self._session_ready = False
         self._session_generation = 0
@@ -458,6 +466,8 @@ class OctoController(BedController, OctoPacketCodec):
         self._rgb_value_type: int | None = None
         self._remote_lock_active: bool = False
         self._light_duration_minutes: int | None = None
+        self._light_duration_invalid = False
+        self._legacy_assumed_lights = False
         self._automatic_light_active: bool = False
         self._light_sensitivity: int | None = None
         self._memory_count: int | None = None  # None = not yet discovered
@@ -478,9 +488,8 @@ class OctoController(BedController, OctoPacketCodec):
         self._pin_sent: bool = False  # True once a PIN packet was written this session
 
         if capability_snapshot:
-            # Offline mint: pre-populate discovered capabilities so entity gating
-            # matches the live bed, and mark discovery "done" so nothing awaits a
-            # connection that will never happen for this client-free controller.
+            # Legacy snapshots lack the records needed for authoritative entity
+            # reconciliation. Preserve their registry entries until live discovery.
             self._apply_capability_snapshot(capability_snapshot)
             self._features_loaded.set()
             self._features_complete.set()
@@ -589,8 +598,12 @@ class OctoController(BedController, OctoPacketCodec):
 
     def _handle_feature_response(self, data: list[int]) -> None:
         """Process feature data from a 0x21 0x71 response."""
+        if self._capability_response_invalid or self.invalid_response_received:
+            self._capability_response_invalid = True
+            return
         record = self._extract_feature_value_pair(data)
         if record is None:
+            self._capability_response_invalid = True
             _LOGGER.debug("Could not extract feature from data: %s", data)
             return
 
@@ -641,6 +654,7 @@ class OctoController(BedController, OctoPacketCodec):
         self._synchro_active = None
         self._remote_lock_active = False
         self._light_duration_minutes = None
+        self._light_duration_invalid = False
         self._automatic_light_active = False
         self._light_sensitivity = None
 
@@ -692,6 +706,7 @@ class OctoController(BedController, OctoPacketCodec):
             or self._has_rgbwi
             or self._has_rgb
         )
+        self._legacy_assumed_lights = False
 
         remote_lock = records.get(OCTO_FEATURE_REMOTE_CONTROL_LOCK)
         self._remote_lock_active = bool(
@@ -701,10 +716,15 @@ class OctoController(BedController, OctoPacketCodec):
             and remote_lock.value[0] == 1
         )
         duration = records.get(OCTO_FEATURE_LIGHT_DURATION)
-        if duration and duration.characteristic[:1] == b"\x01" and len(duration.value) == 2:
-            value = int.from_bytes(duration.value, "big")
-            if 0 <= value <= 60:
-                self._light_duration_minutes = value
+        if duration and duration.characteristic[:1] == b"\x01":
+            if len(duration.value) != 2:
+                self._light_duration_invalid = True
+            else:
+                value = int.from_bytes(duration.value, "big")
+                if 0 <= value <= 60:
+                    self._light_duration_minutes = value
+                else:
+                    self._light_duration_invalid = True
         automatic = records.get(OCTO_FEATURE_LIGHT_AUTO)
         self._automatic_light_active = bool(
             automatic
@@ -855,19 +875,20 @@ class OctoController(BedController, OctoPacketCodec):
         _LOGGER.debug("Received notification: %s", data.hex())
         self.forward_raw_notification(OCTO_CHAR_UUID, bytes(data))
 
-        for packet in self._extract_response_packets(bytes(data)):
+        packets = self._extract_response_packets(bytes(data))
+        if self.invalid_response_received:
+            self._capability_response_invalid = True
+
+        for packet in packets:
             command = packet["command"]
             packet_data = packet["data"]
-            wire_command = packet["wire_command"]
 
-            # The raw session ping has one exact valid response. Packet parsing
-            # already checked checksum, declared length and address framing.
-            if (
-                command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_PING]
-                and wire_command == command
-                and not packet_data
-            ):
+            # Packet parsing already checked the checksum, declared length and
+            # optional six-byte address fields. A valid ping carries no payload.
+            if command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_PING]:
                 self._ping_event.set()
+                if packet_data:
+                    self._ping_invalid = True
 
             if command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_GET_DEVICEINFO]:
                 self._device_info_event.set()
@@ -998,6 +1019,10 @@ class OctoController(BedController, OctoPacketCodec):
         """Invalidate session-owned PIN retry work when the BLE link ends."""
         self._session_ready = False
         self._session_generation += 1
+        self._keepalive_generation += 1
+        if self._keepalive_task is not None:
+            self._keepalive_task.cancel()
+            self._keepalive_task = None
         self._pin_state_accepted = None
         self._pin_state_event.set()
         self._pin_retry_pending = False
@@ -1032,6 +1057,7 @@ class OctoController(BedController, OctoPacketCodec):
             and command_key
             not in {
                 (0x20, OCTO_SYSTEM_PING),
+                (0x20, OCTO_SYSTEM_PIN_AUTH),
                 (0x20, OCTO_SYSTEM_PIN_STATE),
                 (0x02, 0x73),
             }
@@ -1166,7 +1192,7 @@ class OctoController(BedController, OctoPacketCodec):
         if override == "auto":
             if self._motor_count_invalid:
                 return None
-            return self._discovered_motor_count or self._coordinator.motor_count
+            return self._discovered_motor_count or self._rtv_fallback_motor_count()
         if isinstance(override, str) and override.isascii() and override.isdecimal():
             override = int(override)
         if type(override) is int and 1 <= override <= 4:
@@ -1180,12 +1206,21 @@ class OctoController(BedController, OctoPacketCodec):
         # OCTO-only Auto option existed. Preserve those choices across upgrades.
         if override is None and configured != 2 and 1 <= configured <= 4:
             return configured
-        return self._discovered_motor_count or configured
+        return self._discovered_motor_count or self._rtv_fallback_motor_count(configured)
+
+    def _rtv_fallback_motor_count(self, default: int | None = None) -> int:
+        """Use the historical RTV lift layout only when no motor count was advertised."""
+        name = self._coordinator.ble_device_name
+        if isinstance(name, str) and name.strip().lower().startswith("rtv"):
+            return 1
+        return self._coordinator.motor_count if default is None else default
 
     @property
     def supports_lights(self) -> bool:
-        """Whether a current active light or color record is advertised."""
-        return bool(self._has_lights)
+        """Whether current records or the legacy missing-list fallback expose lights."""
+        if self._has_lights is not None:
+            return self._has_lights
+        return not self.controller_entity_discovery_complete
 
     @property
     def supports_light_color_control(self) -> bool:
@@ -1234,14 +1269,14 @@ class OctoController(BedController, OctoPacketCodec):
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return True if bed has separate on/off light commands."""
+        """Return whether the advertised record or legacy fallback supports on/off."""
         record = self._capability_records.get(OCTO_FEATURE_LIGHT)
         return bool(
             record is not None
             and record.characteristic[:1] == b"\x01"
             and record.readonly == 0
             and len(record.value) == 1
-        )
+        ) or (self._legacy_assumed_lights and self.supports_lights)
 
     @property
     def supports_light_toggle_control(self) -> bool:
@@ -1255,16 +1290,37 @@ class OctoController(BedController, OctoPacketCodec):
 
     @property
     def light_auto_off_seconds(self) -> int | None:
-        """Return an active positive timeout; zero means permanent lighting."""
+        """Use advertised minutes, or the historical five-minute default if absent."""
         minutes = self._light_duration_minutes
-        return minutes * 60 if minutes is not None and minutes > 0 else None
+        if not self.supports_lights or self._light_duration_invalid:
+            return None
+        if minutes is None:
+            return OCTO_LIGHT_AUTO_OFF_SECONDS
+        return minutes * 60 if minutes > 0 else None
+
+    @property
+    def legacy_light_fallback(self) -> bool:
+        """Whether absent capability discovery activated the field-compatible light path."""
+        return (
+            self._legacy_assumed_lights
+            and self._session_ready
+            and not self.controller_entity_discovery_complete
+        )
 
     def on_light_auto_off(self) -> None:
         """Publish the expected light expiry without sending a bed command."""
+        if self.legacy_light_fallback:
+            self.forward_controller_state_updates({"under_bed_lights_on": False})
+            return
         if not self.controller_entity_discovery_complete:
             return
         record = self._capability_records.get(OCTO_FEATURE_LIGHT)
-        if record is not None and self.supports_discrete_light_control and record.value != b"\x00":
+        if (
+            record is not None
+            and record.characteristic[:1] == b"\x01"
+            and len(record.value) == 1
+            and record.value != b"\x00"
+        ):
             self._capability_records[OCTO_FEATURE_LIGHT] = record.with_value(b"\x00")
         self._publish_capability_state()
 
@@ -1685,7 +1741,13 @@ class OctoController(BedController, OctoPacketCodec):
         )
 
     async def discover_features(self) -> bool:
-        """Run OCTO's ordered ping, device-info and complete-capability session."""
+        """Run OCTO's ordered session, with legacy fallback for absent replies.
+
+        Well-formed replies follow the app's P1 ping, device-info and complete
+        capability order. A timeout means the receiver omitted that response;
+        malformed responses remain strict failures. Missing CAP_END uses the
+        field-compatible legacy defaults without claiming authoritative records.
+        """
         if self.client is None or not self.client.is_connected:
             _LOGGER.error("Cannot discover features: not connected")
             return False
@@ -1721,8 +1783,11 @@ class OctoController(BedController, OctoPacketCodec):
         self.invalid_response_received = False
         self._response_buffer.clear()
         self._ping_event.clear()
+        self._ping_invalid = False
         self._device_info_event.clear()
         self._device_info_invalid = False
+        self._capability_response_invalid = False
+        self._legacy_assumed_lights = False
         self._features_loaded.clear()
         self._feature_discovery_event.clear()
         self._pin_sent = False
@@ -1730,16 +1795,37 @@ class OctoController(BedController, OctoPacketCodec):
 
         try:
             await self._write_octo_command([0x20, OCTO_SYSTEM_PING], cancel_event=asyncio.Event())
-            await asyncio.wait_for(self._ping_event.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT)
+            try:
+                await asyncio.wait_for(
+                    self._ping_event.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT
+                )
+            except TimeoutError:
+                if self.invalid_response_received:
+                    _LOGGER.debug("Rejecting malformed OCTO ping response")
+                    return False
+                _LOGGER.debug("OCTO ping reply absent; continuing with legacy-compatible session")
+            if self._ping_invalid or self.invalid_response_received:
+                _LOGGER.debug("Rejecting malformed OCTO ping response")
+                return False
 
             self._device_info_event.clear()
             await self._write_octo_command(
                 [0x20, OCTO_SYSTEM_GET_DEVICEINFO], cancel_event=asyncio.Event()
             )
-            await asyncio.wait_for(
-                self._device_info_event.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT
-            )
-            if self._device_info_invalid or self._device_info is None:
+            try:
+                await asyncio.wait_for(
+                    self._device_info_event.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT
+                )
+            except TimeoutError:
+                if self.invalid_response_received:
+                    _LOGGER.debug("Rejecting malformed OCTO device-info response")
+                    return False
+                _LOGGER.debug(
+                    "OCTO device-info reply absent; continuing with legacy-compatible session"
+                )
+            if self._device_info_event.is_set() and (
+                self._device_info_invalid or self.invalid_response_received
+            ):
                 _LOGGER.debug("Rejecting OCTO device-info response without exactly ten bytes")
                 return False
 
@@ -1748,10 +1834,28 @@ class OctoController(BedController, OctoPacketCodec):
             await self._write_octo_command(
                 [0x20, OCTO_SYSTEM_GET_CAPS], cancel_event=asyncio.Event()
             )
-            await asyncio.wait_for(
-                self._feature_discovery_event.wait(), timeout=OCTO_FEATURE_TIMEOUT
-            )
+            try:
+                await asyncio.wait_for(
+                    self._feature_discovery_event.wait(), timeout=OCTO_FEATURE_TIMEOUT
+                )
+            except TimeoutError:
+                if self._capability_response_invalid or self.invalid_response_received:
+                    _LOGGER.debug("Rejecting malformed or incomplete OCTO capability response")
+                    return False
+                if not self.controller_entity_discovery_complete:
+                    # Preserve the historical default without fabricating typed
+                    # records or persisting an incomplete capability list.
+                    self._legacy_assumed_lights = True
+                    self._has_lights = True
+                    self._memory_count = 0
+                    self._has_synchro = False
+                _LOGGER.debug(
+                    "OCTO capability list absent or incomplete; keeping known surfaces and "
+                    "using legacy light fallback where no complete snapshot exists"
+                )
             self._session_ready = True
+            if self._legacy_assumed_lights:
+                self._publish_capability_state()
             _LOGGER.info(
                 "OCTO capability discovery complete: motors=%s memory=%d lights=%s",
                 self.effective_motor_count,
@@ -2153,11 +2257,23 @@ class OctoController(BedController, OctoPacketCodec):
     # Data format: [cap_id (3 bytes), readonly (1 byte), char_len (1 byte), char (n bytes), value_type (1 byte), value (n bytes)]
     # Cap ID 0x000102 = LIGHT feature, ReadOnly=0x00 for write operations, value 0x01=on, 0x00=off
     async def lights_on(self) -> None:
-        """Turn on under-bed lights using the active advertised record."""
+        """Turn on under-bed lights using advertised or legacy field behavior."""
+        if self._legacy_assumed_lights:
+            await self._write_octo_command(
+                [0x20, OCTO_SYSTEM_SET_CAPS],
+                [0x00, 0x01, 0x02, 0x00, 0x01, 0x01, 0x01, 0x01],
+            )
+            return
         await self._write_capability_value(OCTO_FEATURE_LIGHT, b"\x01")
 
     async def lights_off(self) -> None:
-        """Turn off under-bed lights using the active advertised record."""
+        """Turn off under-bed lights using advertised or legacy field behavior."""
+        if self._legacy_assumed_lights:
+            await self._write_octo_command(
+                [0x20, OCTO_SYSTEM_SET_CAPS],
+                [0x00, 0x01, 0x02, 0x00, 0x01, 0x01, 0x01, 0x00],
+            )
+            return
         await self._write_capability_value(OCTO_FEATURE_LIGHT, b"\x00")
 
     async def lights_toggle(self) -> None:
@@ -2264,6 +2380,96 @@ class OctoController(BedController, OctoPacketCodec):
             self._pin_retry_auth_sent = False
             _LOGGER.warning("Failed to send PIN: %s", err)
 
+    async def start_keepalive(self) -> None:
+        """Start periodic PIN refresh for a configured, held OCTO link."""
+        if not self._pin:
+            return
+        client = self.client
+        if not self._session_ready or client is None or not client.is_connected:
+            return
+        if (
+            self._keepalive_task is not None
+            and not self._keepalive_task.done()
+            and self._keepalive_session_generation == self._session_generation
+        ):
+            return
+        await self.stop_periodic_keepalive()
+        self._keepalive_generation += 1
+        generation = self._keepalive_generation
+        session_generation = self._session_generation
+        self._keepalive_session_generation = session_generation
+        self._keepalive_task = asyncio.create_task(
+            self._keepalive_loop(generation, session_generation)
+        )
+
+    async def stop_periodic_keepalive(self) -> None:
+        """Cancel only the periodic PIN refresh task."""
+        self._keepalive_generation += 1
+        task = self._keepalive_task
+        self._keepalive_task = None
+        if task is not None:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    async def _keepalive_loop(self, generation: int, session_generation: int) -> None:
+        """Periodically re-authenticate through the coordinator command lane."""
+        try:
+            while (
+                generation == self._keepalive_generation
+                and session_generation == self._session_generation
+                and self._session_ready
+                and self._pin
+            ):
+                await asyncio.sleep(OCTO_PIN_KEEPALIVE_INTERVAL)
+                client = self.client
+                if (
+                    generation != self._keepalive_generation
+                    or session_generation != self._session_generation
+                    or not self._session_ready
+                    or not self._pin
+                    or client is None
+                    or not client.is_connected
+                ):
+                    return
+
+                async def authenticate(controller: BedController) -> None:
+                    if controller is self:
+                        await self._send_keepalive_pin()
+
+                try:
+                    await self._coordinator.async_execute_controller_command(
+                        authenticate,
+                        cancel_running=False,
+                        skip_disconnect=True,
+                        read_positions_after_operation=False,
+                    )
+                except asyncio.CancelledError:
+                    raise
+                except Exception as err:
+                    _LOGGER.warning("OCTO periodic PIN keepalive failed: %s", err)
+        except asyncio.CancelledError:
+            raise
+        finally:
+            if self._keepalive_task is asyncio.current_task():
+                self._keepalive_task = None
+
+    async def _send_keepalive_pin(self) -> None:
+        """Refresh configured PIN authentication without changing live lock state."""
+        if not self._pin or not self._session_ready:
+            return
+        client = self.client
+        if client is None or not client.is_connected:
+            return
+        if len(self._pin) != 4 or not self._pin.isascii() or not self._pin.isdecimal():
+            _LOGGER.error("Invalid PIN: must contain exactly four ASCII digits")
+            return
+        await self._write_octo_command(
+            [0x20, OCTO_SYSTEM_PIN_AUTH],
+            [int(character) for character in self._pin],
+            cancel_event=asyncio.Event(),
+        )
+
     async def async_wait_for_pin_acceptance(self, cancel_event: asyncio.Event) -> None:
         """Wait for this session to confirm PIN access before a normal command."""
         generation = self._session_generation
@@ -2316,7 +2522,8 @@ class OctoController(BedController, OctoPacketCodec):
                     await task
 
     async def stop_keepalive(self) -> None:
-        """Cancel the one-shot delayed PIN challenge retry."""
+        """Cancel periodic PIN refresh and one-shot delayed challenge retry."""
+        await self.stop_periodic_keepalive()
         self._pin_lock_generation += 1
         if self._pin_resend_task is not None:
             self._pin_resend_task.cancel()

@@ -147,19 +147,23 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
         _async_remove_stale_light_entity(hass, coordinator, ASSUMED_LIGHT_DESCRIPTION)
 
     if controller.supports_light_color_control:
-        _async_remove_stale_switch_entity(hass, coordinator)
+        if octo is None:
+            _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
 
-    if octo is not None and octo.supported_color_modes == frozenset(("onoff",)):
-        _async_remove_stale_switch_entity(hass, coordinator)
-        return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
+    if octo is not None and octo.supports_discrete_light_control:
+        # Main exposed OCTO's on/off-only capability as a switch. Keep its
+        # registry identity and automations stable across this upgrade.
+        _async_remove_stale_light_entity(hass, coordinator)
+        return []
 
     if (
         controller.supports_light_state_feedback
         or coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
         and controller.supports_discrete_light_control
     ):
-        _async_remove_stale_switch_entity(hass, coordinator)
+        if octo is None:
+            _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
     if not controller.light_color_control_pending:

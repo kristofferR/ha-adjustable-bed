@@ -29,7 +29,7 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
-import { MotorHold, movementPulse } from "./hold";
+import { holdTargetForEntity, MotorHold, movementPulse, stopFromCard } from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
 import { localize } from "./localize";
 import {
@@ -495,13 +495,12 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _stopCompact(bed?: BedEntities): void {
-    const alreadyStopped = this._hold.abandon();
+    const alreadyStopped = new Set(this._hold.abandon());
     for (const id of bed ? compactStopEntities(bed) : []) {
       if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
     }
-    for (const id of this._compactStopTargets.keys()) {
-      if (id !== alreadyStopped) this._stopCompactTarget(id);
-    }
+    for (const id of this._compactStopTargets.keys())
+      if (!alreadyStopped.has(id)) this._stopCompactTarget(id);
     if (this._compactStopTargets.size) this.requestUpdate();
   }
 
@@ -964,7 +963,9 @@ export class AdjustableBedCard extends LitElement {
       }
       ${
         bed.stop
-          ? html`<button class="stop-all" @click=${() => this._hold.stopAll(bed.stop)}>
+          ? html`<button class="stop-all" @click=${() =>
+              stopFromCard(this._hold, this.hass, bed.stop)
+            }>
               <ha-icon icon="mdi:stop"></ha-icon>
               <span>${localize(this.hass, "action.stop_all")}</span>
             </button>`
@@ -1527,7 +1528,14 @@ export class AdjustableBedCard extends LitElement {
       else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
-    this._hold.start(m, dir, ownerPointerId, stopId);
+    const targetEntityId = stopId ?? m.cover ?? m[dir];
+    this._hold.start(
+      m,
+      dir,
+      ownerPointerId,
+      stopId,
+      holdTargetForEntity(this.hass, targetEntityId),
+    );
   }
 
   // Screen readers, voice control and switch devices activate a native button
@@ -1544,7 +1552,13 @@ export class AdjustableBedCard extends LitElement {
   ): void {
     if (e.detail !== 0 || this._hold.heldKey !== null) return;
     if (m.heldControls?.[dir]) {
-      this._hold.activateForTap(m, dir, stopId);
+      const targetEntityId = stopId ?? m.cover ?? m[dir];
+      this._hold.activateForTap(
+        m,
+        dir,
+        stopId,
+        holdTargetForEntity(this.hass, targetEntityId),
+      );
       return;
     }
     if (this._config?.layout === "compact") {
@@ -1581,14 +1595,17 @@ export class AdjustableBedCard extends LitElement {
 
   private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) {
-      this._hold.cancel(m);
+      this._hold.cancel(
+        m,
+        holdTargetForEntity(this.hass, stopId ?? m.cover),
+      );
       this._cover(m.cover, "stop_cover");
       return;
     }
     // A button-backed row has no stop of its own and falls through to the stop
     // of the bed it belongs to, which halts whatever is moving on that bed. So
     // it has to invalidate any active hold, not just this row's.
-    this._hold.stopAll(stopId);
+    stopFromCard(this._hold, this.hass, stopId);
   }
 
   // Toggle save mode for ONE section: entering it on a section cancels any other

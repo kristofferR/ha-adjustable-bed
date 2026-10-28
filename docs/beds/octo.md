@@ -10,7 +10,9 @@ The complete finding ledger, including already-covered behavior and explicit exc
 
 ## Session and packet handling
 
-Standard OCTO uses service `FFE0` and characteristic `FFE1`. After notifications are active, the controller sends the P1 ping and requires its exact reply. It then requests device information and accepts only a ten-byte result before asking for capabilities. The session becomes ready only after the complete capability list ends with `FFFFFF`. A failed or incomplete required discovery is retried as a failed connection; it does not publish PIN state or replace the previous complete capability snapshot. Star2 does not use this P1 handshake.
+Standard OCTO uses service `FFE0` and characteristic `FFE1`. When a receiver answers, the controller follows the app's order: P1 ping, ten-byte device information, then the capability request. A complete advertised list ends with `FFFFFF` and is the only source of authoritative capability records. Malformed replies remain strict failures.
+
+For established receivers that omit a ping or device-info reply, the integration continues to the next ordered request. If the capability list is absent or incomplete, it keeps any previous complete snapshot and uses the integration's field-compatible legacy defaults, including the historical assume-lights path. These defaults are not reported as complete discovery and cannot retire known entities or be persisted as a capability snapshot. This absence fallback preserves the behavior used by field-reported receivers; it does not change the accepted app behavior when valid replies arrive. Star2 does not use this P1 handshake.
 
 P1 frames use `40` delimiters, an unsigned big-endian length, a two's-complement checksum and byte escaping. Valid flagged source and destination addresses are six bytes and are removed before dispatch. The parser requires the declared frame length and checksum to match exactly. Malformed flagged addresses and undeclared trailing data are rejected.
 
@@ -18,7 +20,7 @@ Capabilities are retained as typed records containing the feature ID, read-only 
 
 ## Motor layout and motion
 
-The active `CAP_MOTORCOUNT` record advertises one through four motors. Auto layout follows the advertised count; the OCTO-only motor-count option can set an explicit one-to-four override. A one-motor Standard receiver is shown as a TV Lift. No other app metadata selects a different protocol.
+The active `CAP_MOTORCOUNT` record advertises one through four motors. Auto layout follows the advertised count; the OCTO-only motor-count option can set an explicit one-to-four override. If no motor count is discovered, the existing RTV-name setup fallback selects one motor; a valid advertised count or explicit override takes precedence. A one-motor Standard receiver is shown as a TV Lift. This is a layout default only and does not select a different protocol.
 
 Motor commands use the advertised layout, and movement cleanup sends the receiver's global STOP with a fresh cancellation event. The bundled card uses the existing bounded `hold_control` service for held motor and memory actions, then sends STOP to the selected side when the hold ends. The service's 60-second maximum is a Home Assistant safety bound. It is not an app timing value. The OCTO controller owns the app-evidenced 350 ms command cadence; the card's motor start/release delays are 100 ms, while memory starts after 100 ms and releases after 200 ms.
 
@@ -34,17 +36,17 @@ Memory recall uses the same bounded held-control path as motor movement. Saving 
 
 The PIN capability separates whether PIN control is enabled, whether a PIN is configured and whether the receiver is unlocked. Normal motor, memory and settings controls are unavailable while a configured PIN is locked or its live state is unknown. Stop and PIN recovery remain available. PIN digits are never included in command traces or support diagnostics.
 
-The app retries a stored PIN once, one second after a lock challenge. The integration follows that event-driven retry and does not use a periodic PIN timer. PIN entry and enrollment require exactly four ASCII digits. To enroll a PIN, call `adjustable_bed.octo_enroll_pin` for one Standard receiver, enter the PIN twice, and target a single side when the bed is paired. Home Assistant stores the PIN for reconnects after sending the enrollment command.
+The integration keeps the established periodic PIN keepalive while a configured-PIN link is held, serialized through the coordinator command lane. It also retries a stored PIN once after the app's one-second lock challenge. The keepalive interval is host behavior, not an app timing claim. PIN entry and enrollment require exactly four ASCII digits. To enroll a PIN, call `adjustable_bed.octo_enroll_pin` for one Standard receiver, enter the PIN twice, and target a single side when the bed is paired. Home Assistant stores the PIN for reconnects after sending the enrollment command.
 
 ## Lights and settings
 
-Light and setting entities are created from the latest complete capability list and retired only after a later complete list proves a capability is gone. An incomplete discovery preserves the prior known surfaces. The app exposes these direct BLE controls:
+For complete app-authoritative capability lists, light and setting entities follow the latest records and retire only after a later complete list proves a capability is gone. An incomplete discovery preserves prior known surfaces. If discovery replies are absent, the separate field-compatibility path may expose the legacy assumed-light switch without declaring capability records authoritative. The app exposes these direct BLE controls:
 
 | Capability | Home Assistant surface |
 | --- | --- |
 | Synchro / linked mode | Switch |
 | Remote-control lock | Switch, hidden while PIN-locked |
-| Under-bed light power | Light entity when its writable record is active |
+| Under-bed light power | Existing switch for on/off-only records; light entity for color/intensity records |
 | RGB (`CAP_LIGHT_RGB`) | RGB color mode |
 | RGBWI (`CAP_LIGHT_RGBWI`) | RGBW color mode with independent intensity/brightness |
 | RGB and RGBWI together | Both RGB and RGBW modes; each writes its own record |
@@ -54,6 +56,8 @@ Light and setting entities are created from the latest complete capability list 
 | Remote teach | Button, only when active and PIN-unlocked |
 
 Read-only and inactive records do not create writable controls. The RGB and RGBWI records keep their own metadata and values. Switching color modes writes only the requested record; the RGBWI intensity remains unchanged unless an RGBW brightness value is sent.
+
+For complete advertised capabilities, a valid positive light-duration record gives its advertised minutes, while an explicit zero means permanent lighting. If duration is absent, the integration retains the established five-minute state-expiry fallback. An active malformed duration is not replaced with that fallback. For both switch and color-light surfaces, a deliberate ON command restarts the host expiry; identical on-state updates and an equivalent reconnect keep the existing deadline. Expiration updates the current controller without a BLE write. Explicit off, duration changes, authoritative capability loss and entity removal cancel or replace the deadline. For an on/off-only receiver, the existing `switch.*_under_bed_lights` entity and unique ID remain in place so existing automations continue to target the same entity. Newly discovered color or intensity capabilities may create a light entity without migrating or deleting that switch. When no capability list arrives, the legacy assumed-light command path uses the established on/off switch and does not invent a writable capability record.
 
 ## Receiver reset
 

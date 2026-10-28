@@ -4366,6 +4366,8 @@ class AdjustableBedCoordinator:
                     # Send initial PIN if the authoritative capability state requires it.
                     if hasattr(self._controller, "send_pin"):
                         await cast(Any, self._controller).send_pin()
+                    if hasattr(self._controller, "start_keepalive"):
+                        await cast(Any, self._controller).start_keepalive()
                     # Surface the missing credential when this receiver reports
                     # an active PIN lock and no local PIN is configured.
                     if hasattr(self._controller, "pin_locked_without_pin"):

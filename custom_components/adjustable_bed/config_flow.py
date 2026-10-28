@@ -961,8 +961,13 @@ def _default_motor_count(
     bed_type: str | None,
     device_name: str | None = None,
 ) -> int:
-    """Return the generic motor-count default for profiles without a layout record."""
-    del device_name  # Layout never comes from a Bluetooth name.
+    """Return the default motor count, including the historical OCTO RTV fallback."""
+    if (
+        bed_type == BED_TYPE_OCTO
+        and device_name is not None
+        and device_name.strip().lower().startswith("rtv")
+    ):
+        return 1
     if bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY}:
         return 3
     return DEFAULT_MOTOR_COUNT
@@ -2979,7 +2984,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._captured_octo_snapshots[entry.entry_id] = snapshot
             return dict(snapshot)
         cached = self._captured_octo_snapshots.get(entry.entry_id)
-        return dict(cached) if isinstance(cached, dict) else None
+        if isinstance(cached, dict):
+            return dict(cached)
+        # Older paired snapshots predate capability records. Keep their saved
+        # fields available for offline setup, while OctoController treats them
+        # as non-authoritative until current complete discovery arrives.
+        capabilities = entry.data.get("capabilities")
+        legacy = capabilities.get("octo") if isinstance(capabilities, Mapping) else None
+        return dict(legacy) if isinstance(legacy, Mapping) else None
 
     def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
         """Resolve a concrete bed type for pairing compatibility.

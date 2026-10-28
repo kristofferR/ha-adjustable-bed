@@ -4385,7 +4385,6 @@ class TestOctoOfflineSnapshot:
         )
         from custom_components.adjustable_bed.light import (
             LIGHT_DESCRIPTION,
-            AdjustableBedLight,
             _light_entities_for,
         )
         from custom_components.adjustable_bed.switch import (
@@ -4433,6 +4432,13 @@ class TestOctoOfflineSnapshot:
         light_row = registry.async_get_or_create(
             "light", DOMAIN, light_unique_id, config_entry=entry
         )
+        legacy_light_switch_unique_id = left.entity_unique_id("under_bed_lights")
+        legacy_light_switch_row = registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            legacy_light_switch_unique_id,
+            config_entry=entry,
+        )
         registry.async_update_entity(
             light_row.entity_id,
             name="Legacy custom light",
@@ -4443,8 +4449,20 @@ class TestOctoOfflineSnapshot:
         light_entities = _light_entities_for(hass, left)
         switch_entities = _switch_entities_for(hass, left)
         assert light_entities == []
-        assert len(switch_entities) == 1 and isinstance(switch_entities[0], AdjustableBedSwitch)
-        assert switch_entities[0].available is False
+        assert len(switch_entities) == 2
+        unavailable_switches = {
+            entity.unique_id: entity
+            for entity in switch_entities
+            if isinstance(entity, AdjustableBedSwitch)
+        }
+        assert unavailable_switches[legacy_light_switch_unique_id].available is False
+        assert (
+            unavailable_switches[left.entity_unique_id(synchro_description.key)].available is False
+        )
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, legacy_light_switch_unique_id)
+            == legacy_light_switch_row.entity_id
+        )
         retained_light = registry.async_get(light_row.entity_id)
         assert retained_light is not None
         assert retained_light.unique_id == light_unique_id
@@ -4465,14 +4483,16 @@ class TestOctoOfflineSnapshot:
         controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
         assert controller.controller_entity_discovery_complete is True
         discovered_lights = _light_entities_for(hass, left)
-        assert len(discovered_lights) == 1
-        assert isinstance(discovered_lights[0], AdjustableBedLight)
-        assert discovered_lights[0].unique_id == light_unique_id
+        assert discovered_lights == []
         retained_light = registry.async_get(light_row.entity_id)
-        assert retained_light is not None
-        assert retained_light.name == "Legacy custom light"
-        assert retained_light.icon == "mdi:bed"
-        assert _switch_entities_for(hass, left) == []
+        assert retained_light is None
+        discovered_switches = _switch_entities_for(hass, left)
+        assert len(discovered_switches) == 1
+        assert discovered_switches[0].unique_id == legacy_light_switch_unique_id
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, legacy_light_switch_unique_id)
+            == legacy_light_switch_row.entity_id
+        )
         assert registry.async_get_entity_id("switch", DOMAIN, synchro_unique_id) is None
 
         controller._pending_capability_records = {}

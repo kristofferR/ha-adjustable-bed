@@ -190,8 +190,8 @@ def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
 def test_octo_one_motor_count_is_limited_to_standard_tv_lifts() -> None:
     """Only Standard OCTO supports an explicit one-motor TV lift override."""
     assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_OCTO] == "OCTO Smart Control"
-    assert _default_motor_count(BED_TYPE_OCTO, "RTV") == 2
-    assert _default_motor_count(BED_TYPE_OCTO, "RTV-1234") == 2
+    assert _default_motor_count(BED_TYPE_OCTO, "RTV") == 1
+    assert _default_motor_count(BED_TYPE_OCTO, "RTV-1234") == 1
     assert _default_motor_count(BED_TYPE_OCTO, "RC2") == 2
     assert _is_valid_motor_count(BED_TYPE_OCTO, OCTO_VARIANT_STANDARD, 1)
     assert _is_valid_motor_count(BED_TYPE_OCTO, "auto", 1)
@@ -1476,6 +1476,68 @@ async def _open_options_form(hass: HomeAssistant, entry_id: str) -> Any:
 
 class TestBluetoothDiscoveryFlow:
     """Test Bluetooth discovery flow."""
+
+    async def test_rtv_octo_setup_form_keeps_auto_layout_selection(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    ) -> None:
+        mock_bluetooth_service_info.name = "RTV Lift"
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info
+        flow._disambiguated_bed_type = BED_TYPE_OCTO
+        flow._show_full_bed_type_list = True
+        flow._selected_protocol_variant = OCTO_VARIANT_STANDARD
+
+        result = await flow.async_step_bluetooth_confirm()
+
+        markers = {marker.schema: marker for marker in result["data_schema"].schema}
+        assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
+
+    async def test_rtv_octo_config_flow_uses_name_when_motor_count_is_unadvertised(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_octo_rc2: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The real Octo setup path keeps RTV's historical count as Auto fallback."""
+        from custom_components.adjustable_bed.beds.octo import OctoController
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        mock_bluetooth_service_info_octo_rc2.name = "RTV Lift"
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_octo_rc2
+        flow._disambiguated_bed_type = BED_TYPE_OCTO
+        flow._selected_protocol_variant = OCTO_VARIANT_STANDARD
+
+        finished = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
+        monkeypatch.setattr(flow, "_finish_with_verify", finished)
+        await flow.async_step_bluetooth_confirm(
+            {
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_NAME: "RTV Lift",
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
+                CONF_OCTO_PIN: "",
+            }
+        )
+
+        entry_data = finished.await_args.args[0]
+        assert entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "auto"
+        assert entry_data[CONF_MOTOR_COUNT] == 2
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="RTV Lift",
+            data=entry_data,
+            unique_id=mock_bluetooth_service_info_octo_rc2.address,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._record_observed_ble_device_name(entry_data[CONF_NAME])
+        assert OctoController(coordinator).effective_motor_count == 1
 
     async def test_bluetooth_discovery_identical_names_include_address(
         self,

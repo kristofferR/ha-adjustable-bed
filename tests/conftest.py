@@ -896,6 +896,7 @@ def mock_octo_ready_transport(
         controller._session_ready = True
         controller._features_loaded.set()
         controller._features_complete.set()
+        controller._capability_records_authoritative = True
         controller._pin_feature_active = True
         controller._has_pin = False
         controller._pin_locked = False
