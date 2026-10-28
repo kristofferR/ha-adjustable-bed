@@ -4756,6 +4756,119 @@ class TestOctoOfflineSnapshot:
         assert flow._octo_capability_snapshot(star2) is None  # no dynamic snapshot
 
 
+class TestOctoLegacyMotorFallbackSetup:
+    """Octo's accepted legacy session still exposes real side cover entities."""
+
+    @pytest.mark.parametrize(
+        "connection_mode",
+        [PAIR_CONNECTION_MODE_CONCURRENT, PAIR_CONNECTION_MODE_SEQUENTIAL],
+    )
+    async def test_missing_capabilities_keep_paired_child_covers_and_route_stop(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client,
+        enable_custom_integrations,
+        monkeypatch: pytest.MonkeyPatch,
+        connection_mode: str,
+    ) -> None:
+        from custom_components.adjustable_bed.beds import octo as octo_module
+        from custom_components.adjustable_bed.beds.octo import (
+            OCTO_MOTOR_HEAD,
+            OctoController,
+        )
+        from custom_components.adjustable_bed.const import CONF_OCTO_PIN
+        from custom_components.adjustable_bed.cover import _cover_entities_for
+
+        real_discover = OctoController.discover_features
+
+        async def timeout_without_replies(awaitable, *, timeout: float) -> None:
+            del timeout
+            close = getattr(awaitable, "close", None)
+            if close is not None:
+                close()
+            raise TimeoutError
+
+        async def discover_with_absent_replies(controller: OctoController) -> bool:
+            with patch.object(octo_module.asyncio, "wait_for", new=timeout_without_replies):
+                return await real_discover(controller)
+
+        monkeypatch.setattr(OctoController, "discover_features", discover_with_absent_replies)
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        data[CONF_PAIR_CONNECTION_MODE] = connection_mode
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+            child[CONF_MOTOR_COUNT] = 2
+            child[CONF_OCTO_PIN] = ""
+            child.pop("capabilities", None)
+
+        async def disconnect_mock_client() -> None:
+            mock_bleak_client.is_connected = False
+
+        mock_bleak_client.disconnect.side_effect = disconnect_mock_client
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Octo legacy pair",
+            data=data,
+            unique_id=f"pair_octo_legacy_motor_fallback_{connection_mode}",
+            entry_id=f"pair_octo_legacy_motor_fallback_{connection_mode}",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id("cover", DOMAIN, f"{LEFT_ADDR}_back")
+        assert entity_id is not None
+        assert hass.states.get(entity_id) is not None
+
+        pair = hass.data[DOMAIN][entry.entry_id]
+        left = pair.children[SIDE_LEFT]
+        controller = left.capability_controller
+        assert isinstance(controller, OctoController)
+        assert controller.controller_entity_discovery_complete is False
+        assert controller.capability_snapshot() is None
+
+        if connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+            assert not left.is_connected
+            controller.on_disconnect()
+            assert controller._session_ready is False
+            assert {cover.unique_id for cover in _cover_entities_for(hass, left)} == {
+                f"{LEFT_ADDR}_back",
+                f"{LEFT_ADDR}_legs",
+                f"{LEFT_ADDR}_back_legs",
+            }
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "cover", "open_cover", {"entity_id": entity_id}, blocking=True
+        )
+        await hass.services.async_call(
+            "cover", "stop_cover", {"entity_id": entity_id}, blocking=True
+        )
+        payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
+        assert controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD]) in payloads
+        assert controller._build_packet([0x02, 0x73]) in payloads
+
+        if connection_mode == PAIR_CONNECTION_MODE_CONCURRENT:
+            controller.on_disconnect()
+            assert controller._session_ready is False
+            assert {cover.unique_id for cover in _cover_entities_for(hass, left)} == {
+                f"{LEFT_ADDR}_back",
+                f"{LEFT_ADDR}_legs",
+                f"{LEFT_ADDR}_back_legs",
+            }
+
+        assert await hass.config_entries.async_unload(entry.entry_id)
+        await hass.async_block_till_done()
+
+
 class TestOctoSnapshotBackfill:
     """Phase 2.5 C3 (commit 4): a paired Octo side persists its freshly-discovered
     capability snapshot into its child descriptor on connect."""

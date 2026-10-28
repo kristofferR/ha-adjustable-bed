@@ -468,6 +468,7 @@ class OctoController(BedController, OctoPacketCodec):
         self._light_duration_minutes: int | None = None
         self._light_duration_invalid = False
         self._legacy_assumed_lights = False
+        self._legacy_motor_layout_available = False
         self._automatic_light_active: bool = False
         self._light_sensitivity: int | None = None
         self._memory_count: int | None = None  # None = not yet discovered
@@ -546,6 +547,13 @@ class OctoController(BedController, OctoPacketCodec):
         return self._features_complete.is_set() and self._capability_records_authoritative
 
     @property
+    def _motor_control_surface_ready(self) -> bool:
+        """Allow known layouts from snapshots or a successful legacy fallback."""
+        return self.effective_motor_count is not None and (
+            self._features_complete.is_set() or self._legacy_motor_layout_available
+        )
+
+    @property
     def has_dynamic_controller_entities(self) -> bool:
         """Octo capabilities are authoritative only after the live sentinel."""
         return True
@@ -613,6 +621,7 @@ class OctoController(BedController, OctoPacketCodec):
             self._apply_capability_records(self._capability_records)
             self._features_complete.set()
             self._capability_records_authoritative = True
+            self._legacy_motor_layout_available = False
             self._feature_discovery_event.set()
             self._publish_capability_state()
             return
@@ -1855,6 +1864,7 @@ class OctoController(BedController, OctoPacketCodec):
                 )
             self._session_ready = True
             if self._legacy_assumed_lights:
+                self._legacy_motor_layout_available = True
                 self._publish_capability_state()
             _LOGGER.info(
                 "OCTO capability discovery complete: motors=%s memory=%d lights=%s",
@@ -2024,7 +2034,7 @@ class OctoController(BedController, OctoPacketCodec):
         Motor 3/4 are mapped to "head" and "feet" entity keys to match the
         standard cover entity naming convention.
         """
-        if not self._features_complete.is_set():
+        if not self._motor_control_surface_ready:
             return ()
         motor_count = self.effective_motor_count
         if motor_count is None:

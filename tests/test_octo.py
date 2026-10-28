@@ -428,6 +428,158 @@ class TestOctoRequiredStartupDiscovery:
         assert coordinator.is_connected is True
 
 
+class TestOctoLegacyMotorSurface:
+    """A successful absent-capability fallback retains configured motor entities."""
+
+    @pytest.mark.parametrize(
+        ("motor_count", "motor_keys", "command_key"),
+        [
+            (1, ("tv_lift",), "tv_lift"),
+            (2, ("back", "legs", "back_legs"), "back"),
+            (4, ("back", "legs", "back_legs", "head", "feet", "head_feet"), "back"),
+        ],
+    )
+    async def test_missing_capabilities_register_configured_covers_and_route_commands(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+        monkeypatch: pytest.MonkeyPatch,
+        motor_count: int,
+        motor_keys: tuple[str, ...],
+        command_key: str,
+    ) -> None:
+        """Real entry setup keeps stable covers and serializes movement and STOP."""
+        from homeassistant.helpers import entity_registry as er
+
+        address = f"AA:BB:CC:DD:EE:{motor_count:02X}"
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=f"Octo {motor_count} motor",
+            data={
+                **mock_octo_config_entry_data,
+                CONF_ADDRESS: address,
+                CONF_NAME: f"Octo {motor_count} motor",
+                CONF_MOTOR_COUNT: motor_count,
+                CONF_OCTO_PIN: "",
+            },
+            unique_id=address,
+            entry_id=f"octo_legacy_motor_{motor_count}",
+        )
+        entry.add_to_hass(hass)
+
+        async def discover_with_absent_replies(controller: OctoController) -> bool:
+            with patch.object(octo_module.asyncio, "wait_for", new=_raise_timeout):
+                return await _REAL_OCTO_DISCOVER_FEATURES(controller)
+
+        monkeypatch.setattr(OctoController, "discover_features", discover_with_absent_replies)
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        controller = coordinator.controller
+        assert isinstance(controller, OctoController)
+        assert controller._session_ready is True
+        assert controller.controller_entity_discovery_complete is False
+        assert controller._capability_records == {}
+        assert controller.capability_snapshot() is None
+
+        registry = er.async_get(hass)
+        cover_ids = {
+            key: registry.async_get_entity_id("cover", DOMAIN, f"{address}_{key}")
+            for key in motor_keys
+        }
+        assert all(cover_ids.values()), "configured OCTO covers must retain their unique IDs"
+        first_cover_ids = dict(cover_ids)
+
+        assert await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        controller = coordinator.controller
+        assert isinstance(controller, OctoController)
+        assert controller._session_ready is True
+        assert controller.controller_entity_discovery_complete is False
+        assert controller.capability_snapshot() is None
+        cover_ids = {
+            key: registry.async_get_entity_id("cover", DOMAIN, f"{address}_{key}")
+            for key in motor_keys
+        }
+        assert cover_ids == first_cover_ids
+
+        command_entity_id = cover_ids[command_key]
+        assert command_entity_id is not None
+        assert hass.states.get(command_entity_id) is not None
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "cover", "open_cover", {"entity_id": command_entity_id}, blocking=True
+        )
+        await hass.services.async_call(
+            "cover", "stop_cover", {"entity_id": command_entity_id}, blocking=True
+        )
+
+        payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
+        assert controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD]) in payloads
+        assert controller._build_packet([0x02, 0x73]) in payloads
+
+        assert await hass.config_entries.async_unload(entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_later_complete_motor_count_reconciles_fallback_registry_rows(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry: MockConfigEntry,
+    ) -> None:
+        """Only CAP_END retires fallback IDs after replacing the known layout."""
+        from homeassistant.helpers import entity_registry as er
+
+        from custom_components.adjustable_bed.cover import _cover_entities_for
+
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        controller = OctoController(coordinator)
+        coordinator._controller = controller
+        controller._session_ready = True
+        controller._legacy_assumed_lights = True
+        controller._legacy_motor_layout_available = True
+        controller._has_lights = True
+        assert [spec.key for spec in controller.motor_control_specs] == [
+            "back",
+            "legs",
+            "back_legs",
+        ]
+        assert controller.capability_snapshot() is None
+
+        registry = er.async_get(hass)
+        stale_keys = ("back", "legs", "back_legs")
+        for key in stale_keys:
+            registry.async_get_or_create(
+                "cover",
+                DOMAIN,
+                f"{mock_octo_config_entry.data[CONF_ADDRESS]}_{key}",
+                config_entry=mock_octo_config_entry,
+            )
+
+        controller._pending_capability_records = {
+            OCTO_FEATURE_MOTORCOUNT: _capability(OCTO_FEATURE_MOTORCOUNT, b"\x01", b"\x00")
+        }
+        with patch.object(controller, "forward_controller_state_updates"):
+            controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
+
+        assert controller.controller_entity_discovery_complete is True
+        assert [entity.unique_id for entity in _cover_entities_for(hass, coordinator)] == [
+            f"{mock_octo_config_entry.data[CONF_ADDRESS]}_tv_lift"
+        ]
+        assert all(
+            registry.async_get_entity_id(
+                "cover", DOMAIN, f"{mock_octo_config_entry.data[CONF_ADDRESS]}_{key}"
+            )
+            is None
+            for key in stale_keys
+        )
+
+
 class TestOctoNotificationStream:
     """Test OCTO packet reassembly across notified characteristic values."""
 
@@ -848,6 +1000,11 @@ class TestOctoOrderedSession:
         assert await controller.discover_features() is False
         assert controller._session_ready is False
         assert controller.controller_entity_discovery_complete is False
+        assert controller.motor_control_specs == ()
+        writes_before_control = list(_writes)
+        with pytest.raises(ConnectionError, match="session discovery"):
+            await controller.move_back_up()
+        assert _writes[len(writes_before_control) :] == [controller._build_packet([0x02, 0x73])]
 
 
 class TestOctoPinAuth:

@@ -221,7 +221,11 @@ def _cover_entities_for(
         return []
 
     octo = octo_controller(controller)
-    if octo is not None and not octo.controller_entity_discovery_complete:
+    if (
+        octo is not None
+        and not octo.controller_entity_discovery_complete
+        and not octo._motor_control_surface_ready
+    ):
         return []
 
     _async_remove_stale_cover_entities(hass, coordinator, controller)
