@@ -23,6 +23,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
+from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
@@ -449,6 +450,7 @@ class OctoController(BedController, OctoPacketCodec):
         self._session_generation = 0
         self._pin_state_event = asyncio.Event()
         self._pin_state_accepted: bool | None = None
+        self._pin_last_auth_at: float | None = None
         self._pin_retry_pending = False
         self._pin_retry_authorized = False
         self._pin_retry_auth_sent = False
@@ -1028,6 +1030,7 @@ class OctoController(BedController, OctoPacketCodec):
         """Invalidate session-owned PIN retry work when the BLE link ends."""
         self._session_ready = False
         self._session_generation += 1
+        self._pin_last_auth_at = None
         self._keepalive_generation += 1
         if self._keepalive_task is not None:
             self._keepalive_task.cancel()
@@ -1518,10 +1521,25 @@ class OctoController(BedController, OctoPacketCodec):
         ):
             raise ValueError("OCTO hold duration must be 100..60000 milliseconds")
 
+    def _held_session_is_current(self, client: BleakClient | None, session_generation: int) -> bool:
+        """Keep an admitted PIN hold bound to its original live controller link."""
+        return (
+            client is not None
+            and client.is_connected
+            and self.client is client
+            and self._coordinator.controller is self
+            and self._session_ready
+            and self._session_generation == session_generation
+        )
+
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Stream a selected motor or memory command, then send a fresh STOP."""
         self.validate_hold_control(control, duration_ms)
         cancel_event = self._coordinator.cancel_command
+        pin_client = self.client if self._pin else None
+        pin_session_generation = self._session_generation
+        if self._pin and not self._held_session_is_current(pin_client, pin_session_generation):
+            raise ConnectionError("OCTO session changed during held operation")
         memory_slot = None
         if control.startswith("memory_"):
             memory_slot = int(control.removeprefix("memory_"))
@@ -1538,18 +1556,72 @@ class OctoController(BedController, OctoPacketCodec):
         writes = max(1, -(-duration_ms // OCTO_PROTOCOL_HOLD_INTERVAL_MS))
         remaining_ms = duration_ms - (writes - 1) * OCTO_PROTOCOL_HOLD_INTERVAL_MS
         try:
-            await self._write_octo_command(
-                command,
-                data,
-                repeat_count=writes,
-                repeat_delay_ms=OCTO_PROTOCOL_HOLD_INTERVAL_MS,
-                cancel_event=cancel_event,
-            )
-            if not cancel_event.is_set() and remaining_ms > 0:
-                try:
-                    await asyncio.wait_for(cancel_event.wait(), timeout=remaining_ms / 1000)
-                except TimeoutError:
-                    pass
+            if pin_client is None:
+                await self._write_octo_command(
+                    command,
+                    data,
+                    repeat_count=writes,
+                    repeat_delay_ms=OCTO_PROTOCOL_HOLD_INTERVAL_MS,
+                    cancel_event=cancel_event,
+                )
+                if not cancel_event.is_set() and remaining_ms > 0:
+                    try:
+                        await asyncio.wait_for(cancel_event.wait(), timeout=remaining_ms / 1000)
+                    except TimeoutError:
+                        pass
+            else:
+                loop = asyncio.get_running_loop()
+                hold_deadline = loop.time() + duration_ms / 1000
+                refresh_interval = float(OCTO_PIN_KEEPALIVE_INTERVAL)
+                time_epsilon = 0.000001
+                last_auth_at = self._pin_last_auth_at
+                next_refresh_at = (last_auth_at if last_auth_at is not None else loop.time()) + (
+                    refresh_interval
+                )
+                remaining_writes = writes
+                next_movement_at = loop.time()
+                while not cancel_event.is_set():
+                    now = loop.time()
+                    if now >= hold_deadline - time_epsilon:
+                        break
+                    if not self._held_session_is_current(pin_client, pin_session_generation):
+                        raise ConnectionError("OCTO session changed during held operation")
+                    if now >= next_refresh_at - time_epsilon:
+                        refreshed = await self._send_keepalive_pin(cancel_event=cancel_event)
+                        if cancel_event.is_set():
+                            break
+                        if not self._held_session_is_current(pin_client, pin_session_generation):
+                            raise ConnectionError("OCTO session changed during held operation")
+                        if not refreshed:
+                            raise ConnectionError(
+                                "OCTO PIN refresh could not be sent during held operation"
+                            )
+                        last_auth_at = self._pin_last_auth_at
+                        next_refresh_at = (
+                            last_auth_at if last_auth_at is not None else loop.time()
+                        ) + refresh_interval
+                        continue
+
+                    if remaining_writes and now >= next_movement_at - time_epsilon:
+                        movement_started_at = loop.time()
+                        await self._write_octo_command(
+                            command,
+                            data,
+                            cancel_event=cancel_event,
+                        )
+                        remaining_writes -= 1
+                        next_movement_at = movement_started_at + (
+                            OCTO_PROTOCOL_HOLD_INTERVAL_MS / 1000
+                        )
+                        continue
+
+                    wake_at = min(hold_deadline, next_refresh_at)
+                    if remaining_writes:
+                        wake_at = min(wake_at, next_movement_at)
+                    try:
+                        await asyncio.wait_for(cancel_event.wait(), timeout=wake_at - now)
+                    except TimeoutError:
+                        pass
         finally:
             await self._stop_motors()
 
@@ -1786,6 +1858,7 @@ class OctoController(BedController, OctoPacketCodec):
         # complete CAP_END arrives. The current session writes into staging.
         self._session_ready = False
         self._session_generation += 1
+        self._pin_last_auth_at = None
         self._pin_state_accepted = None
         self._pin_state_event.clear()
         self._pin_retry_auth_sent = False
@@ -2360,7 +2433,9 @@ class OctoController(BedController, OctoPacketCodec):
             _LOGGER.debug("Bed does not require PIN authentication")
             return
 
-        if self.client is None or not self.client.is_connected:
+        auth_client = self.client
+        auth_session_generation = self._session_generation
+        if auth_client is None or not auth_client.is_connected:
             _LOGGER.debug("Cannot send PIN: not connected")
             return
 
@@ -2377,6 +2452,7 @@ class OctoController(BedController, OctoPacketCodec):
             if self._pin_retry_pending:
                 self._pin_retry_authorized = False
                 self._pin_retry_auth_sent = True
+            auth_started_at = asyncio.get_running_loop().time()
             await self._write_octo_command(
                 command=[0x20, 0x43],
                 data=pin_data,
@@ -2385,6 +2461,13 @@ class OctoController(BedController, OctoPacketCodec):
                 cancel_event=asyncio.Event(),
             )
             self._pin_sent = True
+            if (
+                self.client is auth_client
+                and auth_client.is_connected
+                and self._session_ready
+                and self._session_generation == auth_session_generation
+            ):
+                self._pin_last_auth_at = auth_started_at
             _LOGGER.debug("PIN authentication sent successfully")
         except (ValueError, BleakError) as err:
             self._pin_retry_auth_sent = False
@@ -2464,21 +2547,34 @@ class OctoController(BedController, OctoPacketCodec):
             if self._keepalive_task is asyncio.current_task():
                 self._keepalive_task = None
 
-    async def _send_keepalive_pin(self) -> None:
+    async def _send_keepalive_pin(self, *, cancel_event: asyncio.Event | None = None) -> bool:
         """Refresh configured PIN authentication without changing live lock state."""
+        if cancel_event is not None and cancel_event.is_set():
+            return False
         if not self._pin or not self._session_ready:
-            return
+            return False
         client = self.client
         if client is None or not client.is_connected:
-            return
+            return False
+        session_generation = self._session_generation
         if len(self._pin) != 4 or not self._pin.isascii() or not self._pin.isdecimal():
             _LOGGER.error("Invalid PIN: must contain exactly four ASCII digits")
-            return
+            return False
+        auth_started_at = asyncio.get_running_loop().time()
         await self._write_octo_command(
             [0x20, OCTO_SYSTEM_PIN_AUTH],
             [int(character) for character in self._pin],
-            cancel_event=asyncio.Event(),
+            cancel_event=cancel_event if cancel_event is not None else asyncio.Event(),
         )
+        if (
+            self.client is not client
+            or not client.is_connected
+            or not self._session_ready
+            or self._session_generation != session_generation
+        ):
+            return False
+        self._pin_last_auth_at = auth_started_at
+        return cancel_event is None or not cancel_event.is_set()
 
     async def async_wait_for_pin_acceptance(self, cancel_event: asyncio.Event) -> None:
         """Wait for this session to confirm PIN access before a normal command."""

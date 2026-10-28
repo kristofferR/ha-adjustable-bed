@@ -13,6 +13,7 @@ from bleak.exc import BleakError
 from .beds.octo import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_PIN,
+    OCTO_FEATURE_TIMEOUT,
     OCTO_SESSION_RESPONSE_TIMEOUT,
     OCTO_SYSTEM_FROM_DEVICE,
     OCTO_SYSTEM_GET_CAPS,
@@ -74,38 +75,46 @@ async def async_verify_octo_pin(
 
     codec = OctoPacketCodec()
     features_complete = asyncio.Event()
-    ping_accepted = asyncio.Event()
+    ping_reply_seen = asyncio.Event()
     device_info_ready = asyncio.Event()
+    ping_valid = False
+    ping_invalid = False
     device_info_valid = False
+    device_info_invalid = False
     pin_required = False
-    malformed_pin_feature = False
+    malformed_capability = False
     pin_sent = False
     reply: asyncio.Future[OctoPinStatus] = asyncio.get_running_loop().create_future()
 
     def notified(_char: BleakGATTCharacteristic, data: bytearray) -> None:
-        nonlocal pin_required, malformed_pin_feature, device_info_valid
+        nonlocal pin_required, malformed_capability, ping_valid, ping_invalid
+        nonlocal device_info_valid, device_info_invalid
         for packet in codec._extract_response_packets(bytes(data)):
             command, payload = packet["command"], packet["data"]
-            if (
-                command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_PING]
-                and packet["wire_command"] == command
-                and not payload
-            ):
-                ping_accepted.set()
+            if command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_PING]:
+                if packet["wire_command"] == command and not payload:
+                    if not ping_invalid:
+                        ping_valid = True
+                else:
+                    ping_invalid = True
+                ping_reply_seen.set()
             elif command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_GET_DEVICEINFO]:
-                device_info_valid = len(payload) == 10
+                if len(payload) == 10:
+                    if not device_info_invalid:
+                        device_info_valid = True
+                else:
+                    device_info_invalid = True
                 device_info_ready.set()
             elif command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_GET_CAPS] and not pin_sent:
                 feature = codec._extract_feature_value_pair(payload)
                 if feature is None:
-                    if payload[:3] == [0, 0, OCTO_FEATURE_PIN]:
-                        malformed_pin_feature = True
+                    malformed_capability = True
                     continue
                 if feature.feature_id == OCTO_FEATURE_END:
                     features_complete.set()
                 elif feature.feature_id == OCTO_FEATURE_PIN:
                     if not feature.characteristic or len(feature.value) < 2:
-                        malformed_pin_feature = True
+                        malformed_capability = True
                     else:
                         pin_required = feature.characteristic[0] == 1 and feature.value[0] == 1
             elif (
@@ -118,6 +127,9 @@ async def async_verify_octo_pin(
                     OctoPinStatus.ACCEPTED if payload[0] == 1 else OctoPinStatus.REJECTED
                 )
 
+    def optional_reply_invalid() -> bool:
+        return ping_invalid or device_info_invalid or codec.invalid_response_received
+
     subscribed = False
     try:
         async with asyncio.timeout(PIN_VERIFICATION_TIMEOUT):
@@ -128,14 +140,30 @@ async def async_verify_octo_pin(
                 codec._build_packet([0x20, OCTO_SYSTEM_PING]),
                 response=False,
             )
-            await asyncio.wait_for(ping_accepted.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT)
+            try:
+                await asyncio.wait_for(
+                    ping_reply_seen.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT
+                )
+            except TimeoutError:
+                if optional_reply_invalid() or codec._response_buffer:
+                    return OctoPinStatus.INCONCLUSIVE
+            if optional_reply_invalid() or (ping_reply_seen.is_set() and not ping_valid):
+                return OctoPinStatus.INCONCLUSIVE
             await client.write_gatt_char(
                 OCTO_CHAR_UUID,
                 codec._build_packet([0x20, OCTO_SYSTEM_GET_DEVICEINFO]),
                 response=False,
             )
-            await asyncio.wait_for(device_info_ready.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT)
-            if not device_info_valid:
+            try:
+                await asyncio.wait_for(
+                    device_info_ready.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT
+                )
+            except TimeoutError:
+                if optional_reply_invalid() or codec._response_buffer:
+                    return OctoPinStatus.INCONCLUSIVE
+            if optional_reply_invalid() or (device_info_ready.is_set() and not device_info_valid):
+                return OctoPinStatus.INCONCLUSIVE
+            if codec._response_buffer:
                 return OctoPinStatus.INCONCLUSIVE
             codec._response_buffer.clear()
             await client.write_gatt_char(
@@ -143,10 +171,12 @@ async def async_verify_octo_pin(
                 codec._build_packet([0x20, OCTO_SYSTEM_GET_CAPS]),
                 response=False,
             )
-            await features_complete.wait()
-            if malformed_pin_feature or codec.invalid_response_received:
+            await asyncio.wait_for(features_complete.wait(), timeout=OCTO_FEATURE_TIMEOUT)
+            if malformed_capability or optional_reply_invalid() or codec._response_buffer:
                 return OctoPinStatus.INCONCLUSIVE
             if not pin_required:
+                if optional_reply_invalid():
+                    return OctoPinStatus.INCONCLUSIVE
                 return OctoPinStatus.NOT_REQUIRED
             if not pin:
                 return OctoPinStatus.REQUIRED
@@ -160,7 +190,12 @@ async def async_verify_octo_pin(
                 codec._build_packet([0x20, 0x43], [int(digit) for digit in pin]),
                 response=False,
             )
-            return await reply
+            status = await asyncio.wait_for(reply, timeout=PIN_VERIFICATION_TIMEOUT)
+            return (
+                OctoPinStatus.INCONCLUSIVE
+                if optional_reply_invalid() or codec._response_buffer
+                else status
+            )
     except TimeoutError, BleakError, ConnectionError:
         return OctoPinStatus.INCONCLUSIVE
     finally:

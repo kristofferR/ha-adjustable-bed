@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from typing import cast
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import voluptuous as vol
+from bleak import BleakClient
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -18,6 +22,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.base import ControllerHoldSpec
 from custom_components.adjustable_bed.beds.octo import (
     OCTO_FEATURE_MEMCOUNT,
+    OCTO_MOTOR_HEAD,
+    OCTO_PROTOCOL_HOLD_INTERVAL_MS,
+    OCTO_SYSTEM_PIN_AUTH,
     OctoCapabilityRecord,
     OctoController,
 )
@@ -31,6 +38,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MODE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_VARIANT_STANDARD,
     PAIR_MODE_SINGLE_ADDRESS,
     SIDE_BOTH,
@@ -131,6 +139,348 @@ def _install_fake_connected_octosession(
     monkeypatch.setattr(coordinator, "_reset_disconnect_timer", lambda: None)
     monkeypatch.setattr(controller, "write_command", write_command)
     return writes
+
+
+@dataclass
+class _VirtualOctoClock:
+    elapsed_ms: int = 0
+    command_task: asyncio.Task[object] | None = None
+    packets: list[bytes] = field(default_factory=list)
+    motor_times: list[int] = field(default_factory=list)
+    memory_times: list[int] = field(default_factory=list)
+    pin_times: list[int] = field(default_factory=list)
+    pin_owned_lane: list[bool] = field(default_factory=list)
+    context_cancel_event: asyncio.Event | None = None
+
+
+async def _active_octo_service_target(
+    hass: HomeAssistant,
+    client: MagicMock,
+    *,
+    pin: str,
+) -> tuple[MockConfigEntry, AdjustableBedCoordinator, OctoController, dr.DeviceEntry]:
+    """Register a real service target backed by the current mocked GATT client."""
+    await async_register_services(hass)
+    entry, coordinator, controller = await _target(hass, mock_executor=False)
+    coordinator._client = cast(BleakClient, client)
+    coordinator._ready = True
+    controller._session_ready = True
+    controller._features_complete.set()
+    controller._capability_records_authoritative = True
+    controller._pin = pin
+    controller._pin_feature_active = True
+    controller._has_pin = bool(pin)
+    controller._pin_locked = False
+    controller._memory_count = 1
+    client.is_connected = True
+    device = _register_service_device(hass, entry, coordinator)
+    return entry, coordinator, controller, device
+
+
+def _install_virtual_octo_clock(
+    monkeypatch: pytest.MonkeyPatch,
+    coordinator: AdjustableBedCoordinator,
+    controller: OctoController,
+    client: MagicMock,
+    *,
+    after_write: Callable[[bytes, int], Awaitable[None]] | None = None,
+) -> _VirtualOctoClock:
+    """Keep the real command lane/GATT path while advancing hold delays virtually."""
+    state = _VirtualOctoClock()
+    real_sleep = asyncio.sleep
+    real_wait_for = asyncio.wait_for
+    real_loop = asyncio.get_running_loop()
+    motor_packet = controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD])
+    memory_packet = controller._build_packet([0x02, 0x72], [0])
+    pin_packet = controller._build_packet([0x20, OCTO_SYSTEM_PIN_AUTH], [1, 2, 3, 4])
+
+    async def observe_write(_uuid: str, packet: bytes, *, response: bool) -> None:
+        assert response is False
+        current = asyncio.current_task()
+        if current is not None:
+            state.command_task = cast(asyncio.Task[object], current)
+            if state.context_cancel_event is None:
+                state.context_cancel_event = coordinator.cancel_command
+        state.packets.append(packet)
+        if packet == motor_packet:
+            state.motor_times.append(state.elapsed_ms)
+        elif packet == memory_packet:
+            state.memory_times.append(state.elapsed_ms)
+        elif packet == pin_packet:
+            state.pin_times.append(state.elapsed_ms)
+            state.pin_owned_lane.append(coordinator._command_lock.locked())
+        if after_write is not None:
+            await after_write(packet, len(state.packets))
+
+    async def virtual_sleep(delay: float) -> None:
+        if asyncio.current_task() is state.command_task:
+            state.elapsed_ms += round(delay * 1000)
+            await real_sleep(0)
+        else:
+            await real_sleep(delay)
+
+    async def virtual_wait_for(awaitable, timeout=None):
+        if asyncio.current_task() is state.command_task and timeout is not None:
+            frame = getattr(awaitable, "cr_frame", None)
+            event = frame.f_locals.get("self") if frame is not None else None
+            if event is coordinator.cancel_command:
+                close = getattr(awaitable, "close", None)
+                if callable(close):
+                    close()
+                if event.is_set():
+                    return True
+                state.elapsed_ms += round(timeout * 1000)
+                raise TimeoutError
+        return await real_wait_for(awaitable, timeout=timeout)
+
+    class VirtualLoopTime:
+        def time(self) -> float:
+            return state.elapsed_ms / 1000
+
+        def __getattr__(self, name: str) -> object:
+            return getattr(real_loop, name)
+
+    client.write_gatt_char.side_effect = observe_write
+    monkeypatch.setattr(asyncio, "sleep", virtual_sleep)
+    monkeypatch.setattr(asyncio, "wait_for", virtual_wait_for)
+    monkeypatch.setattr(asyncio, "get_running_loop", lambda: VirtualLoopTime())
+    return state
+
+
+@pytest.mark.parametrize(
+    ("service", "pin", "duration", "expected_refreshes"),
+    [
+        ("hold_control", "1234", 60, 2),
+        ("goto_preset", "1234", 60, 2),
+        ("hold_control", "1234", 1, 0),
+        ("hold_control", "", 60, 0),
+    ],
+)
+async def test_registered_octo_motor_and_memory_holds_refresh_pin_in_lane(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    service: str,
+    pin: str,
+    duration: int,
+    expected_refreshes: int,
+) -> None:
+    """Real HA hold and recall services refresh only when due, inside their lane."""
+    _entry, coordinator, controller, device = await _active_octo_service_target(
+        hass, mock_bleak_client, pin=pin
+    )
+    state = _install_virtual_octo_clock(monkeypatch, coordinator, controller, mock_bleak_client)
+
+    data: dict[str, object] = {"device_id": device.id, "duration": duration}
+    if service == "hold_control":
+        data["control"] = "back_up"
+    else:
+        data["preset"] = 1
+    await hass.services.async_call(DOMAIN, service, data, blocking=True)
+
+    motor_packet = controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD])
+    memory_packet = controller._build_packet([0x02, 0x72], [0])
+    pin_packet = controller._build_packet([0x20, OCTO_SYSTEM_PIN_AUTH], [1, 2, 3, 4])
+    pin_set_packet = controller._build_packet([0x20, 0x41], [1, 2, 3, 4])
+    stop_packet = controller._build_packet([0x02, 0x73])
+    expected_move = motor_packet if service == "hold_control" else memory_packet
+    assert state.packets.count(expected_move) == (172 if duration == 60 else 3)
+    assert state.packets.count(pin_packet) == expected_refreshes
+    assert pin_set_packet not in state.packets
+    assert state.packets[-1] == stop_packet
+    assert state.pin_owned_lane == [True] * expected_refreshes
+    assert len(state.pin_times) == expected_refreshes
+    if expected_refreshes:
+        assert 0 < state.pin_times[0] <= OCTO_PIN_KEEPALIVE_INTERVAL * 1000
+    assert all(
+        current - previous <= OCTO_PIN_KEEPALIVE_INTERVAL * 1000
+        for previous, current in zip(state.pin_times, state.pin_times[1:], strict=False)
+    )
+    assert state.elapsed_ms == duration * 1000
+    assert all(
+        current - previous == OCTO_PROTOCOL_HOLD_INTERVAL_MS
+        for previous, current in zip(state.motor_times, state.motor_times[1:], strict=False)
+    )
+
+
+@pytest.mark.parametrize(
+    ("service", "elapsed_since_auth_ms", "expected_refreshes"),
+    [
+        ("hold_control", 0, 2),
+        ("goto_preset", 0, 2),
+        ("hold_control", 20_000, 3),
+        ("goto_preset", 20_000, 3),
+    ],
+)
+async def test_registered_octo_hold_refresh_uses_monotonic_due_time(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    service: str,
+    elapsed_since_auth_ms: int,
+    expected_refreshes: int,
+) -> None:
+    """Registered holds include GATT cost and time since the prior PIN write."""
+    _entry, coordinator, controller, device = await _active_octo_service_target(
+        hass, mock_bleak_client, pin="1234"
+    )
+    state = None
+
+    async def account_for_gatt_time(_packet: bytes, _count: int) -> None:
+        assert state is not None
+        state.elapsed_ms += 200
+
+    state = _install_virtual_octo_clock(
+        monkeypatch,
+        coordinator,
+        controller,
+        mock_bleak_client,
+        after_write=account_for_gatt_time,
+    )
+    if elapsed_since_auth_ms:
+        state.elapsed_ms = elapsed_since_auth_ms
+        controller._pin_last_auth_at = 0
+
+    data: dict[str, object] = {"device_id": device.id, "duration": 60}
+    data["control" if service == "hold_control" else "preset"] = (
+        "back_up" if service == "hold_control" else 1
+    )
+
+    await hass.services.async_call(DOMAIN, service, data, blocking=True)
+
+    assert len(state.pin_times) == expected_refreshes
+    assert state.pin_times[0] <= OCTO_PIN_KEEPALIVE_INTERVAL * 1000 + 200
+    assert all(
+        current - previous <= OCTO_PIN_KEEPALIVE_INTERVAL * 1000 + 200
+        for previous, current in zip(state.pin_times, state.pin_times[1:], strict=False)
+    ), state.pin_times
+    assert state.pin_owned_lane == [True] * expected_refreshes
+    operation_times = state.motor_times if service == "hold_control" else state.memory_times
+    assert operation_times
+    assert operation_times[-1] < elapsed_since_auth_ms + 60_000
+    assert all(
+        current - previous >= OCTO_PROTOCOL_HOLD_INTERVAL_MS
+        for previous, current in zip(operation_times, operation_times[1:], strict=False)
+    )
+    assert state.packets[-1] == controller._build_packet([0x02, 0x73])
+
+
+async def test_registered_stop_cancels_long_octo_hold_before_in_lane_refresh(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """STOP cancels the admitted hold, which sends cleanup without late auth."""
+    _entry, coordinator, controller, device = await _active_octo_service_target(
+        hass, mock_bleak_client, pin="1234"
+    )
+    first_write = asyncio.Event()
+    release_write = asyncio.Event()
+    motor_packet = controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD])
+    observed_motor = False
+
+    async def pause_after_first_motor(packet: bytes, _count: int) -> None:
+        nonlocal observed_motor
+        if packet == motor_packet and not observed_motor:
+            observed_motor = True
+            first_write.set()
+            await release_write.wait()
+
+    state = _install_virtual_octo_clock(
+        monkeypatch,
+        coordinator,
+        controller,
+        mock_bleak_client,
+        after_write=pause_after_first_motor,
+    )
+    hold = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": device.id, "control": "back_up", "duration": 60},
+            blocking=True,
+        )
+    )
+    await first_write.wait()
+    stop = asyncio.create_task(
+        hass.services.async_call(DOMAIN, "stop_all", {"device_id": device.id}, blocking=True)
+    )
+    for _ in range(20):
+        if state.context_cancel_event is not None and state.context_cancel_event.is_set():
+            break
+        await asyncio.sleep(0)
+    assert state.context_cancel_event is not None and state.context_cancel_event.is_set()
+    release_write.set()
+    await hold
+    await stop
+
+    pin_packet = controller._build_packet([0x20, OCTO_SYSTEM_PIN_AUTH], [1, 2, 3, 4])
+    stop_packet = controller._build_packet([0x02, 0x73])
+    assert state.packets.count(motor_packet) == 1
+    assert pin_packet not in state.packets
+    assert stop_packet in state.packets
+
+
+@pytest.mark.parametrize("change", ["session", "controller", "client"])
+async def test_long_octo_hold_does_not_refresh_or_move_after_link_identity_changes(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    change: str,
+) -> None:
+    """A stale held controller never authenticates or moves on a replacement link."""
+    _entry, coordinator, controller, device = await _active_octo_service_target(
+        hass, mock_bleak_client, pin="1234"
+    )
+    refresh_chunk = OCTO_PIN_KEEPALIVE_INTERVAL * 1000 // OCTO_PROTOCOL_HOLD_INTERVAL_MS
+    replacement_client = MagicMock() if change == "client" else None
+    if replacement_client is not None:
+        replacement_client.is_connected = True
+        replacement_client.write_gatt_char = AsyncMock()
+        replacement_client.services = ()
+    replacement_controller = OctoController(coordinator, pin="1234")
+    replacement_controller._session_ready = True
+    motor_packet = controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD])
+    motor_count = 0
+
+    async def replace_after_first_refresh_window(packet: bytes, _count: int) -> None:
+        nonlocal motor_count
+        if packet != motor_packet:
+            return
+        motor_count += 1
+        if motor_count != refresh_chunk:
+            return
+        if change == "session":
+            controller.on_disconnect()
+        elif change == "controller":
+            coordinator._controller = replacement_controller
+        else:
+            assert replacement_client is not None
+            coordinator._client = cast(BleakClient, replacement_client)
+
+    state = _install_virtual_octo_clock(
+        monkeypatch,
+        coordinator,
+        controller,
+        mock_bleak_client,
+        after_write=replace_after_first_refresh_window,
+    )
+    with pytest.raises(ConnectionError, match="OCTO session changed during held operation"):
+        await hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": device.id, "control": "back_up", "duration": 60},
+            blocking=True,
+        )
+
+    pin_packet = controller._build_packet([0x20, OCTO_SYSTEM_PIN_AUTH], [1, 2, 3, 4])
+    assert state.packets.count(motor_packet) == refresh_chunk
+    assert pin_packet not in state.packets
+    if replacement_client is not None:
+        replacement_packets = [
+            call.args[1] for call in replacement_client.write_gatt_char.call_args_list
+        ]
+        assert replacement_packets == [controller._build_packet([0x02, 0x73])]
 
 
 async def test_octo_enroll_pin_requires_matching_four_ascii_digits(
