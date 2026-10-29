@@ -122,6 +122,11 @@ any of the 53 ledger IDs/dispositions:
   configured-PIN keepalive runs every 25 seconds while the OCTO link is held,
   through the serialized coordinator command lane, alongside the app's reactive
   one-second PIN_LOCK retry. The periodic cadence is host compatibility policy.
+  As on main, it runs only when the receiver reports a PIN or never reports its
+  PIN state, and a receiver without a complete capability list gets the
+  configured PIN at connect (main's `requires_pin` fallback). Focused proofs:
+  `TestOctoPinAuth::test_unreported_pin_state_sends_configured_pin_and_keepalive`
+  and `test_reported_pinless_bed_gets_no_pin_or_keepalive`.
 - [Issues #499](https://github.com/kristofferR/ha-adjustable-bed/issues/499)
   and [#64](https://github.com/kristofferR/ha-adjustable-bed/issues/64): a
   receiver that answers follows the app's strict ordered session. Missing

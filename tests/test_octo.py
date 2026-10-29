@@ -1076,6 +1076,49 @@ class TestOctoPinAuth:
 
         assert controller._keepalive_task is None
 
+    async def test_unreported_pin_state_sends_configured_pin_and_keepalive(self) -> None:
+        """#29/#499: without a capability list, a configured PIN is still used."""
+        coordinator = MagicMock()
+        coordinator.entry.data = {}
+        coordinator.client = MagicMock(is_connected=True)
+        controller = OctoController(coordinator, pin="1234")
+        controller._session_ready = True
+        controller._write_octo_command = AsyncMock()
+
+        assert controller.controller_entity_discovery_complete is False
+        assert controller.requires_pin is True
+        await controller.send_pin()
+        pin_write = controller._write_octo_command.await_args.kwargs
+        assert (pin_write["command"], pin_write["data"]) == ([0x20, 0x43], [1, 2, 3, 4])
+
+        await controller.start_keepalive()
+        assert controller._keepalive_task is not None
+        await controller.stop_periodic_keepalive()
+
+    @pytest.mark.parametrize("reported", ("inactive", "no_pin", "no_record"))
+    async def test_reported_pinless_bed_gets_no_pin_or_keepalive(self, reported: str) -> None:
+        coordinator = MagicMock()
+        coordinator.entry.data = {}
+        coordinator.client = MagicMock(is_connected=True)
+        controller = OctoController(coordinator, pin="1234")
+        controller._session_ready = True
+        controller._write_octo_command = AsyncMock()
+        if reported == "inactive":
+            controller._pin_feature_active = False
+        elif reported == "no_pin":
+            controller._pin_feature_active = True
+            controller._has_pin = False
+        else:
+            controller._features_complete.set()
+            controller._capability_records_authoritative = True
+
+        assert controller.requires_pin is False
+        await controller.send_pin()
+        await controller.start_keepalive()
+
+        controller._write_octo_command.assert_not_awaited()
+        assert controller._keepalive_task is None
+
     async def test_coordinator_starts_keepalive_after_octo_session(
         self,
         hass: HomeAssistant,

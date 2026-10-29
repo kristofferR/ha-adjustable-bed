@@ -1110,9 +1110,15 @@ class OctoController(BedController, OctoPacketCodec):
 
     @property
     def requires_pin(self) -> bool:
-        """Whether an active, set PIN currently locks normal controls."""
+        """Whether an active, set PIN currently locks normal controls.
+
+        A receiver that never reported its PIN state, because no complete
+        capability list arrived, gets the configured PIN as before (#29, #499).
+        """
         if self._pin_feature_active is False or self._has_pin is False:
             return False
+        if self._has_pin is None and not self.controller_entity_discovery_complete:
+            return bool(self._pin)
         return bool(self._pin_feature_active and self._has_pin and self._pin_locked)
 
     @property
@@ -2476,6 +2482,9 @@ class OctoController(BedController, OctoPacketCodec):
     async def start_keepalive(self) -> None:
         """Start periodic PIN refresh for a configured, held OCTO link."""
         if not self._pin:
+            return
+        # Only beds with a PIN, or that never reported one, drop unrefreshed links.
+        if not (self._has_pin or self.requires_pin):
             return
         client = self.client
         if not self._session_ready or client is None or not client.is_connected:
