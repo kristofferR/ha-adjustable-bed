@@ -297,9 +297,14 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             self.async_write_ha_state()
 
     @property
-    def temperature_unit(self) -> str:
+    def native_temperature_unit(self) -> str:
         """Return a temperature unit for ClimateEntity compatibility."""
         return UnitOfTemperature.CELSIUS
+
+    # Home Assistant before 2026.11 only reads temperature_unit. 2026.11+ prefers
+    # native_temperature_unit when a class provides both, so this alias does not
+    # trigger its deprecation warning. Drop it once the minimum is 2026.11.
+    temperature_unit = native_temperature_unit
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
