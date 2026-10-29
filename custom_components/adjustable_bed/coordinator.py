@@ -4343,30 +4343,33 @@ class AdjustableBedCoordinator:
                         # again after subscriptions have been established.
                         await self._async_record_verified_bond(attempt_details)
 
-                # Notification startup may finish deferred capability discovery
-                # after the BLE authentication window, so schedule from the final
-                # resolved controller state.
-                self._refresh_passive_position_reconciliation_schedule()
-                self._refresh_diagnostic_polling_schedule()
-
                 if self._bed_type == BED_TYPE_LINAK:
                     self._backfill_linak_snapshot()
 
                 # For Octo beds: discover features and handle PIN if needed
                 if self._bed_type == BED_TYPE_OCTO:
-                    # Discover features to detect PIN requirement
-                    if hasattr(self._controller, "discover_features"):
+                    # Standard Octo Smart Control declares this ordered session
+                    # handshake as required. Star2 and legacy optional discovery
+                    # controllers retain their existing startup behavior.
+                    if getattr(self._controller, "requires_ordered_discovery", False):
+                        discovery_complete = await cast(Any, self._controller).discover_features()
+                        if discovery_complete is False:
+                            raise ConnectionError(
+                                "Octo Smart Control session discovery did not complete"
+                            )
+                    elif hasattr(self._controller, "discover_features"):
                         await cast(Any, self._controller).discover_features()
                     # Persist this paired side's freshly-discovered capabilities so
                     # the OFFLINE side / a reload mints correct entities (no-op for
                     # a single bed or if nothing was discovered).
                     self._backfill_octo_snapshot()
-                    # Send initial PIN and start keep-alive if bed requires it
+                    # Send initial PIN if the authoritative capability state requires it.
                     if hasattr(self._controller, "send_pin"):
                         await cast(Any, self._controller).send_pin()
+                    if hasattr(self._controller, "start_keepalive"):
                         await cast(Any, self._controller).start_keepalive()
-                    # A PIN-locked receiver accepts lights but ignores motors, so
-                    # surface the missing PIN instead of looking simply broken.
+                    # Surface the missing credential when this receiver reports
+                    # an active PIN lock and no local PIN is configured.
                     if hasattr(self._controller, "pin_locked_without_pin"):
                         update_octo_pin_required_issue(
                             self.hass,
@@ -4374,6 +4377,12 @@ class AdjustableBedCoordinator:
                             self._name,
                             cast(Any, self._controller).pin_locked_without_pin,
                         )
+
+                # Startup discovery can change which work is safe to schedule.
+                # In particular, an Octo Smart Control session that did not
+                # complete must not leave capability-driven polling behind.
+                self._refresh_passive_position_reconciliation_schedule()
+                self._refresh_diagnostic_polling_schedule()
 
                 # Beds with connect-time feature discovery/state hydration.
                 if self._bed_type in {BED_TYPE_JENSEN, BED_TYPE_SLEEP_NUMBER} and hasattr(
@@ -5269,8 +5278,7 @@ class AdjustableBedCoordinator:
                 self._reset_disconnect_timer()
         except TimeoutError:
             _LOGGER.warning(
-                "Timed out restoring controller tasks for %s after pairing transfer "
-                "cancellation",
+                "Timed out restoring controller tasks for %s after pairing transfer cancellation",
                 self._address,
             )
         except Exception:
@@ -5593,9 +5601,14 @@ class AdjustableBedCoordinator:
                 # Clear cancel signal for this command
                 self._cancel_command.clear()
 
+                logged_command = command.hex()
+                if self._bed_type == BED_TYPE_OCTO and self._controller is not None:
+                    trace_payload = self._controller._format_command_trace_payload(command)
+                    if trace_payload is not None:
+                        logged_command = str(trace_payload.get("hex", "**REDACTED**"))
                 _LOGGER.debug(
                     "async_write_command: %s (repeat: %d, delay: %dms)",
-                    command.hex(),
+                    logged_command,
                     repeat_count,
                     repeat_delay_ms,
                 )
@@ -5765,6 +5778,12 @@ class AdjustableBedCoordinator:
             raise RuntimeError("No controller available")
 
         await self._async_refresh_controller_auth()
+        if self._bed_type == BED_TYPE_OCTO:
+            from .octo_runtime import octo_controller
+
+            octo = octo_controller(controller)
+            if octo is not None:
+                await octo.async_wait_for_pin_acceptance(self.cancel_command)
         return controller
 
     async def _async_finish_controller_operation(
@@ -6058,6 +6077,7 @@ class AdjustableBedCoordinator:
         group_id: str | None = None,
         kind: CommandKind = CommandKind.COMMAND,
         read_positions_after_operation: bool = True,
+        expected_stop_epoch: int | None = None,
     ) -> None:
         """Execute an opaque controller command through the device scheduler."""
 
@@ -6083,6 +6103,7 @@ class AdjustableBedCoordinator:
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
             controller_command=command_fn,
+            expected_stop_epoch=expected_stop_epoch,
         )
 
     async def _async_schedule_command_operation(
@@ -6097,8 +6118,14 @@ class AdjustableBedCoordinator:
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
         controller_command: Callable[[BedController], Awaitable[None]] | None = None,
+        expected_stop_epoch: int | None = None,
     ) -> None:
         """Schedule an operation, or run inline inside this scheduler's reservation."""
+        if (
+            expected_stop_epoch is not None
+            and self._command_scheduler.stop_epoch != expected_stop_epoch
+        ):
+            return
         context = current_command_context()
         if context is not None and context.scheduler_token is self._command_scheduler.token:
             previous_pulse_count = context.pulse_count
@@ -6119,6 +6146,12 @@ class AdjustableBedCoordinator:
 
             await prepare_individual_command(self, controller_command)
 
+        if (
+            expected_stop_epoch is not None
+            and self._command_scheduler.stop_epoch != expected_stop_epoch
+        ):
+            return
+
         intent = self._build_command_intent(
             operation,
             resource=resource,
@@ -6128,8 +6161,9 @@ class AdjustableBedCoordinator:
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
+            expected_stop_epoch=expected_stop_epoch,
         )
-        await self._command_scheduler.execute(intent)
+        await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
 
     def _build_command_intent(
         self,
@@ -6142,6 +6176,7 @@ class AdjustableBedCoordinator:
         pulse_count: int | None = None,
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
+        expected_stop_epoch: int | None = None,
     ) -> CommandIntent:
         """Build one device intent while preserving legacy cancellation signals."""
         if resource is not None and resources is not None:
@@ -6151,7 +6186,9 @@ class AdjustableBedCoordinator:
             if resources is not None
             else command_resources(resource or "*")
         )
-        if cancel_running:
+        if cancel_running and (
+            expected_stop_epoch is None or self._command_scheduler.stop_epoch == expected_stop_epoch
+        ):
             # Keep preemptible non-scheduler work (queries and legacy direct
             # writes) responsive. Scheduler-owned operations use their private
             # ticket event and are replaced only when resources overlap.
@@ -6181,6 +6218,7 @@ class AdjustableBedCoordinator:
         kind: CommandKind = CommandKind.GROUP,
         cancel_running: bool = True,
         group_id: str,
+        expected_stop_epoch: int | None = None,
     ) -> CommandHandle:
         """Queue a linked operation without allowing controller execution yet."""
         intent = self._build_command_intent(
@@ -6190,8 +6228,13 @@ class AdjustableBedCoordinator:
             kind=kind,
             cancel_running=cancel_running,
             group_id=group_id,
+            expected_stop_epoch=expected_stop_epoch,
         )
-        return await self._command_scheduler.enqueue(intent, prepared=True)
+        return await self._command_scheduler.enqueue(
+            intent,
+            prepared=True,
+            expected_stop_epoch=expected_stop_epoch,
+        )
 
     async def async_validate_linked_command_readiness(self) -> None:
         """Prepare actual GATT without starting a reserved linked command."""
@@ -6322,10 +6365,13 @@ class AdjustableBedCoordinator:
         sample_interval = controller.diagnostic_advertisement_interval
         if sample_interval is not None:
             if not math.isfinite(sample_interval) or sample_interval <= 0:
-                _LOGGER.warning("Ignoring invalid advertisement diagnostic interval %s", sample_interval)
+                _LOGGER.warning(
+                    "Ignoring invalid advertisement diagnostic interval %s", sample_interval
+                )
                 return
             self._diagnostic_advertisement_task = self.entry.async_create_background_task(
-                self.hass, self._async_diagnostic_advertisement_loop(controller, sample_interval),
+                self.hass,
+                self._async_diagnostic_advertisement_loop(controller, sample_interval),
                 name=f"adjustable_bed_advertisement_diagnostics_{self._address}",
             )
 
@@ -6866,7 +6912,7 @@ class AdjustableBedCoordinator:
         try:
             try:
                 controller.restore_persisted_app_state(stored)
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 _LOGGER.warning("Ignoring invalid stored app state for %s", self._address)
                 controller.restore_persisted_app_state({})
             self._app_state_slots[controller] = slot

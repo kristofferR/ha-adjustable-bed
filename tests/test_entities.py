@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.const import (
     CONF_KAIDI_PRODUCT_ID,
     CONF_MALOUF_LAYOUT,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -231,7 +232,7 @@ class TestCoverEntities:
     async def test_octo_rtv_exposes_only_tv_lift_cover_and_stop(
         self,
         hass: HomeAssistant,
-        mock_coordinator_connected,
+        mock_octo_ready_transport,
         enable_custom_integrations,
     ):
         """OCTO RTV should expose a lift, never bed-only entities."""
@@ -243,6 +244,7 @@ class TestCoverEntities:
                 "name": "RTV",
                 CONF_BED_TYPE: BED_TYPE_OCTO,
                 CONF_MOTOR_COUNT: 1,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1",
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
@@ -1164,9 +1166,12 @@ class TestSleepNumberEntities:
         )
         for side in ("left", "right"):
             for axis in ("back", "legs"):
-                assert registry.async_get_entity_id(
-                    "cover", DOMAIN, f"AA:BB:CC:DD:EE:57_{axis}_{side}"
-                ) is not None
+                assert (
+                    registry.async_get_entity_id(
+                        "cover", DOMAIN, f"AA:BB:CC:DD:EE:57_{axis}_{side}"
+                    )
+                    is not None
+                )
         assert (
             registry.async_get_entity_id(
                 "binary_sensor",
@@ -1949,12 +1954,17 @@ class TestLightEntities:
         registry = er.async_get(hass)
         unique_id = f"{mock_config_entry.data[CONF_ADDRESS]}_under_bed_lights"
         old_light = registry.async_get_or_create(
-            "light", DOMAIN, unique_id, config_entry=mock_config_entry,
+            "light",
+            DOMAIN,
+            unique_id,
+            config_entry=mock_config_entry,
             suggested_object_id="my_existing_bed_light",
         )
         for domain, key in (("switch", "under_bed_lights"), ("button", "toggle_light")):
             registry.async_get_or_create(
-                domain, DOMAIN, f"{mock_config_entry.data[CONF_ADDRESS]}_{key}",
+                domain,
+                DOMAIN,
+                f"{mock_config_entry.data[CONF_ADDRESS]}_{key}",
                 config_entry=mock_config_entry,
             )
         with patch(
@@ -1966,9 +1976,12 @@ class TestLightEntities:
 
         assert registry.async_get_entity_id("light", DOMAIN, unique_id) == old_light.entity_id
         assert registry.async_get_entity_id("switch", DOMAIN, unique_id) is None
-        assert registry.async_get_entity_id(
-            "button", DOMAIN, f"{mock_config_entry.data[CONF_ADDRESS]}_toggle_light"
-        ) is None
+        assert (
+            registry.async_get_entity_id(
+                "button", DOMAIN, f"{mock_config_entry.data[CONF_ADDRESS]}_toggle_light"
+            )
+            is None
+        )
         state = hass.states.get(old_light.entity_id)
         assert state.state == "off"
         assert not state.attributes.get("assumed_state", False)
@@ -1979,10 +1992,16 @@ class TestLightEntities:
         coordinator.controller._session_ready = True
         mock_bleak_client.write_gatt_char.reset_mock()
         for service, expected_state in (
-            ("turn_on", "on"), ("turn_on", "on"), ("turn_off", "off"), ("turn_off", "off")
+            ("turn_on", "on"),
+            ("turn_on", "on"),
+            ("turn_off", "off"),
+            ("turn_off", "off"),
         ):
             await hass.services.async_call(
-                "light", service, {"entity_id": old_light.entity_id}, blocking=True,
+                "light",
+                service,
+                {"entity_id": old_light.entity_id},
+                blocking=True,
             )
             assert hass.states.get(old_light.entity_id).state == expected_state
         assert mock_bleak_client.write_gatt_char.call_args_list == [
@@ -1990,15 +2009,17 @@ class TestLightEntities:
             for packet in (b"\x92\x00", b"\x92\x00", b"\x93\x00", b"\x93\x00")
         ]
         await hass.services.async_call(
-            "light", "turn_on", {"entity_id": old_light.entity_id}, blocking=True,
+            "light",
+            "turn_on",
+            {"entity_id": old_light.entity_id},
+            blocking=True,
         )
         mock_bleak_client.write_gatt_char.reset_mock()
         await coordinator.async_disconnect()
         await coordinator.async_connect()
         assert hass.states.get(old_light.entity_id).state == "on"
         assert all(
-            item.args[1] != b"\x93\x00"
-            for item in mock_bleak_client.write_gatt_char.call_args_list
+            item.args[1] != b"\x93\x00" for item in mock_bleak_client.write_gatt_char.call_args_list
         )
 
     @pytest.mark.parametrize(
@@ -2029,7 +2050,10 @@ class TestLightEntities:
         assert entity_id is not None
         assert hass.states.get(entity_id).state == "unknown"
         await hass.services.async_call(
-            "light", "turn_off", {"entity_id": entity_id}, blocking=True,
+            "light",
+            "turn_off",
+            {"entity_id": entity_id},
+            blocking=True,
         )
         assert hass.states.get(entity_id).state == "off"
 
@@ -3077,22 +3101,11 @@ class TestSensorEntities:
         )
         for key in ("linak_legs_reported_speed", "linak_alarm_status"):
             assert (
-                registry.async_get_entity_id(
-                    "sensor", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}"
-                )
-                is None
+                registry.async_get_entity_id("sensor", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}") is None
             )
-        assert (
-            registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:FF_back")
-            is not None
-        )
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:FF_back") is not None
         for key in ("legs", "head", "feet", "bed_height"):
-            assert (
-                registry.async_get_entity_id(
-                    "cover", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}"
-                )
-                is None
-            )
+            assert registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}") is None
 
     async def test_linak_performance_removes_inapplicable_diagnostics(
         self,
@@ -3144,10 +3157,7 @@ class TestSensorEntities:
             "linak_alarm_status",
         ):
             assert (
-                registry.async_get_entity_id(
-                    "sensor", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}"
-                )
-                is None
+                registry.async_get_entity_id("sensor", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}") is None
             )
         assert (
             registry.async_get_entity_id(

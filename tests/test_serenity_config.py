@@ -147,6 +147,7 @@ async def test_switching_to_the_app_ignores_fields_it_sets_itself(hass, step):
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import (
+        BED_TYPE_OCTO,
         CONF_BED_TYPE,
         CONF_MOTOR_COUNT,
         CONF_MOTOR_PULSE_DELAY_MS,
@@ -193,6 +194,7 @@ async def test_changing_setup_profile_restores_choices_and_keeps_entered_values(
         CONF_BED_TYPE,
         CONF_MOTOR_COUNT,
         CONF_MOTOR_PULSE_DELAY_MS,
+        CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     )
 
     flow = AdjustableBedConfigFlow()
@@ -217,7 +219,15 @@ async def test_changing_setup_profile_restores_choices_and_keeps_entered_values(
     assert form["type"] == "form"
     assert form["step_id"] == step
     markers = {marker.schema: marker for marker in form["data_schema"].schema}
-    assert (CONF_MOTOR_COUNT in markers) is (requested != BED_TYPE_SERENITY)
+    if requested == BED_TYPE_OCTO:
+        assert CONF_MOTOR_COUNT not in markers
+        if step == "bluetooth_confirm":
+            assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
+        else:
+            # Manual entry collects Octo settings in its dedicated follow-up.
+            assert CONF_OCTO_MOTOR_COUNT_OVERRIDE not in markers
+    else:
+        assert (CONF_MOTOR_COUNT in markers) is (requested != BED_TYPE_SERENITY)
     assert (CONF_MOTOR_PULSE_DELAY_MS in markers) is (requested != BED_TYPE_SERENITY)
     assert markers[CONF_BED_TYPE].description["suggested_value"] == requested
     assert markers[CONF_NAME].description["suggested_value"] == "Edited bed"

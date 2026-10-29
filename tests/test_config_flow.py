@@ -118,6 +118,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_OCTO_PIN,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -187,7 +188,8 @@ def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
 
 
 def test_octo_one_motor_count_is_limited_to_standard_tv_lifts() -> None:
-    """Only Standard OCTO supports the one-motor TV lift layout."""
+    """Only Standard OCTO supports an explicit one-motor TV lift override."""
+    assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_OCTO] == "OCTO Smart Control"
     assert _default_motor_count(BED_TYPE_OCTO, "RTV") == 1
     assert _default_motor_count(BED_TYPE_OCTO, "RTV-1234") == 1
     assert _default_motor_count(BED_TYPE_OCTO, "RC2") == 2
@@ -833,9 +835,7 @@ class TestPairingPersistence:
         assert flow._pairing_route_certain is False
 
     @pytest.mark.parametrize("bed_type", [BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER])
-    async def test_pairs_after_service_discovery(
-        self, hass: HomeAssistant, bed_type: str
-    ) -> None:
+    async def test_pairs_after_service_discovery(self, hass: HomeAssistant, bed_type: str) -> None:
         """The verified app sequence discovers GATT before bonding and Auth."""
         flow = self._new_pairing_flow(hass)
         flow._manual_data[CONF_BED_TYPE] = bed_type
@@ -979,9 +979,7 @@ class TestStaleProxyGattCache:
             observed_at="now",
             gatt_cache_cleared=cleared,
         )
-        verified = replace(
-            failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
-        )
+        verified = replace(failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False)
         retry = replace(failed, status=retry_status)
         results = iter([failed, retry, verified])
         pinned: list[tuple[str | None, str | None]] = []
@@ -1026,12 +1024,8 @@ class TestStaleProxyRerouteRetry:
             observed_at="now",
             gatt_cache_cleared=True,
         )
-        verified = replace(
-            failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
-        )
-        attempt = AsyncMock(
-            side_effect=[failed, BondRouteMismatchError("proxy-b"), verified]
-        )
+        verified = replace(failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False)
+        attempt = AsyncMock(side_effect=[failed, BondRouteMismatchError("proxy-b"), verified])
         with (
             patch(
                 "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
@@ -1483,6 +1477,68 @@ async def _open_options_form(hass: HomeAssistant, entry_id: str) -> Any:
 class TestBluetoothDiscoveryFlow:
     """Test Bluetooth discovery flow."""
 
+    async def test_rtv_octo_setup_form_keeps_auto_layout_selection(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    ) -> None:
+        mock_bluetooth_service_info.name = "RTV Lift"
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info
+        flow._disambiguated_bed_type = BED_TYPE_OCTO
+        flow._show_full_bed_type_list = True
+        flow._selected_protocol_variant = OCTO_VARIANT_STANDARD
+
+        result = await flow.async_step_bluetooth_confirm()
+
+        markers = {marker.schema: marker for marker in result["data_schema"].schema}
+        assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
+
+    async def test_rtv_octo_config_flow_uses_name_when_motor_count_is_unadvertised(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_octo_rc2: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The real Octo setup path keeps RTV's historical count as Auto fallback."""
+        from custom_components.adjustable_bed.beds.octo import OctoController
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        mock_bluetooth_service_info_octo_rc2.name = "RTV Lift"
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_octo_rc2
+        flow._disambiguated_bed_type = BED_TYPE_OCTO
+        flow._selected_protocol_variant = OCTO_VARIANT_STANDARD
+
+        finished = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
+        monkeypatch.setattr(flow, "_finish_with_verify", finished)
+        await flow.async_step_bluetooth_confirm(
+            {
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_NAME: "RTV Lift",
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
+                CONF_OCTO_PIN: "",
+            }
+        )
+
+        entry_data = finished.await_args.args[0]
+        assert entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "auto"
+        assert entry_data[CONF_MOTOR_COUNT] == 2
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="RTV Lift",
+            data=entry_data,
+            unique_id=mock_bluetooth_service_info_octo_rc2.address,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._record_observed_ble_device_name(entry_data[CONF_NAME])
+        assert OctoController(coordinator).effective_motor_count == 1
+
     async def test_bluetooth_discovery_identical_names_include_address(
         self,
         hass: HomeAssistant,
@@ -1533,13 +1589,13 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
 
-    async def test_octo_rtv_discovery_defaults_to_one_motor(
+    async def test_octo_rtv_discovery_uses_advertised_motor_count_by_default(
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info_octo_rc2: MagicMock,
         enable_custom_integrations,
     ):
-        """The official RTV name should select the safe one-motor lift layout."""
+        """The OCTO motor record, not the Bluetooth name, selects the layout."""
         mock_bluetooth_service_info_octo_rc2.name = "RTV"
         mock_bluetooth_service_info_octo_rc2.address = "EC:4E:1A:B5:39:98"
 
@@ -1551,10 +1607,13 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
-        motor_count_marker = next(
-            marker for marker in result["data_schema"].schema if marker.schema == CONF_MOTOR_COUNT
+        override_marker = next(
+            marker
+            for marker in result["data_schema"].schema
+            if marker.schema == CONF_OCTO_MOTOR_COUNT_OVERRIDE
         )
-        assert motor_count_marker.default() == 1
+        assert override_marker.default() == "auto"
+        assert all(marker.schema != CONF_MOTOR_COUNT for marker in result["data_schema"].schema)
 
     async def test_octo_star2_discovery_uses_field_verified_pulse_defaults(
         self,
@@ -3504,9 +3563,7 @@ class TestOptionsFlow:
         await hass.async_block_till_done()
 
         initial = await _open_options_form(hass, entry.entry_id)
-        serialized = to_field_list(
-            initial["data_schema"], custom_serializer=cv.custom_serializer
-        )
+        serialized = to_field_list(initial["data_schema"], custom_serializer=cv.custom_serializer)
         field = next(item for item in serialized if item["name"] == CONF_MOTOR_COUNT)
         assert field["default"] == str(motor_count)
         assert field["options"] == [(str(count), str(count)) for count in (2, 3, 4)]
@@ -3521,8 +3578,7 @@ class TestOptionsFlow:
 
         reopened = await _open_options_form(hass, entry.entry_id)
         marker = next(
-            marker for marker in reopened["data_schema"].schema
-            if marker.schema == CONF_MOTOR_COUNT
+            marker for marker in reopened["data_schema"].schema if marker.schema == CONF_MOTOR_COUNT
         )
         assert marker.default() == str(motor_count)
 
@@ -3604,6 +3660,8 @@ class TestOptionsFlow:
         assert rebuilt["type"] == FlowResultType.FORM
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
         assert rebuilt_markers[CONF_BED_TYPE].default() == BED_TYPE_OCTO
+        assert CONF_MOTOR_COUNT not in rebuilt_markers
+        assert rebuilt_markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
         assert CONF_PROTOCOL_VARIANT in rebuilt_markers
         assert CONF_OCTO_PIN in rebuilt_markers
         assert CONF_BACK_MAX_ANGLE not in rebuilt_markers
@@ -3613,7 +3671,7 @@ class TestOptionsFlow:
             rebuilt["flow_id"],
             user_input={
                 CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_MOTOR_COUNT: 2,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "3",
                 CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
                 CONF_OCTO_PIN: "1234",
             },
@@ -3621,6 +3679,8 @@ class TestOptionsFlow:
 
         assert saved["type"] == FlowResultType.CREATE_ENTRY
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_OCTO
+        assert entry.data[CONF_MOTOR_COUNT] == 3
+        assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "3"
         assert entry.data[CONF_PROTOCOL_VARIANT] == OCTO_VARIANT_STANDARD
         assert entry.data[CONF_OCTO_PIN] == "1234"
         assert CONF_BLE_BOND_ESTABLISHED not in entry.data
@@ -3628,6 +3688,21 @@ class TestOptionsFlow:
         assert CONF_BLE_BOND_MARKER_UNRELIABLE not in entry.data
         assert CONF_BACK_MAX_ANGLE not in entry.data
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
+    async def test_manual_octo_setup_defaults_to_advertised_motor_count(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow.context = {}
+        flow._manual_data = {CONF_BED_TYPE: BED_TYPE_OCTO}
+
+        result = await flow.async_step_manual_octo()
+
+        markers = {marker.schema: marker for marker in result["data_schema"].schema}
+        assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
+        assert CONF_MOTOR_COUNT not in markers
 
     async def test_options_flow_normalizes_fields_after_bed_type_change(
         self,
@@ -3655,11 +3730,13 @@ class TestOptionsFlow:
         await hass.async_block_till_done()
 
         initial = await _open_options_form(hass, entry.entry_id)
+        initial_markers = {marker.schema: marker for marker in initial["data_schema"].schema}
+        assert initial_markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "1"
         rebuilt = await hass.config_entries.options.async_configure(
             initial["flow_id"],
             user_input={
                 CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_MOTOR_COUNT: 1,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1",
                 CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
             },
         )
@@ -4095,17 +4172,20 @@ class TestOptionsFlow:
 
         result = await _open_options_form(hass, entry.entry_id)
         assert result["type"] == FlowResultType.FORM
+        markers = {marker.schema: marker for marker in result["data_schema"].schema}
+        assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
 
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
             user_input={
-                CONF_MOTOR_COUNT: 1,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1",
                 CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
             },
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_MOTOR_COUNT] == 1
+        assert entry.data[CONF_MOTOR_COUNT] == 2
+        assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "1"
         assert entry.data[CONF_PROTOCOL_VARIANT] == OCTO_VARIANT_STANDARD
 
     async def test_options_flow(
@@ -6149,7 +6229,9 @@ async def test_pairing_refuses_rather_than_bonding_through_another_adapter(
     address = "AA:BB:CC:DD:EE:01"
     buffer = async_setup_support_logs(hass)
     with buffer.capture_pairing(address):
-        logging.getLogger("custom_components.adjustable_bed.config_flow").warning("Stale pairing result")
+        logging.getLogger("custom_components.adjustable_bed.config_flow").warning(
+            "Stale pairing result"
+        )
     elsewhere = ConnectionPath(source="proxy", transport=TransportClass.PROXY)
     unavailable = AdvertisementEvidence(status=FreshnessStatus.SOURCE_UNAVAILABLE)
     with (
@@ -6305,9 +6387,7 @@ async def test_proxy_retry_reports_unsupported_pairing_before_auth_read(
     client = MagicMock()
     client._connected_scanner = MagicMock(source="failed-proxy")
     client.pair = AsyncMock(side_effect=error)
-    client.read_gatt_char = AsyncMock(
-        side_effect=BleakError("Insufficient authentication")
-    )
+    client.read_gatt_char = AsyncMock(side_effect=BleakError("Insufficient authentication"))
     client.disconnect = AsyncMock()
 
     with (
@@ -7217,29 +7297,38 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
     with patch.object(
         AdjustableBedConfigFlow,
         "_probe_capabilities",
-        AsyncMock(side_effect=[
-            CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.REJECTED),
-            CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.ACCEPTED),
-        ]),
+        AsyncMock(
+            side_effect=[
+                CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.REJECTED),
+                CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.ACCEPTED),
+            ]
+        ),
     ) as probe:
         result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_BLUETOOTH},
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
             data=mock_bluetooth_service_info_octo_rc2,
         )
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], {
-            CONF_BED_TYPE: BED_TYPE_OCTO,
-            CONF_NAME: "Octo PIN test",
-            CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
-            CONF_MOTOR_COUNT: 2,
-            CONF_OCTO_PIN: "1111",
-        })
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_NAME: "Octo PIN test",
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
+                CONF_OCTO_PIN: "1111",
+            },
+        )
         result = await _advance_progress(hass, result)
         assert result["step_id"] == "verify_octo_pin"
         assert result["errors"] == {"base": "octo_pin_rejected"}
         assert not hass.config_entries.async_entries(DOMAIN)
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], {
-            CONF_OCTO_PIN: "1234",
-        })
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_OCTO_PIN: "1234",
+            },
+        )
         result = await _advance_progress(hass, result)
         assert result["step_id"] == "verify_octo_pin"
         assert result["errors"] == {}
@@ -7247,13 +7336,15 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "auto"
     assert result["data"][CONF_OCTO_PIN] == "1234"
     assert [call.kwargs["octo_pin"] for call in probe.call_args_list] == ["1111", "1234"]
 
 
 @pytest.mark.parametrize("cancel", [False, True])
 async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
-    hass: HomeAssistant, cancel: bool,
+    hass: HomeAssistant,
+    cancel: bool,
 ) -> None:
     """PIN verification uses the chosen setup connection and releases it on cancellation."""
     from custom_components.adjustable_bed.octo_auth import OctoPinStatus
@@ -7270,19 +7361,30 @@ async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
         _patch_gate("hci0", -55),
         patch("bleak_retry_connector.establish_connection", AsyncMock(return_value=client)),
         patch("custom_components.adjustable_bed.config_flow.discover_services", AsyncMock()),
-        patch("custom_components.adjustable_bed.config_flow.read_ble_device_info", AsyncMock(return_value=(None, None))),
+        patch(
+            "custom_components.adjustable_bed.config_flow.read_ble_device_info",
+            AsyncMock(return_value=(None, None)),
+        ),
         patch("custom_components.adjustable_bed.config_flow.async_verify_octo_pin", verify),
     ):
         if cancel:
             with pytest.raises(asyncio.CancelledError):
                 await flow._probe_capabilities(
-                    "AA:BB:CC:DD:EE:01", "auto", BED_TYPE_OCTO, OCTO_VARIANT_STANDARD,
-                    octo_pin="1234", client_tracker=tracked.append,
+                    "AA:BB:CC:DD:EE:01",
+                    "auto",
+                    BED_TYPE_OCTO,
+                    OCTO_VARIANT_STANDARD,
+                    octo_pin="1234",
+                    client_tracker=tracked.append,
                 )
         else:
             report = await flow._probe_capabilities(
-                "AA:BB:CC:DD:EE:01", "auto", BED_TYPE_OCTO, OCTO_VARIANT_STANDARD,
-                octo_pin="1234", client_tracker=tracked.append,
+                "AA:BB:CC:DD:EE:01",
+                "auto",
+                BED_TYPE_OCTO,
+                OCTO_VARIANT_STANDARD,
+                octo_pin="1234",
+                client_tracker=tracked.append,
             )
             assert report.octo_pin_status is OctoPinStatus.ACCEPTED
 

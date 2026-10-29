@@ -35,6 +35,10 @@ The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptra
 maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
 including direct BLE controls, explicit exclusions and hardware validation status.
 
+The [row030 OCTO Smart Control disposition ledger](apk-analysis/dispositions/row030-octo-smart-control.md)
+maps the accepted 1.03.02 artifact to the existing OCTO Standard protocol, including
+direct BLE controls, explicit exclusions and deferred hardware validation.
+
 ## Development and Validation
 
 Work from `main` for v4 changes. Development uses Python **3.14.2+** with

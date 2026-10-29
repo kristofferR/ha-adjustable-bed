@@ -244,7 +244,7 @@ show why browser JavaScript failed to load.
 
 **Solutions:**
 1. **Verify features:** Check if your bed actually has the feature (massage, lights, etc.)
-2. **Update motor count:** Set the correct number of motors in options (2, 3, or 4; use 1 only for a one-motor Standard OCTO lift, with `RTV` detected automatically)
+2. **Update motor layout:** Standard OCTO uses its advertised motor count in Auto; choose an explicit OCTO override only when the receiver's advertised layout needs correction. Other profiles use the Motor Count setting when available.
 3. **Enable massage:** If bed has massage, enable it in integration options
 
 ### Commands are slow or delayed

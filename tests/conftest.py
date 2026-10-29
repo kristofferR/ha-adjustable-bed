@@ -884,6 +884,32 @@ def mock_coordinator_connected(
 
 
 @pytest.fixture
+def mock_octo_ready_transport(
+    mock_coordinator_connected: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Provide an authoritative, already-ready Standard Octo transport session."""
+    del mock_coordinator_connected
+    from custom_components.adjustable_bed.beds.octo import OctoController
+
+    async def discover(controller: OctoController) -> bool:
+        controller._session_ready = True
+        controller._features_loaded.set()
+        controller._features_complete.set()
+        controller._capability_records_authoritative = True
+        controller._pin_feature_active = True
+        controller._has_pin = False
+        controller._pin_locked = False
+        controller._has_lights = False
+        controller._memory_count = 0
+        controller._discovered_motor_count = 2
+        controller._has_synchro = False
+        return True
+
+    monkeypatch.setattr(OctoController, "discover_features", discover)
+
+
+@pytest.fixture
 def mock_bluetooth_service_info_ergomotion() -> MagicMock:
     """Return mock Bluetooth service info for an Ergomotion bed."""
     service_info = MagicMock()

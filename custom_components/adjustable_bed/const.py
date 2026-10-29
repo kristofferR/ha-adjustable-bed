@@ -235,6 +235,7 @@ CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
 CONF_DISABLE_DISCOVERY: Final = "disable_discovery"
 CONF_BLE_DEVICE_NAME: Final = "ble_device_name"
 CONF_OCTO_PIN: Final = "octo_pin"
+CONF_OCTO_MOTOR_COUNT_OVERRIDE: Final = "octo_motor_count_override"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_RMCONTROL_PRODUCT: Final = "rmcontrol_product"
 CONF_RMCONTROL_SIDE: Final = "rmcontrol_side"
@@ -480,10 +481,15 @@ BED_TYPE_LIMOSS_REMOTE: Final = "limoss_remote"  # Explicit Limoss Remote app
 CONF_LIMOSS_REMOTE_THEME: Final = "limoss_remote_theme"
 CONF_LIMOSS_REMOTE_STATE: Final = "limoss_remote_state"
 # Every setting the Limoss Remote profile reads, including shared ones.
-LIMOSS_REMOTE_CONFIG_KEYS: Final = frozenset({
-    CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE,
-    CONF_LIMOSS_REMOTE_THEME, *CONF_REVERSE_MOTORS,
-})
+LIMOSS_REMOTE_CONFIG_KEYS: Final = frozenset(
+    {
+        CONF_PRODUCT_TYPE,
+        CONF_HAS_LIGHT,
+        CONF_HAS_MASSAGE,
+        CONF_LIMOSS_REMOTE_THEME,
+        *CONF_REVERSE_MOTORS,
+    }
+)
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
@@ -513,14 +519,16 @@ CONF_SLEEPTRACKER_UNIT: Final = "sleeptracker_unit_number"
 CONF_SLEEPTRACKER_SNAPSHOT_SIDE: Final = "sleeptracker_snapshot_side"
 CONF_SLEEPTRACKER_RESTRICTED: Final = "sleeptracker_restricted"
 CONF_SLEEPTRACKER_PROCESSOR_TYPE: Final = "sleeptracker_processor_type"
-SLEEPTRACKER_CONFIG_KEYS: Final = frozenset({
-    CONF_PRODUCT_TYPE,
-    CONF_SLEEPTRACKER_FOUNDATION,
-    CONF_SLEEPTRACKER_UNIT,
-    CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
-    CONF_SLEEPTRACKER_RESTRICTED,
-    CONF_SLEEPTRACKER_PROCESSOR_TYPE,
-})
+SLEEPTRACKER_CONFIG_KEYS: Final = frozenset(
+    {
+        CONF_PRODUCT_TYPE,
+        CONF_SLEEPTRACKER_FOUNDATION,
+        CONF_SLEEPTRACKER_UNIT,
+        CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+        CONF_SLEEPTRACKER_RESTRICTED,
+        CONF_SLEEPTRACKER_PROCESSOR_TYPE,
+    }
+)
 SLEEPTRACKER_SERVICE_UUID: Final = "f6380280-6d90-442c-8feb-3aec76948f06"
 BED_TYPE_MOTION_BED: Final = "motion_bed"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
@@ -1089,18 +1097,12 @@ SERTA_WRITE_HANDLE: Final = 0x0020
 # Standard Octo variant
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
+OCTO_PIN_KEEPALIVE_INTERVAL: Final = 25
+OCTO_LIGHT_AUTO_OFF_SECONDS: Final = 300
 
 # Octo Remote Star2 variant
 OCTO_STAR2_SERVICE_UUID: Final = "0000aa5c-0000-1000-8000-00805f9b34fb"
 OCTO_STAR2_CHAR_UUID: Final = "00005a55-0000-1000-8000-00805f9b34fb"
-
-# Octo PIN keep-alive interval (seconds)
-# Octo beds drop BLE connection after ~30s without PIN re-authentication
-OCTO_PIN_KEEPALIVE_INTERVAL: Final = 25
-
-# Octo light auto-off timeout (seconds)
-# Octo under-bed lights automatically turn off after 5 minutes (hardware behavior)
-OCTO_LIGHT_AUTO_OFF_SECONDS: Final = 300
 
 # Octo variant identifiers (dict defined later after VARIANT_AUTO)
 OCTO_VARIANT_STANDARD: Final = "standard"
@@ -1499,6 +1501,8 @@ ADJUSTABLE_LUMBAR_VARIANTS: Final = {
     ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN-name table (OKIN service, with response)",
     ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star-name tables (Nordic UART, chosen by manufacturer)",
 }
+
+
 # Richmat MH app model choices, from the generated catalog: each app's picker dialog
 # and setup wizard, Revive's six short manual identifiers, and every model for
 # Idealbed, whose manual dialog accepts any valid identifier. "auto" applies the

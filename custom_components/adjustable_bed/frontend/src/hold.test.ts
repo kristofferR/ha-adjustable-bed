@@ -4,7 +4,14 @@
 // Every case here is a defect that was found in review while building this, so
 // they are regression tests rather than illustrative examples.
 import { expect, test } from "bun:test";
-import { type Direction, type HoldActions, MotorHold, movementPulse } from "./hold";
+import {
+  holdTargetForEntity,
+  type Direction,
+  type HoldActions,
+  MotorHold,
+  movementPulse,
+  stopFromCard,
+} from "./hold";
 import type { HomeAssistant, MotorEntity } from "./types";
 
 interface Recorder {
@@ -103,6 +110,400 @@ test("ordinary covers, buttons and unsupported directions keep their finite acti
   ]);
 });
 
+test("Octo held controls use the bounded service and retain the selected side", async () => {
+  const calls: unknown[] = [];
+  const hass = {
+    entities: { "cover.left_back": { entity_id: "cover.left_back", device_id: "left-device" } },
+    states: {
+      "cover.left_back": {
+        entity_id: "cover.left_back", state: "closed", last_changed: "", last_updated: "",
+        attributes: { bed_side: "left" },
+      },
+    },
+    callService: async (...args: unknown[]) => { calls.push(args); },
+  } as HomeAssistant;
+  const motor: MotorEntity = {
+    key: "back",
+    cover: "cover.left_back",
+    heldControls: { up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 } },
+  };
+  await movementPulse(hass, motor, "up");
+  expect(calls).toEqual([[
+    "adjustable_bed", "hold_control", {
+      device_id: ["left-device"], control: "back_up", duration: 60, side: "left",
+    },
+  ]]);
+});
+
+for (const shape of ["native", "single-address", "legacy"] as const) {
+  test(`an explicit left STOP preserves a right hold for ${shape} ownership`, async () => {
+    const sideDevice = shape !== "single-address";
+    const hass = {
+      entities: {
+        "button.left_stop": {
+          entity_id: "button.left_stop",
+          device_id: sideDevice ? "left-device" : shape === "single-address" ? "bed" : "legacy-left",
+        },
+        "button.right_stop": {
+          entity_id: "button.right_stop",
+          device_id: sideDevice ? "right-device" : shape === "single-address" ? "bed" : "legacy-right",
+        },
+      },
+      states: {
+        "button.left_stop": {
+          entity_id: "button.left_stop", state: "unknown", last_changed: "", last_updated: "",
+          attributes: { bed_side: "left" },
+        },
+        "button.right_stop": {
+          entity_id: "button.right_stop", state: "unknown", last_changed: "", last_updated: "",
+          attributes: { bed_side: "right" },
+        },
+      },
+      devices: sideDevice
+        ? shape === "legacy"
+          ? {
+              parent: { id: "parent" },
+              "left-device": { id: "left-device", via_device_id: "parent" },
+              "right-device": { id: "right-device", via_device_id: "parent" },
+            }
+          : {
+              parent: { id: "parent" },
+              "left-device": { id: "left-device", parent_device_id: "parent" },
+              "right-device": { id: "right-device", parent_device_id: "parent" },
+            }
+        : {},
+      locale: { language: "en" },
+      language: "en",
+      themes: {},
+      callService: async () => undefined,
+    } satisfies HomeAssistant;
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const rightMotor: MotorEntity = {
+      key: "back",
+      up: "button.right_back_up",
+      heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 0 } },
+    };
+
+    hold.start(
+      rightMotor,
+      "up",
+      1,
+      "button.right_stop",
+      holdTargetForEntity(hass, "button.right_stop"),
+    );
+    stopFromCard(hold, hass, "button.left_stop");
+    expect(hold.heldKey).toBe("back");
+
+    hold.end(rightMotor);
+    await tick();
+    expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
+  });
+}
+
+for (const topology of ["missing-parent", "missing-graph"] as const) {
+  test(`an unsided child STOP stays device-scoped with ${topology}`, async () => {
+    const hass = {
+      entities: {
+        "button.left_stop": { entity_id: "button.left_stop", device_id: "left-device" },
+        "button.right_stop": { entity_id: "button.right_stop", device_id: "right-device" },
+      },
+      states: {},
+      devices: topology === "missing-parent"
+        ? {
+            "left-device": { id: "left-device", parent_device_id: "deleted-parent" },
+            "right-device": { id: "right-device", parent_device_id: "deleted-parent" },
+          }
+        : {},
+      locale: { language: "en" },
+      language: "en",
+      themes: {},
+      callService: async () => undefined,
+    } satisfies HomeAssistant;
+    const leftTarget = holdTargetForEntity(hass, "button.left_stop");
+    const rightTarget = holdTargetForEntity(hass, "button.right_stop");
+    expect(leftTarget?.deviceId).toBe("left-device");
+    expect(rightTarget?.deviceId).toBe("right-device");
+
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const rightMotor: MotorEntity = {
+      key: "back",
+      up: "button.right_back_up",
+      heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 0 } },
+    };
+    hold.start(rightMotor, "up", 1, "button.right_stop", rightTarget);
+    stopFromCard(hold, hass, "button.left_stop");
+    expect(hold.heldKey).toBe("back");
+    hold.end(rightMotor);
+    await tick();
+    expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
+  });
+}
+
+test("a left STOP preserves a pending right release", () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const timers: Array<{ id: number; delay: number; callback: () => void; cancelled: boolean }> = [];
+  let nextId = 1;
+  globalThis.setTimeout = ((handler: TimerHandler, timeout?: number) => {
+    if (typeof handler !== "function") throw new Error("Expected a timer callback");
+    const timer = {
+      id: nextId++,
+      delay: timeout ?? 0,
+      callback: handler as () => void,
+      cancelled: false,
+    };
+    timers.push(timer);
+    return timer.id as ReturnType<typeof setTimeout>;
+  }) as typeof setTimeout;
+  globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+    const timer = timers.find((candidate) => candidate.id === Number(handle));
+    if (timer) timer.cancelled = true;
+  }) as typeof clearTimeout;
+
+  try {
+    const hass = {
+      entities: {
+        "button.left_stop": { entity_id: "button.left_stop", device_id: "bed" },
+        "button.right_stop": { entity_id: "button.right_stop", device_id: "bed" },
+      },
+      states: {
+        "button.left_stop": {
+          entity_id: "button.left_stop", state: "unknown", last_changed: "", last_updated: "",
+          attributes: { bed_side: "left" },
+        },
+        "button.right_stop": {
+          entity_id: "button.right_stop", state: "unknown", last_changed: "", last_updated: "",
+          attributes: { bed_side: "right" },
+        },
+      },
+      devices: { bed: { id: "bed" } },
+      locale: { language: "en" },
+      language: "en",
+      themes: {},
+      callService: async () => undefined,
+    } satisfies HomeAssistant;
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const rightMotor: MotorEntity = {
+      key: "back",
+      up: "button.right_back_up",
+      heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 } },
+    };
+
+    hold.start(rightMotor, "up", 1, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
+    hold.end(rightMotor);
+    stopFromCard(hold, hass, "button.left_stop");
+    expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+
+    timers.find((timer) => timer.delay === 100 && !timer.cancelled)?.callback();
+    expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+});
+
+test("a pending Both release is flushed before the newer side hold starts", () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const timers: Array<{ id: number; callback: () => void; cancelled: boolean }> = [];
+  let nextId = 1;
+  globalThis.setTimeout = ((handler: TimerHandler) => {
+    if (typeof handler !== "function") throw new Error("Expected a timer callback");
+    const timer = { id: nextId++, callback: handler as () => void, cancelled: false };
+    timers.push(timer);
+    return timer.id as ReturnType<typeof setTimeout>;
+  }) as typeof setTimeout;
+  globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+    const timer = timers.find((candidate) => candidate.id === Number(handle));
+    if (timer) timer.cancelled = true;
+  }) as typeof clearTimeout;
+
+  try {
+    const events: string[] = [];
+    const hass = {
+      entities: {
+        "button.parent_stop": { entity_id: "button.parent_stop", device_id: "parent" },
+        "button.right_stop": { entity_id: "button.right_stop", device_id: "right" },
+      },
+      states: {
+        "button.parent_stop": {
+          entity_id: "button.parent_stop", state: "unknown", last_changed: "", last_updated: "",
+          attributes: { bed_side: "both" },
+        },
+        "button.right_stop": {
+          entity_id: "button.right_stop", state: "unknown", last_changed: "", last_updated: "",
+          attributes: { bed_side: "right" },
+        },
+      },
+      devices: {
+        parent: { id: "parent" },
+        right: { id: "right", parent_device_id: "parent" },
+      },
+      locale: { language: "en" },
+      language: "en",
+      themes: {},
+      callService: async () => undefined,
+    } satisfies HomeAssistant;
+    const pending: Array<() => void> = [];
+    const hold = new MotorHold({
+      pulse: (motor) => {
+        events.push(`move:${motor.key}`);
+        return new Promise<void>((resolve) => pending.push(resolve));
+      },
+      stopCover: () => undefined,
+      stopBed: (stop) => events.push(`stop:${stop}`),
+    });
+    const both: MotorEntity = {
+      key: "both-back",
+      up: "button.parent_back_up",
+      heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 } },
+    };
+    const right: MotorEntity = {
+      key: "right-back",
+      up: "button.right_back_up",
+      heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 } },
+    };
+
+    hold.start(
+      both,
+      "up",
+      1,
+      "button.parent_stop",
+      holdTargetForEntity(hass, "button.parent_stop"),
+    );
+    hold.end(both);
+    hold.start(
+      right,
+      "up",
+      2,
+      "button.right_stop",
+      holdTargetForEntity(hass, "button.right_stop"),
+    );
+    expect(events).toEqual([
+      "move:both-back",
+      "stop:button.parent_stop",
+      "move:right-back",
+    ]);
+
+    timers[0]?.callback();
+    expect(events).toEqual([
+      "move:both-back",
+      "stop:button.parent_stop",
+      "move:right-back",
+    ]);
+    hold.abandon();
+    pending.forEach((resolve) => resolve());
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+});
+
+test("overlapping Both STOP cancels a finite Both pulse without restarting it", async () => {
+  const calls: unknown[] = [];
+  let finish!: () => void;
+  const hass = {
+    entities: {
+      "button.parent_stop": { entity_id: "button.parent_stop", device_id: "parent" },
+      "button.left_stop": { entity_id: "button.left_stop", device_id: "left-device" },
+      "button.right_stop": { entity_id: "button.right_stop", device_id: "right-device" },
+      "button.both_back_up": { entity_id: "button.both_back_up", device_id: "parent" },
+    },
+    states: {
+      "button.parent_stop": {
+        entity_id: "button.parent_stop", state: "unknown", last_changed: "", last_updated: "",
+        attributes: { bed_side: "both" },
+      },
+      "button.left_stop": {
+        entity_id: "button.left_stop", state: "unknown", last_changed: "", last_updated: "",
+        attributes: { bed_side: "left" },
+      },
+    },
+    devices: {
+      parent: { id: "parent" },
+      "left-device": { id: "left-device", parent_device_id: "parent" },
+      "right-device": { id: "right-device", parent_device_id: "parent" },
+    },
+    locale: { language: "en" },
+    language: "en",
+    themes: {},
+    callService: (...args: unknown[]) => {
+      calls.push(args);
+      return new Promise<void>((resolve) => { finish = resolve; });
+    },
+  } satisfies HomeAssistant;
+  const rec = recorder();
+  const hold = new MotorHold({
+    ...rec.actions,
+    pulse: (motor, direction) => movementPulse(hass, motor, direction),
+  });
+  const bothTarget = holdTargetForEntity(hass, "button.parent_stop");
+  const leftTarget = holdTargetForEntity(hass, "button.left_stop");
+  const bothMotor: MotorEntity = {
+    key: "back",
+    up: "button.both_back_up",
+    timedMove: { deviceId: "parent", motor: "back" },
+  };
+
+  hold.start(bothMotor, "up", 1, "button.parent_stop", bothTarget);
+  expect(calls).toHaveLength(1);
+  stopFromCard(hold, hass, "button.left_stop");
+  finish();
+  await tick();
+  expect(calls).toHaveLength(1);
+  expect(hold.heldKey).toBeNull();
+  expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+  expect(leftTarget?.side).toBe("left");
+});
+
+test("unrelated delayed STOP runs while another side is held", async () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const timers: Array<{ id: number; delay: number; callback: () => void; cancelled: boolean }> = [];
+  let nextId = 1;
+  globalThis.setTimeout = ((handler: TimerHandler, timeout?: number) => {
+    if (typeof handler !== "function") throw new Error("Expected a timer callback");
+    const timer = { id: nextId++, delay: timeout ?? 0, callback: handler as () => void, cancelled: false };
+    timers.push(timer);
+    return timer.id as ReturnType<typeof setTimeout>;
+  }) as typeof setTimeout;
+  globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+    const timer = timers.find((candidate) => candidate.id === Number(handle));
+    if (timer) timer.cancelled = true;
+  }) as typeof clearTimeout;
+
+  try {
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const left = { deviceId: "parent", side: "left" as const };
+    const right = { deviceId: "parent", side: "right" as const };
+    const leftMotor: MotorEntity = {
+      key: "left-back", up: "button.left_up",
+      heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 } },
+    };
+    const rightMotor: MotorEntity = { key: "right-back", up: "button.right_up" };
+
+    hold.start(leftMotor, "up", 1, "button.left_stop", left);
+    hold.end(leftMotor);
+    hold.start(rightMotor, "up", 2, "button.right_stop", right);
+    const pendingLeft = timers.find((timer) => timer.delay === 100);
+    expect(pendingLeft?.cancelled).toBe(false);
+    pendingLeft?.callback();
+    expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+    expect(hold.heldKey).toBe("right-back");
+
+    hold.end(rightMotor);
+    await Promise.resolve();
+    expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+});
+
 test("a hold repeats until it is released", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
@@ -123,6 +524,99 @@ test("a hold repeats until it is released", async () => {
   expect(rec.pulses.length).toBe(2);
   expect(rec.bedStops).toBe(1);
 });
+
+test("Octo start and release guards are cancellable and an old release cannot stop a new hold", async () => {
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const octoMotor: MotorEntity = {
+    key: "back",
+    cover: "cover.back",
+    heldControls: { up: { control: "back_up", startDelayMs: 20, releaseDelayMs: 30 } },
+  };
+
+  hold.start(octoMotor, "up", 1, "button.left_stop");
+  hold.end(octoMotor);
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  expect(rec.pulses).toHaveLength(0);
+  expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+
+  hold.start({ ...octoMotor, heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 30 } } }, "up", 1, "button.left_stop");
+  await tick();
+  hold.end(octoMotor);
+  hold.start({ ...octoMotor, heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 30 } } }, "up", 2, "button.right_stop");
+  rec.release();
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  // The new hold flushes the prior release once before issuing its first
+  // operation. Its canceled timer cannot issue a duplicate STOP afterward.
+  expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.left_stop"]);
+  hold.end(octoMotor);
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  expect(rec.stoppedBeds).toEqual([
+    "button.left_stop", "button.left_stop", "button.right_stop",
+  ]);
+});
+
+for (const releaseDelayMs of [100, 200]) {
+  test(`Octo ${releaseDelayMs}ms release survives card abandonment and stops once`, async () => {
+    const originalSetTimeout = globalThis.setTimeout;
+    const originalClearTimeout = globalThis.clearTimeout;
+    const timers: Array<{
+      id: number;
+      delay: number;
+      callback: () => void;
+      cancelled: boolean;
+    }> = [];
+    let nextId = 1;
+    globalThis.setTimeout = ((handler: TimerHandler, timeout?: number) => {
+      if (typeof handler !== "function") throw new Error("Expected a timer callback");
+      const timer = {
+        id: nextId++,
+        delay: timeout ?? 0,
+        callback: handler as () => void,
+        cancelled: false,
+      };
+      timers.push(timer);
+      return timer.id as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout;
+    globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+      const timer = timers.find((candidate) => candidate.id === Number(handle));
+      if (timer) timer.cancelled = true;
+    }) as typeof clearTimeout;
+
+    try {
+      const rec = recorder();
+      const hold = new MotorHold(rec.actions);
+      const motor: MotorEntity = {
+        key: `octo-${releaseDelayMs}`,
+        cover: "cover.octo",
+        heldControls: {
+          up: { control: "back_up", startDelayMs: 100, releaseDelayMs },
+        },
+      };
+
+      hold.start(motor, "up", 1, "button.octo_stop");
+      const startTimer = timers.find((timer) => timer.delay === 100 && !timer.cancelled);
+      expect(startTimer).toBeDefined();
+      startTimer!.callback();
+      await Promise.resolve();
+
+      hold.end(motor);
+      const releaseTimer = [...timers].reverse().find((timer) => timer.delay === releaseDelayMs);
+      expect(releaseTimer).toBeDefined();
+      expect(rec.stoppedBeds).toEqual([]);
+
+      hold.abandon();
+      expect(rec.stoppedBeds).toEqual(["button.octo_stop"]);
+      expect(releaseTimer!.cancelled).toBe(true);
+      // Simulate the queued callback racing with navigation after clearTimeout.
+      releaseTimer!.callback();
+      expect(rec.stoppedBeds).toEqual(["button.octo_stop"]);
+    } finally {
+      globalThis.setTimeout = originalSetTimeout;
+      globalThis.clearTimeout = originalClearTimeout;
+    }
+  });
+}
 
 test("ownership survives the card rebuilding the motor object", async () => {
   const rec = recorder();

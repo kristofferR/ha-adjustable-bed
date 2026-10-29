@@ -361,6 +361,8 @@ async def test_light_without_reported_color_uses_power_only(
     ctrl.lights_on = AsyncMock()
     ctrl.lights_toggle = AsyncMock()
     ctrl.set_light_color = AsyncMock()
+    ctrl.light_auto_off_seconds = None
+    coordinator.controller = ctrl
     coordinator.capability_controller = ctrl
 
     async def execute(command, **kwargs):

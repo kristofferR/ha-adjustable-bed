@@ -74,7 +74,7 @@ standalone action; neither side changes automatically. See the
 
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
-| **Motor Count** | 2, 3, 4; 1 for one-motor Standard OCTO lifts | 2 | Number of controllable motor sections |
+| **Motor Count** | Profile-dependent | 2 | Number of controllable motor sections when the profile uses a generic count |
 | **Has Massage** | On/Off | Off | Enable massage controls if your bed supports it |
 | **Preferred Adapter** | Auto / Specific adapter | Auto | Which Bluetooth adapter or proxy to use |
 
@@ -98,12 +98,17 @@ connecting; diagnostics record the actual adapter or proxy used.
 
 | Motors | Controllable Sections |
 |--------|----------------------|
-| 1 | TV/bed lift (Standard OCTO; `RTV` is detected automatically) |
+| 1 | A single controllable section, when offered by the selected profile |
 | 2 | Back + Legs |
 | 3 | Head + Back + Legs |
 | 4 | Head + Back + Legs + Feet |
 
-**Tip:** Count the distinct moving sections when using your physical remote to determine the correct setting. A one-motor Standard OCTO controller can be selected manually; an OCTO device named `RTV` is detected automatically as a one-motor TV lift.
+Standard OCTO reads its default motor layout from the active `CAP_MOTORCOUNT`
+capability. Its OCTO-specific setting defaults to **Auto** and can be changed to
+an explicit one-to-four motor layout. Bluetooth names do not select the layout.
+
+For other profiles that show **Motor Count**, count the distinct moving sections
+on the physical remote.
 
 ### Malouf/Lucid Layout and Memory
 
@@ -604,7 +609,10 @@ See [FSM Relax](beds/fsm_relax.md) for exact controls, quarantine and calibratio
 
 **Setting:** 4-digit PIN code
 
-Some Octo beds require PIN authentication to maintain the BLE connection. The bed will disconnect after ~30 seconds without re-authentication.
+Standard OCTO reports whether PIN control is enabled, whether a PIN is set, and
+whether the receiver is unlocked. Configure a four-digit PIN only when the
+receiver reports one is required. Star2 uses a separate protocol and has no
+Standard OCTO PIN exchange.
 
 **How to configure:**
 1. Go to **Settings** → **Devices & Services**
@@ -616,13 +624,12 @@ Some Octo beds require PIN authentication to maintain the BLE connection. The be
 - Use the PIN set in the OCTO Smart Control app; it is not the OS Bluetooth pairing code.
 - If your bed works without a PIN, leave this field empty
 
-Standard Octo setup verifies PIN acceptance without moving the bed. Setup finishes
+Standard OCTO setup verifies PIN acceptance without moving the bed. Setup finishes
 only when the PIN is accepted or the controller confirms no PIN is required.
 An inconclusive check leaves the entry unsaved and can be retried; it does not
-mean the PIN is wrong. Star2 has no application PIN exchange.
-
-During operation, the integration responds to lock notifications and retains a
-periodic keepalive fallback. See [Octo authentication](beds/octo.md#pin-configuration).
+mean the PIN is wrong. After a PIN lock challenge, the integration retries the
+configured PIN once after one second. It does not use a periodic PIN timer. See
+[OCTO Smart Control](beds/octo.md#pin-control).
 
 ### Jensen PIN
 
