@@ -98,5 +98,9 @@
   "editor.navigation_path": "Full view path (optional)",
   "editor.show_utility": "Utility",
   "editor.compact_connection": "Connection status",
-  "card.both": "Both"
+  "card.both": "Both",
+  "editor.configure_dialog": "Configure dialog full card",
+  "editor.dialog_configuration": "Dialog full card",
+  "editor.dialog_configuration_hint": "These full-card settings apply only inside the dialog. The compact card keeps its own settings.",
+  "editor.back_to_compact": "Back to compact configuration"
 }

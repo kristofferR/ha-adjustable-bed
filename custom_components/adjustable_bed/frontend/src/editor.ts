@@ -9,7 +9,7 @@ import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { SECTION_ORDER } from "./discovery";
 import { applyCompactPreset, COMPACT_PRESETS, compactActionOptions,
-  compactActions, compactTargets } from "./compact";
+  compactActions, compactTargets, fullCardDialogConfig } from "./compact";
 import { presentSections } from "./editor-sections";
 import { defineElement } from "./registration";
 import { localize } from "./localize";
@@ -40,10 +40,17 @@ export class AdjustableBedCardEditor
   implements LovelaceCardEditor
 {
   @property({ attribute: false }) public hass?: HomeAssistant;
-  @state() private _config?: AdjustableBedCardConfig;
+  @state() private _rootConfig?: AdjustableBedCardConfig;
+  @state() private _editingDialog = false;
+
+  private get _config(): AdjustableBedCardConfig | undefined {
+    return this._editingDialog && this._rootConfig
+      ? fullCardDialogConfig(this._rootConfig) : this._rootConfig;
+  }
 
   public setConfig(config: AdjustableBedCardConfig): void {
-    this._config = config;
+    this._rootConfig = config;
+    if (config.layout !== "compact" || !config.open_dialog) this._editingDialog = false;
   }
 
   private _bed(): BedEntities | undefined {
@@ -106,6 +113,23 @@ export class AdjustableBedCardEditor
   private _emit(next: Record<string, unknown>): void {
     next.type = next.type ?? "custom:adjustable-bed-card";
     if (!next.name) delete next.name;
+    if (this._editingDialog && this._rootConfig) {
+      // Store full-card defaults explicitly: deleting a default in this editor
+      // must not re-inherit a different compact setting when the dialog opens.
+      const defaults = {
+        name: "", show_header: true, show_graphic: true, animate: true,
+        show_graphic_labels: true, show_percentage_graphic: false,
+        show_lumbar_graphic: false, show_motors: true, show_firmness: true,
+        show_presets: true, show_memory: true, show_lighting: true,
+        show_massage: true, show_utility: true, show_climate: true,
+        show_connection: true, section_order: [], memory_save: true, memory_slots: [],
+      };
+      const overrides = Object.fromEntries(Object.entries(defaults)
+        .map(([key, value]) => [key, next[key] ?? value]));
+      next = { ...this._rootConfig, dialog_config: {
+        ...this._rootConfig.dialog_config, ...overrides,
+      } };
+    }
     this.dispatchEvent(
       new CustomEvent("config-changed", {
         detail: { config: next },
@@ -122,6 +146,7 @@ export class AdjustableBedCardEditor
   // ---- device / name (ha-form) -------------------------------------------
 
   private _deviceSchema(): HaFormSchema[] {
+    if (this._editingDialog) return [{ name: "name", selector: { text: {} } }];
     return [
       {
         name: "device_id",
@@ -139,8 +164,10 @@ export class AdjustableBedCardEditor
     ev.stopPropagation();
     const value = ev.detail.value as Record<string, unknown>;
     const next = this._cfg;
-    if (next.device_id !== value.device_id) delete next.default_target;
-    next.device_id = value.device_id || undefined;
+    if (!this._editingDialog) {
+      if (next.device_id !== value.device_id) delete next.default_target;
+      next.device_id = value.device_id || undefined;
+    }
     if (value.name) next.name = value.name;
     else delete next.name;
     this._emit(next);
@@ -342,6 +369,11 @@ export class AdjustableBedCardEditor
         </label>
         ${this._compactToggle("animate", true)}
         ${this._compactToggle("open_dialog", false)}
+        ${c.open_dialog ? html`<div class="recipes">
+          <button @click=${() => { this._editingDialog = true; }}>
+            ${localize(this.hass, "editor.configure_dialog")}
+          </button>
+        </div>` : nothing}
         <label class="row path-row"><span class="label">${localize(this.hass, "editor.navigation_path")}</span>
           <input type="text" .value=${c.navigation_path ?? ""} placeholder="/dashboard/bed"
             @change=${(e: Event) => this._setOption("navigation_path", (e.target as HTMLInputElement).value || undefined)}>
@@ -422,6 +454,13 @@ export class AdjustableBedCardEditor
     if (!this.hass || !this._config) return nothing;
     const bed = this._bed();
     return html`
+      ${this._editingDialog ? html`<div class="group">
+        <div class="group-title">${localize(this.hass, "editor.dialog_configuration")}</div>
+        <p class="hint">${localize(this.hass, "editor.dialog_configuration_hint")}</p>
+        <div class="recipes"><button @click=${() => { this._editingDialog = false; }}>
+          ${localize(this.hass, "editor.back_to_compact")}
+        </button></div>
+      </div>` : nothing}
       <ha-form
         .hass=${this.hass}
         .data=${{ device_id: this._config.device_id, name: this._config.name }}
@@ -429,7 +468,7 @@ export class AdjustableBedCardEditor
         .computeLabel=${this._computeLabel}
         @value-changed=${this._deviceChanged}
       ></ha-form>
-      ${this._layoutGroup()}
+      ${this._editingDialog ? nothing : this._layoutGroup()}
       ${this._config.layout === "compact" ? this._compactGroup() : html`
         ${this._graphicOptions()}
         ${bed ? this._sectionsGroup(bed) : nothing}

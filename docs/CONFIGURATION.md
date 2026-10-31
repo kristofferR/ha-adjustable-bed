@@ -39,6 +39,14 @@ no navigation path stays non-interactive. Existing configured navigation keeps
 its previous behavior when the dialog option is off. The compact visual editor
 includes an **Open full card in a dialog** switch.
 
+When **Open full card in a dialog** is enabled in the compact visual editor,
+click **Configure dialog full card** to open a separate configuration view. It
+uses the full card's title, graphic, section visibility/order and memory options.
+Click **Back to compact configuration** to return. Changes in that view are saved
+under `dialog_config` and keep the compact settings intact. Disabling the dialog
+keeps its saved configuration for later use. The bed device and full layout are
+fixed for the dialog.
+
 Optional `dialog_config` settings customize the full card independently of the
 compact controls. They can hide sections, set their order, adjust memory
 options, and override graphic settings. The dialog always uses the same device
