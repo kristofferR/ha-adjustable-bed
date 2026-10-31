@@ -1,5 +1,5 @@
 // A refined bed silhouette. Two hinged mattress panels rotate with the
-// back/legs (or head/feet) angle. Shown only for beds with angle feedback;
+// back/legs (or head/feet) feedback. Percentage poses are schematic;
 // purely decorative — not interactive.
 import { type TemplateResult, svg } from "lit";
 
@@ -8,6 +8,7 @@ export type BedGraphicTone = "theme" | "left" | "right";
 export interface BedGraphicPanel {
   label?: string;
   angle?: number; // degrees, 0 = flat
+  readout?: string; // original percentage, when angle is only a schematic pose
 }
 
 export interface BedGraphicOptions {
@@ -43,7 +44,7 @@ export function renderBedGraphic(
 
   const fmt = (p: BedGraphicPanel): string => {
     if (p.angle === undefined) return "";
-    return `${p.label ? `${p.label} ` : ""}${Math.round(clamp(p.angle))}°`;
+    return `${p.label ? `${p.label} ` : ""}${p.readout ?? `${Math.round(clamp(p.angle))}°`}`;
   };
 
   return svg`

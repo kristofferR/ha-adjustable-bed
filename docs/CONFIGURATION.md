@@ -1,5 +1,16 @@
 # Configuration Guide
 
+## Dashboard bed graphic
+
+The native card can draw beds with degree or percentage position feedback for
+both the upper (head/back) and lower (feet/legs) panels. Degree feedback keeps
+its measured angle. Percentage feedback drives a schematic silhouette from
+flat at 0% to fully raised at 100%, with percentage labels throughout. The
+percentage drawing uses a fixed 0–75° visual range, not a calibrated estimate
+of your bed's physical angle. Mixed degree/percentage panels are supported.
+Missing or nonnumeric feedback on either required panel shows the unavailable
+placeholder; missing lumbar or tilt feedback does not block the silhouette.
+
 This guide covers v4 configuration. Options depend on the selected controller
 and its reported capabilities; not every bed shows every field. v4 requires
 Home Assistant 2026.9.0 or newer. Read the [migration notes](HA_2026_9.md) before

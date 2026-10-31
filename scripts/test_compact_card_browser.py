@@ -297,6 +297,29 @@ async def main():
           card.hass=hass;await configure({device_id:'left'});}""")
         assert await card.locator(".compact-tabs").count() == 0
         assert await card.locator(".bed-graphic-theme").count() == 1
+        # Percentage beds draw a schematic pose without labeling its rotation
+        # as measured degrees. Unknown lumbar must not gate the two panels.
+        await page.evaluate("""async () => {
+          window.degreeHass=hass;
+          const states={...hass.states},entities={...hass.entities};
+          for(const [key,value] of [['back','50'],['legs','25'],['lumbar','unknown']]) {
+            const entity_id='number.left_'+key+'_position';
+            entities[entity_id]={entity_id,device_id:'left',platform:'adjustable_bed',translation_key:key+'_position'};
+            states[entity_id]={entity_id,state:value,attributes:{unit_of_measurement:'%',friendly_name:key}};
+          }
+          hass={...hass,states,entities};card.hass=hass;await card.updateComplete;
+        }""")
+        assert await card.locator(".bed-graphic-label").all_text_contents() == ["50%", "25%"]
+        assert await card.locator(".bed-panel").last.get_attribute("transform") == "rotate(37.5 150 70)"
+        await page.evaluate("configure({device_id:'left',layout:'full'})")
+        assert await card.locator(".bed-graphic-label").all_text_contents() == ["back 50%", "legs 25%"]
+        await page.evaluate("""async () => {
+          hass={...hass,states:{...hass.states,'number.left_back_position':{...hass.states['number.left_back_position'],state:'unknown'}}};
+          card.hass=hass;await configure({device_id:'left'});
+        }""")
+        assert await card.locator(".bed-graphic-theme").count() == 0
+        assert await card.locator(".compact-no-position").count() == 1
+        await page.evaluate("hass=degreeHass;card.hass=hass;")
         await page.evaluate(
             "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
         )

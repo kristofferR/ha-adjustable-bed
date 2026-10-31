@@ -18,7 +18,7 @@ import {
   renderBedGraphic,
   renderDualBedGraphic,
 } from "./bed-graphic";
-import { selectBedGraphicMotors } from "./bed-graphic-state";
+import { bedGraphicPanel, selectBedGraphicMotors } from "./bed-graphic-state";
 import {
   PLATFORM,
   SECTION_ORDER,
@@ -452,7 +452,7 @@ export class AdjustableBedCard extends LitElement {
       ? this._positionSummary(graphics[i]!) : localize(this.hass, "compact.no_position")}`).join(". ");
     const content = allKnown && left
       ? right ? renderDualBedGraphic({ left, right })
-        : renderBedGraphic({ ...left, upper: { angle: left.upper.angle }, lower: { angle: left.lower.angle } })
+        : renderBedGraphic({ ...left, upper: { ...left.upper, label: undefined }, lower: { ...left.lower, label: undefined } })
       : html`<div class="compact-no-position"><ha-icon icon="mdi:bed-outline"></ha-icon>
           <span>${localize(this.hass, "compact.no_position")}</span></div>`;
     return cardNavigationPath(this._config?.navigation_path)
@@ -894,26 +894,20 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _graphicState(bed: BedEntities): BedGraphicState | undefined {
-    const withPosition = bed.motors.filter(
-      (motor) => {
-        const feedbackEntity = motor.angle ?? motor.position;
-        return (
-          feedbackEntity !== undefined &&
-          this._state(feedbackEntity)?.attributes.unit_of_measurement === "°"
-        );
-      },
-    );
-    // Registry entries can outlive a configuration change. Do not draw a flat
-    // default graphic from unavailable/unknown entities. Percentage positions
-    // cannot be rendered as angles, and every degree value must be numeric.
-    if (
-      withPosition.length === 0 ||
-      withPosition.some((motor) => this._angle(motor) === undefined)
-    )
-      return undefined;
+    if (!this.hass) return undefined;
+    const withPosition = bed.motors.filter((motor) => {
+      const feedbackEntity = motor.angle ?? motor.position;
+      const unit = this._state(feedbackEntity ?? "")?.attributes.unit_of_measurement;
+      return unit === "°" || unit === "%";
+    });
     const graphicMotors = selectBedGraphicMotors(withPosition);
     if (!graphicMotors) return undefined;
     const { upper, lower } = graphicMotors;
+    const upperPanel = bedGraphicPanel(upper, this.hass);
+    const lowerPanel = bedGraphicPanel(lower, this.hass);
+    // Missing data on either required panel must never look like a flat bed.
+    // Unrelated motors (such as lumbar or tilt) do not gate the silhouette.
+    if (!upperPanel || !lowerPanel) return undefined;
     const moving = bed.motors.some((m) => {
       const s = m.cover ? this._state(m.cover)?.state : undefined;
       return s === "opening" || s === "closing";
@@ -921,8 +915,8 @@ export class AdjustableBedCard extends LitElement {
     return {
       upperMotor: upper,
       lowerMotor: lower,
-      upper: { label: this._motorName(upper), angle: this._angle(upper) },
-      lower: { label: this._motorName(lower), angle: this._angle(lower) },
+      upper: { label: this._motorName(upper), ...upperPanel },
+      lower: { label: this._motorName(lower), ...lowerPanel },
       moving,
     };
   }
