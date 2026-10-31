@@ -272,26 +272,52 @@ async def main():
         assert await editor.get_by_text("Compact appearance", exact=True).count() == 0
         assert await editor.get_by_text("Full view path (optional)", exact=True).count() == 0
         assert await editor.get_by_text("Sections", exact=True).count() == 1
-        await editor.locator(".row").filter(has_text="Memory").locator("ha-switch").evaluate(
-            "el=>{el.checked=true;el.dispatchEvent(new Event('change'))}"
+        await (
+            editor.locator(".row")
+            .filter(has_text="Memory")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=true;el.dispatchEvent(new Event('change'))}")
         )
-        await editor.locator(".row").filter(has_text="Allow saving positions").locator("ha-switch").evaluate(
-            "el=>{el.checked=true;el.dispatchEvent(new Event('change'))}"
+        await (
+            editor.locator(".row")
+            .filter(has_text="Allow saving positions")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=true;el.dispatchEvent(new Event('change'))}")
         )
-        await editor.locator(".row").filter(has_text="Show labels beneath the graphic").locator("ha-switch").evaluate(
-            "el=>{el.checked=true;el.dispatchEvent(new Event('change'))}"
+        await (
+            editor.locator(".row")
+            .filter(has_text="Show labels beneath the graphic")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=true;el.dispatchEvent(new Event('change'))}")
         )
-        assert await page.evaluate("edited.show_memory === false && edited.memory_save === false && edited.show_graphic_labels === false")
-        assert await page.evaluate("edited.dialog_config.show_memory === true && edited.dialog_config.memory_save === true && edited.dialog_config.show_graphic_labels === true")
+        assert await page.evaluate(
+            "edited.show_memory === false && edited.memory_save === false && edited.show_graphic_labels === false"
+        )
+        assert await page.evaluate(
+            "edited.dialog_config.show_memory === true && edited.dialog_config.memory_save === true && edited.dialog_config.show_graphic_labels === true"
+        )
         await editor.get_by_role("button", name="Back to compact configuration").click()
         assert await editor.get_by_text("Compact appearance", exact=True).count() == 1
         await editor.get_by_role("button", name="Configure dialog full card", exact=True).click()
-        assert await editor.locator(".row").filter(has_text="Allow saving positions").locator("ha-switch").evaluate("el=>el.checked")
-        await editor.get_by_role("button", name="Back to compact configuration").click()
-        await editor.locator(".row").filter(has_text="Open full card in a dialog").locator("ha-switch").evaluate(
-            "el=>{el.checked=false;el.dispatchEvent(new Event('change'))}"
+        assert (
+            await editor.locator(".row")
+            .filter(has_text="Allow saving positions")
+            .locator("ha-switch")
+            .evaluate("el=>el.checked")
         )
-        assert await editor.get_by_role("button", name="Configure dialog full card", exact=True).count() == 0
+        await editor.get_by_role("button", name="Back to compact configuration").click()
+        await (
+            editor.locator(".row")
+            .filter(has_text="Open full card in a dialog")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=false;el.dispatchEvent(new Event('change'))}")
+        )
+        assert (
+            await editor.get_by_role(
+                "button", name="Configure dialog full card", exact=True
+            ).count()
+            == 0
+        )
         assert await page.evaluate("edited.dialog_config.show_memory") is True
         # Full-card settings include memory available only on a side.
         await page.evaluate("""() => {
