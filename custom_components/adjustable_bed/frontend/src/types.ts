@@ -71,6 +71,7 @@ export interface AdjustableBedCardConfig {
   dialog_config?: Partial<AdjustableBedCardConfig>;
   animate?: boolean;
   show_graphic?: boolean;
+  show_graphic_labels?: boolean;
   show_percentage_graphic?: boolean;
   show_lumbar_graphic?: boolean;
   show_motors?: boolean;

@@ -3,6 +3,7 @@
   "editor.open_dialog": "Open full card in a dialog",
   "editor.show_percentage_graphic": "Draw percentage positions (schematic)",
   "editor.show_lumbar_graphic": "Show a separate lumbar section",
+  "editor.show_graphic_labels": "Show labels beneath the graphic",
   "section.position": "Position",
   "section.firmness": "Firmness",
   "section.presets": "Presets",

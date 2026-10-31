@@ -13,6 +13,7 @@ export interface BedGraphicPanel {
 }
 
 export interface BedGraphicOptions {
+  showLabels?: boolean;
   upper: BedGraphicPanel; // head end (left)
   lower: BedGraphicPanel; // foot end (right)
   middle?: BedGraphicPanel; // lumbar support, when this motor exists
@@ -103,9 +104,11 @@ export function renderBedGraphic(
         </g>` : ""}
       </g>
 
+      ${opts.showLabels !== false ? svg`
       <text x=${opts.middle ? 80 : 86} y="128" text-anchor="middle" class="bed-graphic-label">${fmt(opts.upper)}</text>
       ${opts.middle ? svg`<text x="150" y="128" text-anchor="middle" class="bed-graphic-label">${fmt(opts.middle)}</text>` : ""}
       <text x=${opts.middle ? 220 : 214} y="128" text-anchor="middle" class="bed-graphic-label">${fmt(opts.lower)}</text>
+      ` : ""}
     </svg>
   `;
 }

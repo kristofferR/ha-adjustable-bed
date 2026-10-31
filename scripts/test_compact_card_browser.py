@@ -343,6 +343,20 @@ async def main():
         }""")
         assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "1"
         assert await card.locator(".bed-graphic-label").nth(1).text_content() == "Lumbar 100%"
+        # Hide only the SVG labels, preserving panels, readouts and full details.
+        readout = await card.locator(".compact-position").inner_text()
+        await page.evaluate(
+            "configure({device_id:'left',show_percentage_graphic:true,show_lumbar_graphic:true,show_graphic_labels:false,open_dialog:true})"
+        )
+        assert await card.locator(".bed-graphic-label").count() == 0
+        assert await card.locator(".bed-lumbar-panel").count() == 1
+        assert await card.locator(".compact-position").inner_text() == readout
+        assert await card.locator(".compact-actions .tile").count() > 0
+        await card.locator(".compact-graphic").click()
+        assert await card.locator("dialog .bed-graphic-label").count() == 0
+        assert await card.locator("dialog .bed-lumbar-panel").count() == 1
+        await card.locator("dialog").get_by_role("button", name="Close", exact=True).click()
+        await card.locator("dialog").wait_for(state="detached")
         await page.evaluate(
             "configure({device_id:'left',layout:'full',show_percentage_graphic:true,show_lumbar_graphic:true})"
         )

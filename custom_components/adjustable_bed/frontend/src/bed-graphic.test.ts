@@ -111,7 +111,10 @@ test("rendered schematic labels never present percentage travel as measured degr
   });
   expect(template.values).toContain("rotate(37.5 150 70)");
   expect(template.values).toContain("rotate(-18.75 150 70)");
-  expect(template.values).toContain("Head 50%");
-  expect(template.values).toContain("Feet 25%");
-  expect(template.values).not.toContain("Head 38°");
+  const labels = template.values.flatMap(value =>
+    value && typeof value === "object" && "values" in value
+      ? (value as {values: unknown[]}).values : []);
+  expect(labels).toContain("Head 50%");
+  expect(labels).toContain("Feet 25%");
+  expect(labels).not.toContain("Head 38°");
 });

@@ -306,7 +306,7 @@ export class AdjustableBedCardEditor
   private _compactToggle(
     key: "show_header" | "show_graphic" | "show_side_selector" | "show_motors" |
       "show_lighting" | "show_connection" | "animate" | "open_dialog" |
-      "show_percentage_graphic" | "show_lumbar_graphic",
+      "show_percentage_graphic" | "show_lumbar_graphic" | "show_graphic_labels",
     defaultValue: boolean,
   ): TemplateResult {
     return html`<div class="row"><span class="label">${localize(this.hass, key === "show_connection" ? "editor.compact_connection" : `editor.${key}`)}</span>
@@ -412,6 +412,7 @@ export class AdjustableBedCardEditor
 
   private _graphicOptions(): TemplateResult {
     return html`
+      ${this._compactToggle("show_graphic_labels", true)}
       ${this._compactToggle("show_percentage_graphic", false)}
       ${this._compactToggle("show_lumbar_graphic", false)}
     `;

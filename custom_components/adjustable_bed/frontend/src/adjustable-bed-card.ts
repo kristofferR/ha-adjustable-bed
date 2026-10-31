@@ -56,6 +56,7 @@ interface PairedPane {
 }
 
 interface BedGraphicState extends DualBedGraphicSide {
+  showLabels?: boolean;
   upperMotor: MotorEntity;
   lowerMotor: MotorEntity;
   middleMotor?: MotorEntity;
@@ -968,6 +969,7 @@ export class AdjustableBedCard extends LitElement {
     });
     return {
       upperMotor: upper,
+      showLabels: this._config?.show_graphic_labels !== false,
       lowerMotor: lower,
       middleMotor: middle,
       upper: { label: this._motorName(upper), ...upperPanel },

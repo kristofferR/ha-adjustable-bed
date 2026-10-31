@@ -25,6 +25,10 @@ the middle section and displays `?`. This option defaults to `false`, retaining
 the two-panel layout and original motor/readout order. Beds without lumbar
 always retain two panels. Both options are available in the visual editor for
 compact and full layouts. `show_graphic: false` hides the entire graphic.
+Set `show_graphic_labels: false` to hide only the labels beneath the silhouette;
+this defaults to `true` and leaves the separate compact readout, tooltips,
+graphic geometry and controls intact. The visual editor exposes this switch
+for both layouts, and dialogs inherit it unless overridden in `dialog_config`.
 
 For a compact card, set `open_dialog: true` to open the full card in a modal
 when clicking its bed graphic or expand button. The dialog uses the same bed
