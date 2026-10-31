@@ -18,7 +18,7 @@ import {
   renderBedGraphic,
   renderDualBedGraphic,
 } from "./bed-graphic";
-import { bedGraphicPanel, selectBedGraphicMotors } from "./bed-graphic-state";
+import { bedGraphicMotorOrder, bedGraphicPanel, selectBedGraphicMotors } from "./bed-graphic-state";
 import {
   PLATFORM,
   SECTION_ORDER,
@@ -30,7 +30,7 @@ import {
   resolvePairedParentId,
 } from "./discovery";
 import { MotorHold, movementPulse } from "./hold";
-import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
+import { cardNavigationPath, compactActions, compactStopEntities, fullCardDialogConfig } from "./compact";
 import { localize } from "./localize";
 import {
   type AdjustableBedCardConfig,
@@ -58,6 +58,7 @@ interface PairedPane {
 interface BedGraphicState extends DualBedGraphicSide {
   upperMotor: MotorEntity;
   lowerMotor: MotorEntity;
+  middleMotor?: MotorEntity;
 }
 
 type ConnectionStatus = "connected" | "connecting" | "idle" | "disconnected";
@@ -81,6 +82,8 @@ export class AdjustableBedCard extends LitElement {
   @state() private _activePairedPane = "both";
   @state() private _synchronizingTo?: SynchronizeSide;
   @state() private _synchronizationFailed = false;
+  @state() private _detailsOpen = false;
+  private _detailsCard?: AdjustableBedCard;
 
   private _watched: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
@@ -114,6 +117,7 @@ export class AdjustableBedCard extends LitElement {
 
   public setConfig(config: AdjustableBedCardConfig): void {
     if (!config) throw new Error("Invalid configuration");
+    if (this._detailsOpen) this._closeDetails();
     if (this._config) {
       this._hold.abandon();
       this._stopCompact();
@@ -148,6 +152,7 @@ export class AdjustableBedCard extends LitElement {
     // repeat loop running forever and a cover-backed motor moving with nothing
     // left to stop it.
     this._hold.abandon();
+    this._closeDetails();
   }
 
   protected override shouldUpdate(changed: PropertyValues): boolean {
@@ -156,6 +161,7 @@ export class AdjustableBedCard extends LitElement {
     // save-mode interaction just because `hass` changed in the same cycle.
     if (
       changed.has("_config") ||
+      changed.has("_detailsOpen") ||
       changed.has("_saveModeFor") ||
       changed.has("_activePairedPane") ||
       changed.has("_synchronizingTo") ||
@@ -173,6 +179,11 @@ export class AdjustableBedCard extends LitElement {
       if (old.states[id] !== this.hass.states[id]) return true;
     }
     return false;
+  }
+
+  protected override updated(): void {
+    // The dialog uses the same live HA state and service interface as its card.
+    if (this._detailsCard) this._detailsCard.hass = this.hass;
   }
 
   protected override render() {
@@ -376,13 +387,13 @@ export class AdjustableBedCard extends LitElement {
     const sides = paired ? panes.filter((pane) => pane.key !== "both") : panes;
     const canStop = !!bed && compactStopEntities(bed).length > 0;
     const movingControls = actions.length > 0 || motors.length > 0;
-    const nav = cardNavigationPath(c.navigation_path);
+    const nav = c.open_dialog || cardNavigationPath(c.navigation_path);
     return html`
       <ha-card class="compact-card ${!wantsControls ? "compact-glance" : ""} ${c.animate === false ? "no-animation" : ""}">
         ${c.show_header !== false ? html`
           <div class="compact-header">
             <span class="title">${this._title(titleDeviceId)}</span>
-            ${nav ? html`<button class="compact-open" @click=${this._navigate}
+            ${nav ? html`<button class="compact-open" @click=${this._openDetails}
               aria-label=${localize(this.hass, "compact.open")}>
               <ha-icon icon="mdi:open-in-new"></ha-icon>
             </button>` : nothing}
@@ -440,7 +451,16 @@ export class AdjustableBedCard extends LitElement {
         ${!hasControls && c.show_graphic === false && c.compact_labels === "none" &&
             c.show_header === false && c.show_connection !== true
           ? html`<div class="hint">${this._title(titleDeviceId)}</div>` : nothing}
-      </ha-card>`;
+      </ha-card>
+      ${this._detailsOpen ? html`<dialog class="bed-details-dialog" aria-label=${this._title(titleDeviceId)}
+        @close=${this._closeDetails} @click=${this._detailsBackdrop}>
+        <div class="bed-details-heading">
+          <strong>${this._title(titleDeviceId)}</strong>
+          <button class="bed-details-close" @click=${this._closeDetails}
+            aria-label=${localize(this.hass, "action.close")}>✕</button>
+        </div>
+        <div class="bed-details-content">${this._detailsCard}</div>
+      </dialog>` : nothing}`;
   }
 
   private _compactGraphic(sides: PairedPane[]): TemplateResult {
@@ -452,11 +472,11 @@ export class AdjustableBedCard extends LitElement {
       ? this._positionSummary(graphics[i]!) : localize(this.hass, "compact.no_position")}`).join(". ");
     const content = allKnown && left
       ? right ? renderDualBedGraphic({ left, right })
-        : renderBedGraphic({ ...left, upper: { ...left.upper, label: undefined }, lower: { ...left.lower, label: undefined } })
+        : renderBedGraphic({ ...left, upper: { ...left.upper, label: left.middle ? left.upper.label : undefined }, lower: { ...left.lower, label: left.middle ? left.lower.label : undefined } })
       : html`<div class="compact-no-position"><ha-icon icon="mdi:bed-outline"></ha-icon>
           <span>${localize(this.hass, "compact.no_position")}</span></div>`;
-    return cardNavigationPath(this._config?.navigation_path)
-      ? html`<button class="compact-graphic" @click=${this._navigate}
+    return this._config?.open_dialog || cardNavigationPath(this._config?.navigation_path)
+      ? html`<button class="compact-graphic" @click=${this._openDetails}
           aria-label="${localize(this.hass, "compact.open")}. ${description}">${content}</button>`
       : html`<div class="compact-graphic" role="img" aria-label=${description}>${content}</div>`;
   }
@@ -474,8 +494,8 @@ export class AdjustableBedCard extends LitElement {
             ? [...pane.label][0] : pane.label}</span>
         </span>
         ${mode === "angles" ? html`<span class="compact-position"
-          title=${pane.bed.motors.map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
-        >${pane.bed.motors
+          title=${bedGraphicMotorOrder(pane.bed.motors).map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
+        >${bedGraphicMotorOrder(pane.bed.motors)
           .filter((m) => m.angle || m.position || m.cover)
           .map((m) => this._readout(m) ?? "?").join(" / ") ||
           localize(this.hass, "compact.no_position")}</span>` : nothing}
@@ -527,6 +547,37 @@ export class AdjustableBedCard extends LitElement {
     this._hold.abandon();
     history.pushState(null, "", path);
     window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+  };
+
+  private _openDetails = async (): Promise<void> => {
+    if (!this._config?.open_dialog) {
+      this._navigate();
+      return;
+    }
+    this._hold.abandon();
+    if (!this._detailsCard) {
+      this._detailsCard = document.createElement(this.localName) as AdjustableBedCard;
+      this._detailsCard.setConfig(fullCardDialogConfig(this._config));
+    }
+    this._detailsCard.hass = this.hass;
+    this._detailsOpen = true;
+    await this.updateComplete;
+    const dialog = this.renderRoot.querySelector<HTMLDialogElement>(".bed-details-dialog");
+    if (dialog && !dialog.open) dialog.showModal();
+  };
+
+  private _closeDetails = (): void => {
+    const dialog = this.renderRoot.querySelector<HTMLDialogElement>(".bed-details-dialog");
+    if (dialog?.open) dialog.close();
+    this._detailsOpen = false;
+    this._detailsCard = undefined;
+  };
+
+  private _detailsBackdrop = (event: MouseEvent): void => {
+    if (event.target !== event.currentTarget) return;
+    const bounds = (event.currentTarget as HTMLDialogElement).getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom) this._closeDetails();
   };
 
   private _selectPairedPane(key: string): void {
@@ -717,7 +768,7 @@ export class AdjustableBedCard extends LitElement {
     const motors =
       graphic.upperMotor === graphic.lowerMotor
         ? [graphic.upperMotor]
-        : [graphic.upperMotor, graphic.lowerMotor];
+        : [graphic.upperMotor, ...(graphic.middleMotor ? [graphic.middleMotor] : []), graphic.lowerMotor];
     return motors
       .map((motor) => {
         const value = this._readout(motor);
@@ -903,6 +954,7 @@ export class AdjustableBedCard extends LitElement {
     const graphicMotors = selectBedGraphicMotors(withPosition);
     if (!graphicMotors) return undefined;
     const { upper, lower } = graphicMotors;
+    const middle = bed.motors.find((motor) => motor.key === "lumbar");
     const upperPanel = bedGraphicPanel(upper, this.hass);
     const lowerPanel = bedGraphicPanel(lower, this.hass);
     // Missing data on either required panel must never look like a flat bed.
@@ -915,14 +967,16 @@ export class AdjustableBedCard extends LitElement {
     return {
       upperMotor: upper,
       lowerMotor: lower,
+      middleMotor: middle,
       upper: { label: this._motorName(upper), ...upperPanel },
       lower: { label: this._motorName(lower), ...lowerPanel },
+      middle: middle ? { label: this._motorName(middle), ...bedGraphicPanel(middle, this.hass) } : undefined,
       moving,
     };
   }
 
   private _motors(bed: BedEntities): typeof nothing | TemplateResult {
-    const motors = bed.motors.filter((m) => m.cover || m.up || m.down);
+    const motors = bedGraphicMotorOrder(bed.motors).filter((m) => m.cover || m.up || m.down);
     // Motors with movement controls open their position setter from the label.
     const positionRows = bed.motors.filter(
       (m) => m.position && !m.cover && !m.up && !m.down,
@@ -1586,6 +1640,31 @@ export class AdjustableBedCard extends LitElement {
   }
 
   static override styles = css`
+    .bed-details-dialog {
+      box-sizing: border-box;
+      width: min(560px, calc(100vw - 24px));
+      max-height: calc(100dvh - 32px);
+      padding: 0;
+      overflow: auto;
+      color: var(--primary-text-color);
+      background: var(--card-background-color, #fff);
+      border: 1px solid var(--divider-color);
+      border-radius: 16px;
+      box-shadow: 0 16px 60px #0006;
+    }
+    .bed-details-dialog::backdrop { background: #0009; }
+    .bed-details-heading {
+      position: sticky; top: 0; z-index: 1;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 8px 16px;
+      background: var(--card-background-color, #fff);
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .bed-details-close {
+      border: 0; background: transparent; color: inherit;
+      width: 44px; height: 44px; font-size: 20px; cursor: pointer;
+    }
+    .bed-details-content { padding: 8px; }
     .compact-card { padding: 13px; }
     .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 24px;
       align-items: center; gap: 8px; min-height: 22px; padding: 0 2px 9px; }

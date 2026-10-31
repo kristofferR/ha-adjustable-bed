@@ -66,6 +66,7 @@ export interface AdjustableBedCardConfig {
   // Stable preset translation keys; omitted = flat + first recall, [] = none.
   compact_actions?: string[];
   navigation_path?: string;
+  open_dialog?: boolean;
   animate?: boolean;
   show_graphic?: boolean;
   show_motors?: boolean;

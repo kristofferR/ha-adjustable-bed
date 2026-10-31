@@ -305,7 +305,7 @@ export class AdjustableBedCardEditor
 
   private _compactToggle(
     key: "show_header" | "show_graphic" | "show_side_selector" | "show_motors" |
-      "show_lighting" | "show_connection" | "animate",
+      "show_lighting" | "show_connection" | "animate" | "open_dialog",
     defaultValue: boolean,
   ): TemplateResult {
     return html`<div class="row"><span class="label">${localize(this.hass, key === "show_connection" ? "editor.compact_connection" : `editor.${key}`)}</span>
@@ -339,6 +339,7 @@ export class AdjustableBedCardEditor
           </select>
         </label>
         ${this._compactToggle("animate", true)}
+          ${this._compactToggle("open_dialog", false)}
         <label class="row path-row"><span class="label">${localize(this.hass, "editor.navigation_path")}</span>
           <input type="text" .value=${c.navigation_path ?? ""} placeholder="/dashboard/bed"
             @change=${(e: Event) => this._setOption("navigation_path", (e.target as HTMLInputElement).value || undefined)}>

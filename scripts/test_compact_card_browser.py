@@ -309,10 +309,17 @@ async def main():
           }
           hass={...hass,states,entities};card.hass=hass;await card.updateComplete;
         }""")
-        assert await card.locator(".bed-graphic-label").all_text_contents() == ["50%", "25%"]
-        assert await card.locator(".bed-panel").last.get_attribute("transform") == "rotate(37.5 150 70)"
+        assert await card.locator(".bed-graphic-label").all_text_contents() == ["back 50%", "lumbar ?", "legs 25%"]
+        assert await card.locator(".bed-panel[transform]").last.get_attribute("transform") == "rotate(37.5 122 70)"
+        assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "0.35"
+        await page.evaluate("""async () => {
+          hass={...hass,states:{...hass.states,'number.left_lumbar_position':{...hass.states['number.left_lumbar_position'],state:'100'}}};
+          card.hass=hass;await card.updateComplete;
+        }""")
+        assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "1"
+        assert await card.locator(".bed-graphic-label").nth(1).inner_text() == "lumbar 100%"
         await page.evaluate("configure({device_id:'left',layout:'full'})")
-        assert await card.locator(".bed-graphic-label").all_text_contents() == ["back 50%", "legs 25%"]
+        assert await card.locator(".bed-graphic-label").all_text_contents() == ["back 50%", "lumbar 100%", "legs 25%"]
         await page.evaluate("""async () => {
           hass={...hass,states:{...hass.states,'number.left_back_position':{...hass.states['number.left_back_position'],state:'unknown'}}};
           card.hass=hass;await configure({device_id:'left'});
@@ -320,6 +327,22 @@ async def main():
         assert await card.locator(".bed-graphic-theme").count() == 0
         assert await card.locator(".compact-no-position").count() == 1
         await page.evaluate("hass=degreeHass;card.hass=hass;")
+        # Full details stay in a modal and opening/closing is read-only.
+        await page.evaluate("configure({device_id:'left',open_dialog:true})")
+        call_count = await page.evaluate("calls.length")
+        original_url = page.url
+        await card.locator(".compact-graphic").click()
+        dialog = card.locator("dialog")
+        assert await dialog.is_visible()
+        assert await dialog.locator(".section-heading").count() > 0
+        assert page.url == original_url
+        assert await page.evaluate("calls.length") == call_count
+        await dialog.get_by_role("button", name="Close", exact=True).click()
+        assert await card.locator("dialog").count() == 0
+        await card.locator(".compact-graphic").click()
+        await page.keyboard.press("Escape")
+        assert await card.locator("dialog").count() == 0
+        assert await page.evaluate("calls.length") == call_count
         await page.evaluate(
             "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
         )

@@ -7,6 +7,26 @@ import type { AdjustableBedCardConfig, BedEntities, HomeAssistant } from "./type
 export type CompactPreset = "glance" | "quick" | "controls";
 export const COMPACT_PRESETS: readonly CompactPreset[] = ["glance", "quick", "controls"];
 
+export function fullCardDialogConfig(config: AdjustableBedCardConfig): AdjustableBedCardConfig {
+  return {
+    ...config,
+    layout: "full",
+    open_dialog: false,
+    navigation_path: undefined,
+    show_header: true,
+    show_graphic: true,
+    show_motors: true,
+    show_presets: true,
+    show_memory: true,
+    show_lighting: true,
+    show_massage: true,
+    show_utility: true,
+    show_climate: true,
+    show_firmness: true,
+    show_connection: true,
+  };
+}
+
 // Recipes write ordinary options so later customization has one source of truth.
 export function applyCompactPreset(
   config: AdjustableBedCardConfig,

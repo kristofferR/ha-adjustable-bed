@@ -10,6 +10,18 @@ percentage drawing uses a fixed 0–75° visual range, not a calibrated estimate
 of your bed's physical angle. Mixed degree/percentage panels are supported.
 Missing or nonnumeric feedback on either required panel shows the unavailable
 placeholder; missing lumbar or tilt feedback does not block the silhouette.
+Beds exposing a lumbar motor get a separate middle section between head and
+feet, with its own label and feedback. Its support bows upward independently
+as lumbar extension increases; the pillow is decorative. This geometry is
+schematic, not a model of the bed's linkage. Unknown lumbar feedback dims only
+the middle section and displays `?`; beds without lumbar retain two panels.
+
+For a compact card, set `open_dialog: true` to open the full card in a modal
+when clicking its bed graphic or expand button. The dialog uses the same bed
+and live state, enables the full control sections, and closes with Close,
+Escape or a backdrop click. Opening it sends no bed commands. This option
+takes precedence over `navigation_path`; navigation keeps its previous behavior
+when the dialog option is off.
 
 This guide covers v4 configuration. Options depend on the selected controller
 and its reported capabilities; not every bed shows every field. v4 requires

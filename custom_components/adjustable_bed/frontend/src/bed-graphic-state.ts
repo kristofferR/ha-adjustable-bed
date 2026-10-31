@@ -4,6 +4,7 @@ import type { BedGraphicPanel } from "./bed-graphic";
 export interface BedGraphicMotors {
   upper: MotorEntity;
   lower: MotorEntity;
+  middle?: MotorEntity;
 }
 
 export function selectBedGraphicMotors(
@@ -15,7 +16,8 @@ export function selectBedGraphicMotors(
   const lower = motors.find(
     (motor) => motor.key === "legs" || motor.key === "feet",
   );
-  return upper && lower ? { upper, lower } : undefined;
+  const middle = motors.find((motor) => motor.key === "lumbar");
+  return upper && lower ? { upper, lower, ...(middle ? { middle } : {}) } : undefined;
 }
 
 export function bedHasGraphicFeedback(
@@ -28,6 +30,13 @@ export function bedHasGraphicFeedback(
     return unit === "°" || unit === "%";
   });
   return selectBedGraphicMotors(positionMotors) !== undefined;
+}
+
+export function bedGraphicMotorOrder(motors: readonly MotorEntity[]): readonly MotorEntity[] {
+  const graphic = selectBedGraphicMotors(motors);
+  if (!graphic?.middle) return motors;
+  const panels = [graphic.upper, graphic.middle, graphic.lower];
+  return [...panels, ...motors.filter((motor) => !panels.includes(motor))];
 }
 
 /** A percentage drives a schematic pose, never a measured angle label. */

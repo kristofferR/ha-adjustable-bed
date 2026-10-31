@@ -1,4 +1,6 @@
 {
+  "action.close": "Close",
+  "editor.open_dialog": "Open full card in a dialog",
   "section.position": "Position",
   "section.firmness": "Firmness",
   "section.presets": "Presets",
