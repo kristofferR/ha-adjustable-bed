@@ -1,32 +1,63 @@
 # Configuration Guide
 
+This guide covers v4 configuration. Options depend on the selected controller
+and its reported capabilities; not every bed shows every field. v4 requires
+Home Assistant 2026.9.0 or newer. Read the [migration notes](HA_2026_9.md) before
+upgrading from v3.
+
 ## Dashboard bed graphic
 
-The native card can draw beds with degree or percentage position feedback for
+The native card can optionally draw beds with percentage position feedback for
 both the upper (head/back) and lower (feet/legs) panels. Degree feedback keeps
 its measured angle. Percentage feedback drives a schematic silhouette from
 flat at 0% to fully raised at 100%, with percentage labels throughout. The
 percentage drawing uses a fixed 0–75° visual range, not a calibrated estimate
-of your bed's physical angle. Mixed degree/percentage panels are supported.
+of your bed's physical angle. Mixed degree/percentage panels are supported
+when `show_percentage_graphic: true` is enabled. Its default is `false`, so
+existing cards retain their degree-only graphics.
 Missing or nonnumeric feedback on either required panel shows the unavailable
 placeholder; missing lumbar or tilt feedback does not block the silhouette.
-Beds exposing a lumbar motor get a separate middle section between head and
+With `show_lumbar_graphic: true`, beds exposing a lumbar motor get a separate middle section between head and
 feet, with its own label and feedback. Its support bows upward independently
 as lumbar extension increases; the pillow is decorative. This geometry is
 schematic, not a model of the bed's linkage. Unknown lumbar feedback dims only
-the middle section and displays `?`; beds without lumbar retain two panels.
+the middle section and displays `?`. This option defaults to `false`, retaining
+the two-panel layout and original motor/readout order. Beds without lumbar
+always retain two panels. Both options are available in the visual editor for
+compact and full layouts. `show_graphic: false` hides the entire graphic.
 
 For a compact card, set `open_dialog: true` to open the full card in a modal
 when clicking its bed graphic or expand button. The dialog uses the same bed
 and live state, enables the full control sections, and closes with Close,
 Escape or a backdrop click. Opening it sends no bed commands. This option
-takes precedence over `navigation_path`; navigation keeps its previous behavior
-when the dialog option is off.
+takes precedence over `navigation_path`. It defaults to `false`, so a card with
+no navigation path stays non-interactive. Existing configured navigation keeps
+its previous behavior when the dialog option is off. The compact visual editor
+includes an **Open full card in a dialog** switch.
 
-This guide covers v4 configuration. Options depend on the selected controller
-and its reported capabilities; not every bed shows every field. v4 requires
-Home Assistant 2026.9.0 or newer. Read the [migration notes](HA_2026_9.md) before
-upgrading from v3.
+Optional `dialog_config` settings customize the full card independently of the
+compact controls. They can hide sections, set their order, adjust memory
+options, and override graphic settings. The dialog always uses the same device
+and full layout; nested dialogs and navigation are disabled. Opening/closing
+never runs a preset. Closing during a held movement retains the card's existing
+hold-release STOP cleanup.
+
+```yaml
+type: custom:adjustable-bed-card
+device_id: YOUR_BED_DEVICE_ID
+layout: compact
+show_percentage_graphic: true
+show_lumbar_graphic: true
+open_dialog: true
+dialog_config:
+  show_massage: false
+  show_connection: false
+  section_order:
+    - graphic
+    - motors
+    - presets
+    - memory
+```
 
 ## Table of Contents
 

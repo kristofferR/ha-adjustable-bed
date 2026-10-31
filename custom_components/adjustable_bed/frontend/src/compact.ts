@@ -10,9 +10,6 @@ export const COMPACT_PRESETS: readonly CompactPreset[] = ["glance", "quick", "co
 export function fullCardDialogConfig(config: AdjustableBedCardConfig): AdjustableBedCardConfig {
   return {
     ...config,
-    layout: "full",
-    open_dialog: false,
-    navigation_path: undefined,
     show_header: true,
     show_graphic: true,
     show_motors: true,
@@ -24,6 +21,14 @@ export function fullCardDialogConfig(config: AdjustableBedCardConfig): Adjustabl
     show_climate: true,
     show_firmness: true,
     show_connection: true,
+    ...config.dialog_config,
+    // A dialog must not recursively open dialogs or silently target another bed.
+    type: config.type,
+    device_id: config.device_id,
+    layout: "full",
+    open_dialog: false,
+    navigation_path: undefined,
+    dialog_config: undefined,
   };
 }
 

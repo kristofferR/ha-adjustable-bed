@@ -23,16 +23,18 @@ export function selectBedGraphicMotors(
 export function bedHasGraphicFeedback(
   bed: BedEntities,
   hass: HomeAssistant,
+  allowPercentage = false,
 ): boolean {
   const positionMotors = bed.motors.filter((motor) => {
     const entityId = motor.angle ?? motor.position;
     const unit = hass.states[entityId ?? ""]?.attributes.unit_of_measurement;
-    return unit === "°" || unit === "%";
+    return unit === "°" || (allowPercentage && unit === "%");
   });
   return selectBedGraphicMotors(positionMotors) !== undefined;
 }
 
-export function bedGraphicMotorOrder(motors: readonly MotorEntity[]): readonly MotorEntity[] {
+export function bedGraphicMotorOrder(motors: readonly MotorEntity[], showLumbar = false): readonly MotorEntity[] {
+  if (!showLumbar) return motors;
   const graphic = selectBedGraphicMotors(motors);
   if (!graphic?.middle) return motors;
   const panels = [graphic.upper, graphic.middle, graphic.lower];
@@ -43,11 +45,13 @@ export function bedGraphicMotorOrder(motors: readonly MotorEntity[]): readonly M
 export function bedGraphicPanel(
   motor: MotorEntity,
   hass: HomeAssistant,
+  allowPercentage = false,
 ): BedGraphicPanel | undefined {
   const entityId = motor.angle ?? motor.position;
   const state = hass.states[entityId ?? ""];
   const unit = state?.attributes.unit_of_measurement;
   if (unit !== "°" && unit !== "%") return undefined;
+  if (unit === "%" && !allowPercentage) return undefined;
   const raw = state.state.trim();
   if (raw === "") return undefined;
   const value = Number(raw);

@@ -69,7 +69,7 @@ export class AdjustableBedCardEditor
   // Present section keys in their DEFAULT order.
   private _presentKeys(bed: BedEntities): string[] {
     const beds = this.hass ? compactTargets(this.hass, this._config?.device_id).map((t) => t.bed) : [bed];
-    return SECTION_ORDER.filter((key) => beds.some((b) => presentSections(b, this.hass!)[key]));
+    return SECTION_ORDER.filter((key) => beds.some((b) => presentSections(b, this.hass!, this._config)[key]));
   }
 
   // Present section keys in the user's configured order (with the default order
@@ -305,7 +305,8 @@ export class AdjustableBedCardEditor
 
   private _compactToggle(
     key: "show_header" | "show_graphic" | "show_side_selector" | "show_motors" |
-      "show_lighting" | "show_connection" | "animate" | "open_dialog",
+      "show_lighting" | "show_connection" | "animate" | "open_dialog" |
+      "show_percentage_graphic" | "show_lumbar_graphic",
     defaultValue: boolean,
   ): TemplateResult {
     return html`<div class="row"><span class="label">${localize(this.hass, key === "show_connection" ? "editor.compact_connection" : `editor.${key}`)}</span>
@@ -330,6 +331,7 @@ export class AdjustableBedCardEditor
         <div class="group-title">${localize(this.hass, "editor.compact_appearance")}</div>
         ${this._compactToggle("show_header", true)}
         ${this._compactToggle("show_graphic", true)}
+        ${this._graphicOptions()}
         <label class="row"><span class="label">${localize(this.hass, "editor.compact_labels")}</span>
           <select .value=${c.compact_labels ?? "angles"}
             @change=${(e: Event) => this._setOption("compact_labels",
@@ -339,7 +341,7 @@ export class AdjustableBedCardEditor
           </select>
         </label>
         ${this._compactToggle("animate", true)}
-          ${this._compactToggle("open_dialog", false)}
+        ${this._compactToggle("open_dialog", false)}
         <label class="row path-row"><span class="label">${localize(this.hass, "editor.navigation_path")}</span>
           <input type="text" .value=${c.navigation_path ?? ""} placeholder="/dashboard/bed"
             @change=${(e: Event) => this._setOption("navigation_path", (e.target as HTMLInputElement).value || undefined)}>
@@ -408,6 +410,13 @@ export class AdjustableBedCardEditor
     </div>`;
   }
 
+  private _graphicOptions(): TemplateResult {
+    return html`
+      ${this._compactToggle("show_percentage_graphic", false)}
+      ${this._compactToggle("show_lumbar_graphic", false)}
+    `;
+  }
+
   protected override render(): TemplateResult | typeof nothing {
     if (!this.hass || !this._config) return nothing;
     const bed = this._bed();
@@ -421,6 +430,7 @@ export class AdjustableBedCardEditor
       ></ha-form>
       ${this._layoutGroup()}
       ${this._config.layout === "compact" ? this._compactGroup() : html`
+        ${this._graphicOptions()}
         ${bed ? this._sectionsGroup(bed) : nothing}
         ${bed ? this._memoryGroup(bed) : nothing}
       `}

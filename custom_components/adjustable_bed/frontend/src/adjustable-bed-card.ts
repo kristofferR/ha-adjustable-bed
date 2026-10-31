@@ -494,8 +494,8 @@ export class AdjustableBedCard extends LitElement {
             ? [...pane.label][0] : pane.label}</span>
         </span>
         ${mode === "angles" ? html`<span class="compact-position"
-          title=${bedGraphicMotorOrder(pane.bed.motors).map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
-        >${bedGraphicMotorOrder(pane.bed.motors)
+          title=${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true).map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
+        >${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true)
           .filter((m) => m.angle || m.position || m.cover)
           .map((m) => this._readout(m) ?? "?").join(" / ") ||
           localize(this.hass, "compact.no_position")}</span>` : nothing}
@@ -557,7 +557,7 @@ export class AdjustableBedCard extends LitElement {
     this._hold.abandon();
     if (!this._detailsCard) {
       this._detailsCard = document.createElement(this.localName) as AdjustableBedCard;
-      this._detailsCard.setConfig(fullCardDialogConfig(this._config));
+      this._detailsCard.setConfig(fullCardDialogConfig({ ...this._config, default_target: this._activePairedPane }));
     }
     this._detailsCard.hass = this.hass;
     this._detailsOpen = true;
@@ -946,17 +946,19 @@ export class AdjustableBedCard extends LitElement {
 
   private _graphicState(bed: BedEntities): BedGraphicState | undefined {
     if (!this.hass) return undefined;
+    const percentage = this._config?.show_percentage_graphic === true;
     const withPosition = bed.motors.filter((motor) => {
       const feedbackEntity = motor.angle ?? motor.position;
       const unit = this._state(feedbackEntity ?? "")?.attributes.unit_of_measurement;
-      return unit === "°" || unit === "%";
+      return unit === "°" || (percentage && unit === "%");
     });
     const graphicMotors = selectBedGraphicMotors(withPosition);
     if (!graphicMotors) return undefined;
     const { upper, lower } = graphicMotors;
-    const middle = bed.motors.find((motor) => motor.key === "lumbar");
-    const upperPanel = bedGraphicPanel(upper, this.hass);
-    const lowerPanel = bedGraphicPanel(lower, this.hass);
+    const middle = this._config?.show_lumbar_graphic === true
+      ? bed.motors.find((motor) => motor.key === "lumbar") : undefined;
+    const upperPanel = bedGraphicPanel(upper, this.hass, percentage);
+    const lowerPanel = bedGraphicPanel(lower, this.hass, percentage);
     // Missing data on either required panel must never look like a flat bed.
     // Unrelated motors (such as lumbar or tilt) do not gate the silhouette.
     if (!upperPanel || !lowerPanel) return undefined;
@@ -970,13 +972,13 @@ export class AdjustableBedCard extends LitElement {
       middleMotor: middle,
       upper: { label: this._motorName(upper), ...upperPanel },
       lower: { label: this._motorName(lower), ...lowerPanel },
-      middle: middle ? { label: this._motorName(middle), ...bedGraphicPanel(middle, this.hass) } : undefined,
+      middle: middle ? { label: this._motorName(middle), ...bedGraphicPanel(middle, this.hass, percentage) } : undefined,
       moving,
     };
   }
 
   private _motors(bed: BedEntities): typeof nothing | TemplateResult {
-    const motors = bedGraphicMotorOrder(bed.motors).filter((m) => m.cover || m.up || m.down);
+    const motors = bedGraphicMotorOrder(bed.motors, this._config?.show_lumbar_graphic === true).filter((m) => m.cover || m.up || m.down);
     // Motors with movement controls open their position setter from the label.
     const positionRows = bed.motors.filter(
       (m) => m.position && !m.cover && !m.up && !m.down,

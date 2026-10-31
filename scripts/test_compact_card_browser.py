@@ -203,7 +203,9 @@ async def main():
         assert await page.evaluate(
             "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
         )
-        await page.evaluate("async ()=>{await Promise.resolve();await card.updateComplete;calls=[]}")
+        await page.evaluate(
+            "async ()=>{await Promise.resolve();await card.updateComplete;calls=[]}"
+        )
         await card.locator(".compact-stop").click()
         release_calls = await page.evaluate("calls.map(c=>c.entity_id)")
         assert release_calls == ["button.right_stop"], release_calls
@@ -309,20 +311,49 @@ async def main():
           }
           hass={...hass,states,entities};card.hass=hass;await card.updateComplete;
         }""")
-        assert await card.locator(".bed-graphic-label").all_text_contents() == ["back 50%", "lumbar ?", "legs 25%"]
-        assert await card.locator(".bed-panel[transform]").last.get_attribute("transform") == "rotate(37.5 122 70)"
+        # All new presentation features are opt-in. Percentage feedback alone
+        # must not change the default two-panel degree-only graphic.
+        assert await card.locator(".bed-graphic-theme").count() == 0
+        assert await card.locator("button.compact-graphic").count() == 1  # existing navigation
+        await page.evaluate("configure({device_id:'left',navigation_path:undefined})")
+        assert await card.locator("button.compact-graphic").count() == 0
+        await page.evaluate(
+            "configure({device_id:'left',navigation_path:undefined,open_dialog:false})"
+        )
+        assert await card.locator("button.compact-graphic").count() == 0
+        await page.evaluate("configure({device_id:'left',show_percentage_graphic:true})")
+        assert await card.locator(".bed-graphic-label").all_text_contents() == ["50%", "25%"]
+        assert await card.locator(".bed-lumbar-panel").count() == 0
+        await page.evaluate(
+            "configure({device_id:'left',show_percentage_graphic:true,show_lumbar_graphic:true})"
+        )
+        assert await card.locator(".bed-graphic-label").all_text_contents() == [
+            "Back 50%",
+            "Lumbar ?",
+            "Legs 25%",
+        ]
+        assert (
+            await card.locator(".bed-panel[transform]").last.get_attribute("transform")
+            == "rotate(37.5 122 70)"
+        )
         assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "0.35"
         await page.evaluate("""async () => {
           hass={...hass,states:{...hass.states,'number.left_lumbar_position':{...hass.states['number.left_lumbar_position'],state:'100'}}};
           card.hass=hass;await card.updateComplete;
         }""")
         assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "1"
-        assert await card.locator(".bed-graphic-label").nth(1).inner_text() == "lumbar 100%"
-        await page.evaluate("configure({device_id:'left',layout:'full'})")
-        assert await card.locator(".bed-graphic-label").all_text_contents() == ["back 50%", "lumbar 100%", "legs 25%"]
+        assert await card.locator(".bed-graphic-label").nth(1).text_content() == "Lumbar 100%"
+        await page.evaluate(
+            "configure({device_id:'left',layout:'full',show_percentage_graphic:true,show_lumbar_graphic:true})"
+        )
+        assert await card.locator(".bed-graphic-label").all_text_contents() == [
+            "Back 50%",
+            "Lumbar 100%",
+            "Legs 25%",
+        ]
         await page.evaluate("""async () => {
           hass={...hass,states:{...hass.states,'number.left_back_position':{...hass.states['number.left_back_position'],state:'unknown'}}};
-          card.hass=hass;await configure({device_id:'left'});
+          card.hass=hass;await configure({device_id:'left',show_percentage_graphic:true,show_lumbar_graphic:true});
         }""")
         assert await card.locator(".bed-graphic-theme").count() == 0
         assert await card.locator(".compact-no-position").count() == 1
@@ -337,12 +368,42 @@ async def main():
         assert await dialog.locator(".section-heading").count() > 0
         assert page.url == original_url
         assert await page.evaluate("calls.length") == call_count
+        await page.evaluate("""async () => {
+          hass={...hass,states:{...hass.states,'number.left_back_position':{...hass.states['number.left_back_position'],state:'42'}}};
+          card.hass=hass;await card.updateComplete;
+          await card.shadowRoot.querySelector('dialog adjustable-bed-card').updateComplete;
+        }""")
+        assert "Back 42°" in await dialog.locator(".bed-graphic-label").all_text_contents()
         await dialog.get_by_role("button", name="Close", exact=True).click()
-        assert await card.locator("dialog").count() == 0
+        await card.locator("dialog").wait_for(state="detached")
         await card.locator(".compact-graphic").click()
         await page.keyboard.press("Escape")
-        assert await card.locator("dialog").count() == 0
+        await card.locator("dialog").wait_for(state="detached")
         assert await page.evaluate("calls.length") == call_count
+        # Dialog overrides can hide sections without changing the underlying
+        # compact card or navigating to another device.
+        await page.evaluate(
+            "configure({device_id:'left',open_dialog:true,dialog_config:{show_graphic:false,show_memory:false}})"
+        )
+        await card.locator(".compact-graphic").click()
+        assert await card.locator("dialog .bed-graphic").count() == 0
+        assert await card.locator("dialog .section-heading").filter(has_text="Memory").count() == 0
+        await card.locator("dialog").get_by_role("button", name="Close", exact=True).click()
+        await card.locator("dialog").wait_for(state="detached")
+        # Abandoning the dialog mid-hold still sends STOP to the held bed.
+        await page.evaluate("configure({device_id:'left',open_dialog:true})")
+        await card.locator(".compact-graphic").click()
+        await card.locator("dialog").get_by_role("button", name="Up", exact=True).first.focus()
+        await page.keyboard.down("Space")
+        await page.wait_for_function(
+            "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='open_cover')"
+        )
+        await page.keyboard.press("Escape")
+        await page.keyboard.up("Space")
+        await card.locator("dialog").wait_for(state="detached")
+        assert await page.evaluate(
+            "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
+        )
         await page.evaluate(
             "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
         )

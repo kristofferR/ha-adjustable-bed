@@ -22,7 +22,8 @@ test("bed graphic maps one upper and one lower feedback axis", () => {
 test("lumbar is selected as a distinct middle section, not the pillow or head tilt", () => {
   const head = motor("head"), lumbar = motor("lumbar"), feet = motor("feet");
   expect(selectBedGraphicMotors([head, motor("tilt"), lumbar, feet])).toEqual({upper: head, middle: lumbar, lower: feet});
-  expect(bedGraphicMotorOrder([head, feet, lumbar]).map(m => m.key)).toEqual(["head", "lumbar", "feet"]);
+  expect(bedGraphicMotorOrder([head, feet, lumbar]).map(m => m.key)).toEqual(["head", "feet", "lumbar"]);
+  expect(bedGraphicMotorOrder([head, feet, lumbar], true).map(m => m.key)).toEqual(["head", "lumbar", "feet"]);
 });
 
 test("three-section geometry gives lumbar its own space and independent lift", () => {
@@ -60,7 +61,8 @@ test("bed graphic accepts degree and percentage feedback for both panels", () =>
     },
   } as HomeAssistant;
 
-  expect(bedHasGraphicFeedback(bed, hass)).toBe(true);
+  expect(bedHasGraphicFeedback(bed, hass)).toBe(false);
+  expect(bedHasGraphicFeedback(bed, hass, true)).toBe(true);
   hass.states["number.bed_legs"].attributes.unit_of_measurement = "°";
   expect(bedHasGraphicFeedback(bed, hass)).toBe(true);
   hass.states["number.bed_legs"].attributes.unit_of_measurement = "cm";
@@ -69,7 +71,16 @@ test("bed graphic accepts degree and percentage feedback for both panels", () =>
 
 const panelFor = (state: string, unit: string) => bedGraphicPanel(motor("head"), {
   states: { "number.bed_head": { state, attributes: { unit_of_measurement: unit } } },
-} as HomeAssistant);
+} as HomeAssistant, true);
+
+test("percentage graphics are opt-in while measured degree feedback keeps working", () => {
+  const hass = {states: {"number.bed_head": {state: "50", attributes: {unit_of_measurement: "%"}}}} as HomeAssistant;
+  expect(bedGraphicPanel(motor("head"), hass)).toBeUndefined();
+  expect(bedGraphicPanel(motor("head"), hass, false)).toBeUndefined();
+  expect(bedGraphicPanel(motor("head"), hass, true)?.readout).toBe("50%");
+  hass.states["number.bed_head"].attributes.unit_of_measurement = "°";
+  expect(bedGraphicPanel(motor("head"), hass)?.angle).toBe(50);
+});
 
 test("percentage poses preserve percent labels at flat, intermediate and full travel", () => {
   expect(panelFor("0", "%")).toEqual({ angle: 0, readout: "0%" });

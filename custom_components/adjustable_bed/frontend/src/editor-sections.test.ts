@@ -85,7 +85,8 @@ test("visual editor offers the graphic for degree and percentage panel groups", 
     },
   } as HomeAssistant;
 
-  expect(presentSections(bed, hass).graphic).toBe(true);
+  expect(presentSections(bed, hass).graphic).toBe(false);
+  expect(presentSections(bed, hass, {type: "custom:adjustable-bed-card", show_percentage_graphic: true}).graphic).toBe(true);
   hass.states["number.bed_legs"] = state("number.bed_legs", "°");
   expect(presentSections(bed, hass).graphic).toBe(true);
   bed.motors.pop();
