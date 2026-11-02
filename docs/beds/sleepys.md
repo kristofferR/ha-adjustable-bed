@@ -245,11 +245,13 @@ Arbitrary color uses `5A E0 04 02 [R] [G] [B] A5`, for example
 hardware tests on a Sleepy's Elite (#557), not from the Sleepy's app, which only
 offers preset colors:
 
-- The ON frame (`0x73`) resets the LEDs to white. An RGB frame also lights the
-  LEDs from OFF, so the integration turns them on with the last selected color
-  (default white) and never sends ON. This avoids a white flash.
-- After the RGB frame, the integration resends the last selected level 1-6 to
-  restore brightness. Brightness frames keep the current color.
+- The ON frame (`0x73`) resets the LEDs to white. On that reporter's base an
+  RGB frame also lights the LEDs from OFF, but a split Sleepy's Elite with two
+  STAR `252201` controllers (hardware 22, software 103) ignores RGB and
+  brightness frames while the LEDs are off (#702). The integration therefore
+  always sends ON first, then the selected color, then the last selected level
+  1-6. Bases that reset to white on ON show a brief white flash.
+- Brightness frames keep the current color.
 - Levels above 6 (`07` through `FF`) had no effect on the hardware.
 - The RGB light entity maps Home Assistant brightness onto levels 1-6. The light
   level number entity still covers 0-6.
