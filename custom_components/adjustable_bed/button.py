@@ -801,7 +801,10 @@ def _button_entities_for(
 
     if controller is not None:
         _async_migrate_massage_intensity_button_unique_ids(hass, coordinator)
-        _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
+        # Unresolved capabilities (for example Linak memory slots) are not proof
+        # that a button is gone, so keep existing entities until discovery ends.
+        if controller.controller_entity_discovery_complete:
+            _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
 
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
