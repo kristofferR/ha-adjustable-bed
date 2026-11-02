@@ -4,6 +4,7 @@
 // is robust across all supported bed types — a section only appears when its
 // entities exist.
 import type {
+  BedSide,
   BedEntities,
   EntityRegistryDisplayEntry,
   HomeAssistant,
@@ -13,7 +14,7 @@ import type {
 } from "./types";
 
 export const PLATFORM = "adjustable_bed";
-export type BedSide = "left" | "right" | "both";
+export type { BedSide } from "./types";
 
 // The trailing side word of a key. Whether it is a paired-side suffix or part
 // of the control's own name (SIMMONS "Inclined left") depends on the device.
@@ -76,6 +77,16 @@ const RICHMAT_MH_ANGLE_MOTORS: Record<string, string> = {
   pillow: "pillow",
 };
 
+// These covers use a side-wide controller STOP rather than an actuator STOP.
+const SIDE_WIDE_STOP_KEYS = new Set([
+  "elevate_both",
+  "starcode_m1x12_part_1",
+  "starcode_m1x12_part_2",
+  "starcode_m1x12_part_4",
+  "starcode_m1x12_part_8",
+  "starcode_m1x12_part_16",
+]);
+
 const domainOf = (entityId: string): string => entityId.split(".", 1)[0];
 
 // The translation_key the integration assigned, falling back to the registry
@@ -120,7 +131,7 @@ export function bedEntitiesForDevice(
   const motor = (key: string): MotorEntity => {
     let m = motorMap.get(key);
     if (!m) {
-      m = { key };
+      m = SIDE_WIDE_STOP_KEYS.has(key) ? { key, coverStopScope: "side" } : { key };
       motorMap.set(key, m);
     }
     return m;
@@ -159,11 +170,34 @@ export function bedEntitiesForDevice(
 
     switch (domain) {
       case "cover":
-        motor(key).cover = id;
+        {
+          const selectedMotor = motor(key);
+          selectedMotor.cover = id;
+          const attributes = hass.states[id]?.attributes;
+          if (
+            (key === "back" || key === "legs" || key === "lumbar") &&
+            typeof attributes?.held_control_up === "string" &&
+            typeof attributes?.held_control_down === "string"
+          ) {
+            selectedMotor.timedMove = { deviceId, motor: key };
+          }
+        }
         break;
 
       case "sensor":
         if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
+        else if (key.startsWith("reverie_") && key.endsWith("_massage_intensity")) {
+          (bed.massage.states ??= []).push(id);
+        }
+        else if (
+          key === "reverie_pairlink_massage_mode" ||
+          key === "reverie_pairlink_massage_timer"
+        ) {
+          (bed.massage.states ??= []).push(id);
+        }
+        else if (key === "reverie_massage_wave") {
+          (bed.massage.states ??= []).push(id);
+        }
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
         // INNOVA reports its massage timer indicator; the app has no timer select.
@@ -172,10 +206,18 @@ export function bedEntitiesForDevice(
 
       case "number":
         if (key.endsWith("_position")) motor(key.slice(0, -9)).position = id;
+        else if (key === "reverie_body_tilt") motor("lumbar").position = id;
         else if (!selectedSide && split.side && split.key.endsWith("_position"))
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
+        else if (
+          key === "reverie_wave_level" ||
+          key === "reverie_massage_wave" ||
+          key === "reverie_stk_head_wave" ||
+          key === "reverie_stk_global_massage"
+        ) bed.massage.numbers.push(id);
+        else if (key === "reverie_pairlink_massage_timer") bed.massage.timer = id;
         else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
@@ -319,11 +361,29 @@ export function bedEntitiesForDevice(
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
-          const m = motor(match[1]);
+          const entityMotorKey = match[1];
+          const m = motor(entityMotorKey);
           m[match[2] as "up" | "down"] = id;
-          const heldMotor = hass.states[id]?.attributes.paired_hold_motor;
-          if (heldMotor === "back" || heldMotor === "legs") {
-            m.timedMove = { deviceId, motor: heldMotor };
+          const supportedHoldMotor = entityMotorKey === "back"
+            ? "back"
+            : entityMotorKey === "legs"
+              ? "legs"
+              : entityMotorKey === "lumbar"
+                ? "lumbar"
+              : undefined;
+          const pairedHoldMotor = hass.states[id]?.attributes.paired_hold_motor;
+          if (pairedHoldMotor === "back" || pairedHoldMotor === "legs" || pairedHoldMotor === "lumbar") {
+            const heldSide = hass.states[id]?.attributes.paired_hold_side;
+            m.timedMove = {
+              deviceId,
+              motor: pairedHoldMotor,
+              ...(heldSide === "both" ? { side: "both" as const } : {}),
+            };
+          } else if (
+            supportedHoldMotor !== undefined &&
+            typeof hass.states[id]?.attributes.held_control === "string"
+          ) {
+            m.timedMove = { deviceId, motor: supportedHoldMotor };
           }
         }
         break;
@@ -342,6 +402,7 @@ export function bedEntitiesForDevice(
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
         else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
+        else if (key === "reverie_pairlink_low_battery") bed.utility.push(id);
         else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
@@ -349,6 +410,13 @@ export function bedEntitiesForDevice(
       case "select":
         if (key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
+        else if (key === "reverie_stk_side")
+          (bed.utilitySelects ??= []).push(id);
+        else if (
+          key === "reverie_pairlink_massage_mode" ||
+          key === "reverie_pairlink_massage_rhythm"
+        )
+          (bed.massage.selects ??= []).push(id);
         else if (key === "light_timer") bed.lights.timer = id;
         // A split bed's local left/right selector routes the motor controls.
         else if (key === "remacro_control_side") bed.controlSide = id;

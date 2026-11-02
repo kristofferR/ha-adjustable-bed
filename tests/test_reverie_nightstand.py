@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.reverie_comfort import (
+    ReverieComfortRequest,
+)
 from custom_components.adjustable_bed.beds.reverie_nightstand import (
     ReverieNightstandCommands,
+    ReverieNightstandController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -17,12 +23,17 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    REVERIE_NIGHTSTAND_HEAD_POSITION_UUID,
     REVERIE_NIGHTSTAND_LED_UUID,
     REVERIE_NIGHTSTAND_LINEAR_FOOT_UUID,
     REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
     REVERIE_NIGHTSTAND_LINEAR_LUMBAR_UUID,
+    REVERIE_NIGHTSTAND_LUMBAR_UUID,
     REVERIE_NIGHTSTAND_PRESETS_UUID,
+    REVERIE_STK_SIDE_DATA_UUID,
+    REVERIE_STK_SIDE_NO_DATA_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -42,6 +53,7 @@ def mock_reverie_nightstand_config_entry_data() -> dict:
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: False,
         CONF_PREFERRED_ADAPTER: "auto",
+        CONF_PROTOCOL_VARIANT: "R510L",
     }
 
 
@@ -77,7 +89,7 @@ class TestReverieNightstandCommands:
 
     def test_led_control_values(self):
         """LED control values should be correct."""
-        assert ReverieNightstandCommands.LED_ON == 0x64  # 100 decimal
+        assert ReverieNightstandCommands.LED_ON == 64
         assert ReverieNightstandCommands.LED_OFF == 0x00
 
     def test_preset_mode_values(self):
@@ -94,11 +106,11 @@ class TestReverieNightstandCommands:
         assert ReverieNightstandCommands.memory_preset(4) == 0x07
 
     def test_store_memory_calculation(self):
-        """store_memory() should return memory_num + 0x83."""
-        assert ReverieNightstandCommands.store_memory(1) == 0x84
-        assert ReverieNightstandCommands.store_memory(2) == 0x85
-        assert ReverieNightstandCommands.store_memory(3) == 0x86
-        assert ReverieNightstandCommands.store_memory(4) == 0x87
+        """Store values use the source's decimal slot-plus-83 conversion."""
+        assert ReverieNightstandCommands.store_memory(1) == 0x54
+        assert ReverieNightstandCommands.store_memory(2) == 0x55
+        assert ReverieNightstandCommands.store_memory(3) == 0x56
+        assert ReverieNightstandCommands.store_memory(4) == 0x57
 
 
 # -----------------------------------------------------------------------------
@@ -229,12 +241,10 @@ class TestReverieNightstandMovement:
 
         await coordinator.controller.move_head_up()
 
-        assert mock_client.write_gatt_char.called
-        # First call should be to head characteristic with MOTOR_UP
+        assert mock_client.write_gatt_char.call_count == 1
         calls = mock_client.write_gatt_char.call_args_list
-        first_call = calls[0]
-        assert first_call[0][0] == REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID
-        assert first_call[0][1] == bytes([ReverieNightstandCommands.MOTOR_UP])
+        assert calls[0][0][0] == REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID
+        assert calls[0][0][1] == bytes([ReverieNightstandCommands.MOTOR_UP])
 
     async def test_move_legs_up_writes_to_foot_char(
         self,
@@ -252,9 +262,9 @@ class TestReverieNightstandMovement:
         await coordinator.controller.move_legs_up()
 
         calls = mock_client.write_gatt_char.call_args_list
-        first_call = calls[0]
-        assert first_call[0][0] == REVERIE_NIGHTSTAND_LINEAR_FOOT_UUID
-        assert first_call[0][1] == bytes([ReverieNightstandCommands.MOTOR_UP])
+        assert len(calls) == 1
+        assert calls[0][0][0] == REVERIE_NIGHTSTAND_LINEAR_FOOT_UUID
+        assert calls[0][0][1] == bytes([ReverieNightstandCommands.MOTOR_UP])
 
     async def test_move_lumbar_up_writes_to_lumbar_char(
         self,
@@ -272,30 +282,29 @@ class TestReverieNightstandMovement:
         await coordinator.controller.move_lumbar_up()
 
         calls = mock_client.write_gatt_char.call_args_list
-        first_call = calls[0]
-        assert first_call[0][0] == REVERIE_NIGHTSTAND_LINEAR_LUMBAR_UUID
-        assert first_call[0][1] == bytes([ReverieNightstandCommands.MOTOR_UP])
+        assert len(calls) == 1
+        assert calls[0][0][0] == REVERIE_NIGHTSTAND_LINEAR_LUMBAR_UUID
+        assert calls[0][0][1] == bytes([ReverieNightstandCommands.MOTOR_UP])
 
-    async def test_movement_sends_stop_after(
+    async def test_movement_release_is_a_single_explicit_axis_stop(
         self,
         hass: HomeAssistant,
         mock_reverie_nightstand_config_entry,
         mock_coordinator_connected,
     ):
-        """Movement should send STOP after motor command."""
+        """An independent release writes one STOP to the same head axis."""
         coordinator = AdjustableBedCoordinator(
             hass, mock_reverie_nightstand_config_entry
         )
         await coordinator.async_connect()
         mock_client = coordinator._client
 
-        await coordinator.controller.move_head_up()
+        await coordinator.controller.move_head_stop()
 
         calls = mock_client.write_gatt_char.call_args_list
-        # Last call should be STOP to head char
-        last_call = calls[-1]
-        assert last_call[0][0] == REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID
-        assert last_call[0][1] == bytes([ReverieNightstandCommands.MOTOR_STOP])
+        assert len(calls) == 1
+        assert calls[0][0][0] == REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID
+        assert calls[0][0][1] == bytes([ReverieNightstandCommands.MOTOR_STOP])
 
     async def test_stop_all_writes_to_all_motor_chars(
         self,
@@ -325,6 +334,95 @@ class TestReverieNightstandMovement:
         # All should be STOP command
         for call in calls:
             assert call[0][1] == bytes([ReverieNightstandCommands.MOTOR_STOP])
+
+    async def test_bounded_hold_sends_one_press_then_same_axis_stop(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_reverie_nightstand_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        with patch("custom_components.adjustable_bed.beds.reverie_nightstand.asyncio.sleep"):
+            await coordinator.controller.hold_control("back_up", 250)
+
+        calls = mock_client.write_gatt_char.call_args_list
+        assert [call.args[1] for call in calls] == [b"\x01", b"\x00"]
+        assert [call.args[0] for call in calls] == [
+            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
+            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
+        ]
+
+    async def test_stk_side_drift_releases_the_captured_p1_route(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        client = coordinator._client
+        controller = ReverieNightstandController(coordinator, model="STK")
+        controller._set_stk_side("1")
+
+        await controller.move_head_up()
+        controller._set_stk_side("2")
+        await controller.move_head_stop()
+
+        assert [call.args[0] for call in client.write_gatt_char.call_args_list] == [
+            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
+            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
+        ]
+        assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+            b"\x01",
+            b"\x00",
+        ]
+
+    async def test_stk_side_drift_releases_the_captured_p3_route(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        client = coordinator._client
+        controller = ReverieNightstandController(coordinator, model="STK")
+        controller._set_stk_side("2")
+
+        await controller.move_head_up()
+        controller._set_stk_side("1")
+        await controller.move_head_stop()
+
+        calls = client.write_gatt_char.call_args_list
+        assert [(call.args[0], call.args[1]) for call in calls] == [
+            (REVERIE_STK_SIDE_DATA_UUID, bytes((2, 0x01))),
+            (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((2, 0xFF))),
+        ]
+
+    async def test_absolute_position_uses_the_evidence_low_byte(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_reverie_nightstand_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.set_motor_position("head", 300)
+
+        mock_client.write_gatt_char.assert_called_once_with(
+            REVERIE_NIGHTSTAND_HEAD_POSITION_UUID,
+            b"\x2c",
+            response=True,
+        )
 
 
 class TestReverieNightstandPresets:
@@ -416,7 +514,7 @@ class TestReverieNightstandPresets:
         mock_reverie_nightstand_config_entry,
         mock_coordinator_connected,
     ):
-        """program_memory(1) should write 0x84 to presets characteristic."""
+        """program_memory(1) writes the accepted 0x54 slot byte."""
         coordinator = AdjustableBedCoordinator(
             hass, mock_reverie_nightstand_config_entry
         )
@@ -428,7 +526,7 @@ class TestReverieNightstandPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call = calls[0]
         assert first_call[0][0] == REVERIE_NIGHTSTAND_PRESETS_UUID
-        assert first_call[0][1] == bytes([0x84])  # store_memory(1) = 0x84
+        assert first_call[0][1] == bytes([0x54])
 
     async def test_program_memory_4_writes_store_value(
         self,
@@ -436,7 +534,7 @@ class TestReverieNightstandPresets:
         mock_reverie_nightstand_config_entry,
         mock_coordinator_connected,
     ):
-        """program_memory(4) should write 0x87 to presets characteristic."""
+        """program_memory(4) writes the accepted 0x57 slot byte."""
         coordinator = AdjustableBedCoordinator(
             hass, mock_reverie_nightstand_config_entry
         )
@@ -448,7 +546,7 @@ class TestReverieNightstandPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call = calls[0]
         assert first_call[0][0] == REVERIE_NIGHTSTAND_PRESETS_UUID
-        assert first_call[0][1] == bytes([0x87])  # store_memory(4) = 0x87
+        assert first_call[0][1] == bytes([0x57])
 
 
 class TestReverieNightstandLights:
@@ -460,7 +558,7 @@ class TestReverieNightstandLights:
         mock_reverie_nightstand_config_entry,
         mock_coordinator_connected,
     ):
-        """lights_on should write LED_ON (0x64) to LED characteristic."""
+        """lights_on restores known brightness, or falls back to 64."""
         coordinator = AdjustableBedCoordinator(
             hass, mock_reverie_nightstand_config_entry
         )
@@ -494,6 +592,38 @@ class TestReverieNightstandLights:
         assert first_call[0][0] == REVERIE_NIGHTSTAND_LED_UUID
         assert first_call[0][1] == bytes([ReverieNightstandCommands.LED_OFF])
 
+    async def test_lights_on_restores_last_nonzero_brightness(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.read_gatt_char = AsyncMock(
+            side_effect=[
+                bytes((41,)),
+                bytes((1, 41, 10, 20, 30)),
+                bytes((0,)),
+                bytes((0,)),
+                bytes((0,)),
+            ]
+        )
+
+        await coordinator.controller.read_light_state()
+        await coordinator.controller.lights_off()
+        await coordinator.controller.lights_on()
+
+        writes = [
+            call.args[1]
+            for call in mock_client.write_gatt_char.call_args_list
+            if call.args[0] == REVERIE_NIGHTSTAND_LED_UUID
+        ]
+        assert writes == [bytes((0,)), bytes((41,))]
+
 
 class TestReverieNightstandMultiCharacteristic:
     """Test Reverie Nightstand multi-characteristic protocol."""
@@ -522,3 +652,76 @@ class TestReverieNightstandMultiCharacteristic:
         assert ReverieNightstandCommands.MOTOR_STOP <= 0xFF
         assert ReverieNightstandCommands.LED_ON <= 0xFF
         assert ReverieNightstandCommands.LED_OFF <= 0xFF
+
+    async def test_stk_routine_uses_live_preserved_axes_from_notifications(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Normal STK notifications produce the exact routine preservation keys."""
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        client = coordinator._client
+        assert client is not None
+
+        controller = ReverieNightstandController(coordinator, model="STK")
+        coordinator._controller = controller
+        await controller.start_notify()
+        handlers = {
+            call.args[0]: call.args[1]
+            for call in client.start_notify.call_args_list
+        }
+        handlers[REVERIE_NIGHTSTAND_HEAD_POSITION_UUID](None, bytearray((25,)))
+        handlers[REVERIE_NIGHTSTAND_LUMBAR_UUID](None, bytearray((54,)))
+
+        assert coordinator.controller_state["reverie_stk_head_position"] == 25
+        assert coordinator.controller_state["reverie_stk_head2_position"] == 54
+
+        controller._set_stk_side("1")
+        request = ReverieComfortRequest(
+            head_position=25,
+            foot_position=40,
+            lumbar_position=30,
+            head_massage=1,
+            foot_massage=2,
+        )
+        await controller.async_set_comfort(request)
+        client.write_gatt_char.assert_not_awaited()
+        await controller.async_start_routine([(request, 1)])
+
+        client.write_gatt_char.assert_awaited_with(
+            REVERIE_NIGHTSTAND_PRESETS_UUID,
+            bytes.fromhex("0019283608040400000000"),
+            response=True,
+        )
+        controller._cancel_routine()
+
+    async def test_v1_negative_lumbar_routine_is_a_source_defined_no_write(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        client = coordinator._client
+        assert client is not None
+        controller = ReverieNightstandController(coordinator, model="5D")
+        coordinator._controller = controller
+        request = ReverieComfortRequest(
+            head_position=25,
+            foot_position=40,
+            lumbar_position=-1,
+            head_massage=0,
+            foot_massage=0,
+        )
+
+        await controller.async_start_routine([(request, 1)])
+
+        client.write_gatt_char.assert_not_awaited()
+        controller._cancel_routine()

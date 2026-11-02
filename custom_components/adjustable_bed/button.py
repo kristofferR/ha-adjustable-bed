@@ -19,7 +19,6 @@ from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
-    BED_TYPE_OCTO,
     DOMAIN,
     PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
@@ -34,7 +33,12 @@ from .paired_coordinator import (
 from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
+    from .beds.base import (
+        BedController,
+        ControllerButtonSpec,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+    )
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -1299,6 +1303,19 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             self._spec.press_fn, cancel_running=self._spec.cancel_movement
         )
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the declared held control to the bounded card/service path."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = self._spec.hold
+        if hold is not None:
+            attributes.update(
+                held_control=hold.control,
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+            )
+        return attributes
+
 
 def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str:
     """Keep legacy mock/duck coordinators compatible with the parent namespace."""
@@ -1397,6 +1414,39 @@ class PairedBedCombinedButton(ButtonEntity):
             resource=_button_resource(description.key),
         )
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose a bounded Both timed move when both sides own that motor."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        action = self.entity_description.key
+        motor = next(
+            (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),
+            None,
+        )
+        if motor is None:
+            return attributes
+        candidates = ("back", "head") if motor == "head" else ("legs", "feet")
+        common = next(
+            (
+                candidate
+                for candidate in candidates
+                if _paired_motor_available(self._coordinator, candidate)
+            ),
+            None,
+        )
+        if common is not None:
+            hold = _paired_motor_hold_spec(self._coordinator, common)
+            direction = "up" if action.endswith("_up") else "down"
+            if hold is not None:
+                attributes.update(
+                    paired_hold_motor=common,
+                    paired_hold_side=SIDE_BOTH,
+                    held_control=(hold.up_control if direction == "up" else hold.down_control),
+                    hold_start_delay_ms=hold.start_delay_ms,
+                    hold_release_delay_ms=hold.release_delay_ms,
+                )
+        return attributes
+
 
 class PairedBedCombinedMotorButton(ButtonEntity):
     """A 'move both sides' up/down motion button on the paired parent device.
@@ -1422,6 +1472,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._coordinator = coordinator
         self._direction = direction
         self._motor_key = spec.key
+        self._hold_spec = spec.hold
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
@@ -1449,16 +1500,23 @@ class PairedBedCombinedMotorButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Advertise the existing timed action for held OCTO pair movement."""
-        attributes = dict(self._attr_extra_state_attributes or {})
-        if (
-            not isinstance(self._coordinator, SingleAddressPairedCoordinator)
-            and len(self._coordinator.children) == 2
-            and self._coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
-            and self._motor_key in {"back", "legs"}
-            and all(child.bed_type == BED_TYPE_OCTO for child in self._coordinator.children.values())
-        ):
-            attributes["paired_hold_motor"] = self._motor_key
+        """Advertise this common motor through the bounded paired action."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = _paired_motor_hold_spec(self._coordinator, self._motor_key)
+        if hold is not None:
+            attributes.update(
+                **(
+                    {
+                        "paired_hold_motor": self._motor_key,
+                        "paired_hold_side": SIDE_BOTH,
+                    }
+                    if self._motor_key in {"back", "legs"}
+                    else {}
+                ),
+                held_control=(hold.up_control if self._direction == "up" else hold.down_control),
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+            )
         return attributes
 
     @property
@@ -1468,9 +1526,57 @@ class PairedBedCombinedMotorButton(ButtonEntity):
 
     async def async_press(self) -> None:
         """Move this motor on both sides."""
+        if self._hold_spec is not None:
+            # Sequential/incompatible pairs omit card hold metadata. Their
+            # ordinary button press must still finish each receiver's hold and
+            # release, using current per-target validation and admission.
+            from .services import _async_timed_move
+
+            await _async_timed_move(
+                [(self._coordinator, SIDE_BOTH)], self._motor_key, self._direction, 1000
+            )
+            return
         await self._coordinator.async_execute_controller_command(
             self._move_fn,
             side=SIDE_BOTH,
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:
+    """Require an exact current motor capability on every physical side."""
+    return bool(coordinator.children) and all(
+        (controller := child.capability_controller) is not None
+        and any(spec.key == motor for spec in controller.motor_control_specs)
+        for child in coordinator.children.values()
+    )
+
+
+def _paired_motor_hold_spec(
+    coordinator: PairedBedCoordinator,
+    motor: str,
+) -> ControllerMotorHoldSpec | None:
+    """Return a Both hold contract only when every live side can match it."""
+    if (
+        coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+        or len(coordinator.children) != 2
+    ):
+        return None
+
+    common: ControllerMotorHoldSpec | None = None
+    for child in coordinator.children.values():
+        controller = child.capability_controller
+        if controller is None:
+            return None
+        spec = next(
+            (candidate for candidate in controller.motor_control_specs if candidate.key == motor),
+            None,
+        )
+        if spec is None or spec.hold is None:
+            return None
+        if common is None:
+            common = spec.hold
+        elif spec.hold != common:
+            return None
+    return common

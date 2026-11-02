@@ -474,6 +474,7 @@ BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
 BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
 BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
+BED_TYPE_REVERIE_PAIRLINK: Final = "reverie_pairlink"  # Reverie R510L/Harmoniq mesh
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
 BED_TYPE_LIMOSS: Final = "limoss"  # Limoss / Stawett TEA-encrypted protocol
 BED_TYPE_LIMOSS_REMOTE: Final = "limoss_remote"  # Explicit Limoss Remote app
@@ -607,6 +608,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_FFE,
     # Reverie Nightstand (Protocol 110)
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     # Comfort Motion / Lierda protocol
     BED_TYPE_COMFORT_MOTION,
     # Limoss / Stawett
@@ -699,6 +701,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_MOTOSLEEP,
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_REVERIE_PAIRLINK,
         BED_TYPE_JIECANG,
         BED_TYPE_COMFORT_MOTION,
         BED_TYPE_ERGOMOTION,
@@ -1000,6 +1003,28 @@ REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID: Final = "db801080-f324-29c3-38d1-85c0c2e86
 REVERIE_NIGHTSTAND_LED_UUID: Final = "db8010a0-f324-29c3-38d1-85c0c2e86885"
 REVERIE_NIGHTSTAND_RGB_UUID: Final = "db8010a7-f324-29c3-38d1-85c0c2e86885"
 REVERIE_NIGHTSTAND_PRESETS_UUID: Final = "db8010d0-f324-29c3-38d1-85c0c2e86885"
+REVERIE_STK_SIDE_DATA_UUID: Final = "db8010a5-f324-29c3-38d1-85c0c2e86885"
+REVERIE_STK_SIDE_NO_DATA_UUID: Final = "db8010a6-f324-29c3-38d1-85c0c2e86885"
+
+# Reverie Pairlink central and explicit local BlueZ host-peripheral roles.
+REVERIE_PAIRLINK_SERVICE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
+REVERIE_PAIRLINK_WRITE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
+REVERIE_PAIRLINK_NOTIFY_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
+REVERIE_PAIRLINK_LP_SERVICE_UUID: Final = "0000ffd0-0000-1000-8000-00805f9b34fb"
+REVERIE_PAIRLINK_LP_WRITE_UUID: Final = "0000ffd1-0000-1000-8000-00805f9b34fb"
+REVERIE_PAIRLINK_LP_NOTIFY_UUID: Final = "0000ffd2-0000-1000-8000-00805f9b34fb"
+CONF_PAIRLINK_ROLE: Final = "pairlink_role"
+CONF_PAIRLINK_HOST_SOURCE: Final = "pairlink_host_source"
+CONF_PAIRLINK_HOME_ID: Final = "pairlink_home_id"
+CONF_PAIRLINK_PASSWORD_TEXT: Final = "pairlink_password_text"
+CONF_PAIRLINK_PASSWORD_HEX: Final = "pairlink_password_hex"
+PAIRLINK_ROLE_CENTRAL: Final = "central"
+PAIRLINK_ROLE_PERIPHERAL: Final = "peripheral"
+PAIRLINK_MODEL_CHOICES: Final = {
+    "Other": "Other",
+    "R510L": "R510L",
+    "Harmoniq Upgrade": "Harmoniq Upgrade",
+}
 
 # Okimat specific UUIDs (same as Leggett Okin - requires pairing)
 OKIMAT_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
@@ -2704,6 +2729,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_REVERIE_PAIRLINK,
     }
 )
 
@@ -2721,6 +2747,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_REVERIE_PAIRLINK,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_JENSEN,
         BED_TYPE_LIMOSS,
@@ -2744,6 +2771,14 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
     """
     if not bed_type:
         return False
+    if bed_type in (
+        BED_TYPE_REVERIE,
+        BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_REVERIE_PAIRLINK,
+    ):
+        from .beds.reverie_profiles import resolve_reverie_model
+
+        return resolve_reverie_model(protocol_variant).positions
     if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
         return False
     if bed_type in BEDS_WITH_POSITION_FEEDBACK:
@@ -2803,6 +2838,8 @@ BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
         BED_TYPE_SLEEP_NUMBER_MCR,
         BED_TYPE_SLEEPYS_BOX25,
         BED_TYPE_SLEEPSTAR,
+        BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_REVERIE_PAIRLINK,
     }
 )
 

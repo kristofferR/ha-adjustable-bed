@@ -29,7 +29,13 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
-import { MotorHold, movementPulse } from "./hold";
+import {
+  activateWithoutPointer,
+  MotorHold,
+  movementPulse,
+  registerHoldFocusLoss,
+  stopCardMotorHold,
+} from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
 import { localize } from "./localize";
 import {
@@ -49,6 +55,8 @@ interface PairedPane {
   label: string;
   bed: BedEntities;
   graphicTone?: BedGraphicTone;
+  stopScope?: string[];
+  remainingStopIds?: string[];
   synchronizationTarget?: {
     deviceId: string;
     side?: SynchronizeSide;
@@ -99,6 +107,31 @@ export class AdjustableBedCard extends LitElement {
       if (stopEntityId) this._stopCompactTarget(stopEntityId);
     },
   });
+  private _focusLossCleanup: (() => void) | null = null;
+
+  private readonly _windowPointerEnd = (event: PointerEvent): void => {
+    this._hold.endActiveFromPointer(
+      event.pointerId,
+      event.type === "pointercancel" || event.button === 0,
+    );
+  };
+
+  private readonly _windowKeyUp = (event: KeyboardEvent): void => {
+    if (event.key === "Enter" || event.key === " ") this._hold.endKeyboard(undefined, undefined, event.key);
+  };
+
+  public override connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener("pointerup", this._windowPointerEnd);
+    window.addEventListener("pointercancel", this._windowPointerEnd);
+    window.addEventListener("keyup", this._windowKeyUp);
+    this._focusLossCleanup = registerHoldFocusLoss(
+      window,
+      document,
+      () => document.visibilityState === "hidden",
+      () => this._hold.releaseOnFocusLoss(),
+    );
+  }
 
   public static async getConfigElement(): Promise<HTMLElement> {
     return document.createElement("adjustable-bed-card-editor");
@@ -115,8 +148,8 @@ export class AdjustableBedCard extends LitElement {
   public setConfig(config: AdjustableBedCardConfig): void {
     if (!config) throw new Error("Invalid configuration");
     if (this._config) {
-      this._hold.abandon();
-      this._stopCompact();
+      if (this._compactStopTargets.size > 0) this._stopCompact();
+      else this._hold.abandon();
     }
     if (config.device_id !== this._config?.device_id ||
         config.default_target !== this._config?.default_target) {
@@ -143,6 +176,11 @@ export class AdjustableBedCard extends LitElement {
   }
 
   public override disconnectedCallback(): void {
+    window.removeEventListener("pointerup", this._windowPointerEnd);
+    window.removeEventListener("pointercancel", this._windowPointerEnd);
+    window.removeEventListener("keyup", this._windowKeyUp);
+    this._focusLossCleanup?.();
+    this._focusLossCleanup = null;
     super.disconnectedCallback();
     // Navigating away mid-hold never delivers pointerup, which would leave the
     // repeat loop running forever and a cover-backed motor moving with nothing
@@ -217,6 +255,8 @@ export class AdjustableBedCard extends LitElement {
     bed: BedEntities,
     graphicTone: BedGraphicTone = "theme",
     graphicOverride?: typeof nothing | TemplateResult,
+    stopScope?: string[],
+    remainingStopIds?: string[],
   ): (typeof nothing | TemplateResult)[] {
     const c = this._config!;
     const render: Record<string, () => typeof nothing | TemplateResult> = {
@@ -224,7 +264,8 @@ export class AdjustableBedCard extends LitElement {
         c.show_graphic !== false
           ? (graphicOverride ?? this._graphic(bed, graphicTone))
           : nothing,
-      motors: () => (c.show_motors !== false ? this._motors(bed) : nothing),
+      motors: () => (c.show_motors !== false
+        ? this._motors(bed, stopScope, remainingStopIds) : nothing),
       firmness: () => (c.show_firmness !== false ? this._firmness(bed) : nothing),
       presets: () => (c.show_presets !== false ? this._presets(bed) : nothing),
       memory: () => (c.show_memory !== false ? this._memory(bed) : nothing),
@@ -252,6 +293,25 @@ export class AdjustableBedCard extends LitElement {
       // from display order. A renamed child can appear in either visual pane.
       synchronizationTarget: { deviceId: id },
     }));
+    const childStops = sides.flatMap((side) => side.bed.stop ? [side.bed.stop] : []);
+    const parentStop = parentBed.stop;
+    const bothStopScope = [...new Set([
+      ...(parentStop ? [parentStop] : []),
+      ...childStops,
+    ])];
+    const pairedPanes: PairedPane[] = [
+      {
+        key: "both",
+        label: localize(hass, "card.both_sides"),
+        bed: parentBed,
+        stopScope: bothStopScope,
+        remainingStopIds: childStops,
+      },
+      ...sides.map((side) => ({
+        ...side,
+        stopScope: side.bed.stop ? [side.bed.stop] : [],
+      })),
+    ];
     this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
       this._collectWatched(b),
     );
@@ -261,14 +321,7 @@ export class AdjustableBedCard extends LitElement {
     if (bedIsEmpty(parentBed) && sides.every((s) => bedIsEmpty(s.bed)))
       return this._notice("card.no_entities");
 
-    return this._renderPairedCard(parentId, [
-      {
-        key: "both",
-        label: localize(hass, "card.both_sides"),
-        bed: parentBed,
-      },
-      ...sides,
-    ]);
+    return this._renderPairedCard(parentId, pairedPanes);
   }
 
   private _renderSingleAddressPaired(deviceId: string): TemplateResult {
@@ -278,6 +331,9 @@ export class AdjustableBedCard extends LitElement {
       left: bedEntitiesForDevice(hass, deviceId, "left"),
       right: bedEntitiesForDevice(hass, deviceId, "right"),
     };
+    const childStops = [beds.left.stop, beds.right.stop].filter(
+      (id): id is string => id !== undefined,
+    );
     this._watched = Object.values(beds).flatMap((bed) =>
       this._collectWatched(bed),
     );
@@ -289,12 +345,17 @@ export class AdjustableBedCard extends LitElement {
         key: "both",
         label: localize(hass, "card.both_sides"),
         bed: beds.both,
+        stopScope: [...new Set([beds.both.stop, ...childStops].filter(
+          (id): id is string => id !== undefined,
+        ))],
+        remainingStopIds: childStops,
       },
       {
         key: "left",
         label: localize(hass, "card.left_side"),
         bed: beds.left,
         graphicTone: "left",
+        stopScope: beds.left.stop ? [beds.left.stop] : [],
         synchronizationTarget: { deviceId, side: "left" },
       },
       {
@@ -302,6 +363,7 @@ export class AdjustableBedCard extends LitElement {
         label: localize(hass, "card.right_side"),
         bed: beds.right,
         graphicTone: "right",
+        stopScope: beds.right.stop ? [beds.right.stop] : [],
         synchronizationTarget: { deviceId, side: "right" },
       },
     ]);
@@ -346,6 +408,8 @@ export class AdjustableBedCard extends LitElement {
             active.bed,
             active.graphicTone,
             combined ? this._pairedOverview(sidePanes) : undefined,
+            active.stopScope,
+            active.remainingStopIds,
           )}
           ${combined && this._config?.show_lighting !== false
             ? this._combinedLighting(active.bed, sidePanes)
@@ -408,7 +472,7 @@ export class AdjustableBedCard extends LitElement {
           ${localize(this.hass, "compact.target_missing")}</div>` : nothing}
         ${motors.length ? html`<div class="rows compact-motors">
           ${motors.map((m) => m.cover || m.up || m.down
-            ? this._motorRow(m, bed?.stop, true)
+            ? this._motorRow(m, bed?.stop, true, active?.stopScope, active?.remainingStopIds)
             : this._moreInfoRow(m.position!))}
         </div>` : nothing}
         ${actions.length || movingControls || this._compactStopTargets.size ? html`
@@ -496,8 +560,12 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _stopCompact(bed?: BedEntities): void {
-    this._hold.abandon();
-    for (const id of bed ? compactStopEntities(bed) : []) {
+    const targets = [...new Set([
+      ...(bed ? compactStopEntities(bed) : []),
+      ...this._compactStopTargets.keys(),
+    ])];
+    this._hold.cancelForStopScope(targets);
+    for (const id of targets) {
       if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
     }
     for (const id of this._compactStopTargets.keys()) this._stopCompactTarget(id);
@@ -531,7 +599,6 @@ export class AdjustableBedCard extends LitElement {
 
   private _selectPairedPane(key: string): void {
     if (this._activePairedPane === key) return;
-    this._hold.abandon();
     this._activePairedPane = key;
     // Save mode is intentionally local to the visible side. Leaving a side
     // cancels it so returning later can never expose a stale destructive mode.
@@ -927,7 +994,12 @@ export class AdjustableBedCard extends LitElement {
     };
   }
 
-  private _motors(bed: BedEntities): typeof nothing | TemplateResult {
+  private _motors(
+    bed: BedEntities,
+    stopScope?: string[],
+    remainingStopIds?: string[],
+  ): typeof nothing | TemplateResult {
+    const routedStopScope = stopScope ?? (bed.stop ? [bed.stop] : []);
     const motors = bed.motors.filter((m) => m.cover || m.up || m.down);
     // Motors with movement controls open their position setter from the label.
     const positionRows = bed.motors.filter(
@@ -950,7 +1022,9 @@ export class AdjustableBedCard extends LitElement {
       ${
         motors.length
           ? html`<div class="rows">
-              ${motors.map((m) => this._motorRow(m, bed.stop))}
+              ${motors.map((m) => this._motorRow(
+                m, bed.stop, false, routedStopScope, remainingStopIds,
+              ))}
             </div>`
           : nothing
       }
@@ -963,7 +1037,9 @@ export class AdjustableBedCard extends LitElement {
       }
       ${
         bed.stop
-          ? html`<button class="stop-all" @click=${() => this._hold.stopAll(bed.stop)}>
+          ? html`<button class="stop-all" @click=${() => stopCardMotorHold(
+              this._hold, bed.stop, routedStopScope,
+            )}>
               <ha-icon icon="mdi:stop"></ha-icon>
               <span>${localize(this.hass, "action.stop_all")}</span>
             </button>`
@@ -985,7 +1061,13 @@ export class AdjustableBedCard extends LitElement {
   // is passed in rather than read from card-wide state, which during a paired
   // render would point at the parent for every side. It also backs the
   // press-and-hold release, so a hold on one side stops that side.
-  private _motorRow(m: MotorEntity, stopId?: string, compact = false): TemplateResult {
+  private _motorRow(
+    m: MotorEntity,
+    stopId?: string,
+    compact = false,
+    stopScope?: string[],
+    remainingStopIds?: string[],
+  ): TemplateResult {
     const readout = this._readout(m);
     const canStop = !!m.cover || !!stopId;
     const label = html`
@@ -1002,35 +1084,44 @@ export class AdjustableBedCard extends LitElement {
             >${label}</button>`
           : html`<div class="row-label">${label}</div>`}
         <div class="control-group">
-          ${compact ? this._motorDirection(m, "down", stopId) : nothing}
-          ${this._motorDirection(m, "up", stopId)}
+          ${compact ? this._motorDirection(m, "down", stopId, stopScope, remainingStopIds) : nothing}
+          ${this._motorDirection(m, "up", stopId, stopScope, remainingStopIds)}
           ${compact ? nothing : html`<button
             class="cg-btn"
             aria-label=${localize(this.hass, "action.stop")}
-            @click=${() => this._motorStop(m, stopId)}
+            @click=${() => this._motorStop(m, stopId, stopScope)}
             ?disabled=${!canStop}
           >
             <ha-icon icon="mdi:stop"></ha-icon>
           </button>`}
-          ${compact ? nothing : this._motorDirection(m, "down", stopId)}
+          ${compact ? nothing : this._motorDirection(m, "down", stopId, stopScope, remainingStopIds)}
         </div>
       </div>
     `;
   }
 
-  private _motorDirection(m: MotorEntity, direction: "up" | "down", stopId?: string): TemplateResult {
+  private _motorDirection(
+    m: MotorEntity,
+    direction: "up" | "down",
+    stopId?: string,
+    stopScope?: string[],
+    remainingStopIds?: string[],
+  ): TemplateResult {
     const entityId = m.cover ?? m[direction];
     const canStop = !!m.cover || !!stopId;
     return html`
       <button class="cg-btn"
         aria-label=${localize(this.hass, `action.${direction}`)}
-        @pointerdown=${(e: PointerEvent) => this._startHold(e, m, direction, stopId)}
-        @pointerup=${(e: PointerEvent) => this._endPointerHold(e, m)}
-        @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, m)}
-        @keydown=${(e: KeyboardEvent) => this._startHold(e, m, direction, stopId)}
-        @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m)}
-        @blur=${() => this._endHold(m)}
-        @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, direction, stopId)}
+        @pointerdown=${(e: PointerEvent) => this._startHold(
+          e, m, direction, stopId, stopScope, remainingStopIds,
+        )}
+        @pointerup=${(e: PointerEvent) => this._endPointerHold(e, m, stopId)}
+        @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, m, stopId)}
+        @keydown=${(e: KeyboardEvent) => this._startHold(
+          e, m, direction, stopId, stopScope, remainingStopIds,
+        )}
+        @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m, stopId)}
+        @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, direction, stopId, stopScope)}
         ?disabled=${!entityId || (this._config?.layout === "compact" && (!canStop || !this._available(entityId)))}
       ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
   }
@@ -1452,6 +1543,8 @@ export class AdjustableBedCard extends LitElement {
     m: MotorEntity,
     dir: "up" | "down",
     stopId?: string,
+    stopScope?: string[],
+    remainingStopIds?: string[],
   ): void {
     let ownerPointerId: number | null = null;
     if (e instanceof KeyboardEvent) {
@@ -1475,7 +1568,15 @@ export class AdjustableBedCard extends LitElement {
       else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
-    this._hold.start(m, dir, ownerPointerId, stopId);
+    this._hold.start(
+      m,
+      dir,
+      ownerPointerId,
+      stopId,
+      stopScope ?? (stopId ? [stopId] : []),
+      remainingStopIds,
+      e instanceof KeyboardEvent ? e.key : null,
+    );
   }
 
   // Screen readers, voice control and switch devices activate a native button
@@ -1489,6 +1590,7 @@ export class AdjustableBedCard extends LitElement {
     m: MotorEntity,
     dir: "up" | "down",
     stopId?: string,
+    stopScope?: string[],
   ): void {
     if (e.detail !== 0 || this._hold.heldKey !== null) return;
     if (this._config?.layout === "compact") {
@@ -1496,43 +1598,48 @@ export class AdjustableBedCard extends LitElement {
       else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
-    if (m.cover) {
-      this._cover(m.cover, dir === "up" ? "open_cover" : "close_cover");
-      return;
-    }
-    const id = dir === "up" ? m.up : m.down;
-    if (id) this._press(id);
+    this._hold.claimStopScope([
+      ...(stopScope ?? []),
+      ...(stopId ? [stopId] : []),
+      ...(m.cover ? [m.cover] : []),
+    ]);
+    activateWithoutPointer(this.hass, m, dir);
   }
 
-  private _endPointerHold(e: PointerEvent, m: MotorEntity): void {
+  private _endPointerHold(e: PointerEvent, m: MotorEntity, stopId?: string): void {
     // pointercancel carries no meaningful button, so only pointerup can be a
     // non-primary release.
     this._hold.endFromPointer(
       m,
       e.pointerId,
       e.type !== "pointerup" || e.button === 0,
+      stopId,
     );
   }
 
-  private _endKeyHold(e: KeyboardEvent, m: MotorEntity): void {
+  private _endKeyHold(e: KeyboardEvent, m: MotorEntity, stopId?: string): void {
     if (e.key !== "Enter" && e.key !== " ") return;
-    this._hold.end(m);
+    // A rejected stale row event must not reach the unscoped window fallback.
+    e.stopPropagation();
+    this._hold.endKeyboard(m, stopId, e.key);
   }
 
-  private _endHold(m: MotorEntity): void {
-    this._hold.end(m);
-  }
-
-  private _motorStop(m: MotorEntity, stopId?: string): void {
+  private _motorStop(
+    m: MotorEntity,
+    stopId?: string,
+    stopScope?: string[],
+  ): void {
     if (m.cover) {
-      this._hold.cancel(m);
-      this._cover(m.cover, "stop_cover");
+      stopCardMotorHold(this._hold, m.cover, [
+        ...(stopScope ?? (stopId ? [stopId] : [])),
+        m.cover,
+      ], m.coverStopScope === "side" ? undefined : m.key);
       return;
     }
     // A button-backed row has no stop of its own and falls through to the stop
     // of the bed it belongs to, which halts whatever is moving on that bed. So
     // it has to invalidate any active hold, not just this row's.
-    this._hold.stopAll(stopId);
+    stopCardMotorHold(this._hold, stopId, stopScope);
   }
 
   // Toggle save mode for ONE section: entering it on a section cancels any other
@@ -1563,10 +1670,6 @@ export class AdjustableBedCard extends LitElement {
 
   private _press(entityId: string): void {
     this._call("button", "press", entityId);
-  }
-
-  private _cover(entityId: string, service: string): void {
-    this._call("cover", service, entityId);
   }
 
   private _toggle(entityId: string): void {

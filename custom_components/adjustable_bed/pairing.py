@@ -253,7 +253,39 @@ def effective_child_data(
         raise ValueError(f"Paired entry has no child for side {side!r}")
     shared = inheritable_child_fields(entry_data)
     overrides = inheritable_child_fields(options or {})
+    side_owned = side_owned_profile_fields(descriptor)
+    overrides = {key: value for key, value in overrides.items() if key not in side_owned}
     return {**shared, **descriptor, **overrides}
+
+
+def side_owned_profile_fields(child_data: Mapping[str, Any]) -> frozenset[str]:
+    """Return profile-owned options that must remain attached to one child."""
+    from .app_profiles import per_side_profile
+
+    bed_type = child_data.get(CONF_BED_TYPE)
+    variant = child_data.get(CONF_PROTOCOL_VARIANT)
+    profile = per_side_profile(
+        bed_type if isinstance(bed_type, str) else None,
+        variant if isinstance(variant, str) else None,
+    )
+    if profile is None:
+        return frozenset()
+    fields = set(profile.keys)
+    if profile.variant_owned:
+        fields.add(CONF_PROTOCOL_VARIANT)
+    return frozenset(fields)
+
+
+def filter_child_options(
+    child_data: Mapping[str, Any], options: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Keep a parent option overlay from replacing one child's app profile."""
+    side_owned = side_owned_profile_fields(child_data)
+    return {
+        key: value
+        for key, value in inheritable_child_fields(options).items()
+        if key not in side_owned
+    }
 
 
 def pair_member_addresses(entry_data: Mapping[str, Any]) -> list[str]:

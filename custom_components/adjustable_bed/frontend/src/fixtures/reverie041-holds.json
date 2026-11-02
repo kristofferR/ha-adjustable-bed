@@ -1,0 +1,24 @@
+{
+  "standalone_cover": {
+    "held_control_up": "back_up",
+    "held_control_down": "back_down",
+    "hold_start_delay_ms": 0,
+    "hold_release_delay_ms": 0
+  },
+  "compatible_both_button": {
+    "paired_hold_motor": "back",
+    "paired_hold_side": "both",
+    "held_control": "back_up",
+    "hold_start_delay_ms": 0,
+    "hold_release_delay_ms": 0
+  },
+  "incompatible_both_button": {},
+  "sequential_both_button": {},
+  "paired_left_cover": {
+    "bed_side": "left",
+    "held_control_up": "back_up",
+    "held_control_down": "back_down",
+    "hold_start_delay_ms": 0,
+    "hold_release_delay_ms": 0
+  }
+}

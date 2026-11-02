@@ -1,6 +1,8 @@
 """Generic hold_control, rename, sync_clock and goto_preset duration actions."""
 
+import asyncio
 import json
+from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -11,6 +13,11 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.command_scheduler import (
+    CommandContext,
+    CommandIntent,
+    DeviceCommandScheduler,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
@@ -100,6 +107,74 @@ async def test_hold_control_runs_a_declared_control(hass: HomeAssistant, resolve
     controller.validate_hold_control.assert_called_once_with("flat", 1250)
     controller.hold_control.assert_awaited_once_with("flat", 1250)
     assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"]
+
+
+async def test_hold_control_admission_survives_stop_during_live_preflight(
+    hass: HomeAssistant,
+    resolve,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from custom_components.adjustable_bed import services
+
+    scheduler = DeviceCommandScheduler("pairlink-admission")
+    controller = SimpleNamespace(
+        held_control_options=("back_up",),
+        validate_hold_control=MagicMock(),
+        hold_control=AsyncMock(),
+    )
+    coordinator = SimpleNamespace(
+        name="Pairlink",
+        bed_type="reverie_pairlink",
+        entry=SimpleNamespace(data={}),
+        capability_controller=controller,
+        _command_scheduler=scheduler,
+    )
+    observed_stop_epochs: list[int | None] = []
+
+    async def execute(command, *, expected_stop_epoch=None, **_kwargs) -> None:
+        observed_stop_epochs.append(expected_stop_epoch)
+
+        async def operation(_context: CommandContext) -> None:
+            await command(controller)
+
+        await scheduler.execute(
+            CommandIntent(operation),
+            expected_stop_epoch=expected_stop_epoch,
+        )
+
+    coordinator.async_execute_controller_command = execute
+    resolve.return_value = ([(coordinator, SIDE_BOTH)], [])
+    preflight_started = asyncio.Event()
+    finish_preflight = asyncio.Event()
+
+    async def paused_preflight(
+        targets: list[tuple[object, str]],
+        check: Callable[[object, object], None],
+    ) -> list[tuple[object, object]]:
+        preflight_started.set()
+        await finish_preflight.wait()
+        for _target, _side in targets:
+            check(coordinator, controller)
+        return []
+
+    monkeypatch.setattr(services, "_preflight_each", paused_preflight)
+    service_task = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": "bed", "control": "back_up", "duration": 1},
+            blocking=True,
+        )
+    )
+    await preflight_started.wait()
+    stop_epoch = scheduler.request_stop()
+    scheduler.finish_stop(stop_epoch)
+    finish_preflight.set()
+    await service_task
+
+    assert stop_epoch == 1
+    assert observed_stop_epochs == [0]
+    controller.hold_control.assert_not_awaited()
 
 
 async def test_hold_control_lists_valid_controls_before_any_write(

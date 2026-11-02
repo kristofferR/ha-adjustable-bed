@@ -34,6 +34,9 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTION_BED,
     BED_TYPE_REMACRO,
+    BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
@@ -70,6 +73,11 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_PAIRLINK_HOME_ID,
+    CONF_PAIRLINK_HOST_SOURCE,
+    CONF_PAIRLINK_PASSWORD_HEX,
+    CONF_PAIRLINK_PASSWORD_TEXT,
+    CONF_PAIRLINK_ROLE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
@@ -225,6 +233,42 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),
     BED_TYPE_REMACRO: SideProfile("Remacro app", variant_owned=True),
+    BED_TYPE_REVERIE: SideProfile(
+        "Reverie Protocol 108",
+        frozenset(
+            {
+                CONF_PROTOCOL_VARIANT,
+                CONF_MOTOR_COUNT,
+                CONF_HAS_MASSAGE,
+                CONF_DISABLE_ANGLE_SENSING,
+            }
+        ),
+    ),
+    BED_TYPE_REVERIE_NIGHTSTAND: SideProfile(
+        "Reverie Protocol 110",
+        frozenset(
+            {
+                CONF_PROTOCOL_VARIANT,
+                CONF_MOTOR_COUNT,
+                CONF_HAS_MASSAGE,
+                CONF_DISABLE_ANGLE_SENSING,
+            }
+        ),
+    ),
+    BED_TYPE_REVERIE_PAIRLINK: SideProfile(
+        "Reverie Pairlink R510L / Harmoniq",
+        frozenset(
+            {
+                CONF_PROTOCOL_VARIANT,
+                CONF_PAIRLINK_ROLE,
+                CONF_PAIRLINK_HOST_SOURCE,
+                CONF_PAIRLINK_HOME_ID,
+                CONF_PAIRLINK_PASSWORD_TEXT,
+                CONF_PAIRLINK_PASSWORD_HEX,
+                CONF_DISABLE_ANGLE_SENSING,
+            }
+        ),
+    ),
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {

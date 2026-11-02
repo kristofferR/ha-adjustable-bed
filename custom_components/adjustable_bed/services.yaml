@@ -225,6 +225,94 @@ set_positions:
             - value: right
               label: Right
 
+reverie_set_comfort:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    comfort:
+      required: true
+      example:
+        head_position: 20
+        foot_position: 30
+        lumbar_position: 0
+        head_massage: 0
+        foot_massage: 0
+        timer_byte: 0
+        mode: 0
+      selector:
+        object:
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
+reverie_pairlink_alarm_comfort:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    comfort:
+      required: true
+      example:
+        head_position: 20
+        foot_position: 30
+        lumbar_position: 40
+        head_massage: 0
+        foot_massage: 0
+        timer_byte: 0
+        mode: 0
+      selector:
+        object:
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
+reverie_run_routine:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    steps:
+      required: true
+      example:
+        - duration_minutes: 1
+          comfort:
+            head_position: 20
+            foot_position: 30
+            lumbar_position: 0
+            head_massage: 0
+            foot_massage: 0
+      selector:
+        object:
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
+reverie_test:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
 timed_move:
   fields:
     device_id:

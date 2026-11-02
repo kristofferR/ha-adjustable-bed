@@ -11,11 +11,22 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_JENSEN_PIN,
     CONF_OCTO_PIN,
+    CONF_PAIRLINK_PASSWORD_HEX,
+    CONF_PAIRLINK_PASSWORD_TEXT,
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 
 # Credentials are secret even in support bundles that retain device identities.
-_CREDENTIAL_KEYS = {CONF_JENSEN_PIN, CONF_OCTO_PIN, "authcode", "authtoken", "token", "password"}
+_CREDENTIAL_KEYS = {
+    CONF_JENSEN_PIN,
+    CONF_OCTO_PIN,
+    CONF_PAIRLINK_PASSWORD_HEX,
+    CONF_PAIRLINK_PASSWORD_TEXT,
+    "authcode",
+    "authtoken",
+    "token",
+    "password",
+}
 KEYS_TO_REDACT = {
     CONF_NAME, "title", "serial", "serial_number", "configuration_url"
 } | _CREDENTIAL_KEYS

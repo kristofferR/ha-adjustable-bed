@@ -38,12 +38,22 @@ test("paired hold routing comes from backend metadata, not translated motor name
   const hass = hassWith([entry("button.pair_head_up", "head_up", "pair")]);
   hass.states["button.pair_head_up"] = {
     entity_id: "button.pair_head_up", state: "unknown", last_changed: "", last_updated: "",
-    attributes: { paired_hold_motor: "back" },
+    attributes: { paired_hold_motor: "back", paired_hold_side: "both" },
   };
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove)
-    .toEqual({ deviceId: "pair", motor: "back" });
+    .toEqual({ deviceId: "pair", motor: "back", side: "both" });
   delete hass.states["button.pair_head_up"].attributes.paired_hold_motor;
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove).toBeUndefined();
+});
+
+test("standalone held motor metadata selects the bounded timed action", () => {
+  const hass = hassWith([entry("button.back_up", "back_up")]);
+  hass.states["button.back_up"] = {
+    entity_id: "button.back_up", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "back_up", hold_start_delay_ms: 250, hold_release_delay_ms: 100 },
+  };
+  expect(bedEntitiesForDevice(hass, "dev1").motors[0].timedMove)
+    .toEqual({ deviceId: "dev1", motor: "back" });
 });
 
 test("Motion hub module selector is a nonempty utility control", () => {
@@ -139,6 +149,30 @@ test("INNOVA massage level and memory-page timer buttons join the massage sectio
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.massage.buttons).toEqual(["button.innova_level", "button.innova_timer_hold"]);
   expect(bed.massage.timer).toBe("sensor.innova_timer");
+});
+
+test("Pairlink massage controls and state join the massage section", () => {
+  const hass = hassWith([
+    entry("sensor.pairlink_timer_state", "reverie_pairlink_massage_timer"),
+    entry("sensor.pairlink_mode_state", "reverie_pairlink_massage_mode"),
+    entry("number.pairlink_timer", "reverie_pairlink_massage_timer"),
+    entry("select.pairlink_mode", "reverie_pairlink_massage_mode"),
+    entry("select.pairlink_rhythm", "reverie_pairlink_massage_rhythm"),
+    entry("binary_sensor.pairlink_low_battery", "reverie_pairlink_low_battery"),
+  ]);
+
+  const bed = bedEntitiesForDevice(hass, "dev1");
+
+  expect(bed.massage.timer).toBe("number.pairlink_timer");
+  expect(bed.massage.states).toEqual([
+    "sensor.pairlink_timer_state",
+    "sensor.pairlink_mode_state",
+  ]);
+  expect(bed.massage.selects).toEqual([
+    "select.pairlink_mode",
+    "select.pairlink_rhythm",
+  ]);
+  expect(bed.utility).toEqual(["binary_sensor.pairlink_low_battery"]);
 });
 
 test("exact app controls separate floor, bounded mood and massage surfaces", () => {

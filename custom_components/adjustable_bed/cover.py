@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .beds.base import ControllerMotorHoldSpec
 from .const import (
     BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
@@ -46,6 +48,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     # Maximum angle for percentage calculation (default 68 degrees)
     max_angle: float = 68
     scheduler_resource: str | None = None
+    hold: ControllerMotorHoldSpec | None = None
 
 
 # Note: For Linak beds:
@@ -259,6 +262,7 @@ def _build_cover_description(
         position_key=spec.position_key,
         max_angle=spec.max_angle,
         scheduler_resource=spec.scheduler_resource,
+        hold=spec.hold,
     )
 
 
@@ -326,6 +330,20 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         self._is_moving = False
         self._move_direction: str | None = None
         self._movement_generation: int = 0  # Track active movement to handle cancellation
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose bounded hold metadata to the existing card/service path."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = self.entity_description.hold
+        if hold is not None:
+            attributes.update(
+                held_control_up=hold.up_control,
+                held_control_down=hold.down_control,
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+            )
+        return attributes
 
     @property
     def _position_key(self) -> str:
@@ -415,7 +433,24 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 direction,
                 self.entity_description.key,
             )
-            if direction == "open":
+            hold = self.entity_description.hold
+            if hold is not None:
+                control = hold.up_control if direction == "open" else hold.down_control
+
+                async def bounded_movement(controller: BedController) -> None:
+                    controller.validate_hold_control(control, 1000)
+                    await controller.prepare_for_movement()
+                    if hold.start_delay_ms:
+                        await asyncio.sleep(hold.start_delay_ms / 1000)
+                    await controller.hold_control(control, 1000)
+                    if hold.release_delay_ms:
+                        await asyncio.sleep(hold.release_delay_ms / 1000)
+
+                await self._coordinator.async_execute_controller_command(
+                    bounded_movement,
+                    resource=self._motor_resource,
+                )
+            elif direction == "open":
                 await self._coordinator.async_execute_controller_command(
                     self.entity_description.open_fn,
                     resource=self._motor_resource,

@@ -124,6 +124,9 @@ movement. Hardware behavior remains unverified.
 | `set_position` | `motor`, `position` | Move one supported axis to a target |
 | `set_positions` | `positions` | Validate all motor targets before starting an ordered multi-motor request |
 | `timed_move` | `motor`, `direction`, `duration_ms` | Move up/down for an elapsed movement ceiling of 100–30000 ms |
+| `reverie_set_comfort` | `comfort` | Send a typed Reverie composite setting after every selected model validates it |
+| `reverie_run_routine` | `steps` | Replace and run the selected target's Reverie Composer queue |
+| `reverie_test` | None | Run the selected Reverie protocol's timed diagnostic writes and cleanup |
 
 The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
@@ -143,6 +146,49 @@ is performed before movement, but a later transport failure can still leave a
 partially completed move.
 
 A direct command being accepted is not confirmation that the target was reached.
+
+### Reverie composite actions
+
+`reverie_set_comfort` accepts a `comfort` object with optional `head_position`,
+`foot_position`, `lumbar_position`, `head_massage`, `foot_massage`, `timer_byte`,
+and `mode` fields. Each Reverie protocol and selected model validates its supported fields
+and ranges before any selected target writes. Protocol 110 Composer requests
+require its five position and strength fields because its app sends one
+complete payload. Protocol 108 applies changed position and massage values
+after stable notification feedback. Pairlink ordinary requests send only values
+changed from accepted state. Its alarm route sends the source-defined complete
+eight-write sequence. `timer_byte` is a raw source byte, not a duration in
+minutes. Pairlink central writes require the accepted per-target session inputs
+and a ready mesh session; local peripheral writes require the separately
+configured local role to be ready.
+
+`reverie_run_routine` accepts ordered `steps`, each with an integer
+`duration_minutes` and an optional `comfort` object. It replaces the selected
+physical target's routine queue. HA automation timing remains the user's
+scheduler; this action only runs the bed-specific sequence. Protocol 108 and
+Protocol 110 each own a queue and timer per physical address. The STK Composer
+route uses its selected V1 facade with numeric side values 1, 2, or 3, which
+have no inferred left/right mapping. Pairlink uses its separate routine timing
+and replacement behavior: missing comfort settings are skipped, the duration
+list is retained independently, missing durations default to one minute, and
+durations have a one-minute minimum. Pairlink does not schedule a timer after
+its last resolved setting. Other Reverie profiles still require a duration.
+The paired-bed `side` field remains the separate Home Assistant left/right/both
+target selector.
+
+`reverie_test` starts the accepted Protocol 108 or 110 ten-second bed test and
+schedules its matching protocol stop writes. Pairlink's two-second diagnostic
+uses the central encrypted route and has the same explicit runtime-input
+requirements as other Pairlink sends. The local peripheral profile uses the
+selected host adapter's verified address in its advertisement. Its backend is
+integration-owned direct BlueZ D-Bus, separate from Home Assistant's managed
+client transport. A successful characteristic write does not confirm a
+physical response.
+
+Use Home Assistant automations to schedule direct Reverie actions such as
+`reverie_set_comfort`, `reverie_run_routine`, `goto_preset`, and `save_preset`.
+Phone-local alarm storage, Android notification delivery, and the phone's
+alarm scheduler are outside the integration's scope.
 Reported state remains the last measured value until feedback arrives. See
 [position state and freshness](TROUBLESHOOTING.md#position-commands-and-reported-state).
 

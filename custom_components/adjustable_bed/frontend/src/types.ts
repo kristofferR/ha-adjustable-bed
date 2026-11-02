@@ -38,6 +38,8 @@ export interface DeviceRegistryEntry {
   via_device_id?: string | null;
 }
 
+export type BedSide = "left" | "right" | "both";
+
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
   entities: Record<string, EntityRegistryDisplayEntry>;
@@ -101,11 +103,16 @@ export interface LovelaceCardEditor extends HTMLElement {
 export interface MotorEntity {
   key: string;
   cover?: string;
+  coverStopScope?: "motor" | "side";
   // Discrete up/down buttons, used by beds that expose buttons instead of covers.
   up?: string;
   down?: string;
-  // Offered by the backend only for eligible concurrent two-receiver holds.
-  timedMove?: { deviceId: string; motor: "back" | "legs" };
+  // Existing bounded movement route for controller-declared held controls.
+  timedMove?: {
+    deviceId: string;
+    motor: "back" | "legs" | "lumbar";
+    side?: BedSide;
+  };
   angle?: string; // sensor.* angle in degrees
   position?: string; // number.* position
 }

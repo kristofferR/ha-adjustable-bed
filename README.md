@@ -97,7 +97,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Octo](docs/beds/octo.md) | Octo |
 | ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/woosa.md) |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Prodigy LBR (LP Comfort Connect), Prodigy Comfort Elite / CE; [Prodigy 2L / 2 / 4 and U / Ultra Series](docs/beds/leggett-okin.md), [L&P Adjustable Base](docs/beds/lp-legacy.md) |
-| ✅ [Reverie](docs/beds/reverie.md) | Reverie |
+| ✅ [Reverie](docs/beds/reverie.md) | Reverie app (Protocol 108), Reverie Nightstand app (Protocol 110), R510L / Harmoniq Upgrade (Pairlink) |
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed, RF ECO BT bed receivers |
 | ✅ [Customatic](docs/beds/customatic.md) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/customatic-z-series.md) |
 | ✅ Jordan's | [Serenity](docs/beds/serenity.md), [Tranquil](docs/beds/tranquil.md) |

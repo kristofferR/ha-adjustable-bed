@@ -101,6 +101,7 @@ class ControllerButtonSpec:
     translation_key: str | None = None
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
+    hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
 
@@ -152,6 +153,43 @@ class ControllerActionSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class ControllerHoldSpec:
+    """Timing around a controller-owned held action."""
+
+    control: str
+    start_delay_ms: int = 0
+    release_delay_ms: int = 0
+
+    def __post_init__(self) -> None:
+        _validate_hold_metadata(self.control, self.start_delay_ms, self.release_delay_ms)
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerMotorHoldSpec:
+    """Direction-specific controls for a bounded motor hold."""
+
+    up_control: str
+    down_control: str
+    start_delay_ms: int = 0
+    release_delay_ms: int = 0
+
+    def __post_init__(self) -> None:
+        _validate_hold_metadata(self.up_control, self.start_delay_ms, self.release_delay_ms)
+        _validate_hold_metadata(self.down_control, self.start_delay_ms, self.release_delay_ms)
+
+
+def _validate_hold_metadata(control: str, start_delay_ms: int, release_delay_ms: int) -> None:
+    if not isinstance(control, str) or not control:
+        raise ValueError("Held control names must be non-empty strings")
+    for name, delay in (
+        ("start_delay_ms", start_delay_ms),
+        ("release_delay_ms", release_delay_ms),
+    ):
+        if isinstance(delay, bool) or not isinstance(delay, int) or delay < 0:
+            raise ValueError(f"{name} must be a non-negative integer")
+
+
+@dataclass(frozen=True, slots=True)
 class MotorControlSpec:
     """Describes a motor control surface exposed by a controller."""
 
@@ -163,6 +201,7 @@ class MotorControlSpec:
     position_key: str | None = None
     max_angle: float = 68
     scheduler_resource: str | None = None
+    hold: ControllerMotorHoldSpec | None = field(default=None, kw_only=True)
 
 
 # Units a position slider can be scaled in.
@@ -429,6 +468,22 @@ class BedController(ABC):
         it is authoritative even when the bed type/variant resolves to different
         protocols at connect time.
         """
+        return False
+
+    @property
+    def requires_disconnected_transport(self) -> bool:
+        """Return True when the selected operation uses a non-central role.
+
+        Some protocol roles use a local host transport whose session must stay
+        disconnected from the bed's central GATT server. Controllers opt into
+        that role only while it is selected, and the coordinator fails closed
+        unless ``disconnected_transport_ready`` is also true.
+        """
+        return False
+
+    @property
+    def disconnected_transport_ready(self) -> bool:
+        """Return whether the selected non-central transport can accept commands."""
         return False
 
     @property

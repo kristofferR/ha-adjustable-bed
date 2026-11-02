@@ -1483,6 +1483,20 @@ async def _open_options_form(hass: HomeAssistant, entry_id: str) -> Any:
 class TestBluetoothDiscoveryFlow:
     """Test Bluetooth discovery flow."""
 
+    async def test_reverie_uuid_reaches_bluetooth_confirm(
+        self, hass, mock_bluetooth_service_info_reverie,
+        enable_custom_integrations, caplog,
+    ):
+        caplog.set_level("INFO", logger="custom_components.adjustable_bed.config_flow")
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_reverie,
+        )
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        assert "Detected supported bed: reverie" in caplog.text
+
     async def test_bluetooth_discovery_identical_names_include_address(
         self,
         hass: HomeAssistant,
