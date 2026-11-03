@@ -440,7 +440,7 @@ data:
 Both lists are required and may be empty. `dispatch` is required and is `both`,
 `weekly`, or `one_time`. Records default to `enabled: false`, `wake: false`,
 `hour: 0`, `minute: 0`. Hours are 0..23 and minutes 0..59. Weekly days are unique
-integers, Monday0 through Sunday6; an enabled weekly record requires a day.
+integers, Monday 0 through Sunday 6; an enabled weekly record requires a day.
 Each table permits at most three enabled records. Disabled rows consume no
 slots; an enabled `wake: false` row does consume a slot.
 
