@@ -38,6 +38,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
@@ -129,6 +130,8 @@ from .const import (
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
     GLIDEAWAY_MOTION_MODELS,
+    HJBED_PROFILES,
+    HJBED_SCAN_KEYWORDS,
     JENSEN_LINON_NAME_PATTERNS,
     JENSEN_NAME_FRAGMENT,
     JENSEN_NAME_PATTERNS,
@@ -608,6 +611,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
+    BED_TYPE_HJBED: "HJBed app (choose the exact product)",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
@@ -681,6 +685,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
     **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
     (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (product 139)",
@@ -1203,6 +1208,17 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         if any(role.service.lower() in advertised_services for role in TRANSPORTS.values()):
             result.confidence = min(result.confidence, 0.65)
         result.signals.append("name:starcode_abm5_4_app_candidate")
+    if any(keyword in (service_info.name or "") for keyword in HJBED_SCAN_KEYWORDS):
+        if result.bed_type is None:
+            if not any(signal.startswith("excluded:") for signal in result.signals):
+                return DetectionResult(
+                    bed_type=BED_TYPE_HJBED, confidence=0.3,
+                    signals=[*result.signals, "name:hjbed_app_candidate"],
+                )
+        elif result.bed_type != BED_TYPE_HJBED:
+            if BED_TYPE_HJBED not in (result.ambiguous_types or ()):
+                result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_HJBED]
+            result.signals.append("name:hjbed_app_candidate")
     return result
 
 

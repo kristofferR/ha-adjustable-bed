@@ -1454,3 +1454,27 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
     await tick();
   }
 });
+
+test("controller-owned release cancels refresh without the general STOP", () => {
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  const motor: MotorEntity = {
+    key: "memory1", deviceId: "bed", releaseButton: "button.hjbed_release",
+    heldControl: { control: "hjbed_memory_position1", startDelayMs: 0, releaseDelayMs: 0 },
+  };
+  hold.start(motor, "up", null, "button.stop");
+  hold.end(motor);
+  expect(events).toEqual(["start:memory1:up", "stop:button.hjbed_release"]);
+});
+
+
+test("abandoning an HJBed held action retains its protocol release route", () => {
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  const motor: MotorEntity = { key: "sofa_reset", deviceId: "bed",
+    releaseButton: "button.hjbed_release",
+    heldControl: { control: "hjbed_sit_position", startDelayMs: 0, releaseDelayMs: 0 } };
+  hold.start(motor, "up", null, "button.stop");
+  expect(hold.abandon()).toEqual(["button.hjbed_release"]);
+  expect(events).toEqual(["start:sofa_reset:up", "stop:button.hjbed_release"]);
+});

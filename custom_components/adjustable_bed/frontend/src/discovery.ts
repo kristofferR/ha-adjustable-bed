@@ -3,6 +3,7 @@
 // integration sets a stable translation_key (see strings.json), so this mapping
 // is robust across all supported bed types — a section only appears when its
 // entities exist.
+import { heldReleaseButton } from "./hold";
 import type {
   BedEntities,
   EntityRegistryDisplayEntry,
@@ -197,7 +198,10 @@ export function bedEntitiesForDevice(
           const attributes = hass.states[id]?.attributes;
           const up = attributes?.held_control_up;
           const down = attributes?.held_control_down;
-          if (typeof up === "string" && typeof down === "string") {
+          const releaseButton = heldReleaseButton(hass, id);
+          if (releaseButton) item.releaseButton = releaseButton;
+          if (typeof up === "string" && typeof down === "string" &&
+              (typeof attributes?.hold_release_button_key !== "string" || item.releaseButton)) {
             if (entry.device_id) item.deviceId = entry.device_id;
             item.holdEntityId = id;
             item.heldControls = {
@@ -355,6 +359,8 @@ export function bedEntitiesForDevice(
         } else if (key === "richmat_mh_preset") {
           // App-labelled presets share one translation key; keep each entity.
           presetMap.set(`${key}:${id}`, id);
+        } else if (key === "hjbed_action") {
+          bed.utility.push(id);
         } else if (key.startsWith("richmat_mh_")) {
           // Saves, app actions, the smart set lock and detection controls.
           bed.utility.push(id);
@@ -460,7 +466,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
-        if (key === "motion_bed_active_module" || key.startsWith("okin_app_"))
+        if (key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
         else if (key === "sleepys_app_massage_timer_code")
           (bed.massage.selects ??= []).push(id);

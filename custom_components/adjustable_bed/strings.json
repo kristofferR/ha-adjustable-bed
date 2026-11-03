@@ -2928,6 +2928,24 @@
       },
       "bf_query_alarm": {
         "name": "Query bed alarm"
+      },
+      "hjbed_action": {
+        "name": "{action}"
+      },
+      "hjbed_release": {
+        "name": "Release held action"
+      },
+      "hjbed_action_left": {
+        "name": "Left {action}"
+      },
+      "hjbed_action_right": {
+        "name": "Right {action}"
+      },
+      "hjbed_release_left": {
+        "name": "Left Release held action"
+      },
+      "hjbed_release_right": {
+        "name": "Right Release held action"
       }
     },
     "cover": {
@@ -3338,6 +3356,24 @@
       },
       "motor_3": {
         "name": "Motor 3"
+      },
+      "hjbed_foot_box": {
+        "name": "Foot box"
+      },
+      "hjbed_sofa_travel": {
+        "name": "Sofa travel"
+      },
+      "hjbed_foot_box_left": {
+        "name": "Left Foot box"
+      },
+      "hjbed_foot_box_right": {
+        "name": "Right Foot box"
+      },
+      "hjbed_sofa_travel_left": {
+        "name": "Left Sofa travel"
+      },
+      "hjbed_sofa_travel_right": {
+        "name": "Right Sofa travel"
       }
     },
     "sensor": {
@@ -4492,6 +4528,9 @@
       },
       "bf_cherish_alarm": {
         "name": "Bed alarm"
+      },
+      "hjbed_status": {
+        "name": "HJBed status"
       }
     },
     "light": {
@@ -5427,6 +5466,15 @@
       },
       "sleepys_app_massage_timer_code_right": {
         "name": "Right: Massage time code"
+      },
+      "hjbed_layout": {
+        "name": "HJBed layout"
+      },
+      "hjbed_layout_left": {
+        "name": "Left HJBed layout"
+      },
+      "hjbed_layout_right": {
+        "name": "Right HJBed layout"
       }
     },
     "climate": {
@@ -7147,6 +7195,45 @@
         "memory": {
           "name": "Wake memory",
           "description": "Memory A/B is a wake position, not a bed side."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "hjbed": {
+      "name": "Configure HJBed",
+      "description": "Configure an exact HJBed app product. Alarm and light operations require the product capability and its BLE acknowledgement. See the HJBed guide for per-product actions.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "action": {
+          "name": "Alarm action"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "alarm_id": {
+          "name": "Alarm number"
+        },
+        "weekdays": {
+          "name": "Weekdays (empty means once)"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light timeout in seconds"
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "mode": {
+          "name": "Control mode"
         },
         "side": {
           "name": "Side"

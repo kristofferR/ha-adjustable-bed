@@ -79,3 +79,5 @@ hardware evidence.
 
 [Comfort Motion app setup and BLE behavior](beds/comfort-motion.md), including the
 [row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).
+
+[HJBed app controls and telemetry](beds/hjbed.md), including the complete [row121 disposition ledger](apk-analysis/dispositions/row121-hjbed.md).

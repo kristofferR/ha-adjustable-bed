@@ -1486,6 +1486,17 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
+        if self._spec.key == "hjbed_release":
+            from .hjbed_state import GESTURE_RELEASE
+
+            # STOP admission also invalidates a hold still awaiting Bluetooth
+            # preflight. Only its action cleanup may send a release packet.
+            token = GESTURE_RELEASE.set(True)
+            try:
+                await self._coordinator.async_stop_command()
+            finally:
+                GESTURE_RELEASE.reset(token)
+            return
         if self._spec.scheduler_resource is not None:
             await self._coordinator.async_execute_controller_command(
                 self._spec.press_fn,
@@ -1505,6 +1516,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             attributes.update(
                 {
                     "held_control": self._spec.hold.control,
+                    **({"hold_release_button_key": self._spec.hold.release_button_key} if self._spec.hold.release_button_key is not None else {}),
                     "hold_start_delay_ms": self._spec.hold.start_delay_ms,
                     "hold_release_delay_ms": self._spec.hold.release_delay_ms,
                 }
