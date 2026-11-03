@@ -994,3 +994,18 @@ test("a Sleeptracker reported-state-only registry surface is not empty", () => {
   expect(bedIsEmpty(bed)).toBe(false);
   expect(bedIsEmpty(bedEntitiesForDevice(hassWith([]), "dev1"))).toBe(true);
 });
+
+test("Eshine named saves and literal massage controls join their card sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.save", "eshine_save_zero_g"),
+    entry("button.strength", "eshine_massage_head_strength"),
+    entry("button.timer", "eshine_massage_20_minutes"),
+    entry("button.mode", "massage_mode_step"),
+    entry("button.light", "toggle_light"),
+    entry("cover.pillow", "pillow"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.save"]);
+  expect(bed.massage.buttons).toEqual(["button.strength", "button.timer", "button.mode"]);
+  expect(bed.lights.toggle).toBe("button.light");
+  expect(bed.motors.map((motor) => motor.key)).toEqual(["pillow"]);
+});

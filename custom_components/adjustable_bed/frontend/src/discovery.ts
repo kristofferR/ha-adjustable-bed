@@ -255,6 +255,10 @@ export function bedEntitiesForDevice(
           presetMap.set(key, id);
         } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms") {
           bed.utility.push(id);
+        } else if (key.startsWith("eshine_massage_")) {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("eshine_save_")) {
+          bed.utility.push(id);
         } else if (key === "richmat_mh_massage") {
           bed.massage.buttons.push(id);
         } else if (key === "richmat_mh_preset") {
