@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish import BfCherishController as BfCherishController
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
+    from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
@@ -125,6 +126,7 @@ _EXPORT_MODULES = {
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",
     "JensenController": "jensen",
     "JensenLinonController": "jensen_linon",
+    "ComfortMotionController": "comfort_motion",
     "JiecangController": "jiecang",
     "JiecangAppController": "jiecang_app",
     "KaidiController": "kaidi",
@@ -214,6 +216,7 @@ __all__ = [
     "LeggettWilinkeController",
     # Brand-specific controllers
     "CoolBaseController",
+    "ComfortMotionController",
     "JiecangController",
     "JiecangAppController",
     "JensenController",

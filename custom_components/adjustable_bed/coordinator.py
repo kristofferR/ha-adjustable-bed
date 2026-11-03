@@ -188,6 +188,7 @@ from .const import (
     DEVICE_INFO_READ_TIMEOUT,
     DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
@@ -3112,7 +3113,17 @@ class AdjustableBedCoordinator:
         3. A pre-first-connect bed-type heuristic. Only ``auto``/``gen2``
            ``leggett_platt`` entries are assumed persistent here; ``okin`` and
            ``mlrm`` are not (they reconnect normally).
+
+        An idle timeout of 0 opts any bed into the same lifecycle unless
+        Disconnect After Command is on (issue #700). Like persistent
+        controllers, a dropped link then reconnects on the next command rather
+        than on a timer, so receivers that drop idle links cannot storm.
         """
+        if (
+            self._idle_disconnect_seconds == IDLE_DISCONNECT_KEEP_CONNECTED
+            and not self._disconnect_after_command
+        ):
+            return True
         controller = self._controller
         if controller is not None:
             return controller.requires_persistent_connection or (

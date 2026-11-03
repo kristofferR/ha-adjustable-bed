@@ -176,7 +176,11 @@ LOGICDATA_APP_TRANSPORTS: Final = {
 CONF_JIECANG_APP_PROFILE: Final = "jiecang_app_profile"
 CONF_JIECANG_APP_LAYOUT: Final = "jiecang_app_layout"
 CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
-JIECANG_APP_PROFILES: Final = {"dreamask": "ERGOBALANCE (Dreamask)", "dreamotion": "Dream Motion"}
+JIECANG_APP_PROFILES: Final = {
+    "dreamask": "ERGOBALANCE (Dreamask)",
+    "dreamotion": "Dream Motion",
+    "comfort_motion": "Comfort Motion",
+}
 JIECANG_APP_LAYOUTS: Final = {
     "standard_2": "Back and legs (2 motors)",
     "standard_3_neck": "Back, legs and neck",
@@ -2955,6 +2959,8 @@ DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
+# Idle timeout value meaning "never idle-disconnect" (issue #700).
+IDLE_DISCONNECT_KEEP_CONNECTED: Final = 0
 DEFAULT_OCTO_PIN: Final = ""
 DEFAULT_CONNECTION_PROFILE: Final = CONNECTION_PROFILE_BALANCED
 
