@@ -27,12 +27,15 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
+from homeassistant.util import dt as dt_util
 
+from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .beds.reverie_comfort import ReverieComfortRequest
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     CommandHandle,
+    PreparedCommandInvalidated,
     command_resources,
     current_command_context,
 )
@@ -57,6 +60,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
@@ -165,6 +169,7 @@ SERVICE_OCTO_ENROLL_PIN = "octo_enroll_pin"
 SERVICE_OCTO_RESET_DEFAULTS = "octo_reset_defaults"
 SERVICE_RENAME = "rename"
 SERVICE_SYNC_CLOCK = "sync_clock"
+SERVICE_CONFIGURE_ALARM_SCHEDULE = "configure_alarm_schedule"
 # Released per-app names that now alias the generic actions above (linak_rename
 # sits with the other Linak actions).
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
@@ -294,6 +299,14 @@ TIMED_MOVE_MOTOR_OPTIONS = (
     "lumbar",
     "bed_height",
     "stair",
+    "m1x12_part_1",
+    "m1x12_part_2",
+    "m1x12_part_4",
+    "m1x12_part_8",
+    "m1x12_part_16",
+    "elevate_actuator_1",
+    "elevate_actuator_2",
+    "elevate_both",
 )
 LEGGETT_HELD_CONTROLS = (
     "flat",
@@ -1012,7 +1025,9 @@ async def _set_position_plan(
             controller.reports_percentage_position is True
         )
 
-        if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
+        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE):
+            # These direct setters own native bounds independently of generic
+            # angle overrides. Validate every axis/target before scheduling.
             motor_configs = {
                 spec.position_key: {
                     "position_key": spec.position_key,
@@ -1384,6 +1399,7 @@ async def _execute_prepared_reverie_comfort(
     targets: list[tuple[BedTarget, str]],
     request: ReverieComfortRequest,
     pairlink_plans: dict[object, PairlinkComfortPlan],
+    admissions: dict[tuple[int, str], _CommandAdmission],
 ) -> bool:
     """Reserve every selected command lane before dispatching comfort frames.
 
@@ -1421,7 +1437,30 @@ async def _execute_prepared_reverie_comfort(
             "use concurrent paired connection mode"
         )
 
+    def admission_for(target: _ReverieComfortPhysicalTarget) -> _CommandAdmission:
+        key = (id(target.parent or target.target), target.side or SIDE_BOTH)
+        if key not in admissions:
+            key = (key[0], SIDE_BOTH)
+        return admissions[key]
+
+    def stop_epoch_for(target: _ReverieComfortPhysicalTarget) -> int | None:
+        return admission_for(target).expected_stop_epochs.get(target.side or SIDE_BOTH)
+
     def validate_pairlink_plans() -> None:
+        for coordinator, side in targets:
+            admission = admissions[(id(coordinator), side)]
+            if isinstance(coordinator, PairedBedCoordinator):
+                invalidated = coordinator._pair_admission_was_cancelled(
+                    coordinator._targets_for(side),
+                    admission.resources,
+                    admission.expected_pair_generations,
+                    admission.expected_stop_epochs,
+                )
+            else:
+                epoch = admission.expected_stop_epochs.get(SIDE_BOTH)
+                invalidated = epoch is not None and _target_stop_epoch(coordinator) != epoch
+            if invalidated:
+                raise PreparedCommandInvalidated("Comfort request was stopped during preflight")
         for target in physical:
             controller = target.target.controller or target.target.capability_controller
             identity = getattr(controller, "comfort_runtime_identity", None)
@@ -1462,6 +1501,7 @@ async def _execute_prepared_reverie_comfort(
             cancel_running=False,
             resource="reverie:comfort",
             read_positions_after_operation=False,
+            expected_stop_epoch=stop_epoch_for(target),
         )
 
     group_id = uuid4().hex
@@ -1472,11 +1512,13 @@ async def _execute_prepared_reverie_comfort(
     try:
         async with _reverie_comfort_pair_lanes(physical):
             for target in physical:
+                validate_pairlink_plans()
                 handle = await target.target.async_prepare_command_operation(
                     lambda target=target: execute_target(target),
                     resource="reverie:comfort",
                     cancel_running=True,
                     group_id=group_id,
+                    expected_stop_epoch=stop_epoch_for(target),
                 )
                 prepared.append((target, handle))
 
@@ -1592,6 +1634,12 @@ async def handle_reverie_set_comfort(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    admissions = {
+        (id(coordinator), side): _capture_command_admission(
+            coordinator, side, ("reverie:comfort",)
+        )
+        for coordinator, side in targets
+    }
     preflighted: PreflightedSides = []
     pairlink_plans: dict[object, PairlinkComfortPlan] = {}
     try:
@@ -1626,6 +1674,7 @@ async def handle_reverie_set_comfort(call: ServiceCall) -> None:
             targets,
             request,
             pairlink_plans,
+            admissions,
         ):
             return
         for coordinator, side in targets:
@@ -1646,6 +1695,7 @@ async def handle_reverie_set_comfort(call: ServiceCall) -> None:
                 side,
                 apply_comfort,
                 resource="reverie:comfort",
+                admission=admissions[(id(coordinator), side)],
             )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
@@ -1662,6 +1712,12 @@ async def handle_reverie_pairlink_alarm_comfort(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    admissions = {
+        (id(coordinator), side): _capture_command_admission(
+            coordinator, side, ("reverie:comfort",)
+        )
+        for coordinator, side in targets
+    }
     preflighted: PreflightedSides = []
     pairlink_plans: dict[object, PairlinkComfortPlan] = {}
     try:
@@ -1699,6 +1755,7 @@ async def handle_reverie_pairlink_alarm_comfort(call: ServiceCall) -> None:
             targets,
             request,
             pairlink_plans,
+            admissions,
         ):
             return
         for coordinator, side in targets:
@@ -1707,6 +1764,7 @@ async def handle_reverie_pairlink_alarm_comfort(call: ServiceCall) -> None:
                 side,
                 send_alarm_comfort,
                 resource="reverie:comfort",
+                admission=admissions[(id(coordinator), side)],
             )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
@@ -3908,6 +3966,43 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
         raise
 
 
+async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
+    """Preflight both tables on all physical targets before encoding or writing."""
+    schedule = AlarmTableSchedule(
+        weekly=tuple(WeeklyAlarmRecord(**{**row, "weekdays": tuple(row["weekdays"])}) for row in call.data["weekly"]),
+        one_time=tuple(OneTimeAlarmRecord(**row) for row in call.data["one_time"]),
+        dispatch=call.data["dispatch"],
+        reference_time=dt_util.now(),
+    )
+    targets = _call_targets(call)
+    # A table call cannot connect merely to discover whether it is valid:
+    # initialization can write clock/zero/query frames. These static profiles
+    # are offline-mintable, and all other controllers lack this contract.
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            controller = target.capability_controller
+            if controller is None or controller.alarm_table_schedule_spec is None:
+                raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
+
+    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+        spec = controller.alarm_table_schedule_spec
+        if spec is None:
+            raise ServiceValidationError(f"Device '{target.name}' has no alarm-table contract")
+        spec.validate(schedule)
+
+    preflighted = await _preflight_each(targets, check)
+
+    async def configure(controller: BedController) -> None:
+        await controller.configure_alarm_table_schedule(schedule)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, configure, cancel_running=False, resource="configuration")
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
     """Program the app's current-day alarm, validating every side before writes."""
     enabled = call.data[ATTR_ENABLED]
@@ -5078,6 +5173,24 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+    )
+    alarm_fields = {
+        vol.Optional("enabled", default=False): cv.boolean,
+        vol.Optional("wake", default=False): cv.boolean,
+        vol.Optional("hour", default=0): vol.All(int, vol.Range(min=0, max=23)),
+        vol.Optional("minute", default=0): vol.All(int, vol.Range(min=0, max=59)),
+    }
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CONFIGURE_ALARM_SCHEDULE,
+        handle_configure_alarm_schedule,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required("weekly"): [vol.Schema({**alarm_fields, vol.Optional("weekdays", default=[]): [vol.All(int, vol.Range(min=0, max=6))]})],
+            vol.Required("one_time"): [vol.Schema(alarm_fields)],
+            vol.Required("dispatch"): vol.In(("both", "weekly", "one_time")),
+            **SIDE_FIELD,
+        }),
     )
     for service in (SERVICE_SYNC_CLOCK, SERVICE_MALOUF_SYNC_CLOCK):
         hass.services.async_register(

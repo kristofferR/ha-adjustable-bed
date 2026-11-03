@@ -3,6 +3,10 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
+from custom_components.adjustable_bed.beds.base import (
+    ControllerMotorHoldSpec,
+    MotorControlSpec,
+)
 from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
 from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
     PairlinkCredentials,
@@ -86,3 +90,60 @@ async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes(
         "hold_release_delay_ms": 0,
         "held_stop_scope": "motor",
     }
+
+
+def test_controller_hold_metadata_is_exposed_without_changing_other_cover_attributes() -> None:
+    hold = ControllerMotorHoldSpec(
+        up_control="part_1_up",
+        down_control="part_1_down",
+        start_delay_ms=100,
+        release_delay_ms=100,
+        stop_scope="side",
+    )
+    description = _build_cover_description(
+        MotorControlSpec(
+            key="m1x12_part_1",
+            translation_key="starcode_m1x12_part_1",
+            open_fn=_noop,
+            close_fn=_noop,
+            stop_fn=_noop,
+            hold=hold,
+        )
+    )
+    coordinator = SimpleNamespace(
+        entity_side="left",
+        device_info={},
+        entity_translation_key=lambda key: key,
+        entity_unique_id=lambda key: key,
+    )
+    cover = AdjustableBedCover(coordinator, description)
+
+    assert cover.extra_state_attributes == {
+        "bed_side": "left",
+        "held_control_up": "part_1_up",
+        "held_control_down": "part_1_down",
+        "hold_start_delay_ms": 100,
+        "hold_release_delay_ms": 100,
+        "held_stop_scope": "side",
+    }
+
+
+def test_cover_without_controller_hold_does_not_publish_hold_metadata() -> None:
+    coordinator = SimpleNamespace(
+        entity_side=None,
+        device_info={},
+        entity_translation_key=lambda key: key,
+        entity_unique_id=lambda key: key,
+    )
+    cover = AdjustableBedCover(
+        coordinator,
+        AdjustableBedCoverEntityDescription(
+            key="back",
+            translation_key="back",
+            open_fn=_noop,
+            close_fn=_noop,
+            stop_fn=_noop,
+        ),
+    )
+
+    assert not cover.extra_state_attributes

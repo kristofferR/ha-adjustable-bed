@@ -6247,25 +6247,25 @@
           "scope": "Specific P2 discovery UUID, detection and config-flow path only.",
           "code_refs": [
             {
-              "ref": "custom_components/adjustable_bed/const.py:1050-1050",
+              "ref": "custom_components/adjustable_bed/const.py:1068-1068",
               "snapshot_path": "custom_components/adjustable_bed/const.py",
-              "snapshot_sha256": "9d00fcf48ef0ef81741a0a187810d542ba41cb1c8c08fb458e7553157bdbe19d",
+              "snapshot_sha256": "d206410f503c6303b65a0cf9a65a49fd6ff4fee452c5317f166bd19fbbad3673",
               "excerpt_sha256": "a4cd6f6c29d17f10718d1c20364febd23172a1ca453ffc3fd48e81679ed54817",
               "symbol": "REVERIE_SERVICE_UUID",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/detection.py:1925-1932",
+              "ref": "custom_components/adjustable_bed/detection.py:1937-1944",
               "snapshot_path": "custom_components/adjustable_bed/detection.py",
-              "snapshot_sha256": "a7e8aec78b31df28d2317d257a3385784021696e8524e66c7ad8dc4b25589a46",
+              "snapshot_sha256": "229ffcb0e510230d52fbee4f2c5243574695399bcc4b4e4b67139aad275af4a9",
               "excerpt_sha256": "7f49263a29057387ba1d1f837e4baa50fea14eb42ab989bc503c6e04e9883769",
               "symbol": "REVERIE_SERVICE_UUID matcher",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/config_flow.py:3210-3312",
+              "ref": "custom_components/adjustable_bed/config_flow.py:3334-3436",
               "snapshot_path": "custom_components/adjustable_bed/config_flow.py",
-              "snapshot_sha256": "45d6039ed6a9d5679148c1cc0ba8360869bd0f7242d8ca7b7b71be05c266610c",
+              "snapshot_sha256": "ee28f1dcaa23173cbdf9e804eb00b212b0557b513d3d7cd5125a0e75804f900f",
               "excerpt_sha256": "0e95c4904fac1c27e4ea2634cd71ccae41228f51b4acf4638f3e90b35fd83759",
               "symbol": "async_step_bluetooth",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
@@ -6281,9 +6281,9 @@
           ],
           "test_refs": [
             {
-              "ref": "tests/test_detection.py:415-421",
+              "ref": "tests/test_detection.py:416-422",
               "snapshot_path": "tests/test_detection.py",
-              "snapshot_sha256": "cdc830e7258ee1a47e97224b54bedd2761bc22807552cfbdfc044b5efe91d062",
+              "snapshot_sha256": "5d333960d2df1e06d63d815f8975c96c0cdea0c460de65299ff1c99f86b69c2c",
               "excerpt_sha256": "1a8381d0c8b50f9d09c81601c15decdc3297a3d42030098c49b8b43c5f875ccf",
               "symbol": "test_detect_reverie_by_uuid",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
@@ -71513,9 +71513,9 @@
         ],
         "status": "ADDRESSED_PENDING_DISTINCT_REVIEW",
         "coverage": "PATCH_AND_FOCUSED_PROOF_PRESENT",
-        "assertion_crosswalk": "Lengths 6–9 select registered event callbacks before parser-specific minimums; ignored callbacks do not fall through to SDK.",
+        "assertion_crosswalk": "Lengths 6\u20139 select registered event callbacks before parser-specific minimums; ignored callbacks do not fall through to SDK.",
         "accepted_source_refs": [
-          "accepted-addendum/SOURCE_ADDENDUM.md: receive entry steps 1–5",
+          "accepted-addendum/SOURCE_ADDENDUM.md: receive entry steps 1\u20135",
           "accepted-comparison/DISCOVERY_LEDGER.json: G14-6-CHANNEL / G14-6-CUSTOM"
         ],
         "code_refs": [

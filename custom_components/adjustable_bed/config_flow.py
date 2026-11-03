@@ -93,6 +93,7 @@ from .bond_verification import (
     bond_owner_from_entry,
     build_bond_context,
 )
+from .cluster033_profiles import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
@@ -134,6 +135,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM,
@@ -146,6 +148,7 @@ from .const import (
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
     CHAIR_AND_BED_APP_BED_TYPES,
+    CLUSTER033_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -218,6 +221,7 @@ from .const import (
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
+    CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
@@ -857,6 +861,7 @@ def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
 
 
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
+    **dict.fromkeys(CLUSTER033_BED_TYPES, "cluster033_app"),
     BED_TYPE_VIBRADORM: "vibradorm",
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
     BED_TYPE_JIECANG_APP: "jiecang_app",
@@ -865,6 +870,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_SLEEPTRACKER: "sleeptracker",
     BED_TYPE_LIMOSS_REMOTE: "limoss_remote",
     BED_TYPE_FSM_RELAX: "fsm_relax",
+    BED_TYPE_STARCODE_M1X12: "starcode_m1x12",
     BED_TYPE_STARCODE_M5X5: "starcode_m5x5",
     BED_TYPE_VIBRADORM_APP: "vibradorm",
     BED_TYPE_VMATBASIC: "vibradorm",
@@ -1443,12 +1449,33 @@ def _add_starcode_lift_field(
         SelectSelectorConfig(
             options=[
                 {"value": key, "label": label}
-                for key, label in lift_choices(hass, main_entry_id).items()
+                for key, label in lift_choices(hass, main_entry_id, main_data=data).items()
             ],
             multiple=True,
             mode=SelectSelectorMode.DROPDOWN,
         )
     )
+
+
+def _add_starcode_m1x12_schema_fields(
+    schema: dict[vol.Marker, Any],
+    data: Mapping[str, Any],
+    hass: HomeAssistant,
+    main_entry_id: str | None = None,
+) -> None:
+    schema[
+        vol.Required(
+            CONF_BLE_DEVICE_NAME,
+            default=data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, vol.UNDEFINED)),
+        )
+    ] = str
+    schema[
+        vol.Required(
+            CONF_STARCODE_M1X12_PROFILE,
+            default=data.get(CONF_STARCODE_M1X12_PROFILE, vol.UNDEFINED),
+        )
+    ] = vol.In({"cb25": "CB25", "f23": "F23", "kneading": "Kneading"})
+    _add_starcode_lift_field(schema, data, hass, main_entry_id)
 
 
 def _starcode_errors(
@@ -1464,6 +1491,37 @@ def _starcode_errors(
     if not isinstance(name, str) or profile_from_name(name) != data.get(CONF_STARCODE_M5X5_PROFILE):
         return {CONF_STARCODE_M5X5_PROFILE: "starcode_profile_mismatch"}
     return _starcode_lift_errors(hass, data, main_entry_id)
+
+
+def _starcode_m1x12_errors(
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    main_entry_id: str | None = None,
+) -> dict[str, str]:
+    from .beds.starcode_m1x12_protocol import profile_from_name
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if not isinstance(name, str) or profile_from_name(name) != data.get(
+        CONF_STARCODE_M1X12_PROFILE
+    ):
+        return {CONF_STARCODE_M1X12_PROFILE: "starcode_m1x12_profile_mismatch"}
+    try:
+        from .starcode_accessory_group import validate_lift_entries
+
+        validate_lift_entries(
+            hass,
+            data,
+            data.get(CONF_STARCODE_LIFT_ENTRIES, []),
+            main_entry_id=main_entry_id,
+        )
+    except ValueError as err:
+        error = (
+            "starcode_m1x12_elevate_reconfigure"
+            if "M1X12 ELEVATE" in str(err)
+            else "starcode_invalid_m1x12_lifts"
+        )
+        return {CONF_STARCODE_LIFT_ENTRIES: error}
+    return {}
 
 
 def _starcode_lift_errors(
@@ -1964,8 +2022,34 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
 _PROBE_ADVERTISEMENT_WAIT_SECONDS = 10.0
 
 
+def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    bed_type = data[CONF_BED_TYPE]
+    schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, DEFAULT_LAYOUTS[bed_type]))] = vol.In(APP_LAYOUTS[bed_type])
+    if bed_type == "qplus_app":
+        schema[vol.Required(CONF_PROTOCOL_VARIANT, default=data.get(CONF_PROTOCOL_VARIANT, "both"))] = vol.In(("both", "side_a", "side_b"))
+    if bed_type == "serta_mp_remote":
+        for slot in range(1, 5):
+            for axis, maximum in (("head", 60), ("foot", 45)):
+                key = f"serta_mp_memory_{slot}_{axis}"
+                default = 15 if axis == "head" else 0 if slot == 4 else 35
+                schema[vol.Required(key, default=data.get(key, default))] = vol.All(int, vol.Range(min=0, max=maximum))
+
+
+def _normalize_cluster033_data(data: dict[str, Any]) -> None:
+    bed_type = data[CONF_BED_TYPE]
+    layout = data.get(CONF_PRODUCT_TYPE, DEFAULT_LAYOUTS[bed_type])
+    if layout not in APP_LAYOUTS[bed_type]:
+        raise ValueError("Choose the selected app's layout")
+    data[CONF_PRODUCT_TYPE] = layout
+    data[CONF_MOTOR_COUNT] = 2
+    data[CONF_HAS_MASSAGE] = False  # Exact app-labelled controls own their entities.
+    data[CONF_DISABLE_ANGLE_SENSING] = bed_type != "serta_mp_remote"
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+
+
 # Options fields of app profiles whose adder needs only the current data.
 _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]] = {
+    **dict.fromkeys(CLUSTER033_BED_TYPES, _add_cluster033_schema_fields),
     BED_TYPE_FURNIMOVE: _add_furnimove_schema_field,
     BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
     BED_TYPE_JIECANG_APP: _add_jiecang_app_schema_fields,
@@ -2531,6 +2615,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="limoss_remote", data_schema=vol.Schema(schema), errors=errors
         )
 
+    async def async_step_cluster033_app(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Choose a source-owned app layout without guessing from shared adverts."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = {}
+        if user_input is not None:
+            try:
+                _normalize_cluster033_data(data)
+            except ValueError:
+                errors["base"] = "cluster033_layout"
+            else:
+                self._manual_data = data
+                return await self._finish_with_verify(data, data.get(CONF_NAME, APP_NAMES[data[CONF_BED_TYPE]]))
+        schema: dict[vol.Marker, Any] = {}
+        _add_cluster033_schema_fields(schema, data)
+        return self.async_show_form(step_id="cluster033_app", data_schema=vol.Schema(schema), errors=errors)
+
     async def async_step_fsm_relax(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -2566,6 +2667,29 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         _add_starcode_schema_fields(schema, data, self.hass)
         return self.async_show_form(
             step_id="starcode_m5x5", data_schema=vol.Schema(schema), errors=errors
+        )
+
+    async def async_step_starcode_m1x12(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Confirm Adjustable Comfort M1X12 app identity and its named profile."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = _starcode_m1x12_errors(self.hass, data) if user_input is not None else {}
+        if user_input is not None and not errors:
+            data[CONF_HAS_MASSAGE] = True
+            data[CONF_DISABLE_ANGLE_SENSING] = True
+            data[CONF_MOTOR_PULSE_USER_SET] = False
+            data[CONF_MOTOR_PULSE_DELAY_MS] = 100
+            self._manual_data = data
+            return await self._finish_with_verify(
+                data, data.get(CONF_NAME, "Adjustable Comfort M1X12")
+            )
+        schema: dict[vol.Marker, Any] = {}
+        _add_starcode_m1x12_schema_fields(schema, data, self.hass)
+        return self.async_show_form(
+            step_id="starcode_m1x12", data_schema=vol.Schema(schema), errors=errors
         )
 
     async def async_step_vibradorm_app(
@@ -7250,7 +7374,11 @@ def _pairlink_settings_schema(
         ): source_selector,
         vol.Optional(
             CONF_PAIRLINK_HOME_ID,
-            default=str(current_data.get(CONF_PAIRLINK_HOME_ID, "")),
+            default=(
+                ""
+                if current_data.get(CONF_PAIRLINK_HOME_ID) is None
+                else str(current_data[CONF_PAIRLINK_HOME_ID])
+            ),
         ): TextSelector(TextSelectorConfig()),
         vol.Optional(
             CONF_PAIRLINK_PASSWORD_TEXT,
@@ -7475,11 +7603,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type not in CHAIR_AND_BED_APP_BED_TYPES:
             for key in CONF_REVERSE_MOTORS:
                 data.pop(key, None)
-            if bed_type != BED_TYPE_SLEEPTRACKER:
+            profile = per_side_profile(bed_type, data.get(CONF_PROTOCOL_VARIANT))
+            if bed_type != BED_TYPE_SLEEPTRACKER and not (
+                profile is not None and CONF_PRODUCT_TYPE in profile.keys
+            ):
                 data.pop(CONF_PRODUCT_TYPE, None)
 
         if bed_type != BED_TYPE_STARCODE_M5X5:
             data.pop(CONF_STARCODE_M5X5_PROFILE, None)
+        if bed_type != BED_TYPE_STARCODE_M1X12:
+            data.pop(CONF_STARCODE_M1X12_PROFILE, None)
         if bed_type not in STARCODE_GROUP_BED_TYPES:
             data.pop(CONF_STARCODE_LIFT_ENTRIES, None)
         if bed_type != BED_TYPE_VIBRADORM_APP:
@@ -8118,6 +8251,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 _add_starcode_schema_fields(
                     schema_dict, current_data, self.hass, self.config_entry.entry_id
                 )
+            elif bed_type == BED_TYPE_STARCODE_M1X12:
+                _add_starcode_m1x12_schema_fields(
+                    schema_dict, current_data, self.hass, self.config_entry.entry_id
+                )
             elif bed_type == BED_TYPE_STAR_ELEVATE:
                 _add_starcode_lift_field(
                     schema_dict, current_data, self.hass, self.config_entry.entry_id
@@ -8560,6 +8697,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         if key in app_data
                     }
                 )
+            if bed_type in CLUSTER033_BED_TYPES and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                try:
+                    _normalize_cluster033_data(app_data)
+                except ValueError:
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "cluster033_layout"})
+                user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_USER_SET)})
             if bed_type == BED_TYPE_MOTION_BED and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 app_errors = _motion_bed_errors(app_data)
@@ -8600,6 +8744,22 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     )
                 user_input[CONF_HAS_MASSAGE] = True
                 user_input[CONF_DISABLE_ANGLE_SENSING] = False
+            if bed_type == BED_TYPE_STARCODE_M1X12 and not separate_address_pair:
+                app_errors = _starcode_m1x12_errors(
+                    self.hass,
+                    {**current_data, **user_input},
+                    self.config_entry.entry_id,
+                )
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors=app_errors,
+                    )
+                user_input[CONF_HAS_MASSAGE] = True
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+                user_input[CONF_MOTOR_PULSE_USER_SET] = False
+                user_input[CONF_MOTOR_PULSE_DELAY_MS] = 100
             if bed_type == BED_TYPE_STAR_ELEVATE and not separate_address_pair:
                 lift_errors = _starcode_lift_errors(
                     self.hass, {**current_data, **user_input}, self.config_entry.entry_id
@@ -9025,6 +9185,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 new_data.get(key) != self.config_entry.data.get(key)
                 for key in (
                     CONF_STARCODE_M5X5_PROFILE,
+                    CONF_STARCODE_M1X12_PROFILE,
+                    CONF_PROTOCOL_VARIANT,
                     CONF_BLE_DEVICE_NAME,
                     CONF_STARCODE_LIFT_ENTRIES,
                 )

@@ -101,6 +101,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -215,6 +216,7 @@ from .const import (
     SOLACE_SERVICE_UUID,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_NAME_PATTERNS,
+    STAR_ELEVATE_VARIANT_M1X12,
     SUTA_NAME_PATTERNS,
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
@@ -559,11 +561,20 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    'tempur_curve': 'Tempur Curve',
+    'qplus_app': 'Q-Plus Adjustable Remote',
+    'serta_mp_remote': 'Serta MP Remote',
+    'omazz_adjusto_iii': 'Omazz Adjusto III',
+    'ergomotion_app': 'Ergomotion (app)',
+    'row_control': 'ROW Control',
+    'ergo_slim': 'Ergo Slim',
+    'tempur_au': 'TEMPUR AU',
     BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 
     BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading)",
+    BED_TYPE_STARCODE_M1X12: "Adjustable Comfort M1X12 app (CB25 / F23 / kneading)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
@@ -680,6 +691,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): "Nectar Move",
     (BED_TYPE_SVANE, SVANE_VARIANT_JMC): "Svane Remote app (JMC400)",
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): "Jensen Adjustable Sleep app (LinOn)",
+    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): "Adjustable Comfort M1X12 ELEVATE",
     (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK): "The Brick app (Remacro)",
     (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES): "Jerome's app (Remacro)",
     (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230): "Customatic Z-Series app (Z-230)",
@@ -1641,7 +1653,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_SLEEPYS_BOX25,
             confidence=0.65,
             signals=[*signals, "name:starcode_bedding_app_choices"],
-            ambiguous_types=[BED_TYPE_STARCODE_M5X5],
+            ambiguous_types=[BED_TYPE_STARCODE_M5X5, BED_TYPE_STARCODE_M1X12],
         )
 
     # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F

@@ -25,14 +25,19 @@ from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.base import BedController
 from .beds.star_elevate import StarElevateController
+from .beds.starcode_m1x12 import StarcodeM1X12Controller
 from .beds.starcode_m5x5 import PROFILES, StarcodeM5X5Controller
 from .const import (
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     CONF_BED_TYPE,
+    CONF_PROTOCOL_VARIANT,
     CONF_STARCODE_LIFT_ENTRIES,
+    CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     DOMAIN,
+    STAR_ELEVATE_VARIANT_M1X12,
     STARCODE_GROUP_BED_TYPES,
 )
 from .coordinator import AdjustableBedCoordinator
@@ -43,7 +48,7 @@ _LOGGER = logging.getLogger(__name__)
 _OPERATIONS = f"{DOMAIN}_starcode_group_operations"
 _GROUP_DISPATCH: ContextVar[bool] = ContextVar("starcode_group_dispatch", default=False)
 type GroupTasks = dict[str, set[asyncio.Task[object]]]
-type GroupController = StarcodeM5X5Controller | StarElevateController
+type GroupController = StarcodeM5X5Controller | StarcodeM1X12Controller | StarElevateController
 
 
 def is_group_member(data: Mapping[str, object]) -> bool:
@@ -51,6 +56,17 @@ def is_group_member(data: Mapping[str, object]) -> bool:
     if data.get(CONF_BED_TYPE) == BED_TYPE_STAR_ELEVATE:
         return True
     return (
+        data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M5X5
+        and data.get(CONF_STARCODE_M5X5_PROFILE) in PROFILES
+    ) or (
+        data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M1X12
+        and data.get(CONF_STARCODE_M1X12_PROFILE) in {"cb25", "f23", "kneading"}
+    )
+
+
+def _is_m5x5_group_member(data: Mapping[str, object]) -> bool:
+    """Keep the preexisting M5X5 group roster stable."""
+    return data.get(CONF_BED_TYPE) == BED_TYPE_STAR_ELEVATE or (
         data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M5X5
         and data.get(CONF_STARCODE_M5X5_PROFILE) in PROFILES
     )
@@ -95,19 +111,30 @@ def validate_lift_entries(
     main_entry_id: str | None = None,
 ) -> tuple[str, ...]:
     """Validate offline identity and the app's bed classes or ELEVATE in either slot."""
+    is_m1x12_main = main_data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M1X12
+    max_entries = 2 if is_m1x12_main else 3
     if (
         not isinstance(entries, (tuple, list))
-        or len(entries) > 3
+        or len(entries) > max_entries
         or any(not isinstance(v, str) for v in entries)
     ):
-        raise ValueError("Select at most three independently configured lift beds")
+        raise ValueError(f"Select at most {max_entries} independently configured lift beds")
     result: list[str] = []
     addresses = {str(main_data.get(CONF_ADDRESS, "")).upper()}
     for entry_id in entries:
         if entry_id in result or entry_id == main_entry_id:
             raise ValueError("The main and each lift must be distinct")
         entry = hass.config_entries.async_get_entry(entry_id)
-        if entry is None or entry.domain != DOMAIN or not is_group_member(entry.data):
+        if entry is None or entry.domain != DOMAIN:
+            raise ValueError("Each lift must use an AdjustableM5X5 bedding profile or ELEVATE")
+        if is_m1x12_main:
+            if entry.data.get(CONF_BED_TYPE) != BED_TYPE_STAR_ELEVATE:
+                raise ValueError("M1X12 groups can include only ELEVATE accessories")
+            if entry.data.get(CONF_PROTOCOL_VARIANT) != STAR_ELEVATE_VARIANT_M1X12:
+                raise ValueError(
+                    "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE first"
+                )
+        elif not _is_m5x5_group_member(entry.data):
             raise ValueError("Each lift must use an AdjustableM5X5 bedding profile or ELEVATE")
         address = str(entry.data.get(CONF_ADDRESS, "")).upper()
         if not address or address in addresses:
@@ -120,11 +147,22 @@ def validate_lift_entries(
     return tuple(result)
 
 
-def lift_choices(hass: HomeAssistant, main_entry_id: str | None = None) -> dict[str, str]:
+def lift_choices(
+    hass: HomeAssistant,
+    main_entry_id: str | None = None,
+    *,
+    main_data: Mapping[str, object] | None = None,
+) -> dict[str, str]:
+    is_m1x12_main = (main_data or {}).get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M1X12
     return {
         entry.entry_id: entry.title
         for entry in hass.config_entries.async_entries(DOMAIN)
-        if entry.entry_id != main_entry_id and is_group_member(entry.data)
+        if entry.entry_id != main_entry_id
+        and (
+            entry.data.get(CONF_BED_TYPE) == BED_TYPE_STAR_ELEVATE
+            if is_m1x12_main
+            else _is_m5x5_group_member(entry.data)
+        )
     }
 
 
@@ -140,7 +178,10 @@ def _resolve(hass: HomeAssistant, entry_id: str) -> AdjustableBedCoordinator:
 
 def _controller(controller: BedController | None) -> GroupController:
     if (
-        not isinstance(controller, (StarcodeM5X5Controller, StarElevateController))
+        not isinstance(
+            controller,
+            (StarcodeM5X5Controller, StarcodeM1X12Controller, StarElevateController),
+        )
         or not controller.ready
     ):
         raise ConnectionError("An AdjustableM5X5 group member is not ready")

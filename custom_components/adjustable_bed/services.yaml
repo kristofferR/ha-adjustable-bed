@@ -1,3 +1,29 @@
+configure_alarm_schedule:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    weekly:
+      required: true
+      selector:
+        object:
+    one_time:
+      required: true
+      selector:
+        object:
+    dispatch:
+      required: true
+      selector:
+        select:
+          options: [both, weekly, one_time]
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+
 rmcontrol_alarm:
   fields:
     device_id:
@@ -345,6 +371,22 @@ timed_move:
               value: bed_height
             - label: Stair
               value: stair
+            - label: M1X12 Part 1
+              value: m1x12_part_1
+            - label: M1X12 Part 2
+              value: m1x12_part_2
+            - label: M1X12 Part 4
+              value: m1x12_part_4
+            - label: M1X12 Part 8
+              value: m1x12_part_8
+            - label: M1X12 Part 16
+              value: m1x12_part_16
+            - label: ELEVATE Actuator 1
+              value: elevate_actuator_1
+            - label: ELEVATE Actuator 2
+              value: elevate_actuator_2
+            - label: ELEVATE Both Actuators
+              value: elevate_both
     direction:
       required: true
       selector:

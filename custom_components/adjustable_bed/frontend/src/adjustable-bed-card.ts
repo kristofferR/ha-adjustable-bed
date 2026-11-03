@@ -1276,6 +1276,7 @@ export class AdjustableBedCard extends LitElement {
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
       ${main ? this._toggleRow(main) : nothing}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
+      ${l.states?.map((id) => this._moreInfoRow(id))}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
       ${l.numbers?.map((id) => this._moreInfoRow(id))}
       ${l.timer ? this._moreInfoRow(l.timer) : nothing}
@@ -1550,6 +1551,7 @@ export class AdjustableBedCard extends LitElement {
       bed.lights.light,
       bed.lights.switch,
       bed.lights.state,
+      ...(bed.lights.states ?? []),
       bed.lights.level,
       bed.lights.toggle,
       bed.lights.cycle,

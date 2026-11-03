@@ -128,6 +128,11 @@ movement. Hardware behavior remains unverified.
 | `reverie_run_routine` | `steps` | Replace and run the selected target's Reverie Composer queue |
 | `reverie_test` | None | Run the selected Reverie protocol's timed diagnostic writes and cleanup |
 
+M1X12 uses `m1x12_part_1`, `m1x12_part_2`, `m1x12_part_4`,
+`m1x12_part_8`, and `m1x12_part_16` motor targets. ELEVATE uses
+`elevate_actuator_1`, `elevate_actuator_2`, and `elevate_both`.
+Each target must be declared by the selected bed's controller.
+
 The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
 as buttons where supported. `save_preset` changes memory stored on the bed.
@@ -256,6 +261,12 @@ before any of them is written.
 
 ### `hold_control`
 
+Card release events apply to the press that started the movement. Releasing an
+older direction after STOP does not stop a newer press. Compact card cleanup
+retains only targets whose movement service was dispatched; cancelling before
+a declared start delay expires does not send an extra cleanup STOP. An explicit
+Stop button still stops its selected target immediately.
+
 Hold one control declared by the bed's app profile for `duration` seconds
 (0.1–60, whole milliseconds), then send that profile's release sequence. A
 control the bed does not declare is rejected with the list of controls the bed
@@ -283,6 +294,7 @@ they are not exposed through `hold_control`.
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` repeat every 100 ms; the others are sent once. One zero frame 100 ms after the hold |
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | Key every 100 ms, then the zero key 100 ms later |
 | [AdjustableM5X4](beds/starcode-abm5-4.md) | Movement, preset, save and massage controls | Movement and memory refresh every 100 ms with immediate STOP. Flat runs 600 ms; save and reset run the six-second confirmation interval regardless of `duration`. Positive massage controls require observed active state. One physical address only |
+| [Adjustable Comfort M1X12](beds/starcode-m1x12.md) | Parts 1, 2, 4, 8, 16 and union movement, massage wave/intensity, plus explicit ELEVATE actions | 100 ms held refresh, 0.1–60 seconds, fresh STOP on release/cancellation. The native card invokes one bounded service window and routes STOP to the owning side |
 | [Caresse / Werkmeister](beds/vibradorm_app.md) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
 | [V-MAT Basic](beds/vmatbasic.md) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
 | [OCTO Smart Control](beds/octo.md) | Advertised motor directions and `memory_1` through the discovered memory count | P1 commands repeat every 350 ms inside each bounded operation, which ends with STOP. The 60-second service maximum is a Home Assistant safety bound; the card starts another bounded call only while the user still holds the control. |
@@ -448,7 +460,7 @@ See [FSM Relax](beds/fsm_relax.md) for profile gates and reply ambiguity.
 
 ### `starcode_move_lifts`
 
-Controls the accessories configured on an AdjustableM5X5 or DewertOkin ELEVATE main entry; lifts may be either type. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action supports one main plus up to three distinct lifts and never fans out lighting, massage or programming.
+Controls accessories configured on an AdjustableM5X5 or Adjustable Comfort M1X12 main entry. AdjustableM5X5 retains its one-main-plus-three-lifts limit and accepts its existing member types. M1X12 accepts up to two distinct ELEVATE entries explicitly configured with the M1X12 variant. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action never fans out lighting, massage or programming.
 
 ```yaml
 action: adjustable_bed.starcode_move_lifts
@@ -458,6 +470,58 @@ data:
 ```
 
 Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memory slots, three named-save buttons and reset. Programming sends 55 attempts and reports transport completion, not proof that firmware retained the setting. RGB palette indices and brightness use controller-declared select/number entities. Alarm, sound/EQ, sonic and kneading feedback are read-only.
+
+### `configure_alarm_schedule`
+
+Writes whole weekly and one-time tables for the explicit Tempur Curve, Q-Plus
+Adjustable Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and
+TEMPUR AU app profiles. Serta MP Remote has no accepted table writer and is
+unavailable for this action. `supports_alarm` alone never grants this contract.
+
+```yaml
+action: adjustable_bed.configure_alarm_schedule
+data:
+  device_id: YOUR_DEVICE_ID
+  weekly:
+    - enabled: true
+      wake: true
+      hour: 7
+      minute: 30
+      weekdays: [0, 1, 2, 3, 4]
+  one_time: []
+  dispatch: weekly
+```
+
+Both lists are required and may be empty. `dispatch` is required and is `both`,
+`weekly`, or `one_time`. Records default to `enabled: false`, `wake: false`,
+`hour: 0`, `minute: 0`. Hours are0..23 and minutes0..59. Weekly days are unique
+integers, Monday0 through Sunday6; an enabled weekly record requires a day.
+Each table permits at most three enabled records. Disabled rows consume no
+slots; an enabled `wake: false` row does consume a slot.
+
+An enabled one-time record must be later today in Home Assistant's local
+timezone. The action captures one reference time and reuses it for every
+physical target and serialization. Equal/past times, nonexistent DST times and
+ambiguous DST times are rejected before any write. There is no next-day
+rollover. Absolute target/reference timestamps first use Java Date millisecond
+precision. Their positive millisecond difference then uses integer division
+for relative hour/minute/second fields; zero bytes do not establish firmware clearing.
+
+Both complete tables, including the unselected table, and every physical
+target must pass validation before checksums or writes. Fourth rows, source
+partial-overflow corruption and negative deltas are rejected. `both` sends
+weekly first, waits500 ms, then sends one-time; single-table dispatch retains
+500 ms post-write pacing. Configuration uses the existing command lock and
+scheduler with `cancel_running: false`. Native child targets and optional
+`side` retain their existing routing and conflict checks.
+
+Empty tables attempt empty-table writes; clearing firmware is unverified. A
+transport failure may leave one table sent and the other unsent. There is no
+wire rollback. Phone alarm schedulers, local audio, permissions and snooze UI
+storage are outside this BLE action. Normalize any automation's hour/minute
+arithmetic first, reject cross-date results, and preserve its intended weekly
+or one-time dispatch. See each [app guide](CONFIGURATION.md#curve-q-plus-serta-mp-and-sfd-app-profiles)
+for exact weekday-marker, wake-byte, notification and release differences.
 
 ## Comfort Enhancements alarm
 
