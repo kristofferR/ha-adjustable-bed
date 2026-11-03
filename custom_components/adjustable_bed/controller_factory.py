@@ -19,6 +19,9 @@ from .const import (
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
+    BED_TYPE_BF,
+    BED_TYPE_CASPER_BASE,
+    BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -32,6 +35,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -160,6 +164,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     HAS_LIGHT_DEFAULTS,
+    KAIDI_VARIANT_FLOYD,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -365,7 +370,17 @@ class _ControllerSpec:
 # tests/test_controller_contract.py resolves every entry, so a bad module or
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_BF: _ControllerSpec("bf_cherish", "BfCherishController"),
+    BED_TYPE_CHERISH: _ControllerSpec("bf_cherish", "BfCherishController", MappingProxyType({"cherish": True})),
     BED_TYPE_ESHINE: _ControllerSpec("eshine", "EshineController"),
+    BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
+    "casper_remote": _ControllerSpec("casper_sleep", "CasperRemoteController"),
+    "casper_sleep_mm": _ControllerSpec(
+        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "mm"})
+    ),
+    "casper_sleep_sxb": _ControllerSpec(
+        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "sxb"})
+    ),
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
@@ -514,6 +529,14 @@ async def create_controller(
             coordinator, protocol_variant=protocol_variant,
             device_name=device_name if client is not None else None,
         )
+
+    if bed_type == BED_TYPE_CASPER_BASE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.casper_base", __package__
+        )
+        from .beds.casper_base import CasperBaseController
+
+        return CasperBaseController(coordinator, product=protocol_variant or "")
 
     if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
         # The app's name rule picks the table unless the variant fixes the
@@ -957,6 +980,18 @@ async def create_controller(
         from .beds.jiecang_app import JiecangAppController
 
         entry_data = coordinator.entry.data
+        if entry_data[CONF_JIECANG_APP_PROFILE] == "comfort_motion":
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.comfort_motion", __package__
+            )
+            from .beds.comfort_motion import ComfortMotionController
+
+            return ComfortMotionController(
+                coordinator,
+                layout=entry_data[CONF_JIECANG_APP_LAYOUT],
+                transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+                has_light=entry_data.get(CONF_HAS_LIGHT, True),
+            )
         return JiecangAppController(
             coordinator,
             profile=entry_data[CONF_JIECANG_APP_PROFILE],
@@ -1005,6 +1040,16 @@ async def create_controller(
             raise ValueError(
                 "Kaidi product metadata could not be mapped to a command family. "
                 "Select a Kaidi protocol variant manually in options."
+            )
+
+        if resolution.variant == KAIDI_VARIANT_FLOYD:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.floyd", __package__
+            )
+            from .beds.floyd import FloydController
+
+            return FloydController(
+                coordinator, device_name=device_name, manufacturer_data=manufacturer_data,
             )
 
         return KaidiController(

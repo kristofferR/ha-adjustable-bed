@@ -26,6 +26,8 @@ notification requirements, or preset semantics of other beds.
 ## Boundaries
 
 - Persistent-connection controllers keep their existing connection requirement.
+  An idle timeout of `0` gives any bed the same lifecycle while Disconnect After
+  Command is off: no idle timer, and a dropped link reconnects on demand.
   Sequential pairs still explicitly disconnect before switching sides; a group
   hold never overrides explicit disconnect.
 - The scheduler continues to serialize opaque controller operations. Same-resource

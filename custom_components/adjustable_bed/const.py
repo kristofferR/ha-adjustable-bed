@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
+from . import casper_base_catalog as _casper_base_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
 
 DOMAIN: Final = "adjustable_bed"
@@ -176,7 +177,12 @@ LOGICDATA_APP_TRANSPORTS: Final = {
 CONF_JIECANG_APP_PROFILE: Final = "jiecang_app_profile"
 CONF_JIECANG_APP_LAYOUT: Final = "jiecang_app_layout"
 CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
-JIECANG_APP_PROFILES: Final = {"dreamask": "ERGOBALANCE (Dreamask)", "dreamotion": "Dream Motion"}
+JIECANG_APP_PROFILES: Final = {
+    "dreamask": "ERGOBALANCE (Dreamask)",
+    "dreamotion": "Dream Motion",
+    "dreamhd": "Dream Motion HD",
+    "comfort_motion": "Comfort Motion",
+}
 JIECANG_APP_LAYOUTS: Final = {
     "standard_2": "Back and legs (2 motors)",
     "standard_3_neck": "Back, legs and neck",
@@ -404,6 +410,8 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
+BED_TYPE_BF: Final = "bf"
+BED_TYPE_CHERISH: Final = "cherish"
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # Single-actuator staircase
@@ -478,7 +486,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS}
+    {BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -491,6 +499,16 @@ BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.si
 BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
+BED_TYPE_CASPER_BASE: Final = "casper_base"
+BED_TYPE_CASPER_SLEEP_MM: Final = "casper_sleep_mm"
+BED_TYPE_CASPER_SLEEP_SXB: Final = "casper_sleep_sxb"
+CASPER_BASE_VARIANTS: Final = {
+    key: value[0] + (" (stored profile)" if key not in ("casperpro", "caspermax") else "")
+    for key, value in _casper_base_catalog.PRODUCTS.items()
+}
+CASPER_BASE_SIDE_VARIANTS: Final = frozenset(
+    key for key, value in _casper_base_catalog.PRODUCTS.items() if value[11]
+)
 BED_TYPE_RICHMAT_REVIVE: Final = "richmat_revive"  # com.richmat.revive3
 BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.best_mattress
 BED_TYPE_RICHMAT_BLVD_HOME: Final = "richmat_blvd_home"  # com.richmat.blvd_home
@@ -579,6 +597,7 @@ BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
+BED_TYPE_ISLEEP: Final = "isleep"
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 # Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
@@ -624,6 +643,10 @@ SUPPORTED_BED_TYPES: Final = [
     *sorted(CLUSTER033_BED_TYPES),
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BF,
+    BED_TYPE_CHERISH,
+    "casper_remote",
+    BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,
@@ -738,6 +761,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_TIMOTION_AHF,
     # Kaidi (Rize/Floyd/ISleep)
     BED_TYPE_KAIDI,
+    BED_TYPE_ISLEEP,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
@@ -810,6 +834,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_STARCODE_ABM5_4,
         BED_TYPE_MOTION_BED,
         BED_TYPE_SLEEPTRACKER,
+        BED_TYPE_ISLEEP,
         BED_TYPE_LIMOSS_REMOTE,
     }
 )
@@ -1366,9 +1391,10 @@ OCTO_NAME_PATTERNS: Final = (
     "da1458x",
 )
 
-# Exact case-folded prefixes accepted for automatic discovery. The separate
-# S-series app is pending APK Protocol Audit; only exact S4-Y has legacy hardware evidence
-# and is handled by the narrow regex in detection.py.
+# Exact case-folded prefixes accepted for automatic discovery. Other S-series names
+# belong to the separately audited Motion Bed app profile (docs/beds/motion_bed.md);
+# only exact S4-Y has legacy Solace hardware evidence and is handled by the narrow
+# regex in detection.py.
 SOLACE_NAME_PATTERNS: Final = (
     "qms-iq",
     "qms-i06",
@@ -1465,8 +1491,6 @@ JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
 SLEEP_NUMBER_SERVICE_UUID: Final = "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
 SLEEP_NUMBER_BAMKEY_CHAR_UUID: Final = "421e00f3-ae76-4c49-ab6e-39e4df4a5333"
 SLEEP_NUMBER_AUTH_CHAR_UUID: Final = "8d4675a5-b5fa-42b2-b587-0ee71c46b709"
-SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID: Final = "e8d06e2a-c987-48f8-93a8-4d18d56b4337"
-SLEEP_NUMBER_BULK_TRANSFER_CHAR_UUID: Final = "0ec9a5a3-8ac3-4582-92f3-1666421f323d"
 
 # Sleep Number BAM / MCR specific UUIDs (older 360 / i8 FlexFit bases)
 # Protocol reverse-engineered from com.selectcomfort.SleepIQ APK and live testing
@@ -1475,7 +1499,8 @@ SLEEP_NUMBER_MCR_TX_CHAR_UUID: Final = "ffffd1fd-388d-938b-344a-939d1f6efee1"
 SLEEP_NUMBER_MCR_RX_CHAR_UUID: Final = "ffffd1fd-388d-938b-344a-939d1f6efee2"
 
 # Svane LinonPI specific UUIDs (multi-service architecture)
-# Protocol reverse-engineered from com.produktide.svane.svaneremote APK
+# Protocol first reverse-engineered from the legacy com.produktide.svane.svaneremote
+# APK; the audited app is com.svane.svaneremote 1.8 (8), see docs/beds/svane.md
 # Each motor has its own service with direction-specific characteristics
 SVANE_HEAD_SERVICE_UUID: Final = "0000abcb-0000-1000-8000-00805f9b34fb"
 SVANE_FEET_SERVICE_UUID: Final = "0000c258-0000-1000-8000-00805f9b34fb"
@@ -1720,11 +1745,13 @@ SLEEP_NUMBER_VARIANTS: Final = {
 # Kaidi variants — all OEM apps use SEAT_* commands exclusively.
 # BED_* constants from PLDataTrans.java are legacy/enterprise firmware and are
 # NOT used by any consumer mobile app (Rize, Floyd, ISleep).
+KAIDI_VARIANT_FLOYD: Final = "floyd"
 KAIDI_VARIANT_SEAT_1: Final = "seat_1"
 KAIDI_VARIANT_SEAT_2: Final = "seat_2"
 KAIDI_VARIANT_SEAT_3: Final = "seat_3"
 KAIDI_VARIANT_SEAT_1_2: Final = "seat_1_2"
 KAIDI_VARIANTS: Final = {
+    KAIDI_VARIANT_FLOYD: "Floyd Home (product 139)",
     VARIANT_AUTO: "Auto-detect (recommended)",
     KAIDI_VARIANT_SEAT_1: "Seat 1 (single base)",
     KAIDI_VARIANT_SEAT_2: "Seat 2",
@@ -2617,6 +2644,7 @@ OKIN_64BIT_VARIANTS: Final = {
 
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
+    *CASPER_BASE_VARIANTS,
     *COMFORT_ENHANCEMENTS_VARIANTS,
     *(v for v in BEDSENSE_VARIANTS if v != "auto"),
     VARIANT_AUTO,
@@ -2892,7 +2920,12 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_GLIDEAWAY_MOTION,
+        BED_TYPE_ISLEEP,
         BED_TYPE_BEDSENSE,
+        BED_TYPE_BF,
+        BED_TYPE_CHERISH,
+        "casper_remote",
+        BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,
@@ -2966,6 +2999,8 @@ DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
+# Idle timeout value meaning "never idle-disconnect" (issue #700).
+IDLE_DISCONNECT_KEEP_CONNECTED: Final = 0
 DEFAULT_OCTO_PIN: Final = ""
 DEFAULT_CONNECTION_PROFILE: Final = CONNECTION_PROFILE_BALANCED
 
@@ -2996,6 +3031,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_JIECANG_APP,
             BED_TYPE_KAIDI,
             BED_TYPE_LEGGETT_WILINKE,
+            BED_TYPE_ISLEEP,
             BED_TYPE_LIMOSS,
             BED_TYPE_LOGICDATA_APP,
             # Pressure is polled only on a held link, like the app's pump tab.
@@ -3192,7 +3228,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Source: air.no.jensen.adjustablesleep 2.0.29 audit (held frames re-sent every 300 ms)
     BED_TYPE_JENSEN: (4, 300),
     # Svane: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.produktide.svane.svaneremote ANALYSIS.md (motorRunnable posts every 100ms)
+    # Source: legacy com.produktide.svane.svaneremote analysis (motorRunnable posts every
+    # 100ms). The audited com.svane.svaneremote profiles use their own held refreshes.
     BED_TYPE_SVANE: (10, 100),
     # Vibradorm: 100ms delay → 10 repeats = 1.0s total
     # Source: de.vibradorm.vra APK analysis (CmdMotorVMAT uses 100ms intervals)

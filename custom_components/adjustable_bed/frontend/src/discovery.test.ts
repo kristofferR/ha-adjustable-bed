@@ -1313,6 +1313,18 @@ test("Glideaway exposes its reported massage timer and alarm refresh", () => {
   expect(bed.motors.map(m => m.key)).toEqual(["tilt", "bed_height"]);
 });
 
+test("ISleep controls retain each pattern and keep enrollment outside the everyday card", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.all_up", "isleep_all_up"),
+    entry("button.all_down", "isleep_all_down"),
+    entry("button.pattern_1", "isleep_pattern"),
+    entry("button.pattern_cancel", "isleep_pattern"),
+    entry("button.enroll", "isleep_enroll"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.all_up", "button.all_down"]);
+  expect(bed.massage.buttons).toEqual(["button.pattern_1", "button.pattern_cancel"]);
+});
+
 test("BedSense app actions retain distinct entities and app indicators", () => {
   const bed = bedEntitiesForDevice(hassWith([
     entry("cover.bed_hip", "bedsense_hip"),
@@ -1360,4 +1372,30 @@ test("AdjustaMattress model-gated controls and neutral reported fields stay visi
   expect(bed.utilitySelects).toEqual(["select.commit"]);
   expect(bed.utilityNumbers).toEqual(["number.hour"]);
   expect(bed.utilityStates).toEqual(["sensor.alarm", "binary_sensor.aux"]);
+});
+
+test("BF and Cherish expose their exact app controls in the native card", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("number.cherish_intensity", "bf_cherish_intensity"),
+    entry("number.cherish_wave", "bf_cherish_wave"),
+    entry("select.cherish_timer", "massage_timer"),
+    entry("button.bf_query", "bf_query_alarm"),
+    entry("button.cherish_both_up", "bf_cherish_both_up"),
+    entry("button.cherish_both_down", "bf_cherish_both_down"),
+  ]), "dev1");
+  expect(bed.massage.numbers).toEqual(["number.cherish_intensity", "number.cherish_wave"]);
+  expect(bed.massage.timer).toBe("select.cherish_timer");
+  expect(bed.utility).toEqual(["button.bf_query"]);
+  expect(bed.motors.map((motor) => [motor.key, motor.up, motor.down])).toEqual([
+    ["back_legs", "button.cherish_both_up", "button.cherish_both_down"],
+  ]);
+});
+
+test("Casper Base product actions stay available in the card utility section", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.casper_save_tv", "casper_base_action"),
+    entry("button.casper_fan", "casper_base_action"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.casper_save_tv", "button.casper_fan"]);
+  expect(bedIsEmpty(bed)).toBe(false);
 });

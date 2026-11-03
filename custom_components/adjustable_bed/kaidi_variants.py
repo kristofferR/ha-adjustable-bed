@@ -10,6 +10,7 @@ from .const import (
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_PROTOCOL_VARIANT,
+    KAIDI_VARIANT_FLOYD,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
@@ -20,6 +21,7 @@ from .kaidi_protocol import KaidiSeatBars, decode_kaidi_sofa_acu_no
 
 KAIDI_MANUAL_VARIANTS: frozenset[str] = frozenset(
     {
+        KAIDI_VARIANT_FLOYD,
         KAIDI_VARIANT_SEAT_1,
         KAIDI_VARIANT_SEAT_2,
         KAIDI_VARIANT_SEAT_3,
@@ -92,6 +94,12 @@ def resolve_kaidi_variant(
             product_id=product_id,
             sofa_acu_no=sofa_acu_no,
             seat_bars=seat_bars,
+        )
+
+    if product_id == 139:
+        return KaidiVariantResolution(
+            variant=KAIDI_VARIANT_FLOYD, source="product_id",
+            product_id=product_id, sofa_acu_no=sofa_acu_no, seat_bars=seat_bars,
         )
 
     if product_id in KAIDI_SINGLE_PRODUCT_IDS:

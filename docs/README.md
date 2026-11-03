@@ -23,7 +23,8 @@ These guides describe `main`. The integration requires **Home Assistant
 Start with the [Supported Beds table](../README.md#supported-beds), where related
 brands, models and apps are grouped together. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
 to identify your controller and compare features. The detailed guides in
-[`beds/`](beds/) cover model-specific setup and testing status.
+[`beds/`](beds/) cover model-specific setup and testing status, and follow the
+[bed guide format](BED_GUIDE_FORMAT.md).
 
 ## Protocol Research
 
@@ -75,3 +76,6 @@ dependencies from Home Assistant's own manifests.
 APK artifacts and frozen reports stay local and ignored. Consult the repository's
 clean-room rules before protocol work. Documentation updates do not establish new
 hardware evidence.
+
+[Comfort Motion app setup and BLE behavior](beds/comfort-motion.md), including the
+[row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).

@@ -23,12 +23,15 @@ from typing import Any, Final, TypedDict, cast
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
+    BED_TYPE_CASPER_BASE,
+    BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    CASPER_BASE_SIDE_VARIANTS,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
@@ -140,6 +143,8 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_OKIN_CB24,
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
+        BED_TYPE_ISLEEP,
+        BED_TYPE_CASPER_BASE,
     }
 )
 
@@ -153,6 +158,8 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_CASPER_BASE:
+        return protocol_variant in CASPER_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_KAIDI:
         effective_variant = (
             resolved_variant

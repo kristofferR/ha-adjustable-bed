@@ -93,7 +93,7 @@
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead.",
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "transport_direct": "Direct Bluetooth",
@@ -157,7 +157,7 @@
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead."
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
         }
       },
       "manual_entry": {
@@ -191,7 +191,7 @@
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead."
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
         }
       },
       "manual_octo": {
@@ -465,8 +465,8 @@
         },
         "data_description": {
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
-          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
           "has_light": "Expose light controls when this bed has under-bed lighting."
         }
       },
@@ -713,6 +713,15 @@
         "data_description": {
           "sleepys_elite_selector": "Choose the selector shown by the Sleepy's Elite app for this physical bed. Select none only when the app shows no named control box."
         }
+      },
+      "isleep": {
+        "title": "ISleep bed",
+        "description": "Select the product shown by the ISleep app. Keep the existing numeric room ID to adopt a provisioned bed. For an unprovisioned bed, choose its destination room, then use the explicit enrollment action after setup. HA never resets an existing room. The actuator descriptor is the advertised two-byte value: products 130/143 use separate side controls only when it is not 2.",
+        "data": {
+          "product_type": "ISleep product ID",
+          "kaidi_room_id": "Room ID",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor"
+        }
       }
     },
     "progress": {
@@ -772,6 +781,7 @@
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
       "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "comfort_motion_selection": "Comfort Motion supports back/legs, back/legs/neck, or back/legs/neck/lumbar with Auto, G1 or G2 transport.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
@@ -804,6 +814,7 @@
       "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup.",
       "sleeptracker_profile": "Select a supported Sleeptracker layout and numeric processor selectors.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
@@ -891,7 +902,7 @@
           "motion_bed_restored": "Use an app-restored profile",
           "starcode_lift_entries": "Independently addressed lifts (up to three)",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "product_type": "Bed or chair",
+          "product_type": "Product type",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
           "reverse_motor_1": "Reverse motor channel 1",
           "reverse_motor_2": "Reverse motor channel 2",
@@ -903,7 +914,9 @@
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
           "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "sleepys_elite_selector": "Sleepy's Elite control box selector"
+          "sleepys_elite_selector": "Sleepy's Elite control box selector",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "kaidi_room_id": "Room ID"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -924,7 +937,7 @@
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300).",
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
@@ -936,8 +949,8 @@
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
           "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
-          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
@@ -1041,7 +1054,8 @@
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count."
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
         }
       },
       "right_settings": {
@@ -1064,7 +1078,8 @@
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count."
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
         }
       },
       "vibradorm_setup": {
@@ -1078,11 +1093,12 @@
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
-      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
+      "single_address_pairing_unsupported": "This bed's current Bluetooth protocol does not expose paired-side controls.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
       "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "comfort_motion_selection": "Comfort Motion supports back/legs, back/legs/neck, or back/legs/neck/lumbar with Auto, G1 or G2 transport.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
@@ -1110,9 +1126,12 @@
       "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
+      "isleep_unpair_first": "Revert to a standalone bed before selecting an ISleep product or actuator descriptor without separate side controls.",
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
-      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it."
+      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
+      "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -2877,6 +2896,18 @@
       "glideaway_motion_query_alarm": {
         "name": "Refresh alarm"
       },
+      "isleep_pattern": {
+        "name": "Massage pattern {pattern} (0 cancels)"
+      },
+      "isleep_all_down": {
+        "name": "All down"
+      },
+      "isleep_all_up": {
+        "name": "All up"
+      },
+      "isleep_enroll": {
+        "name": "Enroll unprovisioned bed in selected room"
+      },
       "bedsense_action": {
         "name": "{action}"
       },
@@ -2945,6 +2976,18 @@
       },
       "adjustamattress_lift_foot": {
         "name": "Lift foot"
+      },
+      "casper_base_action": {
+        "name": "{action}"
+      },
+      "bf_cherish_both_up": {
+        "name": "Back and legs up"
+      },
+      "bf_cherish_both_down": {
+        "name": "Back and legs down"
+      },
+      "bf_query_alarm": {
+        "name": "Query bed alarm"
       }
     },
     "cover": {
@@ -3355,6 +3398,9 @@
       },
       "adjustamattress_lift": {
         "name": "Lift"
+      },
+      "motor_3": {
+        "name": "Motor 3"
       }
     },
     "sensor": {
@@ -4497,6 +4543,48 @@
       },
       "adjustamattress_strength_index": {
         "name": "Reported anti-snore strength index"
+      },
+      "casper_sleep_l_body_move": {
+        "name": "Left body movement"
+      },
+      "casper_sleep_r_on_bed": {
+        "name": "Right on bed"
+      },
+      "casper_sleep_r_heart": {
+        "name": "Right heart rate"
+      },
+      "casper_sleep_l_heart": {
+        "name": "Left heart rate"
+      },
+      "casper_sleep_l_snoring": {
+        "name": "Left snoring"
+      },
+      "casper_sleep_l_on_bed": {
+        "name": "Left on bed"
+      },
+      "casper_sleep": {
+        "name": "Sleep sensor state"
+      },
+      "casper_sleep_r_body_move": {
+        "name": "Right body movement"
+      },
+      "casper_remote": {
+        "name": "Remote finder state"
+      },
+      "casper_sleep_r_snoring": {
+        "name": "Right snoring"
+      },
+      "casper_base": {
+        "name": "Casper Base state"
+      },
+      "casper_sleep_l_breath": {
+        "name": "Left breathing rate"
+      },
+      "casper_sleep_r_breath": {
+        "name": "Right breathing rate"
+      },
+      "bf_cherish_alarm": {
+        "name": "Bed alarm"
       }
     },
     "light": {
@@ -4809,6 +4897,9 @@
       },
       "adjustamattress_busy": {
         "name": "Control box busy"
+      },
+      "floyd_battery_mode": {
+        "name": "Battery power mode"
       }
     },
     "number": {
@@ -5045,6 +5136,12 @@
       },
       "adjustamattress_alarm_draft_minute": {
         "name": "Alarm minute (draft)"
+      },
+      "bf_cherish_intensity": {
+        "name": "Massage intensity"
+      },
+      "bf_cherish_wave": {
+        "name": "Massage wave"
       }
     },
     "select": {
@@ -7111,6 +7208,130 @@
         "wake_mode": {
           "name": "Wake mode",
           "description": "No bed movement, Memory A (memory_1), or Memory B (memory_2)."
+        }
+      }
+    },
+    "casper_base": {
+      "name": "Casper Base controls",
+      "description": "Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Bed, sleep sensor, or remote to control."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Bed, light, alarm, sensor, or remote action to run."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Duration or mode required by the selected operation. See the Casper Base guide for its units and range."
+        },
+        "rgb_color": {
+          "name": "RGB color",
+          "description": "Color for the selected light operation."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the selected function."
+        },
+        "hour": {
+          "name": "Alarm hour",
+          "description": "Alarm hour in 24-hour time."
+        },
+        "minute": {
+          "name": "Alarm minute",
+          "description": "Minute within the selected alarm hour."
+        },
+        "mode": {
+          "name": "Alarm preset",
+          "description": "Position preset recalled by the alarm."
+        },
+        "slot": {
+          "name": "Repeating alarm ID",
+          "description": "Existing or new repeating alarm identifier."
+        },
+        "days": {
+          "name": "Weekdays",
+          "description": "Days on which the repeating alarm runs."
+        },
+        "part": {
+          "name": "Sensor partition",
+          "description": "MM: 1 or 2. SXB: 11 for left, 12 for right, or 13 for both."
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "1 for a daily report; 2 for a monthly report."
+        },
+        "year": {
+          "name": "Report year",
+          "description": "Year of the requested sensor report."
+        },
+        "month": {
+          "name": "Report month",
+          "description": "Month of the requested sensor report."
+        },
+        "day": {
+          "name": "Report day",
+          "description": "Day of month for a daily report. Use 1 for a monthly report."
+        },
+        "source": {
+          "name": "Detector status sensor",
+          "description": "External status sensor used by snore detection."
+        },
+        "side": {
+          "name": "Paired side",
+          "description": "Side of a paired bed to target."
+        }
+      }
+    },
+    "floyd_action": {
+      "name": "Floyd Home action",
+      "description": "Recall a preset, confirm a built-in preset overwrite, or assign an unassigned BLE room. Conditional internal selectors are hardware-unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "internal_side": {
+          "name": "Internal preset selector",
+          "description": "First is the normal Floyd UI. Both and second are conditional exported-alarm selectors, not physical Left/Right targets."
+        },
+        "confirm": {
+          "name": "Confirm configuration write",
+          "description": "Required for preset overwrites and BLE room assignment."
+        },
+        "room_id": {
+          "name": "BLE room ID",
+          "description": "Only for assign_room on one unassigned standalone bed. Does not change bed Wi-Fi."
+        },
+        "side": {
+          "name": "Physical side"
+        }
+      }
+    },
+    "bf_cherish_set_alarm": {
+      "name": "Set BF or Cherish bed alarm",
+      "description": "Set or disable the bed alarm using Home Assistant local time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling. Uses Home Assistant local time with minute precision."
+        },
+        "memory": {
+          "name": "Wake memory",
+          "description": "Memory A/B is a wake position, not a bed side."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

@@ -22,6 +22,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .const import (
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LINAK,
@@ -324,7 +325,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
+            hass, entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
         )
     if isinstance(coordinator, PairedBedCoordinator):
         paired_entities: list[NumberEntity] = []
@@ -1013,6 +1014,14 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
     def native_value(self) -> float | None:
         """Return the current massage intensity from controller state."""
         controller = self._coordinator.controller
+        if controller is None and self._coordinator.bed_type == BED_TYPE_ISLEEP:
+            side = self._coordinator.entity_side or "both"
+            state = self._coordinator.controller_state.get(f"isleep_massage_{side}")
+            value = (
+                state.get(f"{self.entity_description.massage_zone}_intensity")
+                if isinstance(state, dict) else None
+            )
+            return float(value) if isinstance(value, (int, float)) else None
         if controller is None:
             state_key = {
                 "head": "woosa_head_level",
@@ -1035,7 +1044,8 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         }
         state_key = key_map.get(zone)
         if state_key and state_key in state:
-            return float(state[state_key])
+            value = state[state_key]
+            return float(value) if value is not None else None
         return 0.0
 
     async def async_set_native_value(self, value: float) -> None:

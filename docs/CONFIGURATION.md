@@ -172,7 +172,7 @@ feedback or change which commands a bed supports.
 | **Refresh Positions While Idle** | On/Off, Linak only | On | Periodically reconcile positions when idle polling is allowed |
 | **Connection Profile** | Balanced / Reliable | Balanced | Connection timeout and retry behavior |
 | **Disconnect After Command** | On/Off | Bed/variant-specific | Release the connection promptly after commands |
-| **Idle Disconnect Seconds** | 10-300 | 40 | Auto-disconnect timeout when idle |
+| **Idle Disconnect Seconds** | 0-300 | 40 | Auto-disconnect timeout when idle; 0 keeps the bed connected |
 | **Stop Discovering New Bluetooth Devices** | On/Off | Off | Suppress automatic discovery of new beds (integration-wide) |
 | **Maximum Back Angle** | Greater than 0, up to 180° | 68° | Back/head range for controllers reporting angles |
 | **Maximum Legs Angle** | Greater than 0, up to 180° | 45° | Legs/feet range for controllers reporting angles |
@@ -223,6 +223,9 @@ feedback or change which commands a bed supports.
 - How long to wait before automatically disconnecting when idle
 - Lower values free the connection faster for physical remotes
 - Higher values reduce reconnection overhead for frequent Home Assistant use
+- `0` keeps the bed connected while Home Assistant runs, so commands respond without reconnecting. Use it only for mains-powered beds: the held link blocks the vendor app and any Bluetooth remote (RF remotes are unaffected), and it keeps the bed's Bluetooth radio active.
+- `0` applies only while Disconnect After Command is off; when that option is on, its one-second handoff wins.
+- If a kept link drops, the next command reconnects it. Most beds get no background reconnect timer, because some receivers drop idle links and stop advertising after repeated reconnects. Bed types that already reconnect automatically after a drop keep doing so.
 
 **Timed Move**
 - `adjustable_bed.timed_move` treats the requested milliseconds as an elapsed movement ceiling, starting after connection and movement preparation. Linak completes its readiness handshake before this timer starts. Bluetooth write latency counts toward the ceiling instead of extending it.
@@ -451,7 +454,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Leggett & Platt | [Prodigy / U Series](beds/leggett-okin.md): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
 | Solace / Woosa | [Woosa Sleep](beds/woosa.md): protocol variant `woosa`; `auto` retains name-based Solace routing. |
 | Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
-| Jiecang | [ERGOBALANCE / Dream Motion](beds/jiecang-app.md): app, layout, transport and light. |
+| Jiecang | [ERGOBALANCE / Dream Motion](beds/jiecang-app.md) and [Comfort Motion](beds/comfort-motion.md): explicit app, layout, transport and local light/massage presence. Comfort Motion supports three layouts and G1/G2 only. |
 | LOGICDATA | [MOTIONrelax](beds/logicdata-app.md): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/logicdata-sleep-smart.md): bed layout and series, or separate air pump. |
 | Malouf / Lucid | [Base apps](beds/malouf-app.md): app, exact model, transport and primary/secondary role. |
 | Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/customatic.md), [Z-Series](beds/customatic-z-series.md), [Serenity](beds/serenity.md), [Tranquil](beds/tranquil.md): select the matching app and model. |
@@ -720,7 +723,7 @@ This is expected when Home Assistant is connected. Most beds only support one BL
 
 **Solutions:**
 1. Enable "Disconnect after each command" where supported, or press Disconnect
-2. Reduce "Idle disconnect seconds" for faster automatic disconnection
+2. Reduce "Idle disconnect seconds" for faster automatic disconnection (and avoid `0`, which keeps the bed connected)
 3. Enable "Disable angle sensing" if position monitoring causes conflicts
 
 ### Commands Are Slow or Unresponsive
@@ -927,6 +930,14 @@ All eight profiles require both current-session write and notification roles.
 The seven profiles without position feedback keep angle sensing disabled and
 still subscribe for their proven timer state. Serta MP exposes calibrated angle
 feedback and direct pulse targets. Hardware behavior remains unverified.
+### ISleep
+
+Choose **ISleep (com.kaidi_test4)** and confirm its product ID, signed 32-bit
+room ID and advertised actuator descriptor. The profile owns layout, massage,
+feedback and movement timing. A two-address pair keeps these settings per side.
+Adopt existing rooms explicitly; enrollment of fresh mode09 devices is a
+separate device action. HA never resets an existing room. See the
+[ISleep guide](beds/isleep.md) and [row064 ledger](apk-analysis/dispositions/row064-isleep.md).
 
 ### BedSense app
 
@@ -936,3 +947,27 @@ generic motor count, massage and angle-sensing choices are hidden. The original
 Bluetooth name and layout belong to each side of a two-address pair. There is no
 single-address left/right command. See [BedSense](beds/bedsense.md) for all nine
 layouts, memory indicators and app-labelled massage/light actions.
+### Floyd Home profile
+
+Choose **Floyd Home app (product 139)** under the Kaidi transport. Auto selects
+this profile for advertised product139. It owns its two-axis layout and disables
+unsupported massage/position controls. Pulse count and delay bound an HA hold,
+not a hardware repeat loop. Each physical address keeps its own BLE room and
+node metadata; do not copy those fields to another side. See the
+[Floyd Home guide](beds/floyd.md) for confirmation, conditional internal preset
+selectors and explicit assignment of an unassigned BLE room.
+
+### BF and Cherish app profiles
+
+Select the exact [BF or Cherish app](beds/bf-cherish.md) in manual setup.
+The app fixes its motor layout, capabilities and 200 ms movement refresh.
+Only the bounded pulse count is configurable. A shared FFE9 service does not
+select either app automatically. Each physical address keeps its own profile.
+
+### Casper Base
+
+Choose the explicit **Casper Base app** profile and its PRO/MAX product. Other
+stored-product choices are conditional records from this package, not inferred
+app compatibility. The product owns the motor layout and accessory controls.
+Configure two-address paired sides separately. Sleep sensors and the RCRM handset
+use separate entries. See the [Casper Base guide](beds/casper-base.md).

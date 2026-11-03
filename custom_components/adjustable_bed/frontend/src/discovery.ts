@@ -259,6 +259,8 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
+        else if (key === "bf_cherish_intensity" || key === "bf_cherish_wave")
+          bed.massage.numbers.push(id);
         else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "starcode_m1x12_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
@@ -370,7 +372,7 @@ export function bedEntitiesForDevice(
           // Inclined-bed controls replace three presets; their physical roles are unverified.
           // A single-address left view keys "Inclined left" without a second suffix.
           presetMap.set(key, id);
-        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm") {
+        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm" || key === "bf_query_alarm") {
           bed.utility.push(id);
         } else if (key.startsWith("eshine_massage_")) {
           bed.massage.buttons.push(id);
@@ -404,7 +406,7 @@ export function bedEntitiesForDevice(
         } else if (key === "ore_comfort_program_flat" || key === "ore_comfort_program_zero_g") {
           // Preset saves have no memory slot.
           bed.utility.push(id);
-        } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
+        } else if (key === "isleep_pattern" || key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
         } else if (key === "comfort_enhancements_quiet_sleep") {
           presetMap.set(key, id);
@@ -434,6 +436,8 @@ export function bedEntitiesForDevice(
           key === "octo_all_down" ||
           key === "reset_defaults" ||
           key === "factory_reset" ||
+          key === "isleep_all_up" ||
+          key === "isleep_all_down" ||
           key === "vibradorm_app_all_up" ||
           key === "vibradorm_app_all_down" ||
           key === "vibradorm_app_sync" ||
@@ -448,8 +452,10 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
-        } else if (key.startsWith("sleepys_app_")) {
+        } else if (key.startsWith("sleepys_app_") || key === "casper_base_action") {
           bed.utility.push(id);
+        } else if (key === "bf_cherish_both_up" || key === "bf_cherish_both_down") {
+          motorButton(id, "back_legs", key.endsWith("_up") ? "up" : "down", entry.device_id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
           motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         }

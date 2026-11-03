@@ -964,7 +964,7 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
     if controller is not None and not getattr(controller, "supports_single_address_pairing", True):
         await coordinator.async_shutdown()
         raise ConfigEntryNotReady(
-            "This CBNew protocol has no side selector and cannot expose paired sides"
+            "The connected protocol has no side selector and cannot expose paired sides"
         )
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
