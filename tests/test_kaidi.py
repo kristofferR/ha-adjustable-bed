@@ -211,7 +211,7 @@ def test_resolve_kaidi_variant_manual_override_seat_1_2() -> None:
 
 def test_resolve_kaidi_variant_single_product_id() -> None:
     """Single-base product IDs should resolve to seat_1."""
-    for pid in (129, 131, 132, 135, 136, 137, 138, 139, 142):
+    for pid in (129, 131, 132, 135, 136, 137, 138, 142):
         resolution = resolve_kaidi_variant(VARIANT_AUTO, product_id=pid)
         assert resolution.variant == KAIDI_VARIANT_SEAT_1, f"product_id={pid}"
         assert resolution.source == "product_id"

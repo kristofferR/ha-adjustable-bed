@@ -2148,6 +2148,54 @@ glideaway_set_alarm:
               value: memory_1
             - label: Memory B
               value: memory_2
+floyd_action:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          options:
+          - zero_g
+          - flat
+          - anti_snore
+          - memory_1
+          - memory_2
+          - memory_3
+          - save_zero_g
+          - save_anti_snore
+          - assign_room
+          - confirm_add
+    internal_side:
+      default: first
+      selector:
+        select:
+          options:
+          - first
+          - both
+          - second
+    confirm:
+      default: false
+      selector:
+        boolean: null
+    room_id:
+      selector:
+        number:
+          min: 1
+          max: 4294967295
+          mode: box
+    side:
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
 
 
 bf_cherish_set_alarm:

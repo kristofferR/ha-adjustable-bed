@@ -161,6 +161,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     HAS_LIGHT_DEFAULTS,
+    KAIDI_VARIANT_FLOYD,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -1009,6 +1010,16 @@ async def create_controller(
             raise ValueError(
                 "Kaidi product metadata could not be mapped to a command family. "
                 "Select a Kaidi protocol variant manually in options."
+            )
+
+        if resolution.variant == KAIDI_VARIANT_FLOYD:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.floyd", __package__
+            )
+            from .beds.floyd import FloydController
+
+            return FloydController(
+                coordinator, device_name=device_name, manufacturer_data=manufacturer_data,
             )
 
         return KaidiController(

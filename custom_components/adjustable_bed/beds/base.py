@@ -1603,6 +1603,23 @@ class BedController(ABC):
         raise NotImplementedError("Richmat MH aroma timing is not supported")
 
     @property
+    def supports_floyd_actions(self) -> bool:
+        """Whether the Floyd Home room and preset actions are available."""
+        return False
+
+    def validate_floyd_action(
+        self, action: str, internal_side: str, confirm: bool, room_id: int | None,
+    ) -> None:
+        """Validate a Floyd Home action before any target writes."""
+        raise NotImplementedError("Floyd Home actions are unavailable")
+
+    async def floyd_action(
+        self, action: str, internal_side: str, confirm: bool, room_id: int | None,
+    ) -> None:
+        """Execute an explicit Floyd Home BLE room or preset action."""
+        raise NotImplementedError("Floyd Home actions are unavailable")
+
+    @property
     def supports_sleeptracker_controls(self) -> bool:
         """Whether typed local Sleeptracker processor actions are available."""
         return False
