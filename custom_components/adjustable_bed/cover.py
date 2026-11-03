@@ -19,8 +19,10 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
+    SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
@@ -294,25 +296,14 @@ def _async_remove_stale_cover_entities(
         else set()
     )
     # App-specific covers must retire when a different protocol replaces them.
-    stale_keys = (
-        controller.stale_motor_entity_keys
-        | {axis for layout in LAYOUTS for axis in layout_axes(layout)}
-        | {
-            "both",
-            "right_back",
-            "right_legs",
-            "both_backs",
-            "both_legs",
-            "waist",
-            "malouf_tilt_head",
-            "malouf_full_tilt",
-            "back_legs",
-            "motor_1",
-            "motor_2",
-            "motor_3",
-            "motor_4",
-        }
-    )
+    stale_keys = controller.stale_motor_entity_keys | {
+        axis for layout in LAYOUTS for axis in layout_axes(layout)
+    } | {
+        "both", "right_back", "right_legs", "both_backs", "both_legs", "waist",
+        "hip", "lift", "rise_and_fall", "back_and_leg",
+        "malouf_tilt_head", "malouf_full_tilt", "back_legs",
+        "motor_1", "motor_2", "motor_3", "motor_4",
+    }
 
     for key in stale_keys:
         if key in active_keys:
@@ -381,18 +372,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         return super().available and (octo is None or octo.normal_controls_available)
 
     @property
-    def _position_key(self) -> str:
-        """Return the key to look up in position_data."""
-        return self.entity_description.position_key or self.entity_description.key
-
-    @property
-    def _motor_resource(self) -> str:
-        """Return the scheduler resource for this physical position axis."""
-        return self.entity_description.scheduler_resource or f"motor:{self._position_key}"
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose controller-declared card hold controls and host safety timing."""
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose declared held controls for the shared card."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         hold = self.entity_description.hold
         if hold is not None:
@@ -404,7 +385,17 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                     "hold_release_delay_ms": hold.release_delay_ms,
                 }
             )
-        return attributes
+        return attributes or None
+
+    @property
+    def _position_key(self) -> str:
+        """Return the key to look up in position_data."""
+        return self.entity_description.position_key or self.entity_description.key
+
+    @property
+    def _motor_resource(self) -> str:
+        """Return the scheduler resource for this physical position axis."""
+        return self.entity_description.scheduler_resource or f"motor:{self._position_key}"
 
     @property
     def is_closed(self) -> bool | None:
@@ -484,14 +475,28 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 direction,
                 self.entity_description.key,
             )
+            hold = self.entity_description.hold
+            if hold is not None and self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                control = hold.up_control if direction == "open" else hold.down_control
+
+                async def finite_app_move(controller: BedController) -> None:
+                    await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
+
+                move_fn = finite_app_move
+            else:
+                move_fn = (
+                    self.entity_description.open_fn
+                    if direction == "open"
+                    else self.entity_description.close_fn
+                )
             if direction == "open":
                 await self._coordinator.async_execute_controller_command(
-                    self.entity_description.open_fn,
+                    move_fn,
                     resource=self._motor_resource,
                 )
             else:
                 await self._coordinator.async_execute_controller_command(
-                    self.entity_description.close_fn,
+                    move_fn,
                     resource=self._motor_resource,
                 )
             _LOGGER.debug(

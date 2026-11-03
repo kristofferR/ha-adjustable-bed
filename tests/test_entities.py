@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
@@ -3106,6 +3107,57 @@ class TestSensorEntities:
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:FF_back") is not None
         for key in ("legs", "head", "feet", "bed_height"):
             assert registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}") is None
+
+    async def test_linak_keeps_upgraded_entities_until_capabilities_resolve(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ) -> None:
+        """A 3.x entry must not lose sliders or memories while the mask is pending (#714)."""
+        _configure_linak_advanced(mock_bleak_client)
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+
+        async def read_gatt_char(target: object) -> bytes:
+            if str(target).lower() == LINAK_POSITION_MASK_UUID:
+                raise BleakError("error=5 description=Insufficient authentication")
+            return await original_read(target)
+
+        mock_bleak_client.read_gatt_char.side_effect = read_gatt_char
+        mock_config_entry_data[CONF_DISABLE_ANGLE_SENSING] = False
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Test Bed",
+            data=mock_config_entry_data,
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id="linak_upgrade_entry_id",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        kept = [
+            ("number", "back_position"),
+            ("number", "legs_position"),
+            ("button", "preset_memory_1"),
+            ("button", "program_memory_1"),
+        ]
+        for platform, key in kept:
+            registry.async_get_or_create(
+                platform, DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}", config_entry=entry
+            )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        for platform, key in kept:
+            assert (
+                registry.async_get_entity_id(platform, DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}")
+                is not None
+            )
 
     async def test_linak_performance_removes_inapplicable_diagnostics(
         self,

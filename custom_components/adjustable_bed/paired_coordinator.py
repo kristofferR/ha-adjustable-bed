@@ -464,7 +464,9 @@ class PairedBedCoordinator:
                 cancel_scope = self._active_group_resources or command_scope
                 for child in list(self._active_children):
                     child.request_command_cancel(resources=cancel_scope)
-        entry_cancel = {s: self._pair_cancel_generation(s, command_scope) for s in target_sides}
+        entry_cancel = {
+            s: self._pair_cancel_generation(s, command_scope) for s in target_sides
+        }
 
         if not sequential:
             attempt_cursors = {
@@ -488,7 +490,9 @@ class PairedBedCoordinator:
                     ) from None
                 sequential = True
             except Exception as err:
-                await self._async_fallback_after_connection_slot_exhaustion(err, attempt_cursors)
+                await self._async_fallback_after_connection_slot_exhaustion(
+                    err, attempt_cursors
+                )
                 raise
             else:
                 return
@@ -625,7 +629,9 @@ class PairedBedCoordinator:
                     side, resources, entry_cancel
                 ) or not self._expected_stop_epochs_match(
                     [(side, child)],
-                    {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                    {side: expected_stop_epoch}
+                    if expected_stop_epoch is not None
+                    else None,
                 ):
                     return
                 await op(child)
@@ -639,7 +645,9 @@ class PairedBedCoordinator:
                 side, resources, entry_cancel
             ) or not self._expected_stop_epochs_match(
                 [(side, child)],
-                {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                {side: expected_stop_epoch}
+                if expected_stop_epoch is not None
+                else None,
             ):
                 return
             if expected_stop_epoch is None:
@@ -679,7 +687,9 @@ class PairedBedCoordinator:
                     side, resources, entry_cancel
                 ) or not self._expected_stop_epochs_match(
                     [(side, child)],
-                    {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                    {side: expected_stop_epoch}
+                    if expected_stop_epoch is not None
+                    else None,
                 ):
                     await child.async_abort_prepared_command(handle)
                     return
@@ -753,7 +763,8 @@ class PairedBedCoordinator:
 
         def is_expected_invalidation(side: str, error: BaseException | None) -> bool:
             return isinstance(error, PreparedCommandInvalidated) and (
-                prepared[side][1].outcome in {CommandOutcome.REPLACED, CommandOutcome.STOPPED}
+                prepared[side][1].outcome
+                in {CommandOutcome.REPLACED, CommandOutcome.STOPPED}
             )
 
         try:
@@ -763,15 +774,18 @@ class PairedBedCoordinator:
                 ):
                     return
 
-                async def prepare_side(side: str, child: BedChild) -> CommandHandle | None:
-                    # STOP or a newer side command may run after task creation
-                    # but before this coroutine gets its first turn.
+                async def prepare_side(
+                    side: str, child: BedChild
+                ) -> CommandHandle | None:
+                    # STOP or newer side work may run before this task's first turn.
                     if self._pair_admission_was_cancelled(
                         targets, resources, entry_cancel, expected_stop_epochs
                     ):
                         return None
                     expected_stop_epoch = (
-                        expected_stop_epochs.get(side) if expected_stop_epochs is not None else None
+                        expected_stop_epochs.get(side)
+                        if expected_stop_epochs is not None
+                        else None
                     )
                     if expected_stop_epoch is None:
                         return await child.async_prepare_command_operation(
@@ -789,15 +803,20 @@ class PairedBedCoordinator:
                     )
 
                 enqueue_tasks = {
-                    side: asyncio.create_task(prepare_side(side, child)) for side, child in targets
+                    side: asyncio.create_task(prepare_side(side, child))
+                    for side, child in targets
                 }
                 try:
-                    await asyncio.gather(*enqueue_tasks.values(), return_exceptions=True)
+                    await asyncio.gather(
+                        *enqueue_tasks.values(), return_exceptions=True
+                    )
                 except asyncio.CancelledError:
                     for task in enqueue_tasks.values():
                         if not task.done():
                             task.cancel()
-                    await asyncio.gather(*enqueue_tasks.values(), return_exceptions=True)
+                    await asyncio.gather(
+                        *enqueue_tasks.values(), return_exceptions=True
+                    )
                     collect_enqueues(enqueue_tasks)
                     raise
                 enqueue_errors = collect_enqueues(enqueue_tasks)
@@ -815,7 +834,9 @@ class PairedBedCoordinator:
                 side: asyncio.create_task(child.async_wait_prepared_command(handle))
                 for side, (child, handle) in prepared.items()
             }
-            ready_results = await asyncio.gather(*ready_tasks.values(), return_exceptions=True)
+            ready_results = await asyncio.gather(
+                *ready_tasks.values(), return_exceptions=True
+            )
             ready_errors: dict[str, BaseException] = {}
             ready_invalidated = False
             for side, result in zip(ready_tasks, ready_results, strict=True):
@@ -872,11 +893,15 @@ class PairedBedCoordinator:
                 committed = True
 
                 result_tasks = {
-                    side: asyncio.create_task(child.async_wait_prepared_command_result(handle))
+                    side: asyncio.create_task(
+                        child.async_wait_prepared_command_result(handle)
+                    )
                     for side, (child, handle) in prepared.items()
                 }
                 try:
-                    await asyncio.wait(result_tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
+                    await asyncio.wait(
+                        result_tasks.values(), return_when=asyncio.FIRST_EXCEPTION
+                    )
                     errors: dict[str, BaseException] = {}
                     expected_invalidations = False
                     for side, task in result_tasks.items():
@@ -2048,7 +2073,9 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
             errors: dict[str, BaseException] = {}
             for side, child in targets:
                 if any(
-                    self._pair_command_was_cancelled(target_side, resources, entry_cancel)
+                    self._pair_command_was_cancelled(
+                        target_side, resources, entry_cancel
+                    )
                     for target_side, _ in targets
                 ) or not self._expected_stop_epochs_match(targets, expected_stop_epochs):
                     return
@@ -2059,16 +2086,22 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
                     break
             if errors:
                 stop_targets = [
-                    (side, self._children[side]) for side in PAIR_SIDES if side in self._children
+                    (side, self._children[side])
+                    for side in PAIR_SIDES
+                    if side in self._children
                 ]
                 stop_errors = await self._stop_children(stop_targets)
-                raise PairedSideError(action, _merge_stop_errors(errors, stop_errors))
+                raise PairedSideError(
+                    action, _merge_stop_errors(errors, stop_errors)
+                )
         except asyncio.CancelledError:
             await self._stop_children(targets)
             raise
         except Exception as err:  # noqa: BLE001
             if self._single_native_both and len({child for _, child in targets}) == 1:
-                stop_errors = await self._stop_children([(SIDE_BOTH, targets[0][1])])
+                stop_errors = await self._stop_children(
+                    [(SIDE_BOTH, targets[0][1])]
+                )
                 raise PairedSideError(
                     action,
                     _merge_stop_errors({SIDE_BOTH: err}, stop_errors),

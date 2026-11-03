@@ -163,6 +163,10 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return SBI_VARIANT_BOTH
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
+    if bed_type == const.BED_TYPE_COMFORT_ENHANCEMENTS:
+        return "mc2"
+    if bed_type == const.BED_TYPE_GLIDEAWAY_MOTION:
+        return "motion_400"
     if bed_type == const.BED_TYPE_ZSERIES:
         return const.ZSERIES_VARIANT_Z230
     return None
@@ -183,6 +187,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     client = _make_connected_client()
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unknown"
+    if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
+        coordinator.entry.data[const.CONF_SLEEPYS_ELITE_SELECTOR] = "BOX24"
 
     if bed_type == BED_TYPE_RICHMAT:
         return await create_controller(

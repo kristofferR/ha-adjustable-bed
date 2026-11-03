@@ -102,17 +102,10 @@ function nestedTemplateMatching(
 
 function memoryTile(
   bed: BedEntities,
+  hass: HomeAssistant,
 ): { card: InstanceType<typeof AdjustableBedCard>; tile: TemplateResult } {
   const card = new AdjustableBedCard();
-  card.hass = {
-    states: {},
-    entities: {},
-    devices: {},
-    locale: { language: "en" },
-    language: "en",
-    themes: {},
-    callService: async () => undefined,
-  } satisfies HomeAssistant;
+  card.hass = hass;
   const createSection: unknown = Reflect.get(AdjustableBedCard.prototype, "_memory");
   if (typeof createSection !== "function") throw new Error("Missing card memory section");
   const section: unknown = Reflect.apply(createSection, card, [bed]);
@@ -342,11 +335,22 @@ for (const scenario of [
       slot: 1,
       goto: "button.preset_memory_1",
       save: "button.program_memory_1",
-      heldControl: { control: "memory_1", startDelayMs: 100, releaseDelayMs: 200 },
     };
-    const { card, tile } = memoryTile(bedForMemory(slot, scenario.stop));
-    card.hass = {
-      states: {},
+    const hass: HomeAssistant = {
+      states: {
+        [slot.goto]: {
+          entity_id: slot.goto,
+          state: "unknown",
+          last_changed: "",
+          last_updated: "",
+          // OCTO memory recall is held for as long as the user holds the tile.
+          attributes: {
+            held_control: "memory_1",
+            hold_start_delay_ms: 100,
+            hold_release_delay_ms: 200,
+          },
+        },
+      },
       entities: {
         [slot.goto]: {
           entity_id: slot.goto,
@@ -359,15 +363,21 @@ for (const scenario of [
       locale: { language: "en" },
       language: "en",
       themes: {},
-      callService: async (domain, service, data) => {
+      callService: (domain, service, data) => {
         calls.push({ domain, service, data });
+        // The bounded hold service stays in flight while the tile is held.
+        return service === "hold_control" ? new Promise<void>(() => undefined) : Promise.resolve();
       },
     };
+    const { card, tile } = memoryTile(bedForMemory(slot, scenario.stop), hass);
 
     try {
       const keydown = new TestKeyboardEvent(scenario.key);
       invoke(eventHandler(tile, "keydown"), card, [keydown]);
       expect(keydown.defaultPrevented).toBe(true);
+      expect(scheduled.timers.map((timer) => timer.delay)).toEqual([100]);
+      scheduled.timers[0].callback();
+      await Promise.resolve();
 
       if (scenario.release === "keyup") {
         invoke(eventHandler(tile, "keyup"), card, [keydown]);
@@ -375,13 +385,17 @@ for (const scenario of [
         invoke(eventHandler(tile, "blur"), card);
       }
 
-      const pending = scheduled.timers.filter((timer) => !timer.cancelled);
-      expect(pending.map((timer) => timer.delay)).toEqual([100, 200]);
-      pending.find((timer) => timer.delay === 100)?.callback();
-      await Promise.resolve();
-      pending.find((timer) => timer.delay === 200)?.callback();
+      const release = scheduled.timers.filter((timer) => !timer.cancelled && timer.delay === 200);
+      expect(release).toHaveLength(1);
+      expect(calls).toHaveLength(1);
+      release[0].callback();
 
       expect(calls).toEqual([
+        {
+          domain: "adjustable_bed",
+          service: "hold_control",
+          data: { device_id: ["right-bed"], control: "memory_1", duration: 60 },
+        },
         { domain: "button", service: "press", data: { entity_id: scenario.stop } },
       ]);
     } finally {
@@ -529,7 +543,8 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
         .find((timer) => timer.delay === 100 && !timer.cancelled)
         ?.callback();
       expect(calls.at(-1)).toEqual({
-        domain: "button", service: "press", data: { entity_id: rightBed.stop },
+        // A held cover releases through its own side-wide cover stop.
+        domain: "cover", service: "stop_cover", data: { entity_id: "cover.right_back" },
       });
       finishHold();
       await Promise.resolve();
@@ -579,7 +594,8 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
         .find((timer) => timer.delay === 100 && !timer.cancelled)
         ?.callback();
       expect(calls.at(-1)).toEqual({
-        domain: "button", service: "press", data: { entity_id: rightBed.stop },
+        // A held cover releases through its own side-wide cover stop.
+        domain: "cover", service: "stop_cover", data: { entity_id: "cover.right_back" },
       });
       finishHold();
     } finally {
@@ -660,12 +676,13 @@ for (const stopSide of ["left", "right"] as const) {
           .reverse()
           .find((timer) => timer.delay === 100 && !timer.cancelled)
           ?.callback();
-        expect(calls.filter((call) => call.domain === "button")).toEqual([
+        // The active side's held cover still releases through its own cover stop.
+        expect(calls.filter((call) => call.domain !== "adjustable_bed")).toEqual([
           { domain: "button", service: "press", data: { entity_id: clickedStop } },
           {
-            domain: "button",
-            service: "press",
-            data: { entity_id: `button.${activeSide}_stop` },
+            domain: "cover",
+            service: "stop_cover",
+            data: { entity_id: `cover.${activeSide}_back` },
           },
         ]);
         fixture.finishHold();
@@ -1194,8 +1211,10 @@ for (const relation of ["parent_device_id", "via_device_id"] as const) {
 
         const nextKeydown = new TestKeyboardEvent("Enter");
         invoke(eventHandler(up, "keydown"), fixture.card, [nextKeydown]);
-        expect(calls.filter((call) => call.domain === "button")).toEqual([
-          { domain: "button", service: "press", data: { entity_id: bed.stop } },
+        const releases = (): RecordedServiceCall[] =>
+          calls.filter((call) => call.domain !== "adjustable_bed");
+        expect(releases()).toEqual([
+          { domain: "cover", service: "stop_cover", data: { entity_id: `cover.${side}_back` } },
         ]);
         const nextStart = [...scheduled.timers].reverse().find(
           (timer) => timer.delay === 100 && !timer.cancelled,
@@ -1207,7 +1226,7 @@ for (const relation of ["parent_device_id", "via_device_id"] as const) {
         expect(calls.filter((call) => call.service === "hold_control")).toHaveLength(2);
 
         oldRelease.callback();
-        expect(calls.filter((call) => call.domain === "button")).toHaveLength(1);
+        expect(releases()).toHaveLength(1);
         invoke(eventHandler(up, "keyup"), fixture.card, [nextKeydown]);
         const nextRelease = [...scheduled.timers].reverse().find(
           (timer) => timer.delay === 100 && !timer.cancelled,
@@ -1265,18 +1284,21 @@ test("metadata loss does not let a different side Stop cancel the retained hold"
     await Promise.resolve();
     expect(calls.filter((call) => call.service === "hold_control")).toHaveLength(1);
 
+    const heldKey = (): unknown => Reflect.get(Reflect.get(fixture.card, "_hold"), "heldKey");
     fixture.hass.devices = {};
     invoke(eventHandler(leftStop, "click"), fixture.card);
-    fixture.finishHold();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(calls.filter((call) => call.service === "hold_control")).toHaveLength(2);
+    expect(heldKey()).toBe(rightMotor.key);
 
     invoke(eventHandler(rightStop, "click"), fixture.card);
+    expect(heldKey()).toBeNull();
+    expect(calls.filter((call) => call.domain === "button")).toEqual([
+      { domain: "button", service: "press", data: { entity_id: "button.left_stop" } },
+      { domain: "button", service: "press", data: { entity_id: "button.right_stop" } },
+    ]);
     fixture.finishHold();
     await Promise.resolve();
     await Promise.resolve();
-    expect(calls.filter((call) => call.service === "hold_control")).toHaveLength(2);
+    expect(calls.filter((call) => call.service === "hold_control")).toHaveLength(1);
   } finally {
     scheduled.restore();
     if (previousKeyboardEvent) {

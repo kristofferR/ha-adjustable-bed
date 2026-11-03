@@ -8,157 +8,28 @@ import type { HomeAssistant, MotorEntity } from "./types";
 
 export type Direction = "up" | "down";
 
-export type HoldTargetSide = "left" | "right" | "both";
-
-export interface HoldTarget {
-  deviceId: string;
-  side?: HoldTargetSide;
-  // Preserve the registry's physical owner when a native child loses its
-  // state attributes. The parent identifies the pair, while the child still
-  // distinguishes one side from its sibling.
-  physicalDeviceId?: string;
-  parentDeviceId?: string;
-}
-
-function deviceParentId(
-  deviceId: string,
-  devices: HomeAssistant["devices"],
-): string | undefined {
-  const parentId = devices[deviceId]?.parent_device_id ?? devices[deviceId]?.via_device_id;
-  return parentId && devices[parentId] ? parentId : undefined;
-}
-
-function deviceHasChildren(deviceId: string, devices: HomeAssistant["devices"]): boolean {
-  return Object.values(devices).some(
-    (candidate) =>
-      (candidate.parent_device_id ?? candidate.via_device_id) === deviceId,
-  );
-}
-
-function sideFromStopEntity(
-  hass: HomeAssistant,
+export function heldButtonMotor(
+  hass: HomeAssistant | undefined,
   entityId: string,
-): HoldTargetSide | undefined {
-  const stateSide = hass.states[entityId]?.attributes.bed_side ??
-    hass.states[entityId]?.attributes.side;
-  const translationKey = hass.entities[entityId]?.translation_key;
-  const registrySide = translationKey === "stop_left"
-    ? "left"
-    : translationKey === "stop_right"
-      ? "right"
-      : translationKey === "stop_both"
-        ? "both"
-        : undefined;
-  const stateIsSide = stateSide === "left" || stateSide === "right" || stateSide === "both";
-  if (stateIsSide && registrySide && stateSide !== registrySide) return undefined;
-  if (stateIsSide) return stateSide;
-  return registrySide;
-}
-
-function isRegisteredStopEntity(entityId: string, hass: HomeAssistant): boolean {
-  const entry = hass.entities[entityId];
-  return entry?.platform === "adjustable_bed" &&
-    entry.entity_id.startsWith("button.") &&
-    (entry.translation_key === "stop" ||
-      entry.translation_key === "stop_left" ||
-      entry.translation_key === "stop_right" ||
-      entry.translation_key === "stop_both");
-}
-
-export function holdTargetForEntity(
-  hass: HomeAssistant | undefined,
-  entityId?: string,
-): HoldTarget | undefined {
-  if (!hass || !entityId) return undefined;
-  const deviceId = hass.entities[entityId]?.device_id;
-  if (!deviceId) return undefined;
-
-  const devices = hass.devices ?? {};
-  const parentId = deviceParentId(deviceId, devices);
-  const declaredSide = sideFromStopEntity(hass, entityId);
-  const side: HoldTargetSide | undefined =
-    declaredSide === "left" || declaredSide === "right" || declaredSide === "both"
-      ? declaredSide
-      : !parentId && deviceHasChildren(deviceId, devices)
-        ? "both"
-        : undefined;
-
+): MotorEntity | undefined {
+  const deviceId = hass?.entities[entityId]?.device_id;
+  const attributes = hass?.states[entityId]?.attributes;
+  const control = attributes?.held_control;
+  const startDelayMs = attributes?.hold_start_delay_ms;
+  const releaseDelayMs = attributes?.hold_release_delay_ms;
+  if (
+    !deviceId || typeof control !== "string" ||
+    typeof startDelayMs !== "number" || !Number.isFinite(startDelayMs) ||
+    startDelayMs < 0 || typeof releaseDelayMs !== "number" ||
+    !Number.isFinite(releaseDelayMs) || releaseDelayMs < 0
+  ) return undefined;
   return {
-    // A side-less child is not proof that the stop owns its parent and sibling.
-    // Keep its physical ID until HA publishes a logical side.
-    deviceId: parentId && side ? parentId : deviceId,
-    side,
-    physicalDeviceId: deviceId,
-    ...(parentId ? { parentDeviceId: parentId } : {}),
+    key: entityId,
+    up: entityId,
+    deviceId,
+    holdEntityId: entityId,
+    heldControl: { control, startDelayMs, releaseDelayMs },
   };
-}
-
-function holdTargetsOverlap(
-  first: HoldTarget | undefined,
-  second: HoldTarget | undefined,
-): boolean {
-  // Missing registry ownership is ambiguous, so keep the established broad-stop
-  // behavior instead of risking a hold surviving a STOP that may own it.
-  if (!first || !second) return true;
-  const firstOwner = first.parentDeviceId ?? first.deviceId;
-  const secondOwner = second.parentDeviceId ?? second.deviceId;
-  if (firstOwner !== secondOwner) return false;
-  // An explicitly known Both target overlaps either child even if HA has
-  // temporarily omitted that child's logical-side state attributes.
-  if (first.side === "both" || second.side === "both") return true;
-  if (first.side && second.side) {
-    return first.side === second.side;
-  }
-  // A child with missing state attributes remains distinct from a sibling.
-  // Same-device unsided controls retain the existing broad-stop behavior.
-  return !first.physicalDeviceId || !second.physicalDeviceId ||
-    first.physicalDeviceId === second.physicalDeviceId;
-}
-
-function sameStopIdentity(
-  retainedStop: string | null | undefined,
-  currentStop: string | undefined,
-): boolean {
-  return currentStop !== undefined && retainedStop === currentStop;
-}
-
-function pairedPeerStopEntityIds(
-  hass: HomeAssistant | undefined,
-  stopEntityId: string | undefined,
-): string[] {
-  if (!hass || !stopEntityId) return [];
-  const deviceId = hass.entities[stopEntityId]?.device_id;
-  if (!deviceId) return [];
-  const side = sideFromStopEntity(hass, stopEntityId);
-  if (side === "left" || side === "right") {
-    const peerSide = side === "left" ? "right" : "left";
-    const sameDeviceStops = Object.values(hass.entities).filter(
-      (entry) =>
-        entry.entity_id !== stopEntityId &&
-        entry.device_id === deviceId &&
-        isRegisteredStopEntity(entry.entity_id, hass) &&
-        sideFromStopEntity(hass, entry.entity_id) === peerSide,
-    );
-    if (sameDeviceStops.length === 1) return [sameDeviceStops[0].entity_id];
-  }
-  const devices = hass.devices ?? {};
-  const parentId = deviceParentId(deviceId, devices);
-  if (!parentId) return [];
-  const childIds = Object.entries(devices)
-    .filter(([, device]) => (device.parent_device_id ?? device.via_device_id) === parentId)
-    .map(([id]) => id);
-  // Paired entries have two physical children. Ambiguous or incomplete graphs
-  // cannot prove which registry stop owns the remaining side.
-  if (childIds.length !== 2 || !childIds.includes(deviceId)) return [];
-  const peerId = childIds.find((id) => id !== deviceId);
-  if (!peerId) return [];
-  const stops = Object.values(hass.entities).filter(
-    (entry) =>
-      entry.device_id === peerId &&
-      isRegisteredStopEntity(entry.entity_id, hass) &&
-      entry.translation_key === "stop",
-  );
-  return stops.length === 1 ? [stops[0].entity_id] : [];
 }
 
 export function movementPulse(
@@ -166,21 +37,6 @@ export function movementPulse(
   motor: MotorEntity,
   direction: Direction,
 ): Promise<unknown> | undefined {
-  const heldControl = motor.heldControls?.[direction];
-  if (heldControl) {
-    const entityId = motor.cover ?? motor[direction];
-    const deviceId = entityId ? hass?.entities[entityId]?.device_id : undefined;
-    if (!deviceId) return undefined;
-    const side = entityId ? hass?.states[entityId]?.attributes.bed_side : undefined;
-    return hass?.callService("adjustable_bed", "hold_control", {
-      device_id: [deviceId],
-      control: heldControl.control,
-      // Each operation is host-bounded and cleans up with STOP. The card can
-      // safely start another bounded operation if the user is still holding.
-      duration: 60,
-      ...(side === "left" || side === "right" || side === "both" ? { side } : {}),
-    });
-  }
   if (motor.timedMove) {
     // A shared movement window preserves each receiver's cadence without
     // making the faster side wait out its partner's configured finite pulse.
@@ -201,10 +57,32 @@ export function movementPulse(
   return entityId ? hass?.callService("button", "press", { entity_id: entityId }) : undefined;
 }
 
+// Controller-declared refresh holds use the shared bounded service. The
+// release entity remains the owner of STOP and side routing.
+export function movementHold(
+  hass: HomeAssistant | undefined,
+  motor: MotorEntity,
+  direction: Direction,
+): Promise<unknown> | undefined {
+  const spec = motor.heldControls?.[direction] ?? motor.heldControl;
+  if (!spec || !motor.deviceId) return undefined;
+  const side = hass?.states[motor.holdEntityId ?? motor.cover ?? ""]?.attributes.bed_side;
+  const serviceData: Record<string, unknown> = {
+    device_id: [motor.deviceId],
+    control: spec.control,
+    duration: 60,
+  };
+  if (side === "left" || side === "right" || side === "both") {
+    serviceData.side = side;
+  }
+  return hass?.callService("adjustable_bed", "hold_control", serviceData);
+}
+
 export interface HoldActions {
   // Runs one finite movement pulse and resolves when the bed has finished it.
   // Resolving is what paces the repeat loop; rejecting stops it.
   pulse: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
+  holdControl: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
   // Stops a cover-backed motor, which is the only kind with its own stop. The
   // bed stop identifies the compact target retained when the hold began.
   stopCover: (coverEntityId: string, stopEntityId?: string) => void;
@@ -215,12 +93,179 @@ export interface HoldActions {
   stopBed: (stopEntityId?: string) => void;
 }
 
+export interface HoldTimers {
+  setTimeout: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
+  clearTimeout: (timer: ReturnType<typeof setTimeout>) => void;
+}
+
+export interface HoldLifecycleTarget {
+  addEventListener(
+    type: "visibilitychange" | "pagehide",
+    listener: () => void,
+  ): void;
+  removeEventListener(
+    type: "visibilitychange" | "pagehide",
+    listener: () => void,
+  ): void;
+}
+
 interface PendingRelease {
   id: number;
-  stop?: string;
+  motorKey: string;
+  targetKey: string;
   target?: HoldTarget;
-  started: boolean;
-  timer: ReturnType<typeof setTimeout>;
+  cover?: string;
+  stopEntityId?: string;
+  timer?: ReturnType<typeof setTimeout>;
+}
+
+export type HoldTargetSide = "left" | "right" | "both";
+
+export interface HoldTarget {
+  deviceId: string;
+  side?: HoldTargetSide;
+  // The registry device that owns the entity, and its paired parent. A
+  // two-address child publishes no logical side, so its physical device is
+  // what keeps it distinct from its sibling.
+  physicalDeviceId?: string;
+  parentDeviceId?: string;
+}
+
+export type CoverStopScope = "motor" | "side";
+
+function deviceParentId(
+  deviceId: string,
+  devices: HomeAssistant["devices"],
+): string | undefined {
+  const parentId = devices[deviceId]?.parent_device_id ?? devices[deviceId]?.via_device_id;
+  return parentId && devices[parentId] ? parentId : undefined;
+}
+
+function deviceHasChildren(deviceId: string, devices: HomeAssistant["devices"]): boolean {
+  return Object.values(devices).some(
+    (candidate) => (candidate.parent_device_id ?? candidate.via_device_id) === deviceId,
+  );
+}
+
+const STOP_TRANSLATION_SIDES: Record<string, HoldTargetSide> = {
+  stop_left: "left",
+  stop_right: "right",
+  stop_both: "both",
+};
+
+// State attributes can be missing while HA restores an entity; the registry's
+// sided Stop translation key still names its side. Conflicting sources are
+// ambiguous and claim no side.
+function sideForEntity(hass: HomeAssistant, entityId: string): HoldTargetSide | undefined {
+  const attributes = hass.states[entityId]?.attributes;
+  const declared = attributes?.bed_side ?? attributes?.side;
+  const stateSide = declared === "left" || declared === "right" || declared === "both"
+    ? declared
+    : undefined;
+  const translationKey = hass.entities[entityId]?.translation_key;
+  const registrySide = translationKey ? STOP_TRANSLATION_SIDES[translationKey] : undefined;
+  if (stateSide && registrySide && stateSide !== registrySide) return undefined;
+  return stateSide ?? registrySide;
+}
+
+function isStopEntity(hass: HomeAssistant, entityId: string): boolean {
+  const entry = hass.entities[entityId];
+  return entry?.platform === "adjustable_bed" &&
+    entityId.startsWith("button.") &&
+    (entry.translation_key === "stop" ||
+      (entry.translation_key !== undefined && entry.translation_key in STOP_TRANSLATION_SIDES));
+}
+
+export function holdTargetForEntity(
+  hass: HomeAssistant | undefined,
+  entityId?: string,
+): HoldTarget | undefined {
+  if (!hass || !entityId) return undefined;
+  const deviceId = hass.entities[entityId]?.device_id;
+  if (!deviceId) return undefined;
+
+  const devices = hass.devices ?? {};
+  const parentId = deviceParentId(deviceId, devices);
+  const side = sideForEntity(hass, entityId) ??
+    (!parentId && deviceHasChildren(deviceId, devices) ? "both" : undefined);
+
+  return {
+    // A side-less child is not proof that its Stop owns the parent and the
+    // sibling, so it keeps its own device until HA publishes a logical side.
+    deviceId: parentId && side ? parentId : deviceId,
+    side,
+    physicalDeviceId: deviceId,
+    ...(parentId ? { parentDeviceId: parentId } : {}),
+  };
+}
+
+function holdTargetsOverlap(first: HoldTarget, second: HoldTarget): boolean {
+  if ((first.parentDeviceId ?? first.deviceId) !== (second.parentDeviceId ?? second.deviceId)) {
+    return false;
+  }
+  if (first.side === "both" || second.side === "both") return true;
+  if (first.side && second.side) return first.side === second.side;
+  // A child without a logical side stays distinct from its sibling.
+  return !first.physicalDeviceId || !second.physicalDeviceId ||
+    first.physicalDeviceId === second.physicalDeviceId;
+}
+
+// A side Stop halts only its own receiver. A started held Both operation also
+// needs the other side's Stop, or that side keeps moving until the host bound.
+function pairedPeerStopEntityIds(
+  hass: HomeAssistant | undefined,
+  stopEntityId: string | undefined,
+): string[] {
+  if (!hass || !stopEntityId) return [];
+  const deviceId = hass.entities[stopEntityId]?.device_id;
+  if (!deviceId) return [];
+  const side = sideForEntity(hass, stopEntityId);
+  if (side === "left" || side === "right") {
+    // One-address pairs keep both side Stops on one device.
+    const peerSide = side === "left" ? "right" : "left";
+    const sameDevice = Object.values(hass.entities).filter(
+      (entry) =>
+        entry.entity_id !== stopEntityId &&
+        entry.device_id === deviceId &&
+        isStopEntity(hass, entry.entity_id) &&
+        sideForEntity(hass, entry.entity_id) === peerSide,
+    );
+    if (sameDevice.length === 1) return [sameDevice[0].entity_id];
+  }
+  const devices = hass.devices ?? {};
+  const parentId = deviceParentId(deviceId, devices);
+  if (!parentId) return [];
+  const childIds = Object.entries(devices)
+    .filter(([, device]) => (device.parent_device_id ?? device.via_device_id) === parentId)
+    .map(([id]) => id);
+  // An incomplete pair graph cannot prove which Stop owns the other side.
+  if (childIds.length !== 2 || !childIds.includes(deviceId)) return [];
+  const peerId = childIds.find((id) => id !== deviceId);
+  const stops = Object.values(hass.entities).filter(
+    (entry) =>
+      entry.device_id === peerId &&
+      entry.translation_key === "stop" &&
+      isStopEntity(hass, entry.entity_id),
+  );
+  return stops.length === 1 ? [stops[0].entity_id] : [];
+}
+
+// This is the callback used by both Stop buttons rendered by the card. Keep
+// target resolution here so the state-machine tests exercise the same path as
+// the DOM handlers without needing a browser runtime.
+export function stopFromCard(
+  hold: MotorHold,
+  hass: HomeAssistant | undefined,
+  stopEntityId?: string,
+): void {
+  const target = holdTargetForEntity(hass, stopEntityId);
+  const coversAllTargets = target?.side !== "left" && target?.side !== "right";
+  hold.stopAll(
+    stopEntityId,
+    coversAllTargets,
+    target,
+    pairedPeerStopEntityIds(hass, stopEntityId),
+  );
 }
 
 export class MotorHold {
@@ -242,12 +287,20 @@ export class MotorHold {
   // Bumping this is what stops an in-flight repeat loop: the loop's next
   // iteration sees a stale value and exits.
   private _generation = 0;
+  private _repeatBlocked = false;
+  private _startTimer?: ReturnType<typeof setTimeout>;
   private _started = false;
-  private _activeHeldControl: { startDelayMs: number; releaseDelayMs: number } | null = null;
+  private _heldControl?: MotorEntity["heldControl"];
   private _releaseId = 0;
   private readonly _pendingReleases = new Map<number, PendingRelease>();
 
-  constructor(private readonly actions: HoldActions) {}
+  constructor(
+    private readonly actions: HoldActions,
+    private readonly timers: HoldTimers = {
+      setTimeout: (callback, delayMs) => globalThis.setTimeout(callback, delayMs),
+      clearTimeout: (timer) => globalThis.clearTimeout(timer),
+    },
+  ) {}
 
   get heldKey(): string | null {
     return this._key;
@@ -263,69 +316,75 @@ export class MotorHold {
     stopEntityId?: string,
     target?: HoldTarget,
   ): void {
-    this._begin(motor, dir, pointerId, stopEntityId, target);
-  }
-
-  // A semantic click has no down/up interval. Start the same held service and
-  // release it just after its controller-declared start guard.
-  activateForTap(
-    motor: MotorEntity,
-    dir: Direction,
-    stopEntityId?: string,
-    target?: HoldTarget,
-  ): void {
-    const generation = this._begin(motor, dir, null, stopEntityId, target);
-    if (generation === null) return;
-    const startDelayMs = this._activeHeldControl?.startDelayMs ?? 0;
-    setTimeout(() => {
-      if (generation === this._generation && this._key === motor.key) {
-        this.end(motor);
-      }
-    }, startDelayMs + 1);
-  }
-
-  private _begin(
-    motor: MotorEntity,
-    dir: Direction,
-    pointerId: number | null,
-    stopEntityId?: string,
-    target?: HoldTarget,
-  ): number | null {
-    if (this._key !== null) return null;
-    // Finish only delayed STOPs that overlap this physical target. An unrelated
-    // side can continue its own release while this hold starts.
-    this._flushPendingReleases(target, stopEntityId);
+    if (this._key !== null) return;
     this._key = motor.key;
     this._cover = motor.cover ?? null;
     this._stop = stopEntityId ?? null;
     this._target = target;
     this._pointerId = pointerId;
-    this._activeHeldControl = motor.heldControls?.[dir] ?? null;
     const generation = ++this._generation;
+    this._heldControl = motor.heldControls?.[dir] ?? motor.heldControl;
+    this._flushPendingForTarget(this._targetKey());
+    if (this._heldControl) {
+      const delay = this._heldControl.startDelayMs;
+      if (delay <= 0) {
+        this._startHeldControl(motor, dir, generation);
+      } else {
+        this._startTimer = this.timers.setTimeout(
+          () => this._startHeldControl(motor, dir, generation), delay,
+        );
+      }
+      return;
+    }
+    this._started = true;
     void this._repeat(motor, dir, generation);
-    return generation;
   }
 
-  // Each iteration is one bounded backend operation. Most controls run one
-  // configured pulse; controllers with a held service run until their declared
-  // safety bound. Both paths clean up, and the card repeats only while held.
+  private _startHeldControl(
+    motor: MotorEntity,
+    dir: Direction,
+    generation: number,
+  ): void {
+    this._startTimer = undefined;
+    if (generation !== this._generation || this._key !== motor.key) return;
+    this._started = true;
+    void this._holdControl(motor, dir, generation);
+  }
+
+  private async _holdControl(
+    motor: MotorEntity,
+    dir: Direction,
+    generation: number,
+  ): Promise<void> {
+    try {
+      const pending = this.actions.holdControl(motor, dir);
+      if (pending) await pending;
+    } catch {
+      // Home Assistant reports service errors; forget the hold so it can retry.
+    } finally {
+      if (generation === this._generation) this._reset();
+    }
+  }
+
+  // One iteration moves the bed for a single configured pulse and then stops,
+  // for cover-backed motors too: cover.py runs open_cover/close_cover as one
+  // finite controller command that performs its own STOP/release cleanup rather
+  // than running until stop_cover. So both kinds of motor need re-issuing.
   private async _repeat(
     motor: MotorEntity,
     dir: Direction,
     generation: number,
   ): Promise<void> {
-    const startDelayMs = this._activeHeldControl?.startDelayMs ?? 0;
-    if (startDelayMs > 0) {
-      await new Promise<void>((resolve) => setTimeout(resolve, startDelayMs));
-      if (generation !== this._generation) return;
-    }
-    // Awaiting each operation before starting the next prevents commands from
-    // queueing. If the user releases or the card disappears, the current call
-    // still ends at its controller-declared bound and performs its cleanup.
-    while (generation === this._generation) {
+    // Awaiting each call before issuing the next keeps commands from queueing
+    // up behind each other, so the integration never has to cancel one
+    // mid-flight. It does not make the motion continuous: each backend command
+    // is finite and ends with the protocol's release burst, so a hold is a
+    // train of pulses with a short stop between them. Making it continuous
+    // needs a hold-until-released primitive in the integration, which does not
+    // exist yet: see issue #483.
+    while (generation === this._generation && !this._repeatBlocked) {
       try {
         const pending = this.actions.pulse(motor, dir);
-        this._started = !!pending;
         if (!pending) return;
         await pending;
       } catch {
@@ -334,6 +393,112 @@ export class MotorHold {
         return;
       }
     }
+  }
+
+  private _targetKey(
+    stopEntityId = this._stop ?? undefined,
+    cover = this._cover ?? undefined,
+  ): string {
+    return stopEntityId ?? cover ?? this._key ?? "";
+  }
+
+  // Returns the entity whose stop was requested, if any.
+  private _release(
+    target: Pick<PendingRelease, "cover" | "stopEntityId">,
+  ): string | undefined {
+    if (target.cover) {
+      this.actions.stopCover(target.cover, target.stopEntityId);
+      return target.cover;
+    }
+    this.actions.stopBed(target.stopEntityId);
+    return target.stopEntityId;
+  }
+
+  private _scheduleRelease(): void {
+    const release: PendingRelease = {
+      id: ++this._releaseId,
+      motorKey: this._key ?? "",
+      targetKey: this._targetKey(),
+      target: this._target,
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    this._pendingReleases.set(release.id, release);
+    const delay = this._heldControl?.releaseDelayMs ?? 0;
+    if (delay <= 0) {
+      this._runRelease(release);
+      return;
+    }
+    release.timer = this.timers.setTimeout(() => this._runRelease(release), delay);
+  }
+
+  private _runRelease(release: PendingRelease): string | undefined {
+    if (!this._pendingReleases.delete(release.id)) return undefined;
+    if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+    return this._release(release);
+  }
+
+  private _flushPendingForTarget(targetKey: string): Set<string> {
+    const released = new Set<string>();
+    for (const release of [...this._pendingReleases.values()]) {
+      const key = release.targetKey;
+      if (key !== targetKey) continue;
+      this._runRelease(release);
+      released.add(key);
+    }
+    return released;
+  }
+
+  private _flushAllReleases(skipTarget?: string): Set<string> {
+    const released = new Set<string>();
+    for (const release of [...this._pendingReleases.values()]) {
+      const key = release.targetKey;
+      if (key === skipTarget) {
+        this._pendingReleases.delete(release.id);
+        if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+      } else {
+        this._runRelease(release);
+        released.add(key);
+      }
+    }
+    return released;
+  }
+
+  private _targetsOverlap(
+    targetKey: string,
+    target: HoldTarget | undefined,
+    stopEntityId: string | undefined,
+    stopTarget: HoldTarget | undefined,
+  ): boolean {
+    if (stopEntityId !== undefined && targetKey === stopEntityId) return true;
+    return !!target && !!stopTarget && holdTargetsOverlap(target, stopTarget);
+  }
+
+  // Returns whether a discarded release belonged to a Both hold.
+  private _discardReleasesOverlapping(
+    stopEntityId: string,
+    stopTarget: HoldTarget | undefined,
+  ): boolean {
+    let discardedBoth = false;
+    for (const release of [...this._pendingReleases.values()]) {
+      if (!this._targetsOverlap(
+        release.targetKey,
+        release.target,
+        stopEntityId,
+        stopTarget,
+      )) continue;
+      this._pendingReleases.delete(release.id);
+      if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+      if (release.target?.side === "both") discardedBoth = true;
+    }
+    return discardedBoth;
+  }
+
+  private _discardAllReleases(): void {
+    for (const release of this._pendingReleases.values()) {
+      if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+    }
+    this._pendingReleases.clear();
   }
 
   // A pointer-driven release. Only the pointer that started the hold may end
@@ -352,37 +517,79 @@ export class MotorHold {
   // another control owns: a blur on some other motor's button would otherwise
   // stop the motor that is running.
   end(motor: MotorEntity): void {
-    const stop = this._stop ?? undefined;
-    const heldControl = this._activeHeldControl;
-    const target = this._target;
+    if (this._key !== motor.key) return;
     const started = this._started;
-    if (!this.cancel(motor)) return;
-    if (heldControl) {
-      this._scheduleRelease(stop, target, heldControl.releaseDelayMs, started);
-      return;
-    }
-    if (motor.cover) {
-      this.actions.stopCover(motor.cover, stop);
-      return;
-    }
-    // Cancelling the loop does not touch the pulse already in flight, and each
-    // pulse is a second or more, so without this the bed keeps moving well
-    // after the control is released. The stop cancels the running command,
-    // which is also what makes a short tap move the bed briefly rather than
-    // for a full pulse.
-    this.actions.stopBed(stop);
+    const hasMetadata = this._heldControl !== undefined;
+    const releaseTarget = {
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    if (started && hasMetadata) this._scheduleRelease();
+    this._reset();
+    if (!started || hasMetadata) return;
+    this._release(releaseTarget);
   }
 
   // Stop re-issuing pulses for this motor without sending anything to the bed.
   // Returns whether there was a matching hold to cancel.
-  cancel(motor: MotorEntity | null, target?: HoldTarget): boolean {
+  cancel(motor: MotorEntity | null, explicitStopFollows = false): boolean {
+    if (!motor) return false;
+    const matchedActive = this._key === motor.key;
+    if (matchedActive) this._reset();
+    let matchedRelease = false;
+    if (explicitStopFollows) {
+      for (const release of [...this._pendingReleases.values()]) {
+        if (release.motorKey !== motor.key) continue;
+        this._pendingReleases.delete(release.id);
+        if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+        matchedRelease = true;
+      }
+    }
+    return matchedActive || matchedRelease;
+  }
+
+  // Cover stop behavior is supplied per motor by the backend. Keep ordinary
+  // motor-specific stops on their motor key; a caller with an explicit
+  // side-wide stop contract may invalidate any overlapping operation on that
+  // physical side. The clicked cover service call remains the card's job.
+  stopCover(
+    motor: MotorEntity,
+    target: HoldTarget | undefined,
+    scope: CoverStopScope,
+  ): void {
+    const coverId = motor.cover;
+    if (!coverId) return;
     if (
-      !motor ||
-      this._key !== motor.key ||
-      (target !== undefined && !holdTargetsOverlap(this._target, target))
-    ) return false;
-    this._reset();
-    return true;
+      this._key !== null &&
+      (scope === "side" || this._key === motor.key) &&
+      this._targetsOverlap(this._targetKey(), this._target, coverId, target)
+    ) {
+      const sideOnlyStopOfBoth =
+        this._target?.side === "both" &&
+        this._target.deviceId === target?.deviceId &&
+        (target?.side === "left" || target?.side === "right");
+      if (sideOnlyStopOfBoth && !this._heldControl) {
+        // A finite combined button can have work left on its other child. Stop
+        // reissuing Both commands, but keep its original release owner alive.
+        this._repeatBlocked = true;
+      } else {
+        this._reset();
+      }
+    }
+
+    for (const release of [...this._pendingReleases.values()]) {
+      const partialBothRelease =
+        release.target?.side === "both" &&
+        release.target.deviceId === target?.deviceId &&
+        (target?.side === "left" || target?.side === "right");
+      if (
+        (scope !== "side" && partialBothRelease) ||
+        (scope !== "side" && release.motorKey !== motor.key) ||
+        !this._targetsOverlap(release.targetKey, release.target, coverId, target)
+      ) continue;
+      this._pendingReleases.delete(release.id);
+      if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+    }
   }
 
   // A stop button. Invalidating first matters: otherwise the in-flight pulse
@@ -391,134 +598,114 @@ export class MotorHold {
   // invalidate *any* hold, not just one motor's, because this stop halts
   // whatever is moving. `stopEntityId` is the pressed button's own stop; it
   // wins over the held motor's, which may belong to a different side.
+  // `peerStopEntityIds` are the other side's Stops, pressed only when this
+  // side Stop ends a started held Both operation.
   stopAll(
     stopEntityId?: string,
-    target?: HoldTarget,
+    stopCoversAllTargets = false,
+    stopTarget?: HoldTarget,
     peerStopEntityIds: readonly string[] = [],
   ): void {
-    const matchingPending = [...this._pendingReleases.values()].filter((pending) =>
-      sameStopIdentity(pending.stop, stopEntityId) ||
-      holdTargetsOverlap(pending.target, target),
-    );
-    const pendingStop = matchingPending[0]?.stop;
-    const stop = stopEntityId ?? this._stop ?? pendingStop;
-    const activeMatches = this._key !== null && (
-      sameStopIdentity(this._stop, stopEntityId) ||
-      holdTargetsOverlap(this._target, target)
-    );
-    const startedBothHold =
-      (activeMatches && this._started && this._activeHeldControl !== null &&
-        this._target?.side === "both") ||
-      matchingPending.some((pending) => pending.started && pending.target?.side === "both");
-    const remainingStops = startedBothHold
-      ? peerStopEntityIds.filter((id) => id !== stopEntityId)
-      : [];
-    this._discardPendingReleases(target, stopEntityId);
-    if (activeMatches) this._reset();
-    this.actions.stopBed(stop);
-    for (const peerStop of remainingStops) this.actions.stopBed(peerStop);
+    if (stopEntityId !== undefined) {
+      let endedHeldBoth = false;
+      if (stopCoversAllTargets && !stopTarget) {
+        this._discardAllReleases();
+        this._reset();
+      } else {
+        endedHeldBoth = this._discardReleasesOverlapping(stopEntityId, stopTarget);
+        if (
+          this._key !== null &&
+          this._targetsOverlap(this._targetKey(), this._target, stopEntityId, stopTarget)
+        ) {
+          endedHeldBoth ||= this._started && this._heldControl !== undefined &&
+            this._target?.side === "both";
+          this._reset();
+        }
+      }
+      this.actions.stopBed(stopEntityId);
+      if (endedHeldBoth) {
+        // A newer hold that still owns the peer side ends with its own release.
+        const activeStop = this._key !== null ? this._stop : null;
+        for (const peer of peerStopEntityIds) {
+          if (peer !== stopEntityId && peer !== activeStop) this.actions.stopBed(peer);
+        }
+      }
+      return;
+    }
+
+    const released = this._flushAllReleases(stopEntityId);
+    const active = this._key === null ? null : {
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    const activeTarget = active
+      ? this._targetKey(active.stopEntityId, active.cover)
+      : undefined;
+    const activeStarted = this._started;
+    this._reset();
+    if (active && activeStarted && activeTarget !== undefined) {
+      this._release(active);
+      released.add(activeTarget);
+    }
+    if (released.size === 0 && (!active || !activeStarted)) {
+      this.actions.stopBed(active?.stopEntityId);
+    }
   }
 
   // The card left the DOM mid-hold, so no pointer release will ever arrive.
   // Stops the loop and the bed: a cover would otherwise keep running with
   // nothing left to stop it, and the pulse already in flight on a button-backed
   // motor keeps moving the bed for the rest of its duration, which is a second
-  // or more and longer still with customised pulse settings.
+  // or more and longer still with customised pulse settings. Returns the
+  // entities it stopped so the card does not stop them a second time.
   abandon(): string[] {
-    const cover = this._cover;
-    const stop = this._stop ?? undefined;
-    const heldControl = this._activeHeldControl;
-    const wasHolding = this._key !== null;
-    const stopped = new Set(this._flushPendingReleases());
+    const active = this._key === null ? null : {
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    const activeStarted = this._started;
     this._reset();
-    if (!wasHolding) return [...stopped];
-    if (heldControl) {
-      if (!stop || !stopped.has(stop)) this.actions.stopBed(stop);
-      if (stop) stopped.add(stop);
-      return [...stopped];
+    const stopped = new Set<string>();
+    const record = (id: string | undefined): void => {
+      if (id !== undefined) stopped.add(id);
+    };
+    if (active && activeStarted) record(this._release(active));
+    for (const release of [...this._pendingReleases.values()]) {
+      record(this._runRelease(release));
     }
-    if (cover) {
-      this.actions.stopCover(cover, stop);
-      stopped.add(cover);
-      return [...stopped];
-    }
-    if (!stop || !stopped.has(stop)) this.actions.stopBed(stop);
-    if (stop) stopped.add(stop);
     return [...stopped];
   }
 
   private _reset(): void {
+    if (this._startTimer !== undefined) this.timers.clearTimeout(this._startTimer);
+    this._startTimer = undefined;
     this._key = null;
     this._cover = null;
     this._stop = null;
     this._target = undefined;
     this._pointerId = null;
+    this._repeatBlocked = false;
     this._started = false;
-    this._activeHeldControl = null;
+    this._heldControl = undefined;
     this._generation++;
-  }
-
-  private _scheduleRelease(
-    stop: string | undefined,
-    target: HoldTarget | undefined,
-    delayMs: number,
-    started: boolean,
-  ): void {
-    const pending: PendingRelease = {
-      id: ++this._releaseId,
-      stop,
-      target,
-      started,
-      timer: setTimeout(() => this._runPendingRelease(pending), delayMs),
-    };
-    this._pendingReleases.set(pending.id, pending);
-  }
-
-  private _runPendingRelease(pending: PendingRelease): void {
-    if (!this._pendingReleases.delete(pending.id)) return;
-    this.actions.stopBed(pending.stop);
-  }
-
-  private _flushPendingReleases(
-    target?: HoldTarget,
-    stopEntityId?: string,
-  ): Set<string> {
-    const stopped = new Set<string>();
-    for (const pending of [...this._pendingReleases.values()]) {
-      if (
-        !sameStopIdentity(pending.stop, stopEntityId) &&
-        !holdTargetsOverlap(pending.target, target)
-      ) continue;
-      clearTimeout(pending.timer);
-      this._runPendingRelease(pending);
-      if (pending.stop) stopped.add(pending.stop);
-    }
-    return stopped;
-  }
-
-  private _discardPendingReleases(
-    target?: HoldTarget,
-    stopEntityId?: string,
-  ): void {
-    for (const pending of [...this._pendingReleases.values()]) {
-      if (
-        !sameStopIdentity(pending.stop, stopEntityId) &&
-        !holdTargetsOverlap(pending.target, target)
-      ) continue;
-      clearTimeout(pending.timer);
-      this._pendingReleases.delete(pending.id);
-    }
   }
 }
 
-export function stopFromCard(
+export function attachHoldLifecycle(
   hold: MotorHold,
-  hass: HomeAssistant | undefined,
-  stopEntityId?: string,
-): void {
-  hold.stopAll(
-    stopEntityId,
-    holdTargetForEntity(hass, stopEntityId),
-    pairedPeerStopEntityIds(hass, stopEntityId),
-  );
+  documentTarget: HoldLifecycleTarget & { visibilityState: string },
+  windowTarget: HoldLifecycleTarget,
+): () => void {
+  const abandon = (): void => {
+    hold.abandon();
+  };
+  const onVisibilityChange = (): void => {
+    if (documentTarget.visibilityState === "hidden") abandon();
+  };
+  documentTarget.addEventListener("visibilitychange", onVisibilityChange);
+  windowTarget.addEventListener("pagehide", abandon);
+  return () => {
+    documentTarget.removeEventListener("visibilitychange", onVisibilityChange);
+    windowTarget.removeEventListener("pagehide", abandon);
+  };
 }

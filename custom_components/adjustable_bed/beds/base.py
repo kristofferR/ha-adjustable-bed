@@ -42,6 +42,25 @@ _LOGGER = logging.getLogger(__name__)
 MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
 
 
+@dataclass(frozen=True, slots=True)
+class ControllerHoldSpec:
+    """Finite held-control metadata for a controller-declared button."""
+
+    control: str
+    start_delay_ms: int
+    release_delay_ms: int
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerMotorHoldSpec:
+    """Finite held-control metadata for a motor's two directions."""
+
+    up_control: str
+    down_control: str
+    start_delay_ms: int
+    release_delay_ms: int
+
+
 class SideBoundController:
     """View of one controller with a per-call logical bed side.
 
@@ -91,25 +110,6 @@ class SideBoundController:
 
 
 @dataclass(frozen=True, slots=True)
-class ControllerHoldSpec:
-    """A bounded, card-owned press-and-hold control declared by a controller."""
-
-    control: str
-    start_delay_ms: int
-    release_delay_ms: int
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerMotorHoldSpec:
-    """Bounded card hold metadata for each motor direction."""
-
-    up_control: str
-    down_control: str
-    start_delay_ms: int
-    release_delay_ms: int
-
-
-@dataclass(frozen=True, slots=True)
 class ControllerButtonSpec:
     """An app-labelled action whose physical semantics need no inferred axis."""
 
@@ -120,9 +120,9 @@ class ControllerButtonSpec:
     translation_key: str | None = None
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
+    hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
-    hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -449,6 +449,16 @@ class BedController(ABC):
         idle-disconnects them. Because this is a property of the resolved controller,
         it is authoritative even when the bed type/variant resolves to different
         protocols at connect time.
+        """
+        return False
+
+    @property
+    def holds_link_after_stalled_reconnect(self) -> bool:
+        """Return True to hold the link once a connect has stalled this session.
+
+        For receivers that keep advertising but often refuse or time out
+        reconnects. Until a connect times out or aborts, the configured handoff
+        applies, so receivers that reconnect normally stay free for their apps.
         """
         return False
 
