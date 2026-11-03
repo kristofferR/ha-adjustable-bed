@@ -456,6 +456,10 @@ class BfCherishController(BedController):
         return self.cherish
 
     @property
+    def supports_light_toggle_control(self) -> bool:
+        return self.cherish
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         return self.cherish
 

@@ -568,3 +568,22 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
     runtime.controller_state = owner.handle_controller_state_updates.call_args.args[0]
     runtime.controller = None
     assert select.current_option == "Off"
+
+
+@pytest.mark.parametrize("cherish", [False, True])
+async def test_light_entities_follow_the_selected_app_capability(hass, cherish):
+    from custom_components.adjustable_bed.button import _button_entities_for
+    from custom_components.adjustable_bed.light import _light_entities_for
+    from custom_components.adjustable_bed.switch import _switch_entities_for
+    from tests.test_malouf_app_entities import configure_entity_runtime
+
+    ctrl, _, _ = make_controller(hass, cherish)
+    runtime = configure_entity_runtime(hass, ctrl, BED_TYPE_CHERISH if cherish else BED_TYPE_BF)
+    runtime.bed_type = BED_TYPE_CHERISH if cherish else BED_TYPE_BF
+    buttons = _button_entities_for(hass, runtime)
+    assert all(button.unique_id != runtime.entity_unique_id("toggle_light") for button in buttons)
+    switches = _switch_entities_for(hass, runtime)
+    assert any(switch.unique_id == runtime.entity_unique_id("under_bed_lights") for switch in switches) is cherish
+    assert ctrl.supports_light_toggle_control is cherish
+    # BF's excluded collision must not reappear as the optional assumed light.
+    assert not _light_entities_for(hass, runtime)

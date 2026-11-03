@@ -100,6 +100,24 @@ test("2-motor bed with light switch and no massage/climate", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("Nectar Move Reading and save-response state are discoverable in their own sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.preset_flat", "preset_flat"),
+    entry("button.preset_lounge", "preset_lounge"),
+    entry("button.preset_reading", "preset_reading"),
+    entry("binary_sensor.save_response", "memory_save_response_observed"),
+  ]), "dev1");
+
+  expect(bed.presets).toEqual([
+    "button.preset_flat",
+    "button.preset_lounge",
+    "button.preset_reading",
+  ]);
+  expect(bed.utilityStates).toEqual(["binary_sensor.save_response"]);
+  expect(bed.utility).toEqual([]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("read-only light state is visible independently of light controls", () => {
   const hass = hassWith([
     entry("binary_sensor.bed_light", "under_bed_lights"),
@@ -1073,4 +1091,21 @@ test("BedSense app actions retain distinct entities and app indicators", () => {
   expect(bed.massage.states).toEqual(["sensor.bed_head", "sensor.bed_steps"]);
   expect(bed.massage.timer).toBe("sensor.bed_timer");
   expect(bed.utility).toEqual(["button.bed_cycle", "button.bed_clear"]);
+});
+
+test("BF and Cherish expose their exact app controls in the native card", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("number.cherish_intensity", "bf_cherish_intensity"),
+    entry("number.cherish_wave", "bf_cherish_wave"),
+    entry("select.cherish_timer", "massage_timer"),
+    entry("button.bf_query", "bf_query_alarm"),
+    entry("button.cherish_both_up", "bf_cherish_both_up"),
+    entry("button.cherish_both_down", "bf_cherish_both_down"),
+  ]), "dev1");
+  expect(bed.massage.numbers).toEqual(["number.cherish_intensity", "number.cherish_wave"]);
+  expect(bed.massage.timer).toBe("select.cherish_timer");
+  expect(bed.utility).toEqual(["button.bf_query"]);
+  expect(bed.motors.map((motor) => [motor.key, motor.up, motor.down])).toEqual([
+    ["back_legs", "button.cherish_both_up", "button.cherish_both_down"],
+  ]);
 });

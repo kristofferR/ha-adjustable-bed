@@ -63,6 +63,7 @@ export const PRESET_ORDER = [
   "preset_anti_snore",
   "preset_tv",
   "preset_lounge",
+  "preset_reading",
   "preset_swing",
   "preset_incline",
   "preset_both_up",
@@ -238,6 +239,8 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
+        else if (key === "bf_cherish_intensity" || key === "bf_cherish_wave")
+          bed.massage.numbers.push(id);
         else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
@@ -333,7 +336,7 @@ export function bedEntitiesForDevice(
           // Inclined-bed controls replace three presets; their physical roles are unverified.
           // A single-address left view keys "Inclined left" without a second suffix.
           presetMap.set(key, id);
-        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm") {
+        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm" || key === "bf_query_alarm") {
           bed.utility.push(id);
         } else if (key.startsWith("eshine_massage_")) {
           bed.massage.buttons.push(id);
@@ -407,6 +410,8 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key.startsWith("sleepys_app_")) {
           bed.utility.push(id);
+        } else if (key === "bf_cherish_both_up" || key === "bf_cherish_both_down") {
+          motorButton(id, "back_legs", key.endsWith("_up") ? "up" : "down", entry.device_id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
           motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         }
@@ -425,6 +430,7 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
+        else if (key === "memory_save_response_observed") bed.utilityStates?.push(id);
         else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
         else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
