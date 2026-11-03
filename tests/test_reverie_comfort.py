@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -34,6 +35,7 @@ def _p2_controller() -> tuple[ReverieController, _Clock]:
         return asyncio.create_task(coro)
 
     coordinator = SimpleNamespace(
+        hold_command_connection=nullcontext,
         hass=SimpleNamespace(loop=clock, async_create_task=create_task),
         handle_controller_state_update=lambda *_args: None,
         handle_controller_state_updates=lambda *_args: None,

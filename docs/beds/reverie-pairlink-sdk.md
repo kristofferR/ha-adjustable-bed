@@ -85,7 +85,9 @@ catalog support checks are evaluated at applicable unicast/group gates without
 creating lighting entities. The disabled acquisition worker is never started by
 ordinary receives.
 
-The entry's Home Assistant Store uses an entry-ID key and the source preference
+The entry's Home Assistant Store uses an entry-ID key, with the physical child
+address appended for two-address pairs so independent catalogs cannot overwrite
+each other. Standalone storage keys remain unchanged. It uses the source preference
 namespaces attributesManagement/list and pl_finger_print/<home-id>. Home IDs
 use the source's lowercase, unseparated byte-order hex. Preference values are
 immutable JSON snapshots with source Gson field names, including complete

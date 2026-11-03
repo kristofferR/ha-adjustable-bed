@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
+from ..const import CONF_SIDE
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -165,7 +166,12 @@ class ReveriePairlinkController(BedController):
             runtime._sdk_state = PairlinkSdkState(
                 lambda: Store(
                     coordinator.hass, 1,
-                    f"adjustable_bed.pairlink_sdk.{coordinator.entry.entry_id}",
+                    f"adjustable_bed.pairlink_sdk.{coordinator.entry.entry_id}"
+                    + (
+                        f".{normalize_mac(coordinator.address)}"
+                        if coordinator.entry.data.get(CONF_SIDE) in ("left", "right")
+                        else ""
+                    ),
                 ),
                 self._async_sdk_metadata_effect,
             )

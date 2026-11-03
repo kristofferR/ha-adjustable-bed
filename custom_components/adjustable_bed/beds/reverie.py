@@ -134,6 +134,7 @@ class ReverieController(BedController):
         self._comfort_last_progress_at: float | None = None
         self._comfort_delay_seconds = 0.0
         self._comfort_ready_generation = 0
+        self._comfort_connection_release: Callable[[], None] | None = None
         self._diagnostic_timer: asyncio.TimerHandle | None = None
         self._diagnostic_connection_release: Callable[[], None] | None = None
         self._routine_timer: asyncio.TimerHandle | None = None
@@ -500,6 +501,10 @@ class ReverieController(BedController):
         self._comfort_last_progress_at = None
         self._comfort_delay_seconds = 0.0
         self._comfort_ready_generation = 0
+        release = self._comfort_connection_release
+        self._comfort_connection_release = None
+        if release is not None:
+            release()
 
     def _comfort_now(self) -> float:
         """Read monotonic time through a narrow seam for exact fake-clock tests."""
@@ -589,9 +594,13 @@ class ReverieController(BedController):
             raise
         except Exception:
             _LOGGER.exception("Reverie comfort setting write failed; stopping progression")
-            self._cancel_comfort_progression()
+            if sequence == self._comfort_sequence:
+                self._cancel_comfort_progression()
             raise
         if sequence != self._comfort_sequence:
+            return
+        if not visited_current_controller:
+            self._cancel_comfort_progression()
             return
         if written_index is not None:
             del self._comfort_writes[written_index]
@@ -605,7 +614,7 @@ class ReverieController(BedController):
         )
         self._comfort_advance_queued = False
         if not self._comfort_writes:
-            self._comfort_request = None
+            self._cancel_comfort_progression()
         elif replay_ready and pending is not None:
             self._comfort_advance_queued = True
             self._coordinator.hass.async_create_task(
@@ -618,6 +627,9 @@ class ReverieController(BedController):
     def validate_comfort_request(self, request: ReverieComfortRequest) -> None:
         if not self.model.comfort_settings:
             raise ValueError(f"Model {self.model_id} has no comfort settings")
+        self._validate_composer_values(request)
+
+    def _validate_composer_values(self, request: ReverieComfortRequest) -> None:
         if request.force:
             raise ValueError("Protocol 108 does not define forced comfort writes")
         validate_comfort_request(
@@ -635,6 +647,9 @@ class ReverieController(BedController):
     async def async_set_comfort(self, request: ReverieComfortRequest) -> None:
         """Stop massage, then apply changed values after stable state feedback."""
         self.validate_comfort_request(request)
+        await self._apply_composer_values(request)
+
+    async def _apply_composer_values(self, request: ReverieComfortRequest) -> None:
         self._cancel_comfort_progression()
         await self.write_command(self._build_command(ReverieCommands.STOP_MASSAGE))
 
@@ -650,6 +665,13 @@ class ReverieController(BedController):
             if value is not None
         )
         if self._comfort_writes:
+            context = self._coordinator.hold_command_connection()
+            context.__enter__()
+
+            def release() -> None:
+                context.__exit__(None, None, None)
+
+            self._comfort_connection_release = release
             self._comfort_request = request
             self._comfort_sample = None
             self._comfort_sample_stable = False
@@ -664,7 +686,7 @@ class ReverieController(BedController):
                 raise ValueError("Routine step duration must be an integer number of minutes")
             if request is None:
                 break
-            self.validate_comfort_request(request)
+            self._validate_composer_values(request)
 
     async def async_start_diagnostic(self) -> None:
         """Start the ten-second Protocol 108 direct BLE test route."""
@@ -783,6 +805,7 @@ class ReverieController(BedController):
             release()
 
     def _cancel_routine(self) -> None:
+        self._cancel_comfort_progression()
         self._routine_generation += 1
         if self._routine_timer is not None:
             self._routine_timer.cancel()
@@ -805,7 +828,7 @@ class ReverieController(BedController):
             generation,
         )
         try:
-            await self.async_set_comfort(request)
+            await self._apply_composer_values(request)
         except BaseException:
             self._cancel_routine()
             raise

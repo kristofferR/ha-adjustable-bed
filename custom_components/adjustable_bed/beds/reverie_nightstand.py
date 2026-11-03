@@ -699,6 +699,9 @@ class ReverieNightstandController(BedController):
     def validate_comfort_request(self, request: ReverieComfortRequest) -> None:
         if not self.model.comfort_settings:
             raise ValueError(f"Model {self.model_id} has no comfort settings")
+        self._validate_composer_values(request)
+
+    def _validate_composer_values(self, request: ReverieComfortRequest) -> None:
         if request.force:
             raise ValueError("Composer comfort does not define forced writes")
         validate_comfort_request(
@@ -732,6 +735,9 @@ class ReverieNightstandController(BedController):
         self.validate_comfort_request(request)
         if self.model.tandem:
             return
+        await self._apply_composer_values(request)
+
+    async def _apply_composer_values(self, request: ReverieComfortRequest) -> None:
         if request.lumbar_position is not None and request.lumbar_position < 0 and not self.model.body_tilt:
             return
         payload = build_p1_composer_payload(request, body_tilt=self.model.body_tilt)
@@ -749,7 +755,7 @@ class ReverieNightstandController(BedController):
                 raise ValueError("Routine step duration must be an integer number of minutes")
             if request is None:
                 break
-            self.validate_comfort_request(request)
+            self._validate_composer_values(request)
             if self.model.tandem and self._stk_selected_side in ("1", "2"):
                 state = self._coordinator.controller_state
                 key = (
@@ -771,7 +777,7 @@ class ReverieNightstandController(BedController):
         if request.lumbar_position is not None and request.lumbar_position < 0 and not self.model.body_tilt:
             return
         if not self.model.tandem:
-            await self.async_set_comfort(request)
+            await self._apply_composer_values(request)
             return
         state = self._coordinator.controller_state
         selected_side = int(self._stk_selected_side)

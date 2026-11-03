@@ -69,6 +69,10 @@ while an older sample is still queued, the current sample is retained and
 consumed inside the existing command lane; it is not replaced with a timed
 write during silence.
 
+The BLE connection remains held until all pending comfort fields are consumed,
+cancelled, or fail, including with Disconnect After Command enabled. Cancelling
+a routine also discards its pending comfort progression.
+
 Each physical address owns a separate Composer routine queue and timer. The
 first complete routine item runs immediately. A missing setting aborts queue
 construction and leaves any already-built prefix unscheduled. A replacement
@@ -299,6 +303,8 @@ match current state. Lumbar is required for R510L and must be omitted for
 Harmoniq Upgrade.
 
 `reverie_run_routine` replaces the selected physical target's protocol queue.
+Routine capability is independent of standalone comfort capability: `3EMT`
+and `O300T` accept routine steps while `reverie_set_comfort` remains unavailable.
 It does not add a general-purpose scheduler. Use Home Assistant automations to
 schedule `reverie_set_comfort`, `reverie_run_routine`, `goto_preset`, or
 `save_preset` at the desired time. Phone-local alarm storage, Android

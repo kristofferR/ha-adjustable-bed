@@ -384,7 +384,15 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
             raise ServiceValidationError("Option is not supported by this controller")
         if self._spec.local_select_fn is not None:
             # No frame is sent, so do not take the bed's single BLE link.
-            self._spec.local_select_fn(option)
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_select_specs if controller is not None else ()
+            live = next(
+                (spec for spec in specs if spec.key == self._spec.key),
+                None,
+            )
+            if live is None or live.local_select_fn is None or option not in live.options:
+                raise ServiceValidationError("Controller no longer supports this option")
+            live.local_select_fn(option)
             return
 
         async def select(ctrl: BedController) -> None:

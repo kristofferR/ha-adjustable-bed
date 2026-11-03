@@ -92,7 +92,7 @@ def _coordinator(*, events: list[tuple[str, object]] | None = None):
 @pytest.mark.parametrize(
     ("controller_type", "model", "send_method"),
     [
-        (ReverieController, "9T", "async_set_comfort"),
+        (ReverieController, "9T", "_apply_composer_values"),
         (ReverieNightstandController, "R510L", "_write_routine_comfort"),
     ],
 )
@@ -118,7 +118,7 @@ async def test_composer_schedules_zero_minute_last_poll_before_first_send(
 @pytest.mark.parametrize(
     ("controller_type", "model", "send_method"),
     [
-        (ReverieController, "9T", "async_set_comfort"),
+        (ReverieController, "9T", "_apply_composer_values"),
         (ReverieNightstandController, "R510L", "_write_routine_comfort"),
     ],
 )
@@ -144,7 +144,7 @@ async def test_composer_missing_step_replaces_queue_but_leaves_prefix_unschedule
 @pytest.mark.parametrize(
     ("controller_type", "model", "send_method"),
     [
-        (ReverieController, "9T", "async_set_comfort"),
+        (ReverieController, "9T", "_apply_composer_values"),
         (ReverieNightstandController, "R510L", "_write_routine_comfort"),
     ],
 )
@@ -201,7 +201,7 @@ async def test_composer_routine_holds_real_coordinator_connection_until_cancel(
 
     pending_timer = controller._routine_timer
     assert pending_timer is not None
-    assert coordinator._command_connection_holds == 1
+    assert coordinator._command_connection_holds == 2  # Routine and active comfort progression.
     assert coordinator._disconnect_timer is None
 
     controller._cancel_routine()

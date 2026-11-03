@@ -126,6 +126,16 @@ async def test_routine_connection_owner_releases_on_every_exit(
         lambda current: current.async_start_routine([(request, 1), (request, 1)]),
         read_positions_after_operation=False,
     )
+    async def settle_comfort():
+        if model == "9T":
+            clock = iter((0.0, 0.001))
+            monkeypatch.setattr(controller, "_comfort_now", lambda: next(clock))
+            sample = bytearray((0, 0, 25, 40, 0, 0, 0, 0, 0))
+            controller._parse_position_data(sample)
+            controller._parse_position_data(sample)
+            await hass.async_block_till_done()
+
+    await settle_comfort()
     assert coordinator._command_connection_holds == 1
     assert coordinator._disconnect_timer is None
     timer = controller._routine_timer
@@ -135,6 +145,7 @@ async def test_routine_connection_owner_releases_on_every_exit(
         timer.cancel()
         controller._enqueue_routine_step(controller._routine_generation)
         await hass.async_block_till_done()
+        await settle_comfort()
         assert coordinator._command_connection_holds == 1
         controller._routine_timer.cancel()
         controller._enqueue_routine_step(controller._routine_generation)
@@ -152,7 +163,7 @@ async def test_routine_connection_owner_releases_on_every_exit(
         # Failure in a later real scheduled write must clear pending ownership.
         async def failed(*args, **kwargs):
             raise ConnectionError("injected write failure")
-        method = "async_set_comfort" if model == "9T" else "_write_routine_comfort"
+        method = "_apply_composer_values" if model == "9T" else "_write_routine_comfort"
         monkeypatch.setattr(controller, method, failed)
         timer.cancel()
         with pytest.raises(ConnectionError, match="injected write failure"):
@@ -417,7 +428,8 @@ async def test_p2_current_notification_write_failure_or_replacement_keeps_owners
     else:
         coordinator._controller = ReverieController(coordinator, model="9T")
         await controller._run_comfort_write(sequence, sample)
-        assert len(controller._comfort_writes) == 1
+        assert not controller._comfort_writes
+        assert coordinator._command_connection_holds == 0
         assert controller._comfort_advance_queued is False
         assert coordinator.client.write_gatt_char.call_count == count
     await coordinator.async_shutdown()
