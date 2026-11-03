@@ -570,6 +570,9 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "gmmotor": "GM Control (exact app product)",
+    "gmmotor_sleep_mm": "GM Control sleep module (MM)",
+    "gmmotor_sleep_sxb": "GM Control sleep module (SXB)",
     'tempur_curve': 'Tempur Curve',
     'qplus_app': 'Q-Plus Adjustable Remote',
     'serta_mp_remote': 'Serta MP Remote',
@@ -1190,8 +1193,30 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
 def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
     from .beds.starcode_abm5_4_profiles import TRANSPORTS, scan_matches
+    from .gmmotor_discovery import scan_name_matches
 
     result = _detect_bed_type_detailed(service_info)
+    if scan_name_matches(service_info.name or "") and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None and not any(
+            (service_info.name or "").lower().startswith(pattern)
+            for pattern in LEGGETT_RICHMAT_NAME_PATTERNS
+        ):
+            result.bed_type = "gmmotor"
+            result.confidence = 0.6
+        elif result.bed_type != "gmmotor":
+            result.ambiguous_types = [
+                *(result.ambiguous_types or ()),
+                *([] if "gmmotor" in (result.ambiguous_types or ()) else ["gmmotor"]),
+            ]
+        result.signals.append("name:gmmotor_app_candidate")
+    if any(key in (service_info.name or "") for key in ("RM-", "HJ-")):
+        # GM's input-name classifier owns the session mode. The shared scan
+        # keywords identify candidates; they cannot identify this companion app.
+        hints = ["gmmotor_sleep_mm", "gmmotor_sleep_sxb"]
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), *hints]))
+        result.signals.append("name:gmmotor_sleep_app_candidate")
     advertised = {str(uuid).lower() for uuid in (service_info.service_uuids or [])}
     # FurniMove accepts this gateway service last, after its manufacturer and
     # 1523 service predicates, and without a payload mask. It names an app

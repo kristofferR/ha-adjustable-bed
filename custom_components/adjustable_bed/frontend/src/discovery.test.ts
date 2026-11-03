@@ -35,6 +35,24 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   };
 }
 
+test("GM product controls and raw session state stay with their physical device", () => {
+  const hass = hassWith([
+    entry("button.gm_head", "remote_action", "bed"),
+    entry("sensor.gm_state", "gmmotor_state", "bed"),
+    entry("sensor.gm_sleep", "gmmotor_sleep_state", "module"),
+  ]);
+  hass.states["button.gm_head"] = {
+    entity_id: "button.gm_head", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "gm_0", hold_start_delay_ms: 100, hold_release_delay_ms: 0 },
+  };
+  const bed = bedEntitiesForDevice(hass, "bed");
+  expect(bed.utility).toEqual(["button.gm_head"]);
+  expect(bed.utilityStates).toEqual(["sensor.gm_state"]);
+  expect(bed.motors).toEqual([]);
+  expect(heldButtonMotor(hass, bed.utility[0])?.heldControl?.control).toBe("gm_0");
+  expect(bedEntitiesForDevice(hass, "module").utilityStates).toEqual(["sensor.gm_sleep"]);
+});
+
 test("paired hold routing comes from backend metadata, not translated motor names", () => {
   const hass = hassWith([entry("button.pair_head_up", "head_up", "pair")]);
   hass.states["button.pair_head_up"] = {

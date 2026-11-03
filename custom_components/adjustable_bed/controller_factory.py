@@ -36,6 +36,9 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_GMMOTOR,
+    BED_TYPE_GMMOTOR_SLEEP_MM,
+    BED_TYPE_GMMOTOR_SLEEP_SXB,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
@@ -537,6 +540,36 @@ async def create_controller(
         from .beds.casper_base import CasperBaseController
 
         return CasperBaseController(coordinator, product=protocol_variant or "")
+
+    if bed_type == BED_TYPE_GMMOTOR:
+        from .const import CONF_GMMOTOR_SIDE
+        from .gmmotor_profiles import profile_choices
+
+        profile = coordinator.entry.data.get(CONF_PRODUCT_TYPE, "")
+        if profile not in profile_choices():
+            profile = ""  # Source factory's unsupported-selector fallback.
+        side = coordinator.entry.data.get(CONF_GMMOTOR_SIDE, "left")
+        if profile in ("FWRM", "WFRM"):
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.gmmotor_desk", __package__
+            )
+            from .beds.gmmotor_desk import GmmotorDeskController
+
+            return GmmotorDeskController(coordinator, profile=profile)
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.gmmotor", __package__
+        )
+        from .beds.gmmotor import GmmotorController
+
+        return GmmotorController(coordinator, profile=profile, side=side)
+
+    if bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.gmmotor_sleep", __package__
+        )
+        from .beds.gmmotor_sleep import GmmotorSleepController
+
+        return GmmotorSleepController(coordinator, sxb=bed_type == BED_TYPE_GMMOTOR_SLEEP_SXB)
 
     if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
         # The app's name rule picks the table unless the variant fixes the

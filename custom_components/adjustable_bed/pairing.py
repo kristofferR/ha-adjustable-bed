@@ -24,6 +24,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
     BED_TYPE_CASPER_BASE,
+    BED_TYPE_GMMOTOR,
     BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_LIMOSS_REMOTE,
@@ -145,6 +146,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
         BED_TYPE_CASPER_BASE,
+        BED_TYPE_GMMOTOR,
     }
 )
 
@@ -154,10 +156,18 @@ def supports_single_address_pairing(
     protocol_variant: str | None = None,
     *,
     resolved_variant: str | None = None,
+    product_type: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_GMMOTOR:
+        from .gmmotor_profiles import load_profile
+
+        try:
+            return product_type is not None and 1 in load_profile(product_type).sides
+        except ValueError:
+            return False
     if bed_type == BED_TYPE_CASPER_BASE:
         return protocol_variant in CASPER_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_KAIDI:
@@ -624,6 +634,7 @@ def build_single_address_pair_entry_data(
         bed_type,
         protocol_variant,
         resolved_variant=resolved_variant,
+        product_type=single_data.get(CONF_PRODUCT_TYPE),
     ):
         raise ValueError(f"{bed_type!r} does not support single-address pairing")
 

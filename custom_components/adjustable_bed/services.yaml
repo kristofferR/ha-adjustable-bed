@@ -2620,3 +2620,123 @@ doublesleep_configure:
           min: 0
           max: 255
           mode: box
+
+gmmotor:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - clock_sync
+          - alarm
+          - alarm_at
+          - alarm_cancel
+          - repeat_alarm
+          - repeat_delete
+          - repeat_query
+          - light_color
+          - light_timeout
+          - light_off
+          - snore_enabled
+          - snore_count
+          - snore_time
+          - snore_query
+          - sleep_name
+          - refresh
+          - massage_timer
+          - sensor_time
+          - sensor_part
+          - sensor_query_part
+          - sensor_live
+          - sensor_report
+          - sensor_sensitivity
+          - sensor_stop
+          - desk_height
+          - desk_unit
+          - desk_query
+    mode:
+      selector:
+        text: {}
+    enabled:
+      selector:
+        boolean: {}
+    rgb_color:
+      selector:
+        color_rgb: {}
+    report_date:
+      selector:
+        date: {}
+    unit:
+      selector:
+        select:
+          options:
+          - cm
+          - inch
+    side:
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    value:
+      selector:
+        number:
+          min: 0
+          max: 65535
+          mode: box
+    slot:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    repeat:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    hour:
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    status:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    part:
+      selector:
+        number:
+          min: 1
+          max: 2
+          mode: box
+    report_type:
+      selector:
+        number:
+          min: 1
+          max: 2
+          mode: box
+    height:
+      selector:
+        number:
+          min: 0
+          max: 2559.999
+          mode: box

@@ -4590,6 +4590,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .bf_cherish_services import register_services as register_bf_cherish_services
     from .casper_base_services import async_register_casper_base_services
     from .doublesleep_services import async_register_doublesleep_services
+    from .gmmotor_services import async_register_gmmotor_services
     from .hjbed_services import async_register_hjbed_services
     from .motion_bed_services import async_register_motion_bed_services
     from .richmat_mh_services import async_register_richmat_mh_services
@@ -4600,6 +4601,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     register_bf_cherish_services(hass)
     async_register_motion_bed_services(hass)
     async_register_casper_base_services(hass)
+    async_register_gmmotor_services(hass)
     async_register_richmat_mh_services(hass)
     async_register_hjbed_services(hass)
     async_register_rmcontrol_services(hass)
