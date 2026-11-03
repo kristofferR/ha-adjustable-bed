@@ -226,7 +226,8 @@ export function bedEntitiesForDevice(
         else if (
           key === "innova_massage_timer" ||
           key === "glideaway_motion_massage_timer" ||
-          key === "bedsense_massage_timer"
+          key === "bedsense_massage_timer" ||
+          key === "app_timer_status"
         ) bed.massage.timer = id;
         else if (key === "bedsense_light_duration") bed.lights.state = id;
         else if (/^bedsense_(head_bar|wave_bar|head_steps|foot_steps|wave_steps)$/.test(key))

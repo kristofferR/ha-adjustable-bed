@@ -617,6 +617,85 @@ test("abandoning mid-hold stops the held side", async () => {
   expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
 });
 
+test("opaque MX action uses one bounded service and retains the native child STOP owner", async () => {
+  const { heldButtonMotor, movementHold } = await import("./hold");
+  const calls: Array<{ domain: string; service: string; data: Record<string, unknown> }> = [];
+  let finish: (() => void) | undefined;
+  const hass = {
+    entities: { "button.mx_memory1": { entity_id: "button.mx_memory1", device_id: "right-child" } },
+    states: { "button.mx_memory1": { attributes: { held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0, bed_side: "right" } } },
+    callService: async (domain: string, service: string, data: Record<string, unknown>) => {
+      calls.push({ domain, service, data });
+      if (service === "hold_control") await new Promise<void>((resolve) => { finish = resolve; });
+    },
+  } as unknown as HomeAssistant;
+  const motor = heldButtonMotor(hass, "button.mx_memory1")!;
+  expect(motor.heldControl).toEqual({ control: "mx_memory1", startDelayMs: 0, releaseDelayMs: 0 });
+  const rec = recorder();
+  const hold = new MotorHold({ ...rec.actions, holdControl: (m, dir) => movementHold(hass, m, dir) });
+  hold.start(motor, "up", null, "button.right_stop");
+  expect(calls).toEqual([{ domain: "adjustable_bed", service: "hold_control", data: {
+    device_id: ["right-child"], control: "mx_memory1", duration: 60, side: "right",
+  } }]);
+  expect(rec.pulses).toEqual([]);
+  // Keyboard release uses the exact retained STOP owner, including after discovery rebuild.
+  hold.end({ ...motor });
+  expect(rec.stoppedBeds).toEqual(["button.right_stop"]);
+  finish?.();
+  await Promise.resolve();
+  expect(hold.heldKey).toBeNull();
+  expect(calls).toHaveLength(1);
+});
+
+test("page abandonment cancels the owning cover hold and never repeats finite pulses", async () => {
+  const rec = recorder();
+  const holds: string[] = [];
+  const motor: MotorEntity = { key: "back", cover: "cover.left_back", deviceId: "left-child", heldControls: {
+    up: { control: "head_up", startDelayMs: 0, releaseDelayMs: 0 },
+  } };
+  let finish: (() => void) | undefined;
+  const hold = new MotorHold({ ...rec.actions, holdControl: (m) => {
+    holds.push(m.key);
+    return new Promise<void>((resolve) => { finish = resolve; });
+  } });
+  hold.start(motor, "up", 7, "button.left_stop");
+  hold.abandon();
+  expect(holds).toEqual(["back"]);
+  expect(rec.pulses).toEqual([]);
+  expect(rec.stoppedCovers).toEqual(["cover.left_back"]);
+  expect(rec.stoppedCoverTargets).toEqual(["button.left_stop"]);
+  finish?.();
+  await Promise.resolve();
+  expect(hold.heldKey).toBeNull();
+});
+
+test("unsupported combined direction retains finite fallback", async () => {
+  const rec = recorder();
+  const motor: MotorEntity = { key: "back", up: "button.both_up", down: "button.both_down", heldControls: {
+    down: { control: "head_down", startDelayMs: 0, releaseDelayMs: 0 },
+  } };
+  const hold = new MotorHold(rec.actions);
+  hold.start(motor, "up", 1, "button.pair_stop");
+  expect(rec.pulses).toEqual([{ key: "back", dir: "up" }]);
+  hold.end(motor);
+  rec.release();
+  await Promise.resolve();
+  expect(rec.stoppedBeds).toEqual(["button.pair_stop"]);
+});
+
+test("flat button hold metadata requires its owning device and rejects nested metadata", async () => {
+  const { heldButtonMotor } = await import("./hold");
+  const hass = {
+    entities: { "button.action": { device_id: "bed" } },
+    states: { "button.action": { attributes: { held_control: { control: "head_up" }, hold_start_delay_ms: 0, hold_release_delay_ms: 0 } } },
+  } as unknown as HomeAssistant;
+  expect(heldButtonMotor(hass, "button.action")).toBeUndefined();
+  hass.states["button.action"].attributes = { held_control: "head_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0 };
+  expect(heldButtonMotor(hass, "button.action")?.deviceId).toBe("bed");
+  delete hass.entities["button.action"].device_id;
+  expect(heldButtonMotor(hass, "button.action")).toBeUndefined();
+});
+
 test("a tap canceled before the declared start delay never starts movement", () => {
   const events: string[] = [];
   const timers = new FakeTimers();

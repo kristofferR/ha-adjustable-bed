@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..cluster033_profiles import app_profile
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -38,6 +39,7 @@ from ..const import (
     SIDE_RIGHT,
 )
 from .base import BedController
+from .cluster033 import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -573,3 +575,10 @@ class SBIController(BedController):
     async def massage_mode_3(self) -> None:
         """Set massage to mode 3."""
         await self.write_command(self._build_command(SBICommands.MASSAGE_MODE_3))
+
+
+class QPlusAppController(AppController):
+    """Explicit Q-Plus Adjustable Remote app profile; physical effects remain unverified."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator, *, layout: str | None = None, side: str = "both") -> None:
+        super().__init__(coordinator, app_profile('qplus_app', layout), side=side)
