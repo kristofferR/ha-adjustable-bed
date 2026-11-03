@@ -58,6 +58,7 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
 | Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` |
+| ✅ | Avanti Bases ([profile](ore-comfort-bed.md)) | `com.ore.AvantiBases` |
 | ✅ | Bedsense Bases ([profile](ore-comfort-bed.md)) | `com.ore.sfmc2bedsence` |
 | ✅ | INNOVA ([profile](#innova-profile)) | `com.ore.sfm` |
 | ✅ | MaxCoil Una ([profile](ore-comfort-bed.md)) | `com.ore.maxcoil` |

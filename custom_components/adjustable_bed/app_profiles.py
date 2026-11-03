@@ -77,6 +77,7 @@ from .const import (
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
@@ -139,6 +140,9 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
 }
 _HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(
+        {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
+    ),
     **{
         (BED_TYPE_KEESON, variant): _ALWAYS_MASSAGE
         for variant in (
@@ -270,6 +274,9 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
         "Heal Every Night", frozenset({CONF_MOTOR_COUNT})
     ),
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): SideProfile("OKIN-Seating"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): SideProfile(
+        "Avanti Bases", frozenset({CONF_MOTOR_COUNT})
+    ),
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): SideProfile("Bedsense Bases"),
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): SideProfile("INNOVA"),
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): SideProfile("MaxCoil Una"),

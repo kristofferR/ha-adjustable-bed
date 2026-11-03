@@ -91,7 +91,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | Manufacturer or brand | Supported brands, models and apps |
 |-----------------------|----------------------------------|
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
-| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases](docs/beds/ore-comfort-bed.md), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
+| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases](docs/beds/ore-comfort-bed.md), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [Octo](docs/beds/octo.md) | Octo |
