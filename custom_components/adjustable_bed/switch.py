@@ -170,6 +170,8 @@ def _switch_entities_for(
 class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
     """Switch entity for Adjustable Bed."""
 
+    _attr_should_poll = False
+
     entity_description: AdjustableBedSwitchEntityDescription
 
     def __init__(

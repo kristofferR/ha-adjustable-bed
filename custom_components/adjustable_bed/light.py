@@ -237,6 +237,8 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
     """RGB/RGBW light entity for adjustable beds."""
 
+    _attr_should_poll = False
+
     entity_description: LightEntityDescription
 
     _attr_assumed_state = True

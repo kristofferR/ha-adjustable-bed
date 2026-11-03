@@ -122,3 +122,7 @@ be connected manually but standalone setup completion is not a hardware claim.
 Late capability and RGB replies add the corresponding controls without reloading
 HA. Repeated negative and positive feature replies retire and recreate the
 RGB, brightness, timer, automatic-light and Yoga controls as their gates change.
+
+For paired HD beds, each side's Yoga button follows that side's reported
+capability. The combined Yoga button appears only when both sides support it,
+and follows later withdrawals and replies without reloading the pair.

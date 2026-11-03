@@ -18,14 +18,13 @@ def async_setup_dynamic_entities(
     coordinator: EntityRuntime,
     async_add_entities: AddEntitiesCallback,
     build_entities: Callable[[], Iterable[Entity]],
+    *,
+    additional_coordinators: Iterable[EntityRuntime] = (),
 ) -> None:
     """Register initial entities, then add each newly proven capability once."""
     entities = list(build_entities())
     known = {entity.unique_id: entity for entity in entities}
     async_add_entities(entities)
-    controller = coordinator.capability_controller
-    if controller is None or not controller.has_dynamic_controller_entities:
-        return
 
     def discover(_state: object) -> None:
         candidates = list(build_entities())
@@ -39,7 +38,10 @@ def async_setup_dynamic_entities(
             known.update((entity.unique_id, entity) for entity in additions)
             async_add_entities(additions)
 
-    entry.async_on_unload(coordinator.register_controller_state_callback(discover))
+    for runtime in (coordinator, *additional_coordinators):
+        controller = runtime.capability_controller
+        if controller is not None and controller.has_dynamic_controller_entities:
+            entry.async_on_unload(runtime.register_controller_state_callback(discover))
 
 
 def async_remove_retired_rmcontrol_telemetry(

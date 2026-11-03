@@ -509,6 +509,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
     """Select entity backed by controller state updates."""
 
+    _attr_should_poll = False
+
     entity_description: AdjustableBedControllerStateSelectDescription
 
     def __init__(

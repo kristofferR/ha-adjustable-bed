@@ -615,3 +615,91 @@ async def test_dreamhd_late_light_and_yoga_entities_reconcile_repeated_transitio
         await hass.async_block_till_done()
         entries = er.async_entries_for_config_entry(registry, entry.entry_id)
         assert len({(e.domain, e.unique_id) for e in entries}) == len(entries)
+
+
+@pytest.mark.parametrize("app_ble", [False], indirect=True)
+async def test_paired_dreamhd_late_yoga_reconciles_side_and_combined_buttons(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.const import CONF_PAIR_ID
+    from custom_components.adjustable_bed.pairing import build_pair_entry_data
+
+    left_address = "AA:BB:CC:DD:EE:01"
+    right_address = "AA:BB:CC:DD:EE:02"
+    base = {
+        CONF_BED_TYPE: BED_TYPE_JIECANG_APP,
+        CONF_JIECANG_APP_PROFILE: "dreamhd",
+        CONF_JIECANG_APP_LAYOUT: "standard_2",
+        CONF_JIECANG_APP_TRANSPORT: "g3",
+        CONF_HAS_LIGHT: True,
+        CONF_HAS_MASSAGE: True,
+        CONF_MOTOR_COUNT: 2,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_PREFERRED_ADAPTER: "auto",
+    }
+    data = build_pair_entry_data(
+        {**base, CONF_ADDRESS: left_address, CONF_NAME: "Left"},
+        {**base, CONF_ADDRESS: right_address, CONF_NAME: "Right"},
+        name="HD pair",
+    )
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="HD pair", data=data, unique_id=data[CONF_PAIR_ID], version=4
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    pair = hass.data[DOMAIN][entry.entry_id]
+    left = pair.children["left"].controller
+    right = pair.children["right"].controller
+    left_uid = f"{left_address}_preset_yoga"
+    right_uid = f"{right_address}_preset_yoga"
+    both_uid = f"{data[CONF_PAIR_ID]}_preset_yoga_both"
+
+    def button(uid):
+        return registry.async_get_entity_id("button", DOMAIN, uid)
+
+    def reply(controller, value):
+        controller._handle_notification(
+            SimpleNamespace(uuid=COMFORT_MOTION_LIERDA3_READ_CHAR_UUID),
+            bytearray.fromhex(value),
+        )
+
+    assert all(button(uid) is None for uid in (left_uid, right_uid, both_uid))
+    reply(left, "f2f20e00060000")
+    await hass.async_block_till_done()
+    assert button(left_uid) is not None
+    assert button(right_uid) is None and button(both_uid) is None
+    reply(right, "f2f20e00060000")
+    await hass.async_block_till_done()
+    assert all(button(uid) is not None for uid in (left_uid, right_uid, both_uid))
+    app_ble.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        "button", "press", {"entity_id": button(both_uid)}, blocking=True
+    )
+    assert [call.args[1].hex() for call in app_ble.write_gatt_char.await_args_list] == [
+        "f1f1280200002a7e",
+        "f1f14e004e7e",
+    ] * 2
+    reply(left, "f2f20e00a00000")
+    await hass.async_block_till_done()
+    assert button(left_uid) is None and button(both_uid) is None
+    assert button(right_uid) is not None
+    reply(left, "f2f20e00060000")
+    reply(right, "f2f20e00060000")
+    await hass.async_block_till_done()
+    assert all(button(uid) is not None for uid in (left_uid, right_uid, both_uid))
+    for uid in (left_uid, right_uid, both_uid):
+        assert (
+            len(
+                [
+                    e
+                    for e in registry.entities.values()
+                    if e.domain == "button" and e.unique_id == uid
+                ]
+            )
+            == 1
+        )
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
