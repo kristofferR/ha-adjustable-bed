@@ -1,4 +1,4 @@
-"""Controller for the accepted ORE comfort-bed app profiles.
+"""ORE comfort-bed app controller for explicitly verified app profiles.
 
 Implements the accepted clean-room reports for com.ore.maxcoil 1.1.0 (5) and
 com.ore.Dynasty 1.0.2 (3), formal cluster-013
@@ -7,7 +7,9 @@ com.ore.sfmc2bedsence 1.1 (3), formal cluster-015
 (docs/apk-analysis/dispositions/row059-ore-bedsense-innova.md). MaxCoil Una and
 Dynasty Bases ship the same ``com.ore.okincomfortbed`` code base. Bedsense Bases
 is a separate package whose accepted report proves byte-identical frames,
-screens, timing, release and reply handling, so all three share one behavior.
+screens, timing, release and reply handling. Avanti Bases 1.0.5 (7),
+com.ore.AvantiBases, independently proves the same behavior (row065;
+docs/apk-analysis/dispositions/row065-avanti-bases.md).
 AMERICANSTAR 1.0 (1) independently proves the same behavior
 (docs/apk-analysis/dispositions/row062-americanstar.md).
 
@@ -35,6 +37,7 @@ from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
@@ -65,6 +68,7 @@ class OreComfortBedApp:
 
 # Sibling apps of this code base register their own entry here.
 ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
+    KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp("Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"),
     KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp("AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"),
     KEESON_VARIANT_MAXCOIL_UNA: OreComfortBedApp("MaxCoil Una", "com.ore.maxcoil", "1.1.0 (5)"),
     KEESON_VARIANT_DYNASTY_BASES: OreComfortBedApp("Dynasty Bases", "com.ore.Dynasty", "1.0.2 (3)"),
@@ -131,7 +135,7 @@ def build_frame(word: int) -> bytes:
 
 
 class OreComfortBedController(BedController):
-    """Controller for the accepted ORE comfort-bed app profiles."""
+    """Controller for the artifact-verified ORE comfort-bed app profiles."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
         super().__init__(coordinator)

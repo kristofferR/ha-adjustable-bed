@@ -91,7 +91,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | Manufacturer or brand | Supported brands, models and apps |
 |-----------------------|----------------------------------|
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
-| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / AMERICANSTAR](docs/beds/ore-comfort-bed.md), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
+| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](docs/beds/ore-comfort-bed.md), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [Octo](docs/beds/octo.md) | Octo |
@@ -118,7 +118,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | 🧪 [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, hardware unverified |
-| ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
+| ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's BOX15 / BOX24 / BOX25 and the explicit Sleepy's Elite app profile |
 | ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/starcode-abm5-4.md); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |
 | ✅ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | [Caresse / Werkmeister](docs/beds/vibradorm_app.md), [VMAT](docs/beds/vmat.md), [V-MAT Basic / CBI / XT-Box](docs/beds/vmatbasic.md) |

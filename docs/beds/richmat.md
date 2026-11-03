@@ -131,6 +131,29 @@ catalogs send as massage All Off. Hardware validation is pending.
 With massage enabled, GGRM exposes All Off (`0x5E`), head/foot intensity steps
 and mode stepping. It does not expose the generic all-massage toggle (`0x5D`),
 which is absent from those GGRM catalogs.
+The WiLinke GGRM profile also exposes Save Zero G and Save Anti-snore, plus
+10, 20 and 30 minute massage buttons when massage is enabled. These are
+one-shot catalog actions followed by the standard release after 120 ms.
+Timer buttons do not claim to report the bed's current timer setting.
+The commands are proven by the accepted row055 Revive Control, Blvd Home and
+HARMONY GGRM tables; physical behavior on the issue #695 bed remains unverified.
+
+| Additional GGRM action | WiLinke frame |
+|---|---|
+| Save Zero G | `6e010066d5` |
+| Save Anti-snore | `6e010069d8` |
+| Massage 10 min | `6e01005fce` |
+| Massage 20 min | `6e010063d2` |
+| Massage 30 min | `6e010061d0` |
+
+Evidence: [row055 accepted authority](../apk-analysis/dispositions/row055-richmat-cluster.md#accepted-authority),
+`inventories/sibling-2.json` → `supporting_inventories/expanded-command-vectors.json`
+(variant `ggrm`), with Revive's `binding_rows.json` ONCE bindings and
+`domains/release` (`main_6e`) for the `6e01006edd` release and 120 ms delay.
+The five actions above are implemented; the existing profile already exposes
+the other 18 GGRM catalog actions (eight motor directions, four recalls, memory
+save, light toggle, three massage steps and All Off). The timer controls are
+buttons because no timer-state feedback has been established for this receiver.
 
 ### Prefix55 Variant
 **Format:** 5 bytes `[0x55, 0x01, 0x00, command, checksum]`
