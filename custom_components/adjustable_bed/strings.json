@@ -713,6 +713,15 @@
         "data_description": {
           "sleepys_elite_selector": "Choose the selector shown by the Sleepy's Elite app for this physical bed. Select none only when the app shows no named control box."
         }
+      },
+      "isleep": {
+        "title": "ISleep bed",
+        "description": "Select the product shown by the ISleep app. Keep the existing numeric room ID to adopt a provisioned bed. For an unprovisioned bed, choose its destination room, then use the explicit enrollment action after setup. HA never resets an existing room. The actuator descriptor is the advertised two-byte value: products 130/143 use separate side controls only when it is not 2.",
+        "data": {
+          "product_type": "ISleep product ID",
+          "kaidi_room_id": "Room ID",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor"
+        }
       }
     },
     "progress": {
@@ -805,6 +814,7 @@
       "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup.",
       "sleeptracker_profile": "Select a supported Sleeptracker layout and numeric processor selectors.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
@@ -892,7 +902,7 @@
           "motion_bed_restored": "Use an app-restored profile",
           "starcode_lift_entries": "Independently addressed lifts (up to three)",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "product_type": "Bed or chair",
+          "product_type": "Product type",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
           "reverse_motor_1": "Reverse motor channel 1",
           "reverse_motor_2": "Reverse motor channel 2",
@@ -904,7 +914,9 @@
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
           "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "sleepys_elite_selector": "Sleepy's Elite control box selector"
+          "sleepys_elite_selector": "Sleepy's Elite control box selector",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "kaidi_room_id": "Room ID"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1114,6 +1126,8 @@
       "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
+      "isleep_unpair_first": "Revert to a standalone bed before selecting an ISleep product or actuator descriptor without separate side controls.",
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it."
@@ -2880,6 +2894,18 @@
       },
       "glideaway_motion_query_alarm": {
         "name": "Refresh alarm"
+      },
+      "isleep_pattern": {
+        "name": "Massage pattern {pattern} (0 cancels)"
+      },
+      "isleep_all_down": {
+        "name": "All down"
+      },
+      "isleep_all_up": {
+        "name": "All up"
+      },
+      "isleep_enroll": {
+        "name": "Enroll unprovisioned bed in selected room"
       },
       "bedsense_action": {
         "name": "{action}"

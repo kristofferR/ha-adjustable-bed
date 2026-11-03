@@ -1,3 +1,9 @@
+> For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](isleep.md).
+> Its accepted row064 audit corrects movement lifecycle, side routing, massage
+> strengths and memory capacity independently of this legacy Kaidi route.
+> Existing entries do not change automatically. Reconfigure or add the explicit
+> ISleep profile and confirm product, actuator descriptor and room ID.
+
 # Kaidi
 
 **Status:** ❓ Needs testing

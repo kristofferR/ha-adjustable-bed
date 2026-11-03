@@ -378,7 +378,7 @@ export function bedEntitiesForDevice(
         } else if (key === "ore_comfort_program_flat" || key === "ore_comfort_program_zero_g") {
           // Preset saves have no memory slot.
           bed.utility.push(id);
-        } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
+        } else if (key === "isleep_pattern" || key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
         } else if (key === "comfort_enhancements_quiet_sleep") {
           presetMap.set(key, id);
@@ -408,6 +408,8 @@ export function bedEntitiesForDevice(
           key === "octo_all_down" ||
           key === "reset_defaults" ||
           key === "factory_reset" ||
+          key === "isleep_all_up" ||
+          key === "isleep_all_down" ||
           key === "vibradorm_app_all_up" ||
           key === "vibradorm_app_all_down" ||
           key === "vibradorm_app_sync" ||

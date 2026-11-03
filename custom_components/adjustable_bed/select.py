@@ -17,6 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerSelectSpec
 from .const import (
+    BED_TYPE_ISLEEP,
     DOMAIN,
 )
 from .entity import AdjustableBedEntity
@@ -459,7 +460,11 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
     def current_option(self) -> str | None:
         """Return the current timer setting from controller state."""
         controller = self._coordinator.controller
-        if controller is None:
+        if controller is None and self._coordinator.bed_type == BED_TYPE_ISLEEP:
+            side = self._coordinator.entity_side or "both"
+            state = self._coordinator.controller_state.get(f"isleep_massage_{side}")
+            timer_mode = state.get("timer_mode") if isinstance(state, dict) else None
+        elif controller is None:
             # Between connections, the timer the profile last published.
             state = self._coordinator.controller_state
             timer_mode = (

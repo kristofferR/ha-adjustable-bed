@@ -1,0 +1,1265 @@
+[
+  {
+    "row": 0,
+    "action": "head_up",
+    "opcode": 1,
+    "products": [
+      131,
+      132,
+      133,
+      134
+    ],
+    "lane": 0
+  },
+  {
+    "row": 1,
+    "action": "back_up",
+    "opcode": 1,
+    "products": [
+      129,
+      130,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 2,
+    "action": "head_down",
+    "opcode": 2,
+    "products": [
+      131,
+      132,
+      133,
+      134
+    ],
+    "lane": 0
+  },
+  {
+    "row": 3,
+    "action": "back_down",
+    "opcode": 2,
+    "products": [
+      129,
+      130,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 4,
+    "action": "head_stop",
+    "opcode": 3,
+    "products": [
+      131,
+      132,
+      133,
+      134
+    ],
+    "lane": 0
+  },
+  {
+    "row": 5,
+    "action": "back_stop",
+    "opcode": 3,
+    "products": [
+      129,
+      130,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 6,
+    "action": "legs_up",
+    "opcode": 4,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 7,
+    "action": "legs_down",
+    "opcode": 5,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 8,
+    "action": "legs_stop",
+    "opcode": 6,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 9,
+    "action": "all_up",
+    "opcode": 7,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 10,
+    "action": "all_down",
+    "opcode": 8,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 11,
+    "action": "all_stop",
+    "opcode": 9,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 12,
+    "action": "back_up",
+    "opcode": 10,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 13,
+    "action": "back_down",
+    "opcode": 11,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 14,
+    "action": "back_stop",
+    "opcode": 12,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 15,
+    "action": "legs_up",
+    "opcode": 13,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 16,
+    "action": "legs_down",
+    "opcode": 14,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 17,
+    "action": "legs_stop",
+    "opcode": 15,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 18,
+    "action": "all_up",
+    "opcode": 16,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 19,
+    "action": "all_down",
+    "opcode": 17,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 20,
+    "action": "all_stop",
+    "opcode": 18,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 21,
+    "action": "back_up",
+    "opcode": 19,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 22,
+    "action": "back_down",
+    "opcode": 20,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 23,
+    "action": "back_stop",
+    "opcode": 21,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 24,
+    "action": "legs_up",
+    "opcode": 22,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 25,
+    "action": "legs_down",
+    "opcode": 23,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 26,
+    "action": "legs_stop",
+    "opcode": 24,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 27,
+    "action": "all_up",
+    "opcode": 25,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 28,
+    "action": "all_down",
+    "opcode": 26,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 29,
+    "action": "all_stop",
+    "opcode": 27,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 30,
+    "action": "flat",
+    "opcode": 28,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 31,
+    "action": "flat",
+    "opcode": 29,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 32,
+    "action": "flat",
+    "opcode": 30,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 33,
+    "action": "save_1",
+    "opcode": 37,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 34,
+    "action": "save_2",
+    "opcode": 38,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 35,
+    "action": "save_3",
+    "opcode": 39,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 36,
+    "action": "memory_1",
+    "opcode": 41,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 37,
+    "action": "memory_2",
+    "opcode": 42,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 38,
+    "action": "memory_3",
+    "opcode": 43,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 39,
+    "action": "save_1",
+    "opcode": 45,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 40,
+    "action": "save_2",
+    "opcode": 46,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 41,
+    "action": "save_3",
+    "opcode": 47,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 42,
+    "action": "memory_1",
+    "opcode": 49,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 43,
+    "action": "memory_2",
+    "opcode": 50,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 44,
+    "action": "memory_3",
+    "opcode": 51,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 45,
+    "action": "save_1",
+    "opcode": 53,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 46,
+    "action": "save_2",
+    "opcode": 54,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 47,
+    "action": "save_3",
+    "opcode": 55,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 48,
+    "action": "memory_1",
+    "opcode": 57,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 49,
+    "action": "memory_2",
+    "opcode": 58,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 50,
+    "action": "memory_3",
+    "opcode": 59,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 51,
+    "action": "massage_on",
+    "opcode": 71,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 52,
+    "action": "massage_off",
+    "opcode": 72,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 53,
+    "action": "massage_on",
+    "opcode": 73,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 54,
+    "action": "massage_off",
+    "opcode": 74,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 55,
+    "action": "massage_on",
+    "opcode": 75,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 56,
+    "action": "massage_off",
+    "opcode": 76,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 57,
+    "action": "head_strength",
+    "opcode": 77,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 58,
+    "action": "head_strength",
+    "opcode": 78,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 59,
+    "action": "foot_strength",
+    "opcode": 79,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142
+    ],
+    "lane": 0
+  },
+  {
+    "row": 60,
+    "action": "foot_strength",
+    "opcode": 80,
+    "products": [
+      130
+    ],
+    "lane": 1
+  },
+  {
+    "row": 61,
+    "action": "head_strength",
+    "opcode": 81,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 62,
+    "action": "foot_strength",
+    "opcode": 82,
+    "products": [
+      130
+    ],
+    "lane": 2
+  },
+  {
+    "row": 63,
+    "action": "timer_1",
+    "opcode": 83,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 64,
+    "action": "timer_2",
+    "opcode": 84,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 65,
+    "action": "timer_3",
+    "opcode": 85,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 66,
+    "action": "timer_1",
+    "opcode": 86,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 67,
+    "action": "timer_2",
+    "opcode": 87,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 68,
+    "action": "timer_3",
+    "opcode": 88,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 69,
+    "action": "timer_1",
+    "opcode": 89,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 70,
+    "action": "timer_2",
+    "opcode": 90,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 71,
+    "action": "timer_3",
+    "opcode": 91,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 72,
+    "action": "light_on",
+    "opcode": 92,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 73,
+    "action": "light_off",
+    "opcode": 93,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 74,
+    "action": "light_on",
+    "opcode": 94,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 75,
+    "action": "light_off",
+    "opcode": 95,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 76,
+    "action": "light_on",
+    "opcode": 96,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 77,
+    "action": "light_off",
+    "opcode": 97,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 78,
+    "action": "zero_g",
+    "opcode": 98,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 79,
+    "action": "zero_g",
+    "opcode": 99,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 80,
+    "action": "zero_g",
+    "opcode": 100,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 81,
+    "action": "anti_snore",
+    "opcode": 101,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 82,
+    "action": "anti_snore",
+    "opcode": 102,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 83,
+    "action": "anti_snore",
+    "opcode": 103,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 84,
+    "action": "pattern_1",
+    "opcode": 107,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 85,
+    "action": "pattern_1",
+    "opcode": 108,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 86,
+    "action": "pattern_1",
+    "opcode": 109,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 87,
+    "action": "pattern_2",
+    "opcode": 110,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 88,
+    "action": "pattern_2",
+    "opcode": 111,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 89,
+    "action": "pattern_2",
+    "opcode": 112,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 90,
+    "action": "pattern_3",
+    "opcode": 113,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 91,
+    "action": "pattern_3",
+    "opcode": 114,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 92,
+    "action": "pattern_3",
+    "opcode": 115,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 93,
+    "action": "pattern_cancel",
+    "opcode": 116,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 94,
+    "action": "pattern_cancel",
+    "opcode": 117,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 95,
+    "action": "pattern_cancel",
+    "opcode": 118,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 96,
+    "action": "timer_cancel",
+    "opcode": 119,
+    "products": [
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      142,
+      143
+    ],
+    "lane": 0
+  },
+  {
+    "row": 97,
+    "action": "timer_cancel",
+    "opcode": 120,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 1
+  },
+  {
+    "row": 98,
+    "action": "timer_cancel",
+    "opcode": 121,
+    "products": [
+      130,
+      143
+    ],
+    "lane": 2
+  },
+  {
+    "row": 99,
+    "action": "back_up",
+    "opcode": 122,
+    "products": [
+      131,
+      132,
+      133,
+      134,
+      142
+    ],
+    "lane": 0
+  },
+  {
+    "row": 100,
+    "action": "back_down",
+    "opcode": 123,
+    "products": [
+      131,
+      132,
+      133,
+      134,
+      142
+    ],
+    "lane": 0
+  },
+  {
+    "row": 101,
+    "action": "back_stop",
+    "opcode": 124,
+    "products": [
+      131,
+      132,
+      133,
+      134,
+      142
+    ],
+    "lane": 0
+  },
+  {
+    "row": 102,
+    "action": "lumbar_up",
+    "opcode": 131,
+    "products": [
+      132,
+      134
+    ],
+    "lane": 0
+  },
+  {
+    "row": 103,
+    "action": "lumbar_down",
+    "opcode": 132,
+    "products": [
+      132,
+      134
+    ],
+    "lane": 0
+  },
+  {
+    "row": 104,
+    "action": "lumbar_stop",
+    "opcode": 133,
+    "products": [
+      132,
+      134
+    ],
+    "lane": 0
+  },
+  {
+    "row": 105,
+    "action": "all_up",
+    "opcode": 149,
+    "products": [
+      142
+    ],
+    "lane": 0
+  },
+  {
+    "row": 106,
+    "action": "all_down",
+    "opcode": 150,
+    "products": [
+      142
+    ],
+    "lane": 0
+  },
+  {
+    "row": 107,
+    "action": "all_stop",
+    "opcode": 151,
+    "products": [
+      142
+    ],
+    "lane": 0
+  }
+]
