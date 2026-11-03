@@ -121,8 +121,11 @@ succeeds. This does not change pairing policy for other CST profiles.
   entries.
 - Do not choose CST solely because diagnostics show both the CSS and Nordic DFU
   services. That connected GATT signature is also exposed by RF ECO BT stair
-  actuators. Device Information model `MEGAMAT MBZ` identifies RF ECO BT. Choose
-  CST only when the known base or app identity corroborates the CST protocol.
+  actuators and by OKIMAT drives used with FurniMove (#555). Device Information
+  model `MEGAMAT MBZ` identifies RF ECO BT. Choose CST only when the known base
+  or app identity corroborates the CST protocol. The integration never selects
+  CST automatically from GATT; a CST entry whose drive reports an `OKIMAT` model
+  is offered a [repair](furnimove.md#repairing-existing-configurations).
 - Do not select CST for `LP BED...` receivers. LP Control 2.9.0 identifies those
   as its Okin profile and sends 6-byte commands, even when the receiver also
   exposes CSS and Nordic DFU services. See [Leggett & Platt](leggett-platt.md).

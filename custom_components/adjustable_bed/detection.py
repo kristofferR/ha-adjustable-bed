@@ -302,10 +302,10 @@ OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
     }
 )
 
-# Shared-UUID profiles that already drive an OKIMAT bed acceptably, so a connected
-# OKIMAT Device Info model must not rewrite them. BED_TYPE_OKIMAT and
-# BED_TYPE_OKIN_UUID resolve to the same controller; BED_TYPE_OKIN_CST is its own
-# deliberately preserved full-bed profile (see refine_okin_shared_uuid_protocol_from_gatt).
+# Shared-UUID profiles a connected OKIMAT Device Info model must not rewrite.
+# BED_TYPE_OKIMAT and
+# BED_TYPE_OKIN_UUID resolve to the same controller. BED_TYPE_OKIN_CST is never
+# rewritten here; the okimat_cst_route repair lets the user move it (#555).
 OKIMAT_COMPATIBLE_PROFILES: frozenset[str] = frozenset(
     {
         BED_TYPE_OKIMAT,
@@ -899,7 +899,7 @@ def refine_malouf_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
     return bed_type
 
 
-def _is_okimat_bed_model(ble_model: str | None) -> bool:
+def is_okimat_bed_model(ble_model: str | None) -> bool:
     """Return True when Device Info identifies a multi-motor OKIMAT bed actuator.
 
     OKIMAT bed actuators (e.g. ``OKIMAT 4 IPS/M`` from issue #406) expose the same
@@ -983,7 +983,7 @@ def refine_okin_shared_uuid_protocol_from_gatt(
         if gatt_detection.bed_type in {
             BED_TYPE_OKIN_CST,
             BED_TYPE_OKIN_RF_ECO_BT,
-        } and _is_okimat_bed_model(ble_model):
+        } and is_okimat_bed_model(ble_model):
             # Full OKIMAT beds share the CSS GATT inventory used to infer both
             # profiles, so the Device Info model is the stronger signal (#406).
             if bed_type in OKIMAT_COMPATIBLE_PROFILES:
@@ -1015,6 +1015,11 @@ def refine_okin_shared_uuid_protocol_from_gatt(
         }:
             # CSS and Nordic DFU overlap across these profiles. GATT can narrow
             # the family but cannot safely override the configured choice.
+            return bed_type
+        if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
+            # CSS plus Nordic DFU is only a hint. No CST app identifies its
+            # product from GATT, names or Device Information (cluster 011), and
+            # OKIMAT beds expose the same services (#555). CST stays opt-in.
             return bed_type
         if gatt_detection.bed_type != bed_type and _log_correction:
             _LOGGER.info(
@@ -2686,8 +2691,7 @@ async def detect_bed_type_by_characteristics(
         if gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
             return None  # Shared receiver characteristics do not prove topology.
         if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
-            _LOGGER.info("Refined detection: OKIN CST dual-stack GATT signature found")
-            return BED_TYPE_OKIN_CST
+            return None  # CSS plus Nordic DFU does not prove CST either (#555).
 
         # Build a set of all characteristic UUIDs for easy lookup
         all_chars: set[str] = set()

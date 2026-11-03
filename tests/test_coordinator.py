@@ -12,6 +12,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bluetooth_transport import (
@@ -5639,7 +5640,8 @@ class TestRuntimeBedTypeCorrection:
         adapter_result = MagicMock()
         adapter_result.device = MagicMock()
         adapter_result.device.address = TEST_ADDRESS
-        adapter_result.device.name = TEST_NAME
+        # LP Control names identify the pairing-required 6-byte profile.
+        adapter_result.device.name = "LP BED CONTROL"
         adapter_result.device.details = {"source": "local"}
         adapter_result.source = "local"
         adapter_result.rssi = -60
@@ -5695,10 +5697,10 @@ class TestRuntimeBedTypeCorrection:
             result = await coordinator.async_connect()
 
         assert result is True
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
-        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_LEGGETT_OKIN
+        assert coordinator.bed_type == BED_TYPE_LEGGETT_OKIN
         assert mock_create_controller.await_count == 1
-        assert mock_create_controller.await_args.kwargs["bed_type"] == BED_TYPE_OKIN_CST
+        assert mock_create_controller.await_args.kwargs["bed_type"] == BED_TYPE_LEGGETT_OKIN
         assert mock_bleak_client.disconnect.await_count == 1
         assert [call.kwargs.get("pair") for call in mock_establish_connection.await_args_list] == [
             False,
@@ -5819,6 +5821,79 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.motor_pulse_delay_ms == LEGGETT_OKIN_PULSE_DEFAULTS[1]
         assert entry.data[CONF_MOTOR_PULSE_COUNT] == LEGGETT_OKIN_PULSE_DEFAULTS[0]
         assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == LEGGETT_OKIN_PULSE_DEFAULTS[1]
+
+
+    async def test_okimat_drive_on_cst_raises_route_repair_without_switching(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+        mock_coordinator_connected: None,
+        mock_establish_connection: AsyncMock,
+    ):
+        """Issue #555: an OKIMAT drive saved as CST is offered a repair, not rerouted."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Milou",
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: "Milou",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: "auto",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="test_entry_issue_555",
+        )
+        entry.add_to_hass(hass)
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID)],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID)],
+            ),
+            SimpleNamespace(uuid=NORDIC_DFU_SERVICE_UUID, characteristics=[]),
+        ]
+        mock_bleak_client.services = MagicMock()
+        mock_bleak_client.services.__iter__ = lambda self: iter(gatt_services)
+        mock_bleak_client.services.__len__ = lambda self: len(gatt_services)
+        mock_bleak_client.services.get_service = MagicMock(return_value=None)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=("DewertOkin GmbH", "OKIMAT 4 IPS"),
+            ),
+            patch.object(
+                AdjustableBedCoordinator,
+                "_async_verify_bonded",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            assert await coordinator.async_connect() is True
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+        assert entry.data["okimat_model_on_cst"] == "OKIMAT 4 IPS"
+        issue = ir.async_get(hass).async_get_issue(
+            DOMAIN, "furnimove_layout_test_entry_issue_555_standalone"
+        )
+        assert issue is not None and issue.translation_key == "okimat_cst_route"
+        assert issue.translation_placeholders == {"name": "Milou", "model": "OKIMAT 4 IPS"}
 
 
 class TestDeviceInfoCache:
