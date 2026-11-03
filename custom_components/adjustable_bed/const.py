@@ -1682,11 +1682,17 @@ OKIN_APP_VARIANTS: Final = (
 # ORE SFM apps (com.ore.sfmc2bedsence / com.ore.sfm): explicit, never auto-selected.
 KEESON_VARIANT_BEDSENSE_BASES: Final = "bedsense_bases"
 KEESON_VARIANT_INNOVA: Final = "innova"
-# ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
+# Accepted ORE comfort-bed app profiles: explicit, never auto-selected.
+KEESON_VARIANT_AVANTI_BASES: Final = "avanti_bases"
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
 KEESON_VARIANT_DYNASTY_BASES: Final = "dynasty_bases"
 ORE_COMFORT_BED_VARIANTS: Final = frozenset(
-    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_BEDSENSE_BASES}
+    {
+        KEESON_VARIANT_MAXCOIL_UNA,
+        KEESON_VARIANT_DYNASTY_BASES,
+        KEESON_VARIANT_BEDSENSE_BASES,
+        KEESON_VARIANT_AVANTI_BASES,
+    }
 )
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -1714,6 +1720,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_SIMON_LI: "Simon Li app (chair / love seat / sofa)",
     KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app (motor count 2/3/4 = Healing 6/7/8)",
     KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
+    KEESON_VARIANT_AVANTI_BASES: "Avanti Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_MAXCOIL_UNA: "MaxCoil Una app (2M / 3M / 4M motor count)",
@@ -2532,6 +2539,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_SIMON_LI,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
