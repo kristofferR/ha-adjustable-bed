@@ -2753,6 +2753,27 @@
       },
       "sleepys_app_voice_axis_2_100_right": {
         "name": "Right: Position axis 2 target 100"
+      },
+      "eshine_save_zero_g": {
+        "name": "Save Zero Gravity"
+      },
+      "eshine_save_anti_snore": {
+        "name": "Save Anti-Snore"
+      },
+      "eshine_massage_head_strength": {
+        "name": "Head massage strength"
+      },
+      "eshine_massage_foot_strength": {
+        "name": "Foot massage strength"
+      },
+      "eshine_massage_10_minutes": {
+        "name": "Massage 10 minutes"
+      },
+      "eshine_massage_20_minutes": {
+        "name": "Massage 20 minutes"
+      },
+      "eshine_massage_30_minutes": {
+        "name": "Massage 30 minutes"
       }
     },
     "cover": {
@@ -4050,6 +4071,39 @@
       },
       "sleepys_app_field_0x83": {
         "name": "App state field 0x83"
+      },
+      "eshine_capabilities": {
+        "name": "Capabilities"
+      },
+      "eshine_motors": {
+        "name": "Motor reports"
+      },
+      "eshine_massage": {
+        "name": "Massage reports"
+      },
+      "eshine_light": {
+        "name": "Light reports"
+      },
+      "eshine_rgb": {
+        "name": "RGB reports"
+      },
+      "eshine_alarm": {
+        "name": "Alarm reports"
+      },
+      "eshine_snore": {
+        "name": "Anti-snore reports"
+      },
+      "eshine_lock": {
+        "name": "Lock reports"
+      },
+      "eshine_music": {
+        "name": "Music reports"
+      },
+      "eshine_mode": {
+        "name": "Mode reports"
+      },
+      "eshine_checks": {
+        "name": "Component reports"
       }
     },
     "light": {

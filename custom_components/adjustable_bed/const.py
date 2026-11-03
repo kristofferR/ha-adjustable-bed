@@ -415,6 +415,7 @@ BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 # Bed types - Legacy naming (backwards compatibility)
 # These map to the protocol-based types above
 BED_TYPE_LINAK: Final = "linak"
+BED_TYPE_ESHINE: Final = "eshine"  # Explicit Eshine E6000 app profile
 BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_SOLACE: Final = "solace"
 BED_TYPE_MOTOSLEEP: Final = "motosleep"
@@ -612,6 +613,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SIMMONS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_ESHINE,
     # Explicit Richmat MH app profiles
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_RICHMAT_BEST_MATTRESS,
@@ -747,6 +749,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SIMMONS,
         # Controls are identical for all three tables; only the live link picks one.
         BED_TYPE_ADJUSTABLE_LUMBAR,
+        BED_TYPE_ESHINE,
         # Fixed pump controls; pressure is live-link state only.
         BED_TYPE_LOGICDATA_AIR_PUMP,
         # The constructor refuses offline UART catalogs whose nonpositive C
@@ -2807,6 +2810,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_SIMMONS,
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_COMFORT_ENHANCEMENTS,
+        BED_TYPE_ESHINE,
         # VER1 angle replies feed the app's arc labels, not the shared angle axes.
         *RICHMAT_MH_BED_TYPES,
         BED_TYPE_CUSTOMATIC_CLARITY,
@@ -3029,6 +3033,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
+    BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
     # every motor); the count bounds an HA hold.
