@@ -4,7 +4,11 @@ The **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** selection
 implements the direct BLE path in Tempur Sleeptracker-AI
 `com.fullpower.applications.horizon` **3.6.2 (262)**. The complete Google Play
 delivery was analyzed and independently accepted on 2026-10-08. Protocol and
-app behavior are proven by that artifact; physical hardware remains unverified.
+app behavior are proven by that artifact and the accepted October 17/18
+addenda. An ActiveBreeze STS-60 user has confirmed setup, strength/climate
+readback, Wave Form One and lumbar movement on releases through 4.2.4 in
+[issue #693](https://github.com/kristofferR/ha-adjustable-bed/issues/693).
+Other hardware behavior remains unverified.
 The [S02 discovery ledger](../apk-analysis/dispositions/S02-sleeptracker.md)
 records every accepted discovery and implementation disposition.
 
@@ -96,8 +100,13 @@ app's local countdown recheck uses cloud transport and is excluded.
 Movement repeats an increment only after its reply, using `ticks: 4` and
 `waitForResponse: false`. There is no invented refresh delay. HA bounds the
 hold using its pulse/timed movement budget and always attempts the corresponding
-axis stop in `finally`, with a fresh cancellation event. Transport loss can
-prevent delivery; a sent stop is not proof of a physical stop.
+axis stop in `finally`, with a fresh cancellation event. Increments start only
+within the budget. The last one may await its reply for one more budget, so
+the stop is acknowledged on the same session. Abandoning that reply would leave
+the session ambiguous and force a disconnect after every hold, which issue #693
+reported during lumbar commands. A reply missing past that bound still sends a
+blind stop and closes the session. Transport loss can prevent delivery; a sent
+stop is not proof of a physical stop.
 
 Preset buttons recall the app names. Memory slots 1 and 2 mean `user_favorite`
 and `favorite_2` where available. Save Zero G, Anti-Snore and TV buttons plus
@@ -115,8 +124,14 @@ massage strength** (Off, 1, 2, 3) and **Massage pattern** (Off, Wave Form One,
 Two, Three) selects. The app has no direct setter for either: it steps, and
 draws reported strengths 4/6/8 as one to three bars and patterns 1–3 as One to
 Three, and any other reported value as off. A select sends one step per reply until the processor reports
-the chosen value, at most three steps. It refuses when the current reply carries
-no value, for example a two-snapshot reply's reset strengths. Premium layouts add **28 Hz**, **40 Hz**,
+the chosen value, at most three steps. It refuses until the processor has
+reported a value, for example when status replies carry two snapshots and
+therefore no strengths. **Massage pattern:
+Off** instead sends the selected processor unit's massage-stop command once,
+stopping both massage zones without cycling through other patterns. It works
+without a reported starting pattern; displayed state still comes from the reply.
+Head/foot strength Off continues stepping only that zone, since no separate
+zone-stop command is proven. Premium layouts add **28 Hz**, **40 Hz**,
 wave frequency/duration selectors, wind-down 1/2 and local motor/massage
 animation. Wave choices are 28, 40, 52, 68 and 88 Hz, with 5–105 minutes in
 steps of five. The wire duration is minutes times 600; its physical tick unit
@@ -141,9 +156,13 @@ its existing lighting, massage, climate and utility sections.
 
 Refresh reads motor status. One snapshot reports pattern, raw head/foot massage
 strength and safety light. Two snapshots report only the selected ordinal's
-pattern and reset the other remote values, matching the app parser. Climate
-updates only from a single snapshot's nested fan object, clamps levels to 0–3
-and retains absent fields. There is no invented frequency, timer or axis
+pattern. A reply updates only the fields it carries: the app draws zeros for a
+reply without snapshots, an unmatched ordinal, or a split reply's strengths and
+light, but those are display defaults, not reports. HA keeps the last reported
+value instead, so command replies without snapshots do not show pattern 0 or
+unknown selects. Within a consumed snapshot, a missing field still takes the
+app's default. Climate updates only from a single snapshot's nested fan object,
+clamps levels to 0–3 and retains absent fields. There is no invented frequency, timer or axis
 feedback. Disconnect clears authentication but keeps the last reported state,
 because the processor drops the link shortly after each command; the next
 connection's status replaces it. Local wave
@@ -187,8 +206,9 @@ Empty JSON objects cannot acknowledge a command or establish a session. Valid
 nonempty replies without snapshots retain the applicable partial-state rules.
 Climate timer and curve metadata publish only after a valid acknowledgement.
 Continuation tasks register before execution, including with HA's eager task
-scheduling. Movement's local hold deadline ends a normal hold; an earlier ATT
-or reply timeout propagates after fresh axis cleanup and session closure.
+scheduling. Movement's local hold deadline ends a normal hold after the last
+increment's reply; an earlier ATT or reply timeout propagates after fresh axis
+cleanup and session closure.
 
 HA owns adapters, standard notification descriptors, connection parameters and
 bond lifecycle. The integration does not remove a host bond automatically,

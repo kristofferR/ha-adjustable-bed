@@ -16,12 +16,14 @@ from bleak.exc import BleakError
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
     # - BedTech: By name pattern ("bedtech") or post-connection characteristic check
     # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -30,8 +32,10 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -92,9 +96,11 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -119,6 +125,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
+    GLIDEAWAY_MOTION_MODELS,
     JENSEN_LINON_NAME_PATTERNS,
     JENSEN_NAME_FRAGMENT,
     JENSEN_NAME_PATTERNS,
@@ -135,6 +142,8 @@ from .const import (
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
@@ -177,6 +186,7 @@ from .const import (
     OKIMAT_SERVICE_UUID,
     OKIMAT_VARIANTS,
     OKIMAT_WRITE_CHAR_UUID,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
     OKIN_FFE_NAME_PATTERNS,
     OKIN_GENERIC_NAME_PATTERNS,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
@@ -205,6 +215,7 @@ from .const import (
     SOLACE_SERVICE_UUID,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_NAME_PATTERNS,
+    STAR_ELEVATE_VARIANT_M1X12,
     SUTA_NAME_PATTERNS,
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
@@ -549,16 +560,28 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    'tempur_curve': 'Tempur Curve',
+    'qplus_app': 'Q-Plus Adjustable Remote',
+    'serta_mp_remote': 'Serta MP Remote',
+    'omazz_adjusto_iii': 'Omazz Adjusto III',
+    'ergomotion_app': 'Ergomotion (app)',
+    'row_control': 'ROW Control',
+    'ergo_slim': 'Ergo Slim',
+    'tempur_au': 'TEMPUR AU',
+    BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 
     BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading)",
+    BED_TYPE_STARCODE_M1X12: "Adjustable Comfort M1X12 app (CB25 / F23 / kneading)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
+    BED_TYPE_ESHINE: "Eshine app (E6000)",
     BED_TYPE_RICHMAT_REVIVE: "Revive Control app (Richmat)",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "Best Mattress app (Richmat)",
     BED_TYPE_RICHMAT_BLVD_HOME: "Blvd Home app (Richmat)",
@@ -575,7 +598,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
     BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
-    BED_TYPE_OKIN_ORE: "Okin ORE (Glideaway Motion app)",
+    BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
+    BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
     BED_TYPE_OKIN_CST: "Okin CST (Rize product profiles, 14-byte dual-field)",
@@ -590,7 +614,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_COOLBASE: "Cool Base (BaseI5 with fan)",
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_JIECANG: "Jiecang (legacy Glide / Comfort Motion)",
-    BED_TYPE_JIECANG_APP: "Jiecang (ERGOBALANCE / Dream Motion apps)",
+    BED_TYPE_JIECANG_APP: "Jiecang (ERGOBALANCE / Dream Motion / Comfort Motion apps)",
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
     BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, some Ergomotion Sync beds)",
     BED_TYPE_KAIDI: "Kaidi (Rize, Floyd, ISleep)",
@@ -598,7 +622,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
     BED_TYPE_MOTOSLEEP: "MotoSleep",
-    BED_TYPE_OCTO: "Octo",
+    BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie (Protocol 108)",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
     BED_TYPE_RICHMAT: "Richmat / RMControl app",
@@ -620,6 +644,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
+    BED_TYPE_SLEEPYS_ELITE_APP: "Sleepy's Elite app (explicit selector)",
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
@@ -646,11 +671,15 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
+       for model, label in GLIDEAWAY_MOTION_MODELS.items()},
     (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (product 139)",
     (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): "OKIN-Seating app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): "Avanti Bases app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): "AMERICANSTAR app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): "MaxCoil Una app (Keeson)",
@@ -658,8 +687,10 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app, remote A (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B (Keeson)",
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app (Solace)",
+    (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): "Nectar Move",
     (BED_TYPE_SVANE, SVANE_VARIANT_JMC): "Svane Remote app (JMC400)",
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): "Jensen Adjustable Sleep app (LinOn)",
+    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): "Adjustable Comfort M1X12 ELEVATE",
     (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK): "The Brick app (Remacro)",
     (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES): "Jerome's app (Remacro)",
     (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230): "Customatic Z-Series app (Z-230)",
@@ -707,9 +738,7 @@ def get_bed_type_options() -> list[SelectOptionDict]:
         if bed_type not in VARIANT_REQUIRED_BED_TYPES
         and bed_type not in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
     }
-    choices.update(
-        {bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()}
-    )
+    choices.update({bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()})
     return [
         SelectOptionDict(value=value, label=label)
         for value, label in sorted(choices.items(), key=lambda item: item[1].lower())
@@ -736,9 +765,7 @@ def _is_leggett_okin_name(device_name: str | None) -> bool:
     """Return whether a BLE name identifies LP Control's Okin protocol."""
     normalized_name = (device_name or "").strip().lower()
     return _is_lp_control_okin_name(device_name) or any(
-        pattern in normalized_name
-        for pattern in LEGGETT_OKIN_NAME_PATTERNS
-        if pattern != "lp bed"
+        pattern in normalized_name for pattern in LEGGETT_OKIN_NAME_PATTERNS if pattern != "lp bed"
     )
 
 
@@ -1261,7 +1288,8 @@ def _detect_bed_type_detailed(
                 other.signals.append("manufacturer:vmatbasic_conditional_record")
                 return other
             return DetectionResult(
-                bed_type=BED_TYPE_VMATBASIC, confidence=0.6,
+                bed_type=BED_TYPE_VMATBASIC,
+                confidence=0.6,
                 signals=["manufacturer:vmatbasic_conditional_record", "raw_first_ad_order:unknown"],
                 manufacturer_id=company,
                 requires_characteristic_check=True,
@@ -1283,8 +1311,7 @@ def _detect_bed_type_detailed(
             confidence=mfr_confidence,
             signals=signals,
             manufacturer_id=mfr_id,
-            ambiguous_types=[BED_TYPE_FURNIMOVE]
-            if mfr_bed_type == BED_TYPE_DEWERTOKIN else [],
+            ambiguous_types=[BED_TYPE_FURNIMOVE] if mfr_bed_type == BED_TYPE_DEWERTOKIN else [],
         )
 
     # Priority 2: Kaidi detection - manufacturer data is the primary signal.
@@ -1627,9 +1654,10 @@ def _detect_bed_type_detailed(
 
     if (service_info.name or "").startswith("STAR25"):
         return DetectionResult(
-            bed_type=BED_TYPE_SLEEPYS_BOX25, confidence=0.65,
+            bed_type=BED_TYPE_SLEEPYS_BOX25,
+            confidence=0.65,
             signals=[*signals, "name:starcode_bedding_app_choices"],
-            ambiguous_types=[BED_TYPE_STARCODE_M5X5],
+            ambiguous_types=[BED_TYPE_STARCODE_M5X5, BED_TYPE_STARCODE_M1X12],
         )
 
     # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F
@@ -2034,12 +2062,11 @@ def _detect_bed_type_detailed(
     # Check for BedTech before Richmat WiLinke since they share FEE9 and QRRM
     # names. Confirmed BedTech QRRM controllers advertise their MAC suffix under
     # manufacturer ID 0x4C57; confirmed Casper/Richmat QRRM RGB controllers do not.
-    has_bedtech_manufacturer = (
-        BEDTECH_MANUFACTURER_ID in (service_info.manufacturer_data or {})
-        and (
-            device_name.startswith("qrrm")
-            or any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS)
-        )
+    has_bedtech_manufacturer = BEDTECH_MANUFACTURER_ID in (
+        service_info.manufacturer_data or {}
+    ) and (
+        device_name.startswith("qrrm")
+        or any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS)
     )
     if has_bedtech_manufacturer and BEDTECH_SERVICE_UUID.lower() in service_uuids:
         signals.extend(
@@ -2091,10 +2118,10 @@ def _detect_bed_type_detailed(
     # Home Assistant's Bluetooth index requires three literal leading characters,
     # so automatic discovery is limited to the accepted prefixes represented in
     # the manifest. Shared accepted app names require an explicit profile choice.
-    if any(device_name.startswith(pattern) for pattern in SOLACE_NAME_PATTERNS) or (
-        device_name.startswith("my qms2")
-    ) or (
-        SOLACE_NAME_PATTERN.fullmatch(device_name)
+    if (
+        any(device_name.startswith(pattern) for pattern in SOLACE_NAME_PATTERNS)
+        or (device_name.startswith("my qms2"))
+        or (SOLACE_NAME_PATTERN.fullmatch(device_name))
     ):
         motion_overlap = motion_name
         signals.append("name:solace")
@@ -2130,7 +2157,9 @@ def _detect_bed_type_detailed(
                 bed_type=BED_TYPE_LIMOSS,
                 confidence=0.6 if matches_fsm_relax_candidate(service_info.name) else 0.9,
                 signals=signals,
-                ambiguous_types=[BED_TYPE_FSM_RELAX] if matches_fsm_relax_candidate(service_info.name) else [],
+                ambiguous_types=[BED_TYPE_FSM_RELAX]
+                if matches_fsm_relax_candidate(service_info.name)
+                else [],
             )
 
         # MotoSleep and Power Bob use HHC names; the current MotoSleep app also
@@ -2155,7 +2184,8 @@ def _detect_bed_type_detailed(
             confidence=0.5,
             signals=signals,
             ambiguous_types=[
-                BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP,
+                BED_TYPE_SOLACE,
+                BED_TYPE_MOTOSLEEP,
                 *([BED_TYPE_MOTION_BED] if motion_name else []),
             ],
         )
@@ -2273,8 +2303,12 @@ def _detect_bed_type_detailed(
             service_info.name,
         )
         return DetectionResult(
-            bed_type=BED_TYPE_LIMOSS, confidence=confidence, signals=signals,
-            ambiguous_types=[BED_TYPE_FSM_RELAX] if matches_fsm_relax_candidate(service_info.name) else [],
+            bed_type=BED_TYPE_LIMOSS,
+            confidence=confidence,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_FSM_RELAX]
+            if matches_fsm_relax_candidate(service_info.name)
+            else [],
         )
 
     # Check for Ergomotion - name-based detection (before Keeson since same UUID)

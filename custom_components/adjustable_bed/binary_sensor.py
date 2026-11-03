@@ -118,11 +118,19 @@ def _binary_sensor_entities_for(
         active_keys = {spec.key for spec in specs}
         stale_keys = controller.stale_controller_state_binary_sensor_entity_keys | (
             {
-                "leggett_alarm_indicator", "leggett_sleep_timer_indicator", "under_bed_lights",
-                "furnimove_ubl", "furnimove_sync", "furnimove_child_lock",
+                "leggett_alarm_indicator",
+                "leggett_sleep_timer_indicator",
+                "under_bed_lights",
+                "furnimove_ubl",
+                "furnimove_sync",
+                "furnimove_child_lock",
                 "furnimove_massage_running",
-                "vmatbasic_ed", "adjustable_lite_light", "innova_light",
-            } - active_keys
+                "vmatbasic_ed",
+                "adjustable_lite_light",
+                "innova_light",
+                "memory_save_response_observed",
+            }
+            - active_keys
         )
         _async_remove_stale_controller_state_binary_sensor_entities(
             hass,
@@ -136,7 +144,7 @@ def _binary_sensor_entities_for(
 
     if controller is not None:
         # Retire this runtime's app telemetry after a protocol/profile change.
-        for namespace in ("motion_bed_", "sleeptracker_"):
+        for namespace in ("motion_bed_", "sleeptracker_", "bedsense_"):
             prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
             prefix += namespace
             desired = {coordinator.entity_unique_id(spec.key) for spec in controller.controller_state_binary_sensor_specs}

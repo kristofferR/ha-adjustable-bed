@@ -46,6 +46,8 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
@@ -876,7 +878,9 @@ LEFT_ADDRESS, RIGHT_ADDRESS = "AA:BB:CC:DD:EE:81", "AA:BB:CC:DD:EE:82"
     [
         (KEESON_VARIANT_INNOVA, "innova_massage_level", InnovaController),
         (KEESON_VARIANT_BEDSENSE_BASES, "ore_comfort_massage_start", OreComfortBedController),
+        (KEESON_VARIANT_AVANTI_BASES, "ore_comfort_massage_start", OreComfortBedController),
         ("maxcoil_una", "ore_comfort_massage_start", OreComfortBedController),
+        (KEESON_VARIANT_AMERICANSTAR, "ore_comfort_massage_start", OreComfortBedController),
     ],
 )
 async def test_pair_reload_with_one_side_offline_keeps_both_sides(

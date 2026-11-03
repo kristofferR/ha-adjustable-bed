@@ -115,6 +115,7 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_MODEL: "L600",
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
                     const.CONF_STARCODE_M5X5_PROFILE: "cb25",
+                    const.CONF_STARCODE_M1X12_PROFILE: "cb25",
                     const.CONF_BLE_DEVICE_NAME: "STAR252201123456",
                     const.CONF_PRODUCT_TYPE: "bed",
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
@@ -163,6 +164,10 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return SBI_VARIANT_BOTH
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
+    if bed_type == const.BED_TYPE_COMFORT_ENHANCEMENTS:
+        return "mc2"
+    if bed_type == const.BED_TYPE_GLIDEAWAY_MOTION:
+        return "motion_400"
     if bed_type == const.BED_TYPE_ZSERIES:
         return const.ZSERIES_VARIANT_Z230
     return None
@@ -181,8 +186,21 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     """Create a controller through the factory for the given bed type."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type in const.CLUSTER033_BED_TYPES:
+        from custom_components.adjustable_bed.cluster033_profiles import DEFAULT_LAYOUTS
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unknown"
+    if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
+        coordinator.entry.data[const.CONF_SLEEPYS_ELITE_SELECTOR] = "BOX24"
+
+    if bed_type == const.BED_TYPE_STARCODE_M1X12:
+        coordinator.entry.data.update(
+            {
+                const.CONF_STARCODE_M1X12_PROFILE: "cb25",
+                const.CONF_BLE_DEVICE_NAME: "STAR252201123456",
+            }
+        )
 
     if bed_type == BED_TYPE_RICHMAT:
         return await create_controller(

@@ -33,9 +33,8 @@ For every current and future bed integration, implement direct BLE bed features 
 
 **Current status:** Dozens of bed protocols implemented. The README's "Supported Beds" table is the single source of truth for which protocols exist and which are confirmed working — don't duplicate that list here.
 
-**v4 baseline:** Work from `main`. It requires Home Assistant 2026.9.0+
-and Python 3.14.2+. Start with the [documentation index](docs/README.md),
-[migration notes](docs/HA_2026_9.md), and [validation matrix](docs/V4_VALIDATION.md).
+**Baseline:** Work from `main`. It requires Home Assistant 2026.9.0+
+and Python 3.14.2+. Start with the [documentation index](docs/README.md).
 
 ## GitHub Comment Approval
 
@@ -129,7 +128,7 @@ custom_components/adjustable_bed/
 - One parent device with native Left/Right children, for both one-address and two-address pairs
 - Conversion and unpair preserve side entity/device identities through registry ownership transactions
 - Child service targets retain their side; conflicting explicit side requests are rejected
-- See [runtime boundaries](docs/design/paired-runtime-and-registry.md) and [migration](docs/HA_2026_9.md)
+- See [runtime boundaries](docs/design/paired-runtime-and-registry.md)
 
 **Config Flow** (`config_flow.py`):
 - Automatic discovery via BLE service UUIDs and device name patterns
@@ -255,7 +254,7 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 | `motor_pulse_count` | Command repeat count | 10 |
 | `motor_pulse_delay_ms` | Delay between repeats | 100 |
 | `disconnect_after_command` | Disconnect immediately after commands | per bed type (`disconnect_after_command_default_enabled`) |
-| `idle_disconnect_seconds` | Idle timeout before disconnect | 40 |
+| `idle_disconnect_seconds` | Idle timeout before disconnect; 0 keeps connected unless `disconnect_after_command` | 40 |
 | `disable_discovery` | Suppress automatic discovery (global, stored via `discovery_settings`) | false |
 | `position_mode` | Speed vs accuracy tradeoff | speed |
 | `octo_pin` | PIN for Octo beds | "" |
@@ -403,8 +402,6 @@ The `generate_support_bundle` service captures protocol data for debugging and a
 | `docs/CONNECTION_GUIDE.md` | Bluetooth setup, ESPHome proxy configuration |
 | `docs/TROUBLESHOOTING.md` | Common issues and solutions |
 | `docs/SERVICES.md` | All public actions, paired side routing and automation examples |
-| `docs/HA_2026_9.md` | v4 baseline, migration, backup and rollback |
-| `docs/V4_VALIDATION.md` | Automated validation and final release-candidate gates |
 | `docs/COMMAND_LIFECYCLE.md` | Scheduling, cancellation and connection ownership |
 | `docs/beds/*.md` | Per-actuator protocol documentation |
 

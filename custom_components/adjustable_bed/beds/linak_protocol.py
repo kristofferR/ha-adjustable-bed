@@ -43,6 +43,9 @@ class LinakCapabilitySnapshot:
     actuator_mask: int | None = None
     timer_supported: bool = False
     discovery_complete: bool = False
+    # True when the mask was unreadable and the axes came from the configured
+    # motor layout instead. A later successful mask read replaces it.
+    actuator_mask_inferred: bool = False
 
     @property
     def position_axes(self) -> tuple[str, ...]:
@@ -72,6 +75,7 @@ class LinakCapabilitySnapshot:
             "actuator_mask": self.actuator_mask,
             "timer_supported": self.timer_supported,
             "discovery_complete": self.discovery_complete,
+            "actuator_mask_inferred": self.actuator_mask_inferred,
         }
 
     @classmethod
@@ -96,6 +100,7 @@ class LinakCapabilitySnapshot:
             actuator_mask=actuator_mask,
             timer_supported=value.get("timer_supported") is True,
             discovery_complete=value.get("discovery_complete") is True,
+            actuator_mask_inferred=value.get("actuator_mask_inferred") is True,
         )
 
 

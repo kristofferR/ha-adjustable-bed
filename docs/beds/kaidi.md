@@ -68,7 +68,7 @@ Home Assistant follows the same bootstrap flow as the OEM apps:
 
 ## Command Families
 
-The v4 integration exposes the Floyd app profile and four legacy Seat variants
+The integration exposes the Floyd app profile and four legacy Seat variants
 under the shared `kaidi` bed type.
 The current implementation uses the OEM apps' Seat commands; the old `bed_1`,
 `bed_2`, and `bed_12` choices are not current variants.
@@ -83,7 +83,7 @@ The current implementation uses the OEM apps' Seat commands; the old `bed_1`,
 
 ### APK-backed product IDs
 
-The v4 resolver recognizes these product IDs from Rize 1.3.0, ISleep 1.6.3,
+The resolver recognizes these product IDs from Rize 1.3.0, ISleep 1.6.3,
 and Floyd 1.0.7:
 
 | Product IDs | Auto family |

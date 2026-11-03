@@ -1,9 +1,8 @@
 # Configuration Guide
 
-This guide covers v4 configuration. Options depend on the selected controller
-and its reported capabilities; not every bed shows every field. v4 requires
-Home Assistant 2026.9.0 or newer. Read the [migration notes](HA_2026_9.md) before
-upgrading from v3.
+Options depend on the selected controller and its reported capabilities; not
+every bed shows every field. The integration requires Home Assistant 2026.9.0 or
+newer.
 
 ## Table of Contents
 
@@ -28,9 +27,14 @@ You can configure the integration in two places:
 
 During initial setup, you'll configure basic options like bed type, motor count, and massage support.
 
-**OKIN ORE:** Add the integration manually and select **Okin ORE (Glideaway Motion app)**
-as the bed type. Beds controlled with the current Dynasty Bases or INNOVA apps use
-the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md)
+**Glideaway Motion / Montion app:** Select the explicit MOTION 400, 450, 500 or
+600 app entry matching the app's model selection. Layout, massage and light
+capabilities follow that choice, with a fixed 300 ms refresh interval. No
+advertisement identifies the model. See the [Glideaway guide](beds/glideaway-motion.md).
+
+**OKIN ORE:** The **Okin ORE (legacy A5 5A)** entry preserves existing legacy
+configurations. The accepted Glideaway Motion app uses a separate protocol. Beds controlled with the current Dynasty Bases or INNOVA apps use
+the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/ore-comfort-bed.md)
 or [INNOVA](beds/keeson.md#innova-profile) profile instead. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
 Bluetooth Service Discovery Server UUID, so it cannot identify an ORE bed by itself.
 UUID-only automatic discovery is disabled to avoid detecting unrelated devices such
@@ -74,7 +78,7 @@ standalone action; neither side changes automatically. See the
 
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
-| **Motor Count** | 2, 3, 4; 1 for one-motor Standard OCTO lifts | 2 | Number of controllable motor sections |
+| **Motor Count** | Profile-dependent | 2 | Number of controllable motor sections when the profile uses a generic count |
 | **Has Massage** | On/Off | Off | Enable massage controls if your bed supports it |
 | **Preferred Adapter** | Auto / Specific adapter | Auto | Which Bluetooth adapter or proxy to use |
 
@@ -86,7 +90,7 @@ label wherever it appears:
 | **Enable light controls** (`has_light`) | Logicdata and Jiecang bed apps (default on), FSM Relax and Limoss Remote (default off) | Expose the app's light controls |
 | **Bed or chair** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
 | **Reverse motor channel 1–4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
-| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, AdjustableM5X5 | The unchanged advertised name that identifies the app profile |
+| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, AdjustableM5X5, Adjustable Comfort M1X12 | The unchanged advertised name that identifies the app profile |
 
 Entries that stored `logicdata_app_has_light` or `jiecang_app_has_light` are
 migrated to `has_light` when the integration loads.
@@ -98,12 +102,17 @@ connecting; diagnostics record the actual adapter or proxy used.
 
 | Motors | Controllable Sections |
 |--------|----------------------|
-| 1 | TV/bed lift (Standard OCTO; `RTV` is detected automatically) |
+| 1 | A single controllable section, when offered by the selected profile |
 | 2 | Back + Legs |
 | 3 | Head + Back + Legs |
 | 4 | Head + Back + Legs + Feet |
 
-**Tip:** Count the distinct moving sections when using your physical remote to determine the correct setting. A one-motor Standard OCTO controller can be selected manually; an OCTO device named `RTV` is detected automatically as a one-motor TV lift.
+Standard OCTO reads its default motor layout from the active `CAP_MOTORCOUNT`
+capability. Its OCTO-specific setting defaults to **Auto** and can be changed to
+an explicit one-to-four motor layout. Bluetooth names do not select the layout.
+
+For other profiles that show **Motor Count**, count the distinct moving sections
+on the physical remote.
 
 ### Malouf/Lucid Layout and Memory
 
@@ -163,7 +172,7 @@ feedback or change which commands a bed supports.
 | **Refresh Positions While Idle** | On/Off, Linak only | On | Periodically reconcile positions when idle polling is allowed |
 | **Connection Profile** | Balanced / Reliable | Balanced | Connection timeout and retry behavior |
 | **Disconnect After Command** | On/Off | Bed/variant-specific | Release the connection promptly after commands |
-| **Idle Disconnect Seconds** | 10-300 | 40 | Auto-disconnect timeout when idle |
+| **Idle Disconnect Seconds** | 0-300 | 40 | Auto-disconnect timeout when idle; 0 keeps the bed connected |
 | **Stop Discovering New Bluetooth Devices** | On/Off | Off | Suppress automatic discovery of new beds (integration-wide) |
 | **Maximum Back Angle** | Greater than 0, up to 180° | 68° | Back/head range for controllers reporting angles |
 | **Maximum Legs Angle** | Greater than 0, up to 180° | 45° | Legs/feet range for controllers reporting angles |
@@ -214,6 +223,9 @@ feedback or change which commands a bed supports.
 - How long to wait before automatically disconnecting when idle
 - Lower values free the connection faster for physical remotes
 - Higher values reduce reconnection overhead for frequent Home Assistant use
+- `0` keeps the bed connected while Home Assistant runs, so commands respond without reconnecting. Use it only for mains-powered beds: the held link blocks the vendor app and any Bluetooth remote (RF remotes are unaffected), and it keeps the bed's Bluetooth radio active.
+- `0` applies only while Disconnect After Command is off; when that option is on, its one-second handoff wins.
+- If a kept link drops, the next command reconnects it. Most beds get no background reconnect timer, because some receivers drop idle links and stop advertising after repeated reconnects. Bed types that already reconnect automatically after a drop keep doing so.
 
 **Timed Move**
 - `adjustable_bed.timed_move` treats the requested milliseconds as an elapsed movement ceiling, starting after connection and movement preparation. Linak completes its readiness handshake before this timer starts. Bluetooth write latency counts toward the ceiling instead of extending it.
@@ -243,6 +255,9 @@ These are configuration defaults for ordinary movement pulses. App/product
 profiles and detected controller variants can have their own timing. Presets,
 memory programming, and release sequences can use different controller-defined
 timing; these settings do not replace it. Use the matching [protocol guide](SUPPORTED_ACTUATORS.md).
+For TiMOTION AHF, these defaults apply to finite app-labelled `button.press`
+actions; its bounded `hold_control` behavior has separate timing in the
+[AHF guide](beds/timotion-ahf.md).
 
 | Bed Type | Pulse Count | Pulse Delay |
 |----------|-------------|-------------|
@@ -283,6 +298,10 @@ timing; these settings do not replace it. Use the matching [protocol guide](SUPP
 | Logicdata | 10 | 30ms |
 | All others | 10 | 100ms |
 
+The **Sleepy's Elite app** profile uses its selector-specific app timing and
+release behavior; the BOX15/BOX24 values above describe the existing protocol
+profiles. Its cadence is not controlled by the generic motor pulse settings.
+
 ### When to Adjust
 
 | Symptom | Solution |
@@ -302,6 +321,7 @@ controller-specific choices are documented here:
 
 | Bed type | Choices covered by its guide |
 |----------|-----------------------------|
+| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Explicit control-box selector for each physical bed |
 | [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-cst.md) | Rize and Support product profiles; Auto retains MF900 behavior |
@@ -325,6 +345,8 @@ controller-specific choices are documented here:
 | **Simon Li** | App profile, big-endian E5 frames; fixed back, foot, lumbar, Home and two memories | Seats controlled with the Simon Li app |
 | **Heal Every Night** | App profile, big-endian E5 frames; motor count picks Healing 6/7/8 | Beds controlled with the Heal Every Night app |
 | **OKIN-Seating** | App profile, big-endian E5 frames; back, foot and Home | Seats controlled with the OKIN-Seating app |
+| **Avanti Bases** | ORE comfort-bed app profile; motor count picks 2M/3M/4M | Beds controlled with the Avanti Bases app |
+| **AMERICANSTAR** | ORE comfort-bed app profile; motor count picks 2M/3M/4M | Beds controlled with AMERICANSTAR 1.0 (1) |
 | **Bedsense Bases** | ORE comfort-bed app profile; motor count picks 2M/3M/4M | Beds controlled with the Bedsense Bases app |
 | **INNOVA** | App profile, little-endian E5 frames; motor count picks 2M/3M/4M | Beds controlled with the INNOVA app |
 | **Restonic BT, remote A / B** | App profiles for the two Restonic BT Remote styles | Beds controlled with the Restonic BT Remote app |
@@ -425,13 +447,14 @@ refuses a change, split the pair, configure each side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
-| Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
+| Sleepy's Elite app | [Explicit app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile): select the app's control-box selector independently for each physical receiver. The existing BOX15, BOX24 and BOX25 profiles remain available. |
+| Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/ore-comfort-bed.md), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
 | Richmat | [RMControl](beds/rmcontrol.md): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md): app and model. |
 | Leggett & Platt | [Prodigy / U Series](beds/leggett-okin.md): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
 | Solace / Woosa | [Woosa Sleep](beds/woosa.md): protocol variant `woosa`; `auto` retains name-based Solace routing. |
 | Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
-| Jiecang | [ERGOBALANCE / Dream Motion](beds/jiecang-app.md): app, layout, transport and light. |
+| Jiecang | [ERGOBALANCE / Dream Motion](beds/jiecang-app.md) and [Comfort Motion](beds/comfort-motion.md): explicit app, layout, transport and local light/massage presence. Comfort Motion supports three layouts and G1/G2 only. |
 | LOGICDATA | [MOTIONrelax](beds/logicdata-app.md): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/logicdata-sleep-smart.md): bed layout and series, or separate air pump. |
 | Malouf / Lucid | [Base apps](beds/malouf-app.md): app, exact model, transport and primary/secondary role. |
 | Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/customatic.md), [Z-Series](beds/customatic-z-series.md), [Serenity](beds/serenity.md), [Tranquil](beds/tranquil.md): select the matching app and model. |
@@ -439,6 +462,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | [Exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/simmons.md). |
+| Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/comfort-enhancements.md). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/adjustable-lumbar.md). |
 | AdjustableM5X4 / M5X5 | [M5X4](beds/starcode-abm5-4.md): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
 | Motion Bed | [Layout and retained settings](beds/motion_bed.md); preserve the original Bluetooth name. |
@@ -456,6 +480,10 @@ Choose the app your phone uses, for example **Revive Control app (Richmat)**. Sh
 ### SIMMONS app profile
 
 Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it. See [SIMMONS](beds/simmons.md).
+
+### Eshine app profile
+
+Choose **Eshine app (E6000)** manually for `com.richmat.eshinesleep`. Its fixed head, feet, lumbar, pillow, massage and light layout does not depend on shared Bluetooth names or received capability flags. Only pulse count remains configurable for movement; refresh is fixed at 100 ms. Named preset saves are separate buttons. A two-address pair preserves this profile per physical bed; single-address side control is unsupported. See [Eshine](beds/eshine.md).
 
 ### Adjustable bed (Lumbar) app profile
 
@@ -590,6 +618,14 @@ On the main entry, select up to **three other configured AdjustableM5X5 or Dewer
 
 Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device. See [protocol and control details](beds/starcode-m5x5.md).
 
+### Adjustable Comfort M1X12 app
+
+Select **Adjustable Comfort M1X12 app** explicitly, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
+
+An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 ELEVATE** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
+
+The optional manufacturer read selects its normal command framing only inside the chosen M1X12 profile. The required Device Information 2A28 characteristic supplies the firmware version state; firmware text does not select capabilities. See [M1X12 protocol, controls and lifecycle](beds/starcode-m1x12.md).
+
 ### FSM Relax app
 
 Select the explicit FSM Relax app bed type, then choose chair/bed layout, optional
@@ -604,7 +640,10 @@ See [FSM Relax](beds/fsm_relax.md) for exact controls, quarantine and calibratio
 
 **Setting:** 4-digit PIN code
 
-Some Octo beds require PIN authentication to maintain the BLE connection. The bed will disconnect after ~30 seconds without re-authentication.
+Standard OCTO reports whether PIN control is enabled, whether a PIN is set, and
+whether the receiver is unlocked. Configure a four-digit PIN only when the
+receiver reports one is required. Star2 uses a separate protocol and has no
+Standard OCTO PIN exchange.
 
 **How to configure:**
 1. Go to **Settings** → **Devices & Services**
@@ -616,13 +655,12 @@ Some Octo beds require PIN authentication to maintain the BLE connection. The be
 - Use the PIN set in the OCTO Smart Control app; it is not the OS Bluetooth pairing code.
 - If your bed works without a PIN, leave this field empty
 
-Standard Octo setup verifies PIN acceptance without moving the bed. Setup finishes
+Standard OCTO setup verifies PIN acceptance without moving the bed. Setup finishes
 only when the PIN is accepted or the controller confirms no PIN is required.
 An inconclusive check leaves the entry unsaved and can be retried; it does not
-mean the PIN is wrong. Star2 has no application PIN exchange.
-
-During operation, the integration responds to lock notifications and retains a
-periodic keepalive fallback. See [Octo authentication](beds/octo.md#pin-configuration).
+mean the PIN is wrong. After a PIN lock challenge, the integration retries the
+configured PIN once after one second. It does not use a periodic PIN timer. See
+[OCTO Smart Control](beds/octo.md#pin-control).
 
 ### Jensen PIN
 
@@ -684,7 +722,7 @@ This is expected when Home Assistant is connected. Most beds only support one BL
 
 **Solutions:**
 1. Enable "Disconnect after each command" where supported, or press Disconnect
-2. Reduce "Idle disconnect seconds" for faster automatic disconnection
+2. Reduce "Idle disconnect seconds" for faster automatic disconnection (and avoid `0`, which keeps the bed connected)
 3. Enable "Disable angle sensing" if position monitoring causes conflicts
 
 ### Commands Are Slow or Unresponsive
@@ -766,7 +804,7 @@ To enable it, open **Settings → Devices & Services → Adjustable Bed**, selec
 bed, and enable **Controller Sync** under **Entities**. Existing custom entity
 names may still show the old label.
 
-### Two Independent Frames in v4
+### Two Independent Frames
 
 Add each frame as its own Adjustable Bed entry and confirm that each controls
 only its intended side. For compatible entries, start **Add Integration →
@@ -816,8 +854,7 @@ offline-safe capabilities still support setup with one side unavailable.
 Existing side entity IDs, device IDs, names, areas, and history are retained when
 combining entries. To undo it, choose **Split paired bed** in the pair's options;
 the side entries are restored and combined controls are removed. Update any
-automation that targeted the combined controls. This restores standalone controls,
-not the v3 storage schema; [rollback requires a pre-v4 backup](HA_2026_9.md#backup-and-rollback).
+automation that targeted the combined controls.
 
 Use the [service targeting rules](SERVICES.md#targeting-a-bed-or-side) for
 automations. A child device defaults to its side; a parent defaults to both.
@@ -846,7 +883,7 @@ sequence:
 
 This runs each cover's normal movement action; it does not make movement
 continuous or synchronize positions. To stop, call `cover.stop_cover` targeting
-both covers. Unlike the v4 paired-bed controls, this simple script does not stop
+both covers. Unlike the paired-bed controls, this simple script does not stop
 the other side automatically if one side fails.
 
 ---
@@ -857,6 +894,50 @@ the other side automatically if one side fails.
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
 
+### Curve, Q-Plus, Serta MP and SFD app profiles
+
+Choose the exact app in the bed-type picker: [Tempur Curve](beds/tempur-curve.md),
+[Q-Plus Adjustable Remote](beds/q-plus-adjustable-remote.md),
+[Serta MP Remote](beds/serta-mp-remote.md), [Omazz Adjusto III](beds/omazz-adjusto-iii.md),
+[Ergomotion](beds/ergomotion.md), [ROW Control](beds/row-control.md),
+[Ergo Slim](beds/ergo-slim.md), or [TEMPUR AU](beds/tempur-au.md).
+Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
+Select the bed address manually when automatic discovery cannot disambiguate it.
+
+**App controls** asks for the layout shown by the app. Q-Plus defaults to M2;
+Ergomotion and TEMPUR AU default to B2; Omazz uses its reachable RemoteB layout.
+The layout fixes the available actions and source timing. It does not prove
+physical motor count. The pulse count bounds a normal held-action button press;
+it does not change the source 100 ms refresh interval. Serta's local angle-edit
+controls instead change one degree every 200 ms and send only on release.
+
+Q-Plus's **Both/Side A/Side B** setting controls its P1 packet selector. It is
+independent of a Home Assistant paired Left/Right target. MX Memory1 is an
+opaque app-labelled action, with no invented physical save/recall meaning.
+Serta MP's four configurable local head/foot memory targets are likewise
+separate from the remote M4 key and from physical memory programming.
+
+Each physical side owns its app layout and Serta local memory targets. Configure
+a two-address pair's sides independently. Saving ordinary or shared settings retains
+each declared app layout, Q-Plus A/B/Both wire selector and Serta local targets
+through reload; unrelated settings from a previous protocol are removed.
+Shared options do not overwrite side-owned settings. Native child-device
+targeting and side conflicts follow the existing
+paired rules. No unproven single-address physical side mapping is added.
+
+All eight profiles require both current-session write and notification roles.
+The seven profiles without position feedback keep angle sensing disabled and
+still subscribe for their proven timer state. Serta MP exposes calibrated angle
+feedback and direct pulse targets. Hardware behavior remains unverified.
+
+### BedSense app
+
+Select **BedSense app (com.fenmenbielei.bedsense)** and a layout, or select its
+case-sensitive Bluetooth-name layout rule. Layout owns the motion controls;
+generic motor count, massage and angle-sensing choices are hidden. The original
+Bluetooth name and layout belong to each side of a two-address pair. There is no
+single-address left/right command. See [BedSense](beds/bedsense.md) for all nine
+layouts, memory indicators and app-labelled massage/light actions.
 ### Floyd Home profile
 
 Choose **Floyd Home app (product 139)** under the Kaidi transport. Auto selects
