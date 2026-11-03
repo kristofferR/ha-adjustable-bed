@@ -994,3 +994,18 @@ test("a Sleeptracker reported-state-only registry surface is not empty", () => {
   expect(bedIsEmpty(bed)).toBe(false);
   expect(bedIsEmpty(bedEntitiesForDevice(hassWith([]), "dev1"))).toBe(true);
 });
+
+test("Comfort Enhancements keeps Quiet sleep in presets and app massage clicks in massage", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.quiet", "comfort_enhancements_quiet_sleep"),
+    entry("button.head_cycle", "comfort_enhancements_head_cycle"),
+    entry("button.foot_cycle", "comfort_enhancements_foot_cycle"),
+    entry("button.timer_cycle", "comfort_enhancements_timer_cycle"),
+    entry("select.timer", "massage_timer"),
+    entry("cover.lift", "bed_height"),
+  ]), "dev1");
+  expect(bed.presets).toEqual(["button.quiet"]);
+  expect(bed.massage.buttons).toEqual(["button.head_cycle", "button.foot_cycle", "button.timer_cycle"]);
+  expect(bed.massage.timer).toBe("select.timer");
+  expect(bed.motors[0].key).toBe("bed_height");
+});
