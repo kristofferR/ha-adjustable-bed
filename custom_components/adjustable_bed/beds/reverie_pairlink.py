@@ -209,6 +209,7 @@ class ReveriePairlinkController(BedController):
         self._diagnostic_timer: asyncio.TimerHandle | None = None
         self._diagnostic_generation = 0
         self._diagnostic_snapshot: PairlinkSendSnapshot | None = None
+        self._diagnostic_connection_release: Callable[[], None] | None = None
         self._status_sync_timer: asyncio.TimerHandle | None = None
         self._status_sync_generation = 0
         self._backup_check_timer: asyncio.TimerHandle | None = None
@@ -471,14 +472,14 @@ class ReveriePairlinkController(BedController):
             ControllerSelectSpec(
                 key="reverie_pairlink_massage_mode",
                 translation_key="reverie_pairlink_massage_mode",
-                state_key="reverie_massage_mode",
+                state_key="reverie_massage_mode_option",
                 options=("0", "1", "2", "3", "4"),
                 select_fn=select_mode,
             ),
             ControllerSelectSpec(
                 key="reverie_pairlink_massage_rhythm",
                 translation_key="reverie_pairlink_massage_rhythm",
-                state_key="reverie_massage_rhythm",
+                state_key="reverie_massage_rhythm_option",
                 options=("off", "on"),
                 select_fn=select_rhythm,
             ),
@@ -1613,7 +1614,13 @@ class ReveriePairlinkController(BedController):
             state = self._peer_states.setdefault(peer.address, {})
             if is_active_peer:
                 self._state = state
+        updates = dict(events)
         for key, value in events:
+            if key == "reverie_massage_mode":
+                updates["reverie_massage_mode_option"] = str(value)
+            elif key == "reverie_massage_rhythm":
+                updates["reverie_massage_rhythm_option"] = "on" if value else "off"
+        for key, value in updates.items():
             if key == "pairlink_selector_event":
                 continue
             if key == "pairlink_changed_selectors":
@@ -2640,11 +2647,16 @@ class ReveriePairlinkController(BedController):
         if not self._has_supported_model:
             raise ValueError("Pairlink diagnostic is unavailable for the selected model")
         captured = self._capture_current_send_snapshot()
-        self._diagnostic_generation += 1
+        self._cancel_diagnostic()
         generation = self._diagnostic_generation
         self._diagnostic_snapshot = captured
-        if self._diagnostic_timer is not None:
-            self._diagnostic_timer.cancel()
+        context = self._coordinator.hold_command_connection()
+        context.__enter__()
+
+        def release() -> None:
+            context.__exit__(None, None, None)
+
+        self._diagnostic_connection_release = release
         self._diagnostic_timer = self._coordinator.hass.loop.call_later(
             2, self._enqueue_diagnostic_stop, captured, generation
         )
@@ -2660,6 +2672,8 @@ class ReveriePairlinkController(BedController):
     def _enqueue_diagnostic_stop(
         self, captured: PairlinkSendSnapshot, generation: int
     ) -> None:
+        if generation != self._diagnostic_generation:
+            return
         self._diagnostic_timer = None
         self._coordinator.hass.async_create_task(
             self._stop_diagnostic(captured, generation),
@@ -2684,12 +2698,16 @@ class ReveriePairlinkController(BedController):
                 except Exception as err:
                     failures.append(err)
 
-        await self._coordinator.async_execute_controller_command(
-            write_stops,
-            cancel_running=False,
-            resource="reverie:pairlink:diagnostic",
-            read_positions_after_operation=False,
-        )
+        try:
+            await self._coordinator.async_execute_controller_command(
+                write_stops,
+                cancel_running=False,
+                resource="reverie:pairlink:diagnostic",
+                read_positions_after_operation=False,
+            )
+        finally:
+            if generation == self._diagnostic_generation:
+                self._cancel_diagnostic()
         if failures:
             raise ExceptionGroup("Pairlink diagnostic stop writes failed", failures)
 
@@ -2697,17 +2715,24 @@ class ReveriePairlinkController(BedController):
         if not self._has_supported_model:
             raise ValueError("Pairlink diagnostic is unavailable for the selected model")
 
+    def _cancel_diagnostic(self) -> None:
+        self._diagnostic_generation += 1
+        self._diagnostic_snapshot = None
+        if self._diagnostic_timer is not None:
+            self._diagnostic_timer.cancel()
+            self._diagnostic_timer = None
+        release = self._diagnostic_connection_release
+        self._diagnostic_connection_release = None
+        if release is not None:
+            release()
+
     def _cancel_runtime_owned_activity(self) -> None:
         """Invalidate controller timers when the entry-owned runtime closes."""
         self._set_active_control_session(False)
         self._cancel_clock_sync()
         self._cancel_backup_check()
         self._cancel_routine()
-        self._diagnostic_generation += 1
-        self._diagnostic_snapshot = None
-        if self._diagnostic_timer is not None:
-            self._diagnostic_timer.cancel()
-            self._diagnostic_timer = None
+        self._cancel_diagnostic()
 
     def on_disconnect(self) -> None:
         self._cancel_runtime_owned_activity()

@@ -313,8 +313,11 @@ notifications, and its scheduler are outside this integration's scope.
 `reverie_test` sends the accepted Protocol 108 or 110 direct diagnostic and
 its matching stop writes. Pairlink diagnostics use the current central or local
 session and the same authentication, sign, target, and readiness checks as
-ordinary actions. A successful GATT write only shows transport acceptance, not
-physical bed behavior.
+ordinary actions. The diagnostic retains the command connection until its timed
+cleanup completes, including with Disconnect After Command enabled. Pairlink's
+massage mode and rhythm selects display receiver feedback; the mode sensor
+retains its numeric value for automations. A successful GATT write only shows
+transport acceptance, not physical bed behavior.
 
 See [Actions and Automations](../SERVICES.md) for action schemas and examples.
 

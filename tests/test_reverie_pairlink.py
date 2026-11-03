@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Coroutine
+from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
@@ -140,6 +141,7 @@ def _controller(model: str = "R510L") -> tuple[
         handle_controller_state_update=Mock(),
         handle_controller_state_updates=Mock(),
         clear_position_feedback=Mock(),
+        hold_command_connection=nullcontext,
         hass=SimpleNamespace(async_create_task=create_task, loop=fake_loop),
     )
     controller = ReveriePairlinkController(coordinator, model=model, runtime=runtime)

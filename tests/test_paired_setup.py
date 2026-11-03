@@ -3412,13 +3412,41 @@ class TestPairedReceiverSettings:
         right_spec = make_spec(right_hold)
         coord.children = {
             SIDE_LEFT: SimpleNamespace(
-                capability_controller=SimpleNamespace(motor_control_specs=[left_spec])
+                capability_controller=SimpleNamespace(motor_control_specs=[left_spec]),
+                bed_type=BED_TYPE_LINAK,
             ),
             SIDE_RIGHT: SimpleNamespace(
-                capability_controller=SimpleNamespace(motor_control_specs=[right_spec])
+                capability_controller=SimpleNamespace(motor_control_specs=[right_spec]),
+                bed_type=BED_TYPE_LINAK,
             ),
         }
         entity = PairedBedCombinedMotorButton(coord, left_spec, "up")
+        assert entity.extra_state_attributes == expected
+
+    @pytest.mark.parametrize("mode", ["concurrent", "sequential"])
+    @pytest.mark.parametrize("right_bed_type", [BED_TYPE_OCTO, BED_TYPE_LINAK])
+    @pytest.mark.parametrize("motor", ["back", "legs"])
+    def test_octo_timed_pair_metadata_does_not_require_declared_hold(
+        self, mode, right_bed_type, motor,
+    ):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import MotorControlSpec
+        from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
+
+        spec = MotorControlSpec(motor, motor, AsyncMock(), AsyncMock(), AsyncMock())
+        coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
+        coord.children = {
+            SIDE_LEFT: SimpleNamespace(bed_type=BED_TYPE_OCTO),
+            SIDE_RIGHT: SimpleNamespace(bed_type=right_bed_type),
+        }
+        for child in coord.children.values():
+            child.capability_controller = SimpleNamespace(motor_control_specs=[spec])
+        entity = PairedBedCombinedMotorButton(coord, spec, "up")
+        expected = {"paired_hold_motor": motor} if (
+            mode == "concurrent" and right_bed_type == BED_TYPE_OCTO
+        ) else {}
         assert entity.extra_state_attributes == expected
 
     @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT])

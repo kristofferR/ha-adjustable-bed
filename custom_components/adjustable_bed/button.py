@@ -19,6 +19,7 @@ from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_OCTO,
     DOMAIN,
     PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
@@ -1503,6 +1504,15 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         """Advertise this common motor through the bounded paired action."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         hold = _paired_motor_hold_spec(self._coordinator, self._motor_key)
+        if (
+            not isinstance(self._coordinator, SingleAddressPairedCoordinator)
+            and len(self._coordinator.children) == 2
+            and self._coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+            and self._motor_key in {"back", "legs"}
+            and all(child.bed_type == BED_TYPE_OCTO for child in self._coordinator.children.values())
+        ):
+            # OCTO already supports bounded pulses without a declared hold/release contract.
+            attributes["paired_hold_motor"] = self._motor_key
         if hold is not None:
             attributes.update(
                 **(
