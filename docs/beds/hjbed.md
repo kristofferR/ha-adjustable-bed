@@ -118,6 +118,9 @@ the generic packet mode. HA/Bleak handles MTU negotiation without an arbitrary o
 
 - Choose the explicit app and product profile; configure two-address sides separately.
 - Bluetooth scan candidates contain case-sensitive `QRRM`, `COOL`, `MPE_`, `209A` or `ZRA1`.
+- HA's indexed name hints match those prefixes. Service/manual detection still accepts the keywords anywhere in a name.
+- Names with an earlier prefix and no eligible advertised service use manual device selection. HA rejects leading-wildcard manifest matchers.
+- E0FF uses name hints or manual selection because non-bed devices share it; all six listed transports work after explicit selection.
 - HA provides discovery and an explicit device/product picker. Names are scan hints, not capability evidence.
 - Phone text/QR input searches the current 19 remote codes; persisted display keys use exact case-sensitive first-match selection.
 - HA stores an explicit profile per physical device, so ambiguous remote codes cannot change its layout.

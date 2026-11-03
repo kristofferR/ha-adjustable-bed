@@ -84,6 +84,19 @@ Android widget mounting, camera input, SQLite implementation, permission UI,
 reconnect dialogs and plugin MTU defaults are platform machinery, not extra bed
 features. HA stores explicit profile/layout and acknowledged alarm preferences
 per physical address/profile and uses its existing Bluetooth infrastructure.
+HA's indexed manifest rejects wildcard characters in the first three name
+characters. Its hints therefore use the five literal keyword prefixes and all
+existing name-guarded service hints. All six GATT transports remain supported
+after explicit selection; E0FF retains the existing passive-discovery exclusion
+for non-bed false matches (`tests/test_detection.py:TestW5WiLinkeNameGuard`).
+Service/manual detection preserves the app's complete
+case-sensitive substring rule, including names with an earlier prefix. A name
+without an eligible advertised service can be selected manually in that case.
+Background profile recommendations retain an explicitly selected HJBed app but
+exclude its scan hint from competing receiver signatures and from corroboration
+of a shared service. Proven receiver recommendations and per-address decision
+identities therefore retain their existing behavior; an app scan name does not
+establish another protocol or product layout.
 
 Wi-Fi/cloud/account/provisioning/network, firmware maintenance, desk-only and
 phone-unrelated exclusions carry exact artifact source/reason entries. No

@@ -664,6 +664,11 @@
       "tests/test_hjbed.py:test_discovery_uses_artifact_substrings_without_selecting_a_profile",
       "custom_components/adjustable_bed/beds/hjbed.py:select_transport/start_notify/_send",
       "tests/test_hjbed.py:test_gatt_iteration_precedence",
+      "tests/test_manifest.py:test_manifest_bluetooth_matchers_are_accepted_by_home_assistant",
+      "custom_components/adjustable_bed/profile_recommendations.py:recommend_profile",
+      "tests/test_hjbed.py:test_app_scan_hint_preserves_receiver_recommendations_and_explicit_selection",
+      "tests/test_hjbed.py:test_app_scan_hint_does_not_corroborate_a_shared_receiver_signature",
+      "tests/test_profile_recommendation_history.py:test_qrrm_bedtech_signature_does_not_question_the_richmat_remote_layout",
       "tests/test_hjbed.py:test_late_notification_and_session_replacement"
     ],
     "service": [
@@ -30123,6 +30128,11 @@
       "tests/test_hjbed.py:test_discovery_uses_artifact_substrings_without_selecting_a_profile",
       "custom_components/adjustable_bed/beds/hjbed.py:select_transport/start_notify/_send",
       "tests/test_hjbed.py:test_gatt_iteration_precedence",
+      "tests/test_manifest.py:test_manifest_bluetooth_matchers_are_accepted_by_home_assistant",
+      "custom_components/adjustable_bed/profile_recommendations.py:recommend_profile",
+      "tests/test_hjbed.py:test_app_scan_hint_preserves_receiver_recommendations_and_explicit_selection",
+      "tests/test_hjbed.py:test_app_scan_hint_does_not_corroborate_a_shared_receiver_signature",
+      "tests/test_profile_recommendation_history.py:test_qrrm_bedtech_signature_does_not_question_the_richmat_remote_layout",
       "tests/test_hjbed.py:test_late_notification_and_session_replacement"
     ],
     "P02": [
@@ -30288,7 +30298,7 @@
     "R069": "One awaited write; minimum100ms FIFO pacing without app retry. HA scheduler serializes actions; cancelled future refresh is discarded instead of allowing stale queued motion to drain. Configuration frame pairs remain ordered.",
     "R070": "Raw diagnostic capture precedes split, old timer cancellation precedes split, all complete frames destructively split before dispatch; prior event effects retained on error; failing/later local frames lost and remainder not timed until next successful dispatch.",
     "R071": "Retain all in-scope motor travel/angle/height, version/control mode, massage, RGB/whiteLED, music, snore/off-bed/name/locks, coax/aroma/heating/fan/blanket/detection observations. No sender inferred from an event or unselected enum. Unknownphysicalunits remain raw structured values.",
-    "R072": "Service order decides mode(last match), destination(first eligiblewrite), notify(first notifyproperty on acceptedservices). Require write, not WWR-only; indication-only not selected. Response chosen from writeWithoutResponse property.",
+    "R072": "HA indexed manifest rejects wildcardwithinfirst3characters; safe nameprefix hints cover all5keywords and existing servicehints retain their nameguards. All6GATTtransports remain supported after explicit selection, but E0FF is deliberately absent from passive service-only hints because existing integration evidence/test_detection.TestW5WiLinkeNameGuard records non-bed false matches. Service/manual detector retains exact case-sensitive substringanywhere behavior; names with earlierprefix and noadvertisedservice use manualdevice selection. Background profile recommendations preserve an explicitly selected app but exclude the HJBed app hint from competing receiver ambiguities and from corroboration of a bare shared service. This preserves proven receiver suggestions and physical-address dismissal/decision identities without treating app names as protocol proof. This is HA discovery infrastructure mapping, not an inferred device-name rule. Service order decides mode(last match), destination(first eligiblewrite), notify(first notifyproperty on acceptedservices). Require write, not WWR-only; indication-only not selected. Response chosen from writeWithoutResponse property.",
     "R073": "No app-owned bed auth/PIN/bond/crypto exchange exists. HA permissions/adapters/proxies remain supported infrastructure. No invented pairing command."
   },
   "format": "Resolve proof_ref/reason_ref through the corresponding top-level tables; each item still has exactly one explicit disposition."

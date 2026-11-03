@@ -587,7 +587,54 @@ def test_discovery_uses_artifact_substrings_without_selecting_a_profile(keyword)
     manifest = json.loads(
         (FIXTURES.parents[1] / "custom_components/adjustable_bed/manifest.json").read_text()
     )
-    assert {"local_name": "*" + keyword + "*"} in manifest["bluetooth"]
+    # HA's indexed manifest requires a literal prefix. Service/manual discovery
+    # still uses the full app substring rule exercised above.
+    assert {"local_name": keyword + "*"} in manifest["bluetooth"]
+
+
+@pytest.mark.parametrize(
+    "selected, suggested", [("richmat", "bedtech"), ("bedtech", None), ("hjbed", None)]
+)
+def test_app_scan_hint_preserves_receiver_recommendations_and_explicit_selection(
+    selected, suggested
+):
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+
+    advert = SimpleNamespace(
+        address="AA:BB:CC:DD:EE:21",
+        name="QRRM157738",
+        service_uuids=["0000fee9-0000-1000-8000-00805f9b34fb"],
+        manufacturer_data={19543: bytes.fromhex("54307651")},
+        service_data={},
+    )
+    result = recommend_profile(
+        {
+            CONF_BED_TYPE: selected,
+            CONF_PROTOCOL_VARIANT: "hj_bedbjrn" if selected == "hjbed" else "auto",
+        },
+        advert,
+        {},
+    )
+    if suggested is None:
+        assert result is None
+    else:
+        assert result is not None and result.suggested == suggested
+        assert all(not choice.startswith("hjbed") for choice in result.choices)
+
+
+def test_app_scan_hint_does_not_corroborate_a_shared_receiver_signature():
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+
+    advert = SimpleNamespace(
+        address="AA:BB:CC:DD:EE:21",
+        name="prefix-QRRM-suffix",
+        service_uuids=["0000fee9-0000-1000-8000-00805f9b34fb"],
+        manufacturer_data={},
+        service_data={},
+    )
+    assert recommend_profile({CONF_BED_TYPE: "octo"}, advert, {}) is None
 
 
 async def test_short_gesture_holds_release_without_repeating(coordinator, instant):
