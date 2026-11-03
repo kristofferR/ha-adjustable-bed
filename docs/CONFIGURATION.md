@@ -243,6 +243,9 @@ These are configuration defaults for ordinary movement pulses. App/product
 profiles and detected controller variants can have their own timing. Presets,
 memory programming, and release sequences can use different controller-defined
 timing; these settings do not replace it. Use the matching [protocol guide](SUPPORTED_ACTUATORS.md).
+For TiMOTION AHF, these defaults apply to finite app-labelled `button.press`
+actions; its bounded `hold_control` behavior has separate timing in the
+[AHF guide](beds/timotion-ahf.md).
 
 | Bed Type | Pulse Count | Pulse Delay |
 |----------|-------------|-------------|

@@ -1,5 +1,6 @@
 """Generic hold_control, rename, sync_clock and goto_preset duration actions."""
 
+import asyncio
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,10 +12,12 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.timotion_ahf import TiMOTIONAhfController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
     BED_TYPE_SVANE,
+    BED_TYPE_TIMOTION_AHF,
     DOMAIN,
     SIDE_BOTH,
 )
@@ -146,6 +149,47 @@ async def test_hold_control_profile_constraint_becomes_validation_error(
             {"device_id": "bed", "control": "wave_up", "duration": 1}, blocking=True,
         )
     controller.hold_control.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("status_ready", "lock_mask", "message"),
+    [
+        (False, 0, "valid status frame"),
+        (True, 0x01, "disabled by status lock bit"),
+    ],
+)
+async def test_ahf_hold_control_preflights_status_and_lock_before_writes(
+    hass: HomeAssistant,
+    resolve,
+    status_ready: bool,
+    lock_mask: int,
+    message: str,
+) -> None:
+    """The existing generic service rejects unsafe AHF holds before dispatch."""
+    runtime = SimpleNamespace(
+        client=SimpleNamespace(is_connected=True),
+        address="AA:BB:CC:DD:EE:39",
+        motor_pulse_count=10,
+        motor_pulse_delay_ms=100,
+        _cancel_command=asyncio.Event(),
+    )
+    runtime.cancel_command = runtime._cancel_command
+    controller = TiMOTIONAhfController(runtime)
+    controller._status_ready = status_ready
+    controller._feature_mask = lock_mask
+    coordinator, _ = target(BED_TYPE_TIMOTION_AHF)
+    coordinator.capability_controller = controller
+    select(resolve, (coordinator, controller))
+
+    with pytest.raises(ServiceValidationError, match=message):
+        await hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": "bed", "control": "control_1_up", "duration": 0.5},
+            blocking=True,
+        )
+
+    coordinator.async_execute_controller_command.assert_not_awaited()
 
 
 async def test_hold_control_cannot_mix_live_session_profiles(
