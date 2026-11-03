@@ -359,6 +359,9 @@ def _number_entities_for(
     elif (
         bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_STARCODE_M5X5)
         and controller is not None
+        # Until capabilities resolve, the controller reports no axes; removing
+        # sliders then would delete working entities (#714).
+        and controller.controller_entity_discovery_complete
     ):
         supported_keys = {spec.key for spec in controller.position_number_specs}
         position_keys = _POSITION_ENTITY_KEYS
