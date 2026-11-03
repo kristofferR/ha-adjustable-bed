@@ -30,6 +30,7 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_HJBED,
     BED_TYPE_KEESON,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
@@ -260,8 +261,11 @@ def recommend_profile(
             return _variant_review(bed_type, OCTO_VARIANT_STANDARD, OCTO_VARIANT_STAR2)
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
-    if (detected.confidence < 0.9 or detected.ambiguous_types) and not any(
-        signal.startswith(("name:", "manufacturer", "mac:")) for signal in detected.signals
+    receiver_ambiguities = set(detected.ambiguous_types or ()) - {BED_TYPE_HJBED}
+    if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
+        signal.startswith(("name:", "manufacturer", "mac:"))
+        and signal != "name:hjbed_app_candidate"
+        for signal in detected.signals
     ):
         return None
     matches = {detected.bed_type, *(detected.ambiguous_types or ())}
@@ -276,6 +280,9 @@ def recommend_profile(
         return None
     if bed_type in matches and bed_type != detected.bed_type:
         return None  # Detection explicitly accepts the selected alternative.
+    # HJBed names offer an opt-in app choice, not a competing receiver signature.
+    # Keep an already selected app above; assess other profiles by receiver evidence.
+    matches = {detected.bed_type, *receiver_ambiguities}
     if variant in (None, VARIANT_AUTO) and (
         LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
         == LEGACY_BED_TYPE_MAPPING.get(detected.bed_type, detected.bed_type)
@@ -316,7 +323,7 @@ def recommend_profile(
         detected.bed_type
         if bed_type != detected.bed_type
         and detected.confidence >= 0.9
-        and not detected.ambiguous_types
+        and not receiver_ambiguities
         and not detected.requires_characteristic_check
         and not apps
         else None

@@ -1,0 +1,2247 @@
+[
+  {
+    "object": "990c31",
+    "id": "productAWMotionHC800",
+    "selector": {
+      "display_key": "HC800",
+      "remote_code": "LTRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 7,
+      "restore_target": "990c31",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974061",
+        "973fe1",
+        "9749e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9738e1",
+        "9739e1",
+        "973861"
+      ],
+      "off_30": [
+        "9738e1",
+        "9739e1",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": true,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990cf1",
+    "id": "productAWMotionSN300",
+    "selector": {
+      "display_key": "SN300",
+      "remote_code": "B3RN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 5,
+      "restore_target": "990cf1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "9749e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973861"
+      ],
+      "off_30": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990c91",
+    "id": "productAWMotionSN500",
+    "selector": {
+      "display_key": "SN500",
+      "remote_code": "LTRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 6,
+      "restore_target": "990c91",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974061",
+        "973fe1",
+        "973f61",
+        "973ee1",
+        "9749e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9738e1",
+        "9739e1"
+      ],
+      "off_30": [
+        "9738e1",
+        "9739e1"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98fcd1",
+    "id": "productDreamBlue",
+    "selector": {
+      "display_key": "blue",
+      "remote_code": "LTRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 4,
+      "restore_target": "98fcd1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974061",
+        "973fe1",
+        "973f61",
+        "973ee1",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973a61",
+        "9739e1",
+        "973961",
+        "9738e1",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": [
+        "973a61",
+        "9739e1",
+        "973961",
+        "9738e1",
+        "973861",
+        "9737e1"
+      ]
+    },
+    "flags": {
+      "off_34": true,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98fd91",
+    "id": "productDreamGreen",
+    "selector": {
+      "display_key": "green",
+      "remote_code": "HARM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 1,
+      "restore_target": "98fd91",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61"
+      ],
+      "off_28": [
+        "974361",
+        "973ce1",
+        "9742e1",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "973a61",
+        "973861",
+        "9738e1"
+      ],
+      "off_30": [
+        "9739e1",
+        "973a61",
+        "973861",
+        "9738e1"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98fd31",
+    "id": "productDreamOrange",
+    "selector": {
+      "display_key": "orange",
+      "remote_code": "JMRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 2,
+      "restore_target": "98fd31",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61"
+      ],
+      "off_28": [
+        "974361",
+        "973ce1",
+        "9742e1",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "973a61",
+        "973861",
+        "9738e1"
+      ],
+      "off_30": [
+        "9739e1",
+        "973a61",
+        "973861",
+        "9738e1"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": true,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990d51",
+    "id": "productDreamYellow",
+    "selector": {
+      "display_key": "yellow",
+      "remote_code": "HBRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 3,
+      "restore_target": "990d51",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974ae1",
+        "974a61",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "9742e1",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "973a61",
+        "973861",
+        "9737e1",
+        "9738e1"
+      ],
+      "off_30": [
+        "9739e1",
+        "973a61",
+        "973861",
+        "9737e1",
+        "9738e1"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990211",
+    "id": "productFlexxAFEG300",
+    "selector": {
+      "display_key": "AFEG300",
+      "remote_code": "L5RN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 34,
+      "restore_target": "990211",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61",
+        "974961"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973961",
+        "9739e1",
+        "973a61",
+        "973861",
+        "9744e1"
+      ],
+      "off_30": [
+        "973961",
+        "9739e1",
+        "973a61",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": true,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9901b1",
+    "id": "productFlexxAFEG300SH",
+    "selector": {
+      "display_key": "AFEG300-SH",
+      "remote_code": "LPRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 35,
+      "restore_target": "9901b1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61",
+        "974961",
+        "974b61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973961",
+        "9739e1",
+        "973a61",
+        "973861",
+        "9744e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": true,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98fdf1",
+    "id": "productFlexxLinkQSRN",
+    "selector": {
+      "display_key": "FlexxLink",
+      "remote_code": "QSRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 45,
+      "restore_target": "98feb1",
+      "restore_selected_self": false,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "DEAD/UNUSED",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974061",
+        "973fe1",
+        "9749e1",
+        "973e61",
+        "974961"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1",
+        "9748e1",
+        "974861",
+        "9747e1",
+        "974761",
+        "9746e1",
+        "974661",
+        "9745e1",
+        "974561"
+      ],
+      "off_2c": [
+        "9739e1",
+        "973861",
+        "9744e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98feb1",
+    "id": "productFlexxLinkRFRN",
+    "selector": {
+      "display_key": "FlexxLink",
+      "remote_code": "RFRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 43,
+      "restore_target": "98feb1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974061",
+        "973fe1",
+        "973e61",
+        "974961"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9738e1",
+        "9739e1",
+        "973861",
+        "9744e1"
+      ],
+      "off_30": [
+        "9738e1",
+        "9739e1",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": true,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98fe51",
+    "id": "productFlexxLinkS5RN",
+    "selector": {
+      "display_key": "FlexxLink",
+      "remote_code": "S5RN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 44,
+      "restore_target": "98feb1",
+      "restore_selected_self": false,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "DEAD/UNUSED",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61",
+        "974961"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973961",
+        "9739e1",
+        "973a61",
+        "973861",
+        "9744e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990391",
+    "id": "productFlexxPB250",
+    "selector": {
+      "display_key": "PB250",
+      "remote_code": "VJRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 30,
+      "restore_target": "990391",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "973e61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "973861"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990331",
+    "id": "productFlexxPB300",
+    "selector": {
+      "display_key": "PB300",
+      "remote_code": "FARM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 31,
+      "restore_target": "990331",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973a61",
+        "973961",
+        "9739e1",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9902d1",
+    "id": "productFlexxPB325",
+    "selector": {
+      "display_key": "PB325",
+      "remote_code": "FARM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 32,
+      "restore_target": "9902d1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973a61",
+        "9738e1",
+        "9739e1",
+        "973861"
+      ],
+      "off_30": [
+        "973a61",
+        "9738e1",
+        "9739e1",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": true,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990271",
+    "id": "productFlexxPB450",
+    "selector": {
+      "display_key": "PB450",
+      "remote_code": "MPRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 33,
+      "restore_target": "990271",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974c61",
+        "974be1",
+        "9749e1",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973861"
+      ],
+      "off_30": [
+        "9739e1",
+        "9738e1",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": true,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990151",
+    "id": "productFlexxPB450SH",
+    "selector": {
+      "display_key": "PB450-SH",
+      "remote_code": "LVRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 36,
+      "restore_target": "990151",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974061",
+        "973fe1",
+        "973e61",
+        "9749e1"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9738e1",
+        "9739e1",
+        "973861"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": true,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": true,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990871",
+    "id": "productHJBedBJRN",
+    "selector": {
+      "display_key": "BJRN",
+      "remote_code": "BJRN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 17,
+      "restore_target": "990871",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974061",
+        "973fe1",
+        "973f61",
+        "973ee1",
+        "974961",
+        "974f61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "974e61",
+        "974de1",
+        "9751e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990811",
+    "id": "productHJBedBYRN",
+    "selector": {
+      "display_key": "BYRN",
+      "remote_code": "BYRN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 18,
+      "restore_target": "990811",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "9758e1",
+        "975861",
+        "974ee1"
+      ],
+      "off_28": [],
+      "off_2c": [],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9907b1",
+    "id": "productHJBedD4RN",
+    "selector": {
+      "display_key": "D4RN",
+      "remote_code": "D4RN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 19,
+      "restore_target": "9907b1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "9757e1",
+        "975761",
+        "9755e1",
+        "975561",
+        "9756e1",
+        "975661",
+        "9754e1",
+        "975461",
+        "9753e1"
+      ],
+      "off_28": [],
+      "off_2c": [],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": true
+    }
+  },
+  {
+    "object": "990751",
+    "id": "productHJBedD5RN",
+    "selector": {
+      "display_key": "D5RN",
+      "remote_code": "D5RN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 20,
+      "restore_target": "990751",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "9757e1",
+        "975761",
+        "9755e1",
+        "975561",
+        "9756e1",
+        "975661",
+        "9754e1",
+        "975461",
+        "9753e1",
+        "975361"
+      ],
+      "off_28": [],
+      "off_2c": [],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": true
+    }
+  },
+  {
+    "object": "9906f1",
+    "id": "productHJBedD6RN",
+    "selector": {
+      "display_key": "D6RN",
+      "remote_code": "D6RN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 21,
+      "restore_target": "9906f1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "9755e1",
+        "975561",
+        "9754e1",
+        "975461",
+        "9753e1",
+        "975361"
+      ],
+      "off_28": [],
+      "off_2c": [],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": true
+    }
+  },
+  {
+    "object": "990691",
+    "id": "productHJBedD7RN",
+    "selector": {
+      "display_key": "D7RN",
+      "remote_code": "D7RN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 22,
+      "restore_target": "990691",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "9754e1",
+        "975461",
+        "9753e1",
+        "975361"
+      ],
+      "off_28": [],
+      "off_2c": [],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": true
+    }
+  },
+  {
+    "object": "990631",
+    "id": "productHJBedE3RM",
+    "selector": {
+      "display_key": "E3RM",
+      "remote_code": "E3RM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 23,
+      "restore_target": "990631",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "975061",
+        "974fe1",
+        "974ee1",
+        "974961",
+        "974b61",
+        "9752e1"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "974e61",
+        "974de1",
+        "9751e1",
+        "975261"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990b71",
+    "id": "productHJBedFARM",
+    "selector": {
+      "display_key": "FARM",
+      "remote_code": "FARM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 9,
+      "restore_target": "990b71",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973a61",
+        "973961",
+        "9739e1",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990b11",
+    "id": "productHJBedHZRM",
+    "selector": {
+      "display_key": "HZRM",
+      "remote_code": "HZRM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 10,
+      "restore_target": "990b11",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974961",
+        "974f61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "975161",
+        "9750e1",
+        "974e61",
+        "974de1",
+        "9751e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990ab1",
+    "id": "productHJBedJGRM",
+    "selector": {
+      "display_key": "JGRM",
+      "remote_code": "JGRM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 11,
+      "restore_target": "990ab1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974961",
+        "974f61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "975161",
+        "9750e1",
+        "975961",
+        "974e61",
+        "974de1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990a51",
+    "id": "productHJBedJHRM",
+    "selector": {
+      "display_key": "JHRM",
+      "remote_code": "JHRM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 12,
+      "restore_target": "990a51",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974f61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "975161",
+        "9750e1",
+        "975961"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9909f1",
+    "id": "productHJBedJJRM",
+    "selector": {
+      "display_key": "JJRM",
+      "remote_code": "JJRM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 13,
+      "restore_target": "9909f1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974f61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "975161"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990991",
+    "id": "productHJBedKZRM",
+    "selector": {
+      "display_key": "KZRM",
+      "remote_code": "KZRM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 14,
+      "restore_target": "990991",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974961",
+        "974f61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "975161",
+        "9750e1",
+        "974e61",
+        "974de1",
+        "9751e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990931",
+    "id": "productHJBedL2RM",
+    "selector": {
+      "display_key": "L2RM",
+      "remote_code": "L2RM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 15,
+      "restore_target": "990931",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "974f61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "975161",
+        "9750e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990511",
+    "id": "productHJBedRERN",
+    "selector": {
+      "display_key": "RERN",
+      "remote_code": "RERN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 26,
+      "restore_target": "990511",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "973f61",
+        "973ee1",
+        "974f61",
+        "974961"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "974e61",
+        "975161",
+        "9750e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9905d1",
+    "id": "productHJBedTYRN",
+    "selector": {
+      "display_key": "TYRN",
+      "remote_code": "TYRN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 24,
+      "restore_target": "9905d1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974f61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "975161",
+        "9750e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990571",
+    "id": "productHJBedTZRN",
+    "selector": {
+      "display_key": "TZRN",
+      "remote_code": "TZRN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 25,
+      "restore_target": "990571",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974961",
+        "974f61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "975161",
+        "9750e1",
+        "974e61",
+        "974de1",
+        "9751e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9904b1",
+    "id": "productHJBedUURN",
+    "selector": {
+      "display_key": "UURN",
+      "remote_code": "UURN",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 27,
+      "restore_target": "9904b1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "975061",
+        "974fe1",
+        "974f61",
+        "974961",
+        "974ee1"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "974e61",
+        "974de1",
+        "974d61",
+        "974ce1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9908d1",
+    "id": "productHJBedVJRM",
+    "selector": {
+      "display_key": "VJRM",
+      "remote_code": "VJRM",
+      "current_dialog": true,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 16,
+      "restore_target": "9908d1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "973e61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "973861"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990bd1",
+    "id": "productLikomioABM10",
+    "selector": {
+      "display_key": "ABM10",
+      "remote_code": "UTRM",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 8,
+      "restore_target": "990bd1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98ffd1",
+    "id": "productMotionNXCA200",
+    "selector": {
+      "display_key": "Series 1",
+      "remote_code": "GURN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 40,
+      "restore_target": "98ffd1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61"
+      ],
+      "off_28": [],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973961",
+        "973861"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98ff71",
+    "id": "productMotionNXCA300",
+    "selector": {
+      "display_key": "Series 2",
+      "remote_code": "GVRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 41,
+      "restore_target": "98ff71",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61",
+        "974961"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973c61",
+        "973ce1",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "98ff11",
+    "id": "productMotionOpus",
+    "selector": {
+      "display_key": "Series 3",
+      "remote_code": "GWRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 42,
+      "restore_target": "98ff11",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974061",
+        "973fe1",
+        "973f61",
+        "973ee1",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973c61",
+        "973ce1",
+        "973be1",
+        "973b61",
+        "973ae1",
+        "974561",
+        "9748e1",
+        "974861",
+        "9747e1",
+        "974761",
+        "9745e1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973861"
+      ],
+      "off_30": [
+        "9739e1",
+        "9738e1",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": true,
+      "off_38": true,
+      "off_3c": true,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990091",
+    "id": "productMuuegmABF03",
+    "selector": {
+      "display_key": "ABF03",
+      "remote_code": "BNRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 38,
+      "restore_target": "990091",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973961",
+        "973861"
+      ],
+      "off_30": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973961",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": false,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990031",
+    "id": "productMuuegmABF07",
+    "selector": {
+      "display_key": "ABF07",
+      "remote_code": "DNRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 39,
+      "restore_target": "990031",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973961",
+        "973861"
+      ],
+      "off_30": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973961",
+        "973861"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": true,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9900f1",
+    "id": "productMuuegmNUPG400",
+    "selector": {
+      "display_key": "NUPG400",
+      "remote_code": "BVRN",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 37,
+      "restore_target": "9900f1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974ae1",
+        "974a61",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "9739e1",
+        "9738e1",
+        "973a61",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990db1",
+    "id": "productNone",
+    "selector": {
+      "display_key": "none",
+      "remote_code": "",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 0,
+      "restore_target": "990db1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "DEAD/UNUSED",
+    "groups": {
+      "off_24": [],
+      "off_28": [],
+      "off_2c": [],
+      "off_30": []
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": false,
+      "off_3c": false,
+      "off_40": false,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "990451",
+    "id": "productVelocityVIP3",
+    "selector": {
+      "display_key": "VIP 3.0",
+      "remote_code": "",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 28,
+      "restore_target": "990451",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973a61",
+        "973961",
+        "9739e1",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": [
+        "973a61",
+        "973961",
+        "9739e1",
+        "973861",
+        "9737e1"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": true,
+      "off_40": true,
+      "off_44": false,
+      "off_48": false
+    }
+  },
+  {
+    "object": "9903f1",
+    "id": "productVelocityVIP3SH",
+    "selector": {
+      "display_key": "VIP 3.0-SH",
+      "remote_code": "",
+      "current_dialog": false,
+      "restore_condition": "Exact case-sensitive display key off14; first matching item in pp13698 ordered46enum list. Current hjbed997ca1 takes direct predicate6f1908; does not split pipe or use remote code.",
+      "restore_order": 29,
+      "restore_target": "9903f1",
+      "restore_selected_self": true,
+      "alternative_current_routes": "Current hjbed/Motion product dialogs both call AppTheme current19. ChooseBrand/ChooseProduct typed2brand lists offer only SN300/SN500/HC800. Motion bed-config callback reuses current product. No current route selects shadowed S5RN/QSRN; MusicPage is independently routable and has static senders."
+    },
+    "disposition": "CONDITIONALLY REACHABLE",
+    "groups": {
+      "off_24": [
+        "974261",
+        "9741e1",
+        "974161",
+        "9740e1",
+        "974461",
+        "9743e1",
+        "974961",
+        "973e61"
+      ],
+      "off_28": [
+        "973de1",
+        "973d61",
+        "973ce1",
+        "973c61",
+        "973be1",
+        "973b61",
+        "973ae1"
+      ],
+      "off_2c": [
+        "973a61",
+        "973961",
+        "9739e1",
+        "973861",
+        "9737e1"
+      ],
+      "off_30": [
+        "973a61",
+        "973961",
+        "9739e1",
+        "973861",
+        "9737e1"
+      ]
+    },
+    "flags": {
+      "off_34": false,
+      "off_38": true,
+      "off_3c": true,
+      "off_40": true,
+      "off_44": true,
+      "off_48": false
+    }
+  }
+]

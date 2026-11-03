@@ -547,3 +547,7 @@ SXB 11/12/13). Reports use `part` (1 left, 2 right), `report_type` (1 day, 2 mon
 and optional `report_date`. Live polling uses `enabled`. Local stop sends no
 hardware STOP. The [sleep-module reference](beds/gmmotor.md#sleep-modules) records
 the distinct wire builders and raw-data limitations.
+
+### HJBed configuration
+
+`adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/hjbed.md#configuration-actions).

@@ -39,6 +39,7 @@ from .const import (
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_GMMOTOR_SLEEP_SXB,
+    BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
@@ -633,6 +634,11 @@ async def create_controller(
         from .beds.solace import SolaceController
 
         return SolaceController(coordinator)
+
+    if bed_type == BED_TYPE_HJBED:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)
+        from .beds.hjbed import HJBedController
+        return HJBedController(coordinator, profile=protocol_variant or "")
 
     if bed_type == BED_TYPE_GLIDEAWAY_MOTION:
         await coordinator.hass.async_add_import_executor_job(

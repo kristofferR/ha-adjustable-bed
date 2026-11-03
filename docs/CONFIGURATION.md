@@ -987,3 +987,7 @@ Bluetooth entries. Each physical address owns its session, and a paired bed
 retains each receiver's product and wire side. **Pair sides** for one address
 requires the selected product's actual side choices. See the
 [GM Control guide](beds/gmmotor.md) for commands, raw state and static-only status.
+
+### HJBed app
+
+Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. See [HJBed](beds/hjbed.md) for all current and conditional profiles.

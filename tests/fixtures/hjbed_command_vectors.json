@@ -1,0 +1,862 @@
+[
+  {
+    "id": "deviceFunctionItemAntiSnoring@9738e1/short",
+    "detail_object": "9738e1",
+    "code": 70,
+    "single_code": "46",
+    "framed_by_side": {
+      "0": "6e010046b5",
+      "1": "6e010146b6"
+    }
+  },
+  {
+    "id": "deviceFunctionItemAntiSnoring@9738e1/save",
+    "detail_object": "9738e1",
+    "code": 105,
+    "single_code": "69",
+    "framed_by_side": {
+      "0": "6e010069d8",
+      "1": "6e010169d9"
+    }
+  },
+  {
+    "id": "deviceFunctionItemAntiSnoring@975961/short",
+    "detail_object": "975961",
+    "code": 70,
+    "single_code": "46",
+    "framed_by_side": {
+      "0": "6e010046b5",
+      "1": "6e010146b6"
+    }
+  },
+  {
+    "id": "deviceFunctionItemAntiSnoring@975961/save",
+    "detail_object": "975961",
+    "code": 105,
+    "single_code": "69",
+    "framed_by_side": {
+      "0": "6e010069d8",
+      "1": "6e010169d9"
+    }
+  },
+  {
+    "id": "deviceFunctionItemBedLight@974961/short",
+    "detail_object": "974961",
+    "code": 60,
+    "single_code": "3c",
+    "framed_by_side": {
+      "0": "6e01003cab",
+      "1": "6e01013cac"
+    }
+  },
+  {
+    "id": "deviceFunctionItemBedLightClose@9759e1/short",
+    "detail_object": "9759e1",
+    "code": 117,
+    "single_code": "75",
+    "framed_by_side": {
+      "0": "6e010075e4",
+      "1": "6e010175e5"
+    }
+  },
+  {
+    "id": "deviceFunctionItemCoaxingSleepMode@9744e1/short",
+    "detail_object": "9744e1",
+    "code": 134,
+    "single_code": "86",
+    "framed_by_side": {
+      "0": "6e010086f5",
+      "1": "6e010186f6"
+    }
+  },
+  {
+    "id": "deviceFunctionItemCoaxingSleepMode@9744e1/save",
+    "detail_object": "9744e1",
+    "code": 137,
+    "single_code": "89",
+    "framed_by_side": {
+      "0": "6e010089f8",
+      "1": "6e010189f9"
+    }
+  },
+  {
+    "id": "deviceFunctionItemExitLimit@973761/short",
+    "detail_object": "973761",
+    "code": 0,
+    "single_code": "00",
+    "framed_by_side": {
+      "0": "6e02010071",
+      "1": "6e02010071"
+    }
+  },
+  {
+    "id": "deviceFunctionItemFootBoxDown@975861/short",
+    "detail_object": "975861",
+    "code": 37,
+    "single_code": "25",
+    "framed_by_side": {
+      "0": "6e01002594",
+      "1": "6e01012595"
+    }
+  },
+  {
+    "id": "deviceFunctionItemFootBoxUp@9758e1/short",
+    "detail_object": "9758e1",
+    "code": 36,
+    "single_code": "24",
+    "framed_by_side": {
+      "0": "6e01002493",
+      "1": "6e01012494"
+    }
+  },
+  {
+    "id": "deviceFunctionItemFootDown@9740e1/short",
+    "detail_object": "9740e1",
+    "code": 39,
+    "single_code": "27",
+    "framed_by_side": {
+      "0": "6e01002796",
+      "1": "6e01012797"
+    }
+  },
+  {
+    "id": "deviceFunctionItemFootUp@974161/short",
+    "detail_object": "974161",
+    "code": 38,
+    "single_code": "26",
+    "framed_by_side": {
+      "0": "6e01002695",
+      "1": "6e01012696"
+    }
+  },
+  {
+    "id": "deviceFunctionItemHeadAndFootDown@9743e1/short",
+    "detail_object": "9743e1",
+    "code": 42,
+    "single_code": "2a",
+    "framed_by_side": {
+      "0": "6e01002a99",
+      "1": "6e01012a9a"
+    }
+  },
+  {
+    "id": "deviceFunctionItemHeadAndFootUp@974461/short",
+    "detail_object": "974461",
+    "code": 41,
+    "single_code": "29",
+    "framed_by_side": {
+      "0": "6e01002998",
+      "1": "6e01012999"
+    }
+  },
+  {
+    "id": "deviceFunctionItemHeadDown@9741e1/short",
+    "detail_object": "9741e1",
+    "code": 37,
+    "single_code": "25",
+    "framed_by_side": {
+      "0": "6e01002594",
+      "1": "6e01012595"
+    }
+  },
+  {
+    "id": "deviceFunctionItemHeadUp@974261/short",
+    "detail_object": "974261",
+    "code": 36,
+    "single_code": "24",
+    "framed_by_side": {
+      "0": "6e01002493",
+      "1": "6e01012494"
+    }
+  },
+  {
+    "id": "deviceFunctionItemLightBoard@9749e1/short",
+    "detail_object": "9749e1",
+    "code": 80,
+    "single_code": "50",
+    "framed_by_side": {
+      "0": "6e010050bf",
+      "1": "6e010150c0"
+    }
+  },
+  {
+    "id": "deviceFunctionItemLoungePosition@973961/short",
+    "detail_object": "973961",
+    "code": 89,
+    "single_code": "59",
+    "framed_by_side": {
+      "0": "6e010059c8",
+      "1": "6e010159c9"
+    }
+  },
+  {
+    "id": "deviceFunctionItemLoungePosition@973961/save",
+    "detail_object": "973961",
+    "code": 101,
+    "single_code": "65",
+    "framed_by_side": {
+      "0": "6e010065d4",
+      "1": "6e010165d5"
+    }
+  },
+  {
+    "id": "deviceFunctionItemLumberDown@973fe1/short",
+    "detail_object": "973fe1",
+    "code": 64,
+    "single_code": "40",
+    "framed_by_side": {
+      "0": "6e010040af",
+      "1": "6e010140b0"
+    }
+  },
+  {
+    "id": "deviceFunctionItemLumberDown@974be1/short",
+    "detail_object": "974be1",
+    "code": 66,
+    "single_code": "42",
+    "framed_by_side": {
+      "0": "6e010042b1",
+      "1": "6e010142b2"
+    }
+  },
+  {
+    "id": "deviceFunctionItemLumberUp@974061/short",
+    "detail_object": "974061",
+    "code": 63,
+    "single_code": "3f",
+    "framed_by_side": {
+      "0": "6e01003fae",
+      "1": "6e01013faf"
+    }
+  },
+  {
+    "id": "deviceFunctionItemLumberUp@974c61/short",
+    "detail_object": "974c61",
+    "code": 65,
+    "single_code": "41",
+    "framed_by_side": {
+      "0": "6e010041b0",
+      "1": "6e010141b1"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassage10MinuteTimer@973be1/short",
+    "detail_object": "973be1",
+    "code": 95,
+    "single_code": "5f",
+    "framed_by_side": {
+      "0": "6e01005fce",
+      "1": "6e01015fcf"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassage20MinuteTimer@973b61/short",
+    "detail_object": "973b61",
+    "code": 99,
+    "single_code": "63",
+    "framed_by_side": {
+      "0": "6e010063d2",
+      "1": "6e010163d3"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassage30MinuteTimer@973ae1/short",
+    "detail_object": "973ae1",
+    "code": 97,
+    "single_code": "61",
+    "framed_by_side": {
+      "0": "6e010061d0",
+      "1": "6e010161d1"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassageFootInstensityStrengthen@973d61/short",
+    "detail_object": "973d61",
+    "code": 78,
+    "single_code": "4e",
+    "framed_by_side": {
+      "0": "6e01004ebd",
+      "1": "6e01014ebe"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassageHeadInstensityStrengthen@973de1/short",
+    "detail_object": "973de1",
+    "code": 76,
+    "single_code": "4c",
+    "framed_by_side": {
+      "0": "6e01004cbb",
+      "1": "6e01014cbc"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassageInstensityStrengthen@974361/short",
+    "detail_object": "974361",
+    "code": 52,
+    "single_code": "34",
+    "framed_by_side": {
+      "0": "6e010034a3",
+      "1": "6e010134a4"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassageModeAllOff@973c61/short",
+    "detail_object": "973c61",
+    "code": 94,
+    "single_code": "5e",
+    "framed_by_side": {
+      "0": "6e01005ecd",
+      "1": "6e01015ece"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassageModeChange@973ce1/short",
+    "detail_object": "973ce1",
+    "code": 72,
+    "single_code": "48",
+    "framed_by_side": {
+      "0": "6e010048b7",
+      "1": "6e010148b8"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMassageSwitch@9742e1/short",
+    "detail_object": "9742e1",
+    "code": 111,
+    "single_code": "6f",
+    "framed_by_side": {
+      "0": "6e01006fde",
+      "1": "6e01016fdf"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition1@973861/short",
+    "detail_object": "973861",
+    "code": 46,
+    "single_code": "2e",
+    "framed_by_side": {
+      "0": "6e01002e9d",
+      "1": "6e01012e9e"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition1@973861/save",
+    "detail_object": "973861",
+    "code": 43,
+    "single_code": "2b",
+    "framed_by_side": {
+      "0": "6e01002b9a",
+      "1": "6e01012b9b"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition1@974e61/short",
+    "detail_object": "974e61",
+    "code": 46,
+    "single_code": "2e",
+    "framed_by_side": {
+      "0": "6e01002e9d",
+      "1": "6e01012e9e"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition1@974e61/save",
+    "detail_object": "974e61",
+    "code": 43,
+    "single_code": "2b",
+    "framed_by_side": {
+      "0": "6e01002b9a",
+      "1": "6e01012b9b"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition2@9737e1/short",
+    "detail_object": "9737e1",
+    "code": 47,
+    "single_code": "2f",
+    "framed_by_side": {
+      "0": "6e01002f9e",
+      "1": "6e01012f9f"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition2@9737e1/save",
+    "detail_object": "9737e1",
+    "code": 44,
+    "single_code": "2c",
+    "framed_by_side": {
+      "0": "6e01002c9b",
+      "1": "6e01012c9c"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition2@974de1/short",
+    "detail_object": "974de1",
+    "code": 47,
+    "single_code": "2f",
+    "framed_by_side": {
+      "0": "6e01002f9e",
+      "1": "6e01012f9f"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition2@974de1/save",
+    "detail_object": "974de1",
+    "code": 44,
+    "single_code": "2c",
+    "framed_by_side": {
+      "0": "6e01002c9b",
+      "1": "6e01012c9c"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition3@9751e1/short",
+    "detail_object": "9751e1",
+    "code": 48,
+    "single_code": "30",
+    "framed_by_side": {
+      "0": "6e0100309f",
+      "1": "6e010130a0"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition3@9751e1/save",
+    "detail_object": "9751e1",
+    "code": 45,
+    "single_code": "2d",
+    "framed_by_side": {
+      "0": "6e01002d9c",
+      "1": "6e01012d9d"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition4@975261/short",
+    "detail_object": "975261",
+    "code": 178,
+    "single_code": "b2",
+    "framed_by_side": {
+      "0": "6e0100b221",
+      "1": "6e0101b222"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMemoryPosition4@975261/save",
+    "detail_object": "975261",
+    "code": 179,
+    "single_code": "b3",
+    "framed_by_side": {
+      "0": "6e0100b322",
+      "1": "6e0101b323"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMotorReset@973e61/short",
+    "detail_object": "973e61",
+    "code": 49,
+    "single_code": "31",
+    "framed_by_side": {
+      "0": "6e010031a0",
+      "1": "6e010131a1"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMotorReset@974f61/short",
+    "detail_object": "974f61",
+    "code": 49,
+    "single_code": "31",
+    "framed_by_side": {
+      "0": "6e010031a0",
+      "1": "6e010131a1"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicBlueToothSwitch@9748e1/short",
+    "detail_object": "9748e1",
+    "code": 216,
+    "single_code": "d8",
+    "framed_by_side": {
+      "0": "6e0100d847",
+      "1": "6e0101d848"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicNextSong@974661/short",
+    "detail_object": "974661",
+    "code": 211,
+    "single_code": "d3",
+    "framed_by_side": {
+      "0": "6e0100d342",
+      "1": "6e0101d343"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicPausePlay@9745e1/short",
+    "detail_object": "9745e1",
+    "code": 215,
+    "single_code": "d7",
+    "framed_by_side": {
+      "0": "6e0100d746",
+      "1": "6e0101d747"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicPreviousSong@9746e1/short",
+    "detail_object": "9746e1",
+    "code": 210,
+    "single_code": "d2",
+    "framed_by_side": {
+      "0": "6e0100d241",
+      "1": "6e0101d242"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicShakeMode@974861/short",
+    "detail_object": "974861",
+    "code": 214,
+    "single_code": "d6",
+    "framed_by_side": {
+      "0": "6e0100d645",
+      "1": "6e0101d646"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicSwitchSoundTrack@975ae1/short",
+    "detail_object": "975ae1",
+    "code": 196,
+    "single_code": "c4",
+    "framed_by_side": {
+      "0": "6e0100c433",
+      "1": "6e0101c434"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicVolumuDown@974761/short",
+    "detail_object": "974761",
+    "code": 213,
+    "single_code": "d5",
+    "framed_by_side": {
+      "0": "6e0100d544",
+      "1": "6e0101d545"
+    }
+  },
+  {
+    "id": "deviceFunctionItemMusicVolumuUp@9747e1/short",
+    "detail_object": "9747e1",
+    "code": 212,
+    "single_code": "d4",
+    "framed_by_side": {
+      "0": "6e0100d443",
+      "1": "6e0101d444"
+    }
+  },
+  {
+    "id": "deviceFunctionItemPillowDown@973ee1/short",
+    "detail_object": "973ee1",
+    "code": 66,
+    "single_code": "42",
+    "framed_by_side": {
+      "0": "6e010042b1",
+      "1": "6e010142b2"
+    }
+  },
+  {
+    "id": "deviceFunctionItemPillowDown@974a61/short",
+    "detail_object": "974a61",
+    "code": 64,
+    "single_code": "40",
+    "framed_by_side": {
+      "0": "6e010040af",
+      "1": "6e010140b0"
+    }
+  },
+  {
+    "id": "deviceFunctionItemPillowUp@973f61/short",
+    "detail_object": "973f61",
+    "code": 65,
+    "single_code": "41",
+    "framed_by_side": {
+      "0": "6e010041b0",
+      "1": "6e010141b1"
+    }
+  },
+  {
+    "id": "deviceFunctionItemPillowUp@974ae1/short",
+    "detail_object": "974ae1",
+    "code": 63,
+    "single_code": "3f",
+    "framed_by_side": {
+      "0": "6e01003fae",
+      "1": "6e01013faf"
+    }
+  },
+  {
+    "id": "deviceFunctionItemStop@975a61/short",
+    "detail_object": "975a61",
+    "code": 110,
+    "single_code": "6e",
+    "framed_by_side": {
+      "0": "6e01006edd",
+      "1": "6e01016ede"
+    }
+  },
+  {
+    "id": "deviceFunctionItemSyncOff@9752e1/short",
+    "detail_object": "9752e1",
+    "code": 189,
+    "single_code": "bd",
+    "framed_by_side": {
+      "0": "6e0100bd2c",
+      "1": "6e0101bd2d"
+    }
+  },
+  {
+    "id": "deviceFunctionItemSyncOn@974b61/short",
+    "detail_object": "974b61",
+    "code": 188,
+    "single_code": "bc",
+    "framed_by_side": {
+      "0": "6e0100bc2b",
+      "1": "6e0101bc2c"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTVPosition@973a61/short",
+    "detail_object": "973a61",
+    "code": 88,
+    "single_code": "58",
+    "framed_by_side": {
+      "0": "6e010058c7",
+      "1": "6e010158c8"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTVPosition@973a61/save",
+    "detail_object": "973a61",
+    "code": 100,
+    "single_code": "64",
+    "framed_by_side": {
+      "0": "6e010064d3",
+      "1": "6e010164d4"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTVPosition@974d61/short",
+    "detail_object": "974d61",
+    "code": 88,
+    "single_code": "58",
+    "framed_by_side": {
+      "0": "6e010058c7",
+      "1": "6e010158c8"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTVPosition@974d61/save",
+    "detail_object": "974d61",
+    "code": 100,
+    "single_code": "64",
+    "framed_by_side": {
+      "0": "6e010064d3",
+      "1": "6e010164d4"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTVPosition@975161/short",
+    "detail_object": "975161",
+    "code": 88,
+    "single_code": "58",
+    "framed_by_side": {
+      "0": "6e010058c7",
+      "1": "6e010158c8"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTVPosition@975161/save",
+    "detail_object": "975161",
+    "code": 100,
+    "single_code": "64",
+    "framed_by_side": {
+      "0": "6e010064d3",
+      "1": "6e010164d4"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTileDown@974fe1/short",
+    "detail_object": "974fe1",
+    "code": 92,
+    "single_code": "5c",
+    "framed_by_side": {
+      "0": "6e01005ccb",
+      "1": "6e01015ccc"
+    }
+  },
+  {
+    "id": "deviceFunctionItemTileUp@975061/short",
+    "detail_object": "975061",
+    "code": 91,
+    "single_code": "5b",
+    "framed_by_side": {
+      "0": "6e01005bca",
+      "1": "6e01015bcb"
+    }
+  },
+  {
+    "id": "deviceFunctionItemZeroGravity@9739e1/short",
+    "detail_object": "9739e1",
+    "code": 69,
+    "single_code": "45",
+    "framed_by_side": {
+      "0": "6e010045b4",
+      "1": "6e010145b5"
+    }
+  },
+  {
+    "id": "deviceFunctionItemZeroGravity@9739e1/save",
+    "detail_object": "9739e1",
+    "code": 102,
+    "single_code": "66",
+    "framed_by_side": {
+      "0": "6e010066d5",
+      "1": "6e010166d6"
+    }
+  },
+  {
+    "id": "deviceFunctionItemZeroGravity@974ce1/short",
+    "detail_object": "974ce1",
+    "code": 69,
+    "single_code": "45",
+    "framed_by_side": {
+      "0": "6e010045b4",
+      "1": "6e010145b5"
+    }
+  },
+  {
+    "id": "deviceFunctionItemZeroGravity@974ce1/save",
+    "detail_object": "974ce1",
+    "code": 102,
+    "single_code": "66",
+    "framed_by_side": {
+      "0": "6e010066d5",
+      "1": "6e010166d6"
+    }
+  },
+  {
+    "id": "deviceFunctionItemZeroGravity@9750e1/short",
+    "detail_object": "9750e1",
+    "code": 69,
+    "single_code": "45",
+    "framed_by_side": {
+      "0": "6e010045b4",
+      "1": "6e010145b5"
+    }
+  },
+  {
+    "id": "deviceFunctionItemZeroGravity@9750e1/save",
+    "detail_object": "9750e1",
+    "code": 102,
+    "single_code": "66",
+    "framed_by_side": {
+      "0": "6e010066d5",
+      "1": "6e010166d6"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaBackward@975461/short",
+    "detail_object": "975461",
+    "code": 92,
+    "single_code": "5c",
+    "framed_by_side": {
+      "0": "6e01005ccb",
+      "1": "6e01015ccc"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaForword@9754e1/short",
+    "detail_object": "9754e1",
+    "code": 91,
+    "single_code": "5b",
+    "framed_by_side": {
+      "0": "6e01005bca",
+      "1": "6e01015bcb"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaHeadDown@975561/short",
+    "detail_object": "975561",
+    "code": 37,
+    "single_code": "25",
+    "framed_by_side": {
+      "0": "6e01002594",
+      "1": "6e01012595"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaHeadUp@9755e1/short",
+    "detail_object": "9755e1",
+    "code": 36,
+    "single_code": "24",
+    "framed_by_side": {
+      "0": "6e01002493",
+      "1": "6e01012494"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaLight@975361/short",
+    "detail_object": "975361",
+    "code": 60,
+    "single_code": "3c",
+    "framed_by_side": {
+      "0": "6e01003cab",
+      "1": "6e01013cac"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaLumbarDown@975661/short",
+    "detail_object": "975661",
+    "code": 64,
+    "single_code": "40",
+    "framed_by_side": {
+      "0": "6e010040af",
+      "1": "6e010140b0"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaLumbarUp@9756e1/short",
+    "detail_object": "9756e1",
+    "code": 63,
+    "single_code": "3f",
+    "framed_by_side": {
+      "0": "6e01003fae",
+      "1": "6e01013faf"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaPillowDown@975761/short",
+    "detail_object": "975761",
+    "code": 66,
+    "single_code": "42",
+    "framed_by_side": {
+      "0": "6e010042b1",
+      "1": "6e010142b2"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaPillowUp@9757e1/short",
+    "detail_object": "9757e1",
+    "code": 65,
+    "single_code": "41",
+    "framed_by_side": {
+      "0": "6e010041b0",
+      "1": "6e010141b1"
+    }
+  },
+  {
+    "id": "deviceFunctionSofaSitPosition@9753e1/short",
+    "detail_object": "9753e1",
+    "code": 229,
+    "single_code": "e5",
+    "framed_by_side": {
+      "0": "6e0100e554",
+      "1": "6e0101e555"
+    }
+  }
+]

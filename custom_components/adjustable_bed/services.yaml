@@ -2314,6 +2314,57 @@ casper_base:
         select:
           options: [left, right, both]
 
+hjbed:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [single, cancel_single, repeat, delete, query, toggle, sync, light_timeout, light_color, mode]
+    action:
+      selector:
+        text:
+    time:
+      selector:
+        time:
+    alarm_id:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    enabled:
+      default: true
+      selector:
+        boolean:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 28800
+          mode: box
+    rgb_color:
+      selector:
+        color_rgb:
+    mode:
+      selector:
+        select:
+          options: [split_head, standard]
+    side:
+      selector:
+        select:
+          options: [both, left, right]
 
 doublesleep_configure:
   fields:
