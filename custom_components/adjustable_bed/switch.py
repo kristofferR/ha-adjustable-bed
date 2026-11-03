@@ -6,6 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
@@ -24,6 +25,7 @@ from .const import (
     OKIN_BEDDING_APP_BED_TYPES,
 )
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import entity_runtimes
 
@@ -100,11 +102,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed switch entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([
-        entity
-        for runtime in entity_runtimes(coordinator)
-        for entity in _switch_entities_for(hass, runtime)
-    ])
+    for runtime in entity_runtimes(coordinator):
+        async_setup_dynamic_entities(
+            hass, entry, runtime, async_add_entities, partial(_switch_entities_for, hass, runtime)
+        )
 
 
 def _switch_entities_for(

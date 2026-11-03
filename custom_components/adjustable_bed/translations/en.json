@@ -463,8 +463,8 @@
         },
         "data_description": {
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
-          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst.",
           "has_light": "Expose light controls when this bed has under-bed lighting."
         }
       },
@@ -889,8 +889,8 @@
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
           "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
-          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst.",
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",

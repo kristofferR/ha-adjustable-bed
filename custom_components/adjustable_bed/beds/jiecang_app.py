@@ -78,9 +78,11 @@ class JiecangAppController(BedController):
     ) -> None:
         super().__init__(coordinator)
         if profile not in protocol.APP_PROFILES:
-            raise ValueError("Select an explicit Dreamask or Dreamotion app profile")
+            raise ValueError("Select an explicit Jiecang app profile")
         if layout not in protocol.LAYOUTS:
             raise ValueError("Select an explicit Jiecang app actuator layout")
+        if profile == "dreamhd" and layout not in protocol.DREAMHD_LAYOUTS:
+            raise ValueError("Layout unavailable in Dream Motion HD")
         if transport not in ("auto", *_TRANSPORTS):
             raise ValueError("Unknown Jiecang app transport")
         self.profile: protocol.AppProfile = next(
@@ -106,6 +108,7 @@ class JiecangAppController(BedController):
         self._alarm_visible = False
         self._massage = dict.fromkeys(protocol.massage_zones(self.layout), 0)
         self._clock_task: asyncio.Task[None] | None = None
+        self._hd_light = protocol.DreamHDLightControls()
 
     def _select_transport(self) -> None:
         if self.client is None or self.client.services is None:
@@ -162,6 +165,10 @@ class JiecangAppController(BedController):
         return True
 
     @property
+    def has_dynamic_controller_entities(self) -> bool:
+        return self.profile == "dreamhd"
+
+    @property
     def controller_entity_discovery_complete(self) -> bool:
         """Return whether any expected capability response was received."""
         return not self._bootstrap_ready or self._capabilities_received.is_set()
@@ -176,6 +183,7 @@ class JiecangAppController(BedController):
             "capabilities": asdict(self._capabilities) if self._capabilities else None,
             "alarm": asdict(self._alarm) if self._alarm else None,
             "alarm_visible": self._alarm_visible,
+            "dreamhd_light_controls": asdict(self._hd_light) if self.profile == "dreamhd" else None,
         }
 
     async def write_command(
@@ -238,6 +246,13 @@ class JiecangAppController(BedController):
         self._select_transport()
         if self.client is None:
             raise ConnectionError("Not connected to bed")
+        if self.profile == "dreamhd":
+            self._hd_light.connected()
+            # Retain Yoga, but never reuse stale light state after reconnecting.
+            self._rgb = None
+            self._rgb_received.clear()
+            self._light_on = None
+            self._automatic_light = None
         await self.client.start_notify(self._notify_uuid, self._handle_notification)
         self._subscriptions.append(self._notify_uuid)
         try:
@@ -246,7 +261,11 @@ class JiecangAppController(BedController):
                 if await self._pause(1000, self._coordinator.cancel_command):
                     raise ConnectionError("Notification initialization cancelled")
                 ready_time = asyncio.get_running_loop().time()
-                if not await self._schedule(protocol.BOOTSTRAP_SCHEDULE):
+                if not await self._schedule(
+                    protocol.DREAMHD_BOOTSTRAP
+                    if self.profile == "dreamhd"
+                    else protocol.BOOTSTRAP_SCHEDULE
+                ):
                     raise ConnectionError("Notification initialization cancelled")
                 if not self._capabilities_received.is_set():
                     try:
@@ -284,9 +303,13 @@ class JiecangAppController(BedController):
 
     def _handle_notification(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         self.forward_raw_notification(sender.uuid, bytes(data))
-        update = protocol.parse_notification(bytes(data))
+        update = protocol.parse_notification(bytes(data), self.profile)
         if update is None:
             return
+        if self.profile == "dreamhd":
+            self._hd_light.receive(
+                update, has_light=self._has_light, split_series=self.layout == "split_series"
+            )
         if update.capabilities is not None:
             self._capabilities = update.capabilities
             self._capabilities_received.set()
@@ -294,7 +317,9 @@ class JiecangAppController(BedController):
             self._rgb = update.rgb
             self._light_on = update.rgb.on
             self._rgb_received.set()
-        if update.legacy_light is not None:
+        if update.legacy_light is not None and (
+            self.profile != "dreamhd" or update.legacy_light or self._has_light
+        ):
             self._light_on = update.legacy_light
             if self._rgb is not None:
                 self._rgb = replace(self._rgb, on=update.legacy_light)
@@ -303,11 +328,22 @@ class JiecangAppController(BedController):
         if update.alarm_visible:
             self._alarm_visible = True
         if update.alarm is not None:
-            self._alarm = update.alarm
+            self._alarm = (
+                replace(update.alarm, wake=self._alarm.wake)
+                if self.profile == "dreamhd" and update.alarm.wake is None and self._alarm
+                else update.alarm
+            )
         for zone, value in (("back", update.massage_back), ("legs", update.massage_legs)):
             mapped = "right" if zone == "legs" and protocol.is_bilateral(self.layout) else zone
             if value is not None and mapped in self._massage:
                 self._massage[mapped] = protocol.WIRE_MASSAGE_LEVELS.index(value)
+        if (
+            self.profile == "dreamhd"
+            and update.massage_legs is not None
+            and "right" in self._massage
+        ):
+            # The app consumes byte 6 for both legs and right back, not a third offset.
+            self._massage["right"] = protocol.WIRE_MASSAGE_LEVELS.index(update.massage_legs)
         self._publish_state()
         if update.clock_requested and (self._clock_task is None or self._clock_task.done()):
             self._clock_task = self._coordinator.hass.async_create_task(self._respond_with_clock())
@@ -375,7 +411,10 @@ class JiecangAppController(BedController):
             )
             # Dreamotion's normal touch release emits one last movement frame.
             # A cancelled HA action never restarts movement to imitate that bug.
-            if self.profile == "dreamotion" and not self._coordinator.cancel_command.is_set():
+            if (
+                self.profile in ("dreamotion", "dreamhd")
+                and not self._coordinator.cancel_command.is_set()
+            ):
                 await self.write_command(command)
         finally:
             await self._schedule(protocol.movement_releases(self.profile), cleanup=True)
@@ -451,11 +490,16 @@ class JiecangAppController(BedController):
         )
 
     async def _click(self, command: bytes, release_ms: int = 800) -> None:
+        if self.profile == "dreamhd":
+            release_ms = 100
         try:
             await self.write_command(command)
             await self._pause(release_ms, self._coordinator.cancel_command)
         finally:
-            await self.write_command(protocol.LONG_RELEASE, cancel_event=asyncio.Event())
+            await self.write_command(
+                protocol.SHORT_RELEASE if self.profile == "dreamhd" else protocol.LONG_RELEASE,
+                cancel_event=asyncio.Event(),
+            )
 
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -496,11 +540,13 @@ class JiecangAppController(BedController):
         await self._click(protocol.preset_command(self.layout, "yoga"))
 
     async def preset_memory(self, memory_num: int) -> None:
-        await self._click(protocol.memory_command(memory_num))
+        await self._click(protocol.memory_command(memory_num, profile=self.profile))
 
     async def program_memory(self, memory_num: int) -> None:
         await self.write_command(
-            protocol.memory_command(memory_num, save=True), repeat_count=3, repeat_delay_ms=30
+            protocol.memory_command(memory_num, save=True, profile=self.profile),
+            repeat_count=3,
+            repeat_delay_ms=30,
         )
 
     @property
@@ -535,7 +581,7 @@ class JiecangAppController(BedController):
             await self._click(command)
         else:
             await self.write_command(command)
-        if not self._coordinator.cancel_command.is_set():
+        if self.profile != "dreamhd" and not self._coordinator.cancel_command.is_set():
             self._massage[target] = level
             self._publish_state()
 
@@ -556,7 +602,10 @@ class JiecangAppController(BedController):
         await self.set_massage_intensity("foot", max(0, self._massage.get("legs", 0) - 1))
 
     async def massage_mode_step(self) -> None:
-        await self._click(protocol.massage_mode_command(self.layout), 1000)
+        if self.profile == "dreamhd":
+            await self.write_command(protocol.massage_mode_command(self.layout))
+        else:
+            await self._click(protocol.massage_mode_command(self.layout), 1000)
 
     async def massage_off(self) -> None:
         await self.write_command(protocol.massage_close_command(self.layout))
@@ -578,6 +627,8 @@ class JiecangAppController(BedController):
 
     @property
     def supports_light_color_control(self) -> bool:
+        if self.profile == "dreamhd":
+            return self._has_light and self._hd_light.picker == 0
         return (
             self._has_light
             and not protocol.is_bilateral(self.layout)
@@ -623,7 +674,11 @@ class JiecangAppController(BedController):
 
     async def _known_rgb(self) -> protocol.RGBState:
         if self._rgb is None:
-            await self.write_command(protocol.QUERY_LIGHT, repeat_count=2, repeat_delay_ms=100)
+            await self.write_command(
+                protocol.build_frame(0) if self.profile == "dreamhd" else protocol.QUERY_LIGHT,
+                repeat_count=2,
+                repeat_delay_ms=100,
+            )
             try:
                 await asyncio.wait_for(self._rgb_received.wait(), 1.0)
             except TimeoutError as error:
@@ -648,6 +703,19 @@ class JiecangAppController(BedController):
         if not self.supports_lights:
             raise ValueError("Lighting was not configured")
         state = await self._known_rgb()
+        if self.profile == "dreamhd":
+            try:
+                await self._write_rgb(replace(state, on=not state.on))
+                if await self._pause(100, self._coordinator.cancel_command):
+                    return
+                await self.write_command(protocol.SHORT_RELEASE)
+                if await self._pause(100, self._coordinator.cancel_command):
+                    return
+                await self.write_command(protocol.build_frame(0x0F))
+                await self._pause(100, self._coordinator.cancel_command)
+            finally:
+                await self.write_command(protocol.SHORT_RELEASE, cancel_event=asyncio.Event())
+            return
         try:
             await self._write_rgb(replace(state, on=not state.on))
             if not await self._pause(150, self._coordinator.cancel_command):
@@ -688,6 +756,8 @@ class JiecangAppController(BedController):
 
     @property
     def supports_automatic_light(self) -> bool:
+        if self.profile == "dreamhd":
+            return self._has_light and self._hd_light.human == 0
         return self.supports_light_color_control
 
     async def set_automatic_light(self, enabled: bool) -> None:
@@ -696,7 +766,10 @@ class JiecangAppController(BedController):
         if self._automatic_light is None:
             raise ValueError("Read automatic-light state before changing its toggle")
         if self._automatic_light != enabled:
-            await self.write_command(protocol.AUTOMATIC_LIGHT_TOGGLE)
+            if self.profile == "dreamhd":
+                await self._click(protocol.AUTOMATIC_LIGHT_TOGGLE)
+            else:
+                await self.write_command(protocol.AUTOMATIC_LIGHT_TOGGLE)
             if not self._coordinator.cancel_command.is_set():
                 self._automatic_light = enabled
                 self._publish_state()
@@ -707,12 +780,14 @@ class JiecangAppController(BedController):
 
     def validate_device_rename(self, name: str) -> None:
         # The G1 framing is the bare name, so this applies only the name rule.
-        protocol.rename_command(name, True, False)
+        protocol.rename_command(name, True, False, self.profile)
 
     async def rename_device(self, name: str) -> None:
         if self.client is None or not self._name_uuid:
             raise ValueError("Selected transport has no name characteristic")
-        command = protocol.rename_command(name, self._transport == "g1", self._transport == "g3")
+        command = protocol.rename_command(
+            name, self._transport == "g1", self._transport == "g3", self.profile
+        )
         characteristic = self.client.services.get_characteristic(self._name_uuid)
         if characteristic is None:
             raise ValueError("Name characteristic unavailable")
@@ -771,13 +846,20 @@ class JiecangAppController(BedController):
         foot_level: int = 0,
     ) -> None:
         schedule = protocol.wake_schedule(
-            self.layout, self._wake_preset(preset), head_level, foot_level
+            self.layout, self._wake_preset(preset), head_level, foot_level, profile=self.profile
         )
         completed = False
         try:
             completed = await self._schedule(schedule)
         finally:
-            if not completed:
+            if self.profile == "dreamhd":
+                # Android's broadcast executor omits preset release and cancellation.
+                try:
+                    await self.write_command(protocol.SHORT_RELEASE, cancel_event=asyncio.Event())
+                finally:
+                    if not completed:
+                        await self.stop_wake_routine()
+            elif not completed:
                 await self.write_command(protocol.LONG_RELEASE, cancel_event=asyncio.Event())
 
     async def stop_wake_routine(self) -> None:

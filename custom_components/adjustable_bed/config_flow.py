@@ -1670,6 +1670,10 @@ def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
         errors[CONF_JIECANG_APP_PROFILE] = "jiecang_app_required"
     if data.get(CONF_JIECANG_APP_LAYOUT) not in JIECANG_APP_LAYOUTS:
         errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
+    if data.get(CONF_JIECANG_APP_PROFILE) == "dreamhd" and data.get(CONF_JIECANG_APP_LAYOUT) in (
+        "standard_4_bilateral", "split_after_bilateral"
+    ):
+        errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
     return errors
 
 

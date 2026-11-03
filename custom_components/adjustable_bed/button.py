@@ -17,6 +17,7 @@ from homeassistant.helpers.typing import UndefinedType
 
 from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
@@ -25,6 +26,7 @@ from .const import (
     SIDE_BOTH,
 )
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -748,6 +750,13 @@ async def async_setup_entry(
         _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
         async_add_entities(entities)
         _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, entities)
+        return
+
+    if coordinator.bed_type == BED_TYPE_JIECANG_APP:
+        async_setup_dynamic_entities(
+            hass, entry, coordinator, async_add_entities,
+            lambda: _button_entities_for(hass, coordinator),
+        )
         return
 
     initial = [entity for runtime in entity_runtimes(coordinator)

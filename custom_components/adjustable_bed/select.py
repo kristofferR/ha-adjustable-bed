@@ -149,7 +149,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities,
+            hass, entry, runtime, async_add_entities,
             partial(_select_entities_for, hass, runtime),
         )
 

@@ -323,7 +323,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
+            hass, entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
         )
     if isinstance(coordinator, PairedBedCoordinator):
         paired_entities: list[NumberEntity] = []

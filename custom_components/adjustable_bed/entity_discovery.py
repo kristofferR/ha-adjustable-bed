@@ -13,6 +13,7 @@ from .entity_runtime import EntityRuntime
 
 
 def async_setup_dynamic_entities(
+    hass: HomeAssistant,
     entry: ConfigEntry,
     coordinator: EntityRuntime,
     async_add_entities: AddEntitiesCallback,
@@ -20,16 +21,22 @@ def async_setup_dynamic_entities(
 ) -> None:
     """Register initial entities, then add each newly proven capability once."""
     entities = list(build_entities())
-    known = {entity.unique_id for entity in entities}
+    known = {entity.unique_id: entity for entity in entities}
     async_add_entities(entities)
     controller = coordinator.capability_controller
     if controller is None or not controller.has_dynamic_controller_entities:
         return
 
     def discover(_state: object) -> None:
-        additions = [entity for entity in build_entities() if entity.unique_id not in known]
+        candidates = list(build_entities())
+        # Builders may retire registry rows when a capability is withdrawn.
+        # Forget those instances so a later positive reply can recreate them.
+        for identity, entity in list(known.items()):
+            if entity.entity_id and er.async_get(hass).async_get(entity.entity_id) is None:
+                del known[identity]
+        additions = [entity for entity in candidates if entity.unique_id not in known]
         if additions:
-            known.update(entity.unique_id for entity in additions)
+            known.update((entity.unique_id, entity) for entity in additions)
             async_add_entities(additions)
 
     entry.async_on_unload(coordinator.register_controller_state_callback(discover))
