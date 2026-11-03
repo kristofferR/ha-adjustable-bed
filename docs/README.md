@@ -34,6 +34,22 @@ The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptra
 maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
 including direct BLE controls, explicit exclusions and hardware validation status.
 
+The [Adjustable Comfort M1X12 protocol guide](beds/starcode-m1x12.md) links its
+sealed accepted evidence to the complete 970-ID implementation ledger.
+
+The [cluster033 durable disposition ledger](beds/cluster033-dispositions.json) maps all
+562 accepted discoveries to implementation symbols, focused tests, narrowly
+credited baseline behavior or exact evidence-backed exclusions. The eight app
+profiles and their hardware-unverified status remain indexed by the Supported
+Beds table.
+
+The [row030 OCTO Smart Control disposition ledger](apk-analysis/dispositions/row030-octo-smart-control.md)
+maps the accepted 1.03.02 artifact to the existing OCTO Standard protocol, including
+direct BLE controls, explicit exclusions and deferred hardware validation.
+
+The [row042 Nectar Move ledger](apk-analysis/dispositions/row042-nectar-motion.md)
+maps all 43 accepted comparison rows to implementation proof or exact exclusions.
+
 The [row068 Glideaway Motion ledger](apk-analysis/dispositions/row068-glideaway-motion.md)
 accounts for the accepted 1.0.3 revision01 commands, models, parsers, timing and
 explicit safety/product exclusions.
@@ -59,3 +75,6 @@ dependencies from Home Assistant's own manifests.
 APK artifacts and frozen reports stay local and ignored. Consult the repository's
 clean-room rules before protocol work. Documentation updates do not establish new
 hardware evidence.
+
+[Comfort Motion app setup and BLE behavior](beds/comfort-motion.md), including the
+[row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).

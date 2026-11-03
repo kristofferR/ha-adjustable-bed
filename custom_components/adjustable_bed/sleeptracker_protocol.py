@@ -505,7 +505,13 @@ class RemoteSnapshotError(ValueError):
 def status(
     value: dict[str, Json], selected_snapshot: int, previous: dict[str, Json]
 ) -> dict[str, Json]:
-    """Remote reset rules and fan partial-update rules are deliberately distinct."""
+    """Update only the remote and fan fields this reply actually carries.
+
+    The app's remote screen draws zeros for fields a reply omits: no snapshot,
+    an unmatched split ordinal, or the strengths and light of a split reply.
+    Those are display defaults, not reports, so the last reported value stays.
+    Within a consumed snapshot, a missing field keeps the app's own default.
+    """
     snapshots = child(value, "body").get("snapshots", [])
     if not isinstance(snapshots, list):
         raise ValueError("Sleeptracker snapshots must be a list")
@@ -514,20 +520,11 @@ def status(
         if all(isinstance(item, (dict, str, int, float, bool)) for item in snapshots):
             raise RemoteSnapshotError("Sleeptracker snapshot must be an object")
         raise ValueError("Sleeptracker snapshot must be an object")
-    updates: dict[str, Json] = {
-        "massage_pattern": 0,
-        "massage_head_strength": 0,
-        "massage_foot_strength": 0,
-        "light_on": False,
-        # Choices are None unless this reply actually carried them, since the
-        # app's zero defaults would otherwise read as a reported "off".
-        "massage_pattern_option": None,
-        "massage_head_level": None,
-        "massage_foot_level": None,
-    }
+    updates: dict[str, Json] = {}
     if len(snapshots) == 1 and isinstance(snapshot := snapshots[0], dict):
-        updates["massage_pattern"] = integer(snapshot.get("massagePattern"))
-        updates["massage_pattern_option"] = _pattern(updates["massage_pattern"])
+        pattern = integer(snapshot.get("massagePattern"))
+        updates["massage_pattern"] = pattern
+        updates["massage_pattern_option"] = _pattern(pattern)
         updates["light_on"] = boolean(snapshot.get("safetyLightOn"))
         for axis in ("head", "foot"):
             strength = integer(child(child(snapshot, axis), "massage").get("strength"))
@@ -546,8 +543,9 @@ def status(
                 and integer(snapshot.get("side"), -1) == selected_snapshot
                 and "massagePattern" in snapshot
             ):
-                updates["massage_pattern"] = integer(snapshot["massagePattern"])
-                updates["massage_pattern_option"] = _pattern(updates["massage_pattern"])
+                pattern = integer(snapshot["massagePattern"])
+                updates["massage_pattern"] = pattern
+                updates["massage_pattern_option"] = _pattern(pattern)
     return {**previous, **updates}
 
 
