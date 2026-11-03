@@ -36,6 +36,25 @@ pinned prompt/schema, never coordinator history or comparison findings. Fresh
 conversation context alone is not a filesystem security boundary. Preserve the
 existing clean-room restrictions and do not claim isolation that was not provided.
 
+## Launch workers as visible threads
+
+The maintainer must be able to watch and steer every analyst, auditor, repair
+and reconciliation worker.
+
+- Start each worker as a visible T3 thread with `delegate_task` (for example
+  Codex `gpt-6.1-sol`). Share the child thread link when it starts, and wait
+  for its result instead of polling logs.
+- Never launch a worker as a hidden process: no direct `codex exec`, `setsid`,
+  `nohup` or detached jobs, and no older launcher scripts that do this
+  (`run-isolated.sh`, `launch-detached.sh`).
+- Isolation comes from the run workspace, not from hiding the process. Stage
+  `sandbox.sh`, `heavy-tool.sh`, `namespace.sh` and `execution-driver.py` in the
+  run root, re-rooted from the latest staged workspace under
+  `disassembly/output/phase4-early/`. Seal `input/` in `INPUTS.SHA256` and run
+  `verify-inputs.py` through `sandbox.sh` before launch. Give the worker only
+  `input/ANALYST-BRIEF.txt`, which requires every operation to go through those
+  wrappers.
+
 ## Prepare useful evidence before audit
 
 - Reuse already operational artifact checks, decompilers, warning logs, safe

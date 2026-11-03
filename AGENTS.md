@@ -458,7 +458,10 @@ clean-room analyst.
 
 Coordinators follow [the APK Protocol Audit operational workflow](docs/apk-analysis/phase4-coordinator-workflow.md)
 for ownership, affected-scope audit repairs, preserved accepted work, and the bounded pilot.
-It does not replace the analyst prompt, report schema, or completion gates.
+It does not replace the analyst prompt, report schema, or completion gates. Launch every
+analyst, auditor and repair worker as a visible T3 thread (`delegate_task`) confined by the run
+workspace's `sandbox.sh` wrappers, never as a hidden background process such as a direct
+`codex exec` or detached job.
 
 The canonical #443 analyst prompt and pinned `analysis.json` schema are
 [`docs/apk-analysis/phase4-analyst-prompt.md`](docs/apk-analysis/phase4-analyst-prompt.md) and
