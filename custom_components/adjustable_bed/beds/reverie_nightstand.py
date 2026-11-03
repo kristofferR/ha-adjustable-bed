@@ -137,6 +137,7 @@ class ReverieNightstandController(BedController):
         )
         self._stk_selected_side = retained_side if retained_side in ("1", "2", "3") else "1"
         self._stk_head_positions: dict[str, int] = {}
+        # Release retains its target even when the initial GATT write fails.
         self._active_stk_motion_side: int | None = None
         self._diagnostic_timer: asyncio.TimerHandle | None = None
         self._diagnostic_connection_release: Callable[[], None] | None = None
@@ -1086,43 +1087,25 @@ class ReverieNightstandController(BedController):
         """Move head up."""
         if self.model.tandem and self._stk_selected_side != "1":
             self._active_stk_motion_side = int(self._stk_selected_side)
-            try:
-                await self._write_stk_axis(0x01, side=self._active_stk_motion_side)
-            except BaseException:
-                self._active_stk_motion_side = None
-                raise
+            await self._write_stk_axis(0x01, side=self._active_stk_motion_side)
             return
         if self.model.tandem:
             self._active_stk_motion_side = 1
-        try:
-            await self._move_linear(
-                REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID, ReverieNightstandCommands.MOTOR_UP
-            )
-        except BaseException:
-            if self.model.tandem:
-                self._active_stk_motion_side = None
-            raise
+        await self._move_linear(
+            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID, ReverieNightstandCommands.MOTOR_UP
+        )
 
     async def move_head_down(self) -> None:
         """Move head down."""
         if self.model.tandem and self._stk_selected_side != "1":
             self._active_stk_motion_side = int(self._stk_selected_side)
-            try:
-                await self._write_stk_axis(0x03, side=self._active_stk_motion_side)
-            except BaseException:
-                self._active_stk_motion_side = None
-                raise
+            await self._write_stk_axis(0x03, side=self._active_stk_motion_side)
             return
         if self.model.tandem:
             self._active_stk_motion_side = 1
-        try:
-            await self._move_linear(
-                REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID, ReverieNightstandCommands.MOTOR_DOWN
-            )
-        except BaseException:
-            if self.model.tandem:
-                self._active_stk_motion_side = None
-            raise
+        await self._move_linear(
+            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID, ReverieNightstandCommands.MOTOR_DOWN
+        )
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""

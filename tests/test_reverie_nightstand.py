@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -405,6 +407,69 @@ class TestReverieNightstandMovement:
             (REVERIE_STK_SIDE_DATA_UUID, bytes((2, 0x01))),
             (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((2, 0xFF))),
         ]
+
+    @pytest.mark.parametrize("side", ["1", "2", "3"])
+    @pytest.mark.parametrize("direction", ["up", "down"])
+    @pytest.mark.parametrize("failure", ["cancel", "write_error"])
+    async def test_stk_failed_hold_start_releases_its_captured_side(
+        self,
+        hass,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+        side,
+        direction,
+        failure,
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_reverie_nightstand_config_entry)
+        await coordinator.async_connect()
+        client = coordinator._client
+        controller = ReverieNightstandController(coordinator, model="STK")
+        controller._set_stk_side(side)
+        entered, fail_write = asyncio.Event(), asyncio.Event()
+        writes = []
+
+        async def write(characteristic, payload, **_kwargs):
+            writes.append((characteristic, payload))
+            if len(writes) == 1:
+                entered.set()
+                await fail_write.wait()
+                raise BleakError("Initial write completion failed")
+
+        client.write_gatt_char.side_effect = write
+        hold = asyncio.create_task(controller.hold_control(f"back_{direction}", 250))
+        changed_side = "2" if side == "1" else "1"
+        try:
+            async with asyncio.timeout(2):
+                await entered.wait()
+                controller._set_stk_side(changed_side)
+                if failure == "cancel":
+                    coordinator.cancel_command.set()
+                    hold.cancel()
+                else:
+                    fail_write.set()
+                with pytest.raises(asyncio.CancelledError if failure == "cancel" else BleakError):
+                    await hold
+            if side == "1":
+                expected = [
+                    (
+                        REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
+                        b"\x01" if direction == "up" else b"\x02",
+                    ),
+                    (REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID, b"\x00"),
+                ]
+            else:
+                expected = [
+                    (REVERIE_STK_SIDE_DATA_UUID, bytes((int(side), 1 if direction == "up" else 3))),
+                    (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((int(side), 0xFF))),
+                ]
+            assert writes == expected
+            assert controller._active_stk_motion_side is None
+            assert controller._stk_selected_side == changed_side
+        finally:
+            if not hold.done():
+                hold.cancel()
+            await asyncio.gather(hold, return_exceptions=True)
+            await coordinator.async_shutdown()
 
     async def test_absolute_position_uses_the_evidence_low_byte(
         self,

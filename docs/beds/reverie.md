@@ -207,6 +207,9 @@ The back position follows the selected head. Selecting Both reports an unknown
 back position until both heads report the same value; the two raw head readings
 remain separate for Composer routines.
 
+A failed or canceled press still releases the side that started the hold,
+even if the local side selector changes before cleanup.
+
 ### Paired local Pairlink setup
 
 Paired local Pairlink entries reserve each selected adapter separately. Combining
@@ -317,8 +320,8 @@ replacement, own-address changes, fragmented packets, registered channel-32
 state, and eligible SDK status consumers. The accepted state request order is
 `01 A7 20` with types `01,02,03,05,06,11,07,08,09,0A,0B,0C,0D,0E`; active
 status sync uses separate `01 A8 00 00` and `01 A9 00 00` requests. Generated
-queries use existing coordinator serialization. Central status polling preserves
-the current idle-disconnect deadline and never reconnects an idle-disconnected
+queries use existing coordinator serialization. Central status polling and clock
+queries preserve the current idle-disconnect deadline and never reconnect an idle-disconnected
 receiver. Central frames use the
 accepted target/MAC session key and actual ATT MTU. A GATT write completion is
 transport acceptance, not confirmation that the bed moved.
@@ -538,6 +541,7 @@ minimum.
 | Protocol 108 comfort | Stable repeated feedback; strictly positive initial elapsed time, then greater than 2000 ms |
 | Protocol 108 / 110 routines | Schedule the exact minute duration before each write, including the final empty-queue poll |
 | Pairlink central fragments | ATT-derived fragment size, 15 ms after every fragment |
+| Pairlink clock query | First query after five seconds; next query five seconds after a time response; preserves the idle deadline |
 | Pairlink backup cleanup | First check after one second, then 800 ms while applicable |
 | Diagnostic | Protocol 108/110 ten seconds; Pairlink two seconds; connection held through cleanup |
 

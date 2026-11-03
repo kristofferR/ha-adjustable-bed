@@ -121,10 +121,12 @@ async def test_later_deferred_target_respects_stop_before_dispatch(
 
 
 @pytest.mark.parametrize("idle_seconds", [0, 40])
-async def test_central_status_polls_preserve_idle_deadline_and_never_reconnect(
+@pytest.mark.parametrize("poll_kind", ["status", "clock"])
+async def test_central_polls_preserve_idle_deadline_and_never_reconnect(
     hass,
     monkeypatch,
     idle_seconds,
+    poll_kind,
 ):
     controller, client, runtime, tasks = _controller()
     await _join_central(controller, client, runtime, tasks)
@@ -152,8 +154,23 @@ async def test_central_status_polls_preserve_idle_deadline_and_never_reconnect(
         "_schedule_status_sync",
         lambda _generation, *, delay_seconds: scheduled.append(delay_seconds),
     )
+    clock_queries = []
+    monkeypatch.setattr(
+        controller,
+        "_schedule_clock_query",
+        lambda _generation, *, delay_seconds: clock_queries.append(delay_seconds),
+    )
     controller._set_active_control_session(True)
-    generation = controller._status_sync_generation
+    poll = (
+        controller._async_run_status_sync
+        if poll_kind == "status"
+        else controller._async_run_clock_query
+    )
+    generation = (
+        controller._status_sync_generation
+        if poll_kind == "status"
+        else controller._clock_sync_generation
+    )
     coordinator._reset_disconnect_timer()
     timer = coordinator._disconnect_timer
     deadline = timer.when() if timer is not None else None
@@ -161,13 +178,21 @@ async def test_central_status_polls_preserve_idle_deadline_and_never_reconnect(
         assert (timer is None) is (idle_seconds == 0)
         client.writes.clear()
         for _ in range(3):
-            await controller._async_run_status_sync(generation)
+            await poll(generation)
             assert coordinator._disconnect_timer is timer
             if timer is not None:
                 assert not timer.cancelled()
                 assert timer.when() == deadline
-        assert len(client.writes) >= 6
-        assert scheduled == [0, 1, 1, 1]
+            if poll_kind == "clock":
+                assert client.writes[-1][1] == b"\x01\x1a"
+                # The registered response rearms the clock; a query alone does not.
+                previous_queries = len(clock_queries)
+                assert client.notify_callback is not None
+                client.notify_callback(None, bytearray.fromhex("021a78563412"))
+                await hass.async_block_till_done()
+                assert clock_queries[previous_queries:] == [5]
+        assert len(client.writes) == (6 if poll_kind == "status" else 3)
+        assert scheduled == ([0, 1, 1, 1] if poll_kind == "status" else [0])
         if timer is not None:
             # Model this exact handle reaching its deadline without a real wait.
             timer.cancel()
@@ -178,7 +203,7 @@ async def test_central_status_polls_preserve_idle_deadline_and_never_reconnect(
             client.disconnect.assert_not_awaited()
             await coordinator.async_disconnect()
         client.writes.clear()
-        await controller._async_run_status_sync(generation)
+        await poll(generation)
         assert client.writes == []
         connect.assert_not_awaited()
     finally:

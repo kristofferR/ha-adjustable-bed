@@ -1866,11 +1866,16 @@ class ReveriePairlinkController(BedController):
                 )
 
         try:
-            await self._coordinator.async_execute_controller_command(
+            await self._coordinator.async_execute_controller_query(
                 request_time,
                 cancel_running=False,
-                resource="reverie:pairlink:clock-query",
-                read_positions_after_operation=False,
+                skip_disconnect=True,
+                run_if=lambda: (
+                    generation == self._clock_sync_generation
+                    and self._clock_sync_active
+                    and self._runtime.joined
+                ),
+                preserve_idle_deadline=True,
             )
         except asyncio.CancelledError:
             raise
