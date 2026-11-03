@@ -115,10 +115,10 @@ enabled slots in each table. Disabled rows consume no slots; `wake: false`
 enabled rows still consume a slot. Both full tables and every physical target
 are checked before checksums or any sends, including an unselected table.
 
-Weekday encoding: no marker, weekday bits only; Monday through Saturday use bits1..6,
-Sunday bit0. Wake byte: **0x03**, otherwise zero.
+Weekday encoding: no marker, weekday bits only; Monday through Saturday use bits 1..6,
+Sunday bit 0. Wake byte: **0x03**, otherwise zero.
 The frames are `ED 80 03` (weekly) and `ED 80 02` (one-time), each 16 bytes,
-with three four-byte records and an inverted-sum checksum at15. `both` sends
+with three four-byte records and an inverted-sum checksum at 15. `both` sends
 weekly then waits 500 ms then one-time; selected single-table dispatch still
 waits 500 ms after the send. A transport failure can leave only one table sent;
 there is no wire rollback. Empty-table bytes are attempted writes, not proof
@@ -143,7 +143,7 @@ prior value unchanged. The parser does not infer acknowledgement, battery,
 physical motor count, light state or physical memory meaning. Incoming packets
 are not reassembled or given invented header/checksum guards.
 
-Accept 16/19/20. At 16, byte13 bit5 suppresses; at 19 F1 selects status14, every other first byte selects15;20 uses14.
+Accept 16/19/20. At 16, byte 13 bit 5 suppresses; at 19 F1 selects status 14, every other first byte selects 15; 20 uses 14.
 
 The GATT selector independently retains the last matching notification and
 write characteristics across all services. Both are required. FFE4/FFE9 are

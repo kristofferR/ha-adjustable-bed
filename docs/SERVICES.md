@@ -437,7 +437,7 @@ data:
 
 Both lists are required and may be empty. `dispatch` is required and is `both`,
 `weekly`, or `one_time`. Records default to `enabled: false`, `wake: false`,
-`hour: 0`, `minute: 0`. Hours are0..23 and minutes0..59. Weekly days are unique
+`hour: 0`, `minute: 0`. Hours are 0..23 and minutes 0..59. Weekly days are unique
 integers, Monday0 through Sunday6; an enabled weekly record requires a day.
 Each table permits at most three enabled records. Disabled rows consume no
 slots; an enabled `wake: false` row does consume a slot.
@@ -453,7 +453,7 @@ for relative hour/minute/second fields; zero bytes do not establish firmware cle
 Both complete tables, including the unselected table, and every physical
 target must pass validation before checksums or writes. Fourth rows, source
 partial-overflow corruption and negative deltas are rejected. `both` sends
-weekly first, waits500 ms, then sends one-time; single-table dispatch retains
+weekly first, waits 500 ms, then sends one-time; single-table dispatch retains
 500 ms post-write pacing. Configuration uses the existing command lock and
 scheduler with `cancel_running: false`. Native child targets and optional
 `side` retain their existing routing and conflict checks.

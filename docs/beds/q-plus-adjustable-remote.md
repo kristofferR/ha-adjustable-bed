@@ -139,10 +139,10 @@ enabled slots in each table. Disabled rows consume no slots; `wake: false`
 enabled rows still consume a slot. Both full tables and every physical target
 are checked before checksums or any sends, including an unselected table.
 
-Weekday encoding: marker bit7 plus weekday bits; Monday through Saturday use bits1..6,
-Sunday bit0. Wake byte: **0x10**, otherwise zero.
+Weekday encoding: marker bit 7 plus weekday bits; Monday through Saturday use bits 1..6,
+Sunday bit 0. Wake byte: **0x10**, otherwise zero.
 The frames are `ED 80 03` (weekly) and `ED 80 02` (one-time), each 16 bytes,
-with three four-byte records and an inverted-sum checksum at15. `both` sends
+with three four-byte records and an inverted-sum checksum at 15. `both` sends
 weekly then waits 500 ms then one-time; selected single-table dispatch still
 waits 500 ms after the send. A transport failure can leave only one table sent;
 there is no wire rollback. Empty-table bytes are attempted writes, not proof
@@ -159,7 +159,7 @@ that zero clears firmware. Negative source deltas and fourth-row corruption
 are never sent. This applies even to Omazz/Ergomotion's source partial-overflow
 cases. Weekly and disabled zero fields are not blanket-rejected as zero delays.
 
-The source snooze path stores55+10 as minute65 without carrying. HA's
+The source snooze path stores 55+10 as minute 65 without carrying. HA's
 public table input requires valid HH:MM; an automation must normalize date/time
 first and reject a cross-date result. Phone AlarmManager scheduling remains
 outside the integration. The BLE table writer preserves the original weekly
@@ -173,7 +173,7 @@ prior value unchanged. The parser does not infer acknowledgement, battery,
 physical motor count, light state or physical memory meaning. Incoming packets
 are not reassembled or given invented header/checksum guards.
 
-Accept lengths 16/19/20/23. A5 0B 0D at16 bytes precedes normal bit5 suppression and maps a big-endian seconds word1..600/601..1200/1201..1800 to1/2/3. Normal16 requires byte13 bit5 clear and bytes 7..9 zero for timer updates. At19, byte16 second-side bit drops for every current A/B/Both selector, and bytes 7..9 must be zero; status15. Length 20 uses14,23 uses15. No physical side identity is assigned.
+Accept lengths 16/19/20/23. A5 0B 0D at 16 bytes precedes normal bit 5 suppression and maps a big-endian seconds word 1..600/601..1200/1201..1800 to 1/2/3. Normal 16 requires byte 13 bit 5 clear and bytes 7..9 zero for timer updates. At 19, byte 16 second-side bit drops for every current A/B/Both selector, and bytes 7..9 must be zero; status 15. Length 20 uses 14, 23 uses 15. No physical side identity is assigned.
 
 The GATT selector independently retains the last matching notification and
 write characteristics across all services. Both are required. FFE4/FFE9 are

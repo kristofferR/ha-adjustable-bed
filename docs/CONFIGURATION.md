@@ -905,8 +905,8 @@ Select the bed address manually when automatic discovery cannot disambiguate it.
 Ergomotion and TEMPUR AU default to B2; Omazz uses its reachable RemoteB layout.
 The layout fixes the available actions and source timing. It does not prove
 physical motor count. The pulse count bounds a normal held-action button press;
-it does not change the source100 ms refresh interval. Serta's local angle-edit
-controls instead change one degree every200 ms and send only on release.
+it does not change the source 100 ms refresh interval. Serta's local angle-edit
+controls instead change one degree every 200 ms and send only on release.
 
 Q-Plus's **Both/Side A/Side B** setting controls its P1 packet selector. It is
 independent of a Home Assistant paired Left/Right target. MX Memory1 is an
