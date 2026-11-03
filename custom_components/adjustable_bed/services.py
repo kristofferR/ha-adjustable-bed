@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine
+from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, Protocol, cast
@@ -30,7 +30,12 @@ from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .beds.reverie_comfort import ReverieComfortRequest
-from .command_scheduler import ALL_COMMAND_RESOURCES, CommandHandle, command_resources
+from .command_scheduler import (
+    ALL_COMMAND_RESOURCES,
+    CommandHandle,
+    command_resources,
+    current_command_context,
+)
 from .const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -52,6 +57,7 @@ from .const import (
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
@@ -627,12 +633,19 @@ async def _execute_sided(
     resource: str | None = None,
     resources: Collection[str] | None = None,
     admission: _CommandAdmission | None = None,
+    expected_stop_epoch: int | None = None,
+    expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
+    expected_stop_epochs: Mapping[str, int] | None = None,
 ) -> None:
     """Run a command on the targeted side(s).
 
     A paired bed fans out (with the both-failure stop-the-other contract); a
     single bed runs exactly as before.
     """
+    if admission is not None:
+        expected_pair_generations = admission.expected_pair_generations
+        expected_stop_epochs = admission.expected_stop_epochs
+        expected_stop_epoch = admission.expected_stop_epochs.get(SIDE_BOTH)
     if isinstance(coordinator, PairedBedCoordinator):
         await coordinator.async_execute_controller_command(
             command_fn,
@@ -641,27 +654,27 @@ async def _execute_sided(
             skip_disconnect=skip_disconnect,
             resource=resource,
             resources=resources,
-            expected_pair_generations=(
-                admission.expected_pair_generations if admission is not None else None
-            ),
-            expected_stop_epochs=(
-                admission.expected_stop_epochs if admission is not None else None
-            ),
+            expected_pair_generations=expected_pair_generations,
+            expected_stop_epochs=expected_stop_epochs,
         )
     else:
-        expected_stop_epoch = (
-            admission.expected_stop_epochs.get(SIDE_BOTH)
-            if admission is not None
-            else None
-        )
-        await coordinator.async_execute_controller_command(
-            command_fn,
-            cancel_running=cancel_running,
-            skip_disconnect=skip_disconnect,
-            resource=resource,
-            resources=resources,
-            expected_stop_epoch=expected_stop_epoch,
-        )
+        if expected_stop_epoch is None:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+            )
+        else:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                expected_stop_epoch=expected_stop_epoch,
+            )
 
 
 async def _release_preflighted(preflighted: PreflightedSides) -> None:
@@ -1897,7 +1910,19 @@ async def _timed_move_plan(
                 f"{'head' if motor == 'back' else 'feet'}_{direction}", duration_ms,
             )
 
-        # Get the appropriate move function based on direction
+        # The explicit app profile's direction is a held route. timed_move has
+        # an elapsed duration, so delegate its bounded window and release to
+        # the controller instead of treating one press frame as a full move.
+        hold_control = None
+        if coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP and spec.hold is not None:
+            hold_control = (
+                spec.hold.up_control if direction == "up" else spec.hold.down_control
+            )
+            try:
+                controller.validate_hold_control(hold_control, duration_ms)
+            except ValueError as err:
+                raise ServiceValidationError(str(err)) from err
+
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
         stop_fn = spec.stop_fn
         hold_spec = spec.hold
@@ -1957,7 +1982,11 @@ async def _timed_move_plan(
             with contextlib.ExitStack() as admission_scope:
                 if svane_admission is not None:
                     admission_scope.enter_context(svane_admission.activate(ctrl))
-                if _hold_spec is not None and _hold_control is not None:
+                if (
+                    _hold_spec is not None
+                    and _hold_control is not None
+                    and coordinator.bed_type != BED_TYPE_SLEEPYS_ELITE_APP
+                ):
                     await ctrl.prepare_for_movement()
                     if _hold_spec.start_delay_ms:
                         await asyncio.sleep(_hold_spec.start_delay_ms / 1000)
@@ -1968,28 +1997,35 @@ async def _timed_move_plan(
                 controller_timed_out = False
                 try:
                     await ctrl.prepare_for_movement()
-                    deadline = asyncio.timeout(duration_ms / 1000)
-                    try:
-                        async with deadline:
-                            try:
-                                await _move_fn(ctrl)
-                            except TimeoutError:
-                                # Controller cleanup can time out while responding
-                                # to our cancellation; that is still a real failure.
-                                controller_timed_out = True
+                    if _hold_control is not None:
+                        await ctrl.hold_control(_hold_control, duration_ms)
+                    else:
+                        deadline = asyncio.timeout(duration_ms / 1000)
+                        try:
+                            async with deadline:
+                                try:
+                                    await _move_fn(ctrl)
+                                except TimeoutError:
+                                    # Controller cleanup can time out while responding
+                                    # to our cancellation; that is still a real failure.
+                                    controller_timed_out = True
+                                    raise
+                        except TimeoutError:
+                            if controller_timed_out or not deadline.expired():
                                 raise
-                    except TimeoutError:
-                        if controller_timed_out or not deadline.expired():
-                            raise
                 finally:
                     # Release is outside the movement ceiling. Keep the wire lane
                     # until it settles even if the caller is cancelled during STOP.
-                    stop_task = asyncio.create_task(_stop_fn(ctrl))
-                    try:
-                        await asyncio.shield(stop_task)
-                    except asyncio.CancelledError:
-                        await stop_task
-                        raise
+                    context = current_command_context()
+                    # Leave a completed controller release for its admitted
+                    # external STOP owner to consume after this wrapper returns.
+                    if context is None or not context.cleanup_stop_sent:
+                        stop_task = asyncio.create_task(_stop_fn(ctrl))
+                        try:
+                            await asyncio.shield(stop_task)
+                        except asyncio.CancelledError:
+                            await stop_task
+                            raise
 
         return (
             timed_movement,
@@ -2585,6 +2621,43 @@ async def handle_hold_control(call: ServiceCall) -> None:
         await _hold_targets(targets, control, duration_ms)
 
 
+@dataclass(frozen=True, slots=True)
+class _HoldAdmission:
+    """Cancellation state captured before hold capability preflight awaits."""
+
+    stop_epoch: int | None = None
+    pair_generations: Mapping[str, tuple[int, ...]] | None = None
+    stop_epochs: Mapping[str, int] | None = None
+
+
+def _target_stop_epoch(target: BedChild) -> int | None:
+    """Read the owning physical scheduler's STOP epoch for one service target."""
+    owner = getattr(target, "_single_inner", target)
+    scheduler = getattr(owner, "_command_scheduler", None)
+    epoch = getattr(scheduler, "stop_epoch", None)
+    return epoch if isinstance(epoch, int) else None
+
+
+def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
+    """Snapshot STOP ownership before a hold's possibly blocking preflight."""
+    if not isinstance(coordinator, PairedBedCoordinator):
+        return _HoldAdmission(stop_epoch=_target_stop_epoch(coordinator))
+
+    pair_generations: dict[str, tuple[int, ...]] = {}
+    stop_epochs: dict[str, int] = {}
+    for target_side, target in coordinator._targets_for(side):
+        pair_generations[target_side] = coordinator._pair_cancel_generation(
+            target_side, ALL_COMMAND_RESOURCES
+        )
+        stop_epoch = _target_stop_epoch(target)
+        if stop_epoch is not None:
+            stop_epochs[target_side] = stop_epoch
+    return _HoldAdmission(
+        pair_generations=pair_generations,
+        stop_epochs=stop_epochs or None,
+    )
+
+
 def _require_held_control(
     target: BedChild, controller: BedController | SideBoundController, control: str
 ) -> None:
@@ -2627,23 +2700,30 @@ async def _hold_targets(
         _require_held_control(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
 
+    admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController | SideBoundController) -> None:
         await controller.hold_control(control, duration_ms)
 
     try:
-        for coordinator, side, admission in admissions:
+        for (coordinator, side), admission in zip(targets, admissions, strict=True):
             await _execute_sided(
                 coordinator,
                 side,
                 hold,
                 cancel_running=True,
-                admission=admission,
+                expected_stop_epoch=admission.stop_epoch,
+                expected_pair_generations=admission.pair_generations,
+                expected_stop_epochs=admission.stop_epochs,
             )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
+    else:
+        # A stale scheduler admission is a normal no-op after STOP, so restore
+        # the idle deadline on links opened during preflight on either path.
+        await _release_preflighted(preflighted)
 
 
 CUSTOMATIC_MEMORY_ACTIONS = ("flat", "zg", "anti", "program", "incline")
@@ -4357,7 +4437,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
         SERVICE_HOLD_CONTROL,
         handle_hold_control,
         # Each target's controller declares its valid controls.
-        schema=vol.Schema({**hold_fields, vol.Required(ATTR_CONTROL): cv.string}),
+        schema=vol.Schema(
+            {
+                **hold_fields,
+                vol.Required(ATTR_CONTROL): cv.string,
+            }
+        ),
     )
     hass.services.async_register(
         DOMAIN,

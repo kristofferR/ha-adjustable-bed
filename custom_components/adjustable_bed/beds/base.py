@@ -172,6 +172,7 @@ class ControllerMotorHoldSpec:
     down_control: str
     start_delay_ms: int = 0
     release_delay_ms: int = 0
+    stop_scope: Literal["motor", "side"] = field(default="motor", kw_only=True)
 
     def __post_init__(self) -> None:
         _validate_hold_metadata(self.up_control, self.start_delay_ms, self.release_delay_ms)
@@ -484,6 +485,16 @@ class BedController(ABC):
     @property
     def disconnected_transport_ready(self) -> bool:
         """Return whether the selected non-central transport can accept commands."""
+        return False
+
+    @property
+    def holds_link_after_stalled_reconnect(self) -> bool:
+        """Return True to hold the link once a connect has stalled this session.
+
+        For receivers that keep advertising but often refuse or time out
+        reconnects. Until a connect times out or aborts, the configured handoff
+        applies, so receivers that reconnect normally stay free for their apps.
+        """
         return False
 
     @property

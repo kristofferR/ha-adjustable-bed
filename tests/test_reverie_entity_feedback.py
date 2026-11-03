@@ -11,9 +11,29 @@ from custom_components.adjustable_bed.const import (
     REVERIE_NIGHTSTAND_HEAD_WAVE_UUID,
     REVERIE_STK_SIDE_DATA_UUID,
 )
+from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
 from tests.test_reverie_review_lifecycle import _pairlink_central
 from tests.test_reverie_session_lane import _central
+
+
+@pytest.mark.parametrize(
+    ("controller_type", "model", "scope"),
+    [(ReverieController, "9T", "side"), (ReverieNightstandController, "R510L", "motor")],
+)
+async def test_cover_publishes_the_controller_stop_scope(
+    hass, mock_coordinator_connected, controller_type, model, scope
+):
+    coordinator = await _central(hass)
+    try:
+        controller = controller_type(coordinator, model=model)
+        coordinator._controller = controller
+        cover = AdjustableBedCover(
+            coordinator, _build_cover_description(controller.motor_control_specs[0])
+        )
+        assert cover.extra_state_attributes["held_stop_scope"] == scope
+    finally:
+        await coordinator.async_shutdown()
 
 
 @pytest.mark.parametrize(

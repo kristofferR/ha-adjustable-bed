@@ -52,6 +52,15 @@ that exact mask. A Base actuator becomes a bed-height cover; the other selected
 axes receive movement controls and position entities. The resolved variant is
 shown as the device's Model ID in Home Assistant rather than as a separate entity.
 
+Some controllers never answer the mask read over an ESPHome proxy, or reject it
+with `Insufficient authorization` ([#714](https://github.com/kristofferR/ha-adjustable-bed/issues/714)).
+The read is bounded to two seconds. When it fails, a mask read on an earlier
+connection stays authoritative. Without one, the integration falls back to the
+configured motor count, as 3.x did: Back and Legs, plus Head for three motors
+and Feet for four, limited to reference outputs present in the GATT table. Both
+TD3 and Advanced have four memories, so those stay available. The snapshot is
+marked `actuator_mask_inferred`, and a later successful read replaces it.
+
 All three analyzed BLE applications proactively request Android/OS bonding, but
 physical testing with two Advanced controllers proves that their GATT control
 works without a bond. The integration therefore does not force pairing. A short

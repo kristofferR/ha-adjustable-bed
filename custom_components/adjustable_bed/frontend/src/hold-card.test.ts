@@ -110,10 +110,13 @@ test("actual card handlers route discovered standalone and Both holds, then capt
     const { api, hass } = fixture();
     const { template } = row(api, hass, device);
     handler(template, "@pointerdown")(down(1));
-    expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "timed_move", data: {
-      device_id: device, motor: "back", direction: "up", duration_ms: 1000,
-      ...(device === "pair" ? { side: "both" } : {}),
-    } });
+    expect(calls.at(-1)).toEqual(device === "left"
+      ? { domain: "adjustable_bed", service: "hold_control", data: {
+          device_id: [device], control: "back_up", duration: 60,
+        } }
+      : { domain: "adjustable_bed", service: "timed_move", data: {
+          device_id: device, side: "both", motor: "back", direction: "up", duration_ms: 1000,
+        } });
     delete hass.entities["button." + device + "_stop"];
     page.visibilityState = "visible";
     page.dispatchEvent(new Event("visibilitychange"));
@@ -214,13 +217,25 @@ test("real Python standalone cover metadata reaches the registered bounded card 
   useCover(hass, "left");
   const left = row(api, hass, "left");
   handler(left.template, "@pointerdown")(down(5));
-  expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "timed_move", data: {
-    device_id: "left", motor: "back", direction: "up", duration_ms: 1000,
+  expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "hold_control", data: {
+    device_id: ["left"], control: "back_up", duration: 60, side: "left",
   } });
   handler(left.template, "@pointerup")(up(5));
   expect(calls.at(-1)).toEqual({ domain: "cover", service: "stop_cover", data: {
     entity_id: "cover.left_back",
   } });
+});
+
+test("legacy strings-only cover projection retains the finite timed action", () => {
+  const { api, hass } = fixture();
+  useCover(hass, "left");
+  delete hass.states["cover.left_back"].attributes.held_stop_scope;
+  const left = row(api, hass, "left");
+  handler(left.template, "@pointerdown")(down(55));
+  expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "timed_move", data: {
+    device_id: "left", motor: "back", direction: "up", duration_ms: 1000,
+  } });
+  handler(left.template, "@pointerup")(up(55));
 });
 
 test("live sequential or mismatched Both metadata keeps the existing finite button fallback", () => {
@@ -280,6 +295,10 @@ function axisCover(hass: HomeAssistant, device: string, axis: string): MotorEnti
   hass.states[entity_id] = { entity_id, state: "open", last_changed: "", last_updated: "", attributes: {
     ...projections.standalone_cover, held_control_up: `${axis}_up`, held_control_down: `${axis}_down`,
   } };
+  // Older side-wide controls do not publish the new typed scope field.
+  if (axis.startsWith("starcode_m1x12_part_") || axis === "elevate_both") {
+    delete hass.states[entity_id].attributes.held_stop_scope;
+  }
   return bedEntitiesForDevice(hass, device).motors.find((motor) => motor.key === axis)!;
 }
 

@@ -105,6 +105,7 @@ function emptyBed(): BedEntities {
     massage: { buttons: [], numbers: [] },
     climate: { entities: [], selects: [], numbers: [] },
     utility: [],
+    utilityStates: [],
   };
 }
 
@@ -135,6 +136,44 @@ export function bedEntitiesForDevice(
       motorMap.set(key, m);
     }
     return m;
+  };
+  const motorButton = (
+    id: string,
+    key: string,
+    direction: "up" | "down",
+    ownerDeviceId: string | undefined,
+  ): void => {
+    const item = motor(key);
+    item[direction] = id;
+    const attributes = hass.states[id]?.attributes;
+    const control = attributes?.held_control;
+    const startDelayMs = attributes?.hold_start_delay_ms;
+    const releaseDelayMs = attributes?.hold_release_delay_ms;
+    if (
+      typeof control === "string" &&
+      typeof startDelayMs === "number" &&
+      typeof releaseDelayMs === "number" &&
+      ownerDeviceId &&
+      attributes?.paired_hold_motor === undefined
+    ) {
+      item.deviceId = ownerDeviceId;
+      item.holdEntityId = id;
+      item.heldControls = {
+        ...item.heldControls,
+        [direction]: { control, startDelayMs, releaseDelayMs },
+      };
+    }
+    const heldMotor = attributes?.paired_hold_motor;
+    if (heldMotor === "back" || heldMotor === "legs" || heldMotor === "lumbar") {
+      item.timedMove = {
+        deviceId,
+        motor: heldMotor,
+        ...(attributes?.paired_hold_side === "both" ? { side: "both" as const } : {}),
+      };
+    } else if (
+      (key === "back" || key === "legs" || key === "lumbar") &&
+      typeof control === "string"
+    ) item.timedMove = { deviceId, motor: key };
   };
   const presetMap = new Map<string, string>();
   const memoryMap = new Map<number, MemorySlot>();
@@ -171,25 +210,45 @@ export function bedEntitiesForDevice(
     switch (domain) {
       case "cover":
         {
-          const selectedMotor = motor(key);
-          selectedMotor.cover = id;
+          const item = motor(key);
+          item.cover = id;
           const attributes = hass.states[id]?.attributes;
-          if (
-            (key === "back" || key === "legs" || key === "lumbar") &&
-            typeof attributes?.held_control_up === "string" &&
-            typeof attributes?.held_control_down === "string"
-          ) {
-            selectedMotor.timedMove = { deviceId, motor: key };
+          const up = attributes?.held_control_up;
+          const down = attributes?.held_control_down;
+          if (attributes?.held_stop_scope === "motor" || attributes?.held_stop_scope === "side") {
+            item.coverStopScope = attributes.held_stop_scope;
+          }
+          if (typeof up === "string" && typeof down === "string") {
+            if (key === "back" || key === "legs" || key === "lumbar") {
+              item.timedMove = { deviceId, motor: key };
+            }
+            const startDelayMs = attributes?.hold_start_delay_ms;
+            const releaseDelayMs = attributes?.hold_release_delay_ms;
+            if ((attributes?.held_stop_scope === "motor" || attributes?.held_stop_scope === "side") &&
+                entry.device_id && typeof startDelayMs === "number" &&
+                Number.isFinite(startDelayMs) && startDelayMs >= 0 &&
+                typeof releaseDelayMs === "number" &&
+                Number.isFinite(releaseDelayMs) && releaseDelayMs >= 0) {
+              item.deviceId = entry.device_id;
+              item.holdEntityId = id;
+              item.heldControls = {
+                up: { control: up, startDelayMs, releaseDelayMs },
+                down: { control: down, startDelayMs, releaseDelayMs },
+              };
+            }
           }
         }
         break;
 
       case "sensor":
         if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
+        else if (key.startsWith("sleepys_app_position_") || key.startsWith("sleepys_app_field_"))
+          bed.utilityStates?.push(id);
         else if (key.startsWith("reverie_") && key.endsWith("_massage_intensity")) {
           (bed.massage.states ??= []).push(id);
         }
         else if (
+          key === "sleepys_app_massage_timer_code" ||
           key === "reverie_pairlink_massage_mode" ||
           key === "reverie_pairlink_massage_timer"
         ) {
@@ -239,18 +298,22 @@ export function bedEntitiesForDevice(
         else if (key === "vmatbasic_mood_speed" || key === "vmatbasic_mood_brightness") mood().numbers.push(id);
         else if (key === "vibradorm_app_massage_speed") bed.massage.numbers.push(id);
         else if (key === "sleeptracker_wave_minutes") bed.massage.numbers.push(id);
+        else if (key === "sleepys_app_color_code") (bed.lights.numbers ??= []).push(id);
+        else if (key.startsWith("sleepys_app_target_axis_")) (bed.utilityNumbers ??= []).push(id);
         else if (/^sleeptracker_(left|right)_level$/.test(key)) bed.climate.numbers.push(id);
         else if (key === "fan_level") bed.climate.numbers.push(id);
         else if (key.startsWith("sleep_number_setting")) bed.firmness.push(id);
         break;
 
       case "button":
-        if (PRESET_ORDER.includes(key) || key.startsWith("preset_")) {
+        if (PRESET_ORDER.includes(key) || key.startsWith("preset_") || key.startsWith("sleepys_app_preset_")) {
           if ((match = key.match(/^preset_memory_(\d+)$/)))
             memory(Number(match[1])).goto = id;
           else presetMap.set(key, id);
         } else if ((match = key.match(/^program_memory_(\d+)$/))) {
           memory(Number(match[1])).save = id;
+        } else if ((match = key.match(/^sleepys_app_memory_(\d+)$/))) {
+          memory(Number(match[1])).goto = id;
         } else if (key === "stop" || key === "stop_both") {
           // stop_both is the paired parent device's combined STOP.
           bed.stop = id;
@@ -266,6 +329,14 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key.startsWith("sleeptracker_")) {
           bed.utility.push(id);
+        } else if (
+          key.startsWith("sleepys_app_light_") ||
+          key.startsWith("sleepys_app_voice_brightness_") ||
+          key === "sleepys_app_rgb_action"
+        ) {
+          (bed.lights.buttons ??= []).push(id);
+        } else if (key.startsWith("sleepys_app_massage_")) {
+          bed.massage.buttons.push(id);
         } else if (key === "toggle_light") {
           bed.lights.toggle = id;
         } else if (key === "light_cycle" || key === "starcode_light_cycle") {
@@ -360,31 +431,10 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
+        } else if (key.startsWith("sleepys_app_")) {
+          bed.utility.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
-          const entityMotorKey = match[1];
-          const m = motor(entityMotorKey);
-          m[match[2] as "up" | "down"] = id;
-          const supportedHoldMotor = entityMotorKey === "back"
-            ? "back"
-            : entityMotorKey === "legs"
-              ? "legs"
-              : entityMotorKey === "lumbar"
-                ? "lumbar"
-              : undefined;
-          const pairedHoldMotor = hass.states[id]?.attributes.paired_hold_motor;
-          if (pairedHoldMotor === "back" || pairedHoldMotor === "legs" || pairedHoldMotor === "lumbar") {
-            const heldSide = hass.states[id]?.attributes.paired_hold_side;
-            m.timedMove = {
-              deviceId,
-              motor: pairedHoldMotor,
-              ...(heldSide === "both" ? { side: "both" as const } : {}),
-            };
-          } else if (
-            supportedHoldMotor !== undefined &&
-            typeof hass.states[id]?.attributes.held_control === "string"
-          ) {
-            m.timedMove = { deviceId, motor: supportedHoldMotor };
-          }
+          motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         }
         break;
 
@@ -559,14 +609,16 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.climate.selects.length === 0 &&
     bed.climate.numbers.length === 0 &&
     bed.utility.length === 0 &&
-    !bed.utilitySelects?.length
+    !bed.utilityNumbers?.length &&
+    !bed.utilitySelects?.length &&
+    !bed.utilityStates?.length
   );
 }
 
 export function hasLightingControls(lights: LightEntities): boolean {
   return !!(
     lights.light || lights.switch || lights.level || lights.toggle ||
-    lights.buttons?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
+    lights.numbers?.length || lights.buttons?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
     lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length || lights.mood?.buttons?.length
   );
 }

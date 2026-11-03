@@ -55,11 +55,15 @@ notification requirements, or preset semantics of other beds.
 
 Held controls keep the existing flat entity attributes: button `held_control`,
 cover `held_control_up` / `held_control_down`, and the two delay fields.
+Cover `held_stop_scope` explicitly distinguishes a whole-side STOP from a
+motor-specific STOP; timing metadata alone does not imply either scope.
 Combined hold metadata is exposed only while both current receivers have matching
 contracts and concurrent execution is available. A declared-hold combined button
-still uses a finite one-second timed operation when that metadata is absent,
-including sequential mode. Each receiver keeps its own start/release timing and
-controller cleanup. The one-second pulse is card policy, not a protocol interval.
+still uses a finite timed operation when that metadata is absent, including
+sequential mode. Sleepy's retains its native action duration; other declared
+holds retain the one-second card pulse. Each receiver keeps its own controller
+cleanup. Sleepy's app delay fields govern card gestures, not additional delays
+around the controller's finite service action.
 
 Window blur and hidden-document transitions release the captured hold target.
 An unrelated side's STOP leaves the other side's hold owner intact. Exact STOP

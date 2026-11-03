@@ -212,7 +212,7 @@ class ReverieController(BedController):
                 stop_fn=lambda ctrl: ctrl.move_back_stop(),
                 position_key="back",
                 max_angle=REVERIE_BACK_MAX_ANGLE,
-                hold=ControllerMotorHoldSpec("back_up", "back_down"),
+                hold=ControllerMotorHoldSpec("back_up", "back_down", stop_scope="side"),
             ),
             MotorControlSpec(
                 key="legs",
@@ -222,7 +222,7 @@ class ReverieController(BedController):
                 stop_fn=lambda ctrl: ctrl.move_legs_stop(),
                 position_key="legs",
                 max_angle=45,
-                hold=ControllerMotorHoldSpec("legs_up", "legs_down"),
+                hold=ControllerMotorHoldSpec("legs_up", "legs_down", stop_scope="side"),
             ),
         )
 

@@ -3,7 +3,8 @@
     "held_control_up": "back_up",
     "held_control_down": "back_down",
     "hold_start_delay_ms": 0,
-    "hold_release_delay_ms": 0
+    "hold_release_delay_ms": 0,
+    "held_stop_scope": "motor"
   },
   "compatible_both_button": {
     "paired_hold_motor": "back",
@@ -19,6 +20,7 @@
     "held_control_up": "back_up",
     "held_control_down": "back_down",
     "hold_start_delay_ms": 0,
-    "hold_release_delay_ms": 0
+    "hold_release_delay_ms": 0,
+    "held_stop_scope": "motor"
   }
 }

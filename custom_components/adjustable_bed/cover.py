@@ -21,8 +21,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerMotorHoldSpec
 from .const import (
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
+    SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
@@ -30,7 +32,12 @@ from .logicdata_app_protocol import LAYOUTS, layout_axes
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, MotorControlSpec, SideBoundController
+    from .beds.base import (
+        BedController,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+        SideBoundController,
+    )
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -342,6 +349,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 held_control_down=hold.down_control,
                 hold_start_delay_ms=hold.start_delay_ms,
                 hold_release_delay_ms=hold.release_delay_ms,
+                held_stop_scope=hold.stop_scope,
             )
         return attributes
 
@@ -438,11 +446,19 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 control = hold.up_control if direction == "open" else hold.down_control
 
                 async def bounded_movement(controller: BedController) -> None:
-                    controller.validate_hold_control(control, 1000)
+                    duration_ms = (
+                        SLEEPYS_ELITE_NATIVE_ACTION_MS
+                        if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+                        else 1000
+                    )
+                    controller.validate_hold_control(control, duration_ms)
+                    if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                        await controller.hold_control(control, duration_ms)
+                        return
                     await controller.prepare_for_movement()
                     if hold.start_delay_ms:
                         await asyncio.sleep(hold.start_delay_ms / 1000)
-                    await controller.hold_control(control, 1000)
+                    await controller.hold_control(control, duration_ms)
                     if hold.release_delay_ms:
                         await asyncio.sleep(hold.release_delay_ms / 1000)
 

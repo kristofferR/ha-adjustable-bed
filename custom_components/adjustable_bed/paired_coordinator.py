@@ -287,7 +287,7 @@ class PairedBedCoordinator:
         targets: Collection[tuple[str, BedChild]],
         expected_stop_epochs: Mapping[str, int] | None,
     ) -> bool:
-        """Check physical STOP epochs captured before a paired hold preflight."""
+        """Check the physical STOP epochs captured before paired hold admission."""
         if expected_stop_epochs is None:
             return True
         for side, child in targets:
@@ -307,7 +307,7 @@ class PairedBedCoordinator:
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None,
     ) -> bool:
-        """Revalidate captured pair/STOP ownership after an admission wait."""
+        """Revalidate a linked request after it has waited for an admission lane."""
         return any(
             self._pair_command_was_cancelled(side, resources, entry_cancel)
             for side, _child in targets
@@ -441,8 +441,6 @@ class PairedBedCoordinator:
         if len(targets) > 1 and self._linked_readiness_required(targets) and sequential:
             raise ValueError("This linked profile requires concurrent ready physical receivers")
 
-        # A stale public held event must be rejected before it can replace a
-        # newer command or bump the pair's STOP ownership counters.
         if expected_pair_generations is not None and any(
             expected_pair_generations.get(target_side)
             != self._pair_cancel_generation(target_side, command_scope)
@@ -643,9 +641,13 @@ class PairedBedCoordinator:
             async with self._pair_side_locks[side]:
                 if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
                     raise _ConnectionModeChanged
-                if self._pair_command_was_cancelled(side, resources, entry_cancel) or not self._expected_stop_epochs_match(
+                if self._pair_command_was_cancelled(
+                    side, resources, entry_cancel
+                ) or not self._expected_stop_epochs_match(
                     [(side, child)],
-                    {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                    {side: expected_stop_epoch}
+                    if expected_stop_epoch is not None
+                    else None,
                 ):
                     return
                 await op(child)
@@ -655,9 +657,13 @@ class PairedBedCoordinator:
         async with self._pair_side_locks[side]:
             if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
                 raise _ConnectionModeChanged
-            if self._pair_command_was_cancelled(side, resources, entry_cancel) or not self._expected_stop_epochs_match(
+            if self._pair_command_was_cancelled(
+                side, resources, entry_cancel
+            ) or not self._expected_stop_epochs_match(
                 [(side, child)],
-                {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                {side: expected_stop_epoch}
+                if expected_stop_epoch is not None
+                else None,
             ):
                 return
             if expected_stop_epoch is None:
@@ -693,9 +699,13 @@ class PairedBedCoordinator:
                 raise _ConnectionModeChanged
             try:
                 await child.async_wait_prepared_command(handle)
-                if self._pair_command_was_cancelled(side, resources, entry_cancel) or not self._expected_stop_epochs_match(
+                if self._pair_command_was_cancelled(
+                    side, resources, entry_cancel
+                ) or not self._expected_stop_epochs_match(
                     [(side, child)],
-                    {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                    {side: expected_stop_epoch}
+                    if expected_stop_epoch is not None
+                    else None,
                 ):
                     await child.async_abort_prepared_command(handle)
                     return
@@ -755,7 +765,7 @@ class PairedBedCoordinator:
         result_tasks: dict[str, asyncio.Task[None]] = {}
 
         def collect_enqueues(
-            enqueue_tasks: Mapping[str, asyncio.Task[CommandHandle]],
+            enqueue_tasks: Mapping[str, asyncio.Task[CommandHandle | None]],
         ) -> dict[str, BaseException]:
             """Recover every completed reservation, including during cancellation."""
             errors: dict[str, BaseException] = {}
@@ -767,7 +777,8 @@ class PairedBedCoordinator:
                 except BaseException as err:
                     errors[side] = err
                 else:
-                    prepared[side] = (child_by_side[side], handle)
+                    if handle is not None:
+                        prepared[side] = (child_by_side[side], handle)
             return errors
 
         def is_expected_invalidation(side: str, error: BaseException | None) -> bool:
@@ -778,35 +789,41 @@ class PairedBedCoordinator:
 
         try:
             async with self._locked_target_sides(targets):
-                # STOP/replacement can overtake this group while it waits for
-                # the physical lanes. Reject before enqueue can cancel newer work.
                 if self._pair_admission_was_cancelled(
                     targets, resources, entry_cancel, expected_stop_epochs
                 ):
                     return
-                async def prepare_child(side: str, child: BedChild) -> CommandHandle:
-                    expected_epoch = (
+
+                async def prepare_side(
+                    side: str, child: BedChild
+                ) -> CommandHandle | None:
+                    # STOP or newer side work may run before this task's first turn.
+                    if self._pair_admission_was_cancelled(
+                        targets, resources, entry_cancel, expected_stop_epochs
+                    ):
+                        return None
+                    expected_stop_epoch = (
                         expected_stop_epochs.get(side)
                         if expected_stop_epochs is not None
                         else None
                     )
-                    if expected_epoch is None:
+                    if expected_stop_epoch is None:
                         return await child.async_prepare_command_operation(
-                            lambda: op(child),
+                            lambda child=child: op(child),
                             resources=resources,
                             cancel_running=cancel_running,
                             group_id=group_id,
                         )
                     return await child.async_prepare_command_operation(
-                        lambda: op(child),
+                        lambda child=child: op(child),
                         resources=resources,
                         cancel_running=cancel_running,
                         group_id=group_id,
-                        expected_stop_epoch=expected_epoch,
+                        expected_stop_epoch=expected_stop_epoch,
                     )
 
                 enqueue_tasks = {
-                    side: asyncio.create_task(prepare_child(side, child))
+                    side: asyncio.create_task(prepare_side(side, child))
                     for side, child in targets
                 }
                 try:
@@ -825,6 +842,10 @@ class PairedBedCoordinator:
                 enqueue_errors = collect_enqueues(enqueue_tasks)
                 if enqueue_errors:
                     raise PairedSideError(action, enqueue_errors)
+                if self._pair_admission_was_cancelled(
+                    targets, resources, entry_cancel, expected_stop_epochs
+                ) or any(task.result() is None for task in enqueue_tasks.values()):
+                    return
 
             # Do not hold the side lanes while an older operation is ahead of a
             # group reservation. A newer replacement for that active resource
@@ -853,6 +874,10 @@ class PairedBedCoordinator:
             # Reacquire both lanes and revalidate reservations. From commit until
             # result/STOP cleanup completes, overlapping commands wait here.
             async with self._locked_target_sides(targets):
+                if self._pair_admission_was_cancelled(
+                    targets, resources, entry_cancel, expected_stop_epochs
+                ):
+                    return
                 revalidation_errors: dict[str, BaseException] = {}
                 revalidation_invalidated = False
                 for side, (child, handle) in prepared.items():
@@ -884,6 +909,11 @@ class PairedBedCoordinator:
                         for child, handle in prepared.values():
                             await child.async_abort_prepared_command(handle)
                         return
+
+                if self._pair_admission_was_cancelled(
+                    targets, resources, entry_cancel, expected_stop_epochs
+                ):
+                    return
 
                 # No controller command coroutine has run before this point. Commit every
                 # ready handle synchronously so neither side can observe a partial
@@ -2149,6 +2179,10 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
             return
         try:
             if self._single_native_both and len({child for _, child in targets}) == 1:
+                if self._pair_admission_was_cancelled(
+                    targets, resources, entry_cancel, expected_stop_epochs
+                ):
+                    return
                 await op(targets[0][1])
                 return
 
@@ -2159,9 +2193,7 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
                         target_side, resources, entry_cancel
                     )
                     for target_side, _ in targets
-                ) or not self._expected_stop_epochs_match(
-                    targets, expected_stop_epochs
-                ):
+                ) or not self._expected_stop_epochs_match(targets, expected_stop_epochs):
                     return
                 try:
                     await op(child)

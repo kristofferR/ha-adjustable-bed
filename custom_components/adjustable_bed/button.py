@@ -20,9 +20,11 @@ from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     DOMAIN,
     PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
+    SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
@@ -806,7 +808,10 @@ def _button_entities_for(
 
     if controller is not None:
         _async_migrate_massage_intensity_button_unique_ids(hass, coordinator)
-        _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
+        # Unresolved capabilities (for example Linak memory slots) are not proof
+        # that a button is gone, so keep existing entities until discovery ends.
+        if controller.controller_entity_discovery_complete:
+            _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
 
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
@@ -834,7 +839,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "sleepys_app_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -949,7 +954,8 @@ def _combined_motor_buttons_for(
     Built from each side's own ``MotorControlSpec`` (not generic
     ``COVER_DESCRIPTIONS``) so a 3/4-motor Octo — whose ``head``/``feet`` map to the
     extra ``_move_motor3/4`` functions — drives the RIGHT motor on both sides. All
-    eligible sides are the same bed type, so any side's specs match.
+    eligible sides share the same controls. Held metadata is intersected for
+    each direction so a combined card hold never assumes cross-side support.
     """
     specs_by_key: dict[str, MotorControlSpec] = {}
     common: set[str] | None = None
@@ -974,8 +980,14 @@ def _combined_motor_buttons_for(
         spec = specs_by_key.get(key)
         if spec is None:
             continue
-        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "up"))
-        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "down"))
+        for direction in ("up", "down"):
+            entities.append(
+                PairedBedCombinedMotorButton(
+                    coordinator,
+                    spec,
+                    direction,
+                )
+            )
     return entities
 
 
@@ -1503,7 +1515,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Advertise this common motor through the bounded paired action."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
-        hold = _paired_motor_hold_spec(self._coordinator, self._motor_key)
+        hold = _paired_motor_hold_spec(self._coordinator, self._motor_key, self._direction)
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
             and len(self._coordinator.children) == 2
@@ -1536,6 +1548,21 @@ class PairedBedCombinedMotorButton(ButtonEntity):
 
     async def async_press(self) -> None:
         """Move this motor on both sides."""
+        if self._hold_spec is not None and all(
+            child.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+            for child in self._coordinator.children.values()
+        ):
+            control = (
+                self._hold_spec.up_control if self._direction == "up" else self._hold_spec.down_control
+            )
+
+            async def finite_app_move(controller: BedController) -> None:
+                await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
+
+            await self._coordinator.async_execute_controller_command(
+                finite_app_move, side=SIDE_BOTH, cancel_running=True, resource=self._resource
+            )
+            return
         if self._hold_spec is not None:
             # Sequential/incompatible pairs omit card hold metadata. Their
             # ordinary button press must still finish each receiver's hold and
@@ -1543,11 +1570,15 @@ class PairedBedCombinedMotorButton(ButtonEntity):
             from .services import _async_timed_move
 
             await _async_timed_move(
-                [(self._coordinator, SIDE_BOTH)], self._motor_key, self._direction, 1000
+                [(self._coordinator, SIDE_BOTH)],
+                self._motor_key,
+                self._direction,
+                1000,
             )
             return
+        move_fn = self._move_fn
         await self._coordinator.async_execute_controller_command(
-            self._move_fn,
+            move_fn,
             side=SIDE_BOTH,
             cancel_running=True,
             resource=self._resource,
@@ -1566,6 +1597,7 @@ def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bo
 def _paired_motor_hold_spec(
     coordinator: PairedBedCoordinator,
     motor: str,
+    direction: str | None = None,
 ) -> ControllerMotorHoldSpec | None:
     """Return a Both hold contract only when every live side can match it."""
     if (
@@ -1587,6 +1619,12 @@ def _paired_motor_hold_spec(
             return None
         if common is None:
             common = spec.hold
-        elif spec.hold != common:
+        elif (
+            (spec.hold.up_control != common.up_control and direction != "down")
+            or (spec.hold.down_control != common.down_control and direction != "up")
+            or spec.hold.start_delay_ms != common.start_delay_ms
+            or spec.hold.release_delay_ms != common.release_delay_ms
+            or spec.hold.stop_scope != common.stop_scope
+        ):
             return None
     return common

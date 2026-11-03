@@ -84,4 +84,5 @@ async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes(
         "held_control_down": "back_down",
         "hold_start_delay_ms": 0,
         "hold_release_delay_ms": 0,
+        "held_stop_scope": "motor",
     }
