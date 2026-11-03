@@ -179,6 +179,7 @@ CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
 JIECANG_APP_PROFILES: Final = {
     "dreamask": "ERGOBALANCE (Dreamask)",
     "dreamotion": "Dream Motion",
+    "dreamhd": "Dream Motion HD",
     "comfort_motion": "Comfort Motion",
 }
 JIECANG_APP_LAYOUTS: Final = {
