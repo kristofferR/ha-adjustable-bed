@@ -150,6 +150,12 @@ class Okin7ByteController(BedController):
         return self._config.has_incline
 
     @property
+    def supports_massage_intensity_step_control(self) -> bool:
+        # The methods are always overridden, so the base override check would
+        # advertise buttons that raise on variants without intensity bytes.
+        return self._config.has_massage_intensity
+
+    @property
     def has_lumbar_support(self) -> bool:
         return True
 
