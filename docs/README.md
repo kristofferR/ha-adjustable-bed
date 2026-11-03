@@ -38,6 +38,9 @@ The [row030 OCTO Smart Control disposition ledger](apk-analysis/dispositions/row
 maps the accepted 1.03.02 artifact to the existing OCTO Standard protocol, including
 direct BLE controls, explicit exclusions and deferred hardware validation.
 
+The [row042 Nectar Move ledger](apk-analysis/dispositions/row042-nectar-motion.md)
+maps all 43 accepted comparison rows to implementation proof or exact exclusions.
+
 The [row068 Glideaway Motion ledger](apk-analysis/dispositions/row068-glideaway-motion.md)
 accounts for the accepted 1.0.3 revision01 commands, models, parsers, timing and
 explicit safety/product exclusions.
