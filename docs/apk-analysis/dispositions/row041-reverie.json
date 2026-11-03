@@ -6249,15 +6249,15 @@
             {
               "ref": "custom_components/adjustable_bed/const.py:1042-1042",
               "snapshot_path": "custom_components/adjustable_bed/const.py",
-              "snapshot_sha256": "553e904f60cd09de0d438930871cf35851e11c8bbd9e2663de7256daebaafa82",
+              "snapshot_sha256": "d5193cb2023279bace2a7f49b7117d7b12506029a6f2f60565d3bbe70d78cc8d",
               "excerpt_sha256": "a4cd6f6c29d17f10718d1c20364febd23172a1ca453ffc3fd48e81679ed54817",
               "symbol": "REVERIE_SERVICE_UUID",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/detection.py:1926-1933",
+              "ref": "custom_components/adjustable_bed/detection.py:1928-1935",
               "snapshot_path": "custom_components/adjustable_bed/detection.py",
-              "snapshot_sha256": "7ec841048b08628975828a3c89df59658e5e70971600e0183c1775a444272728",
+              "snapshot_sha256": "aedba4e431b9a300e1ec63a208dcbb73299e43d991a6b7aa65694d4f0f901f76",
               "excerpt_sha256": "7f49263a29057387ba1d1f837e4baa50fea14eb42ab989bc503c6e04e9883769",
               "symbol": "REVERIE_SERVICE_UUID matcher",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
@@ -6289,9 +6289,9 @@
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "tests/test_config_flow.py:1486-1498",
+              "ref": "tests/test_config_flow.py:1491-1503",
               "snapshot_path": "tests/test_config_flow.py",
-              "snapshot_sha256": "e232ab60f808178cb89811af63d95638e4937ada305c99437b7ad6458d7e0173",
+              "snapshot_sha256": "0d0c673a0814c517102713953c43085b1f9ced187348968cab2d5ea297805b35",
               "excerpt_sha256": "a299b48644e0eb23037ed590e623cf3d693b4c50d4d1a60b2b5a5a37a0ad028a",
               "symbol": "test_reverie_uuid_reaches_bluetooth_confirm",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
