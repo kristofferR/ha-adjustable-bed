@@ -9,6 +9,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -28,6 +30,8 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.furnimove_repair import (
     CONF_FURNIMOVE_ROUTE_KEPT,
+    CONF_OKIMAT_MODEL_ON_CST,
+    CONF_OKIN_CST_KEPT,
     CONF_STAIRCASE_LAYOUT_CONFIRMED,
     FurniMoveLayoutRepairFlow,
     async_clear_furnimove_layout_issues,
@@ -230,6 +234,91 @@ async def test_dot_handsets_outside_the_catalog_and_okin_uuid_entries_get_no_pro
     assert not ir.async_get(hass).issues
 
 
+def _cst(hass, model: str | None = "OKIMAT 4 IPS"):
+    """An issue #555 drive that v3.5.0 moved from Okimat to Okin CST."""
+    data = {CONF_ADDRESS: "D0:D1:62:A4:62:F1", CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+            CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_COUNT: 2, CONF_BLE_BOND_ESTABLISHED: True}
+    if model is not None:
+        data[CONF_OKIMAT_MODEL_ON_CST] = model
+    entry = MockConfigEntry(domain=DOMAIN, title="Milou", unique_id="D0:D1:62:A4:62:F1",
+        version=4, data=data)
+    entry.add_to_hass(hass)
+    return entry
+
+
+async def test_okimat_drive_on_cst_switches_to_okimat_keeping_identity_and_bond(hass):
+    entry = _cst(hass)
+    entry_id = entry.entry_id
+    async_refresh_furnimove_layout_issues(hass, entry)
+    issue_id = f"furnimove_layout_{entry_id}_standalone"
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
+    assert issue is not None and issue.translation_key == "okimat_cst_route"
+    assert issue.translation_placeholders == {"name": "Milou", "model": "OKIMAT 4 IPS"}
+    flow = await async_create_fix_flow(hass, issue_id, issue.data)
+    flow.hass = hass
+    form = await flow.async_step_init({"issue_id": issue_id})
+    config = form["data_schema"].schema["route"].config
+    assert (config["options"], config["translation_key"]) == (
+        ["okimat", "furnimove", "keep"], "okimat_cst_route",
+    )
+    result = await flow.async_step_init({"route": "okimat"})
+    assert result["type"] == "create_entry"
+    assert entry.entry_id == entry_id
+    assert dict(entry.data) == {CONF_ADDRESS: "D0:D1:62:A4:62:F1", CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                                CONF_MOTOR_COUNT: 2, CONF_BLE_BOND_ESTABLISHED: True}
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_okimat_drive_on_cst_can_choose_a_captured_furnimove_handset(hass):
+    entry = _cst(hass)
+    flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
+    flow.hass = hass
+    result = await flow.async_step_init({"route": "furnimove"})
+    assert result["step_id"] == "handset"
+    # 90569 is printed on the #555 remote but is not in DewertOkin's catalog.
+    invalid = await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "90569"})
+    assert invalid["errors"] == {CONF_FURNIMOVE_REMOTE: "handset_required"}
+    await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "00000"})
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_FURNIMOVE
+    assert entry.data[CONF_FURNIMOVE_REMOTE] == "00000"
+    assert CONF_OKIMAT_MODEL_ON_CST not in entry.data
+    assert not ir.async_get(hass).issues
+
+
+async def test_okimat_drive_on_cst_can_keep_cst_and_other_cst_entries_get_no_prompt(hass):
+    entry = _cst(hass)
+    before = dict(entry.data)
+    flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
+    flow.hass = hass
+    await flow.async_step_init({"route": "keep"})
+    assert dict(entry.data) == {**before, CONF_OKIN_CST_KEPT: True}
+    async_refresh_furnimove_layout_issues(hass, entry)
+    async_refresh_furnimove_layout_issues(hass, _cst(hass, model=None))
+    assert not ir.async_get(hass).issues
+
+
+async def test_paired_okimat_side_on_cst_keeps_its_bond_and_gets_its_own_repair(hass):
+    """Recording the #555 model on one side must not drop that side's bond markers."""
+    from custom_components.adjustable_bed import _build_paired_children
+
+    entry = MockConfigEntry(domain=DOMAIN, title="Bed", version=4, data={
+        CONF_PAIR_ID: "pair_555", CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+        CONF_PAIR_CHILDREN: [
+            {CONF_SIDE: side, CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+             CONF_MOTOR_COUNT: 2, CONF_BLE_BOND_ESTABLISHED: True} for side, address in (
+                (SIDE_LEFT, "D0:D1:62:A4:62:F1"), (SIDE_RIGHT, "F1:9F:E9:77:A2:45"))],
+    })
+    entry.add_to_hass(hass)
+    children = _build_paired_children(hass, entry)
+    children[SIDE_LEFT]._record_okimat_model_on_cst("OKIMAT 4 IPS")
+    left = effective_child_data(entry.data, SIDE_LEFT, entry.options)
+    assert left[CONF_OKIMAT_MODEL_ON_CST] == "OKIMAT 4 IPS"
+    assert left[CONF_BLE_BOND_ESTABLISHED] is True
+    issues = ir.async_get(hass).issues
+    assert (DOMAIN, f"furnimove_layout_{entry.entry_id}_left") in issues
+    assert (DOMAIN, f"furnimove_layout_{entry.entry_id}_right") not in issues
+
+
 def test_every_repair_choice_has_a_translated_label():
     import json
     from pathlib import Path
@@ -239,3 +328,4 @@ def test_every_repair_choice_has_a_translated_label():
         "furnimove", "staircase", "keep",
     }
     assert set(strings["selector"]["furnimove_handset_route"]["options"]) == {"furnimove", "keep"}
+    assert set(strings["selector"]["okimat_cst_route"]["options"]) == {"okimat", "furnimove", "keep"}

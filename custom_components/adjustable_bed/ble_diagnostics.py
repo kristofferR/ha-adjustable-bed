@@ -28,8 +28,10 @@ from .adapter import (
 from .address_lock import async_get_connect_lock
 from .const import (
     ADAPTER_AUTO,
+    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
@@ -41,6 +43,7 @@ from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     detect_bed_type_detailed,
     detect_bed_type_from_gatt_services,
+    is_okimat_bed_model,
     refine_okin_shared_uuid_protocol_from_gatt,
 )
 from .diagnostic_payloads import (
@@ -1132,8 +1135,16 @@ class BLEDiagnosticRunner:
             signals = list(gatt_detection.signals)
             confidence = gatt_detection.confidence
             ambiguous_types = list(gatt_detection.ambiguous_types or [])
+            # An OKIMAT model confirms the Okimat route even when the
+            # configured profile alone would have kept it.
+            model_confirms_okimat = bed_type in {
+                BED_TYPE_OKIMAT,
+                BED_TYPE_OKIN_UUID,
+            } and is_okimat_bed_model(model_number)
             if bed_type != gatt_detection.bed_type:
-                if bed_type_without_model is not None and bed_type != bed_type_without_model:
+                if bed_type_without_model is not None and (
+                    bed_type != bed_type_without_model or model_confirms_okimat
+                ):
                     signals.append("device_info:model_number")
                     confidence = max(confidence, 0.95)
                     ambiguous_types = []

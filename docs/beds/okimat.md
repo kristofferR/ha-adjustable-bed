@@ -68,13 +68,16 @@ Detection priority:
 1. Device name contains "nectar" → Nectar
 2. Device name contains "leggett", "l&p", or "adjustable base" → Leggett & Platt
 3. Device name contains "okimat", "okin rf", or "okin ble" → Okimat/Okin UUID
-4. Connected GATT has OKIN UUID + CSS → Okin CST or OKIN Smart Remote / RF
-   ECO BT. Nordic DFU is only an initial CST hint. Device Information model
+4. Connected GATT has OKIN UUID + CSS → OKIN Smart Remote / RF ECO BT when no
+   stronger signal exists. Nordic DFU is only a CST hint and never selects Okin
+   CST, which stays an explicit choice (#555). Device Information model
    `MEGAMAT MBZ` identifies the confirmed staircase, while an `OKIMAT` model
    identifies a full bed. The generic model `RF eco BT` is also used by full
    beds, so an explicitly selected valid handset code preserves the Okin UUID
    profile. With ambiguous shared GATT signals and no stronger model evidence,
-   an already configured CST or RF ECO BT profile is preserved.
+   an already configured CST or RF ECO BT profile is preserved. A CST entry on
+   an `OKIMAT` drive gets a [repair](furnimove.md#repairing-existing-configurations)
+   instead of a silent switch.
 5. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
 6. Fallback → Okimat (with warning)
 

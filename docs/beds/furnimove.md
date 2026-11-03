@@ -185,6 +185,14 @@ fixable warning offering **Switch to the FurniMove profile** or **Keep current
 configuration**. Switching keeps the handset and derives the axes and massage
 availability from its table.
 
+An **Okin CST** entry whose drive reports an `OKIMAT` Device Information model
+(for example `OKIMAT 4 IPS`, #555) receives a fixable warning after it connects.
+Older versions chose CST for these drives from shared CSS and Nordic DFU
+services. The repair offers **Switch to Okimat** (the route a new setup uses),
+**Switch to FurniMove** with a captured handset, or **Keep Okin CST**. A remote
+code missing from DewertOkin's catalog, such as #555's `90569`, cannot be
+selected; use Okimat instead.
+
 Every repair:
 
 - Updates the same config entry. Bluetooth address, device ownership, entry

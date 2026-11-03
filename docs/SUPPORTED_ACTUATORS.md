@@ -169,7 +169,7 @@ These beds have their own dedicated integrations:
 
 4. **Use the support bundle to find service UUIDs**: If unsure, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
-   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` → [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md); Nordic DFU is only an initial CST hint. Device Information model `MEGAMAT MBZ` identifies RF ECO BT, while an `OKIMAT` model identifies a full bed. Shared receiver/GATT identity alone cannot select a handset. FurniMove beds use its [explicit app profile](beds/furnimove.md), and unconfirmed legacy RF ECO BT entries receive a layout repair.
+   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` → [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md); Nordic DFU is only a hint; CST is never selected automatically (#555). Device Information model `MEGAMAT MBZ` identifies RF ECO BT, while an `OKIMAT` model identifies a full bed. Shared receiver/GATT identity alone cannot select a handset. FurniMove beds use its [explicit app profile](beds/furnimove.md), and unconfirmed legacy RF ECO BT entries receive a layout repair.
    - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant
    - Service `01000001-...` → Malouf/Lucid family (usually New OKIN; `OKIN-BLE` + `BTCB` uses Legacy OKIN)
