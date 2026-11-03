@@ -26,7 +26,9 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
+from homeassistant.util import dt as dt_util
 
+from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .command_scheduler import ALL_COMMAND_RESOURCES, current_command_context
 from .const import (
@@ -47,6 +49,7 @@ from .const import (
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_OCTO,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
@@ -112,6 +115,7 @@ SERVICE_OCTO_ENROLL_PIN = "octo_enroll_pin"
 SERVICE_OCTO_RESET_DEFAULTS = "octo_reset_defaults"
 SERVICE_RENAME = "rename"
 SERVICE_SYNC_CLOCK = "sync_clock"
+SERVICE_CONFIGURE_ALARM_SCHEDULE = "configure_alarm_schedule"
 # Released per-app names that now alias the generic actions above (linak_rename
 # sits with the other Linak actions).
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
@@ -857,7 +861,9 @@ async def _set_position_plan(
             BED_TYPE_SLEEP_NUMBER_MCR,
         ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
-        if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
+        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE):
+            # These direct setters own native bounds independently of generic
+            # angle overrides. Validate every axis/target before scheduling.
             motor_configs = {
                 spec.position_key: {
                     "position_key": spec.position_key,
@@ -3054,6 +3060,43 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
         raise
 
 
+async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
+    """Preflight both tables on all physical targets before encoding or writing."""
+    schedule = AlarmTableSchedule(
+        weekly=tuple(WeeklyAlarmRecord(**{**row, "weekdays": tuple(row["weekdays"])}) for row in call.data["weekly"]),
+        one_time=tuple(OneTimeAlarmRecord(**row) for row in call.data["one_time"]),
+        dispatch=call.data["dispatch"],
+        reference_time=dt_util.now(),
+    )
+    targets = _call_targets(call)
+    # A table call cannot connect merely to discover whether it is valid:
+    # initialization can write clock/zero/query frames. These static profiles
+    # are offline-mintable, and all other controllers lack this contract.
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            controller = target.capability_controller
+            if controller is None or controller.alarm_table_schedule_spec is None:
+                raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
+
+    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+        spec = controller.alarm_table_schedule_spec
+        if spec is None:
+            raise ServiceValidationError(f"Device '{target.name}' has no alarm-table contract")
+        spec.validate(schedule)
+
+    preflighted = await _preflight_each(targets, check)
+
+    async def configure(controller: BedController) -> None:
+        await controller.configure_alarm_table_schedule(schedule)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, configure, cancel_running=False, resource="configuration")
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
     """Program the app's current-day alarm, validating every side before writes."""
     enabled = call.data[ATTR_ENABLED]
@@ -4172,6 +4215,24 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+    )
+    alarm_fields = {
+        vol.Optional("enabled", default=False): cv.boolean,
+        vol.Optional("wake", default=False): cv.boolean,
+        vol.Optional("hour", default=0): vol.All(int, vol.Range(min=0, max=23)),
+        vol.Optional("minute", default=0): vol.All(int, vol.Range(min=0, max=59)),
+    }
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CONFIGURE_ALARM_SCHEDULE,
+        handle_configure_alarm_schedule,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required("weekly"): [vol.Schema({**alarm_fields, vol.Optional("weekdays", default=[]): [vol.All(int, vol.Range(min=0, max=6))]})],
+            vol.Required("one_time"): [vol.Schema(alarm_fields)],
+            vol.Required("dispatch"): vol.In(("both", "weekly", "one_time")),
+            **SIDE_FIELD,
+        }),
     )
     for service in (SERVICE_SYNC_CLOCK, SERVICE_MALOUF_SYNC_CLOCK):
         hass.services.async_register(

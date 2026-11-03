@@ -28,6 +28,16 @@ if TYPE_CHECKING:
     from ..motion_bed_requests import MotionBedWrite
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
+from ..alarm_table import (
+    AlarmTableSchedule,
+    AlarmTableScheduleSpec,
+)
+from ..alarm_table import (
+    OneTimeAlarmRecord as OneTimeAlarmRecord,
+)
+from ..alarm_table import (
+    WeeklyAlarmRecord as WeeklyAlarmRecord,
+)
 from ..const import (
     POSITION_CHECK_INTERVAL,
     POSITION_STALL_COUNT,
@@ -1734,6 +1744,15 @@ class BedController(ABC):
     def supports_clock_alarm(self) -> bool:
         """Return whether a weekly clock alarm can be configured."""
         return False
+
+    @property
+    def alarm_table_schedule_spec(self) -> AlarmTableScheduleSpec | None:
+        """Return the exact whole-table contract, when this profile has one."""
+        return None
+
+    async def configure_alarm_table_schedule(self, schedule: AlarmTableSchedule) -> None:
+        """Write validated weekly/one-time tables through the command queue."""
+        raise NotImplementedError("Alarm tables are unavailable on this profile")
 
     @property
     def supports_clock_sync(self) -> bool:

@@ -22,6 +22,8 @@ if TYPE_CHECKING:
     from .dewertokin_rf_gateway import (
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
+    from .ergo_slim import ErgoSlimController as ErgoSlimController
+    from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine import EshineController as EshineController
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
@@ -57,6 +59,7 @@ if TYPE_CHECKING:
     from .okin_ore import OkinOreController as OkinOreController
     from .okin_rf_eco_bt import OkinRfEcoBtController as OkinRfEcoBtController
     from .okin_uuid import OkinUuidController as OkinUuidController
+    from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
     from .remacro import RemacroController as RemacroController
     from .reverie import ReverieController as ReverieController
@@ -64,11 +67,14 @@ if TYPE_CHECKING:
     from .richmat import RichmatController as RichmatController
     from .richmat_mh import RichmatMhController as RichmatMhController
     from .rondure import RondureController as RondureController
+    from .row_control import RowControlController as RowControlController
+    from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
     from .serenity import SerenityController as SerenityController
     from .serenity import TranquilController as TranquilController
     from .serenity import ZSeriesController as ZSeriesController
+    from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
     from .simmons import SimmonsController as SimmonsController
     from .sleep_number import SleepNumberController as SleepNumberController
     from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
@@ -82,6 +88,8 @@ if TYPE_CHECKING:
     from .starcode_m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .suta import SutaController as SutaController
     from .svane import SvaneController as SvaneController
+    from .tempur_au import TempurAUController as TempurAUController
+    from .tempur_curve import TempurCurveController as TempurCurveController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
     from .vibradorm import VibradormController as VibradormController
     from .vibradorm_app import VibradormAppController as VibradormAppController
@@ -89,6 +97,14 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    'TempurCurveController': 'tempur_curve',
+    'QPlusAppController': 'sbi',
+    'SertaMPRemoteController': 'serta_mp_remote',
+    'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
+    'ErgomotionAppController': 'ergomotion_app',
+    'RowControlController': 'row_control',
+    'ErgoSlimController': 'ergo_slim',
+    'TempurAUController': 'tempur_au',
     "ComfortEnhancementsController": "comfort_enhancements",
     "EshineController": "eshine",
     "GlideawayMotionController": "glideaway_motion",
@@ -165,6 +181,15 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    'TempurCurveController',
+    'QPlusAppController',
+    'SertaMPRemoteController',
+    'OmazzAdjustoIIIController',
+    'ErgomotionAppController',
+    'RowControlController',
+    'ErgoSlimController',
+    'TempurAUController',
+
     # Base class
     "BedController",
     # Protocol-based controllers
