@@ -581,3 +581,7 @@ external-detector, sleep sensor and remote-finder operations. Select a `device_i
 and `operation`; paired targets are validated together before sending commands.
 The [Casper Base guide](beds/casper-base.md#configuration-actions) lists each
 operation's fields and the separate sensor/remote entry types.
+
+### HJBed configuration
+
+`adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/hjbed.md#configuration-actions).

@@ -392,3 +392,149 @@ async def test_registered_local_diagnostic_keeps_going_after_early_feedback(
             ]
             for frame in _read_available(socket)
         ) == (dashboard_payload(79, 20), dashboard_payload(92, 0))
+
+
+@pytest.mark.parametrize("feedback", [False, True])
+@pytest.mark.parametrize("primary_drift", [False, True])
+async def test_captured_release_accepts_queued_peer_feedback_without_retargeting(
+    hass, monkeypatch, enable_custom_integrations, feedback, primary_drift
+):
+    async with _local_canonical(hass, monkeypatch) as (controller, bus, socket, _entry):
+        runtime = controller._runtime
+        captured = runtime.prepare_send()
+        backend = runtime.peripheral_backend
+        assert backend is not None
+        backup_socket = None
+        try:
+            if primary_drift:
+                address = "22:33:44:55:66:77"
+                path = _peer_path("hci3", address)
+                bus.managed_objects[path] = _device(address)
+                backup_socket = await _subscribe_peer(bus, path)
+                await _send_peer_write(bus, path, b"\x01\x00" + bytes(4))
+                _recv(backup_socket)
+                await _send_peer_write(bus, path, b"\x02\x31\x08")
+                assert _recv(backup_socket) == b"\x01\x20"
+                await hass.async_block_till_done()
+                assert runtime.primary_mac == address
+                _read_available(backup_socket)
+            _read_available(socket)
+            controller._coordinator.cancel_command.set()
+            await backend._lock.acquire()
+            pending = asyncio.create_task(
+                controller._async_release_to_captured_target(dashboard_payload(3, 0), captured)
+            )
+            try:
+                await asyncio.sleep(0)
+                assert not pending.done()
+                if feedback:
+                    generation = runtime.peer_sessions[captured.target_mac].state_generation
+                    await _send_state_selector(
+                        bus, _PEER_PATH, runtime, 1, 20, device_key=captured.device_key
+                    )
+                    for _ in range(40):
+                        if (
+                            runtime.peer_sessions[captured.target_mac].state_generation
+                            != generation
+                        ):
+                            break
+                        await asyncio.sleep(0)
+                    assert runtime.peer_sessions[captured.target_mac].state_generation != generation
+            finally:
+                backend._lock.release()
+            await pending
+            assert tuple(
+                decrypt_user_frame(
+                    frame, event_key=captured.event_key, device_key=captured.device_key
+                )[10:]
+                for frame in _read_available(socket)
+            ) == (dashboard_payload(3, 0),)
+            if backup_socket is not None:
+                assert _read_available(backup_socket) == []
+        finally:
+            if backup_socket is not None:
+                backup_socket.close()
+
+
+@pytest.mark.parametrize(
+    "mutation", ["key", "event_key", "epoch", "sign", "mtu", "peer_generation"]
+)
+async def test_captured_release_rejects_queued_auth_or_physical_changes(
+    hass, monkeypatch, enable_custom_integrations, mutation
+):
+    async with _local_canonical(hass, monkeypatch) as (controller, bus, socket, _entry):
+        runtime = controller._runtime
+        captured = runtime.prepare_send()
+        assert captured.peer is not None and captured.device_key is not None
+        backend = runtime.peripheral_backend
+        assert backend is not None
+        _read_available(socket)
+        await backend._lock.acquire()
+        pending = asyncio.create_task(
+            controller._async_release_to_captured_target(dashboard_payload(3, 0), captured)
+        )
+        try:
+            await asyncio.sleep(0)
+            assert not pending.done()
+            generation = runtime.peer_sessions[captured.target_mac].state_generation
+            await _send_state_selector(
+                bus, _PEER_PATH, runtime, 1, 20, device_key=captured.device_key
+            )
+            for _ in range(40):
+                if runtime.peer_sessions[captured.target_mac].state_generation != generation:
+                    break
+                await asyncio.sleep(0)
+            assert runtime.peer_sessions[captured.target_mac].state_generation != generation
+            if mutation == "key":
+                runtime._peer_keys[captured.target_mac] = (
+                    bytes((captured.device_key[0] ^ 1,)) + captured.device_key[1:]
+                )
+            elif mutation == "event_key":
+                old = runtime.current_event_key
+                runtime._current_event_key = bytes((old[0] ^ 1,)) + old[1:]
+            elif mutation == "epoch":
+                runtime.epoch += 1
+            elif mutation == "sign":
+                runtime.sign_gate.sign_all = False
+            elif mutation == "mtu":
+                runtime.peer_sessions[captured.target_mac].notify_mtu = captured.mtu + 1
+            else:
+                backend._peer_generations[captured.peer.device_path] += 1
+        finally:
+            backend._lock.release()
+        with pytest.raises(
+            Exception, match="authentication|session|signing|peer|generation|transport"
+        ):
+            await pending
+        assert _read_available(socket) == []
+
+
+@pytest.mark.parametrize("feedback", [False, True])
+async def test_central_captured_release_accepts_queued_feedback_after_stop(monkeypatch, feedback):
+    controller, client, runtime, tasks = _controller()
+    await _join_central(controller, client, runtime, tasks)
+    captured = runtime.prepare_send(mtu=client.mtu_size)
+    client.writes.clear()
+    controller._coordinator.cancel_command.set()
+    await controller._ble_lock.acquire()
+    pending = asyncio.create_task(
+        controller._async_release_to_captured_target(dashboard_payload(3, 0), captured)
+    )
+    try:
+        await asyncio.sleep(0)
+        assert not pending.done()
+        if feedback:
+            controller.handle_mesh_event(32, bytes((0, 0, 0, 0, 2, 0xA7, 1, 20)))
+    finally:
+        controller._ble_lock.release()
+    try:
+        await pending
+        assert captured.device_key is not None
+        assert tuple(
+            decrypt_user_frame(frame, event_key=captured.event_key, device_key=captured.device_key)[
+                10:
+            ]
+            for _uuid, frame, _response in client.writes
+        ) == (dashboard_payload(3, 0),)
+    finally:
+        await controller.stop_notify()

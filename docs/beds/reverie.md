@@ -328,7 +328,8 @@ transport acceptance, not confirmation that the bed moved.
 
 Initial dashboard reads and diagnostic starts accept position, massage, and light
 feedback between writes while retaining the captured physical session and
-authentication guards.
+authentication guards. Captured-target releases also accept telemetry while waiting
+for the writer, without following a replacement primary or changed authentication.
 
 ### Local peripheral role
 

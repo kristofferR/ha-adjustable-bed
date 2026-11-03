@@ -235,6 +235,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
         coordinator.entry.options = {}
         coordinator.entry.entry_id = "contract-fsm-relax"
         return await create_controller(coordinator, bed_type, None, client)
+    if bed_type == const.BED_TYPE_HJBED:
+        return await create_controller(coordinator, bed_type, "hj_bedbjrn", client)
     if bed_type == const.BED_TYPE_DOUBLESLEEP:
         coordinator.entry.options = {}
         coordinator.entry.data = {**coordinator.entry.data, const.CONF_PRODUCT_TYPE: "3"}

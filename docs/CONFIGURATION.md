@@ -972,3 +972,7 @@ stored-product choices are conditional records from this package, not inferred
 app compatibility. The product owns the motor layout and accessory controls.
 Configure two-address paired sides separately. Sleep sensors and the RCRM handset
 use separate entries. See the [Casper Base guide](beds/casper-base.md).
+
+### HJBed app
+
+Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. See [HJBed](beds/hjbed.md) for all current and conditional profiles.

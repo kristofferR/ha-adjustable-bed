@@ -387,6 +387,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 hold_release_delay_ms=hold.release_delay_ms,
                 held_stop_scope=hold.stop_scope,
             )
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
     @property

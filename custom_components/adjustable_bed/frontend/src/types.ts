@@ -114,6 +114,7 @@ export interface MotorEntity {
   heldControls?: Partial<Record<"up" | "down", HeldControl>>;
   heldControl?: HeldControl;
   holdEntityId?: string;
+  releaseButton?: string;
   // Discrete up/down buttons, used by beds that expose buttons instead of covers.
   up?: string;
   down?: string;

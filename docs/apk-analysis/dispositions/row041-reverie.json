@@ -6247,34 +6247,34 @@
           "scope": "Specific P2 discovery UUID, detection and config-flow path only.",
           "code_refs": [
             {
-              "ref": "custom_components/adjustable_bed/const.py:1099-1099",
+              "ref": "custom_components/adjustable_bed/const.py:1103-1103",
               "snapshot_path": "custom_components/adjustable_bed/const.py",
-              "snapshot_sha256": "2ca5b8c0c71dab1fa3d96e5bb8e9df4ce176cfc499d6ccb5002252012ff8f95d",
+              "snapshot_sha256": "c3cf86887118ec80ac66fabcf7cf2ad72c3a4dc331cfb460d1a278db08b5b5ed",
               "excerpt_sha256": "a4cd6f6c29d17f10718d1c20364febd23172a1ca453ffc3fd48e81679ed54817",
               "symbol": "REVERIE_SERVICE_UUID",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/detection.py:1981-1988",
+              "ref": "custom_components/adjustable_bed/detection.py:1997-2004",
               "snapshot_path": "custom_components/adjustable_bed/detection.py",
-              "snapshot_sha256": "3882ffe1864bf9b22e6ed2f8e47216d579d7e6bcef1dfe0769659493fb0db41d",
+              "snapshot_sha256": "9fe0d5aa91767472360de6621abaa9b8f6ceeb60f7aeb5aea5f428964ffeea6d",
               "excerpt_sha256": "7f49263a29057387ba1d1f837e4baa50fea14eb42ab989bc503c6e04e9883769",
               "symbol": "REVERIE_SERVICE_UUID matcher",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/config_flow.py:3478-3580",
+              "ref": "custom_components/adjustable_bed/config_flow.py:3479-3581",
               "snapshot_path": "custom_components/adjustable_bed/config_flow.py",
-              "snapshot_sha256": "d4133de1c48efc3a57e52b414521b1e4b2ac78f2561fbc4d2c6af00a4100dcd6",
+              "snapshot_sha256": "c0b60325bbcb4010f051add0dd2b9af27a2da386b7fd216b2744bd6aa8ec75fe",
               "excerpt_sha256": "0e95c4904fac1c27e4ea2634cd71ccae41228f51b4acf4638f3e90b35fd83759",
               "symbol": "async_step_bluetooth",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/manifest.json:1-400",
+              "ref": "custom_components/adjustable_bed/manifest.json:1-415",
               "snapshot_path": "custom_components/adjustable_bed/manifest.json",
-              "snapshot_sha256": "8c02f6f5e73fd9eee1fe894eb158eae6d9916aa2ae59dc6f05661a6829c45324",
-              "excerpt_sha256": "8c02f6f5e73fd9eee1fe894eb158eae6d9916aa2ae59dc6f05661a6829c45324",
+              "snapshot_sha256": "0c9d0104c792641ca6a127a167fd6c91f89ebdf4f2c416602d73539a7cb9434c",
+              "excerpt_sha256": "0c9d0104c792641ca6a127a167fd6c91f89ebdf4f2c416602d73539a7cb9434c",
               "symbol": null,
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             }

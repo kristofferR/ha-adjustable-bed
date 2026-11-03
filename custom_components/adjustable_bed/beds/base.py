@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from ..casper_base_protocol import Request as CasperBaseRequest
     from ..coordinator import AdjustableBedCoordinator
+    from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
@@ -170,6 +171,7 @@ class ControllerHoldSpec:
     control: str
     start_delay_ms: int = 0
     release_delay_ms: int = 0
+    release_button_key: str | None = None
 
     def __post_init__(self) -> None:
         _validate_hold_metadata(self.control, self.start_delay_ms, self.release_delay_ms)
@@ -183,6 +185,7 @@ class ControllerMotorHoldSpec:
     down_control: str
     start_delay_ms: int = 0
     release_delay_ms: int = 0
+    release_button_key: str | None = None
     stop_scope: Literal["motor", "side"] = field(default="motor", kw_only=True)
 
     def __post_init__(self) -> None:
@@ -1522,6 +1525,23 @@ class BedController(ABC):
     async def set_massage_speed(self, value: float) -> None:
         """Set the controller-declared massage speed scale."""
         raise NotImplementedError("Massage speed control is not supported")
+
+    @property
+    def supports_hjbed(self) -> bool:
+        """Whether this is an explicit HJBed app product."""
+        return False
+
+    async def async_execute_hjbed_action(self, detail: str, *, save: bool = False) -> None:
+        """Execute a catalogued HJBed detail through the normal command lock."""
+        raise NotImplementedError("HJBed controls are unavailable")
+
+    def validate_hjbed_request(self, request: HJBedRequest) -> None:
+        """Validate every HJBed target before executing configuration writes."""
+        raise NotImplementedError("HJBed configuration is unavailable")
+
+    async def async_execute_hjbed_request(self, request: HJBedRequest) -> None:
+        """Execute a preflighted HJBed request under the command lock."""
+        raise NotImplementedError("HJBed configuration is unavailable")
 
     @property
     def supports_rmcontrol_alarm(self) -> bool:

@@ -1,0 +1,629 @@
+[
+  {
+    "id": "motor-travel",
+    "inputs": {
+      "frame": "6e200a010202011234e4"
+    },
+    "expected_event": "deviceMotorCurrentTravelStatusEvent",
+    "expected_payload": [
+      {
+        "position": 1,
+        "travel": 4660
+      }
+    ]
+  },
+  {
+    "id": "motor-angle",
+    "inputs": {
+      "frame": "6e200a01030202002dcd"
+    },
+    "expected_event": "deviceMotorCurrentAngleStatusEvent",
+    "expected_payload": [
+      {
+        "position": 2,
+        "angle": 45
+      }
+    ]
+  },
+  {
+    "id": "motor-height",
+    "inputs": {
+      "frame": "6e200b01020200012c02cd"
+    },
+    "expected_event": "deviceMotorCurrentHeightStatusEvent",
+    "expected_payload": {
+      "height": 30.0,
+      "type": 2,
+      "angle": -1,
+      "monitorHeight": 0
+    }
+  },
+  {
+    "id": "head-massage",
+    "inputs": {
+      "frame": "6e20090201020103a0"
+    },
+    "expected_event": "deviceMassageHeadStrengthStatusEvent",
+    "expected_payload": 3
+  },
+  {
+    "id": "foot-massage",
+    "inputs": {
+      "frame": "6e20090201020202a0"
+    },
+    "expected_event": "deviceMassageFootStrengthStatusEvent",
+    "expected_payload": 2
+  },
+  {
+    "id": "massage-mode",
+    "inputs": {
+      "frame": "6e20090202020004a1"
+    },
+    "expected_event": "deviceMassageModeStatusEvent",
+    "expected_payload": 4
+  },
+  {
+    "id": "white-led",
+    "inputs": {
+      "frame": "6e200903010200019e"
+    },
+    "expected_event": "deviceWhiteLedStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "rgb-color",
+    "inputs": {
+      "frame": "6e200b04010200ff80001f"
+    },
+    "expected_event": "deviceRGBStripColorStatusEvent",
+    "expected_payload": {
+      "alpha": 1,
+      "r": 1,
+      "g": 0.5019607843137255,
+      "b": 0
+    }
+  },
+  {
+    "id": "rgb-time",
+    "inputs": {
+      "frame": "6e200a040202000203a5"
+    },
+    "expected_event": "deviceRGBStripTimerStatusEvent",
+    "expected_payload": 123
+  },
+  {
+    "id": "alarm",
+    "inputs": {
+      "frame": "6e200d0501020100071e2efff6"
+    },
+    "expected_event": "deviceRepeatAlarmListStatusEvent",
+    "expected_payload": {
+      "number": 1,
+      "kind": 0,
+      "hour": 7,
+      "minute": 30,
+      "code": 46,
+      "repeat": 255,
+      "data": []
+    }
+  },
+  {
+    "id": "alarm-custom",
+    "inputs": {
+      "frame": "6e200f0501030201080000012425fb"
+    },
+    "expected_event": "deviceRepeatAlarmListEscalationStatusEvent",
+    "expected_payload": {
+      "number": 2,
+      "kind": 1,
+      "hour": 8,
+      "minute": 0,
+      "code": 0,
+      "repeat": 1,
+      "data": [
+        36,
+        37
+      ]
+    }
+  },
+  {
+    "id": "snore",
+    "inputs": {
+      "frame": "6e20090601020001a1"
+    },
+    "expected_event": "deviceAntiSnoreEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "snore-name",
+    "inputs": {
+      "frame": "6e200a06030200414226"
+    },
+    "expected_event": "deviceSleepAdvNameEvent",
+    "expected_payload": [
+      65,
+      66
+    ]
+  },
+  {
+    "id": "lock",
+    "inputs": {
+      "frame": "6e20090702020001a3"
+    },
+    "expected_event": "deviceCharacteristicsSubscriptionBoxLockEvent",
+    "expected_payload": null
+  },
+  {
+    "id": "music-volume",
+    "inputs": {
+      "frame": "6e20090902020211b7"
+    },
+    "expected_event": "deviceMusicVolumeStatusEvent",
+    "expected_payload": 17
+  },
+  {
+    "id": "music-ble",
+    "inputs": {
+      "frame": "6e20090903020001a6"
+    },
+    "expected_event": "deviceMusicBleStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "check-any-operation",
+    "inputs": {
+      "frame": "6e20090a03090001ae"
+    },
+    "expected_event": "deviceCheckEvent",
+    "expected_payload": [
+      3,
+      [
+        110,
+        32,
+        9,
+        10,
+        3,
+        9,
+        0,
+        1,
+        174
+      ]
+    ]
+  },
+  {
+    "id": "press-mode",
+    "inputs": {
+      "frame": "6e20090b02020002a8"
+    },
+    "expected_event": "deviceStrandardAndSplitControlEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "blacket",
+    "inputs": {
+      "frame": "6e20090d01020001a8"
+    },
+    "expected_event": "deviceBlacketPowerStatusEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "fan",
+    "inputs": {
+      "frame": "6e20090e01020003ab"
+    },
+    "expected_event": "deviceFanGearStatusEvent",
+    "expected_payload": 3
+  },
+  {
+    "id": "coax-enable",
+    "inputs": {
+      "frame": "6e20090f01020101ab"
+    },
+    "expected_event": "deviceCoaxingSleepRunningStatusEvent",
+    "expected_payload": [
+      {
+        "number": 1,
+        "enabled": true
+      }
+    ]
+  },
+  {
+    "id": "coax-time",
+    "inputs": {
+      "frame": "6e200b0f02020163010213"
+    },
+    "expected_event": "deviceCoaxingSleepTimerStatusEvent",
+    "expected_payload": [
+      {
+        "number": 1,
+        "minute": 258
+      }
+    ]
+  },
+  {
+    "id": "atomization",
+    "inputs": {
+      "frame": "6e200a100202000714c7"
+    },
+    "expected_event": "deviceAtomizationTimeStatusEvent",
+    "expected_payload": 20
+  },
+  {
+    "id": "heat-time",
+    "inputs": {
+      "frame": "6e200a11020202012cdc"
+    },
+    "expected_event": "deviceHeatingTimeChangeStatusEvent",
+    "expected_payload": {
+      "position": 2,
+      "type": 2,
+      "timeSum": 300
+    }
+  },
+  {
+    "id": "heat-always",
+    "inputs": {
+      "frame": "6e200a11020202ffffad"
+    },
+    "expected_event": "deviceHeatingTimeChangeStatusEvent",
+    "expected_payload": {
+      "position": 2,
+      "type": 1,
+      "timeSum": 0
+    }
+  },
+  {
+    "id": "heat-temperature",
+    "inputs": {
+      "frame": "6e200a110302010023d2"
+    },
+    "expected_event": "deviceHeatingTemperatureChangeStatusEvent",
+    "expected_payload": {
+      "position": 1,
+      "temperature": 35
+    }
+  },
+  {
+    "id": "common-version-bad-checksum",
+    "inputs": {
+      "frame": "6e90000700"
+    },
+    "expected_event": "deviceControlBoxProtocolVersionEvent",
+    "expected_payload": 7
+  },
+  {
+    "id": "common-angle",
+    "inputs": {
+      "frame": "6e90392d00"
+    },
+    "expected_event": "deviceMotorCurrentAngleStatusEvent",
+    "expected_payload": [
+      {
+        "no": 2,
+        "status": 1,
+        "angle": 45
+      }
+    ]
+  },
+  {
+    "id": "massage-frequency",
+    "inputs": {
+      "frame": "6e20090204020009a8"
+    },
+    "expected_event": "deviceMassageFrequencStatusEvent",
+    "expected_payload": 9
+  },
+  {
+    "id": "massage-shake",
+    "inputs": {
+      "frame": "6e20090205020006a6"
+    },
+    "expected_event": "deviceMusicShakeStatusEvent",
+    "expected_payload": 6
+  },
+  {
+    "id": "massage-power",
+    "inputs": {
+      "frame": "6e20090206020001a2"
+    },
+    "expected_event": "deviceMassagePowerStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "rgb-motion",
+    "inputs": {
+      "frame": "6e20090403020001a1"
+    },
+    "expected_event": "deviceRGBStripMotionStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "rgb-enabled",
+    "inputs": {
+      "frame": "6e20090404020001a2"
+    },
+    "expected_event": "deviceRGBStripStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "off-bed",
+    "inputs": {
+      "frame": "6e20090602020001a2"
+    },
+    "expected_event": "deviceGetOffBedStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "snore-music-stop",
+    "inputs": {
+      "frame": "6e200a060402000101a6"
+    },
+    "expected_event": "deviceCharacteristicsSubscriptionSnoreStopPlayMusicEvent",
+    "expected_payload": null
+  },
+  {
+    "id": "snore-count",
+    "inputs": {
+      "frame": "6e200a060502000107ad"
+    },
+    "expected_event": "deviceAntiSnoreConfigCountEvent",
+    "expected_payload": 7
+  },
+  {
+    "id": "snore-time",
+    "inputs": {
+      "frame": "6e200a060502000208af"
+    },
+    "expected_event": "deviceAntiSnoreConfigTimeEvent",
+    "expected_payload": 8
+  },
+  {
+    "id": "unlock",
+    "inputs": {
+      "frame": "6e20090702020002a4"
+    },
+    "expected_event": "deviceCharacteristicsSubscriptionCancelBoxLockEvent",
+    "expected_payload": null
+  },
+  {
+    "id": "music-playing",
+    "inputs": {
+      "frame": "6e20090901020001a4"
+    },
+    "expected_event": "deviceMusicPlayStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "music-silent",
+    "inputs": {
+      "frame": "6e20090902020304ab"
+    },
+    "expected_event": "deviceMusicVolumeSilentStatusEvent",
+    "expected_payload": 4
+  },
+  {
+    "id": "music-usb",
+    "inputs": {
+      "frame": "6e20090904020001a7"
+    },
+    "expected_event": "deviceMusicUsbStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "press-raw",
+    "inputs": {
+      "frame": "6e20090b01020009ae"
+    },
+    "expected_event": "devicePressModeEvent",
+    "expected_payload": 9
+  },
+  {
+    "id": "same-split-raw",
+    "inputs": {
+      "frame": "6e20090b04020008b0"
+    },
+    "expected_event": "deviceSameAndSplitControlEvent",
+    "expected_payload": 8
+  },
+  {
+    "id": "blacket-delay",
+    "inputs": {
+      "frame": "6e200b0d02020001003ce7"
+    },
+    "expected_event": "deviceBlacketDelayStatusEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "blacket-mode",
+    "inputs": {
+      "frame": "6e200b0d050200010203b3"
+    },
+    "expected_event": "deviceBlacketModeStatusEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "blacket-mite",
+    "inputs": {
+      "frame": "6e20090d06020001ad"
+    },
+    "expected_event": "deviceBlacketMiteRemovalStatusEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "blacket-sleep",
+    "inputs": {
+      "frame": "6e20160d0702000102030405060708090a0b0c0d0e23"
+    },
+    "expected_event": "deviceBlacketSleepStatusEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "blacket-setting",
+    "inputs": {
+      "frame": "6e20090d08020001af"
+    },
+    "expected_event": "deviceBlacketSettingStatusEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "blacket-live",
+    "inputs": {
+      "frame": "6e200d0d0902000102030405c2"
+    },
+    "expected_event": "deviceBlacketLiveStatusEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "atomization-power",
+    "inputs": {
+      "frame": "6e20091001020001ab"
+    },
+    "expected_event": "deviceAtomizationOpenStatusEvent",
+    "expected_payload": 1
+  },
+  {
+    "id": "heat-disabled",
+    "inputs": {
+      "frame": "6e200a110202010000ae"
+    },
+    "expected_event": "deviceHeatingTimeChangeStatusEvent",
+    "expected_payload": {
+      "position": 1,
+      "type": 0,
+      "timeSum": 0
+    }
+  },
+  {
+    "id": "heat-mode",
+    "inputs": {
+      "frame": "6e200811050202b0"
+    },
+    "expected_event": "deviceHeatingPadModelStatusEvent",
+    "expected_payload": 2
+  },
+  {
+    "id": "common-bed-mode",
+    "inputs": {
+      "frame": "6e90120000"
+    },
+    "expected_event": "deviceVersionOneBedModeEvent",
+    "expected_payload": 2
+  },
+  {
+    "id": "common-massage",
+    "inputs": {
+      "frame": "6e90aaab00"
+    },
+    "expected_event": "deviceVersionOneMassageModeEvent",
+    "expected_payload": {
+      "mode": 5,
+      "massage1": 3,
+      "massage2": 5,
+      "massage3": 2
+    }
+  },
+  {
+    "id": "common-music-usb",
+    "inputs": {
+      "frame": "6e90b1e000"
+    },
+    "expected_event": "deviceMusicUsbStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "common-music-play",
+    "inputs": {
+      "frame": "6e90b1e000"
+    },
+    "expected_event": "deviceMusicPlayStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "common-music-shake",
+    "inputs": {
+      "frame": "6e90b1e000"
+    },
+    "expected_event": "deviceMusicShakeStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "common-music-ble",
+    "inputs": {
+      "frame": "6e90b1e000"
+    },
+    "expected_event": "deviceMusicBleStatusEvent",
+    "expected_payload": true
+  },
+  {
+    "id": "common-detection-start",
+    "inputs": {
+      "frame": "6e90c21000"
+    },
+    "expected_event": "deviceDetectionStatusEvent",
+    "expected_payload": "start"
+  },
+  {
+    "id": "common-detection-stop",
+    "inputs": {
+      "frame": "6e90c22000"
+    },
+    "expected_event": "deviceDetectionStatusEvent",
+    "expected_payload": "stop"
+  },
+  {
+    "id": "common-detection-pause",
+    "inputs": {
+      "frame": "6e90c23000"
+    },
+    "expected_event": "deviceDetectionStatusEvent",
+    "expected_payload": "pause"
+  },
+  {
+    "id": "common-detection-repeat",
+    "inputs": {
+      "frame": "6e90c24000"
+    },
+    "expected_event": "deviceDetectionStatusEvent",
+    "expected_payload": "repeat"
+  },
+  {
+    "id": "common-detection-default",
+    "inputs": {
+      "frame": "6e90c2f000"
+    },
+    "expected_event": "deviceDetectionStatusEvent",
+    "expected_payload": "start"
+  },
+  {
+    "id": "common-detection-empty",
+    "inputs": {
+      "frame": "6e90c34500"
+    },
+    "expected_event": "deviceDetectionMessageEvent",
+    "expected_payload": {}
+  },
+  {
+    "id": "common-volume",
+    "inputs": {
+      "frame": "6e90d11100"
+    },
+    "expected_event": "deviceMusicVolumeStatusEvent",
+    "expected_payload": 17
+  },
+  {
+    "id": "common-shake-gear",
+    "inputs": {
+      "frame": "6e90d20300"
+    },
+    "expected_event": "deviceMusicShakeGearStatusEvent",
+    "expected_payload": 3
+  },
+  {
+    "id": "white-checksum-as-value",
+    "inputs": {
+      "frame": "6e2008030102009c"
+    },
+    "expected_event": "deviceWhiteLedStatusEvent",
+    "expected_payload": false
+  }
+]

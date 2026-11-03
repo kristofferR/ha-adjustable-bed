@@ -6,6 +6,7 @@ from typing import Final, overload
 
 from . import casper_base_catalog as _casper_base_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
+from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 
 DOMAIN: Final = "adjustable_bed"
 
@@ -462,6 +463,8 @@ CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
+BED_TYPE_HJBED: Final = "hjbed"
+HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
 GLIDEAWAY_MOTION_MODELS: Final = {
     "motion_400": "MOTION 400 (GM-A4Z)",
@@ -486,7 +489,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
+    {BED_TYPE_HJBED, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -645,6 +648,7 @@ CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_A
 
 SUPPORTED_BED_TYPES: Final = [
     *sorted(CLUSTER033_BED_TYPES),
+    BED_TYPE_HJBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
@@ -1862,6 +1866,7 @@ OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
 }
@@ -2762,6 +2767,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
         if variant != VARIANT_AUTO
     ),
     *ZSERIES_VARIANTS,
+    *HJBED_PROFILES,
     *GLIDEAWAY_MOTION_MODELS,
 ]
 
@@ -2961,6 +2967,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_DOUBLESLEEP,
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
+        BED_TYPE_HJBED,
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_ISLEEP,
         BED_TYPE_BEDSENSE,

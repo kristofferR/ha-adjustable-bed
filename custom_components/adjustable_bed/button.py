@@ -1365,6 +1365,8 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
     async def async_press(self) -> None:
@@ -1475,6 +1477,17 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
+        if self._spec.key == "hjbed_release":
+            from .hjbed_state import GESTURE_RELEASE
+
+            # STOP admission also invalidates a hold still awaiting Bluetooth
+            # preflight. Only its action cleanup may send a release packet.
+            token = GESTURE_RELEASE.set(True)
+            try:
+                await self._coordinator.async_stop_command()
+            finally:
+                GESTURE_RELEASE.reset(token)
+            return
         if self._spec.scheduler_resource is not None:
             await self._coordinator.async_execute_controller_command(
                 self._spec.press_fn,
@@ -1497,6 +1510,8 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 hold_start_delay_ms=hold.start_delay_ms,
                 hold_release_delay_ms=hold.release_delay_ms,
             )
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
 
@@ -1637,6 +1652,8 @@ class PairedBedCombinedButton(ButtonEntity):
                     hold_start_delay_ms=hold.start_delay_ms,
                     hold_release_delay_ms=hold.release_delay_ms,
                 )
+                if hold.release_button_key is not None:
+                    attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
 
@@ -1720,6 +1737,8 @@ class PairedBedCombinedMotorButton(ButtonEntity):
                 hold_start_delay_ms=hold.start_delay_ms,
                 hold_release_delay_ms=hold.release_delay_ms,
             )
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
     @property
@@ -1806,6 +1825,7 @@ def _paired_motor_hold_spec(
             or spec.hold.start_delay_ms != common.start_delay_ms
             or spec.hold.release_delay_ms != common.release_delay_ms
             or spec.hold.stop_scope != common.stop_scope
+            or spec.hold.release_button_key != common.release_button_key
         ):
             return None
     return common

@@ -396,7 +396,7 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
                 None,
             )
             if live is None or live.local_select_fn is None or option not in live.options:
-                raise ServiceValidationError("Controller no longer supports this option")
+                raise ServiceValidationError("Controller no longer supports this local option")
             live.local_select_fn(option)
             return
 
