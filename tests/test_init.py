@@ -60,6 +60,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
@@ -1495,9 +1496,9 @@ class TestServices:
         await hass.async_block_till_done()
 
         device_registry = dr.async_get(hass)
-        device_id = dr.async_entries_for_config_entry(
-            device_registry, mock_config_entry.entry_id
-        )[0].id
+        device_id = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)[
+            0
+        ].id
         coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
         execute = AsyncMock()
 
@@ -1548,9 +1549,9 @@ class TestServices:
         await hass.async_block_till_done()
 
         device_registry = dr.async_get(hass)
-        device_id = dr.async_entries_for_config_entry(
-            device_registry, mock_config_entry.entry_id
-        )[0].id
+        device_id = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)[
+            0
+        ].id
 
         with pytest.raises(ServiceValidationError, match="Valid motors: back"):
             await hass.services.async_call(
@@ -1763,9 +1764,13 @@ class TestServices:
         # At 300ms cadence, the elapsed 900ms ceiling allows at most three
         # writes. The old count-only limit sent a fourth at/after the deadline.
         assert 1 <= len(writes) <= 3
-        assert writes == [call(
-            KEESON_KSBT_CHAR_UUID, bytes.fromhex("040200000001"), response=True,
-        )] * len(writes)
+        assert writes == [
+            call(
+                KEESON_KSBT_CHAR_UUID,
+                bytes.fromhex("040200000001"),
+                response=True,
+            )
+        ] * len(writes)
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert {tuple(item["resources"]) for item in coordinator.command_trace} == {("motor:back",)}
         timed_move_record = coordinator._command_scheduler.recent_records[-1]
@@ -1834,7 +1839,7 @@ class TestServices:
     async def test_timed_move_service_accepts_octo_tv_lift(
         self,
         hass: HomeAssistant,
-        mock_coordinator_connected,
+        mock_octo_ready_transport,
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
@@ -1847,6 +1852,7 @@ class TestServices:
                 CONF_NAME: "RTV",
                 CONF_BED_TYPE: BED_TYPE_OCTO,
                 CONF_MOTOR_COUNT: 1,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1",
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",

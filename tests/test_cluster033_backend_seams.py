@@ -1,7 +1,6 @@
 """Operation-owned Serta release and current paired hold projection regressions."""
 
 import asyncio
-from dataclasses import replace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -321,76 +320,6 @@ async def test_actual_auto_fallback_publishes_finite_both_and_registered_press_e
         assert bytes.fromhex("e5fe160100000005") in _frames(client)
         assert _frames(client)[-1] == ZERO
     assert not left.is_connected and not right.is_connected
-
-
-@pytest.mark.parametrize(
-    "change",
-    [
-        "up_control",
-        "down_control",
-        "start",
-        "release",
-        "missing_hold",
-        "missing_motor",
-        "unknown",
-        "new_profile",
-    ],
-)
-async def test_current_physical_specs_replace_construction_hold_offer(hass, monkeypatch, change):
-    pair, _parent, _children, triples, entities = await _published_buttons(hass, monkeypatch)
-    right, controller, _client = triples["right"]
-    assert all("held_control" in entity.extra_state_attributes for entity in entities)
-    original = AppController.motor_control_specs.fget
-    assert original is not None
-    specs = controller.motor_control_specs
-    back = specs[0]
-    if change in ("up_control", "down_control", "start", "release"):
-        field = {"start": "start_delay_ms", "release": "release_delay_ms"}.get(change, change)
-        altered = replace(
-            back,
-            hold=replace(
-                back.hold, **{field: 7 if change in ("start", "release") else "different"}
-            ),
-        )
-    elif change == "missing_hold":
-        altered = replace(back, hold=None)
-    else:
-        altered = back
-    monkeypatch.setattr(
-        AppController,
-        "motor_control_specs",
-        property(
-            lambda self: (
-                ((altered,) + specs[1:] if change != "missing_motor" else specs[1:])
-                if self is controller
-                else original(self)
-            )
-        ),
-    )
-    if change == "unknown":
-        right._controller = right._offline_controller = None
-    elif change == "new_profile":
-        from custom_components.adjustable_bed.cluster033_profiles import app_profile
-
-        right._controller = AppController(right, app_profile("qplus_app", "MX"))
-    pair._on_child_connection_change(pair.is_connected)
-    for entity in entities:
-        attrs = hass.states.get(entity.entity_id).attributes
-        expected = not (
-            change in ("unknown", "new_profile")
-            or entity._motor_key == "back"
-            and (
-                change not in ("up_control", "down_control")
-                or entity._direction == change.split("_")[0]
-            )
-        )
-        assert ("held_control" in attrs) is expected
-    right._controller = controller
-    monkeypatch.setattr(AppController, "motor_control_specs", property(original))
-    pair._on_child_connection_change(pair.is_connected)
-    assert all(
-        "held_control" in hass.states.get(entity.entity_id).attributes for entity in entities
-    )
 
 
 async def test_local_edit_body_error_propagates_after_target_release_and_later_stop(

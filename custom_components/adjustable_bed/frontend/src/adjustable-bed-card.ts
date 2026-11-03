@@ -30,8 +30,14 @@ import {
   resolvePairedParentId,
 } from "./discovery";
 import {
-  MotorHold, attachHoldLifecycle, heldButtonMotor, holdTargetForEntity,
-  movementHold, movementPulse, stopFromCard,
+  attachHoldLifecycle,
+  type CoverStopScope,
+  heldButtonMotor,
+  MotorHold,
+  holdTargetForEntity,
+  movementHold,
+  movementPulse,
+  stopFromCard,
 } from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
 import { localize } from "./localize";
@@ -88,7 +94,7 @@ export class AdjustableBedCard extends LitElement {
   private _watched: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
   // service response. A later Stop must still reach movement this card started.
-  private readonly _compactStopTargets = new Map<string, { stopping: boolean }>();
+  private readonly _compactStopTargets = new Map<string, symbol>();
   // Press-and-hold rules live in MotorHold; this class owns only the event
   // wiring and the service calls it drives.
   private readonly _hold = new MotorHold({
@@ -120,7 +126,7 @@ export class AdjustableBedCard extends LitElement {
   public setConfig(config: AdjustableBedCardConfig): void {
     if (!config) throw new Error("Invalid configuration");
     if (this._config) {
-      this._hold.abandon();
+      // _stopCompact abandons the hold itself and skips the targets it stopped.
       this._stopCompact();
     }
     if (config.device_id !== this._config?.device_id ||
@@ -502,32 +508,24 @@ export class AdjustableBedCard extends LitElement {
 
   private _compactRecall(entityId: string, bed: BedEntities): void {
     this._hold.abandon();
-    compactStopEntities(bed).forEach((id) => this._compactStopTargets.set(id, { stopping: false }));
+    compactStopEntities(bed).forEach((id) => this._compactStopTargets.set(id, Symbol()));
     this._press(entityId);
     this.requestUpdate();
   }
 
   private _stopCompact(bed?: BedEntities): void {
-    if (bed) {
-      for (const id of compactStopEntities(bed)) {
-        const motor = bed.motors.find((m) => m.cover === id);
-        if (motor) {
-          this._hold.stopCover(motor, holdTargetForEntity(this.hass, id));
-          this._stopCompactTarget(id);
-        } else stopFromCard(this._hold, this.hass, id);
-      }
-      return;
+    const alreadyStopped = new Set(this._hold.abandon());
+    for (const id of bed ? compactStopEntities(bed) : []) {
+      if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
     }
-    this._hold.abandon();
-    for (const [id, movement] of this._compactStopTargets) {
-      if (!movement.stopping) this._stopCompactTarget(id);
+    for (const id of this._compactStopTargets.keys()) {
+      if (!alreadyStopped.has(id)) this._stopCompactTarget(id);
     }
     if (this._compactStopTargets.size) this.requestUpdate();
   }
 
   private _stopCompactTarget(id: string, retainedTarget = id): void {
     const movement = this._compactStopTargets.get(retainedTarget);
-    if (movement) movement.stopping = true;
     const cover = id.startsWith("cover.");
     this.hass?.callService(cover ? "cover" : "button", cover ? "stop_cover" : "press", {
       entity_id: id,
@@ -540,9 +538,6 @@ export class AdjustableBedCard extends LitElement {
       }
     }).catch(() => {
       // Keep failed targets available for another Stop, even after switching sides.
-      if (movement && this._compactStopTargets.get(retainedTarget) === movement) {
-        movement.stopping = false;
-      }
     });
   }
 
@@ -988,7 +983,9 @@ export class AdjustableBedCard extends LitElement {
       }
       ${
         bed.stop
-          ? html`<button class="stop-all" @click=${() => stopFromCard(this._hold, this.hass, bed.stop)}>
+          ? html`<button class="stop-all" @click=${() =>
+              stopFromCard(this._hold, this.hass, bed.stop)
+            }>
               <ha-icon icon="mdi:stop"></ha-icon>
               <span>${localize(this.hass, "action.stop_all")}</span>
             </button>`
@@ -1046,20 +1043,15 @@ export class AdjustableBedCard extends LitElement {
   private _motorDirection(m: MotorEntity, direction: "up" | "down", stopId?: string): TemplateResult {
     const entityId = m.cover ?? m[direction];
     const canStop = !!m.cover || !!stopId;
-    let owner = this._hold.generationFor(m, direction);
-    const start = (event: PointerEvent | KeyboardEvent): void => {
-      const admitted = this._startHold(event, m, direction, stopId);
-      if (admitted !== undefined) owner = admitted;
-    };
     return html`
       <button class="cg-btn"
         aria-label=${localize(this.hass, `action.${direction}`)}
-        @pointerdown=${start}
-        @pointerup=${(e: PointerEvent) => this._endPointerHold(e, m, owner)}
-        @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, m, owner)}
-        @keydown=${start}
-        @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m, owner)}
-        @blur=${() => this._endHold(m, owner)}
+        @pointerdown=${(e: PointerEvent) => this._startHold(e, m, direction, stopId)}
+        @pointerup=${(e: PointerEvent) => this._endPointerHold(e, m)}
+        @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, m)}
+        @keydown=${(e: KeyboardEvent) => this._startHold(e, m, direction, stopId)}
+        @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m)}
+        @blur=${() => this._endHold(m)}
         @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, direction, stopId)}
         ?disabled=${!entityId || (this._config?.layout === "compact" && (!canStop || !this._available(entityId)))}
       ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
@@ -1070,29 +1062,57 @@ export class AdjustableBedCard extends LitElement {
     return html`
       ${this._heading("section.presets")}
       <div class="tiles">
-        ${bed.presets.map((id) => this._tile(id, () => this._press(id)))}
+        ${bed.presets.map((id) => this._actionTile(id, bed.stop))}
       </div>
     `;
   }
 
   private _utility(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.utility.length === 0 && !bed.utilitySelects?.length) return nothing;
+    if (bed.utility.length === 0 && !bed.utilityNumbers?.length && !bed.utilitySelects?.length && !bed.utilityStates?.length) return nothing;
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
-        ${bed.utility.map((id) => {
-          const held = heldButtonMotor(this.hass, id);
-          return held && bed.stop
-            ? this._heldActionTile(id, held, bed.stop)
-            : this._tile(id, () =>
-                id.startsWith("switch.")
-                  ? this._call("switch", "toggle", id)
-                  : this._press(id),
-              );
-        })}
+        ${bed.utility.map((id) =>
+          this._actionTile(id, bed.stop, () =>
+            id.startsWith("switch.")
+              ? this._call("switch", "toggle", id)
+              : this._press(id),
+          ),
+        )}
       </div>
       ${bed.utilitySelects?.map((id) => this._moreInfoRow(id))}
+      ${bed.utilityNumbers?.map((id) => this._moreInfoRow(id))}
+      ${bed.utilityStates?.map((id) => this._moreInfoRow(id))}
     `;
+  }
+
+  private _actionTile(
+    entityId: string,
+    stopId?: string,
+    activate: () => void = () => this._press(entityId),
+  ): TemplateResult {
+    const held = heldButtonMotor(this.hass, entityId);
+    return held ? this._heldActionTile(entityId, held, stopId) : this._tile(entityId, activate);
+  }
+
+  private _heldActionTile(
+    entityId: string,
+    motor: MotorEntity,
+    stopId?: string,
+  ): TemplateResult {
+    return html`<button class="tile"
+      aria-label=${this._name(entityId)}
+      @pointerdown=${(e: PointerEvent) => this._startHold(e, motor, "up", stopId)}
+      @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+      @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+      @keydown=${(e: KeyboardEvent) => this._startHold(e, motor, "up", stopId)}
+      @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, motor)}
+      @blur=${() => this._endHold(motor)}
+      @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
+      ?disabled=${!stopId || !this._available(entityId)}>
+      ${this._icon(entityId)}
+      <span class="tile-label">${this._name(entityId)}</span>
+    </button>`;
   }
 
   private _memory(bed: BedEntities): typeof nothing | TemplateResult {
@@ -1133,11 +1153,11 @@ export class AdjustableBedCard extends LitElement {
           ? html`<div class="hint">${localize(this.hass, "memory.set_hint")}</div>`
           : nothing
       }
-      <div class="tiles">${slots.map((s) => this._memoryTile(s, saveMode))}</div>
+      <div class="tiles">${slots.map((s) => this._memoryTile(s, saveMode, bed.stop))}</div>
     `;
   }
 
-  private _memoryTile(slot: MemorySlot, saveMode: boolean): TemplateResult {
+  private _memoryTile(slot: MemorySlot, saveMode: boolean, stopId?: string): TemplateResult {
     const labelId = slot.goto ?? slot.save!;
     if (saveMode) {
       const savable = !!slot.save;
@@ -1155,6 +1175,7 @@ export class AdjustableBedCard extends LitElement {
     // Only a real goto recalls; a save-only slot must not be saved by a plain
     // tap (that requires Save mode), so its tile is disabled here.
     const canRecall = !!slot.goto;
+    if (canRecall) return this._actionTile(slot.goto!, stopId);
     return html`
       <button
         class="tile ${canRecall ? "" : "is-disabled"}"
@@ -1171,13 +1192,14 @@ export class AdjustableBedCard extends LitElement {
     const l = bed.lights;
     const main = l.light ?? l.switch;
     if (!hasLightingControls(l) && !l.state) return nothing;
-    const floor = main || l.state || l.level || l.timer || l.toggle || l.cycle || l.timerMinutes || l.timerToggle || l.buttons?.length;
+    const floor = main || l.state || l.level || l.numbers?.length || l.timer || l.toggle || l.cycle || l.timerMinutes || l.timerToggle || l.buttons?.length;
     return html`
       ${this._heading("section.lighting")}
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
       ${main ? this._toggleRow(main) : nothing}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
+      ${l.numbers?.map((id) => this._moreInfoRow(id))}
       ${l.timer ? this._moreInfoRow(l.timer) : nothing}
       ${l.timerMinutes ? this._moreInfoRow(l.timerMinutes) : nothing}
       ${!l.timerAppliesImmediately && (l.timerMinutes || l.timerToggle)
@@ -1189,7 +1211,7 @@ export class AdjustableBedCard extends LitElement {
               ${l.toggle ? this._tile(l.toggle, () => this._press(l.toggle!)) : nothing}
               ${l.cycle ? this._tile(l.cycle, () => this._press(l.cycle!)) : nothing}
               ${l.timerToggle ? this._tile(l.timerToggle, () => this._press(l.timerToggle!)) : nothing}
-              ${l.buttons?.map((id) => this._tile(id, () => this._press(id)))}
+              ${l.buttons?.map((id) => this._actionTile(id, bed.stop))}
             </div>`
           : nothing
       }
@@ -1214,12 +1236,7 @@ export class AdjustableBedCard extends LitElement {
       ${
         m.buttons.length
           ? html`<div class="tiles">
-              ${m.buttons.map((id) => {
-                const held = heldButtonMotor(this.hass, id);
-                return held
-                  ? this._heldActionTile(id, held, bed.stop)
-                  : this._tile(id, () => this._press(id));
-              })}
+              ${m.buttons.map((id) => this._actionTile(id, bed.stop))}
             </div>`
           : nothing
       }
@@ -1228,31 +1245,6 @@ export class AdjustableBedCard extends LitElement {
       ${m.states?.map((id) => this._moreInfoRow(id))}
       ${m.timer ? this._moreInfoRow(m.timer) : nothing}
     `;
-  }
-
-  private _heldActionTile(
-    entityId: string,
-    motor: MotorEntity,
-    stopId?: string,
-  ): TemplateResult {
-    let owner = this._hold.generationFor(motor, "up");
-    const start = (event: PointerEvent | KeyboardEvent): void => {
-      const admitted = this._startHold(event, motor, "up", stopId);
-      if (admitted !== undefined) owner = admitted;
-    };
-    return html`<button class="tile"
-      aria-label=${this._name(entityId)}
-      @pointerdown=${start}
-      @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor, owner)}
-      @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor, owner)}
-      @keydown=${start}
-      @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, motor, owner)}
-      @blur=${() => this._endHold(motor, owner)}
-      @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
-      ?disabled=${!stopId || !this._available(entityId)}>
-      ${this._icon(entityId)}
-      <span class="tile-label">${this._name(entityId)}</span>
-    </button>`;
   }
 
   private _climate(bed: BedEntities): typeof nothing | TemplateResult {
@@ -1492,6 +1484,7 @@ export class AdjustableBedCard extends LitElement {
     bed.firmness.forEach((x) => ids.add(x));
     bed.massage.buttons.forEach((x) => ids.add(x));
     bed.lights.buttons?.forEach((x) => ids.add(x));
+    bed.lights.numbers?.forEach((x) => ids.add(x));
     bed.massage.numbers.forEach((x) => ids.add(x));
     bed.massage.selects?.forEach((x) => ids.add(x));
     bed.massage.states?.forEach((x) => ids.add(x));
@@ -1499,7 +1492,9 @@ export class AdjustableBedCard extends LitElement {
     bed.lights.mood?.numbers.forEach((x) => ids.add(x));
     bed.lights.mood?.buttons?.forEach((x) => ids.add(x));
     bed.utility.forEach((x) => ids.add(x));
+    bed.utilityNumbers?.forEach((x) => ids.add(x));
     bed.utilitySelects?.forEach((x) => ids.add(x));
+    bed.utilityStates?.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
     bed.climate.numbers.forEach((x) => ids.add(x));
@@ -1515,7 +1510,7 @@ export class AdjustableBedCard extends LitElement {
     m: MotorEntity,
     dir: "up" | "down",
     stopId?: string,
-  ): number | undefined {
+  ): void {
     let ownerPointerId: number | null = null;
     if (e instanceof KeyboardEvent) {
       // Ignore the auto-repeat the OS generates while a key stays down: the
@@ -1533,15 +1528,19 @@ export class AdjustableBedCard extends LitElement {
       e.preventDefault();
       ownerPointerId = e.pointerId;
     }
-    const onStarted = (): void => {
-      if (this._config?.layout !== "compact") return;
-      if (stopId) this._compactStopTargets.set(stopId, { stopping: false });
-      else if (m.cover) this._compactStopTargets.set(m.cover, { stopping: false });
+    if (this._config?.layout === "compact") {
+      if (stopId) this._compactStopTargets.set(stopId, Symbol());
+      else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
-    };
-    const targetEntityId = m.holdEntityId ?? m.cover ?? m[dir] ?? stopId;
-    return this._hold.start(m, dir, ownerPointerId, stopId,
-      holdTargetForEntity(this.hass, targetEntityId), onStarted);
+    }
+    const targetEntityId = stopId ?? m.holdEntityId ?? m.cover ?? m[dir];
+    this._hold.start(
+      m,
+      dir,
+      ownerPointerId,
+      stopId,
+      holdTargetForEntity(this.hass, targetEntityId),
+    );
   }
 
   // Screen readers, voice control and switch devices activate a native button
@@ -1557,47 +1556,52 @@ export class AdjustableBedCard extends LitElement {
     stopId?: string,
   ): void {
     if (e.detail !== 0 || this._hold.heldKey !== null) return;
-    const entityId = m.cover ?? m[dir];
-    if (!entityId || !this.hass) return;
-    if (m.cover) this._cover(m.cover, dir === "up" ? "open_cover" : "close_cover");
-    else this._press(entityId);
     if (this._config?.layout === "compact") {
-      if (stopId) this._compactStopTargets.set(stopId, { stopping: false });
-      else if (m.cover) this._compactStopTargets.set(m.cover, { stopping: false });
+      if (stopId) this._compactStopTargets.set(stopId, Symbol());
+      else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
+    if (m.cover) {
+      this._cover(m.cover, dir === "up" ? "open_cover" : "close_cover");
+      return;
+    }
+    const id = dir === "up" ? m.up : m.down;
+    if (id) this._press(id);
   }
 
-  private _endPointerHold(e: PointerEvent, m: MotorEntity, owner?: number): void {
-    if (owner === undefined) return;
+  private _endPointerHold(e: PointerEvent, m: MotorEntity): void {
     // pointercancel carries no meaningful button, so only pointerup can be a
     // non-primary release.
     this._hold.endFromPointer(
       m,
       e.pointerId,
       e.type !== "pointerup" || e.button === 0,
-      owner,
     );
   }
 
-  private _endKeyHold(e: KeyboardEvent, m: MotorEntity, owner?: number): void {
-    if (owner === undefined || (e.key !== "Enter" && e.key !== " ")) return;
-    this._hold.end(m, owner);
+  private _endKeyHold(e: KeyboardEvent, m: MotorEntity): void {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    this._hold.end(m);
   }
 
-  private _endHold(m: MotorEntity, owner?: number): void {
-    if (owner !== undefined) this._hold.end(m, owner);
+  private _endHold(m: MotorEntity): void {
+    this._hold.end(m);
   }
 
   private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) {
-      this._hold.stopCover(m, holdTargetForEntity(this.hass, m.cover));
+      // Typed hold metadata comes from explicit MotorControlSpecs (Sleepy's,
+      // OCTO and the stop_all-backed app profiles) whose stop_fn stops the
+      // whole side. Plain covers stay scoped to their motor key.
+      const scope: CoverStopScope = m.heldControls ? "side" : "motor";
+      this._hold.stopCover(
+        m,
+        holdTargetForEntity(this.hass, m.cover),
+        scope,
+      );
       this._cover(m.cover, "stop_cover");
       return;
     }
-    // A button-backed row has no stop of its own and falls through to the stop
-    // of the bed it belongs to, which halts whatever is moving on that bed. So
-    // it has to invalidate any active hold, not just this row's.
     stopFromCard(this._hold, this.hass, stopId);
   }
 

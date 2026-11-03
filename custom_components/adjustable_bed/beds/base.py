@@ -54,7 +54,7 @@ MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
 
 @dataclass(frozen=True, slots=True)
 class ControllerHoldSpec:
-    """Finite hold metadata for a controller button action."""
+    """Finite held-control metadata for a controller-declared button."""
 
     control: str
     start_delay_ms: int
@@ -63,7 +63,7 @@ class ControllerHoldSpec:
 
 @dataclass(frozen=True, slots=True)
 class ControllerMotorHoldSpec:
-    """Finite hold metadata for a motor's up and down controls."""
+    """Finite held-control metadata for a motor's two directions."""
 
     up_control: str
     down_control: str
@@ -459,6 +459,16 @@ class BedController(ABC):
         idle-disconnects them. Because this is a property of the resolved controller,
         it is authoritative even when the bed type/variant resolves to different
         protocols at connect time.
+        """
+        return False
+
+    @property
+    def holds_link_after_stalled_reconnect(self) -> bool:
+        """Return True to hold the link once a connect has stalled this session.
+
+        For receivers that keep advertising but often refuse or time out
+        reconnects. Until a connect times out or aborts, the configured handoff
+        applies, so receivers that reconnect normally stay free for their apps.
         """
         return False
 
@@ -1158,6 +1168,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_preset_reading(self) -> bool:
+        """Return True if bed supports a Reading preset."""
+        return False
+
+    @property
     def supports_preset_swing(self) -> bool:
         """Return True if bed supports a physical swing/rocking mode."""
         return False
@@ -1309,6 +1324,19 @@ class BedController(ABC):
         Returns 'rgb', 'rgbw', or None if no color control is supported.
         """
         return None
+
+    @property
+    def supported_color_modes(self) -> frozenset[str]:
+        """Return all color modes the light entity can safely send.
+
+        Existing controllers expose one mode through ``supported_color_mode``;
+        multi-mode controllers can override this property. The light platform
+        maps these protocol-neutral values to Home Assistant's ColorMode enum.
+        """
+        mode = self.supported_color_mode
+        if mode not in {"rgb", "rgbw"}:
+            return frozenset()
+        return frozenset((mode,))
 
     @property
     def default_light_rgb_color(self) -> tuple[int, int, int] | None:
@@ -1757,6 +1785,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_remote_control_lock(self) -> bool:
+        """Return whether the protocol exposes a remote-control lock setting."""
+        return False
+
+    @property
     def supports_simultaneous_movement(self) -> bool:
         """Return True if two sections can be driven by one protocol command."""
         return False
@@ -1809,6 +1842,11 @@ class BedController(ABC):
             type(self).massage_intensity_up is not BedController.massage_intensity_up
             and type(self).massage_intensity_down is not BedController.massage_intensity_down
         )
+
+    @property
+    def supports_massage_intensity_up_control(self) -> bool:
+        """Return True if the controller exposes an overall massage increase."""
+        return self.supports_massage_intensity_step_control
 
     @property
     def supports_head_massage_toggle_control(self) -> bool:
@@ -2343,6 +2381,10 @@ class BedController(ABC):
         """
         raise NotImplementedError("Anti-snore preset not supported on this bed")
 
+    async def preset_reading(self) -> None:
+        """Move bed to a Reading position when the selected app exposes it."""
+        raise NotImplementedError("Reading preset not supported on this bed")
+
     async def preset_tv(self) -> None:
         """Move bed to TV/lounge position.
 
@@ -2419,12 +2461,14 @@ class BedController(ABC):
     async def set_motion_bed_surface(self, surface: str) -> None:
         raise NotImplementedError("Motion Bed hub module selection unavailable")
 
-    def validate_motion_bed_action(self, key: str, *, branch: str = "app",
-                                  duration: float = 1, confirmed: bool = False) -> None:
+    def validate_motion_bed_action(
+        self, key: str, *, branch: str = "app", duration: float = 1, confirmed: bool = False
+    ) -> None:
         raise NotImplementedError("Motion Bed actions unavailable")
 
-    async def async_execute_motion_bed_action(self, key: str, *, branch: str = "app",
-                                             duration: float = 1, confirmed: bool = False) -> None:
+    async def async_execute_motion_bed_action(
+        self, key: str, *, branch: str = "app", duration: float = 1, confirmed: bool = False
+    ) -> None:
         raise NotImplementedError("Motion Bed actions unavailable")
 
     async def async_execute_motion_bed_internal_query(self, key: str) -> None:
@@ -2460,7 +2504,11 @@ class BedController(ABC):
         raise NotImplementedError("FurniMove rename not supported on this bed")
 
     def validate_furnimove_simultaneous(
-        self, first_axis: str, first_up: bool, second_axis: str, second_up: bool,
+        self,
+        first_axis: str,
+        first_up: bool,
+        second_axis: str,
+        second_up: bool,
         duration_ms: int | None = None,
     ) -> None:
         """Validate two selected FurniMove motor directions before writing."""
@@ -2515,6 +2563,10 @@ class BedController(ABC):
     async def set_automatic_light(self, enabled: bool) -> None:
         """Enable or disable automatic under-bed lighting."""
         raise NotImplementedError("Automatic lighting not supported on this bed")
+
+    async def set_remote_control_lock(self, enabled: bool) -> None:
+        """Enable or disable the receiver's remote-control lock setting."""
+        raise NotImplementedError("Remote-control lock is not supported on this bed")
 
     async def configure_clock_alarm(
         self,
@@ -2944,7 +2996,11 @@ class BedController(ABC):
         """
         raise NotImplementedError("Light color control not supported on this bed")
 
-    async def set_light_color_rgbw(self, rgbw_color: tuple[int, int, int, int]) -> None:
+    async def set_light_color_rgbw(
+        self,
+        rgbw_color: tuple[int, int, int, int],
+        intensity: int | None = None,
+    ) -> None:
         """Set light RGBW color.
 
         Args:
@@ -2953,6 +3009,7 @@ class BedController(ABC):
         Raises:
             NotImplementedError: If the bed doesn't support RGBW light control
         """
+        del intensity
         raise NotImplementedError("RGBW light control not supported on this bed")
 
     # Light timer control (optional - for beds with auto-off timer)
@@ -3010,9 +3067,7 @@ class BedController(ABC):
         """Return the supported semantic Sleep Number configuration actions."""
         return ()
 
-    def validate_sleep_number_command(
-        self, command: str, parameters: Mapping[str, object]
-    ) -> None:
+    def validate_sleep_number_command(self, command: str, parameters: Mapping[str, object]) -> None:
         """Validate a complete action without changing the bed."""
         raise ValueError("Sleep Number configuration actions are not supported on this bed")
 
@@ -3020,7 +3075,9 @@ class BedController(ABC):
         self, command: str, parameters: Mapping[str, object]
     ) -> dict[str, object]:
         """Execute an allowlisted action and return its structured result."""
-        raise NotImplementedError("Sleep Number configuration actions are not supported on this bed")
+        raise NotImplementedError(
+            "Sleep Number configuration actions are not supported on this bed"
+        )
 
     async def read_bed_presence(self) -> bool | None:
         """Read bed occupancy state for the configured side.

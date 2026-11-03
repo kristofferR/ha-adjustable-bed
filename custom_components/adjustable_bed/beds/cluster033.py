@@ -33,6 +33,11 @@ FFE9 = "0000ffe9-0000-1000-8000-00805f9b34fb"
 NUS_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 NUS_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 
+# The card keeps a held action running for its declared release delay before
+# STOP. Every source-held key stops refreshing on release, so the card adds
+# none; MX's delayed 300/600/900 ms release queries belong to _release().
+_CARD_RELEASE_DELAY_MS = 0
+
 
 def finish(data: bytes) -> bytes:
     """Java signed sum and unsigned sum have the same low-byte complement."""
@@ -173,7 +178,7 @@ class AppController(BedController):
                 a.key,
                 a.name,
                 press(a.key),
-                hold=ControllerHoldSpec(a.key, 0, self._hold_release_delay_ms)
+                hold=ControllerHoldSpec(a.key, 0, _CARD_RELEASE_DELAY_MS)
                 if a.mode in ("held", "held_zeros")
                 else None,
             )
@@ -201,12 +206,6 @@ class AppController(BedController):
         return any(spec.key == key for spec in self.controller_button_specs)
 
     @property
-    def _hold_release_delay_ms(self) -> int:
-        # MX's first release query is delayed300ms; its release has no zero or
-        # STOP packet. All other held keys release with an immediate zero.
-        return 300 if self.profile.parser == "qplus" and self.profile.layout == "MX" else 0
-
-    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         def move(key: str):
             async def run(controller: BedController) -> None:
@@ -222,7 +221,7 @@ class AppController(BedController):
                 move("head_down"),
                 lambda c: c.stop_all(),
                 hold=ControllerMotorHoldSpec(
-                    "head_up", "head_down", 0, self._hold_release_delay_ms
+                    "head_up", "head_down", 0, _CARD_RELEASE_DELAY_MS
                 ),
             ),
             MotorControlSpec(
@@ -232,7 +231,7 @@ class AppController(BedController):
                 move("foot_down"),
                 lambda c: c.stop_all(),
                 hold=ControllerMotorHoldSpec(
-                    "foot_up", "foot_down", 0, self._hold_release_delay_ms
+                    "foot_up", "foot_down", 0, _CARD_RELEASE_DELAY_MS
                 ),
             ),
         )

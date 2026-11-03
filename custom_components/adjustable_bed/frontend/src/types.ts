@@ -110,8 +110,6 @@ export interface MotorEntity {
   deviceId?: string;
   heldControls?: Partial<Record<"up" | "down", HeldControl>>;
   heldControl?: HeldControl;
-  // Entity carrying button hold metadata when this MotorEntity adapts a held
-  // app action. Cover-backed holds use `cover` for the same state lookup.
   holdEntityId?: string;
   // Discrete up/down buttons, used by beds that expose buttons instead of covers.
   up?: string;
@@ -134,6 +132,7 @@ export interface LightEntities {
   switch?: string; // switch.* under_bed_lights
   state?: string; // binary_sensor.* under_bed_lights (read-only)
   level?: string; // number.* light_level (brightness)
+  numbers?: string[]; // app-scoped light values without color or brightness semantics
   toggle?: string; // button.* toggle_light
   cycle?: string; // button.* light_cycle
   timer?: string; // select.* light_timer, or number.* timeout applied on release
@@ -164,7 +163,9 @@ export interface BedEntities {
   massage: { buttons: string[]; numbers: string[]; selects?: string[]; states?: string[]; timer?: string };
   climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level
   utility: string[]; // button.* sync_positions / child_lock_toggle
+  utilityNumbers?: string[]; // controller-declared number controls without a card section
   utilitySelects?: string[]; // select.* active app/module surface
+  utilityStates?: string[]; // read-only app/device state
 }
 
 // Replaced at build time with the integration version (see build.mjs).

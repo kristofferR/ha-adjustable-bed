@@ -23,10 +23,8 @@ This guide covers common issues and their solutions when using the Adjustable Be
 
 ## Upgrade and Migration
 
-v4 requires **Home Assistant 2026.9.0+**. If setup fails after upgrading, check
-the HA version before changing Bluetooth settings. Restore a pre-v4 backup to
-return to v3; reinstalling the older integration files alone cannot reverse the
-config-entry migration. See [compatibility and rollback](HA_2026_9.md).
+The integration requires **Home Assistant 2026.9.0+**. If setup fails after
+upgrading, check the HA version before changing Bluetooth settings.
 
 After an integration update, restart Home Assistant and reload the dashboard
 page so it loads the matching card version. For paired-bed conversion, existing
@@ -244,7 +242,7 @@ show why browser JavaScript failed to load.
 
 **Solutions:**
 1. **Verify features:** Check if your bed actually has the feature (massage, lights, etc.)
-2. **Update motor count:** Set the correct number of motors in options (2, 3, or 4; use 1 only for a one-motor Standard OCTO lift, with `RTV` detected automatically)
+2. **Update motor layout:** Standard OCTO uses its advertised motor count in Auto; choose an explicit OCTO override only when the receiver's advertised layout needs correction. Other profiles use the Motor Count setting when available.
 3. **Enable massage:** If bed has massage, enable it in integration options
 
 ### Commands are slow or delayed

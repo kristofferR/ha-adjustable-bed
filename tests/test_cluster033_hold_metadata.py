@@ -22,6 +22,9 @@ from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_co
 
 from .test_cluster033 import coordinator
 
+# A concurrent two-address pair; only its size matters for hold routing.
+PAIR_CHILDREN = {side: SimpleNamespace(bed_type="tempur_curve") for side in ("left", "right")}
+
 
 def entity_runtime():
     return SimpleNamespace(
@@ -40,7 +43,8 @@ def entity_runtime():
 def test_source_owned_specs_project_flat_metadata_and_keep_side(app, layout):
     ctrl = AppController(coordinator(), app_profile(app, layout))
     runtime = entity_runtime()
-    delay = 300 if app == "qplus_app" and layout == "MX" else 0
+    # The card adds no release delay; MX release queries are controller-owned.
+    delay = 0
     source_actions = {action.key: action for action in ctrl.profile.actions}
     for spec in ctrl.controller_button_specs:
         button = ControllerActionButton(runtime, spec)
@@ -82,17 +86,20 @@ def test_serta_local_angle_hold_metadata_is_distinct_from_remote_motor_keys():
     assert next(s for s in ctrl.motor_control_specs if s.key == "back").hold.up_control == "head_up"
 
 
-async def test_mixed_parent_hold_intersection_retains_finite_commands_and_own_resource():
+async def test_mixed_layout_parent_shares_hold_metadata_and_keeps_finite_press():
     left = AppController(coordinator(), app_profile("qplus_app", "M2"))
     right = AppController(coordinator(), app_profile("qplus_app", "MX"))
-    parent = MagicMock(pair_id="pair", device_info={}, children={}, connection_mode="concurrent")
+    parent = MagicMock(
+        pair_id="pair", device_info={}, children=PAIR_CHILDREN, connection_mode="concurrent"
+    )
     parent.async_execute_controller_command = AsyncMock()
     runtimes = [SimpleNamespace(capability_controller=ctrl) for ctrl in (left, right)]
     buttons = _combined_motor_buttons_for(parent, runtimes)
     assert len(buttons) == 4
     for button in buttons:
-        # Same key names do not erase P1 immediate-zero vs MX delayed-query release.
-        assert "held_control" not in button.extra_state_attributes
+        # Equal card metadata; each side's controller owns its own P1 zero or
+        # MX query release, so the combined hold stays protocol-correct.
+        assert button.extra_state_attributes["hold_release_delay_ms"] == 0
         await button.async_press()
         kwargs = parent.async_execute_controller_command.await_args.kwargs
         assert kwargs["side"] == "both" and kwargs["cancel_running"] is True
@@ -108,7 +115,9 @@ def test_parent_hold_intersection_is_direction_specific_and_requires_all_sides()
     ctrl = AppController(coordinator(), app_profile("tempur_curve"))
     left = ctrl.motor_control_specs[0]
     right = replace(left, hold=replace(left.hold, up_control="different_up"))
-    parent = MagicMock(pair_id="pair", device_info={}, children={}, connection_mode="concurrent")
+    parent = MagicMock(
+        pair_id="pair", device_info={}, children=PAIR_CHILDREN, connection_mode="concurrent"
+    )
 
     def sides(specs):
         return [
@@ -168,25 +177,3 @@ def test_legacy_entity_without_base_attribute_dictionary_does_not_break_projecti
         runtime, replace(_build_cover_description(ctrl.motor_control_specs[0]), hold=None)
     )
     assert cover.extra_state_attributes is None
-
-
-def test_legacy_motor_spec_without_new_field_keeps_cover_and_parent_finite_fallback():
-    from dataclasses import fields
-
-    ctrl = AppController(coordinator(), app_profile("tempur_curve"))
-    spec = ctrl.motor_control_specs[0]
-    legacy = SimpleNamespace(
-        **{field.name: getattr(spec, field.name) for field in fields(spec) if field.name != "hold"}
-    )
-    assert _build_cover_description(legacy).hold is None
-    parent = MagicMock(pair_id="pair", device_info={}, children={}, connection_mode="concurrent")
-    child = SimpleNamespace(
-        capability_controller=SimpleNamespace(
-            supports_motor_control=True,
-            has_discrete_motor_control=False,
-            motor_control_specs=(legacy,),
-        )
-    )
-    buttons = _combined_motor_buttons_for(parent, [child, child])
-    assert len(buttons) == 2
-    assert all("held_control" not in button.extra_state_attributes for button in buttons)

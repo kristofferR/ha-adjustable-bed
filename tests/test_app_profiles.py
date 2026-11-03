@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_SINO,
@@ -122,7 +123,10 @@ def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
     assert bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280) in options
 
 
-async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(hass: HomeAssistant) -> None:
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_INNOVA, KEESON_VARIANT_AMERICANSTAR])
+async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(
+    hass: HomeAssistant, variant: str,
+) -> None:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
@@ -131,43 +135,58 @@ async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(hass: Hom
     await flow.async_step_manual_entry(
         {
             CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
-            CONF_BED_TYPE: bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA),
+            CONF_BED_TYPE: bed_type_choice(BED_TYPE_KEESON, variant),
             CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
         }
     )
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT]) == (
         BED_TYPE_KEESON,
-        KEESON_VARIANT_INNOVA,
+        variant,
     )
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_INNOVA, KEESON_VARIANT_AMERICANSTAR])
 async def test_options_show_the_app_entry_and_let_the_variant_field_decide(
-    hass: HomeAssistant,
+    hass: HomeAssistant, variant: str,
 ) -> None:
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
             CONF_ADDRESS: "AA:BB:CC:DD:EE:03",
             CONF_BED_TYPE: BED_TYPE_KEESON,
-            CONF_PROTOCOL_VARIANT: KEESON_VARIANT_INNOVA,
+            CONF_PROTOCOL_VARIANT: variant,
         },
     )
     entry.add_to_hass(hass)
     flow = AdjustableBedOptionsFlow(entry)
     flow.hass = hass
     flow.handler = entry.entry_id
-    innova = bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
+    choice = bed_type_choice(BED_TYPE_KEESON, variant)
 
     form = await flow.async_step_settings()
     marker = next(m for m in form["data_schema"].schema if m.schema == CONF_BED_TYPE)
-    assert marker.default() == innova
+    assert marker.default() == choice
     # The selector is unchanged, so the variant field decides.
     result = await flow.async_step_settings(
-        {CONF_BED_TYPE: innova, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO}
+        {CONF_BED_TYPE: choice, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO}
     )
     if result["type"] == "form":
         result = await flow.async_step_settings({})
     assert result["type"] == "create_entry"
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_KEESON
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
+
+
+def test_americanstar_profile_owns_massage_and_per_side_layout() -> None:
+    variant = KEESON_VARIANT_AMERICANSTAR
+    choice = bed_type_choice(BED_TYPE_KEESON, variant)
+    options = {option["value"]: option["label"] for option in get_bed_type_options()}
+    assert options[choice] == "AMERICANSTAR app (Keeson)"
+    assert resolve_bed_type_choice(choice) == (BED_TYPE_KEESON, variant)
+    assert CONF_HAS_MASSAGE in hidden_generic_fields(BED_TYPE_KEESON, variant)
+    assert CONF_MOTOR_COUNT not in hidden_generic_fields(BED_TYPE_KEESON, variant)
+    sides = [(BED_TYPE_KEESON, variant)] * 2
+    assert _per_side_refusal(sides[0], sides, {CONF_MOTOR_COUNT: 3}) == (
+        CONF_MOTOR_COUNT, "AMERICANSTAR"
+    )

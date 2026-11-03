@@ -203,9 +203,11 @@ pair. Mixed, unknown, legacy and sequential sides keep finite controls.
 
 The scalar metadata is `held_control` on buttons, or `held_control_up` and
 `held_control_down` on covers, plus `hold_start_delay_ms` and
-`hold_release_delay_ms`. Source-held cluster033 controls start at0ms. Immediate
-zero releases use0ms; Q-Plus MX uses300ms to its first query, followed by the
-remaining600/900ms queries. These delays do not invent a physical STOP for MX.
+`hold_release_delay_ms`. Source-held cluster033 controls declare 0 ms for both,
+so the card sends STOP as soon as the control is released: every source-held
+key stops refreshing on release. Q-Plus MX's release queries at 300, 600 and
+900 ms come from the controller's release cleanup, not from a card delay. They
+do not invent a physical STOP for MX.
 
 Rename keeps this app's14-unit editor domain. HA rejects outer whitespace;
 it does not infer another package's trimmed caller semantics for Q-Plus.

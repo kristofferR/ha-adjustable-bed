@@ -4,7 +4,11 @@ The **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** selection
 implements the direct BLE path in Tempur Sleeptracker-AI
 `com.fullpower.applications.horizon` **3.6.2 (262)**. The complete Google Play
 delivery was analyzed and independently accepted on 2026-10-08. Protocol and
-app behavior are proven by that artifact; physical hardware remains unverified.
+app behavior are proven by that artifact and the accepted October 17/18
+addenda. An ActiveBreeze STS-60 user has confirmed setup, strength/climate
+readback, Wave Form One and lumbar movement on releases through 4.2.4 in
+[issue #693](https://github.com/kristofferR/ha-adjustable-bed/issues/693).
+Other hardware behavior remains unverified.
 The [S02 discovery ledger](../apk-analysis/dispositions/S02-sleeptracker.md)
 records every accepted discovery and implementation disposition.
 
@@ -116,7 +120,12 @@ Two, Three) selects. The app has no direct setter for either: it steps, and
 draws reported strengths 4/6/8 as one to three bars and patterns 1–3 as One to
 Three, and any other reported value as off. A select sends one step per reply until the processor reports
 the chosen value, at most three steps. It refuses when the current reply carries
-no value, for example a two-snapshot reply's reset strengths. Premium layouts add **28 Hz**, **40 Hz**,
+no value, for example a two-snapshot reply's reset strengths. **Massage pattern:
+Off** instead sends the selected processor unit's massage-stop command once,
+stopping both massage zones without cycling through other patterns. It works
+without a reported starting pattern; displayed state still comes from the reply.
+Head/foot strength Off continues stepping only that zone, since no separate
+zone-stop command is proven. Premium layouts add **28 Hz**, **40 Hz**,
 wave frequency/duration selectors, wind-down 1/2 and local motor/massage
 animation. Wave choices are 28, 40, 52, 68 and 88 Hz, with 5–105 minutes in
 steps of five. The wire duration is minutes times 600; its physical tick unit

@@ -64,6 +64,7 @@ from .const import (
     VARIANT_AUTO,
     connection_gated_by_bond,
     requires_pairing,
+    supports_runtime_authentication_recovery,
 )
 from .coordinator import (
     AdjustableBedCoordinator,
@@ -1020,7 +1021,10 @@ async def _maybe_create_pairing_issue_for(
     bed_type = entry_data.get(CONF_BED_TYPE)
     protocol_variant = entry_data.get(CONF_PROTOCOL_VARIANT)
     if not (bed_type and requires_pairing(bed_type, protocol_variant)):
-        await coordinator.async_clear_obsolete_pairing_state()
+        # A failed connection proves nothing about a runtime auth repair: only
+        # a successful connection resolves it, so keep it until then.
+        if not (bed_type and supports_runtime_authentication_recovery(bed_type, protocol_variant)):
+            await coordinator.async_clear_obsolete_pairing_state()
         return
 
     address = entry_data.get(CONF_ADDRESS, "")

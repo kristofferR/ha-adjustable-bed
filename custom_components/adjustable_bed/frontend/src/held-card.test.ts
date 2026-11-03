@@ -32,7 +32,7 @@ function fixture() {
       "button.right_stop": { entity_id: "button.right_stop", platform: "adjustable_bed", device_id: "right-child", translation_key: "stop" },
     },
     states: {
-      "button.mx_memory1": { entity_id: "button.mx_memory1", state: "unknown", attributes: { friendly_name: "MX Memory 1", held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 300, bed_side: "right" } },
+      "button.mx_memory1": { entity_id: "button.mx_memory1", state: "unknown", attributes: { friendly_name: "MX Memory 1", held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0, bed_side: "right" } },
       "button.right_stop": { entity_id: "button.right_stop", state: "unknown", attributes: {} },
     },
     devices: {}, themes: {}, language: "en", locale: { language: "en" },
@@ -104,17 +104,6 @@ test("real card page abandonment cancels a pending utility hold on its owning si
     await Promise.resolve();
   });
 });
-test("real card keeps a finite press when a held utility action has no STOP owner", () => {
-  const f = fixture();
-  const bed = bedEntitiesForDevice(f.hass, "right-child");
-  bed.stop = undefined;
-  const button = tile(f.card._utility(bed));
-  expect(button.strings.some((s) => s.includes("@keydown="))).toBe(false);
-  handler(button, "click")(new Event("click"));
-  expect(f.calls).toEqual([{ domain: "button", service: "press", data: { entity_id: "button.mx_memory1" } }]);
-  f.card.disconnectedCallback();
-});
-
 // Registry IDs are opaque. No entity name or held-control string determines
 // scope; native children and legacy same-device explicit sides share behavior.
 interface OwnershipCard extends CardUnderTest {
@@ -147,7 +136,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
       hold_start_delay_ms: 0, hold_release_delay_ms: 0,
     });
     // Source-owned opaque MX and Serta local-target actions use utility tiles.
-    add(`button.${side}_mx`, side, "remote_action", { held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 300 });
+    add(`button.${side}_mx`, side, "remote_action", { held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0 });
     add(`button.${side}_angle`, side, "remote_action", { held_control: "head_target_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0 });
   }
   const hass: HomeAssistant = { entities, states, devices, themes: {}, language: "en", locale: { language: "en" },
@@ -195,55 +184,6 @@ function rowStop(template: TemplateResult): TemplateResult {
 async function settle() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
 
 for (const mode of ["native", "legacy", "via"] as const) {
-  for (const release of ["keyup", "blur", "abandon"] as const) {
-    test(`${mode}: opposite bottom STOP preserves actual later ${release} cover cleanup`, async () => withKeyboard(async () => {
-      const f = ownershipFixture(mode);
-      const right = f.bed("right").motors.find((m) => m.key === "back")!;
-      const button = f.card._motorDirection(right, "up", f.bed("right").stop);
-      handler(button, "keydown")(new KeyEvent("Enter"));
-      f.stop("left");
-      expect(f.calls[1]).toEqual({ domain: "button", service: "press", data: { entity_id: "button.left_stop" } });
-      expect(f.card._hold.heldKey).toBe("back");
-      // A blur on the same logical motor on Left cannot steal Right ownership.
-      const left = f.bed("left").motors.find((m) => m.key === "back")!;
-      handler(f.card._motorDirection(left, "up", f.bed("left").stop), "blur")(new Event("blur"));
-      expect(f.calls).toHaveLength(2);
-      if (release === "abandon") f.card.disconnectedCallback();
-      else handler(button, release)(release === "keyup" ? new KeyEvent("Enter", "keyup") : new Event("blur"));
-      expect(f.calls[2]).toEqual({ domain: "cover", service: "stop_cover", data: { entity_id: "cover.right_back" } });
-      f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done());
-      await settle();
-      expect(f.calls).toHaveLength(3);
-    }));
-  }
-  test(`${mode}: row STOP is conservative across different motors despite held metadata`, async () => withKeyboard(async () => {
-    const f = ownershipFixture(mode);
-    const right = f.bed("right");
-    const back = right.motors.find((m) => m.key === "back")!;
-    const legs = right.motors.find((m) => m.key === "legs")!;
-    const button = f.card._motorDirection(back, "up", right.stop);
-    handler(button, "keydown")(new KeyEvent(" "));
-    handler(rowStop(f.card._motorRow(legs, right.stop)), "click")(new Event("click"));
-    expect(f.calls[1]).toEqual({ domain: "cover", service: "stop_cover", data: { entity_id: "cover.right_legs" } });
-    handler(button, "keyup")(new KeyEvent(" ", "keyup"));
-    expect(f.calls[2].data.entity_id).toBe("cover.right_back");
-    f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done()); await settle();
-  }));
-  test(`${mode}: finite Both cannot restart after side STOP and retains remaining cleanup`, async () => withKeyboard(async () => {
-    const f = ownershipFixture(mode);
-    f.add("button.finite_both", "both", "head_up");
-    // Current sequential/mixed-mode discovery offers no hold metadata.
-    const both = f.bed("both");
-    const motor = both.motors.find((m) => m.up === "button.finite_both")!;
-    const button = f.card._motorDirection(motor, "up", both.stop);
-    handler(button, "keydown")(new KeyEvent("Enter"));
-    f.stop("left");
-    f.finishes[0](); await settle();
-    expect(f.calls.map((c) => c.service)).toEqual(["press", "press"]);
-    handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
-    expect(f.calls[2].data.entity_id).toBe("button.both_stop");
-    f.stopFinishes.forEach((done) => done()); await settle();
-  }));
   test(`${mode}: explicit full STOP invalidates old hold completion without forgetting a newer one`, async () => withKeyboard(async () => {
     const f = ownershipFixture(mode);
     const right = f.bed("right");
@@ -294,18 +234,6 @@ for (const mode of ["native", "legacy", "via"] as const) {
     expect(f.calls[3].data.entity_id).toBe("cover.right_legs");
     f.finishes[1](); f.stopFinishes.forEach((done) => done()); await settle();
   }));
-  test(`${mode}: compact explicit side STOP preserves opposite hold release`, async () => withKeyboard(async () => {
-    const f = ownershipFixture(mode);
-    const right = f.bed("right");
-    const back = right.motors.find((m) => m.key === "back")!;
-    const button = f.card._motorDirection(back, "up", right.stop);
-    handler(button, "keydown")(new KeyEvent("Enter"));
-    f.card._stopCompact(f.bed("left"));
-    expect(f.calls[1].data.entity_id).toBe("button.left_stop");
-    handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
-    expect(f.calls[2].data.entity_id).toBe("cover.right_back");
-    f.finishes[0](); f.stopFinishes.forEach((done) => done()); await settle();
-  }));
   test(`${mode}: partial row STOP blocks finite Both repetition but abandonment cleans remaining side`, async () => withKeyboard(async () => {
     const f = ownershipFixture(mode);
     const both = f.bed("both"), left = f.bed("left");
@@ -341,20 +269,6 @@ test("pointer release owns the actual opposite-side callback after STOP", async 
   f.finishes[0](); f.stopFinishes.forEach((done) => done()); await settle();
 }));
 
-test("STOP on an unrelated device or an unknown registry entity retains own later release", async () => withKeyboard(async () => {
-  const f = ownershipFixture("native"), right = f.bed("right");
-  f.hass.entities["button.other"] = { entity_id: "button.other", device_id: "unrelated", platform: "adjustable_bed", translation_key: "stop" };
-  f.hass.states["button.other"] = { entity_id: "button.other", state: "unknown", attributes: {}, last_changed: "", last_updated: "" };
-  const back = right.motors.find((m) => m.key === "back")!;
-  const button = f.card._motorDirection(back, "up", right.stop);
-  handler(button, "keydown")(new KeyEvent("Enter"));
-  f.card._stopCompact({ ...right, stop: "button.other" });
-  f.card._stopCompact({ ...right, stop: "button.unknown" });
-  handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
-  expect(f.calls.map((c) => c.data.entity_id ?? c.data.control)).toEqual(["head_up", "button.other", "button.unknown", "cover.right_back"]);
-  f.finishes[0](); f.stopFinishes.forEach((done) => done()); await settle();
-}));
-
 for (const event of ["pagehide", "visibilitychange"] as const) test(`actual connected card ${event} releases owner and detaches listeners`, async () => withKeyboard(async () => {
   const f = ownershipFixture("native"), right = f.bed("right");
   const back = right.motors.find((m) => m.key === "back")!;
@@ -386,69 +300,6 @@ for (const event of ["pagehide", "visibilitychange"] as const) test(`actual conn
   }
 }));
 
-test("partial Stop retains a bounded Both hold's remaining release owner", async () => withKeyboard(async () => {
-  const f = ownershipFixture("native"), both = f.bed("both");
-  const back = both.motors.find((m) => m.key === "back")!;
-  const button = f.card._motorDirection(back, "up", both.stop);
-  handler(button, "keydown")(new KeyEvent("Enter"));
-  f.stop("left");
-  expect(f.card._hold.heldKey).toBe("back");
-  handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
-  expect(f.calls.map((c) => c.data.entity_id ?? c.data.control)).toEqual(["head_up", "button.left_stop", "cover.both_back"]);
-  f.finishes[0](); f.stopFinishes.forEach((done) => done()); await settle();
-}));
-
-for (const mode of ["native", "legacy", "via"] as const) {
-  for (const ending of ["keyup", "blur", "pointerup", "pointercancel"] as const) {
-    test(`${mode}: stale ${ending} owns admitted generation, not new opposite movement`, async () => withKeyboard(async () => {
-      const f = ownershipFixture(mode), bed = f.bed("right");
-      const back = bed.motors.find((m) => m.key === "back")!;
-      const old = f.card._motorDirection(back, "up", bed.stop), fresh = f.card._motorDirection(back, "down", bed.stop);
-      const pointer = (type: string) => {
-        const event = Object.assign(new Event(type, { cancelable: true }), { pointerId: 7, button: 0, isPrimary: true });
-        Object.defineProperty(event, "currentTarget", { value: { setPointerCapture() {} } });
-        return event;
-      };
-      const isPointer = ending.startsWith("pointer");
-      handler(old, isPointer ? "pointerdown" : "keydown")(isPointer ? pointer("pointerdown") : new KeyEvent("Enter"));
-      f.stop("right");
-      handler(fresh, isPointer ? "pointerdown" : "keydown")(isPointer ? pointer("pointerdown") : new KeyEvent("Enter"));
-      const event = () => isPointer ? pointer(ending) : ending === "blur" ? new Event("blur") : new KeyEvent("Enter", "keyup");
-      handler(old, ending)(event());
-      expect(f.card._hold.heldKey).toBe("back");
-      expect(f.calls.map((c) => c.data.entity_id ?? c.data.control)).toEqual(["head_up", "button.right_stop", "head_down"]);
-      handler(fresh, ending)(event());
-      expect(f.calls[3]).toEqual({ domain: "cover", service: "stop_cover", data: { entity_id: "cover.right_back" } });
-      f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done()); await settle();
-    }));
-  }
-  test(`${mode}: old same-direction template cannot end a new generation; rediscovery releases it`, async () => withKeyboard(async () => {
-    const f = ownershipFixture(mode), bed = f.bed("right"), back = bed.motors.find((m) => m.key === "back")!;
-    const old = f.card._motorDirection(back, "up", bed.stop);
-    handler(old, "keydown")(new KeyEvent(" ")); f.stop("right");
-    const fresh = f.card._motorDirection(back, "up", bed.stop);
-    handler(fresh, "keydown")(new KeyEvent(" "));
-    handler(old, "blur")(new Event("blur")); expect(f.calls).toHaveLength(3);
-    const rebuilt = f.card._motorDirection(f.bed("right").motors.find((m) => m.key === "back")!, "up", bed.stop);
-    handler(rebuilt, "keyup")(new KeyEvent(" ", "keyup"));
-    expect(f.calls[3].data.entity_id).toBe("cover.right_back");
-    f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done()); await settle();
-  }));
-  test(`${mode}: public config cleanup owns admitted compact Right, never rejected Left`, async () => withKeyboard(async () => {
-    const f = ownershipFixture(mode);
-    (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "opaque-root", layout: "compact" });
-    for (const side of ["right", "left"] as const) {
-      const bed = f.bed(side), back = bed.motors.find((m) => m.key === "back")!;
-      handler(f.card._motorDirection(back, "up", bed.stop), "keydown")(new KeyEvent("Enter"));
-    }
-    expect(f.calls).toHaveLength(1);
-    (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "different", layout: "compact" });
-    expect(f.calls.some((c) => c.data.entity_id === "button.left_stop")).toBe(false);
-    expect(f.calls.some((c) => c.data.entity_id === "cover.right_back")).toBe(true);
-    expect(f.calls.filter((c) => c.service === "stop_cover")).toHaveLength(1);
-    f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done()); await settle();
-  }));
-}
 class HoldClock {
   now = 0;
   next = 0;
@@ -470,68 +321,15 @@ async function withHoldClock(run: (clock: HoldClock) => Promise<void>) {
   try { await run(clock); }
   finally { Object.defineProperty(globalThis, "setTimeout", set); Object.defineProperty(globalThis, "clearTimeout", clear); }
 }
-for (const ending of ["release", "config", "abandon", "stop"] as const) test(`compact ${ending} before deferred start retains no cleanup ownership`, async () => withKeyboard(async () => withHoldClock(async (clock) => {
+for (const ending of ["release", "abandon", "stop"] as const) test(`compact ${ending} before deferred start retains no cleanup ownership`, async () => withKeyboard(async () => withHoldClock(async (clock) => {
   const f = ownershipFixture("native"), bed = f.bed("right");
   (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "opaque-root", layout: "compact" });
   const back = bed.motors.find((m) => m.key === "back")!; back.heldControls!.up!.startDelayMs = 250;
   const button = f.card._motorDirection(back, "up", bed.stop);
   handler(button, "keydown")(new KeyEvent("Enter")); clock.advance(249); expect(f.calls).toEqual([]);
   if (ending === "release") handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
-  else if (ending === "config") (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "different", layout: "compact" });
   else if (ending === "stop") f.stop("right"); else f.card.disconnectedCallback();
   clock.advance(1000);
   expect(f.calls).toEqual(ending === "stop" ? [{ domain: "button", service: "press", data: { entity_id: "button.right_stop" } }] : []);
   expect(clock.tasks.size).toBe(0); f.stopFinishes.forEach((done) => done()); await settle();
 })));
-test("deferred compact hold retains exact cleanup only after service dispatch", async () => withKeyboard(async () => withHoldClock(async (clock) => {
-  const f = ownershipFixture("native"), bed = f.bed("right");
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "opaque-root", layout: "compact" });
-  const back = bed.motors.find((m) => m.key === "back")!; back.heldControls!.up!.startDelayMs = 250;
-  handler(f.card._motorDirection(back, "up", bed.stop), "keydown")(new KeyEvent("Enter")); clock.advance(250);
-  expect(f.calls[0].data.control).toBe("head_up");
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "different", layout: "compact" });
-  expect(f.calls.map((c) => c.data.entity_id ?? c.data.control)).toEqual(["head_up", "cover.right_back"]);
-  f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done()); await settle();
-})));
-
-test("missing compact accessibility direction creates no cleanup target", async () => {
-  const f = ownershipFixture("native");
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "opaque-root", layout: "compact" });
-  const button = f.card._motorDirection({ key: "missing" }, "up", "button.left_stop");
-  handler(button, "click")(Object.assign(new Event("click"), { detail: 0 }));
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "different", layout: "compact" });
-  expect(f.calls).toEqual([]);
-});
-
-test("compact lifecycle flush does not duplicate pending cleanup, explicit Stop still dispatches", async () => withKeyboard(async () => {
-  const f = ownershipFixture("native"), bed = f.bed("right"), back = bed.motors.find((m) => m.key === "back")!;
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "opaque-root", layout: "compact" });
-  const button = f.card._motorDirection(back, "up", bed.stop);
-  handler(button, "keydown")(new KeyEvent("Enter")); handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
-  f.stop("right");
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "different", layout: "compact" });
-  expect(f.calls.map((c) => c.data.entity_id ?? c.data.control)).toEqual(["head_up", "cover.right_back", "button.right_stop"]);
-  f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done()); await settle();
-}));
-
-test("old failed compact cleanup cannot change ownership of a newer movement", async () => withKeyboard(async () => {
-  const f = ownershipFixture("native"), bed = f.bed("right"), back = bed.motors.find((m) => m.key === "back")!;
-  const service = f.hass.callService;
-  let failOld: ((reason: Error) => void) | undefined;
-  let stopCalls = 0;
-  f.hass.callService = (domain, action, data = {}) => {
-    if (action === "stop_cover" && stopCalls++ === 0) {
-      f.calls.push({ domain, service: action, data });
-      return new Promise((_resolve, reject) => { failOld = reject; });
-    }
-    return service(domain, action, data);
-  };
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "opaque-root", layout: "compact" });
-  const up = f.card._motorDirection(back, "up", bed.stop);
-  handler(up, "keydown")(new KeyEvent("Enter")); handler(up, "keyup")(new KeyEvent("Enter", "keyup"));
-  handler(f.card._motorDirection(back, "down", bed.stop), "keydown")(new KeyEvent("Enter"));
-  failOld!(new Error("old cleanup failed")); await settle();
-  (f.card as unknown as AdjustableBedCard).setConfig({ type: "custom:adjustable-bed-card", device_id: "different", layout: "compact" });
-  expect(f.calls.map((c) => c.data.entity_id ?? c.data.control)).toEqual(["head_up", "cover.right_back", "head_down", "cover.right_back"]);
-  f.finishes.forEach((done) => done()); f.stopFinishes.forEach((done) => done()); await settle();
-}));

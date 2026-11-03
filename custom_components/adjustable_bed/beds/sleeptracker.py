@@ -759,11 +759,15 @@ class SleeptrackerController(BedController):
     async def _step_massage_to(
         self, key: str, option: str, action: Literal["head", "foot", "pattern"]
     ) -> None:
-        """The app only steps; repeat one step per reply until it reports the choice.
+        """Step to a reported choice, or stop massage for pattern Off.
 
         Strength and pattern each cycle through four states, so three steps
         reach any of them.
         """
+        if action == "pattern" and option == "off":
+            # The proven massage-domain stop avoids cycling through active patterns.
+            await self.massage_off()
+            return
         for _ in range(3):
             current = self._state.get(key)
             if current == option:

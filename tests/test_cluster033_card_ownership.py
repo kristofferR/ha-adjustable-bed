@@ -206,7 +206,12 @@ def test_existing_combined_entity_drops_hold_offer_after_live_sequential_transit
     from .test_cluster033 import coordinator
 
     ctrl = AppController(coordinator(), app_profile("tempur_curve"))
-    parent = MagicMock(pair_id="pair", device_info={}, children={}, connection_mode="concurrent")
+    parent = MagicMock(
+        pair_id="pair",
+        device_info={},
+        children={side: SimpleNamespace(bed_type="tempur_curve") for side in ("left", "right")},
+        connection_mode="concurrent",
+    )
     entities = _combined_motor_buttons_for(
         parent, [SimpleNamespace(capability_controller=ctrl)] * 2
     )

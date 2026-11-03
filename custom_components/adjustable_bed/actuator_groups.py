@@ -17,6 +17,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -63,7 +64,10 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
+    GLIDEAWAY_MOTION_MODELS,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
@@ -77,6 +81,7 @@ from .const import (
     KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SIMON_LI,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
 )
@@ -117,6 +122,20 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "description": "Two control axes, one memory and app-specific massage/light controls",
                 "hint": "Choose the app profile explicitly; shared Bluetooth names do not identify it.",
             }
+        ],
+    },
+    "glideaway_motion": {
+        "display": "Glideaway Motion / Montion app",
+        "description": "MOTION 400 / 450 / 500 / 600",
+        "variants": [
+            {
+                "type": BED_TYPE_GLIDEAWAY_MOTION,
+                "variant": model,
+                "label": label,
+                "description": "Use the model selected in the Glideaway Motion app",
+                "hint": "Bluetooth names and shared service UUIDs do not identify the model.",
+            }
+            for model, label in GLIDEAWAY_MOTION_MODELS.items()
         ],
     },
     "bedtech": {
@@ -245,6 +264,20 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "OKIN-Seating app",
                 "description": "Seats from the OKIN-Seating app",
                 "hint": "Choose this if you control the seat with the OKIN-Seating app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_AVANTI_BASES,
+                "label": "Avanti Bases app",
+                "description": "2M, 3M or 4M bases from the Avanti Bases app; set the motor count to match",
+                "hint": "Choose this if you control the bed with the Avanti Bases app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_AMERICANSTAR,
+                "label": "AMERICANSTAR app",
+                "description": "2M, 3M or 4M bases from the AMERICANSTAR app; set the motor count to match",
+                "hint": "Choose this if you control the bed with the AMERICANSTAR app",
             },
             {
                 "type": BED_TYPE_KEESON,
@@ -417,9 +450,9 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             },
             {
                 "type": BED_TYPE_OKIN_7BYTE,
-                "label": "Nectar beds",
-                "description": "Nectar Move and similar models",
-                "hint": "Device name contains 'Nectar'",
+                "label": "Legacy Nectar (7-byte)",
+                "description": "Older Nectar bases using the legacy seven-byte protocol",
+                "hint": "Choose only when the installed bed uses the legacy Nectar protocol",
             },
             {
                 "type": BED_TYPE_OKIN_CST,
@@ -429,6 +462,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                     "II Clarity, Rize MF900, Support, newer Nectar Motion, and some OKIN-* bases"
                 ),
                 "hint": "Try this for OKIN-* beds with 62741525 plus 90311625/00001530 GATT services",
+            },
+            {
+                "type": BED_TYPE_OKIN_CST,
+                "variant": OKIN_CST_VARIANT_NECTAR_MOVE,
+                "label": "Nectar Move app",
+                "description": "Explicit two-axis profile for the Nectar Move app, using Okin CST",
+                "hint": "Choose the Nectar Move app profile; shared OKIN identity is not enough",
             },
             {
                 "type": BED_TYPE_OKIN_NORDIC,

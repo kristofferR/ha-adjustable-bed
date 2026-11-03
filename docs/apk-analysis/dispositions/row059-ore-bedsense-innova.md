@@ -54,9 +54,12 @@ Raw artifacts, reports and decompiled sources remain machine-local.
 - INNOVA writes to and subscribes the last FFE9 and FFE4 found across services, as the app
   does, requires both and mirrors Android's inherited write type. Changing profile or bed
   type removes the profile's covers, buttons and states.
-- The `okin_ore` bed type is now labelled "Okin ORE (Glideaway Motion app)": the accepted
+- At row059 implementation time, `okin_ore` was labelled "Okin ORE (Glideaway Motion app)": the accepted
   Dynasty Bases and INNOVA reports prove both apps use only the `E5 FE 16` frame, so docs
   point their users to the Keeson app profiles. Its key and behavior are unchanged.
+  The later accepted [row068 Glideaway report](row068-glideaway-motion.md) proves
+  a separate `E6 FE 16` app profile. The legacy entry is now labelled
+  "Okin ORE (legacy A5 5A)"; no existing entry is automatically migrated.
 
 ## Totals
 
