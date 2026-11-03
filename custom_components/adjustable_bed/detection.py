@@ -1309,7 +1309,7 @@ def _detect_bed_type_detailed(
     has_kaidi_mac = any(
         service_info.address.upper().startswith(prefix) for prefix in KAIDI_MAC_PREFIXES
     )
-    floyd_payload = service_info.manufacturer_data.get(0xFFFF)
+    floyd_payload = (service_info.manufacturer_data or {}).get(0xFFFF)
     floyd_adv = extract_kaidi_advertisement({0xFFFF: floyd_payload}) if floyd_payload else None
     has_floyd_product = is_floyd_advertisement(floyd_adv) and service_info.rssi >= -92
     if kaidi_adv and not (has_kaidi_uuid or has_kaidi_name or has_kaidi_mac or has_floyd_product):
