@@ -125,6 +125,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | 🧪 [BedSense app](docs/beds/bedsense.md) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
+| 🧪 [OKIN SleepEase](docs/beds/doublesleep.md) | DoubleSleep / XiaoBao and sensor-only XiaoBao Only; artifact-proven, hardware unverified |
 | 🧪 [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, hardware unverified |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's BOX15 / BOX24 / BOX25 and the explicit Sleepy's Elite app profile |
 | ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/starcode-abm5-4.md); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |

@@ -33,6 +33,26 @@ both sides.
 `target_address` and has no `side` parameter. Select a child device for a
 two-address pair. See [support capture](GETTING_HELP.md#generating-a-support-bundle).
 
+## OKIN SleepEase / DoubleSleep
+
+`doublesleep_configure` accepts a bed `device_id` and optional paired target
+`side`. Its `action` selects alarm setup, anti-snore apply/demo, sensitivity,
+day/month report retrieval, named preset programming or MFP capability queries.
+The fields and model/driver gates are documented in the
+[SleepEase guide](beds/doublesleep.md#configuration-and-reports).
+`report_side` chooses a sensor stream independently of paired-device `side`.
+Report sensors retain raw results and typed records for automations.
+
+```yaml
+action: adjustable_bed.doublesleep_configure
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  action: report
+  report_side: left
+  report_kind: day
+  date: "2026-11-03"
+```
+
 ## Sleeptracker Smart Bed
 
 These actions require the separate [Sleeptracker framed-JSON processor](beds/sleeptracker.md).

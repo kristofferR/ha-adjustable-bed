@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
@@ -671,6 +672,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_VMATBASIC: "V-MAT Basic app",
     BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
     BED_TYPE_MOTION_BED: "Motion Bed app",
+    BED_TYPE_DOUBLESLEEP: "OKIN SleepEase (DoubleSleep / XiaoBao)",
     BED_TYPE_SLEEPTRACKER: "Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
@@ -1492,6 +1494,19 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_JENSEN,
             confidence=0.9,
             signals=signals,
+        )
+
+    from .doublesleep_protocol import discover as discover_doublesleep
+
+    if discover_doublesleep(
+        getattr(getattr(service_info, "device", None), "name", None) or "",
+        service_info.manufacturer_data or {},
+        service_info.name,
+    ):
+        return DetectionResult(
+            bed_type=BED_TYPE_DOUBLESLEEP,
+            confidence=1.0,
+            signals=["name:sleepease", "manufacturer:89"],
         )
 
     # Unique app processor service. Do not identify UART bases by KSSF names.

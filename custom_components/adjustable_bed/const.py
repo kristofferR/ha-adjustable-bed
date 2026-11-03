@@ -573,6 +573,9 @@ STARCODE_GROUP_BED_TYPES: Final = frozenset(
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
+BED_TYPE_DOUBLESLEEP: Final = "doublesleep"
+DOUBLESLEEP_VARIANTS: Final = {"auto": "From advertisement", "p1": "SleepDriver (P1)", "p2": "XiaoBao (P2)", "p3": "XiaoBao Only sensor (P3)"}
+DOUBLESLEEP_CONFIG_KEYS: Final = frozenset({CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT})
 BED_TYPE_SLEEPTRACKER: Final = "sleeptracker"
 CONF_SLEEPTRACKER_FOUNDATION: Final = "sleeptracker_foundation"
 CONF_SLEEPTRACKER_UNIT: Final = "sleeptracker_unit_number"
@@ -748,6 +751,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_DOUBLESLEEP,
     BED_TYPE_SLEEPTRACKER,
     # Rondure / 1500 Tilt Base
     BED_TYPE_RONDURE,
@@ -2650,6 +2654,8 @@ OKIN_64BIT_VARIANTS: Final = {
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
     *CASPER_BASE_VARIANTS,
+
+    "p1", "p2", "p3",
     *COMFORT_ENHANCEMENTS_VARIANTS,
     *(v for v in BEDSENSE_VARIANTS if v != "auto"),
     VARIANT_AUTO,
@@ -2924,6 +2930,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_DOUBLESLEEP,
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_HJBED,
         BED_TYPE_GLIDEAWAY_MOTION,

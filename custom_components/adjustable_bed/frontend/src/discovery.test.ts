@@ -1415,3 +1415,33 @@ test("HJBed gestures release through their same-side cancellation button", () =>
   delete hass.entities["button.release"];
   expect(heldButtonMotor(hass, "button.memory")).toBeUndefined();
 });
+
+test("SleepEase exposes held motors, massage, lights, sensors and the local child gate", () => {
+  const hass = hassWith([
+    entry("cover.head", "head"),
+    entry("button.flat", "preset_flat"),
+    entry("button.massage", "doublesleep_massage_action"),
+    entry("button.light", "doublesleep_light_action"),
+    entry("button.refresh", "doublesleep_action"),
+    entry("sensor.hr", "doublesleep_left_heart_rate"),
+    entry("sensor.mode", "doublesleep_massage_mode"),
+    entry("sensor.light", "doublesleep_light"),
+    entry("binary_sensor.flag", "doublesleep_left_flag1"),
+    entry("select.child", "doublesleep_child_lock"),
+  ]);
+  hass.states["cover.head"] = {
+    entity_id: "cover.head", state: "open", last_changed: "", last_updated: "",
+    attributes: { held_control_up: "doublesleep_2", held_control_down: "doublesleep_3",
+                  hold_start_delay_ms: 0, hold_release_delay_ms: 0 },
+  };
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors[0].heldControls?.up.control).toBe("doublesleep_2");
+  expect(bed.presets).toEqual(["button.flat"]);
+  expect(bed.massage.buttons).toEqual(["button.massage"]);
+  expect(bed.massage.states).toEqual(["sensor.mode"]);
+  expect(bed.lights.buttons).toEqual(["button.light"]);
+  expect(bed.lights.states).toEqual(["sensor.light"]);
+  expect(bed.utility).toEqual(["button.refresh"]);
+  expect(bed.utilityStates).toEqual(["sensor.hr", "binary_sensor.flag"]);
+  expect(bed.utilitySelects).toEqual(["select.child"]);
+});

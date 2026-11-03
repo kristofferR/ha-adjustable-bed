@@ -2365,3 +2365,154 @@ hjbed:
       selector:
         select:
           options: [both, left, right]
+
+doublesleep_configure:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    action:
+      required: true
+      selector:
+        select:
+          options:
+          - alarm
+          - anti_snore
+          - anti_snore_demo
+          - sensitivities
+          - report
+          - save_preset
+          - capabilities
+    hour:
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+          - value: sun
+            label: Sunday
+          - value: mon
+            label: Monday
+          - value: tue
+            label: Tuesday
+          - value: wed
+            label: Wednesday
+          - value: thu
+            label: Thursday
+          - value: fri
+            label: Friday
+          - value: sat
+            label: Saturday
+    alarm_preset:
+      selector:
+        select:
+          options:
+          - value: zero_g
+            label: Zero gravity
+          - value: flat
+            label: Flat
+          - value: memory_1
+            label: Memory 1
+          - value: memory_2
+            label: Memory 2
+          - value: vibration
+            label: Vibration
+    alarm_massage:
+      selector:
+        boolean: null
+    mode:
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    pwm:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    timer:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    sensor_side:
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    left_sensitivity:
+      selector:
+        select:
+          options:
+          - value: '1'
+            label: Low
+          - value: '2'
+            label: Medium
+          - value: '3'
+            label: High
+    right_sensitivity:
+      selector:
+        select:
+          options:
+          - value: '1'
+            label: Low
+          - value: '2'
+            label: Medium
+          - value: '3'
+            label: High
+    date:
+      selector:
+        date: null
+    report_side:
+      selector:
+        select:
+          options:
+          - left
+          - right
+    report_kind:
+      selector:
+        select:
+          options:
+          - day
+          - month
+    preset:
+      selector:
+        select:
+          options:
+          - memory_1
+          - memory_2
+          - anti_snore
+          - lounge
+          - tv
+          - zero_g
+    capability_page:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
