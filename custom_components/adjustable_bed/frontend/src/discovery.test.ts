@@ -110,6 +110,21 @@ test("read-only light state is visible independently of light controls", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("Sleepy's voice brightness actions appear with its lighting controls", () => {
+  const bed = bedEntitiesForDevice(
+    hassWith([
+      entry("button.sleepys_brightness_down", "sleepys_app_voice_brightness_down"),
+      entry("button.sleepys_brightness_up", "sleepys_app_voice_brightness_up"),
+    ]),
+    "dev1",
+  );
+  expect(bed.lights.buttons).toEqual([
+    "button.sleepys_brightness_down",
+    "button.sleepys_brightness_up",
+  ]);
+  expect(bed.utility).toEqual([]);
+});
+
 test("Adjustable Lite light toggle and reported bulb state share the lighting section", () => {
   const hass = hassWith([
     entry("button.lite_toggle_light", "toggle_light"),

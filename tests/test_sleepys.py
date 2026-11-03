@@ -1321,8 +1321,7 @@ class TestSleepysBox25Controller:
             (controller.move_lumbar_down, "5A0103103007A5"),
             (controller.move_tilt_up, "5A010310300AA5"),
             (controller.move_tilt_down, "5A010310300BA5"),
-            # ON resets the LEDs to white; turning on uses the RGB frame (#557).
-            (controller.lights_on, "5AE00402FFFFFFA5"),
+            (controller.lights_on, "5A0103103073A5"),
             (controller.lights_off, "5A0103103074A5"),
             (controller.lights_toggle, "5A0103103071A5"),
             (controller.massage_off, "5A010310306FA5"),
@@ -1435,37 +1434,34 @@ class TestSleepysBox25Controller:
         assert coordinator.controller_state["light_level"] == 0
         assert coordinator.controller_state["under_bed_lights_on"] is False
 
-    async def test_rgb_light_turns_on_in_colour_and_restores_brightness(
+    async def test_lights_on_sends_on_frame_and_reports_white(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """Hardware-tested #557 sequence: RGB lights the LEDs, then the level is restored."""
+        """Some Star bases ignore RGB while off (#702); ON lights them in white (#557)."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         assert controller.supports_light_color_control
         assert controller.supported_color_mode == "rgb"
-        assert not controller.supports_explicit_light_on_control
+        assert controller.supports_explicit_light_on_control
 
         with patch.object(controller, "write_command", AsyncMock()) as mock_write:
             await controller.set_light_color((0, 255, 255))
-            await controller.set_light_level(3)
             await controller.lights_off()
             assert coordinator.controller_state["under_bed_lights_on"] is False
             await controller.lights_on()
 
         assert [call.args[0] for call in mock_write.await_args_list] == [
             bytes.fromhex("5A E0 04 02 00 FF FF A5"),
-            bytes.fromhex("5A E0 04 00 03 00 00 A5"),
             bytes.fromhex("5A 01 03 10 30 74 A5"),
-            bytes.fromhex("5A E0 04 02 00 FF FF A5"),
-            bytes.fromhex("5A E0 04 00 03 00 00 A5"),
+            bytes.fromhex("5A 01 03 10 30 73 A5"),
         ]
         assert coordinator.controller_state["under_bed_lights_on"] is True
-        assert coordinator.controller_state["under_bed_lights_rgb"] == (0, 255, 255)
+        assert coordinator.controller_state["under_bed_lights_rgb"] == (255, 255, 255)
 
     async def test_rgb_light_entity_maps_brightness_to_six_levels(
         self,
@@ -1495,6 +1491,7 @@ class TestSleepysBox25Controller:
             for call in mock_write.await_args_list
             if call.args[0] != Box25Commands.QUERY_STATUS
         ] == [
+            bytes.fromhex("5A 01 03 10 30 73 A5"),
             bytes.fromhex("5A E0 04 02 FF 00 00 A5"),
             bytes.fromhex("5A E0 04 00 06 00 00 A5"),
             bytes.fromhex("5A E0 04 00 01 00 00 A5"),
@@ -1530,6 +1527,7 @@ class TestSleepysBox25Controller:
             for call in mock_write.await_args_list
             if call.args[0] != Box25Commands.QUERY_STATUS
         ] == [
+            bytes.fromhex("5A 01 03 10 30 73 A5"),
             bytes.fromhex("5A E0 04 02 FF FF FF A5"),
             bytes.fromhex("5A E0 04 00 03 00 00 A5"),
         ]

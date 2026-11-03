@@ -921,7 +921,7 @@ def massage_select(target: Processor, key: str):
         ("sleeptracker_massage_head_level", "3", 2),
         ("sleeptracker_massage_head_level", "off", 3),
         ("sleeptracker_massage_head_level", "1", 0),
-        ("sleeptracker_massage_pattern_option", "off", 3),
+        ("sleeptracker_massage_pattern_option", "three", 2),
     ],
 )
 async def test_massage_select_steps_until_the_processor_reports_the_choice(key, option, steps) -> None:
@@ -932,6 +932,50 @@ async def test_massage_select_steps_until_the_processor_reports_the_choice(key, 
     sent = [v["request"]["massage"] for _, v in target.requests if "massage" in v.get("request", {})]
     assert len(sent) == steps
     assert target.states[key] == option
+
+
+@pytest.mark.parametrize("pattern", [0, 4])
+async def test_pattern_off_sends_selected_unit_massage_stop(pattern) -> None:
+    target = Processor(model="activebreeze_large")
+    await target.bed.start_notify()
+    reply_with(
+        target,
+        {"details": {"body": {"snapshots": [{"massagePattern": pattern}]}}},
+    )
+    target.requests.clear()
+
+    await massage_select(target, "sleeptracker_massage_pattern_option").select_fn(target.bed, "off")
+
+    assert target.requests == [
+        (
+            p.CONTROL_UUID,
+            {
+                "wsCommand": "motor-command",
+                "authToken": "session-secret",
+                "request": {"stop": {"action": "massage", "position": {"side": 2}}},
+            },
+        )
+    ]
+    assert target.states["sleeptracker_massage_pattern_option"] == "off"
+    assert target.states["sleeptracker_massage_head_level"] == "off"
+    assert target.states["sleeptracker_massage_foot_level"] == "off"
+
+
+async def test_pattern_off_needs_no_prior_state_and_does_not_assume_a_stop() -> None:
+    target = Processor()
+    await target.bed.start_notify()
+    target.bed._update_status({"details": {"body": {"snapshots": []}}})
+    assert target.states["sleeptracker_massage_pattern_option"] is None
+    target.requests.clear()
+
+    # The default mock still reports One. Sending stop is not proof of stopping.
+    await massage_select(target, "sleeptracker_massage_pattern_option").select_fn(target.bed, "off")
+
+    assert len(target.requests) == 1
+    assert target.requests[0][1]["request"] == {
+        "stop": {"action": "massage", "position": {"side": 2}}
+    }
+    assert target.states["sleeptracker_massage_pattern_option"] == "one"
 
 
 async def test_pattern_select_steps_from_an_idle_unlisted_pattern() -> None:

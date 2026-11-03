@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from functools import partial
 from typing import TYPE_CHECKING, cast
 
 from bleak import BleakClient
@@ -35,7 +36,7 @@ from ..const import (
     get_richmat_features,
     richmat_remote_has_combined_head_feet,
 )
-from .base import BedController, MotorControlSpec
+from .base import BedController, ControllerButtonSpec, MotorControlSpec, SideBoundController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -50,6 +51,22 @@ RICHMAT_TOGGLE_LIGHT_REMOTE_CODES = frozenset({"bt6500", "ggrm"})
 RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES = frozenset({"qrrm"})
 RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS = ("casper",)
 RICHMAT_LIGHT_TIMER_ALWAYS_ON = "Always On"
+
+# Accepted row055 GGRM binding rows, including the ONCE queue's release delay.
+_GGRM_ACTIONS = {
+    0x66: ("Save Zero G", "richmat_mh_save"),
+    0x69: ("Save Anti-snore", "richmat_mh_save"),
+    0x5F: ("Massage 10 min", "richmat_mh_massage"),
+    0x63: ("Massage 20 min", "richmat_mh_massage"),
+    0x61: ("Massage 30 min", "richmat_mh_massage"),
+}
+
+
+async def _ggrm_button_action(controller: BedController, *, command: int) -> None:
+    target = controller._controller if isinstance(controller, SideBoundController) else controller
+    if not isinstance(target, RichmatController):
+        raise TypeError("This action requires the GGRM remote profile")
+    await target.tap_ggrm_action(command)
 
 RICHMAT_RGB_STRIP_LIGHT_DEFAULT_COLOR = (1, 221, 255)
 RICHMAT_RGB_STRIP_LIGHT_TIMER_MAX_MINUTES = 30
@@ -301,6 +318,40 @@ class RichmatController(BedController):
         return self._features
 
     # Capability properties based on remote code features
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        if (
+            self._remote_code.upper() != RICHMAT_REMOTE_GGRM
+            or self._command_protocol != RICHMAT_PROTOCOL_WILINKE
+        ):
+            return ()
+        # Reuse the MH action identities, translations and card sections: these
+        # are the same catalog commands, explicitly selected for a QRRM receiver.
+        return tuple(
+            ControllerButtonSpec(
+                key=f"richmat_mh_{command:02x}",
+                name=label,
+                press_fn=partial(_ggrm_button_action, command=command),
+                icon="mdi:content-save" if kind == "richmat_mh_save" else "mdi:timer-outline",
+                translation_key=kind,
+                translation_placeholders={"action": label},
+            )
+            for command, (label, kind) in _GGRM_ACTIONS.items()
+            if kind != "richmat_mh_massage" or self._coordinator.has_massage
+        )
+
+    async def tap_ggrm_action(self, command: int) -> None:
+        """Send a catalog ONCE action, then its release after 120 ms."""
+        if not any(spec.key == f"richmat_mh_{command:02x}" for spec in self.controller_button_specs):
+            raise ValueError("This action is not available for the selected Richmat remote")
+        try:
+            await self.write_command(self._build_command(command))
+        finally:
+            try:
+                await asyncio.sleep(0.12)
+            finally:
+                await self.write_command(self._build_stop_command(), cancel_event=asyncio.Event())
+
     @property
     def supports_massage_toggle_control(self) -> bool:
         return self._remote_code.upper() != RICHMAT_REMOTE_GGRM

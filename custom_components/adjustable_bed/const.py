@@ -69,6 +69,21 @@ MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_PRESET, CONF_MOTION_B
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
 CONF_STARCODE_LIFT_ENTRIES: Final = "starcode_lift_entries"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
+CONF_SLEEPYS_ELITE_SELECTOR: Final = "sleepys_elite_selector"
+SLEEPYS_ELITE_SELECTORS: Final = (
+    "none",
+    "BOX15",
+    "BOX24",
+    "BOX1220",
+    "BOX1221",
+    "BOX2422",
+    "BOX2442",
+    "BOX3633",
+    "BOX25",
+    "BOX25_STAR",
+)
+# Bound for ordinary HA button, cover and value commits on this source-held profile.
+SLEEPYS_ELITE_NATIVE_ACTION_MS: Final = 300
 CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
 CONF_VMATBASIC_FLOOR_LEVEL: Final = "vmatbasic_floor_level"
 CONF_VMATBASIC_FLOOR_MINUTES: Final = "vmatbasic_floor_minutes"
@@ -503,6 +518,7 @@ BED_TYPE_SLEEPYS_BOX15: Final = (
 )
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
+BED_TYPE_SLEEPYS_ELITE_APP: Final = "sleepys_elite_app"
 BED_TYPE_SLEEPSTAR: Final = "sleepstar"  # SleepSpa S9000AI / SLEEPSTAR transparent StarCode
 BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
@@ -639,6 +655,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SLEEPYS_BOX24,
     # Sleepy's Elite BOX25 Star
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     # SleepSpa S9000AI / SLEEPSTAR
     BED_TYPE_SLEEPSTAR,
     # Separate ELEVATE two-actuator accessory
@@ -715,6 +732,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_BEDTECH,
         BED_TYPE_SLEEPYS_BOX15,
         BED_TYPE_SLEEPYS_BOX24,
+        BED_TYPE_SLEEPYS_ELITE_APP,
         BED_TYPE_SVANE,
         BED_TYPE_RONDURE,
         BED_TYPE_SCOTT_LIVING,
@@ -1690,11 +1708,20 @@ OKIN_APP_VARIANTS: Final = (
 # ORE SFM apps (com.ore.sfmc2bedsence / com.ore.sfm): explicit, never auto-selected.
 KEESON_VARIANT_BEDSENSE_BASES: Final = "bedsense_bases"
 KEESON_VARIANT_INNOVA: Final = "innova"
+# Accepted ORE comfort-bed app profiles: explicit, never auto-selected.
+KEESON_VARIANT_AVANTI_BASES: Final = "avanti_bases"
 # ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
+KEESON_VARIANT_AMERICANSTAR: Final = "americanstar"
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
 KEESON_VARIANT_DYNASTY_BASES: Final = "dynasty_bases"
 ORE_COMFORT_BED_VARIANTS: Final = frozenset(
-    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_BEDSENSE_BASES}
+    {
+        KEESON_VARIANT_MAXCOIL_UNA,
+        KEESON_VARIANT_DYNASTY_BASES,
+        KEESON_VARIANT_BEDSENSE_BASES,
+        KEESON_VARIANT_AVANTI_BASES,
+        KEESON_VARIANT_AMERICANSTAR,
+    }
 )
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -1723,6 +1750,8 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_SIMON_LI: "Simon Li app (chair / love seat / sofa)",
     KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app (motor count 2/3/4 = Healing 6/7/8)",
     KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
+    KEESON_VARIANT_AVANTI_BASES: "Avanti Bases app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_AMERICANSTAR: "AMERICANSTAR app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_MAXCOIL_UNA: "MaxCoil Una app (2M / 3M / 4M motor count)",
@@ -2542,6 +2571,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_SIMON_LI,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_AVANTI_BASES,
+    KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
@@ -3085,8 +3116,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # SUTA: 150ms delay → 7 repeats = 1.05s total
     # Source: com.shuta.smart_home ANALYSIS.md
     BED_TYPE_SUTA: (7, 150),
-    # TiMOTION AHF: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.timotion.ahf ANALYSIS.md
+    # HA button.press defaults: ten finite writes, starting immediately, with a
+    # 100 ms delay between repeats. Held AHF controls use a separate cadence.
     BED_TYPE_TIMOTION_AHF: (10, 100),
     # Logicdata: 30ms delay → 10 repeats = 0.3s total
     # Source: at.silvermotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)

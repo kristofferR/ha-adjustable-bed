@@ -46,6 +46,7 @@ from .base import (
     build_position_number_spec,
 )
 from .linak_protocol import (
+    LINAK_AXIS_MASKS,
     LinakAlarmStep,
     LinakCapabilitySnapshot,
     LinakModelVariant,
@@ -69,6 +70,9 @@ _LOGGER = logging.getLogger(__name__)
 LINAK_CONTROL_READY_TIMEOUT_S = 15.0
 LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
 LINAK_PROTOCOL_READ_TIMEOUT_S = 0.75
+# Some controllers never answer the mask read over a proxy (issue #714). Without
+# a bound, the proxy's own 30 s read timeout stalls every connect.
+LINAK_CAPABILITY_MASK_READ_TIMEOUT_S = 2.0
 LINAK_INITIAL_POSITION_RETRY_ATTEMPTS = 3
 LINAK_INITIAL_POSITION_RETRY_DELAY_S = 0.75
 LINAK_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S = 120.0
@@ -585,6 +589,72 @@ class LinakController(BedController):
             str(getattr(service, "uuid", "")).lower() == uuid.lower() for service in services
         )
 
+    def _has_characteristic(self, uuid: str) -> bool:
+        """Return whether the connected GATT collection contains a characteristic UUID."""
+        if self.client is None or self.client.services is None:
+            return False
+        try:
+            return self.client.services.get_characteristic(uuid) is not None
+        except BleakError:
+            # Duplicate UUIDs across services still prove the characteristic exists.
+            return True
+
+    def _inferred_capabilities(self) -> LinakCapabilitySnapshot:
+        """Infer reference axes from the configured motor layout, as 3.x did.
+
+        Used only when the controller has the position service but its mask
+        read fails. Both mask outcomes for that service (TD3 and Advanced)
+        expose four memories, so only the axis set is an inference.
+        """
+        motor_count = self._coordinator.motor_count
+        axes = ["back", "legs"]
+        if motor_count >= 3:
+            axes.append("head")
+        if motor_count >= 4:
+            axes.append("feet")
+        uuids = {
+            "back": LINAK_POSITION_BACK_UUID,
+            "legs": LINAK_POSITION_LEG_UUID,
+            "head": LINAK_POSITION_HEAD_UUID,
+            "feet": LINAK_POSITION_FEET_UUID,
+        }
+        mask = 0
+        for axis in axes:
+            if self._has_characteristic(uuids[axis]):
+                mask |= LINAK_AXIS_MASKS[axis]
+        return LinakCapabilitySnapshot(
+            profile=self._profile,
+            model_variant=LinakModelVariant.ADVANCED if mask else LinakModelVariant.TD3,
+            actuator_mask=mask,
+            discovery_complete=True,
+            actuator_mask_inferred=True,
+        )
+
+    def _handle_unreadable_mask(self, err: Exception) -> None:
+        """Keep a mask-backed cache, otherwise fall back to the motor layout."""
+        cached = self._capabilities
+        # Timer promotion can complete a snapshot without any mask read.
+        if (
+            cached.discovery_complete
+            and cached.actuator_mask is not None
+            and not cached.actuator_mask_inferred
+        ):
+            _LOGGER.warning(
+                "Could not read Linak capability mask for %s; retaining cached capabilities: %s",
+                self._coordinator.address,
+                err,
+            )
+            return
+        self._capabilities = self._inferred_capabilities()
+        _LOGGER.warning(
+            "Could not read Linak capability mask for %s (%s); using configured "
+            "%d-motor layout with position axes: %s",
+            self._coordinator.address,
+            str(err) or type(err).__name__,
+            self._coordinator.motor_count,
+            ", ".join(self._capabilities.position_axes) or "none",
+        )
+
     async def async_discover_capabilities(self) -> None:
         """Resolve Standard, TD3, and Advanced from services and mask byte 0."""
         if self._profile is LinakProfile.PERFORMANCE:
@@ -607,8 +677,9 @@ class LinakController(BedController):
 
         self._timer_candidate = self._has_service(LINAK_TIMER_SERVICE_UUID)
         try:
-            async with self._ble_lock:
-                data = await self.client.read_gatt_char(LINAK_POSITION_MASK_UUID)
+            async with asyncio.timeout(LINAK_CAPABILITY_MASK_READ_TIMEOUT_S):
+                async with self._ble_lock:
+                    data = await self.client.read_gatt_char(LINAK_POSITION_MASK_UUID)
             if not data:
                 raise ValueError("Linak capability mask is empty")
         except BleakError as err:
@@ -619,19 +690,11 @@ class LinakController(BedController):
                     err,
                 )
             else:
-                _LOGGER.warning(
-                    "Could not resolve Linak capability mask for %s; retaining cached capabilities: %s",
-                    self._coordinator.address,
-                    err,
-                )
+                self._handle_unreadable_mask(err)
             self._publish_capability_state()
             return
         except (TimeoutError, ValueError) as err:
-            _LOGGER.warning(
-                "Could not resolve Linak capability mask for %s; retaining cached capabilities: %s",
-                self._coordinator.address,
-                err,
-            )
+            self._handle_unreadable_mask(err)
             self._publish_capability_state()
             return
 
@@ -984,6 +1047,7 @@ class LinakController(BedController):
             actuator_mask=self._capabilities.actuator_mask,
             timer_supported=True,
             discovery_complete=True,
+            actuator_mask_inferred=self._capabilities.actuator_mask_inferred,
         )
         self._publish_capability_state()
         await self._read_protocol_characteristic(
