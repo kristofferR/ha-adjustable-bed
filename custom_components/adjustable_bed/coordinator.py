@@ -1928,6 +1928,53 @@ class AdjustableBedCoordinator:
             else:
                 await self.async_disconnect(reason="authentication_failed")
 
+    def _can_encrypt_link_in_place(self) -> bool:
+        """Return True when a runtime auth failure should first try in-place pairing.
+
+        A retained link that never requested pairing proves nothing about the
+        bond: unlike BlueZ, the ESP32 proxy in issue #709 did not raise link
+        security after an "insufficient encryption" reply, so an unpaired
+        reconnect to a bonded bed stayed unencrypted. Pairing that live link is
+        exactly what the guided repair does, and with stored keys it needs no
+        pairing mode. Once a link has paired, a further auth failure is real
+        evidence.
+        """
+        return (
+            grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
+            and not self._attempt_used_pairing
+            and self._pairing_supported is not False
+            and self._client is not None
+            and self._client.is_connected
+        )
+
+    async def _async_encrypt_link_in_place(self) -> bool:
+        """Pair the retained live link; raise the repair only if the bed refuses."""
+        async with self._lock:
+            if self._client is None or not self._client.is_connected:
+                await self._async_raise_pairing_issue()
+                return False
+            try:
+                # Raises the repair itself when the bond is refused.
+                paired = await self._async_pair_on_live_link({})
+            except Exception:
+                _LOGGER.warning(
+                    "Could not pair the live link to %s in place", self._address, exc_info=True
+                )
+                await self._async_raise_pairing_issue()
+                return False
+            if not paired:
+                return False
+            _LOGGER.info(
+                "Paired the live link to %s in place with its existing bond; "
+                "future connections will pair after service discovery",
+                self._address,
+            )
+            # The authentication failure was the unencrypted link, not a lost bond.
+            self._last_bond_evidence = None
+            self._record_bond_verification("encrypted_in_place")
+            await delete_pairing_required_issue(self.hass, self._address)
+            return True
+
     async def _async_raise_pairing_issue(self) -> None:
         """Surface the guided pairing repair, best-effort."""
         try:
@@ -2028,6 +2075,9 @@ class AdjustableBedCoordinator:
                                 self._vmat_unready_client = None
                         self._intentional_disconnect = False
         advisory = grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
+        # Any pairing on this link, including the repair's, makes a later auth
+        # failure on it evidence rather than an unencrypted link.
+        self._attempt_used_pairing = True
         try:
             _LOGGER.info("BLE backend pairing starting for %s on the discovered link", self._address)
             await client.pair()
@@ -3101,7 +3151,15 @@ class AdjustableBedCoordinator:
                 self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE),
                 source or "an unknown source",
             )
-        bond_marker_trusted = self._ble_bond_established and not marker_out_of_scope
+        # A latched marker has already been proven wrong once, so it never
+        # suppresses pairing, even after a repair recorded a fresh bond
+        # (issue #709: the repair kept the latch but re-armed the marker, and
+        # the next unpaired proxy reconnect came up unencrypted).
+        bond_marker_trusted = (
+            self._ble_bond_established
+            and not self._ble_bond_marker_unreliable
+            and not marker_out_of_scope
+        )
 
         use_pairing = (
             bed_requires_pairing
@@ -3786,6 +3844,7 @@ class AdjustableBedCoordinator:
                         and self._unverified_marker_applies(adapter_result.source)
                         else onboarding_deadline
                     )
+                    live_link_bonded = False
                     try:
                         await self._async_cancel_furnimove_bond_request()
                         async with asyncio.timeout_at(connection_deadline):
@@ -3858,6 +3917,14 @@ class AdjustableBedCoordinator:
                                 self._mark_ble_bond_established()
                             pairing_details["adapter_pairing_supported"] = True
                             pairing_details["connection_result"] = "pairing_connection_succeeded"
+                            live_link_bonded = (
+                                pair_after_service_discovery
+                                and self._bed_type != BED_TYPE_SLEEP_NUMBER
+                            )
+                            if live_link_bonded:
+                                # An earlier session's auth failure is retired;
+                                # the probe below records any fresh one.
+                                self._last_bond_evidence = None
                         elif use_pairing:
                             # Advisory bond failed; the link is up and stays up.
                             # _async_pair_on_live_link already recorded whether
@@ -4090,6 +4157,17 @@ class AdjustableBedCoordinator:
                     self._connecting = False
                     self._connection_attempt_details.append(attempt_details)
                     continue
+
+                if live_link_bonded and (
+                    self._last_bond_evidence is None
+                    or self._last_bond_evidence.status is not BondVerificationStatus.AUTH_FAILED
+                ):
+                    # The bed accepted an explicit bond on this link and the
+                    # probe saw no authentication failure: the same proof the
+                    # pairing repair accepts. Without this, a bed whose probe is
+                    # always inconclusive (LP Gen2 has no DIS) would keep an
+                    # earlier session's repair open while working (issue #709).
+                    await delete_pairing_required_issue(self.hass, self._address)
 
                 # Some beds (Sleep Number MCR/Fuzion, Jensen) disconnect if
                 # there is too much delay between the BLE connection and the
@@ -6024,7 +6102,12 @@ class AdjustableBedCoordinator:
                     # Dropping it would spend the single connection a
                     # one-connection-per-window bed grants, and the repair could
                     # not reconnect until the user power-cycled the bed.
-                    await self._async_handle_ble_authentication_error(err, retain_link=True)
+                    encrypt_in_place = self._can_encrypt_link_in_place()
+                    await self._async_handle_ble_authentication_error(
+                        err, retain_link=True, defer_pairing_issue=encrypt_in_place
+                    )
+                    if encrypt_in_place:
+                        await self._async_encrypt_link_in_place()
                 raise
             except _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS:
                 if (
