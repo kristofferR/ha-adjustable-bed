@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -1162,6 +1163,63 @@ class TestRichmatLights:
 
 class TestRichmatMassage:
     """Test Richmat massage commands."""
+
+    @pytest.mark.parametrize(
+        ("command", "frame"),
+        [
+            (0x66, "6e010066d5"),
+            (0x69, "6e010069d8"),
+            (0x5F, "6e01005fce"),
+            (0x63, "6e010063d2"),
+            (0x61, "6e010061d0"),
+        ],
+    )
+    async def test_ggrm_extra_actions_match_frozen_catalog(self, monkeypatch, command, frame):
+        """Row055 Blvd Home GGRM vectors and Revive ONCE release semantics."""
+        controller = RichmatController(MagicMock(has_massage=True), is_wilinke=True, remote_code="GGRM")
+        controller.write_command = AsyncMock()
+        sleep = AsyncMock()
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.asyncio.sleep", sleep)
+        spec = next(s for s in controller.controller_button_specs if s.key == f"richmat_mh_{command:02x}")
+
+        await spec.press_fn(controller)
+
+        assert [call.args[0].hex() for call in controller.write_command.await_args_list] == [
+            frame, "6e01006edd"
+        ]
+        sleep.assert_awaited_once_with(0.12)
+        assert not controller.write_command.await_args_list[-1].kwargs["cancel_event"].is_set()
+
+    @pytest.mark.parametrize("remote, wilinke, massage, keys", [
+        ("ggrm", True, False, {"richmat_mh_66", "richmat_mh_69"}),
+        ("BT6500", True, True, set()),
+        ("auto", True, True, set()),
+        ("GGRM", False, True, set()),
+    ])
+    async def test_ggrm_extra_actions_require_profile_transport_and_massage(
+        self, remote, wilinke, massage, keys
+    ):
+        controller = RichmatController(MagicMock(has_massage=massage), is_wilinke=wilinke, remote_code=remote)
+        controller.write_command = AsyncMock()
+        assert {spec.key for spec in controller.controller_button_specs} == keys
+        with pytest.raises(ValueError):
+            await controller.tap_ggrm_action(0x5F)
+        controller.write_command.assert_not_awaited()
+
+    @pytest.mark.parametrize("cancel_during", ["write", "release_delay"])
+    async def test_ggrm_extra_action_cancellation_releases(self, monkeypatch, cancel_during):
+        controller = RichmatController(MagicMock(has_massage=True), is_wilinke=True, remote_code="GGRM")
+        controller.write_command = AsyncMock(
+            side_effect=[asyncio.CancelledError(), None] if cancel_during == "write" else None
+        )
+        sleep = AsyncMock(side_effect=asyncio.CancelledError() if cancel_during == "release_delay" else None)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.asyncio.sleep", sleep)
+
+        with pytest.raises(asyncio.CancelledError):
+            await controller.tap_ggrm_action(0x66)
+
+        assert controller.write_command.await_args_list[-1].args == (bytes.fromhex("6e01006edd"),)
+        assert not controller.write_command.await_args_list[-1].kwargs["cancel_event"].is_set()
 
     @pytest.mark.parametrize(
         ("remote_code", "button_key", "frame", "unsupported_method"),

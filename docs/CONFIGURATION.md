@@ -30,7 +30,7 @@ During initial setup, you'll configure basic options like bed type, motor count,
 
 **OKIN ORE:** Add the integration manually and select **Okin ORE (Glideaway Motion app)**
 as the bed type. Beds controlled with the current Dynasty Bases or INNOVA apps use
-the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md)
+the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases](beds/ore-comfort-bed.md)
 or [INNOVA](beds/keeson.md#innova-profile) profile instead. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
 Bluetooth Service Discovery Server UUID, so it cannot identify an ORE bed by itself.
 UUID-only automatic discovery is disabled to avoid detecting unrelated devices such
@@ -286,6 +286,10 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Logicdata | 10 | 30ms |
 | All others | 10 | 100ms |
 
+The **Sleepy's Elite app** profile uses its selector-specific app timing and
+release behavior; the BOX15/BOX24 values above describe the existing protocol
+profiles. Its cadence is not controlled by the generic motor pulse settings.
+
 ### When to Adjust
 
 | Symptom | Solution |
@@ -305,6 +309,7 @@ controller-specific choices are documented here:
 
 | Bed type | Choices covered by its guide |
 |----------|-----------------------------|
+| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Explicit control-box selector for each physical bed |
 | [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-cst.md) | Rize and Support product profiles; Auto retains MF900 behavior |
@@ -328,6 +333,7 @@ controller-specific choices are documented here:
 | **Simon Li** | App profile, big-endian E5 frames; fixed back, foot, lumbar, Home and two memories | Seats controlled with the Simon Li app |
 | **Heal Every Night** | App profile, big-endian E5 frames; motor count picks Healing 6/7/8 | Beds controlled with the Heal Every Night app |
 | **OKIN-Seating** | App profile, big-endian E5 frames; back, foot and Home | Seats controlled with the OKIN-Seating app |
+| **Avanti Bases** | ORE comfort-bed app profile; motor count picks 2M/3M/4M | Beds controlled with the Avanti Bases app |
 | **Bedsense Bases** | ORE comfort-bed app profile; motor count picks 2M/3M/4M | Beds controlled with the Bedsense Bases app |
 | **INNOVA** | App profile, little-endian E5 frames; motor count picks 2M/3M/4M | Beds controlled with the INNOVA app |
 | **Restonic BT, remote A / B** | App profiles for the two Restonic BT Remote styles | Beds controlled with the Restonic BT Remote app |
@@ -428,7 +434,8 @@ refuses a change, split the pair, configure each side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
-| Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
+| Sleepy's Elite app | [Explicit app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile): select the app's control-box selector independently for each physical receiver. The existing BOX15, BOX24 and BOX25 profiles remain available. |
+| Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases](beds/ore-comfort-bed.md), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
 | Richmat | [RMControl](beds/rmcontrol.md): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md): app and model. |
 | Leggett & Platt | [Prodigy / U Series](beds/leggett-okin.md): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |

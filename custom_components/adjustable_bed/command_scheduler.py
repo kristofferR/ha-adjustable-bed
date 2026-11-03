@@ -76,6 +76,11 @@ class CommandContext:
     pulse_count: int | None = None
     pulse_delay_ms: int | None = None
     cancel_reason: CommandOutcome | None = None
+    # A protocol cleanup frame belongs to the operation that is leaving the
+    # lane. The immediately admitted replacement can use this acknowledgement
+    # to avoid sending a duplicate STOP after it acquires the lane.
+    preempted_contexts: tuple[CommandContext, ...] = ()
+    cleanup_stop_sent: bool = False
     active: bool = True
     defer_disconnect: bool = False
 
@@ -289,24 +294,46 @@ class DeviceCommandScheduler:
             ),
         }
 
-    async def execute(self, intent: CommandIntent) -> None:
+    async def execute(
+        self, intent: CommandIntent, *, expected_stop_epoch: int | None = None
+    ) -> None:
         """Admit an ordinary intent and wait for its terminal result."""
-        handle = await self.enqueue(intent)
+        handle = await self.enqueue(intent, expected_stop_epoch=expected_stop_epoch)
         try:
             await asyncio.shield(handle.future)
         except asyncio.CancelledError:
             await self.cancel(handle, CommandOutcome.CALLER_CANCELLED)
             raise
 
-    async def enqueue(self, intent: CommandIntent, *, prepared: bool = False) -> CommandHandle:
+    async def enqueue(
+        self,
+        intent: CommandIntent,
+        *,
+        prepared: bool = False,
+        expected_stop_epoch: int | None = None,
+    ) -> CommandHandle:
         """Admit an intent and return its handle without waiting for execution."""
-        handle = self._new_handle(intent, prepared=prepared)
+        handle = self._new_handle(
+            intent,
+            prepared=prepared,
+            admitted_stop_epoch=expected_stop_epoch,
+        )
 
         async with self._lock:
             if self._closed:
                 raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+            if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
+                self._finish_locked(
+                    handle,
+                    CommandOutcome.STOPPED,
+                    invalidated_stop_epoch=self._stop_epoch,
+                )
+                return handle
             replaces_active = False
             if intent.cancel_running:
+                active = self._active
+                if active is not None and self._handles_conflict(active, handle):
+                    handle.context.preempted_contexts = (active.context,)
                 replaces_active = self._replace_conflicts_locked(handle)
             # A replacement for the operation currently owning the link must be
             # next after that operation's cleanup. Otherwise an older,
@@ -333,6 +360,13 @@ class DeviceCommandScheduler:
         if self._closed:
             raise RuntimeError(f"Command scheduler for {self._name} is shut down")
         normalized_resources = command_resources(*resources)
+        active = self._active
+        preempted_contexts = (
+            (active.context,)
+            if active is not None
+            and _resources_overlap(active.intent.resources, normalized_resources)
+            else ()
+        )
         stop_epoch = self.request_stop(normalized_resources)
         handle = self._new_handle(
             CommandIntent(
@@ -345,6 +379,7 @@ class DeviceCommandScheduler:
             prepared=False,
             admitted_stop_epoch=stop_epoch,
         )
+        handle.context.preempted_contexts = preempted_contexts
         task = asyncio.create_task(
             self._execute_admitted_stop(handle),
             name=f"adjustable_bed_stop_{self._name}",
