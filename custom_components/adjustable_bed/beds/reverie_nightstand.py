@@ -138,6 +138,7 @@ class ReverieNightstandController(BedController):
         self._stk_selected_side = retained_side if retained_side in ("1", "2", "3") else "1"
         self._active_stk_motion_side: int | None = None
         self._diagnostic_timer: asyncio.TimerHandle | None = None
+        self._diagnostic_connection_release: Callable[[], None] | None = None
         self._routine_timer: asyncio.TimerHandle | None = None
         self._routine_steps: list[tuple[ReverieComfortRequest | None, int]] = []
         self._routine_generation = 0
@@ -688,9 +689,7 @@ class ReverieNightstandController(BedController):
 
     def _cancel_protocol_timers(self) -> None:
         self._cancel_routine()
-        if self._diagnostic_timer is not None:
-            self._diagnostic_timer.cancel()
-            self._diagnostic_timer = None
+        self._cancel_diagnostic()
 
     def on_disconnect(self) -> None:
         self._cancel_protocol_timers()
@@ -853,10 +852,16 @@ class ReverieNightstandController(BedController):
     async def async_start_diagnostic(self) -> None:
         """Run the P1 scan-screen LED and massage test for ten seconds."""
         self.validate_diagnostic()
-        if self._diagnostic_timer is not None:
-            self._diagnostic_timer.cancel()
+        self._cancel_diagnostic()
+        context = self._coordinator.hold_command_connection()
+        context.__enter__()
+
+        def release() -> None:
+            context.__exit__(None, None, None)
+
+        self._diagnostic_connection_release = release
         self._diagnostic_timer = self._coordinator.hass.loop.call_later(
-            10, self._enqueue_diagnostic_stop
+            10, self._enqueue_diagnostic_stop, release
         )
         failures: list[Exception] = []
         for char_uuid, value in (
@@ -875,16 +880,29 @@ class ReverieNightstandController(BedController):
         if not self.model.nightlight or not self.model.massage:
             raise ValueError("Protocol 110 diagnostic test requires lights and massage")
 
-    def _enqueue_diagnostic_stop(self) -> None:
+    def _cancel_diagnostic(self) -> None:
+        if self._diagnostic_timer is not None:
+            self._diagnostic_timer.cancel()
+            self._diagnostic_timer = None
+        release = self._diagnostic_connection_release
+        self._diagnostic_connection_release = None
+        if release is not None:
+            release()
+
+    def _enqueue_diagnostic_stop(self, release: Callable[[], None]) -> None:
+        if release is not self._diagnostic_connection_release:
+            return
         self._diagnostic_timer = None
         self._coordinator.hass.async_create_task(
-            self._stop_diagnostic(), "adjustable_bed.reverie_diagnostic_stop"
+            self._stop_diagnostic(release), "adjustable_bed.reverie_diagnostic_stop"
         )
 
-    async def _stop_diagnostic(self) -> None:
+    async def _stop_diagnostic(self, release: Callable[[], None] | None = None) -> None:
+        if release is None:
+            release = self._diagnostic_connection_release
         failures: list[Exception] = []
         async def write_stops(controller: BedController) -> None:
-            if controller is not self:
+            if controller is not self or release is not self._diagnostic_connection_release:
                 return
             for char_uuid, value in (
                 (REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, 0x00),
@@ -900,12 +918,16 @@ class ReverieNightstandController(BedController):
                         "Reverie Protocol 110 diagnostic stop write failed"
                     )
 
-        await self._coordinator.async_execute_controller_command(
-            write_stops,
-            cancel_running=False,
-            resource="reverie:diagnostic",
-            read_positions_after_operation=False,
-        )
+        try:
+            await self._coordinator.async_execute_controller_command(
+                write_stops,
+                cancel_running=False,
+                resource="reverie:diagnostic",
+                read_positions_after_operation=False,
+            )
+        finally:
+            if release is self._diagnostic_connection_release:
+                self._cancel_diagnostic()
         if failures:
             raise ExceptionGroup("Reverie diagnostic stop writes failed", failures)
 

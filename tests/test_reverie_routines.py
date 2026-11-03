@@ -25,11 +25,14 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
 )
 
@@ -335,3 +338,102 @@ async def test_diagnostic_stop_pair_runs_in_one_serialized_operation(
     assert calls[0][1] is not None and calls[1][1] is not None
     assert calls[0][1] is not calls[1][1]
     assert not calls[0][1].is_set() and not calls[1][1].is_set()
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "model", "controller_type", "write_method"),
+    [
+        (BED_TYPE_REVERIE, "8Q", ReverieController, "write_command"),
+        (BED_TYPE_REVERIE_NIGHTSTAND, "R510L", ReverieNightstandController, "_write_to_char"),
+    ],
+)
+@pytest.mark.parametrize("finish", ["stop", "stop_failure", "disconnect", "replace"])
+async def test_diagnostic_keeps_connection_until_cleanup(
+    hass, mock_coordinator_connected, monkeypatch,
+    bed_type, model, controller_type, write_method, finish,
+) -> None:
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Reverie diagnostic ownership",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+            CONF_BED_TYPE: bed_type,
+            CONF_PROTOCOL_VARIANT: model,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        },
+        options={CONF_DISCONNECT_AFTER_COMMAND: True},
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    await coordinator.async_connect()
+    controller = coordinator.controller
+    assert isinstance(controller, controller_type)
+    writes = AsyncMock()
+    monkeypatch.setattr(controller, write_method, writes)
+
+    await coordinator.async_execute_controller_command(
+        lambda selected: selected.async_start_diagnostic(),
+        resource="reverie:diagnostic",
+        read_positions_after_operation=False,
+    )
+    timer = controller._diagnostic_timer
+    release = controller._diagnostic_connection_release
+    assert timer is not None
+    assert coordinator._command_connection_holds == 1
+    assert coordinator._disconnect_timer is None
+    writes.reset_mock()
+
+    if finish == "disconnect":
+        controller.on_disconnect()
+        writes.assert_not_awaited()
+    else:
+        if finish == "replace":
+            await controller.async_start_diagnostic()
+            writes.reset_mock()
+            await controller._stop_diagnostic(release)
+            writes.assert_not_awaited()
+            assert coordinator._command_connection_holds == 1
+        if finish == "stop_failure":
+            writes.side_effect = ConnectionError("stop write failed")
+            with pytest.raises(ExceptionGroup, match="diagnostic stop writes failed"):
+                await controller._stop_diagnostic()
+        else:
+            await controller._stop_diagnostic()
+        assert writes.await_count == 2
+    assert timer.cancelled()
+    assert coordinator._command_connection_holds == 0
+    assert controller._diagnostic_timer is None
+    assert coordinator._disconnect_timer is not None
+    coordinator._cancel_disconnect_timer()
+
+
+@pytest.mark.parametrize("side", ["1", "2", "3"])
+def test_stk_side_changes_only_legacy_wave_number_availability(side):
+    from custom_components.adjustable_bed.number import (
+        MASSAGE_NUMBER_DESCRIPTIONS,
+        AdjustableBedMassageNumber,
+    )
+
+    coordinator, _, _ = _coordinator()
+    controller = ReverieNightstandController(coordinator, model="STK")
+    coordinator.capability_controller = controller
+    coordinator.entity_side = None
+    coordinator.device_info = {}
+    coordinator.entity_translation_key = lambda key: key
+    coordinator.entity_unique_id = lambda key: key
+    controller._set_stk_side(side)
+    numbers = {
+        description.massage_zone: AdjustableBedMassageNumber(coordinator, description)
+        for description in MASSAGE_NUMBER_DESCRIPTIONS
+        if description.massage_zone in ("head", "foot", "wave")
+    }
+
+    assert numbers["head"].available
+    assert numbers["foot"].available
+    assert numbers["wave"].available is (side == "1")

@@ -927,12 +927,6 @@
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count."
-        },
-        "error": {
-          "invalid_pairlink_role": "Choose central connection or local peripheral role.",
-          "pairlink_local_source_unavailable": "Select exactly one active local Bluetooth source from this Home Assistant host.",
-          "invalid_pairlink_home_id": "Enter a signed or unsigned four-byte decimal HomeID.",
-          "invalid_pairlink_password": "Enter text that encodes to exactly four UTF-8 bytes, or use an eight-digit hex override with the default text 1122."
         }
       },
       "remove_bond": {
@@ -1041,6 +1035,10 @@
       }
     },
     "error": {
+      "invalid_pairlink_role": "Choose central connection or local peripheral role.",
+      "pairlink_local_source_unavailable": "Select exactly one active local Bluetooth source from this Home Assistant host.",
+      "invalid_pairlink_home_id": "Enter a signed or unsigned four-byte decimal HomeID.",
+      "invalid_pairlink_password": "Enter text that encodes to exactly four UTF-8 bytes, or use an eight-digit hex override with the default text 1122.",
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",

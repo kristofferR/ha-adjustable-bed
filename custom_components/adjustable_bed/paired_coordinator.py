@@ -1963,7 +1963,6 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
             kind=kind,
             read_positions_after_operation=read_positions_after_operation,
             expected_stop_epoch=expected_stop_epoch,
-            resource=resource,
             resources=self._scoped_command_resources(resource, resources),
         )
         self._sync_position_state()
