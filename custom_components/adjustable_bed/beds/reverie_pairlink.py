@@ -1330,7 +1330,9 @@ class ReveriePairlinkController(BedController):
                 return
             for payload in state_query_payloads():
                 try:
-                    await self.async_send_payload(payload, prepared_snapshot=snapshot)
+                    await self.async_send_payload(
+                        payload, prepared_snapshot=snapshot, refresh_telemetry=True
+                    )
                 except PermissionError:
                     # The SDK loops over all selectors even when the shared
                     # sign gate refuses each send; no frame is emitted here.

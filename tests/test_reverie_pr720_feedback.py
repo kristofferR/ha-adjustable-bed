@@ -7,7 +7,12 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    decrypt_user_frame,
+    state_query_payloads,
+)
 from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+    PairlinkMeshStatusEvent,
     PairlinkRuntimeNotReadyError,
 )
 from custom_components.adjustable_bed.const import (
@@ -29,7 +34,12 @@ from tests.test_reverie_pairlink_production import (
     _send_state_selector,
     _subscribe_peer,
 )
-from tests.test_reverie_pairlink_sdk_wiring import _local_canonical
+from tests.test_reverie_pairlink_sdk_wiring import (
+    _full_tlv,
+    _local_canonical,
+    _message,
+    _read_available,
+)
 
 
 async def test_registered_backup_disconnect_preserves_primary_telemetry(
@@ -204,3 +214,93 @@ async def test_admitted_comfort_accepts_feedback_but_keeps_transport_and_stop_gu
             assert len(client.writes) == 1
     finally:
         await controller.stop_notify()
+
+
+@pytest.mark.parametrize("feedback", [None, "first", "every"])
+@pytest.mark.parametrize("mutation", [None, "key", "epoch", "target", "stop", "sign"])
+async def test_initial_dashboard_reads_accept_feedback_but_keep_session_guards(
+    monkeypatch, feedback, mutation
+):
+    controller, client, runtime, tasks = _controller()
+    await _join_central(controller, client, runtime, tasks)
+    captured = runtime.prepare_send(mtu=client.mtu_size)
+    effect = PairlinkMeshStatusEvent(runtime.epoch, runtime.target_mac, None, 8)
+    client.writes.clear()
+    original_write = client.write_gatt_char
+
+    async def write(*args, **kwargs):
+        await original_write(*args, **kwargs)
+        if feedback == "every" or (feedback == "first" and len(client.writes) == 1):
+            controller.handle_mesh_event(32, bytes((0, 0, 0, 0, 2, 0xA7, 1, 20)))
+        if len(client.writes) == 1:
+            if mutation == "key":
+                runtime._peer_keys[runtime.target_mac] = bytes.fromhex("AABBCCDD")
+            elif mutation == "epoch":
+                runtime.epoch += 1
+            elif mutation == "target":
+                runtime.target_mac = "11:22:33:44:55:66"
+            elif mutation == "stop":
+                controller._coordinator.cancel_command.set()
+            elif mutation == "sign":
+                runtime.sign_gate.sign_all = False
+
+    monkeypatch.setattr(client, "write_gatt_char", write)
+    try:
+        if mutation == "stop":
+            with pytest.raises(asyncio.CancelledError):
+                await controller._async_run_initial_dashboard_queries(effect)
+        else:
+            await controller._async_run_initial_dashboard_queries(effect)
+        expected = state_query_payloads() if mutation is None else state_query_payloads()[:1]
+        assert captured.device_key is not None
+        assert (
+            tuple(
+                decrypt_user_frame(
+                    frame, event_key=captured.event_key, device_key=captured.device_key
+                )[10:]
+                for _uuid, frame, _response in client.writes
+            )
+            == expected
+        )
+    finally:
+        await controller.stop_notify()
+
+
+async def test_registered_local_initial_reads_keep_going_after_early_feedback(
+    hass, monkeypatch, enable_custom_integrations
+):
+    async with _local_canonical(hass, monkeypatch) as (controller, bus, socket, _entry):
+        runtime = controller._runtime
+        backend = runtime.peripheral_backend
+        assert backend is not None
+        captured = runtime.prepare_send()
+        _read_available(socket)
+        original_send = backend.async_notify_to_peer
+        sends = 0
+
+        async def send(peer, value, **kwargs):
+            nonlocal sends
+            await original_send(peer, value, **kwargs)
+            sends += 1
+            if sends == 1:
+                generation = runtime.prepare_send().peer_state_generation
+                await _send_state_selector(bus, _PEER_PATH, runtime, 1, 20)
+                for _ in range(20):
+                    if runtime.prepare_send().peer_state_generation != generation:
+                        break
+                    await asyncio.sleep(0)
+                assert runtime.prepare_send().peer_state_generation != generation
+
+        monkeypatch.setattr(backend, "async_notify_to_peer", send)
+        await _send_peer_write(bus, _PEER_PATH, _message(4, data=_full_tlv()))
+        await hass.async_block_till_done()
+        assert captured.device_key is not None
+        assert (
+            tuple(
+                decrypt_user_frame(
+                    frame, event_key=captured.event_key, device_key=captured.device_key
+                )[10:]
+                for frame in _read_available(socket)
+            )
+            == state_query_payloads()
+        )

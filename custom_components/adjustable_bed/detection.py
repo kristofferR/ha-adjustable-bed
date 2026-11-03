@@ -16,6 +16,7 @@ from bleak.exc import BleakError
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
@@ -590,6 +591,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
+    BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
     BED_TYPE_ESHINE: "Eshine app (E6000)",

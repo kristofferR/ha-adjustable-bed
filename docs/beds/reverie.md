@@ -326,6 +326,9 @@ receiver. Central frames use the
 accepted target/MAC session key and actual ATT MTU. A GATT write completion is
 transport acceptance, not confirmation that the bed moved.
 
+Initial dashboard reads accept position, massage, and light feedback between
+queries while retaining the captured physical session and authentication guards.
+
 ### Local peripheral role
 
 The separate local peripheral role is an explicit setup choice that makes this
