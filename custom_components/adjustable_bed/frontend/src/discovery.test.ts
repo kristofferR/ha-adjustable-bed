@@ -1400,6 +1400,22 @@ test("Casper Base product actions stay available in the card utility section", (
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("HJBed gestures release through their same-side cancellation button", () => {
+  const hass = hassWith([
+    entry("button.memory", "hjbed_action_right", "right"),
+    entry("button.release", "hjbed_release_right", "right"),
+    entry("button.other_release", "hjbed_release_left", "left"),
+  ]);
+  hass.states["button.memory"] = {
+    entity_id: "button.memory", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { bed_side: "right", held_control: "hjbed_memory_position1",
+      hold_start_delay_ms: 0, hold_release_delay_ms: 0, hold_release_button_key: "hjbed_release" },
+  };
+  expect(heldButtonMotor(hass, "button.memory")?.releaseButton).toBe("button.release");
+  delete hass.entities["button.release"];
+  expect(heldButtonMotor(hass, "button.memory")).toBeUndefined();
+});
+
 test("SleepEase exposes held motors, massage, lights, sensors and the local child gate", () => {
   const hass = hassWith([
     entry("cover.head", "head"),

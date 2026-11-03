@@ -180,6 +180,36 @@ test("button hold metadata uses the bounded side-scoped service", async () => {
   ]]);
 });
 
+for (const scheme of ["single-address", "two-address", "standalone"] as const) {
+  test(`HJBed ${scheme} holds resolve and retain their own release button`, () => {
+    const side = scheme === "standalone" ? undefined : "right";
+    const suffix = scheme === "single-address" ? "_right" : "";
+    const entityId = "button.memory";
+    const hass = {
+      entities: {
+        [entityId]: { entity_id: entityId, device_id: "child", translation_key: `hjbed_action${suffix}` },
+        "button.peer_release": { entity_id: "button.peer_release", device_id: "peer", translation_key: `hjbed_release${suffix}` },
+        "button.other_side": { entity_id: "button.other_side", device_id: "child", translation_key: "hjbed_release_left" },
+        "button.release": { entity_id: "button.release", device_id: "child", translation_key: `hjbed_release${suffix}` },
+      },
+      states: { [entityId]: { attributes: {
+        ...(side ? { bed_side: side } : {}),
+        held_control: "hjbed_memory_position1", hold_start_delay_ms: 0,
+        hold_release_delay_ms: 0, hold_release_button_key: "hjbed_release",
+      } } },
+    } as unknown as HomeAssistant;
+    const motor = heldButtonMotor(hass, entityId);
+    expect(motor?.releaseButton).toBe("button.release");
+    const events: string[] = [];
+    const hold = new MotorHold(heldActions(events));
+    hold.start(motor!, "up", 1, "button.general_stop");
+    hold.end(motor!, 1);
+    expect(events).toEqual(["start:button.memory:up", "stop:button.release"]);
+    delete hass.entities["button.release"];
+    expect(heldButtonMotor(hass, entityId)).toBeUndefined();
+  });
+}
+
 test("eligible Both holds use the parent timed action and retain combined Stop", async () => {
   const calls: unknown[] = [];
   let finish!: () => void;
@@ -1453,6 +1483,30 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
     expect(stopped).toEqual(["button.pair_stop"]);
     await tick();
   }
+});
+
+test("controller-owned release cancels refresh without the general STOP", () => {
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  const motor: MotorEntity = {
+    key: "memory1", deviceId: "bed", releaseButton: "button.hjbed_release",
+    heldControl: { control: "hjbed_memory_position1", startDelayMs: 0, releaseDelayMs: 0 },
+  };
+  hold.start(motor, "up", null, "button.stop");
+  hold.end(motor);
+  expect(events).toEqual(["start:memory1:up", "stop:button.hjbed_release"]);
+});
+
+
+test("abandoning an HJBed held action retains its protocol release route", () => {
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  const motor: MotorEntity = { key: "sofa_reset", deviceId: "bed",
+    releaseButton: "button.hjbed_release",
+    heldControl: { control: "hjbed_sit_position", startDelayMs: 0, releaseDelayMs: 0 } };
+  hold.start(motor, "up", null, "button.stop");
+  expect(hold.abandon()).toEqual(["button.hjbed_release"]);
+  expect(events).toEqual(["start:sofa_reset:up", "stop:button.hjbed_release"]);
 });
 
 test("AdjustaMattress backend owns start and release delays for card holds", () => {

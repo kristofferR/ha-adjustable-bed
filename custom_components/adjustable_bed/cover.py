@@ -381,6 +381,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             attributes.update(
                 {
                     "held_control_up": hold.up_control,
+                    **({"hold_release_button_key": hold.release_button_key} if hold.release_button_key is not None else {}),
                     "held_control_down": hold.down_control,
                     "hold_start_delay_ms": hold.start_delay_ms,
                     "hold_release_delay_ms": hold.release_delay_ms,

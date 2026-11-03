@@ -8,6 +8,21 @@ import type { HomeAssistant, MotorEntity } from "./types";
 
 export type Direction = "up" | "down";
 
+// Resolve controller-owned gesture release on the same device and side.
+export function heldReleaseButton(hass: HomeAssistant | undefined, entityId: string): string | undefined {
+  const owner = hass?.entities[entityId];
+  const attributes = hass?.states[entityId]?.attributes;
+  const key = attributes?.hold_release_button_key;
+  if (!owner?.device_id || typeof key !== "string") return undefined;
+  const side = attributes?.bed_side;
+  const releaseKey = (side === "left" || side === "right") &&
+    owner.translation_key?.endsWith(`_${side}`) ? `${key}_${side}` : key;
+  return Object.values(hass?.entities ?? {}).find((entry) =>
+    entry.device_id === owner.device_id && entry.entity_id.startsWith("button.") &&
+    entry.translation_key === releaseKey,
+  )?.entity_id;
+}
+
 export function heldButtonMotor(
   hass: HomeAssistant | undefined,
   entityId: string,
@@ -23,7 +38,10 @@ export function heldButtonMotor(
     startDelayMs < 0 || typeof releaseDelayMs !== "number" ||
     !Number.isFinite(releaseDelayMs) || releaseDelayMs < 0
   ) return undefined;
+  const releaseButton = heldReleaseButton(hass, entityId);
+  if (typeof attributes?.hold_release_button_key === "string" && !releaseButton) return undefined;
   return {
+    ...(releaseButton ? { releaseButton } : {}),
     key: entityId,
     up: entityId,
     deviceId,
@@ -110,6 +128,7 @@ export interface HoldLifecycleTarget {
 }
 
 interface PendingRelease {
+  releaseButton?: string;
   id: number;
   motorKey: string;
   targetKey: string;
@@ -303,6 +322,7 @@ export class MotorHold {
   private _repeatBlocked = false;
   private _startTimer?: ReturnType<typeof setTimeout>;
   private _started = false;
+  private _releaseButton?: string;
   private _heldControl?: MotorEntity["heldControl"];
   private _releaseId = 0;
   private readonly _pendingReleases = new Map<number, PendingRelease>();
@@ -338,6 +358,7 @@ export class MotorHold {
     this._pointerId = pointerId;
     const generation = ++this._generation;
     this._heldControl = motor.heldControls?.[dir] ?? motor.heldControl;
+    this._releaseButton = motor.releaseButton;
     this._flushPendingForTarget(this._targetKey());
     if (this._heldControl) {
       const delay = this._heldControl.startDelayMs;
@@ -418,8 +439,12 @@ export class MotorHold {
 
   // Returns the entity whose stop was requested, if any.
   private _release(
-    target: Pick<PendingRelease, "cover" | "stopEntityId">,
+    target: Pick<PendingRelease, "cover" | "stopEntityId" | "releaseButton">,
   ): string | undefined {
+    if (target.releaseButton) {
+      this.actions.stopBed(target.releaseButton);
+      return target.releaseButton;
+    }
     if (target.cover) {
       this.actions.stopCover(target.cover, target.stopEntityId);
       return target.cover;
@@ -431,6 +456,7 @@ export class MotorHold {
   private _scheduleRelease(): void {
     const release: PendingRelease = {
       id: ++this._releaseId,
+      releaseButton: this._releaseButton,
       motorKey: this._key ?? "",
       targetKey: this._targetKey(),
       target: this._target,
@@ -535,6 +561,7 @@ export class MotorHold {
     const started = this._started;
     const hasMetadata = this._heldControl !== undefined;
     const releaseTarget = {
+      releaseButton: this._releaseButton,
       cover: this._cover ?? undefined,
       stopEntityId: this._stop ?? undefined,
     };
@@ -668,6 +695,7 @@ export class MotorHold {
 
     const released = this._flushAllReleases(stopEntityId);
     const active = this._key === null ? null : {
+      releaseButton: this._releaseButton,
       cover: this._cover ?? undefined,
       stopEntityId: this._stop ?? undefined,
     };
@@ -693,6 +721,7 @@ export class MotorHold {
   // entities it stopped so the card does not stop them a second time.
   abandon(): string[] {
     const active = this._key === null ? null : {
+      releaseButton: this._releaseButton,
       cover: this._cover ?? undefined,
       stopEntityId: this._stop ?? undefined,
     };
@@ -721,6 +750,7 @@ export class MotorHold {
     this._repeatBlocked = false;
     this._started = false;
     this._heldControl = undefined;
+    this._releaseButton = undefined;
     this._generation++;
   }
 }

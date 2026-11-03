@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
     from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
+    from .hjbed import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
     from .isleep import IsleepController as IsleepController
     from .jensen import JensenController as JensenController
@@ -103,6 +104,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "HJBedController": "hjbed",
     "DoubleSleepController": "doublesleep",
     'TempurCurveController': 'tempur_curve',
     'QPlusAppController': 'sbi',
