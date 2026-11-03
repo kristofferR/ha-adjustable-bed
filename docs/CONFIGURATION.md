@@ -856,3 +856,13 @@ the other side automatically if one side fails.
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+
+### BedSense app
+
+Select **BedSense app (com.fenmenbielei.bedsense)** and a layout, or select its
+case-sensitive Bluetooth-name layout rule. Layout owns the motion controls;
+generic motor count, massage and angle-sensing choices are hidden. The original
+Bluetooth name and layout belong to each side of a two-address pair. There is no
+single-address left/right command. See [BedSense](beds/bedsense.md) for all nine
+layouts, memory indicators and app-labelled massage/light actions.

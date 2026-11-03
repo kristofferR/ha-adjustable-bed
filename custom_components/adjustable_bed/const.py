@@ -537,6 +537,19 @@ BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 # Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
 BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
+BED_TYPE_BEDSENSE: Final = "bedsense"
+BEDSENSE_VARIANTS: Final = {
+    "auto": "BedSense layout from the Bluetooth name",
+    "bedsense_1": "BEDSENSE-850 (TYPE 1)",
+    "bedsense_2": "BEDSENSE-890 (TYPE 2)",
+    "bedsense_3": "Default BedSense layout (TYPE 3, WAIST / HIP labels)",
+    "bedsense_4": "BEDSENSE-1150 (TYPE 4)",
+    "bedsense_5": "BEDSENSE-1050 (TYPE 5)",
+    "bedsense_6": "BEDSENSE-250 (TYPE 6)",
+    "bedsense_7": "BEDSENSE-150 (TYPE 7)",
+    "bedsense_8": "BEDSENSE-350 (TYPE 8)",
+    "bedsense_9": "Resten Hi-Low (TYPE 9)",
+}
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # Bed types whose entry chooses light controls (CONF_HAS_LIGHT), with the default.
@@ -551,6 +564,7 @@ CHAIR_AND_BED_APP_BED_TYPES: Final = frozenset({BED_TYPE_FSM_RELAX, BED_TYPE_LIM
 
 # All supported bed types (includes both protocol-based and legacy names)
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_BEDSENSE,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,
@@ -688,6 +702,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_BEDSENSE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_OKIN_HANDLE,
         BED_TYPE_DEWERTOKIN,
@@ -1530,6 +1545,7 @@ RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
 }
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
@@ -2505,6 +2521,7 @@ OKIN_64BIT_VARIANTS: Final = {
 
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
+    *(v for v in BEDSENSE_VARIANTS if v != "auto"),
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
@@ -2757,6 +2774,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_BEDSENSE,
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,

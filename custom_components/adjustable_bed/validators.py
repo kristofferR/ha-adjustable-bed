@@ -12,6 +12,7 @@ from .const import (
     ADAPTER_AUTO,
     ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
@@ -33,6 +34,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
+    BEDSENSE_VARIANTS,
     KAIDI_VARIANTS,
     KEESON_VARIANTS,
     LEGGETT_VARIANTS,
@@ -87,6 +89,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    BED_TYPE_BEDSENSE: BEDSENSE_VARIANTS,
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,
