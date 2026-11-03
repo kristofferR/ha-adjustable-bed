@@ -59,6 +59,7 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
 | Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` |
 | ✅ | Avanti Bases ([profile](ore-comfort-bed.md)) | `com.ore.AvantiBases` |
+| ✅ | AMERICANSTAR ([profile](ore-comfort-bed.md), hardware unverified) | `com.ore.americanstar` |
 | ✅ | Bedsense Bases ([profile](ore-comfort-bed.md)) | `com.ore.sfmc2bedsence` |
 | ✅ | INNOVA ([profile](#innova-profile)) | `com.ore.sfm` |
 | ✅ | MaxCoil Una ([profile](ore-comfort-bed.md)) | `com.ore.maxcoil` |
@@ -409,7 +410,7 @@ persist, the Heal massage and light semantics, and the GATT layout.
 is complete; hardware is unverified. See the
 [cluster disposition](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
 Its cluster sibling Bedsense Bases uses the
-[MaxCoil Una / Dynasty Bases / Bedsense Bases profile](ore-comfort-bed.md).
+[MaxCoil Una / Dynasty Bases / Bedsense Bases / AMERICANSTAR profile](ore-comfort-bed.md).
 
 Select the `innova` (`INNOVA app`) protocol variant. The app scans without any
 name or service rule, so Auto never chooses it; `ORE-` names stay on the Base

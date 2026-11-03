@@ -8,12 +8,15 @@ Bedsense Bases 1.1 (3) (`com.ore.sfmc2bedsence`, formal cluster-015). See the
 and the [Bedsense Bases / INNOVA dispositions](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
 Avanti Bases 1.0.5 (7) (`com.ore.AvantiBases`, standalone FULL row065) is
 independently accepted; see its [discovery ledger](../apk-analysis/dispositions/row065-avanti-bases.md).
+AMERICANSTAR 1.0 (1) (`com.ore.americanstar`) is independently accepted too; see its
+[dispositions](../apk-analysis/dispositions/row062-americanstar.md).
 
 MaxCoil Una and Dynasty Bases ship the same `com.ore.okincomfortbed` code base.
 Bedsense Bases is a separate package, but its accepted report proves the same
 frames, screens, timing, release, massage, light and reply handling, so all
 three share this profile. The separate Avanti artifact proves every command,
-layout, timing and reply behavior below as well. INNOVA (`com.ore.sfm`), Bedsense's cluster sibling,
+layout, timing and reply behavior below as well, and so does AMERICANSTAR 1.0 (1)
+(`com.ore.americanstar`). INNOVA (`com.ore.sfm`), Bedsense's cluster sibling,
 uses different frames and has its own [INNOVA profile](keeson.md#innova-profile).
 
 ## Setup
@@ -27,6 +30,7 @@ protocol variant for your app:
 | Dynasty Bases | `dynasty_bases` |
 | Bedsense Bases | `bedsense_bases` |
 | Avanti Bases | `avanti_bases` |
+| AMERICANSTAR | `americanstar` |
 
 Set the **motor count** to the screen you pick in the app:
 
