@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from .furnimove import FurniMoveController as FurniMoveController
     from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
     from .innova import InnovaController as InnovaController
+    from .isleep import IsleepController as IsleepController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
     from .jiecang import JiecangController as JiecangController
@@ -108,6 +109,7 @@ _EXPORT_MODULES = {
     "JensenLinonController": "jensen_linon",
     "JiecangController": "jiecang",
     "JiecangAppController": "jiecang_app",
+    "IsleepController": "isleep",
     "KaidiController": "kaidi",
     "KeesonController": "keeson",
     "LeggettGen2Controller": "leggett_gen2",

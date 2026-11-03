@@ -103,6 +103,7 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
@@ -166,6 +167,8 @@ from .const import (
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_THEME,
@@ -401,7 +404,7 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE}
+    {BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE}
 )
 
 
@@ -846,6 +849,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_SLEEPTRACKER: "sleeptracker",
+    BED_TYPE_ISLEEP: "isleep",
     BED_TYPE_LIMOSS_REMOTE: "limoss_remote",
     BED_TYPE_FSM_RELAX: "fsm_relax",
     BED_TYPE_STARCODE_M5X5: "starcode_m5x5",
@@ -1157,6 +1161,40 @@ def _starcode_setup_transport_present(client: BleakClient, selector: str) -> boo
             if {transport.write, transport.notify}.issubset(roles):
                 return True
     return False
+
+
+def _add_isleep_schema_fields(schema: dict[vol.Marker, Any], data: dict[str, Any]) -> None:
+    """Ask for explicit app product and wire room identity on every setup route."""
+    from .isleep_profile import ISLEEP_PRODUCTS
+
+    schema[vol.Required(CONF_PRODUCT_TYPE, default=str(data.get(CONF_PRODUCT_TYPE, 129)))] = SelectSelector(
+        SelectSelectorConfig(options=[SelectOptionDict(value=str(p), label=str(p)) for p in ISLEEP_PRODUCTS], mode=SelectSelectorMode.DROPDOWN)
+    )
+    schema[vol.Required(CONF_KAIDI_ROOM_ID, default=data.get(CONF_KAIDI_ROOM_ID, 10000))] = vol.Coerce(int)
+    schema[vol.Required(CONF_KAIDI_SOFA_ACU_NO, default=data.get(CONF_KAIDI_SOFA_ACU_NO, 2))] = vol.All(vol.Coerce(int), vol.Range(min=0, max=65535))
+
+
+def _isleep_errors(data: dict[str, Any]) -> dict[str, str]:
+    from .isleep_profile import validate_isleep_profile
+
+    try:
+        if isinstance(data.get(CONF_PRODUCT_TYPE), str):
+            data[CONF_PRODUCT_TYPE] = int(data[CONF_PRODUCT_TYPE])
+        validate_isleep_profile(data)
+    except (ValueError, TypeError):
+        return {"base": "isleep_profile"}
+    return {}
+
+
+def _normalize_isleep_data(data: dict[str, Any]) -> None:
+    from .isleep_profile import validate_isleep_profile
+
+    profile = validate_isleep_profile(data)
+    data[CONF_MOTOR_COUNT] = len(profile.axes)
+    data[CONF_HAS_MASSAGE] = True
+    data[CONF_DISABLE_ANGLE_SENSING] = True
+    data[CONF_MOTOR_PULSE_DELAY_MS] = 100
+    data[CONF_MOTOR_PULSE_USER_SET] = False
 
 
 def _add_sleeptracker_schema_fields(schema: dict[vol.Marker, Any], data: dict[str, Any]) -> None:
@@ -1876,6 +1914,7 @@ _OPTIONS_APP_FIELDS: Final[
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
     BED_TYPE_MOTION_BED: _add_motion_bed_schema_fields,
     BED_TYPE_SLEEPTRACKER: _add_sleeptracker_schema_fields,
+    BED_TYPE_ISLEEP: _add_isleep_schema_fields,
     BED_TYPE_FSM_RELAX: _add_fsm_relax_schema_fields,
     BED_TYPE_VIBRADORM_APP: _add_vibradorm_app_schema_fields,
     BED_TYPE_VMATBASIC: _add_vmatbasic_schema_fields,
@@ -2480,6 +2519,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="vibradorm_app", data_schema=vol.Schema(schema), errors=errors
         )
+
+    async def async_step_isleep(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Confirm ISleep provenance before using a transport shared by other apps."""
+        from .isleep_profile import add_isleep_metadata
+
+        assert self._manual_data is not None
+        address = self._manual_data[CONF_ADDRESS]
+        info = self._discovery_info or bluetooth.async_last_service_info(self.hass, address, connectable=False)
+        data = add_isleep_metadata(self._manual_data, info.manufacturer_data if info else {})
+        data.update(user_input or {})
+        errors = _isleep_errors(data) if user_input is not None else {}
+        if user_input is not None and not errors:
+            _normalize_isleep_data(data)
+            self._manual_data = data
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "ISleep"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_isleep_schema_fields(schema, data)
+        return self.async_show_form(step_id="isleep", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_sleeptracker(
         self, user_input: dict[str, Any] | None = None
@@ -7023,7 +7080,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type not in CHAIR_AND_BED_APP_BED_TYPES:
             for key in CONF_REVERSE_MOTORS:
                 data.pop(key, None)
-            if bed_type != BED_TYPE_SLEEPTRACKER:
+            if bed_type not in (BED_TYPE_SLEEPTRACKER, BED_TYPE_ISLEEP):
                 data.pop(CONF_PRODUCT_TYPE, None)
 
         if bed_type != BED_TYPE_STARCODE_M5X5:
@@ -8020,6 +8077,24 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input[CONF_MOTOR_COUNT] = 2
                 user_input[CONF_HAS_MASSAGE] = True
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
+            if bed_type == BED_TYPE_ISLEEP and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                app_errors = _isleep_errors(app_data)
+                if app_errors:
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors)
+                from .isleep_profile import validate_isleep_profile
+
+                if (
+                    self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+                    and not validate_isleep_profile(app_data).split
+                ):
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors={"base": "isleep_unpair_first"},
+                    )
+                _normalize_isleep_data(app_data)
+                user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_KAIDI_ROOM_ID, CONF_KAIDI_SOFA_ACU_NO, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS, CONF_MOTOR_PULSE_USER_SET) if key in app_data})
             if bed_type == BED_TYPE_SLEEPTRACKER and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 app_errors = _sleeptracker_errors(app_data)

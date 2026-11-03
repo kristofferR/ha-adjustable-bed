@@ -565,6 +565,7 @@ BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
+BED_TYPE_ISLEEP: Final = "isleep"
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 # Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
@@ -697,6 +698,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_TIMOTION_AHF,
     # Kaidi (Rize/Floyd/ISleep)
     BED_TYPE_KAIDI,
+    BED_TYPE_ISLEEP,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
@@ -767,6 +769,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_STARCODE_ABM5_4,
         BED_TYPE_MOTION_BED,
         BED_TYPE_SLEEPTRACKER,
+        BED_TYPE_ISLEEP,
         BED_TYPE_LIMOSS_REMOTE,
     }
 )
@@ -2814,6 +2817,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_GLIDEAWAY_MOTION,
+        BED_TYPE_ISLEEP,
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,
@@ -2914,6 +2918,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_JIECANG_APP,
             BED_TYPE_KAIDI,
             BED_TYPE_LEGGETT_WILINKE,
+            BED_TYPE_ISLEEP,
             BED_TYPE_LIMOSS,
             BED_TYPE_LOGICDATA_APP,
             # Pressure is polled only on a held link, like the app's pump tab.

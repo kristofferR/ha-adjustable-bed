@@ -1051,3 +1051,15 @@ test("Glideaway exposes its reported massage timer and alarm refresh", () => {
   expect(bed.utility).toContain("button.motion_alarm");
   expect(bed.motors.map(m => m.key)).toEqual(["tilt", "bed_height"]);
 });
+
+test("ISleep controls retain each pattern and keep enrollment outside the everyday card", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.all_up", "isleep_all_up"),
+    entry("button.all_down", "isleep_all_down"),
+    entry("button.pattern_1", "isleep_pattern"),
+    entry("button.pattern_cancel", "isleep_pattern"),
+    entry("button.enroll", "isleep_enroll"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.all_up", "button.all_down"]);
+  expect(bed.massage.buttons).toEqual(["button.pattern_1", "button.pattern_cancel"]);
+});

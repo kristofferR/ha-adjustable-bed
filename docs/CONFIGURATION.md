@@ -875,3 +875,12 @@ the other side automatically if one side fails.
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### ISleep
+
+Choose **ISleep (com.kaidi_test4)** and confirm its product ID, signed 32-bit
+room ID and advertised actuator descriptor. The profile owns layout, massage,
+feedback and movement timing. A two-address pair keeps these settings per side.
+Adopt existing rooms explicitly; enrollment of fresh mode09 devices is a
+separate device action. HA never resets an existing room. See the
+[ISleep guide](beds/isleep.md) and [row064 ledger](apk-analysis/dispositions/row064-isleep.md).
