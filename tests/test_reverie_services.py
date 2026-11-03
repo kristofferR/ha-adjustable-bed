@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     DOMAIN,
@@ -251,3 +252,48 @@ async def test_deferred_actions_preflight_pair_connection_policy(
     assert getattr(first_controller, method).await_count == (0 if rejected else 1)
     assert getattr(left_controller, method).await_count == (0 if rejected else 1)
     assert getattr(right_controller, method).await_count == (1 if not rejected and side == SIDE_BOTH else 0)
+
+
+@pytest.mark.parametrize("bed_type", [BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND])
+@pytest.mark.parametrize("mode", ["sequential", "concurrent", "fallback"])
+@pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_BOTH])
+async def test_comfort_rejects_only_deferred_sequential_targets(hass, bed_type, mode, side):
+    first, first_controller = _target()
+    left, left_controller = _target(bed_type=bed_type)
+    right, right_controller = _target(bed_type=bed_type)
+    pair = MagicMock(spec=PairedBedCoordinator)
+    pair.connection_mode = "concurrent" if mode == "fallback" else mode
+    pair.children = {SIDE_LEFT: left, SIDE_RIGHT: right}
+    pair.child_for_side.side_effect = pair.children.get
+    for controller in (left_controller, right_controller):
+        controller.requires_disconnected_transport = False
+
+    async def execute(command, *, side, **_kwargs):
+        if mode == "fallback":
+            pair.connection_mode = "sequential"
+        selected = pair.children.values() if side == SIDE_BOTH else [pair.children[side]]
+        for target in selected:
+            await command(target.controller)
+
+    pair.async_execute_controller_command = AsyncMock(side_effect=execute)
+    await async_register_services(hass)
+    rejected = bed_type == BED_TYPE_REVERIE and mode != "concurrent"
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(first, SIDE_BOTH), (pair, side)], []),
+    ):
+        call = hass.services.async_call(
+            DOMAIN, "reverie_set_comfort",
+            {"device_id": ["first", "pair"], "comfort": {"head_position": 45}},
+            blocking=True,
+        )
+        if rejected:
+            with pytest.raises(ServiceValidationError, match="require concurrent"):
+                await call
+        else:
+            await call
+    # Preflight rejects every initial write. Runtime fallback rejects before the
+    # pair starts, even if an earlier independent target already completed.
+    assert first_controller.async_set_comfort.await_count == (0 if rejected and mode == "sequential" else 1)
+    assert left_controller.async_set_comfort.await_count == (0 if rejected else 1)
+    assert right_controller.async_set_comfort.await_count == (1 if not rejected and side == SIDE_BOTH else 0)

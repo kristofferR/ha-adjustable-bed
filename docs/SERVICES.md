@@ -177,9 +177,9 @@ The paired-bed `side` field remains the separate Home Assistant left/right/both
 target selector.
 
 STOP cancels the selected target's remaining routine steps as well as current
-movement. Routines and diagnostics require concurrent connection mode for
-two-address pairs using central Bluetooth connections, including side-only
-targets. Sequential mode disconnects each receiver before deferred work can
+movement. Routines, diagnostics, and Protocol 108 comfort require concurrent
+connection mode for two-address pairs using central Bluetooth connections,
+including side-only targets. Sequential mode disconnects each receiver before deferred work can
 finish. Local Pairlink peripheral transports do not have that restriction.
 
 `reverie_test` starts the accepted Protocol 108 or 110 ten-second bed test and

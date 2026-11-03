@@ -1249,11 +1249,12 @@ async def _prepare_reverie_comfort_target(
 ) -> None:
     """Validate one physical target and prepare P4 against its live generation."""
     if target.bed_type != BED_TYPE_REVERIE_PAIRLINK:
-        controller = _reverie_comfort_controller(
-            target, await _validation_controller(parent, target, preflighted)
-        )
+        controller = await _validation_controller(parent, target, preflighted)
+        if target.bed_type == BED_TYPE_REVERIE:
+            _validate_reverie_deferred_target(parent, controller)
+        reverie = _reverie_comfort_controller(target, controller)
         try:
-            controller.validate_comfort_request(request)
+            reverie.validate_comfort_request(request)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
         return
@@ -1579,10 +1580,22 @@ async def handle_reverie_set_comfort(call: ServiceCall) -> None:
         ):
             return
         for coordinator, side in targets:
+            async def apply_comfort(
+                controller: BedController,
+                parent: BedTarget = coordinator,
+                selected_side: str = side,
+            ) -> None:
+                if any(
+                    target.bed_type == BED_TYPE_REVERIE
+                    for target in _command_targets(parent, selected_side)
+                ):
+                    _validate_reverie_deferred_target(parent, controller)
+                await set_comfort(controller)
+
             await _execute_sided(
                 coordinator,
                 side,
-                set_comfort,
+                apply_comfort,
                 resource="reverie:comfort",
             )
     except (Exception, asyncio.CancelledError):
@@ -1661,7 +1674,7 @@ def _validate_reverie_deferred_target(
         and not controller.requires_disconnected_transport
     ):
         raise ServiceValidationError(
-            "Reverie routines and diagnostics require concurrent paired connection mode "
+            "Deferred Reverie actions require concurrent paired connection mode "
             "for central Bluetooth receivers"
         )
 
