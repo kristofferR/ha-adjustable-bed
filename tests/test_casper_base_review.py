@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import re
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -20,6 +23,7 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 from tests.test_casper_base import make
 
 
@@ -61,6 +65,25 @@ def runtime(hass, model="hushl400sh", *, transport=1, kind=None):
     coordinator._controller = controller
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     return entry, coordinator, controller
+
+
+@pytest.mark.parametrize("kind", ["mm", "sxb"])
+async def test_sensor_translation_keys_preserve_case_sensitive_state(hass, kind):
+    _, coordinator, controller = runtime(hass, kind=kind)
+    root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
+    specs = controller.controller_state_sensor_specs
+    for filename in ("strings.json", "translations/en.json"):
+        translations = json.loads((root / filename).read_text())["entity"]["sensor"]
+        assert all(re.fullmatch(r"[a-z0-9]+(?:[a-z0-9_-]*[a-z0-9])?", spec.translation_key) for spec in specs)
+        assert all(spec.translation_key in translations for spec in specs)
+    for spec in specs[1:]:
+        assert spec.key == spec.state_key
+        assert "_L_" in spec.state_key or "_R_" in spec.state_key
+        entity = AdjustableBedControllerStateSensor(coordinator, spec)
+        coordinator.handle_controller_state_update(spec.state_key, 42)
+        assert entity.translation_key == spec.state_key.lower()
+        assert entity.unique_id == coordinator.entity_unique_id(spec.state_key)
+        assert entity.native_value == 42
 
 
 @pytest.mark.parametrize("kind", [None, "mm", "sxb"])
@@ -169,6 +192,27 @@ def bt_ordinary(enabled):
 
 def bt_extended(enabled):
     return extra(9, 3, (0, int(enabled)), operation=2)
+
+
+@pytest.mark.parametrize("split", range(1, 6))
+async def test_marker_checksum_notification_updates_music_source_state(split):
+    controller, c = make("nisconup355b")
+    await controller.start_notify()
+    controller._on_notification(None, bytearray(bytes.fromhex("6e16010186")))
+    controller._on_notification(None, bytearray(bt_extended(True)))
+    assert controller._music_bluetooth
+    packet = bytes.fromhex("6e90b0c06e")
+    controller._on_notification(None, bytearray(packet[:split]))
+    controller._on_notification(None, bytearray(packet[split:]))
+    assert controller.events["accessories"] == {
+        "usb": False, "play": True, "music_follow": True, "bluetooth": False
+    }
+    assert not controller._music_bluetooth
+    c.client.write_gatt_char.reset_mock()
+    await controller.async_perform_casper_base_action("MusicSwitchSoundTrack", music_page=True)
+    assert [bytes(call.args[1]).hex() for call in c.client.write_gatt_char.call_args_list] == [
+        "6e0100c433"
+    ]
 
 
 @pytest.mark.parametrize(

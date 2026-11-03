@@ -674,6 +674,20 @@
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides."
         }
       },
+      "starcode_m1x12": {
+        "title": "Adjustable Comfort M1X12 app",
+        "description": "Select this app explicitly. The shared Bluetooth service, manufacturer and ELEVATE name do not identify the app.",
+        "data": {
+          "ble_device_name": "Exact Bluetooth name",
+          "starcode_m1x12_profile": "M1X12 app profile",
+          "starcode_lift_entries": "M1X12 ELEVATE accessories (up to two)"
+        },
+        "data_description": {
+          "ble_device_name": "Enter the unchanged Bluetooth name. The exact prefix selects CB25, F23 or kneading after you choose this app.",
+          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
+          "starcode_lift_entries": "Choose up to two separately configured ELEVATE entries explicitly set to Adjustable Comfort M1X12 ELEVATE. Existing ELEVATE entries are not changed when linking."
+        }
+      },
       "cluster033_app": {
         "title": "App controls",
         "description": "Choose the layout shown by your bed app. Layouts do not identify physical motor count. Q-Plus A/B/Both selects app wire addressing, independently from paired Left/Right sides.",
@@ -790,6 +804,9 @@
       "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup.",
       "sleeptracker_profile": "Select a supported Sleeptracker layout and numeric processor selectors.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
+      "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
+      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
       "cluster033_layout": "Choose a layout belonging to the selected app."
     }
   },
@@ -1093,6 +1110,9 @@
       "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
+      "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
+      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
       "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls."
     },
     "progress": {
@@ -2222,6 +2242,60 @@
       "starcode_query": {
         "name": "Refresh massage and RGB"
       },
+      "starcode_m1x12_memory_8": {
+        "name": "Recall MemoryType 8"
+      },
+      "starcode_m1x12_save_tv": {
+        "name": "Save TV position"
+      },
+      "starcode_m1x12_save_zero_g": {
+        "name": "Save zero gravity position"
+      },
+      "starcode_m1x12_save_lounge": {
+        "name": "Save reading or lounge position"
+      },
+      "starcode_m1x12_save_memory_1": {
+        "name": "Save M1 position"
+      },
+      "starcode_m1x12_save_memory_2": {
+        "name": "Save M2 position"
+      },
+      "starcode_m1x12_reset": {
+        "name": "Reset saved positions"
+      },
+      "starcode_m1x12_light_mode_0": {
+        "name": "Light mode 0"
+      },
+      "starcode_m1x12_light_mode_1": {
+        "name": "Light mode 1"
+      },
+      "starcode_m1x12_query": {
+        "name": "Refresh bed state"
+      },
+      "starcode_m1x12_hold_massage_wave_up": {
+        "name": "Hold to increase massage wave"
+      },
+      "starcode_m1x12_hold_massage_wave_down": {
+        "name": "Hold to decrease massage wave"
+      },
+      "starcode_m1x12_hold_massage_head_up": {
+        "name": "Hold to increase head massage"
+      },
+      "starcode_m1x12_hold_massage_head_down": {
+        "name": "Hold to decrease head massage"
+      },
+      "starcode_m1x12_hold_massage_foot_up": {
+        "name": "Hold to increase foot massage"
+      },
+      "starcode_m1x12_hold_massage_foot_down": {
+        "name": "Hold to decrease foot massage"
+      },
+      "starcode_m1x12_hold_massage_both_up": {
+        "name": "Hold to increase both-zone massage"
+      },
+      "starcode_m1x12_hold_massage_both_down": {
+        "name": "Hold to decrease both-zone massage"
+      },
       "simmons_inclined_left": {
         "name": "Inclined left"
       },
@@ -3184,6 +3258,21 @@
       "richmat_mh_pillow_lumbar": {
         "name": "Pillow and lumbar"
       },
+      "starcode_m1x12_part_1": {
+        "name": "Part 1"
+      },
+      "starcode_m1x12_part_2": {
+        "name": "Part 2"
+      },
+      "starcode_m1x12_part_4": {
+        "name": "Part 4"
+      },
+      "starcode_m1x12_part_8": {
+        "name": "Part 8"
+      },
+      "starcode_m1x12_part_16": {
+        "name": "Part 16"
+      },
       "bedsense_back": {
         "name": "Back"
       },
@@ -4092,6 +4181,117 @@
       "sleeptracker_right_commanded_timer_seconds": {
         "name": "Right ActiveBreeze timer (last command)"
       },
+      "starcode_m1x12_firmware": {
+        "name": "Firmware version"
+      },
+      "starcode_m1x12_massage_time_raw": {
+        "name": "Massage time (raw)"
+      },
+      "starcode_m1x12_massage_head_level": {
+        "name": "Head massage level"
+      },
+      "starcode_m1x12_massage_foot_level": {
+        "name": "Foot massage level"
+      },
+      "starcode_m1x12_massage_mode": {
+        "name": "Massage mode"
+      },
+      "starcode_m1x12_light_brightness": {
+        "name": "Light brightness (raw)"
+      },
+      "starcode_m1x12_light_color_index": {
+        "name": "Light color index"
+      },
+      "starcode_m1x12_light_rgb_mode": {
+        "name": "Direct RGB mode"
+      },
+      "starcode_m1x12_light_mode": {
+        "name": "Light mode"
+      },
+      "starcode_m1x12_sonic_time_raw": {
+        "name": "Sonic time (raw)"
+      },
+      "starcode_m1x12_sonic_frequency": {
+        "name": "Sonic frequency"
+      },
+      "starcode_m1x12_sonic_head_level": {
+        "name": "Head sonic level"
+      },
+      "starcode_m1x12_sonic_foot_level": {
+        "name": "Foot sonic level"
+      },
+      "starcode_m1x12_sonic_mode": {
+        "name": "Sonic mode"
+      },
+      "starcode_m1x12_sonic_massage_type": {
+        "name": "Sonic massage type"
+      },
+      "starcode_m1x12_part_1_position": {
+        "name": "Part 1 position (%)"
+      },
+      "starcode_m1x12_part_2_position": {
+        "name": "Part 2 position (%)"
+      },
+      "starcode_m1x12_part_4_position": {
+        "name": "Part 4 position (%)"
+      },
+      "starcode_m1x12_part_8_position": {
+        "name": "Part 8 position (%)"
+      },
+      "starcode_m1x12_part_16_position": {
+        "name": "Part 16 position (%)"
+      },
+      "starcode_m1x12_part_32_position": {
+        "name": "Part 32 position (%)"
+      },
+      "starcode_m1x12_alarm_0": {
+        "name": "Alarm 1 enabled"
+      },
+      "starcode_m1x12_alarm_1": {
+        "name": "Alarm 2 enabled"
+      },
+      "starcode_m1x12_eq_volume": {
+        "name": "Equalizer volume"
+      },
+      "starcode_m1x12_eq_preset": {
+        "name": "Equalizer preset"
+      },
+      "starcode_m1x12_eq_low_frequency": {
+        "name": "Equalizer low frequency"
+      },
+      "starcode_m1x12_eq_high_frequency": {
+        "name": "Equalizer high frequency"
+      },
+      "starcode_m1x12_eq_band_0": {
+        "name": "Equalizer 32 Hz"
+      },
+      "starcode_m1x12_eq_band_1": {
+        "name": "Equalizer 64 Hz"
+      },
+      "starcode_m1x12_eq_band_2": {
+        "name": "Equalizer 125 Hz"
+      },
+      "starcode_m1x12_eq_band_3": {
+        "name": "Equalizer 250 Hz"
+      },
+      "starcode_m1x12_eq_band_4": {
+        "name": "Equalizer 500 Hz"
+      },
+      "starcode_m1x12_eq_band_5": {
+        "name": "Equalizer 1 kHz"
+      },
+      "starcode_m1x12_eq_band_6": {
+        "name": "Equalizer 2 kHz"
+      },
+      "starcode_m1x12_eq_band_7": {
+        "name": "Equalizer 4 kHz"
+      },
+      "starcode_m1x12_kneading_time_raw": {
+        "name": "Kneading time (raw)"
+      },
+      "starcode_m1x12_kneading_mode": {
+        "name": "Kneading mode"
+      },
       "app_timer_status": {
         "name": "App timer status"
       },
@@ -4212,44 +4412,44 @@
       "bedsense_wave_steps": {
         "name": "Wave frequency (app steps)"
       },
-      "casper_sleep_R_body_move": {
-        "name": "Right body movement"
+      "casper_sleep_l_body_move": {
+        "name": "Left body movement"
       },
-      "casper_sleep_R_heart": {
-        "name": "Right heart rate"
-      },
-      "casper_remote": {
-        "name": "Remote finder state"
-      },
-      "casper_sleep_L_on_bed": {
-        "name": "Left on bed"
-      },
-      "casper_sleep_R_on_bed": {
+      "casper_sleep_r_on_bed": {
         "name": "Right on bed"
       },
-      "casper_sleep_L_heart": {
+      "casper_sleep_r_heart": {
+        "name": "Right heart rate"
+      },
+      "casper_sleep_l_heart": {
         "name": "Left heart rate"
+      },
+      "casper_sleep_l_snoring": {
+        "name": "Left snoring"
+      },
+      "casper_sleep_l_on_bed": {
+        "name": "Left on bed"
       },
       "casper_sleep": {
         "name": "Sleep sensor state"
       },
-      "casper_sleep_L_body_move": {
-        "name": "Left body movement"
+      "casper_sleep_r_body_move": {
+        "name": "Right body movement"
       },
-      "casper_sleep_R_snoring": {
+      "casper_remote": {
+        "name": "Remote finder state"
+      },
+      "casper_sleep_r_snoring": {
         "name": "Right snoring"
-      },
-      "casper_sleep_L_breath": {
-        "name": "Left breathing rate"
-      },
-      "casper_sleep_L_snoring": {
-        "name": "Left snoring"
-      },
-      "casper_sleep_R_breath": {
-        "name": "Right breathing rate"
       },
       "casper_base": {
         "name": "Casper Base state"
+      },
+      "casper_sleep_l_breath": {
+        "name": "Left breathing rate"
+      },
+      "casper_sleep_r_breath": {
+        "name": "Right breathing rate"
       }
     },
     "light": {
@@ -4509,6 +4709,27 @@
       "sleeptracker_wind_down_running": {
         "name": "Wind-down running (reported)"
       },
+      "starcode_m1x12_motor_stopped": {
+        "name": "Motor stopped"
+      },
+      "starcode_m1x12_massage_active": {
+        "name": "Massage active"
+      },
+      "starcode_m1x12_light_on": {
+        "name": "Light on"
+      },
+      "starcode_m1x12_sonic_active": {
+        "name": "Sonic active"
+      },
+      "starcode_m1x12_usb_on": {
+        "name": "USB on"
+      },
+      "starcode_m1x12_kneading_on": {
+        "name": "Kneading active"
+      },
+      "starcode_m1x12_kneading_demo": {
+        "name": "Kneading demo available"
+      },
       "bedsense_m1_saved": {
         "name": "M1 saved (app indicator)"
       },
@@ -4714,6 +4935,9 @@
       },
       "sleeptracker_right_level": {
         "name": "Right ActiveBreeze level"
+      },
+      "starcode_m1x12_brightness": {
+        "name": "RGB brightness level"
       },
       "sleepys_app_target_axis_0": {
         "name": "App target axis 0"
@@ -6756,7 +6980,77 @@
     },
     "casper_base": {
       "name": "Casper Base controls",
-      "description": "Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields."
+      "description": "Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Bed, sleep sensor, or remote to control."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Bed, light, alarm, sensor, or remote action to run."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Duration or mode required by the selected operation. See the Casper Base guide for its units and range."
+        },
+        "rgb_color": {
+          "name": "RGB color",
+          "description": "Color for the selected light operation."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the selected function."
+        },
+        "hour": {
+          "name": "Alarm hour",
+          "description": "Alarm hour in 24-hour time."
+        },
+        "minute": {
+          "name": "Alarm minute",
+          "description": "Minute within the selected alarm hour."
+        },
+        "mode": {
+          "name": "Alarm preset",
+          "description": "Position preset recalled by the alarm."
+        },
+        "slot": {
+          "name": "Repeating alarm ID",
+          "description": "Existing or new repeating alarm identifier."
+        },
+        "days": {
+          "name": "Weekdays",
+          "description": "Days on which the repeating alarm runs."
+        },
+        "part": {
+          "name": "Sensor partition",
+          "description": "MM: 1 or 2. SXB: 11 for left, 12 for right, or 13 for both."
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "1 for a daily report; 2 for a monthly report."
+        },
+        "year": {
+          "name": "Report year",
+          "description": "Year of the requested sensor report."
+        },
+        "month": {
+          "name": "Report month",
+          "description": "Month of the requested sensor report."
+        },
+        "day": {
+          "name": "Report day",
+          "description": "Day of month for a daily report. Use 1 for a monthly report."
+        },
+        "source": {
+          "name": "Detector status sensor",
+          "description": "External status sensor used by snore detection."
+        },
+        "side": {
+          "name": "Paired side",
+          "description": "Side of a paired bed to target."
+        }
+      }
     }
   },
   "exceptions": {

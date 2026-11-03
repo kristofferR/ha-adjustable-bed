@@ -109,7 +109,7 @@ class CasperSleepController(BedController):
                 specs.append(
                     ControllerStateSensorSpec(
                         f"casper_sleep_{side}_{field}",
-                        f"casper_sleep_{side}_{field}",
+                        f"casper_sleep_{side.lower()}_{field}",
                         f"casper_sleep_{side}_{field}",
                         "mdi:sleep",
                         attribute_keys=(f"casper_sleep_{side}_valid",),

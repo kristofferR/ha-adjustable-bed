@@ -152,6 +152,41 @@ def test_framing_and_malformed_cleanup():
     assert bed.decode_main(bytes.fromhex("6e90352a00")).name == "motor"
 
 
+@pytest.mark.parametrize(
+    "packet",
+    [bytes.fromhex("6e90b06e00"), bytes.fromhex("6e90b0c06e")]
+    + [
+        packet[:index] + b"\x6e" + packet[index + 1 :]
+        for packet in (
+            bytes.fromhex("6e900000062500"),
+            bytes.fromhex("6e00000102030405060708090a0b0c00"),
+        )
+        for index in range(2, len(packet))
+    ],
+)
+def test_ordinary_marker_bytes_preserve_supported_notification_lengths(packet):
+    receiver = bed.MainReceive()
+    assert receiver.feed(packet) == [packet]
+    assert bed.decode_main(packet) is not None
+    assert not receiver.pending
+
+
+@pytest.mark.parametrize("split", range(1, 5))
+def test_ordinary_fragment_and_coalesced_boundaries(split):
+    first = bytes.fromhex("6e90b0c06e")
+    second = bytes.fromhex("6e90352a00")
+    receiver = bed.MainReceive()
+    assert receiver.feed(first[:split]) == []
+    assert receiver.feed(first[split:] + second) == [first, second]
+    short_desk = bytes.fromhex("6e900000062500")
+    long_desk = bytes.fromhex("6e00000102030405060708090a0b0c00")
+    assert receiver.feed(short_desk + second) == [short_desk, second]
+    assert receiver.feed(long_desk + second) == [long_desk, second]
+    with pytest.raises(ValueError, match="ordinary frame boundary"):
+        receiver.feed(b"\x6e" + bytes(16))
+    assert receiver.feed(second) == [second]
+
+
 @pytest.mark.parametrize("kind", ["mm", "sxb"])
 def test_full_report_typed_shapes(kind):
     day = {

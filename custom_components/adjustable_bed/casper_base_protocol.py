@@ -106,7 +106,7 @@ def time_sync(now: datetime) -> bytes:
 
 
 class MainReceive:
-    """Keep the artifact framing rules while bounding malformed input safely."""
+    """Preserve supported ordinary lengths and validate extended framing."""
 
     def __init__(self) -> None:
         self.pending = bytearray()
@@ -131,10 +131,19 @@ class MainReceive:
                 if len(self.pending) < size:
                     break
             else:
-                try:
-                    size = self.pending.index(0x6E, 1)
-                except ValueError:
-                    size = len(self.pending)
+                # Ordinary formats have no length byte. Keep complete 5/7/16-byte
+                # notifications intact, including marker-valued data/checksums.
+                size = len(self.pending)
+                if size not in (5, 7, 16):
+                    size = next(
+                        (n for n in (5, 7, 16) if len(self.pending) > n and self.pending[n] == 0x6E),
+                        0,
+                    )
+                    if not size:
+                        if len(self.pending) < 16:
+                            break
+                        self.pending.clear()
+                        raise ValueError("Unsupported ordinary frame boundary")
             packet = bytes(self.pending[:size])
             del self.pending[:size]
             if packet[1:2] != b"\x20" or sum(packet[:-1]) & 255 == packet[-1]:

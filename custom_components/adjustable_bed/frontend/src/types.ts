@@ -131,6 +131,7 @@ export interface LightEntities {
   light?: string; // light.* under_bed_lights (color)
   switch?: string; // switch.* under_bed_lights
   state?: string; // binary_sensor.* under_bed_lights (read-only)
+  states?: string[]; // read-only light telemetry
   level?: string; // number.* light_level (brightness)
   numbers?: string[]; // app-scoped light values without color or brightness semantics
   toggle?: string; // button.* toggle_light

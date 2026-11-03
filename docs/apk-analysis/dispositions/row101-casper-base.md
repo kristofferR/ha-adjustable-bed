@@ -111,14 +111,14 @@ boundary, unreachable/dead code, unrelated phone infrastructure or an explicit s
 | `excluded.unsafe_app_lifecycle` | Safety: owned cancellable HA tasks, bounded requests and deterministic cleanup replace harmful app bugs. |
 | `excluded.unsafe_cross_service` | Safety: first coherent service/write/notify selection; never mix roles across services. |
 | `excluded.unsafe_shared_sensor_state` | Safety: independent physical-entry state, serialized transactions and MTU-aware writes. Proven per-protocol commands remain available. |
-| `excluded.unsafe_malformed_receive` | Safety: reject malformed lengths, catch typed/bounds failures, cap report decompression; retain partial live state and diagnostics. |
+| `excluded.unsafe_malformed_receive` | Safety: preserve complete ordinary notifications and marker-valued data at supported 5/7/16-byte boundaries, reject malformed lengths, catch typed/bounds failures, cap report decompression; retain partial live state and diagnostics. No length header or ordinary checksum gate is invented. |
 | `excluded.unrelated_disconnects` | Safety: HA only owns and disconnects the selected physical target. |
 | `excluded.p3_empty_init_builder` | Dead outbound builder: do not extrapolate a P4 packet to P3. |
 
 Unsafe app lifecycle behavior is documented, not silently copied or called missing evidence.
 HA serializes writes, cancels owned timers and delayed work, selects coherent GATT roles,
 avoids unrelated-device disconnects, rejects undefined long programming commands and
-bounds malformed frames/report decompression. Proven hardware commands are unchanged.
+bounds malformed frames/report decompression. The accepted ordinary marker-splitting bug is corrected at supported notification lengths, preserving checksum-valued markers and current music-source state. Ambiguous variable-length fragment combinations have no inferred header. Proven hardware commands are unchanged.
 
 ## Validation and external status
 

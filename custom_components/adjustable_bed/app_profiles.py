@@ -46,7 +46,9 @@ from .const import (
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -85,6 +87,7 @@ from .const import (
     CONF_REVERSE_MOTORS,
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
+    CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
@@ -102,6 +105,7 @@ from .const import (
     RICHMAT_MH_BED_TYPES,
     SLEEPTRACKER_CONFIG_KEYS,
     SOLACE_VARIANT_WOOSA,
+    STAR_ELEVATE_VARIANT_M1X12,
     STARCODE_APP_CONFIG_KEYS,
     SVANE_VARIANT_JENSEN_LINON,
     VIBRADORM_APP_CONFIG_KEYS,
@@ -154,6 +158,7 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # The handset table sets the layout and massage; the receiver sets the protocol.
     BED_TYPE_FURNIMOVE: _FIXED_LAYOUT | {CONF_HAS_MASSAGE, CONF_PROTOCOL_VARIANT},
     BED_TYPE_STARCODE_M5X5: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_STARCODE_M1X12: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     # The app step asks for massage; the pulse count bounds a held control.
     BED_TYPE_FSM_RELAX: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_LIMOSS_REMOTE: _APP_DEFINED,
@@ -169,6 +174,7 @@ _HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     # Nectar Move fixes two axes, has massage, and uses its own refresh interval.
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): _NECTAR_MOVE,
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
+    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): _FIXED_LAYOUT | {CONF_PROTOCOL_VARIANT},
     (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(
         {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
     ),
@@ -295,6 +301,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "AdjustableM5X5",
         frozenset({CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
     ),
+    BED_TYPE_STARCODE_M1X12: SideProfile(
+        "Adjustable Comfort M1X12",
+        frozenset({CONF_STARCODE_M1X12_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
+    ),
     BED_TYPE_VIBRADORM_APP: SideProfile(
         "Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}
     ),
@@ -309,6 +319,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
+    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
+        "Adjustable Comfort M1X12 ELEVATE", frozenset({CONF_PROTOCOL_VARIANT})
+    ),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): SideProfile("Nectar Move"),
     (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN): SideProfile(

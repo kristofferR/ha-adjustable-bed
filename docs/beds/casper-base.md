@@ -130,6 +130,12 @@ Bed GATT layouts select a one-byte or five-byte sum-checksummed format. Dedicate
 alarm and light builders retain their own framing even on the one-byte transport.
 Notifications retain all ordinary and extended parser branches. Sensor frames
 carry compact JSON in the accepted 14-byte envelope; report payloads use gzip.
+HA keeps complete 5/7/16-byte ordinary notifications intact and accepts stream
+boundaries only at those supported lengths. Marker-valued payload and checksum
+bytes do not truncate a notification, and short five-byte fragments are retained.
+This corrects the app's marker-splitting bug without inventing a length header or
+adding an ordinary checksum requirement. Length alone cannot distinguish every
+fragmented or coalesced combination of the variable ordinary formats.
 Neither bed nor sensor paths require a PIN or application authentication. Bed and
 sensor notification channels initialize even when angle sensing is disabled.
 
