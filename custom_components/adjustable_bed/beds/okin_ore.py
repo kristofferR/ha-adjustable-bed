@@ -1,7 +1,7 @@
 """OKIN ORE (OREBedBleProtocol) bed controller implementation.
 
-Protocol reverse-engineered from com.ore.bedding.glideawaymontion APK.
-See disassembly/output/com.ore.bedding.glideawaymontion/ANALYSIS.md for details.
+Legacy protocol implementation. The accepted com.ore.bedding.glideawaymontion
+1.0.3 artifact uses a different protocol; see beds/glideaway_motion.py.
 
 This controller handles beds that use the OREBedBleProtocol A5 5A packet format,
 such as ORE/OKIN beds with service UUID 00001000-0000-1000-8000-00805f9b34fb.

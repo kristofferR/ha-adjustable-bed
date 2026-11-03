@@ -16,12 +16,14 @@ from bleak.exc import BleakError
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
     # - BedTech: By name pattern ("bedtech") or post-connection characteristic check
     # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -30,8 +32,10 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -121,6 +125,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
+    GLIDEAWAY_MOTION_MODELS,
     JENSEN_LINON_NAME_PATTERNS,
     JENSEN_NAME_FRAGMENT,
     JENSEN_NAME_PATTERNS,
@@ -136,6 +141,8 @@ from .const import (
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
@@ -551,6 +558,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 
@@ -561,6 +569,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
+    BED_TYPE_ESHINE: "Eshine app (E6000)",
     BED_TYPE_RICHMAT_REVIVE: "Revive Control app (Richmat)",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "Best Mattress app (Richmat)",
     BED_TYPE_RICHMAT_BLVD_HOME: "Blvd Home app (Richmat)",
@@ -577,7 +587,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
     BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
-    BED_TYPE_OKIN_ORE: "Okin ORE (Glideaway Motion app)",
+    BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
+    BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
     BED_TYPE_OKIN_CST: "Okin CST (Rize product profiles, 14-byte dual-field)",
@@ -650,10 +661,14 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
+       for model, label in GLIDEAWAY_MOTION_MODELS.items()},
     (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): "OKIN-Seating app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): "Avanti Bases app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): "AMERICANSTAR app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): "MaxCoil Una app (Keeson)",

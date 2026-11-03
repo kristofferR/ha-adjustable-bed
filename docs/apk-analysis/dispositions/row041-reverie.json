@@ -6247,17 +6247,17 @@
           "scope": "Specific P2 discovery UUID, detection and config-flow path only.",
           "code_refs": [
             {
-              "ref": "custom_components/adjustable_bed/const.py:1006-1006",
+              "ref": "custom_components/adjustable_bed/const.py:1042-1042",
               "snapshot_path": "custom_components/adjustable_bed/const.py",
-              "snapshot_sha256": "d92f7976569c3a7199c8b8bb62566d7c763a741189bbf8061b42a48ee19a65bd",
+              "snapshot_sha256": "553e904f60cd09de0d438930871cf35851e11c8bbd9e2663de7256daebaafa82",
               "excerpt_sha256": "a4cd6f6c29d17f10718d1c20364febd23172a1ca453ffc3fd48e81679ed54817",
               "symbol": "REVERIE_SERVICE_UUID",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/detection.py:1911-1918",
+              "ref": "custom_components/adjustable_bed/detection.py:1926-1933",
               "snapshot_path": "custom_components/adjustable_bed/detection.py",
-              "snapshot_sha256": "70c0a686b3fe8b539c307c52307332b24af34e4a093eeb9860e559e636a435d2",
+              "snapshot_sha256": "7ec841048b08628975828a3c89df59658e5e70971600e0183c1775a444272728",
               "excerpt_sha256": "7f49263a29057387ba1d1f837e4baa50fea14eb42ab989bc503c6e04e9883769",
               "symbol": "REVERIE_SERVICE_UUID matcher",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"

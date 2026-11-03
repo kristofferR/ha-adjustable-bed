@@ -91,7 +91,7 @@ The displayed switch state records requested changes, not confirmed movement or
 sync status from the bed. In the HJC9 report, enabling it on both frames did not
 make them move together.
 
-For independently controllable frames, use v4's **Combine two beds into one
+For independently controllable frames, use the **Combine two beds into one
 (Dual Bed)** flow, or keep standalone entries and control both with a script.
 See [Controller Sync and two-frame setup](../CONFIGURATION.md#split-king--controller-sync)
 for the distinction, setup guidance, and a script example.

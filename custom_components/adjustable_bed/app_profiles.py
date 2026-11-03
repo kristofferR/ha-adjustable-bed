@@ -21,8 +21,12 @@ from typing import Final
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_LP_LEGACY,
@@ -45,6 +49,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
+    BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -85,6 +90,8 @@ from .const import (
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
@@ -122,12 +129,18 @@ _APP_DEFINED: Final = GENERIC_FIELDS
 _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     BED_TYPE_SERENITY: _FIXED_LAYOUT,
     BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
     BED_TYPE_ZSERIES: _FIXED_LAYOUT,
     BED_TYPE_SIMMONS: _FIXED_LAYOUT,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
     BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
+    # AHF has no massage. Motor count still sizes the legacy covers.
+    BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
     # These apps always show their massage page.
     BED_TYPE_ADJUSTABLE_LUMBAR: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     BED_TYPE_STARCODE_ABM5_4: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
@@ -147,12 +160,16 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
 }
 _HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(
+        {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
+    ),
     **{
         (BED_TYPE_KEESON, variant): _ALWAYS_MASSAGE
         for variant in (
             KEESON_VARIANT_INNOVA,
             KEESON_VARIANT_MAXCOIL_UNA,
             KEESON_VARIANT_DYNASTY_BASES,
+            KEESON_VARIANT_AMERICANSTAR,
             KEESON_VARIANT_BEDSENSE_BASES,
             KEESON_VARIANT_HEAL_EVERY_NIGHT,
         )
@@ -182,6 +199,9 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
+    BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
+    BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     BED_TYPE_FSM_RELAX: SideProfile(
         "FSM Relax",
         frozenset(
@@ -259,6 +279,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}
     ),
     BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic", VMATBASIC_CONFIG_KEYS),
+    BED_TYPE_ESHINE: SideProfile("Eshine E6000"),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
     BED_TYPE_ZSERIES: SideProfile("Customatic Z-Series", variant_owned=True),
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),
@@ -314,6 +335,12 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
         "Heal Every Night", frozenset({CONF_MOTOR_COUNT})
     ),
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): SideProfile("OKIN-Seating"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): SideProfile(
+        "Avanti Bases", frozenset({CONF_MOTOR_COUNT})
+    ),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): SideProfile(
+        "AMERICANSTAR", frozenset({CONF_MOTOR_COUNT})
+    ),
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): SideProfile("Bedsense Bases"),
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): SideProfile("INNOVA"),
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): SideProfile("MaxCoil Una"),

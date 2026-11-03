@@ -15,8 +15,10 @@ from .adapter import discover_services
 from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -25,8 +27,10 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -357,6 +361,7 @@ class _ControllerSpec:
 # tests/test_controller_contract.py resolves every entry, so a bad module or
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_ESHINE: _ControllerSpec("eshine", "EshineController"),
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
@@ -484,6 +489,14 @@ async def create_controller(
         ValueError: If bed_type is unknown
         ConnectionError: If auto-detection is needed but client is not connected
     """
+    if bed_type == BED_TYPE_COMFORT_ENHANCEMENTS:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.comfort_enhancements", __package__
+        )
+        from .beds.comfort_enhancements import ComfortEnhancementsController
+
+        return ComfortEnhancementsController(coordinator, layout=protocol_variant or "")
+
     if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
         # The app's name rule picks the table unless the variant fixes the
         # branch; offline controllers must not read the display name.
@@ -592,6 +605,14 @@ async def create_controller(
         from .beds.solace import SolaceController
 
         return SolaceController(coordinator)
+
+    if bed_type == BED_TYPE_GLIDEAWAY_MOTION:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.glideaway_motion", __package__
+        )
+        from .beds.glideaway_motion import GlideawayMotionController
+
+        return GlideawayMotionController(coordinator, model=protocol_variant)
 
     if bed_type == BED_TYPE_ZSERIES:
         # The app page is a user choice nothing on the bed identifies.
@@ -1650,6 +1671,19 @@ async def create_controller(
         )
         _LOGGER.debug("Using SBI controller with variant: %s", variant)
         return SBIController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_BEDSENSE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.bedsense", __package__
+        )
+        from .beds.bedsense import BedSenseController, BedSenseSession
+
+        return BedSenseController(
+            coordinator,
+            variant=protocol_variant or "auto",
+            device_name=device_name if client is not None else None,
+            session=app_session(coordinator.hass, coordinator.address, "bedsense", BedSenseSession),
+        )
 
     controller = await _create_from_registry(coordinator, bed_type)
     if controller is not None:
