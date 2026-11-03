@@ -30,12 +30,14 @@ from homeassistant.helpers.service import async_get_device_and_config_entry
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .command_scheduler import ALL_COMMAND_RESOURCES, current_command_context
 from .const import (
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -68,6 +70,7 @@ from .pairing import is_paired, iter_children, pair_member_addresses
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
+    from .beds.comfort_enhancements import ComfortEnhancementsController
     from .beds.limoss_remote import LimossRemoteController
     from .beds.serenity import ZSeriesController
     from .beds.svane import SvaneHoldAdmission
@@ -106,6 +109,7 @@ SERVICE_LOGICDATA_RENAME = "logicdata_rename"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
 SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
+SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 ATTR_SLOT = "slot"
@@ -2545,6 +2549,37 @@ async def _execute_zseries_alarm(
         raise
 
 
+async def handle_glideaway_set_alarm(call: ServiceCall) -> None:
+    """Use the Glideaway app's automatic day selection and exact clock encoding."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    if enabled and alarm_time is None:
+        raise ServiceValidationError("Choose a Glideaway alarm time")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("Glideaway alarms use minute precision")
+    targets = _call_targets(call)
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_GLIDEAWAY_MOTION:
+                raise ServiceValidationError(f"Device '{target.name}' is not a Glideaway Motion app bed")
+    preflighted = await _preflight_capability(targets, "supports_clock_alarm", "Glideaway alarms")
+
+    async def program(controller: BedController | SideBoundController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=enabled, weekdays=(),
+            hour=alarm_time.hour if alarm_time is not None else 0,
+            minute=alarm_time.minute if alarm_time is not None else 0,
+            preset=call.data[ATTR_WAKE_MODE],
+        )
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, program)
+    except (Exception, asyncio.CancelledError):
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_zseries_set_alarm(call: ServiceCall) -> None:
     """Set or clear the Z-Series app alarm, using Home Assistant's local time."""
     enabled = call.data[ATTR_ENABLED]
@@ -2775,6 +2810,41 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
             await _execute_sided(
                 coordinator, side, program, cancel_running=False, resource="configuration"
             )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
+    """Program the app's current-day alarm, validating every side before writes."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    if enabled and alarm_time is None:
+        raise ServiceValidationError("Choose an alarm time")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("Comfort Enhancements alarms use minute precision")
+    fields = {
+        "enabled": enabled,
+        "hour": alarm_time.hour if alarm_time is not None else 0,
+        "minute": alarm_time.minute if alarm_time is not None else 0,
+        "memory": call.data["memory"],
+        "massage": call.data["massage"],
+    }
+    targets = _call_targets(call)
+
+    def validate(target: BedChild, controller: BedController | SideBoundController) -> None:
+        if target.bed_type != BED_TYPE_COMFORT_ENHANCEMENTS:
+            raise ServiceValidationError("Choose a Comfort Enhancements app controller")
+        cast("ComfortEnhancementsController", controller).validate_alarm(**fields)
+
+    preflighted = await _preflight_each(targets, validate)
+
+    async def program(controller: BedController | SideBoundController) -> None:
+        await cast("ComfortEnhancementsController", controller).set_alarm(**fields)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, program, cancel_running=False, resource="configuration")
     except Exception:
         await _release_preflighted(preflighted)
         raise
@@ -3542,6 +3612,17 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {**hold_fields, vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS)}
         ),
     )
+    hass.services.async_register(
+        DOMAIN, "comfort_enhancements_set_alarm", handle_comfort_enhancements_set_alarm,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_TIME): cv.time,
+            vol.Optional("memory", default=0): vol.All(vol.Coerce(int), vol.In((0, 1, 2))),
+            vol.Optional("massage", default=False): cv.boolean,
+            **SIDE_FIELD,
+        }),
+    )
     device_fields = {
         vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
         **SIDE_FIELD,
@@ -3607,6 +3688,16 @@ async def async_register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, SERVICE_FSM_RELAX_CALIBRATE, handle_fsm_relax_calibrate,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                            vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,))), **SIDE_FIELD}))
+    hass.services.async_register(
+        DOMAIN, SERVICE_GLIDEAWAY_SET_ALARM, handle_glideaway_set_alarm,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_TIME): cv.time,
+            vol.Optional(ATTR_WAKE_MODE, default="none"): vol.In(("none", "memory_1", "memory_2")),
+            **SIDE_FIELD,
+        }),
+    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_ZSERIES_SET_ALARM,

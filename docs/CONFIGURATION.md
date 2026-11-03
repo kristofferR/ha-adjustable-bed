@@ -1,9 +1,8 @@
 # Configuration Guide
 
-This guide covers v4 configuration. Options depend on the selected controller
-and its reported capabilities; not every bed shows every field. v4 requires
-Home Assistant 2026.9.0 or newer. Read the [migration notes](HA_2026_9.md) before
-upgrading from v3.
+Options depend on the selected controller and its reported capabilities; not
+every bed shows every field. The integration requires Home Assistant 2026.9.0 or
+newer.
 
 ## Table of Contents
 
@@ -28,8 +27,13 @@ You can configure the integration in two places:
 
 During initial setup, you'll configure basic options like bed type, motor count, and massage support.
 
-**OKIN ORE:** Add the integration manually and select **Okin ORE (Glideaway Motion app)**
-as the bed type. Beds controlled with the current Dynasty Bases or INNOVA apps use
+**Glideaway Motion / Montion app:** Select the explicit MOTION 400, 450, 500 or
+600 app entry matching the app's model selection. Layout, massage and light
+capabilities follow that choice, with a fixed 300 ms refresh interval. No
+advertisement identifies the model. See the [Glideaway guide](beds/glideaway-motion.md).
+
+**OKIN ORE:** The **Okin ORE (legacy A5 5A)** entry preserves existing legacy
+configurations. The accepted Glideaway Motion app uses a separate protocol. Beds controlled with the current Dynasty Bases or INNOVA apps use
 the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/ore-comfort-bed.md)
 or [INNOVA](beds/keeson.md#innova-profile) profile instead. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
 Bluetooth Service Discovery Server UUID, so it cannot identify an ORE bed by itself.
@@ -450,6 +454,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | [Exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/simmons.md). |
+| Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/comfort-enhancements.md). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/adjustable-lumbar.md). |
 | AdjustableM5X4 / M5X5 | [M5X4](beds/starcode-abm5-4.md): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
 | Motion Bed | [Layout and retained settings](beds/motion_bed.md); preserve the original Bluetooth name. |
@@ -467,6 +472,10 @@ Choose the app your phone uses, for example **Revive Control app (Richmat)**. Sh
 ### SIMMONS app profile
 
 Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it. See [SIMMONS](beds/simmons.md).
+
+### Eshine app profile
+
+Choose **Eshine app (E6000)** manually for `com.richmat.eshinesleep`. Its fixed head, feet, lumbar, pillow, massage and light layout does not depend on shared Bluetooth names or received capability flags. Only pulse count remains configurable for movement; refresh is fixed at 100 ms. Named preset saves are separate buttons. A two-address pair preserves this profile per physical bed; single-address side control is unsupported. See [Eshine](beds/eshine.md).
 
 ### Adjustable bed (Lumbar) app profile
 
@@ -777,7 +786,7 @@ To enable it, open **Settings → Devices & Services → Adjustable Bed**, selec
 bed, and enable **Controller Sync** under **Entities**. Existing custom entity
 names may still show the old label.
 
-### Two Independent Frames in v4
+### Two Independent Frames
 
 Add each frame as its own Adjustable Bed entry and confirm that each controls
 only its intended side. For compatible entries, start **Add Integration →
@@ -827,8 +836,7 @@ offline-safe capabilities still support setup with one side unavailable.
 Existing side entity IDs, device IDs, names, areas, and history are retained when
 combining entries. To undo it, choose **Split paired bed** in the pair's options;
 the side entries are restored and combined controls are removed. Update any
-automation that targeted the combined controls. This restores standalone controls,
-not the v3 storage schema; [rollback requires a pre-v4 backup](HA_2026_9.md#backup-and-rollback).
+automation that targeted the combined controls.
 
 Use the [service targeting rules](SERVICES.md#targeting-a-bed-or-side) for
 automations. A child device defaults to its side; a parent defaults to both.
@@ -857,7 +865,7 @@ sequence:
 
 This runs each cover's normal movement action; it does not make movement
 continuous or synchronize positions. To stop, call `cover.stop_cover` targeting
-both covers. Unlike the v4 paired-bed controls, this simple script does not stop
+both covers. Unlike the paired-bed controls, this simple script does not stop
 the other side automatically if one side fails.
 
 ---

@@ -1010,6 +1010,47 @@ test("a Sleeptracker reported-state-only registry surface is not empty", () => {
   expect(bedIsEmpty(bedEntitiesForDevice(hassWith([]), "dev1"))).toBe(true);
 });
 
+test("Comfort Enhancements keeps Quiet sleep in presets and app massage clicks in massage", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.quiet", "comfort_enhancements_quiet_sleep"),
+    entry("button.head_cycle", "comfort_enhancements_head_cycle"),
+    entry("button.foot_cycle", "comfort_enhancements_foot_cycle"),
+    entry("button.timer_cycle", "comfort_enhancements_timer_cycle"),
+    entry("select.timer", "massage_timer"),
+    entry("cover.lift", "bed_height"),
+  ]), "dev1");
+  expect(bed.presets).toEqual(["button.quiet"]);
+  expect(bed.massage.buttons).toEqual(["button.head_cycle", "button.foot_cycle", "button.timer_cycle"]);
+  expect(bed.massage.timer).toBe("select.timer");
+  expect(bed.motors[0].key).toBe("bed_height");
+});
+
+test("Eshine named saves and literal massage controls join their card sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.save", "eshine_save_zero_g"),
+    entry("button.strength", "eshine_massage_head_strength"),
+    entry("button.timer", "eshine_massage_20_minutes"),
+    entry("button.mode", "massage_mode_step"),
+    entry("button.light", "toggle_light"),
+    entry("cover.pillow", "pillow"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.save"]);
+  expect(bed.massage.buttons).toEqual(["button.strength", "button.timer", "button.mode"]);
+  expect(bed.lights.toggle).toBe("button.light");
+  expect(bed.motors.map((motor) => motor.key)).toEqual(["pillow"]);
+});
+
+test("Glideaway exposes its reported massage timer and alarm refresh", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("sensor.motion_timer", "glideaway_motion_massage_timer"),
+    entry("button.motion_alarm", "glideaway_motion_query_alarm"),
+    entry("cover.motion_tilt", "tilt"),
+    entry("cover.motion_height", "bed_height"),
+  ]), "dev1");
+  expect(bed.massage.timer).toBe("sensor.motion_timer");
+  expect(bed.utility).toContain("button.motion_alarm");
+  expect(bed.motors.map(m => m.key)).toEqual(["tilt", "bed_height"]);
+});
 
 test("BedSense app actions retain distinct entities and app indicators", () => {
   const bed = bedEntitiesForDevice(hassWith([

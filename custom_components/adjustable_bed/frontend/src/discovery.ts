@@ -221,8 +221,12 @@ export function bedEntitiesForDevice(
           bed.utilityStates?.push(id);
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
-        // INNOVA reports its massage timer indicator; the app has no timer select.
-        else if (key === "innova_massage_timer" || key === "bedsense_massage_timer") bed.massage.timer = id;
+        // These apps report a massage timer indicator without a timer select.
+        else if (
+          key === "innova_massage_timer" ||
+          key === "glideaway_motion_massage_timer" ||
+          key === "bedsense_massage_timer"
+        ) bed.massage.timer = id;
         else if (key === "bedsense_light_duration") bed.lights.state = id;
         else if (/^bedsense_(head_bar|wave_bar|head_steps|foot_steps|wave_steps)$/.test(key))
           (bed.massage.states ??= []).push(id);
@@ -329,7 +333,11 @@ export function bedEntitiesForDevice(
           // Inclined-bed controls replace three presets; their physical roles are unverified.
           // A single-address left view keys "Inclined left" without a second suffix.
           presetMap.set(key, id);
-        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms") {
+        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm") {
+          bed.utility.push(id);
+        } else if (key.startsWith("eshine_massage_")) {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("eshine_save_")) {
           bed.utility.push(id);
         } else if (key === "richmat_mh_massage") {
           bed.massage.buttons.push(id);
@@ -350,6 +358,7 @@ export function bedEntitiesForDevice(
           // Pump taps have no motor, preset or memory-slot meaning.
           bed.utility.push(id);
         } else if (
+          /^comfort_enhancements_(head|foot|timer)_cycle$/.test(key) ||
           key === "ore_comfort_massage_start" ||
           key === "innova_massage_level" ||
           key === "innova_massage_timer_hold"
@@ -360,6 +369,8 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
+        } else if (key === "comfort_enhancements_quiet_sleep") {
+          presetMap.set(key, id);
         } else if (key === "restonic_zzz") {
           // Restonic BT remote B's ZZZ tap; the app proves no preset or memory meaning.
           bed.utility.push(id);
