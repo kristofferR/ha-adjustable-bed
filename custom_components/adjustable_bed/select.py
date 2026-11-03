@@ -464,7 +464,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             timer_mode = (
                 state.get("okin_app_massage_timer")
                 if "okin_app_massage_timer" in state
-                else state.get("woosa_massage_timer", 0)
+                else state.get("bf_cherish_massage_timer", state.get("woosa_massage_timer", 0))
             )
         else:
             timer_mode = controller.get_massage_state().get("timer_mode")
