@@ -211,16 +211,15 @@ accepts. Save controls can change stored positions. Svane Remote and Limoss
 Remote beds validate and release through their own live session, so a single
 call cannot mix them with other profiles.
 
-```yaml
-action: adjustable_bed.hold_control
-data:
-  device_id: YOUR_DEVICE_ID
-  control: head_up
-  duration: 2.5
-```
+Sleepy's Elite uses selector-supported static controls here. Numeric and select
+entities remain separate commit paths. Its accepted palette commits select
+codes `1`–`7`, each as one writer attempt without repeat or STOP. Caller timing
+for the other dynamic app values remains under source-to-caller reconciliation;
+they are not exposed through `hold_control`.
 
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
+| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
 | [Leggett Okin app profiles](beds/leggett-okin.md) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide. `leggett_hold_control` remains as an alias limited to this list |
 | [Jordan's Serenity](beds/serenity.md#reachable-commands) | 31 literal app actions | Two-frame release |
 | [Jordan's Tranquil](beds/tranquil.md#reachable-commands) | 30 literal app actions | Two-frame release |
@@ -287,6 +286,7 @@ enable additional commands.
 
 | Controller/profile | Actions | Guide |
 |--------------------|---------|-------|
+| Sleepy's Elite app | Selector-backed controls are exposed as Home Assistant entities; there is no separate alarm action | [Sleepy's Elite app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) |
 | Linak Bed Control | `linak_move_simultaneously`, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Jensen JMC400 | `linak_move_simultaneously` (back and legs only; the action keeps its original name) | [Jensen](beds/jensen.md) |
 | Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |

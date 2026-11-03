@@ -1,6 +1,6 @@
 # Sleepy's Elite (MFRM)
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Protocol implemented; hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [SethCalkins](https://github.com/SethCalkins) (BOX25 Star, ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed))
 
@@ -40,6 +40,107 @@ Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
 - If your bed has **OKIN 64-bit service UUID** (62741523-...), use BOX24
 - Octo Star2 beds also use `Star2` names, but they advertise the Octo Star2 UUID and are detected as Octo first
 - When in doubt, try BOX24 first (simplest protocol)
+
+### Explicit Sleepy's Elite app profile
+
+Choose **Sleepy's Elite app** in manual setup when the bed is operated with the
+`com.okin.bedding.sleepy` app. This is a separate, app-findable profile. It is
+never inferred from a shared BLE service or transport, and it does not replace
+the existing BOX15, BOX24, or BOX25 integrations above. For a paired bed, choose
+the selector independently for each physical receiver. Select `none` only when
+the app has no named control box for that receiver.
+
+The selector list follows the app: `none`, `BOX15`, `BOX24`, `BOX1220`,
+`BOX1221`, `BOX2422`, `BOX2442`, `BOX3633`, `BOX25`, and `BOX25_STAR`.
+Selectors control the app's exact GATT route and packet builders. Setup writes
+`5A 0B 00 A5` with response before enabling the selected notification target;
+an initial setup-write error triggers one retry of the same frame. Once the
+notification channel is ready, this profile checks Device Information and
+best-effort reads manufacturer name `2A29`, followed by software revision
+`2A28`. These optional metadata reads do not gate readiness. A disconnect ends
+the sequence, so a prior session cannot store metadata from a stale response.
+Other Sleepy's profiles keep their existing generic `2A29`/`2A24` behavior.
+
+| Selector | Write characteristic | Notification characteristic | App-only additions |
+|----------|----------------------|-----------------------------|--------------------|
+| `none`, `BOX24`, `BOX1221`, `BOX2422`, `BOX2442` | Nordic UART `6E400002` | Nordic UART `6E400003` | Position target sliders and raw app state where the app caller is proven |
+| `BOX15` | `FFE9` in `FFE5` | `FFE4` in `FFE0` | Position target sliders and raw app state where the app caller is proven |
+| `BOX1220` | `1001` in `1000` | `1002` in `1000` | Position target sliders and raw app state where the app caller is proven |
+| `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the proven safe common app surface; the conditional navigation-race position slider is excluded |
+| `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | App light, massage, timer-code, and voice actions |
+
+The profile exposes proven head, feet, lumbar, and selector-supported neck
+movement, the app's preset and memory actions, position refresh, and eligible
+light/massage actions. Position target values and unlabelled state fields keep
+the app's raw axis/field identities; the integration does not guess physical
+axis labels or semantics. Nine proven UI selectors expose axis `0`, `1`, and
+`2` target numbers over the logical `0..100` range. BOX25 and BOX25_STAR also
+retain separate one-shot voice endpoints at `0` and `100`. Stable BOX3633
+continues to expose its direction controls before target-event creation; its
+conditional navigation-race target slider remains excluded.
+
+The accepted position input domain is axes `0`, `1`, and `2` with slider
+targets truncated to integer `0..100`; the app's tagged `0xc8` argument is
+integer `100`, not `200`.
+The app's 25-position layouts commit the requested target once at drag end or
+active cancellation, with no appended STOP. Its seven 36-position selectors
+commit the changed target, send STOP at interaction end, then separately try
+midpoint `50`. Home Assistant numbers provide one commit and no drag-end
+callback, so a 36-selector number commit is adapted as target, STOP, then a
+separate midpoint value write. That midpoint is a real position command, not a
+STOP substitute. The app's private StoppedState delta thresholds (3/3/5),
+running-axis queue and deduplication, same-axis reset `(7, 0)`, event-4
+queue-clear without reset, STOP, or transition, and event-5 completion/replay
+are source facts; the final duplicate target event is ignored. Event
+consumption reads the manager's then-current selector.
+HA commits do not create that private gesture queue; they run as finite
+per-controller commands through the integration's command lane using the
+physical side's explicit selector. No physical axis meaning is inferred.
+
+On `BOX25` and `BOX25_STAR`, lights and massage follow the app's actual callers.
+The brightness number spans `0..6`: positive values send one brightness
+frame, while zero uses the separate light-off route. The controller brightness
+setter still supports the distinct source value-zero brightness frame. Two
+one-step HA buttons adapt the source's relative voice brightness calls; they
+retain the current `0..6` level at either endpoint and wait for a known level
+before sending. Slider and palette commits require the parsed under-bed-light
+enabled state. HA commits require the active BLE controller session but do
+not reproduce the app's UI-only debounce or local preview. Combined massage
+intensity spans `0..7` and maps to builder
+value `0` or `2..8`; timer options are opaque codes `1`, `2`, and `3`, not
+minute labels. Intensity and timer commits require active massage; timer
+selection also skips the already-selected code. The source sends brightness
+after slider end/active cancellation, timer choices on button up/cancel, and
+intensity on slider end/active cancellation or button up/cancel; its intensity
+down callback is inert. HA numbers/selects are single commits, each sending
+one frame with no implicit STOP. The color number exposes codes `1..7`.
+Palette/cycle up and cancel are speak-mode callers: each commit attempts one
+frame, starts no repeat timer, and sends no STOP. The app's event-4 interrupt
+clears only its pending position-event queue before massage time/intensity
+writes; the HA adapter has no retained app gesture queue and does not invent a
+reset or STOP for those commits. Selector-specific button repeats use the
+app's 100 ms refresh and STOP release paths. The card honors each direction's
+declared 100 ms start and release delays. Native Home Assistant button and
+cover actions use a bounded 300 ms adapter window with the same refresh and
+release behavior. Voice position calls are one-shot.
+Motion-sensor refresh ends after five seconds by cancelling its repeat; this
+path sends no fabricated STOP frame. The app's
+`setAlarm` and `queryAlarm` routes are unreachable from the app UI and are not
+exposed. The two empty BOX15 writer calls are retained as exact empty-value
+attempts in the internal route table; no payload bytes or platform acceptance
+are inferred for them, and they do not create public massage controls.
+
+Current caller policy, its accepted addendum/audit hashes, and the selector
+classification correction are indexed additively in the [row003 disposition
+ledger](../apk-analysis/dispositions/row003-sleepys-elite.json). They leave the
+canonical route table and original dynamic-vector provenance intact.
+
+Raw RX state is parsed atomically: malformed or bounds-faulting packets, and
+callbacks without a current BLE notification session, leave the prior state
+unchanged. Unknown fields are surfaced with neutral raw
+field names instead of inferred physical labels. The protocol is reconstructed
+from accepted canonical v2 app evidence; physical behavior has not been
+verified on a bed.
 
 ## Features
 
