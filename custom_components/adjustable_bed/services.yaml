@@ -2022,3 +2022,34 @@ sleeptracker_relaxation:
       selector:
         select:
           options: [wind_down_1, wind_down_2, local_animation]
+
+glideaway_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    wake_mode:
+      default: none
+      selector:
+        select:
+          options:
+            - label: No bed movement
+              value: none
+            - label: Memory A
+              value: memory_1
+            - label: Memory B
+              value: memory_2

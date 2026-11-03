@@ -994,3 +994,15 @@ test("a Sleeptracker reported-state-only registry surface is not empty", () => {
   expect(bedIsEmpty(bed)).toBe(false);
   expect(bedIsEmpty(bedEntitiesForDevice(hassWith([]), "dev1"))).toBe(true);
 });
+
+test("Glideaway exposes its reported massage timer and alarm refresh", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("sensor.motion_timer", "glideaway_motion_massage_timer"),
+    entry("button.motion_alarm", "glideaway_motion_query_alarm"),
+    entry("cover.motion_tilt", "tilt"),
+    entry("cover.motion_height", "bed_height"),
+  ]), "dev1");
+  expect(bed.massage.timer).toBe("sensor.motion_timer");
+  expect(bed.utility).toContain("button.motion_alarm");
+  expect(bed.motors.map(m => m.key)).toEqual(["tilt", "bed_height"]);
+});

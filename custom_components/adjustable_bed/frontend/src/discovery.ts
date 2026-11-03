@@ -166,8 +166,8 @@ export function bedEntitiesForDevice(
         if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
-        // INNOVA reports its massage timer indicator; the app has no timer select.
-        else if (key === "innova_massage_timer") bed.massage.timer = id;
+        // These apps report a massage timer indicator without a timer select.
+        else if (key === "innova_massage_timer" || key === "glideaway_motion_massage_timer") bed.massage.timer = id;
         break;
 
       case "number":
@@ -253,7 +253,7 @@ export function bedEntitiesForDevice(
           // Inclined-bed controls replace three presets; their physical roles are unverified.
           // A single-address left view keys "Inclined left" without a second suffix.
           presetMap.set(key, id);
-        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms") {
+        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm") {
           bed.utility.push(id);
         } else if (key === "richmat_mh_massage") {
           bed.massage.buttons.push(id);

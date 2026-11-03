@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     )
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
+    from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
     from .innova import InnovaController as InnovaController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
@@ -84,6 +85,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "GlideawayMotionController": "glideaway_motion",
     "InnovaController": "innova",
     "StarcodeM5X5Controller": "starcode_m5x5",
     "FurniMoveController": "furnimove",

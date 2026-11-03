@@ -35,6 +35,10 @@ The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptra
 maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
 including direct BLE controls, explicit exclusions and hardware validation status.
 
+The [row068 Glideaway Motion ledger](apk-analysis/dispositions/row068-glideaway-motion.md)
+accounts for the accepted 1.0.3 revision01 commands, models, parsers, timing and
+explicit safety/product exclusions.
+
 ## Development and Validation
 
 Work from `main` for v4 changes. Development uses Python **3.14.2+** with

@@ -2315,6 +2315,9 @@
       },
       "sleeptracker_identify_local": {
         "name": "Identify local safety light"
+      },
+      "glideaway_motion_query_alarm": {
+        "name": "Refresh alarm"
       }
     },
     "cover": {
@@ -3552,6 +3555,12 @@
       },
       "sleeptracker_right_commanded_timer_seconds": {
         "name": "Right ActiveBreeze timer (last command)"
+      },
+      "glideaway_motion_alarm": {
+        "name": "Bed alarm"
+      },
+      "glideaway_motion_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "light": {
@@ -5874,6 +5883,29 @@
         },
         "action": {
           "name": "Action"
+        }
+      }
+    },
+    "glideaway_set_alarm": {
+      "name": "Glideaway Motion alarm",
+      "description": "Set or disable the MOTION 400/450/500/600 bed alarm. Uses the app's unusual automatic weekday selection and clock offsets. Time is the transmitted 24-hour value, one hour below the app's 1\u201312 wheel label. Hardware unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling. Use minute precision."
+        },
+        "wake_mode": {
+          "name": "Wake mode",
+          "description": "No bed movement, Memory A (memory_1), or Memory B (memory_2)."
         }
       }
     }
