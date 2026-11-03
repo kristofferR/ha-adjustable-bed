@@ -55,6 +55,39 @@ and reconciliation worker.
   `input/ANALYST-BRIEF.txt`, which requires every operation to go through those
   wrappers.
 
+## Acquire runtime catalogs without asking
+
+Some apps download the product, model or capability catalog that selects their
+BLE profile from a vendor backend at runtime. When a report is PARTIAL or
+BLOCKED only because such a catalog is absent, the coordinator fetches it
+without asking the maintainer. This standing authorization covers:
+
+- Replaying exactly the request the artifact builds, as identified in the
+  frozen report and its cited source: the same endpoint, method, headers,
+  parameters, and signing or token derived from keys embedded in the app.
+- Read-only catalog, model, configuration or remote-code lookups only, one
+  request per response the report needs. No retries in loops and no endpoint
+  enumeration.
+
+It never covers user accounts or personal credentials, login, registration,
+pairing or device-bound requests, or anything that writes or changes state on
+the backend. If the app's request needs any of those, record the blocker and
+ask instead.
+
+Then:
+
+1. Store the response body untouched, plus acquisition metadata: URL, method,
+   header names, timestamps, HTTP status, response headers, body SHA-256 and the
+   app source references that build the request. Never write a token or key
+   value to disk or logs. Keep the response machine-local under the unit's
+   state directory, never committed, and make it read-only.
+2. Stage a new attempt with the same sealed inputs plus the response under
+   `input/runtime-catalog/`, with the prior attempt mounted read-only. Launch a
+   visible scoped-repair worker that checks the response's provenance against
+   the artifact and reconciles every catalog row without network access.
+3. Record the acquisition in the unit's handoff and in the #447 entry with the
+   report.
+
 ## Prepare useful evidence before audit
 
 - Reuse already operational artifact checks, decompilers, warning logs, safe

@@ -436,6 +436,7 @@ Until [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436) 
 - Keep raw artifacts, decompilation output, and APK Protocol Audit reports machine-local and ignored as required by #436. Commit only durable integration, test, documentation, and workflow-instruction changes.
 - Do not assume maintainers can physically test a discovered bed. A report may be COMPLETE when app behavior is exhaustively proven from the artifact while hardware status remains explicitly unverified. Treat physical checks and captures as deferred external validation for real users after a beta or release, not as an immediately actionable maintainer task or an automatic reason to fail the analysis.
 - Never guess protocol behavior when the required artifact or analysis layer is unavailable. Record the precise APK or runtime-table blocker. If only physical semantics remain, record a deferred validation request for real users after beta/release; do not ask a maintainer to acquire or immediately test the bed.
+- Product, model or capability catalogs that an app downloads from its vendor backend to choose a BLE profile are evidence the coordinator acquires without asking, by replaying the app's own read-only request once and staging the response as an offline input for a scoped repair. Follow [the runtime catalog procedure](docs/apk-analysis/phase4-coordinator-workflow.md#acquire-runtime-catalogs-without-asking). Fetching one is evidence collection, not an in-scope cloud feature. Analysts stay offline.
 
 ### Mandatory post-freeze implementation convergence
 
