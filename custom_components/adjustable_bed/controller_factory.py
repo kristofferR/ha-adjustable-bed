@@ -15,6 +15,7 @@ from .adapter import discover_services
 from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
@@ -518,6 +519,17 @@ async def create_controller(
         from .beds.comfort_enhancements import ComfortEnhancementsController
 
         return ComfortEnhancementsController(coordinator, layout=protocol_variant or "")
+
+    if bed_type == BED_TYPE_ADJUSTAMATTRESS:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.adjustamattress", __package__
+        )
+        from .beds.adjustamattress import AdjustaMattressController
+
+        return AdjustaMattressController(
+            coordinator, protocol_variant=protocol_variant,
+            device_name=device_name if client is not None else None,
+        )
 
     if bed_type == BED_TYPE_CASPER_BASE:
         await coordinator.hass.async_add_import_executor_job(

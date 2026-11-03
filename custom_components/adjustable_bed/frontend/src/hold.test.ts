@@ -1478,3 +1478,32 @@ test("abandoning an HJBed held action retains its protocol release route", () =>
   expect(hold.abandon()).toEqual(["button.hjbed_release"]);
   expect(events).toEqual(["start:sofa_reset:up", "stop:button.hjbed_release"]);
 });
+
+test("AdjustaMattress backend owns start and release delays for card holds", () => {
+  const calls: unknown[] = [];
+  const hass = {
+    entities: { "button.massage": { device_id: "bed" } },
+    states: { "button.massage": { attributes: {
+      held_control: "headStrengthAdd", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+    } } },
+    callService: (...args: unknown[]) => { calls.push(args); return new Promise<void>(() => {}); },
+  } as HomeAssistant;
+  const motor = heldButtonMotor(hass, "button.massage")!;
+  const timers = new FakeTimers();
+  const stops: string[] = [];
+  const hold = new MotorHold({
+    pulse: () => undefined,
+    holdControl: (entity, direction) => movementHold(hass, entity, direction),
+    stopCover: () => undefined,
+    stopBed: (id) => { if (id) stops.push(id); },
+  }, timers);
+  hold.start(motor, "up", 1, "button.stop");
+  expect(calls).toEqual([["adjustable_bed", "hold_control", {
+    device_id: ["bed"], control: "headStrengthAdd", duration: 60,
+  }]]);
+  hold.end(motor);
+  expect(stops).toEqual(["button.stop"]);
+  timers.advance(1000);
+  expect(calls).toHaveLength(1);
+  expect(stops).toHaveLength(1);
+});

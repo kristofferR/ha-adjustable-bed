@@ -2917,6 +2917,66 @@
       "bedsense_light": {
         "name": "{action}"
       },
+      "adjustamattress_lift_up": {
+        "name": "Lift up"
+      },
+      "adjustamattress_lift_down": {
+        "name": "Lift down"
+      },
+      "adjustamattress_sync_clock": {
+        "name": "Synchronize clock"
+      },
+      "adjustamattress_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "adjustamattress_query_massage": {
+        "name": "Refresh massage"
+      },
+      "adjustamattress_m1": {
+        "name": "M1"
+      },
+      "adjustamattress_timer10": {
+        "name": "Massage timer 10 minutes"
+      },
+      "adjustamattress_timer20": {
+        "name": "Massage timer 20 minutes"
+      },
+      "adjustamattress_timer30": {
+        "name": "Massage timer 30 minutes"
+      },
+      "adjustamattress_query_massage_once": {
+        "name": "Query massage once"
+      },
+      "adjustamattress_sleep": {
+        "name": "Sleep"
+      },
+      "adjustamattress_demonstration": {
+        "name": "Demonstrate anti-snore"
+      },
+      "adjustamattress_query_status": {
+        "name": "Refresh anti-snore status"
+      },
+      "adjustamattress_head_strength_add": {
+        "name": "Head massage step"
+      },
+      "adjustamattress_foot_strength_add": {
+        "name": "Foot massage step"
+      },
+      "adjustamattress_wave_add": {
+        "name": "Wave step"
+      },
+      "adjustamattress_massage_timer": {
+        "name": "Massage timer step"
+      },
+      "adjustamattress_underbed_lighting": {
+        "name": "Underbed lighting"
+      },
+      "adjustamattress_lift_head": {
+        "name": "Lift head"
+      },
+      "adjustamattress_lift_foot": {
+        "name": "Lift foot"
+      },
       "casper_base_action": {
         "name": "{action}"
       },
@@ -3353,6 +3413,9 @@
       },
       "bedsense_back_and_leg": {
         "name": "Back and leg"
+      },
+      "adjustamattress_lift": {
+        "name": "Lift"
       },
       "motor_3": {
         "name": "Motor 3"
@@ -4487,6 +4550,36 @@
       "bedsense_wave_steps": {
         "name": "Wave frequency (app steps)"
       },
+      "adjustamattress_alarm_hour": {
+        "name": "Reported alarm hour"
+      },
+      "adjustamattress_alarm_minute": {
+        "name": "Reported alarm minute"
+      },
+      "adjustamattress_alarm_type": {
+        "name": "Reported alarm action code"
+      },
+      "adjustamattress_alarm_repeat": {
+        "name": "Reported alarm repeat byte"
+      },
+      "adjustamattress_massage_time": {
+        "name": "Reported massage time"
+      },
+      "adjustamattress_head_intensity": {
+        "name": "Reported head intensity"
+      },
+      "adjustamattress_foot_intensity": {
+        "name": "Reported foot intensity"
+      },
+      "adjustamattress_wave": {
+        "name": "Reported wave"
+      },
+      "adjustamattress_sensitivity": {
+        "name": "Reported sensitivity index"
+      },
+      "adjustamattress_strength_index": {
+        "name": "Reported anti-snore strength index"
+      },
       "casper_sleep_l_body_move": {
         "name": "Left body movement"
       },
@@ -4826,6 +4919,24 @@
       "bedsense_m5_saved": {
         "name": "M5 saved (app indicator)"
       },
+      "adjustamattress_alarm_on": {
+        "name": "Reported alarm enabled"
+      },
+      "adjustamattress_sleeping": {
+        "name": "Reported sleeping"
+      },
+      "adjustamattress_snore_enabled": {
+        "name": "Reported intelligent anti-snore"
+      },
+      "adjustamattress_demonstration": {
+        "name": "Reported demonstration"
+      },
+      "adjustamattress_auxiliary_status_bit_1": {
+        "name": "Auxiliary status bit 1"
+      },
+      "adjustamattress_busy": {
+        "name": "Control box busy"
+      },
       "floyd_battery_mode": {
         "name": "Battery power mode"
       }
@@ -5058,6 +5169,12 @@
       },
       "sleepys_app_color_code_right": {
         "name": "Right: App color code"
+      },
+      "adjustamattress_alarm_draft_hour": {
+        "name": "Alarm hour (draft)"
+      },
+      "adjustamattress_alarm_draft_minute": {
+        "name": "Alarm minute (draft)"
       },
       "bf_cherish_intensity": {
         "name": "Massage intensity"
@@ -5466,6 +5583,71 @@
       },
       "sleepys_app_massage_timer_code_right": {
         "name": "Right: Massage time code"
+      },
+      "adjustamattress_alarm_draft_type": {
+        "name": "Alarm action (draft)",
+        "state": {
+          "0": "Default",
+          "9": "Massage",
+          "17": "Action 17",
+          "19": "Position"
+        }
+      },
+      "adjustamattress_alarm_commit": {
+        "name": "Alarm",
+        "state": {
+          "on": "On",
+          "off": "Off"
+        }
+      },
+      "adjustamattress_head_selector": {
+        "name": "Head massage selection",
+        "state": {
+          "0": "0",
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "adjustamattress_foot_selector": {
+        "name": "Foot massage selection",
+        "state": {
+          "0": "0",
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "adjustamattress_wave_selector": {
+        "name": "Wave selection",
+        "state": {
+          "0": "0",
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "adjustamattress_privacy": {
+        "name": "Anti-snore privacy agreement",
+        "state": {
+          "accepted": "Accepted",
+          "not_accepted": "Not accepted"
+        }
+      },
+      "adjustamattress_strength_setting": {
+        "name": "Anti-snore strength (next command)",
+        "state": {
+          "0": "0",
+          "1": "1",
+          "2": "2"
+        }
+      },
+      "adjustamattress_snore_control": {
+        "name": "Intelligent anti-snore",
+        "state": {
+          "on": "On",
+          "off": "Off"
+        }
       },
       "hjbed_layout": {
         "name": "HJBed layout"

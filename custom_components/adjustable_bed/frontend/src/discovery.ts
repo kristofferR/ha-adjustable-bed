@@ -221,6 +221,14 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (/^adjustamattress_(massage_time|head_intensity|foot_intensity|wave)$/.test(key)) {
+          (bed.massage.states ??= []).push(id);
+          break;
+        }
+        if (key.startsWith("adjustamattress_")) {
+          bed.utilityStates?.push(id);
+          break;
+        }
         if (key.startsWith("starcode_m1x12_part_") && key.endsWith("_position"))
           motor(key.slice(0, -9)).position = id;
         else if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
@@ -246,6 +254,10 @@ export function bedEntitiesForDevice(
         break;
 
       case "number":
+        if (key.startsWith("adjustamattress_")) {
+          (bed.utilityNumbers ??= []).push(id);
+          break;
+        }
         if (key.endsWith("_position")) motor(key.slice(0, -9)).position = id;
         else if (!selectedSide && split.side && split.key.endsWith("_position"))
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
@@ -282,6 +294,22 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
+        if (key === "adjustamattress_underbed_lighting") {
+          (bed.lights.buttons ??= []).push(id);
+          break;
+        }
+        if (/^adjustamattress_(head_strength_add|foot_strength_add|wave_add|massage_timer|timer\d+|query_massage.*)$/.test(key)) {
+          bed.massage.buttons.push(id);
+          break;
+        }
+        if (key === "adjustamattress_m1") {
+          presetMap.set(key, id);
+          break;
+        }
+        if (key.startsWith("adjustamattress_")) {
+          bed.utility.push(id);
+          break;
+        }
         if (PRESET_ORDER.includes(key) || key.startsWith("preset_") || key.startsWith("sleepys_app_preset_")) {
           if ((match = key.match(/^preset_memory_(\d+)$/)))
             memory(Number(match[1])).goto = id;
@@ -455,6 +483,10 @@ export function bedEntitiesForDevice(
         break;
 
       case "binary_sensor":
+        if (key.startsWith("adjustamattress_")) {
+          bed.utilityStates?.push(id);
+          break;
+        }
         if (key === "ble_connection") bed.connectivity = id;
         else if (key === "memory_save_response_observed") bed.utilityStates?.push(id);
         else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
@@ -466,6 +498,14 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
+        if (/^adjustamattress_(head|foot|wave)_selector$/.test(key)) {
+          (bed.massage.selects ??= []).push(id);
+          break;
+        }
+        if (key.startsWith("adjustamattress_")) {
+          (bed.utilitySelects ??= []).push(id);
+          break;
+        }
         if (key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
         else if (key === "sleepys_app_massage_timer_code")
