@@ -495,3 +495,11 @@ schedule these presets; the app's phone alarms are not on-bed alarm storage.
 `memory_1`, `memory_2`, default `none`). The clock uses HA local time. All
 targets must be BF or Cherish profiles. [Profile details and example](beds/bf-cherish.md#alarm-action)
 cover distinct packet formats, retained intent and report limitations.
+
+### Casper Base
+
+`adjustable_bed.casper_base` provides capability-validated alarm, light, automatic
+external-detector, sleep sensor and remote-finder operations. Select a `device_id`
+and `operation`; paired targets are validated together before sending commands.
+The [Casper Base guide](beds/casper-base.md#configuration-actions) lists each
+operation's fields and the separate sensor/remote entry types.

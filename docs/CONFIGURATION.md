@@ -962,3 +962,11 @@ Select the exact [BF or Cherish app](beds/bf-cherish.md) in manual setup.
 The app fixes its motor layout, capabilities and 200 ms movement refresh.
 Only the bounded pulse count is configurable. A shared FFE9 service does not
 select either app automatically. Each physical address keeps its own profile.
+
+### Casper Base
+
+Choose the explicit **Casper Base app** profile and its PRO/MAX product. Other
+stored-product choices are conditional records from this package, not inferred
+app compatibility. The product owns the motor layout and accessory controls.
+Configure two-address paired sides separately. Sleep sensors and the RCRM handset
+use separate entries. See the [Casper Base guide](beds/casper-base.md).

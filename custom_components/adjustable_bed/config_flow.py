@@ -7833,13 +7833,28 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         """Enable the reversible left/right/both surface on one BLE address."""
         runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
         controller = getattr(runtime, "capability_controller", None)
-        if controller is not None and not getattr(
-            controller, "supports_single_address_pairing", True
+        needs_casper_transport_proof = self.config_entry.data.get(CONF_BED_TYPE) == "casper_base"
+        casper_not_connected = needs_casper_transport_proof and (
+            runtime is None or not runtime.is_connected
+        )
+        if (
+            casper_not_connected
+            or (needs_casper_transport_proof and controller is None)
+            or (
+                controller is not None
+                and not getattr(controller, "supports_single_address_pairing", True)
+            )
         ):
             return self.async_show_form(
                 step_id="pair_sides",
                 data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
-                errors={"base": "single_address_pairing_unsupported"},
+                errors={
+                    "base": (
+                        "casper_pairing_needs_connection"
+                        if casper_not_connected or controller is None
+                        else "single_address_pairing_unsupported"
+                    )
+                },
             )
 
         if user_input is not None and user_input.get("confirm"):

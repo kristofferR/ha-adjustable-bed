@@ -164,6 +164,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return SBI_VARIANT_BOTH
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
+    if bed_type == const.BED_TYPE_CASPER_BASE:
+        return "casperpro"
     if bed_type == const.BED_TYPE_COMFORT_ENHANCEMENTS:
         return "mc2"
     if bed_type == const.BED_TYPE_GLIDEAWAY_MOTION:

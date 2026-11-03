@@ -1,0 +1,2939 @@
+[
+  {
+    "id": "mm-full-short-retains",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-63-15-1-1-0-1-0",
+        "R": "1-1-63-15-1-1-0-1-0"
+      },
+      {
+        "L": "1-1-64-16-1",
+        "R": "1-1-65-17-1"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        },
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "65",
+            "breath": "17",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "mm-invalid-1",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": "--",
+            "heart": "--",
+            "breath": "--",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": false,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-invalid-1-1-64-16",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-16",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": "--",
+            "heart": "--",
+            "breath": "--",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": false,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-invalid-1-1-64-16-0",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-16-0",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": "--",
+            "heart": "--",
+            "breath": "--",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": false,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-offbed-retains-flags",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "0-1-64-16-1",
+        "R": "0-1-65-17-1"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": false,
+            "heart": "--",
+            "breath": "--",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": false,
+            "heart": "--",
+            "breath": "--",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-malformed-1-1-64-16-1-bad",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-16-1-bad",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-malformed-1-1-64-bad",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-bad",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": false,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-malformed-1-1-64-16-0-bad",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-16-0-bad",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": false,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-malformed-1-1-64-16-1-0-bad",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-16-1-0-bad",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": false,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-malformed-right-keeps-left",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-16-1",
+        "R": "1-1-65-bad"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "65",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-empty",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": false,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-unused-tail-still-parsed",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-63-15-1-1-0-1-0-bad",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "mm-zero-labels",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-0-64-16-1-0-0-0-0",
+        "R": "1-0-65-17-1-0-0-0-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": false,
+            "snoring": false
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "65",
+            "breath": "17",
+            "body_move": false,
+            "snoring": false
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "p4-status-1",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          1,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          1,
+          70,
+          18,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "70",
+            "breath": "18",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "70",
+            "breath": "18",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-status--4",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          -4,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          -4,
+          70,
+          18,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "70",
+            "breath": "18",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "70",
+            "breath": "18",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-status-0",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          0,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          0,
+          70,
+          18,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": "--",
+            "heart": "--",
+            "breath": "--",
+            "body_move": "--",
+            "snoring": true
+          },
+          "R": {
+            "on_bed": "--",
+            "heart": "--",
+            "breath": "--",
+            "body_move": "--",
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-status--1",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          -1,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          -1,
+          70,
+          18,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": "--",
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": "--",
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-status--2",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          -2,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          -2,
+          70,
+          18,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-status--3",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          -3,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          -3,
+          70,
+          18,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-status-7",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          7,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          7,
+          70,
+          18,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": "--",
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": "--",
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-skip-None",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": null,
+        "R": null
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-skip-[]",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [],
+        "R": []
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-skip-[1, 1, 70, 18, 1]",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          1,
+          1,
+          70,
+          18,
+          1
+        ],
+        "R": [
+          1,
+          1,
+          70,
+          18,
+          1
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-short-1",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0
+        ],
+        "R": [
+          0,
+          1,
+          80,
+          20,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "IndexError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-short-2",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          1
+        ],
+        "R": [
+          0,
+          1,
+          80,
+          20,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": "--",
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "IndexError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-short-3",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          1,
+          70
+        ],
+        "R": [
+          0,
+          1,
+          80,
+          20,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "70",
+            "breath": "15",
+            "body_move": "--",
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "IndexError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-short-4",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          1,
+          70,
+          18
+        ],
+        "R": [
+          0,
+          1,
+          80,
+          20,
+          0
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "70",
+            "breath": "18",
+            "body_move": "--",
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "IndexError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "p4-right-short-preserves-left",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          0,
+          1,
+          70,
+          18,
+          0
+        ],
+        "R": [
+          0,
+          1,
+          80
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "70",
+            "breath": "18",
+            "body_move": "--",
+            "snoring": "--"
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "80",
+            "breath": "16",
+            "body_move": "--",
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "IndexError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "init-valid",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "error": 0,
+        "ver": "1.2",
+        "type": "CORE_HJ"
+      }
+    },
+    "expected": {
+      "bean": {
+        "id": 1,
+        "cmd": "s_init",
+        "val": {
+          "error": 0,
+          "ver": "1.2",
+          "type": "CORE_HJ"
+        }
+      },
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "init-missing-nullable",
+    "kind": "init",
+    "input": {
+      "val": {}
+    },
+    "expected": {
+      "bean": {
+        "id": null,
+        "cmd": null,
+        "val": {
+          "error": null,
+          "ver": null,
+          "type": null
+        }
+      },
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "init-explicit-nullable",
+    "kind": "init",
+    "input": {
+      "id": null,
+      "cmd": null,
+      "val": {
+        "error": null,
+        "ver": null,
+        "type": null
+      }
+    },
+    "expected": {
+      "bean": {
+        "id": null,
+        "cmd": null,
+        "val": {
+          "error": null,
+          "ver": null,
+          "type": null
+        }
+      },
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "init-missing-val",
+    "kind": "init",
+    "input": {},
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val"
+      ],
+      "error": "val"
+    }
+  },
+  {
+    "id": "init-null-val",
+    "kind": "init",
+    "input": {
+      "val": null
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val"
+      ],
+      "error": "val"
+    }
+  },
+  {
+    "id": "init-array-val",
+    "kind": "init",
+    "input": {
+      "val": []
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val"
+      ],
+      "error": "val"
+    }
+  },
+  {
+    "id": "init-str-val",
+    "kind": "init",
+    "input": {
+      "val": "x"
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val"
+      ],
+      "error": "val"
+    }
+  },
+  {
+    "id": "init-int-val",
+    "kind": "init",
+    "input": {
+      "val": 1
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val"
+      ],
+      "error": "val"
+    }
+  },
+  {
+    "id": "init-float-id",
+    "kind": "init",
+    "input": {
+      "id": 1.0,
+      "cmd": "s_init",
+      "val": {
+        "error": 0,
+        "ver": "1.2",
+        "type": "CORE_HJ"
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id"
+      ],
+      "error": "id"
+    }
+  },
+  {
+    "id": "init-str-id",
+    "kind": "init",
+    "input": {
+      "id": "1",
+      "cmd": "s_init",
+      "val": {
+        "error": 0,
+        "ver": "1.2",
+        "type": "CORE_HJ"
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id"
+      ],
+      "error": "id"
+    }
+  },
+  {
+    "id": "init-bool-id",
+    "kind": "init",
+    "input": {
+      "id": true,
+      "cmd": "s_init",
+      "val": {
+        "error": 0,
+        "ver": "1.2",
+        "type": "CORE_HJ"
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id"
+      ],
+      "error": "id"
+    }
+  },
+  {
+    "id": "init-int-cmd",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": 1,
+      "val": {
+        "error": 0,
+        "ver": "1.2",
+        "type": "CORE_HJ"
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd"
+      ],
+      "error": "cmd"
+    }
+  },
+  {
+    "id": "init-root-array",
+    "kind": "init",
+    "input": [],
+    "expected": {
+      "bean": null,
+      "trace": [],
+      "error": "root"
+    }
+  },
+  {
+    "id": "init-str-error",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "error": "0",
+        "ver": "1.2",
+        "type": "CORE_HJ"
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error"
+      ],
+      "error": "val.error"
+    }
+  },
+  {
+    "id": "init-float-error",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "error": 0.0
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error"
+      ],
+      "error": "val.error"
+    }
+  },
+  {
+    "id": "init-int-ver",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "ver": 12
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver"
+      ],
+      "error": "val.ver"
+    }
+  },
+  {
+    "id": "init-int-type",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "type": 1
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": "val.type"
+    }
+  },
+  {
+    "id": "init-float-type",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "type": 1.0
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": "val.type"
+    }
+  },
+  {
+    "id": "init-bool-type",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "type": false
+      }
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": "val.type"
+    }
+  },
+  {
+    "id": "init-evaluation-first-id",
+    "kind": "init",
+    "input": {
+      "id": "bad",
+      "cmd": 2,
+      "val": null
+    },
+    "expected": {
+      "bean": null,
+      "trace": [
+        "id"
+      ],
+      "error": "id"
+    }
+  },
+  {
+    "id": "init-nonzero-error-emits-and-consumes",
+    "kind": "init",
+    "input": {
+      "id": 1,
+      "cmd": "s_init",
+      "val": {
+        "error": 9,
+        "ver": "2.0",
+        "type": "OTHER"
+      }
+    },
+    "expected": {
+      "bean": {
+        "id": 1,
+        "cmd": "s_init",
+        "val": {
+          "error": 9,
+          "ver": "2.0",
+          "type": "OTHER"
+        }
+      },
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": null,
+      "consumer": {
+        "state": {
+          "type": "OTHER",
+          "ver": "2.0"
+        },
+        "excluded_http_args": [
+          "OTHER",
+          "2.0"
+        ]
+      }
+    },
+    "prior": {
+      "type": "old",
+      "ver": "old"
+    }
+  },
+  {
+    "id": "init-null-retains-consumer",
+    "kind": "init",
+    "input": {
+      "val": {}
+    },
+    "expected": {
+      "bean": {
+        "id": null,
+        "cmd": null,
+        "val": {
+          "error": null,
+          "ver": null,
+          "type": null
+        }
+      },
+      "trace": [
+        "id",
+        "cmd",
+        "val",
+        "val.error",
+        "val.ver",
+        "val.type"
+      ],
+      "error": null,
+      "consumer": {
+        "state": {
+          "type": "old",
+          "ver": "old"
+        },
+        "excluded_http_args": [
+          "old",
+          "old"
+        ]
+      }
+    },
+    "prior": {
+      "type": "old",
+      "ver": "old"
+    }
+  },
+  {
+    "id": "typed-P3-66",
+    "kind": "typed_live",
+    "protocol": "P3",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "TypedError:R"
+    }
+  },
+  {
+    "id": "typed-P3-67",
+    "kind": "typed_live",
+    "protocol": "P3",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": "1-1-63-15-1-1-0-1-0",
+        "R": null
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "TypedError:R"
+    }
+  },
+  {
+    "id": "typed-P3-68",
+    "kind": "typed_live",
+    "protocol": "P3",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": 1,
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "TypedError:L"
+    }
+  },
+  {
+    "id": "typed-P4-69",
+    "kind": "typed_live",
+    "protocol": "P4",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": [
+          0,
+          1,
+          70,
+          18,
+          1
+        ],
+        "R": [
+          0,
+          1,
+          "bad",
+          19,
+          1
+        ]
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "TypedError:R.element"
+    }
+  },
+  {
+    "id": "typed-P4-70",
+    "kind": "typed_live",
+    "protocol": "P4",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": "bad",
+        "R": []
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "TypedError:L"
+    }
+  },
+  {
+    "id": "typed-P4-71",
+    "kind": "typed_live",
+    "protocol": "P4",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": [
+          false
+        ],
+        "R": []
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": "TypedError:L.element"
+    }
+  },
+  {
+    "id": "typed-P4-72",
+    "kind": "typed_live",
+    "protocol": "P4",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {}
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "typed-P4-73",
+    "kind": "typed_live",
+    "protocol": "P4",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": null,
+        "R": null
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "mm-negative-token-split-before-parse",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1--64-16-1",
+        "R": "1-1-63-15-1-1-0-1-0"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "63",
+            "breath": "15",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": false,
+            "R": false
+          }
+        }
+      ],
+      "error": "ValueError"
+    },
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    }
+  },
+  {
+    "id": "typed-p4-floating-num",
+    "kind": "typed_live",
+    "protocol": "P4",
+    "prior": {
+      "L": {
+        "on_bed": true,
+        "heart": "63",
+        "breath": "15",
+        "body_move": true,
+        "snoring": true
+      },
+      "R": {
+        "on_bed": true,
+        "heart": "64",
+        "breath": "16",
+        "body_move": true,
+        "snoring": true
+      },
+      "valid": {
+        "L": true,
+        "R": true
+      }
+    },
+    "updates": [
+      {
+        "L": [
+          0.0,
+          1.0,
+          63.5,
+          15.5,
+          1.0
+        ],
+        "R": []
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "63.5",
+            "breath": "15.5",
+            "body_move": "--",
+            "snoring": true
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": true,
+            "snoring": true
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "numeric-conversion-76",
+    "kind": "numeric_helper",
+    "input": 7,
+    "source_functions": [
+      "0x5401f8",
+      "0x54027c",
+      "0x540680",
+      "0x540704"
+    ],
+    "expected": {
+      "result": 7,
+      "error": null
+    }
+  },
+  {
+    "id": "numeric-conversion-77",
+    "kind": "numeric_helper",
+    "input": 7.9,
+    "source_functions": [
+      "0x5401f8",
+      "0x54027c",
+      "0x540680",
+      "0x540704"
+    ],
+    "expected": {
+      "result": 7,
+      "error": null
+    }
+  },
+  {
+    "id": "numeric-conversion-78",
+    "kind": "numeric_helper",
+    "input": -7.9,
+    "source_functions": [
+      "0x5401f8",
+      "0x54027c",
+      "0x540680",
+      "0x540704"
+    ],
+    "expected": {
+      "result": -7,
+      "error": null
+    }
+  },
+  {
+    "id": "numeric-conversion-79",
+    "kind": "numeric_helper",
+    "input": "7",
+    "source_functions": [
+      "0x5401f8",
+      "0x54027c",
+      "0x540680",
+      "0x540704"
+    ],
+    "expected": {
+      "result": null,
+      "error": "num"
+    }
+  },
+  {
+    "id": "numeric-conversion-80",
+    "kind": "numeric_helper",
+    "input": null,
+    "source_functions": [
+      "0x5401f8",
+      "0x54027c",
+      "0x540680",
+      "0x540704"
+    ],
+    "expected": {
+      "result": null,
+      "error": "num"
+    }
+  },
+  {
+    "id": "numeric-conversion-81",
+    "kind": "numeric_helper",
+    "input": true,
+    "source_functions": [
+      "0x5401f8",
+      "0x54027c",
+      "0x540680",
+      "0x540704"
+    ],
+    "expected": {
+      "result": null,
+      "error": "num"
+    }
+  },
+  {
+    "id": "mm-initial-short-valid-retains-null",
+    "kind": "live",
+    "protocol": "P3",
+    "updates": [
+      {
+        "L": "1-1-64-16-1",
+        "R": "1-1-65-17-1"
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": true,
+            "heart": "64",
+            "breath": "16",
+            "body_move": null,
+            "snoring": null
+          },
+          "R": {
+            "on_bed": true,
+            "heart": "65",
+            "breath": "17",
+            "body_move": null,
+            "snoring": null
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "id": "p4-initial-unrecognized-header-retains-null",
+    "kind": "live",
+    "protocol": "P4",
+    "updates": [
+      {
+        "L": [
+          1
+        ],
+        "R": []
+      }
+    ],
+    "expected": {
+      "states": [
+        {
+          "L": {
+            "on_bed": null,
+            "heart": null,
+            "breath": null,
+            "body_move": null,
+            "snoring": null
+          },
+          "R": {
+            "on_bed": null,
+            "heart": null,
+            "breath": null,
+            "body_move": null,
+            "snoring": null
+          },
+          "valid": {
+            "L": true,
+            "R": true
+          }
+        }
+      ],
+      "error": null
+    }
+  }
+]

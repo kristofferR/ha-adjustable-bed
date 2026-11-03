@@ -1364,3 +1364,12 @@ test("BF and Cherish expose their exact app controls in the native card", () => 
     ["back_legs", "button.cherish_both_up", "button.cherish_both_down"],
   ]);
 });
+
+test("Casper Base product actions stay available in the card utility section", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.casper_save_tv", "casper_base_action"),
+    entry("button.casper_fan", "casper_base_action"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.casper_save_tv", "button.casper_fan"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
