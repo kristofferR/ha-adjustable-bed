@@ -212,7 +212,7 @@ function holdTargetsOverlap(first: HoldTarget, second: HoldTarget): boolean {
 
 // A side Stop halts only its own receiver. A started held Both operation also
 // needs the other side's Stop, or that side keeps moving until the host bound.
-function pairedPeerStopEntityIds(
+export function pairedPeerStopEntityIds(
   hass: HomeAssistant | undefined,
   stopEntityId: string | undefined,
 ): string[] {
@@ -241,12 +241,14 @@ function pairedPeerStopEntityIds(
   // An incomplete pair graph cannot prove which Stop owns the other side.
   if (childIds.length !== 2 || !childIds.includes(deviceId)) return [];
   const peerId = childIds.find((id) => id !== deviceId);
-  const stops = Object.values(hass.entities).filter(
-    (entry) =>
-      entry.device_id === peerId &&
-      entry.translation_key === "stop" &&
-      isStopEntity(hass, entry.entity_id),
-  );
+  // Two-address children publish a plain "stop"; single-address children
+  // carry a side-suffixed key. Either way the peer's Stop must not claim Both
+  // or this Stop's own side.
+  const stops = Object.values(hass.entities).filter((entry) => {
+    if (entry.device_id !== peerId || !isStopEntity(hass, entry.entity_id)) return false;
+    const peerSide = sideForEntity(hass, entry.entity_id);
+    return peerSide !== "both" && (peerSide === undefined || peerSide !== side);
+  });
   return stops.length === 1 ? [stops[0].entity_id] : [];
 }
 
@@ -268,12 +270,23 @@ export function stopFromCard(
   );
 }
 
+// Ownership is tracked by the motor's key and the entity it drives rather than
+// object identity: the first pulse completing updates that entity, which
+// re-renders the card and rebuilds every MotorEntity, so a release handler
+// would otherwise hold a different object for the same motor and never stop
+// the loop. The key alone is not enough: a paired bed renders one section per
+// side, each with its own "back" motor, and a blur on one side's button must
+// not end the other side's hold. Stops still match by key: a motor-scoped
+// cover stop deliberately reaches the same motor across the Both and side
+// sections, and target overlap keeps the two sides apart there.
+function motorIdentity(motor: MotorEntity): string {
+  const entity = motor.holdEntityId ?? motor.cover ?? motor.up ?? motor.down ?? "";
+  return `${motor.key}\u0000${entity}`;
+}
+
 export class MotorHold {
-  // Ownership is tracked by MotorEntity.key rather than object identity: the
-  // first pulse completing updates that entity, which re-renders the card and
-  // rebuilds every MotorEntity, so a release handler would otherwise hold a
-  // different object for the same motor and never stop the loop.
   private _key: string | null = null;
+  private _motorId: string | null = null;
   private _cover: string | null = null;
   // The stop entity that covers the held motor. Tracked per hold because a
   // paired bed renders one section per side, each with its own stop, so there
@@ -318,6 +331,7 @@ export class MotorHold {
   ): void {
     if (this._key !== null) return;
     this._key = motor.key;
+    this._motorId = motorIdentity(motor);
     this._cover = motor.cover ?? null;
     this._stop = stopEntityId ?? null;
     this._target = target;
@@ -346,7 +360,7 @@ export class MotorHold {
     generation: number,
   ): void {
     this._startTimer = undefined;
-    if (generation !== this._generation || this._key !== motor.key) return;
+    if (generation !== this._generation || this._motorId !== motorIdentity(motor)) return;
     this._started = true;
     void this._holdControl(motor, dir, generation);
   }
@@ -517,7 +531,7 @@ export class MotorHold {
   // another control owns: a blur on some other motor's button would otherwise
   // stop the motor that is running.
   end(motor: MotorEntity): void {
-    if (this._key !== motor.key) return;
+    if (this._motorId !== motorIdentity(motor)) return;
     const started = this._started;
     const hasMetadata = this._heldControl !== undefined;
     const releaseTarget = {
@@ -552,13 +566,20 @@ export class MotorHold {
   // motor-specific stops on their motor key; a caller with an explicit
   // side-wide stop contract may invalidate any overlapping operation on that
   // physical side. The clicked cover service call remains the card's job.
+  //
+  // `peerStopEntityIds` are the other side's Stops. A one-side cover stop of a
+  // started held Both operation presses them, as a side Stop does in
+  // stopAll(): otherwise the other side keeps holding until the host bound.
   stopCover(
     motor: MotorEntity,
     target: HoldTarget | undefined,
     scope: CoverStopScope,
+    peerStopEntityIds: readonly string[] = [],
   ): void {
     const coverId = motor.cover;
     if (!coverId) return;
+    const stopIsOneSide = target !== undefined && target.side !== "both";
+    let endedHeldBoth = false;
     if (
       this._key !== null &&
       (scope === "side" || this._key === motor.key) &&
@@ -573,6 +594,8 @@ export class MotorHold {
         // reissuing Both commands, but keep its original release owner alive.
         this._repeatBlocked = true;
       } else {
+        endedHeldBoth = stopIsOneSide && this._started &&
+          this._heldControl !== undefined && this._target?.side === "both";
         this._reset();
       }
     }
@@ -589,6 +612,16 @@ export class MotorHold {
       ) continue;
       this._pendingReleases.delete(release.id);
       if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+      // Only started held operations leave a pending release.
+      if (stopIsOneSide && release.target?.side === "both") endedHeldBoth = true;
+    }
+
+    if (endedHeldBoth) {
+      // A newer hold that still owns the peer side ends with its own release.
+      const activeStop = this._key !== null ? this._stop : null;
+      for (const peer of peerStopEntityIds) {
+        if (peer !== activeStop) this.actions.stopBed(peer);
+      }
     }
   }
 
@@ -680,6 +713,7 @@ export class MotorHold {
     if (this._startTimer !== undefined) this.timers.clearTimeout(this._startTimer);
     this._startTimer = undefined;
     this._key = null;
+    this._motorId = null;
     this._cover = null;
     this._stop = null;
     this._target = undefined;
