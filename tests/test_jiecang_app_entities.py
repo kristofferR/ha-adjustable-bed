@@ -57,8 +57,12 @@ def app_ble(mock_bleak_client, monkeypatch, request):
     async def start_notify(uuid, callback):
         if uuid != COMFORT_MOTION_LIERDA3_READ_CHAR_UUID:
             return
-        if getattr(request, "param", True):
-            callback(characteristic, bytearray.fromhex("f2f20e00070000"))
+        feature = getattr(request, "param", True)
+        if feature:
+            callback(
+                characteristic,
+                bytearray.fromhex("f2f20e00060000" if feature == "negative" else "f2f20e00070000"),
+            )
         callback(characteristic, bytearray.fromhex("f2f25300000000"))
         callback(characteristic, bytearray.fromhex("f2f2520733221164012c01517e"))
 
@@ -67,7 +71,7 @@ def app_ble(mock_bleak_client, monkeypatch, request):
     return mock_bleak_client
 
 
-def _entry(hass: HomeAssistant, layout: str) -> MockConfigEntry:
+def _entry(hass: HomeAssistant, layout: str, profile: str = "dreamotion") -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="Jiecang app bed",
@@ -75,7 +79,7 @@ def _entry(hass: HomeAssistant, layout: str) -> MockConfigEntry:
             CONF_ADDRESS: ADDRESS,
             CONF_NAME: "Jiecang app bed",
             CONF_BED_TYPE: BED_TYPE_JIECANG_APP,
-            CONF_JIECANG_APP_PROFILE: "dreamotion",
+            CONF_JIECANG_APP_PROFILE: profile,
             CONF_JIECANG_APP_LAYOUT: layout,
             CONF_JIECANG_APP_TRANSPORT: "g3",
             CONF_HAS_LIGHT: True,
@@ -148,11 +152,17 @@ async def test_selected_layout_exposes_only_proven_motors_and_two_memories(
         # RGB capability flags do not expose the standard-only light settings here.
         assert not any(
             entity.unique_id.removeprefix(f"{ADDRESS}_") in {"automatic_light", "light_timer"}
-            or (entity.domain == "light" and not entity.unique_id.endswith("_under_bed_lights_assumed"))
+            or (
+                entity.domain == "light"
+                and not entity.unique_id.endswith("_under_bed_lights_assumed")
+            )
             for entity in entries
         )
         light_id = _entity_id(hass, "light", "under_bed_lights_assumed")
-        assert er.async_get(hass).async_get(light_id).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert (
+            er.async_get(hass).async_get(light_id).disabled_by
+            is er.RegistryEntryDisabler.INTEGRATION
+        )
         assert hass.states.get(light_id) is None
 
 
@@ -424,3 +434,272 @@ async def test_reload_removes_numbers_for_disabled_optional_features(
         assert registry.async_get_entity_id("number", DOMAIN, f"{ADDRESS}_{key}") is None
     for key in retained_keys:
         assert hass.states.get(_entity_id(hass, "number", key)).state != "unavailable"
+
+
+async def test_dreamhd_entities_use_hd_frames_and_notification_aliases(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass, "standard_3_split_upper", "dreamhd")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    light_id = _entity_id(hass, "light", "under_bed_lights")
+    assert hass.states.get(light_id).attributes["rgb_color"] == (17, 34, 51)
+    auto_id = _entity_id(hass, "switch", "automatic_light")
+    assert hass.states.get(auto_id).state == "off"
+    right = _entity_id(hass, "number", "massage_right_intensity")
+    foot = _entity_id(hass, "number", "massage_foot_intensity")
+    app_ble.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": _entity_id(hass, "button", "preset_memory_1")},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": right, "value": 3}, blocking=True
+    )
+    await hass.services.async_call("switch", "turn_on", {"entity_id": auto_id}, blocking=True)
+    assert [call.args[1].hex() for call in app_ble.write_gatt_char.await_args_list] == [
+        "f1f10b01010d7e",
+        "f1f14e004e7e",
+        "f1f122020804307e",
+        "f1f1290200002b7e",
+        "f1f14e004e7e",
+    ]
+    callback = app_ble.start_notify.await_args_list[0].args[1]
+    callback(
+        SimpleNamespace(uuid=COMFORT_MOTION_LIERDA3_READ_CHAR_UUID),
+        bytearray.fromhex("f2f206050200030040507e"),
+    )
+    await hass.async_block_till_done()
+    assert float(hass.states.get(right).state) == 2
+    assert float(hass.states.get(foot).state) == 2
+
+
+async def test_dreamhd_alarm_wake_and_rename_services(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass, "standard_2", "dreamhd")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    device_id = er.async_get(hass).async_get(_entity_id(hass, "cover", "back")).device_id
+    app_ble.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        DOMAIN,
+        "jiecang_set_alarm",
+        {
+            "device_id": device_id,
+            "enabled": True,
+            "time": "07:00:00",
+            "weekdays": [],
+            "preset": "zero_g",
+            "head_level": 0,
+            "foot_level": 0,
+        },
+        blocking=True,
+    )
+    assert app_ble.write_gatt_char.call_args.args[1].hex() == "f1f151080100000700020000637e"
+    app_ble.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        DOMAIN,
+        "jiecang_wake",
+        {
+            "device_id": device_id,
+            "preset": "memory_1",
+            "head_level": 0,
+            "foot_level": 0,
+        },
+        blocking=True,
+    )
+    assert [call.args[1].hex() for call in app_ble.write_gatt_char.await_args_list] == [
+        *(["f1f10b01010d7e"] * 5),
+        "f1f14e004e7e",
+    ]
+    app_ble.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        DOMAIN, "jiecang_stop_wake", {"device_id": device_id}, blocking=True
+    )
+    assert app_ble.write_gatt_char.call_args.args[1].hex() == "f1f11101081a7e"
+    app_ble.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        DOMAIN, "rename", {"device_id": device_id, "name": "Bed room"}, blocking=True
+    )
+    assert [call.args[1] for call in app_ble.write_gatt_char.await_args_list] == [
+        b"\x01\xfc\x07\x08Bed room"
+    ] * 2
+
+
+@pytest.mark.parametrize(
+    ("layout", "massage", "light"),
+    [
+        (layout, massage, light)
+        for layout in (
+            "standard_2",
+            "standard_3_neck",
+            "standard_3_lumbar",
+            "standard_3_hi_low",
+            "standard_3_split_upper",
+            "standard_4_legacy",
+        )
+        for massage in (False, True)
+        for light in (False, True)
+    ]
+    + [("split_series", True, True)],
+)
+async def test_dreamhd_all_25_configurations_gate_entities(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations, layout, massage, light
+):
+    from custom_components.adjustable_bed.jiecang_app_protocol import layout_axes
+
+    entry = _entry(hass, layout, "dreamhd")
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_HAS_MASSAGE: massage, CONF_HAS_LIGHT: light}
+    )
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    entries = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+    keys = {entity.unique_id.removeprefix(f"{ADDRESS}_") for entity in entries}
+    assert {
+        entity.unique_id.removeprefix(f"{ADDRESS}_")
+        for entity in entries
+        if entity.domain == "cover"
+    } == set(layout_axes(layout))
+    assert ("massage_head_intensity" in keys) == massage
+    assert ("massage_foot_intensity" in keys) == massage
+    assert ("massage_right_intensity" in keys) == (
+        massage and layout in ("standard_3_split_upper", "split_series")
+    )
+    assert ("under_bed_lights" in keys) == light
+    assert ("automatic_light" in keys) == light
+    assert ("light_timer" in keys) == light
+
+
+@pytest.mark.parametrize("app_ble", ["negative", False], indirect=True)
+async def test_dreamhd_late_light_and_yoga_entities_reconcile_repeated_transitions(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass, "standard_2", "dreamhd")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    callback = app_ble.start_notify.await_args_list[0].args[1]
+    sender = SimpleNamespace(uuid=COMFORT_MOTION_LIERDA3_READ_CHAR_UUID)
+    controls = {
+        "light": "under_bed_lights",
+        "number": "light_level",
+        "select": "light_timer",
+        "switch": "automatic_light",
+    }
+
+    def has_control(domain, key):
+        return registry.async_get_entity_id(domain, DOMAIN, f"{ADDRESS}_{key}") is not None
+
+    for _ in range(2):
+        callback(sender, bytearray.fromhex("f2f20e00060000"))
+        await hass.async_block_till_done()
+        assert all(not has_control(domain, key) for domain, key in controls.items())
+        assert has_control("button", "preset_yoga")
+        # A reply while suppression is sticky must not re-expose RGB controls.
+        callback(sender, bytearray.fromhex("f2f2520733221164012c01517e"))
+        await hass.async_block_till_done()
+        assert all(not has_control(domain, key) for domain, key in controls.items())
+        callback(sender, bytearray.fromhex("f2f20e00a00000"))
+        await hass.async_block_till_done()
+        assert all(has_control(domain, key) for domain, key in controls.items())
+        assert not has_control("button", "preset_yoga")
+        for domain, key in controls.items():
+            assert hass.states.get(_entity_id(hass, domain, key)) is not None
+        # Repeated notifications must not create duplicate unique IDs.
+        callback(sender, bytearray.fromhex("f2f20e00a00000"))
+        callback(sender, bytearray.fromhex("f2f2520733221164012c01517e"))
+        await hass.async_block_till_done()
+        entries = er.async_entries_for_config_entry(registry, entry.entry_id)
+        assert len({(e.domain, e.unique_id) for e in entries}) == len(entries)
+
+
+@pytest.mark.parametrize("app_ble", [False], indirect=True)
+async def test_paired_dreamhd_late_yoga_reconciles_side_and_combined_buttons(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.const import CONF_PAIR_ID
+    from custom_components.adjustable_bed.pairing import build_pair_entry_data
+
+    left_address = "AA:BB:CC:DD:EE:01"
+    right_address = "AA:BB:CC:DD:EE:02"
+    base = {
+        CONF_BED_TYPE: BED_TYPE_JIECANG_APP,
+        CONF_JIECANG_APP_PROFILE: "dreamhd",
+        CONF_JIECANG_APP_LAYOUT: "standard_2",
+        CONF_JIECANG_APP_TRANSPORT: "g3",
+        CONF_HAS_LIGHT: True,
+        CONF_HAS_MASSAGE: True,
+        CONF_MOTOR_COUNT: 2,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_PREFERRED_ADAPTER: "auto",
+    }
+    data = build_pair_entry_data(
+        {**base, CONF_ADDRESS: left_address, CONF_NAME: "Left"},
+        {**base, CONF_ADDRESS: right_address, CONF_NAME: "Right"},
+        name="HD pair",
+    )
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="HD pair", data=data, unique_id=data[CONF_PAIR_ID], version=4
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    pair = hass.data[DOMAIN][entry.entry_id]
+    left = pair.children["left"].controller
+    right = pair.children["right"].controller
+    left_uid = f"{left_address}_preset_yoga"
+    right_uid = f"{right_address}_preset_yoga"
+    both_uid = f"{data[CONF_PAIR_ID]}_preset_yoga_both"
+
+    def button(uid):
+        return registry.async_get_entity_id("button", DOMAIN, uid)
+
+    def reply(controller, value):
+        controller._handle_notification(
+            SimpleNamespace(uuid=COMFORT_MOTION_LIERDA3_READ_CHAR_UUID),
+            bytearray.fromhex(value),
+        )
+
+    assert all(button(uid) is None for uid in (left_uid, right_uid, both_uid))
+    reply(left, "f2f20e00060000")
+    await hass.async_block_till_done()
+    assert button(left_uid) is not None
+    assert button(right_uid) is None and button(both_uid) is None
+    reply(right, "f2f20e00060000")
+    await hass.async_block_till_done()
+    assert all(button(uid) is not None for uid in (left_uid, right_uid, both_uid))
+    app_ble.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        "button", "press", {"entity_id": button(both_uid)}, blocking=True
+    )
+    assert [call.args[1].hex() for call in app_ble.write_gatt_char.await_args_list] == [
+        "f1f1280200002a7e",
+        "f1f14e004e7e",
+    ] * 2
+    reply(left, "f2f20e00a00000")
+    await hass.async_block_till_done()
+    assert button(left_uid) is None and button(both_uid) is None
+    assert button(right_uid) is not None
+    reply(left, "f2f20e00060000")
+    reply(right, "f2f20e00060000")
+    await hass.async_block_till_done()
+    assert all(button(uid) is not None for uid in (left_uid, right_uid, both_uid))
+    for uid in (left_uid, right_uid, both_uid):
+        assert (
+            len(
+                [
+                    e
+                    for e in registry.entities.values()
+                    if e.domain == "button" and e.unique_id == uid
+                ]
+            )
+            == 1
+        )
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()

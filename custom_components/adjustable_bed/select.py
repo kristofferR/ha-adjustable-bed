@@ -150,6 +150,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
+            hass,
             entry,
             runtime,
             async_add_entities,
@@ -511,6 +512,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
 class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
     """Select entity backed by controller state updates."""
+
+    _attr_should_poll = False
 
     entity_description: AdjustableBedControllerStateSelectDescription
 
