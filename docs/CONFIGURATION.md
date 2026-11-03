@@ -27,8 +27,13 @@ You can configure the integration in two places:
 
 During initial setup, you'll configure basic options like bed type, motor count, and massage support.
 
-**OKIN ORE:** Add the integration manually and select **Okin ORE (Glideaway Motion app)**
-as the bed type. Beds controlled with the current Dynasty Bases or INNOVA apps use
+**Glideaway Motion / Montion app:** Select the explicit MOTION 400, 450, 500 or
+600 app entry matching the app's model selection. Layout, massage and light
+capabilities follow that choice, with a fixed 300 ms refresh interval. No
+advertisement identifies the model. See the [Glideaway guide](beds/glideaway-motion.md).
+
+**OKIN ORE:** The **Okin ORE (legacy A5 5A)** entry preserves existing legacy
+configurations. The accepted Glideaway Motion app uses a separate protocol. Beds controlled with the current Dynasty Bases or INNOVA apps use
 the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/ore-comfort-bed.md)
 or [INNOVA](beds/keeson.md#innova-profile) profile instead. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
 Bluetooth Service Discovery Server UUID, so it cannot identify an ORE bed by itself.

@@ -17,6 +17,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -63,6 +64,7 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
+    GLIDEAWAY_MOTION_MODELS,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
@@ -119,6 +121,20 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "description": "Two control axes, one memory and app-specific massage/light controls",
                 "hint": "Choose the app profile explicitly; shared Bluetooth names do not identify it.",
             }
+        ],
+    },
+    "glideaway_motion": {
+        "display": "Glideaway Motion / Montion app",
+        "description": "MOTION 400 / 450 / 500 / 600",
+        "variants": [
+            {
+                "type": BED_TYPE_GLIDEAWAY_MOTION,
+                "variant": model,
+                "label": label,
+                "description": "Use the model selected in the Glideaway Motion app",
+                "hint": "Bluetooth names and shared service UUIDs do not identify the model.",
+            }
+            for model, label in GLIDEAWAY_MOTION_MODELS.items()
         ],
     },
     "bedtech": {

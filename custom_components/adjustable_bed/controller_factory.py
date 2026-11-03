@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -558,6 +559,14 @@ async def create_controller(
         from .beds.solace import SolaceController
 
         return SolaceController(coordinator)
+
+    if bed_type == BED_TYPE_GLIDEAWAY_MOTION:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.glideaway_motion", __package__
+        )
+        from .beds.glideaway_motion import GlideawayMotionController
+
+        return GlideawayMotionController(coordinator, model=protocol_variant)
 
     if bed_type == BED_TYPE_ZSERIES:
         # The app page is a user choice nothing on the bed identifies.

@@ -37,6 +37,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -108,6 +109,7 @@ SERVICE_LOGICDATA_RENAME = "logicdata_rename"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
 SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
+SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 ATTR_SLOT = "slot"
@@ -2547,6 +2549,37 @@ async def _execute_zseries_alarm(
         raise
 
 
+async def handle_glideaway_set_alarm(call: ServiceCall) -> None:
+    """Use the Glideaway app's automatic day selection and exact clock encoding."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    if enabled and alarm_time is None:
+        raise ServiceValidationError("Choose a Glideaway alarm time")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("Glideaway alarms use minute precision")
+    targets = _call_targets(call)
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_GLIDEAWAY_MOTION:
+                raise ServiceValidationError(f"Device '{target.name}' is not a Glideaway Motion app bed")
+    preflighted = await _preflight_capability(targets, "supports_clock_alarm", "Glideaway alarms")
+
+    async def program(controller: BedController | SideBoundController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=enabled, weekdays=(),
+            hour=alarm_time.hour if alarm_time is not None else 0,
+            minute=alarm_time.minute if alarm_time is not None else 0,
+            preset=call.data[ATTR_WAKE_MODE],
+        )
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, program)
+    except (Exception, asyncio.CancelledError):
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_zseries_set_alarm(call: ServiceCall) -> None:
     """Set or clear the Z-Series app alarm, using Home Assistant's local time."""
     enabled = call.data[ATTR_ENABLED]
@@ -3655,6 +3688,16 @@ async def async_register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, SERVICE_FSM_RELAX_CALIBRATE, handle_fsm_relax_calibrate,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                            vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,))), **SIDE_FIELD}))
+    hass.services.async_register(
+        DOMAIN, SERVICE_GLIDEAWAY_SET_ALARM, handle_glideaway_set_alarm,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_TIME): cv.time,
+            vol.Optional(ATTR_WAKE_MODE, default="none"): vol.In(("none", "memory_1", "memory_2")),
+            **SIDE_FIELD,
+        }),
+    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_ZSERIES_SET_ALARM,

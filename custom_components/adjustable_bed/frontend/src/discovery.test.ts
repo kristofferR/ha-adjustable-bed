@@ -1039,3 +1039,15 @@ test("Eshine named saves and literal massage controls join their card sections",
   expect(bed.lights.toggle).toBe("button.light");
   expect(bed.motors.map((motor) => motor.key)).toEqual(["pillow"]);
 });
+
+test("Glideaway exposes its reported massage timer and alarm refresh", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("sensor.motion_timer", "glideaway_motion_massage_timer"),
+    entry("button.motion_alarm", "glideaway_motion_query_alarm"),
+    entry("cover.motion_tilt", "tilt"),
+    entry("cover.motion_height", "bed_height"),
+  ]), "dev1");
+  expect(bed.massage.timer).toBe("sensor.motion_timer");
+  expect(bed.utility).toContain("button.motion_alarm");
+  expect(bed.motors.map(m => m.key)).toEqual(["tilt", "bed_height"]);
+});
