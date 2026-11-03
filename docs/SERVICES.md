@@ -487,3 +487,11 @@ normal `device_id` and paired physical `side` routing. See the
 preset or assigning membership. Combined movement uses `hold_control` with
 `head_feet_up` or `head_feet_down` and a duration up to 30 seconds. HA automations
 schedule these presets; the app's phone alarms are not on-bed alarm storage.
+
+### BF and Cherish bed alarms
+
+`adjustable_bed.bf_cherish_set_alarm` accepts `device_id`, `enabled`, optional
+`side`, `time` (required when enabling, minute precision), and `memory` (`none`,
+`memory_1`, `memory_2`, default `none`). The clock uses HA local time. All
+targets must be BF or Cherish profiles. [Profile details and example](beds/bf-cherish.md#alarm-action)
+cover distinct packet formats, retained intent and report limitations.

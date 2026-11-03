@@ -947,3 +947,10 @@ not a hardware repeat loop. Each physical address keeps its own BLE room and
 node metadata; do not copy those fields to another side. See the
 [Floyd Home guide](beds/floyd.md) for confirmation, conditional internal preset
 selectors and explicit assignment of an unassigned BLE room.
+
+### BF and Cherish app profiles
+
+Select the exact [BF or Cherish app](beds/bf-cherish.md) in manual setup.
+The app fixes its motor layout, capabilities and 200 ms movement refresh.
+Only the bounded pulse count is configurable. A shared FFE9 service does not
+select either app automatically. Each physical address keeps its own profile.

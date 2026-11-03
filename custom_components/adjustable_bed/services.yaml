@@ -2196,3 +2196,30 @@ floyd_action:
           - left
           - right
           - both
+
+
+bf_cherish_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    memory:
+      default: none
+      selector:
+        select:
+          options: [none, memory_1, memory_2]
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
