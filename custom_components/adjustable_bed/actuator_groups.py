@@ -64,6 +64,7 @@ from .const import (
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
@@ -245,6 +246,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "OKIN-Seating app",
                 "description": "Seats from the OKIN-Seating app",
                 "hint": "Choose this if you control the seat with the OKIN-Seating app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_AMERICANSTAR,
+                "label": "AMERICANSTAR app",
+                "description": "2M, 3M or 4M bases from the AMERICANSTAR app; set the motor count to match",
+                "hint": "Choose this if you control the bed with the AMERICANSTAR app",
             },
             {
                 "type": BED_TYPE_KEESON,

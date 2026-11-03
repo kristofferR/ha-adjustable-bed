@@ -1,4 +1,4 @@
-"""ORE comfort-bed app family controller (MaxCoil Una, Dynasty Bases, Bedsense Bases).
+"""Controller for the accepted ORE comfort-bed app profiles.
 
 Implements the accepted clean-room reports for com.ore.maxcoil 1.1.0 (5) and
 com.ore.Dynasty 1.0.2 (3), formal cluster-013
@@ -8,6 +8,8 @@ com.ore.sfmc2bedsence 1.1 (3), formal cluster-015
 Dynasty Bases ship the same ``com.ore.okincomfortbed`` code base. Bedsense Bases
 is a separate package whose accepted report proves byte-identical frames,
 screens, timing, release and reply handling, so all three share one behavior.
+AMERICANSTAR 1.0 (1) independently proves the same behavior
+(docs/apk-analysis/dispositions/row062-americanstar.md).
 
 Every command is ``E5 FE 16`` + a big-endian 32-bit word + the complement of the
 byte sum, written to the last FFE9 characteristic found in any service. The app
@@ -32,6 +34,7 @@ from homeassistant.exceptions import HomeAssistantError
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
+    KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
@@ -62,6 +65,7 @@ class OreComfortBedApp:
 
 # Sibling apps of this code base register their own entry here.
 ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
+    KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp("AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"),
     KEESON_VARIANT_MAXCOIL_UNA: OreComfortBedApp("MaxCoil Una", "com.ore.maxcoil", "1.1.0 (5)"),
     KEESON_VARIANT_DYNASTY_BASES: OreComfortBedApp("Dynasty Bases", "com.ore.Dynasty", "1.0.2 (3)"),
     KEESON_VARIANT_BEDSENSE_BASES: OreComfortBedApp(
@@ -127,7 +131,7 @@ def build_frame(word: int) -> bytes:
 
 
 class OreComfortBedController(BedController):
-    """Controller for the MaxCoil Una / Dynasty Bases app protocol."""
+    """Controller for the accepted ORE comfort-bed app profiles."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
         super().__init__(coordinator)

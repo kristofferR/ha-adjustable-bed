@@ -1,27 +1,31 @@
-# MaxCoil Una / Dynasty Bases / Bedsense Bases app profile
+# MaxCoil Una / Dynasty Bases / Bedsense Bases / AMERICANSTAR app profile
 
 **Status:** ✅ artifact-verified, hardware unverified. Clean-room analysis of
 MaxCoil Una 1.1.0 (5) (`com.ore.maxcoil`) and Dynasty Bases 1.0.2 (3)
 (`com.ore.Dynasty`) is complete and accepted (formal cluster-013), as is
 Bedsense Bases 1.1 (3) (`com.ore.sfmc2bedsence`, formal cluster-015). See the
 [MaxCoil Una / Dynasty Bases dispositions](../apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md)
-and the [Bedsense Bases / INNOVA dispositions](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
+the [Bedsense Bases / INNOVA dispositions](../apk-analysis/dispositions/row059-ore-bedsense-innova.md),
+and the independently accepted [AMERICANSTAR 1.0 (1) dispositions](../apk-analysis/dispositions/row062-americanstar.md).
 
 MaxCoil Una and Dynasty Bases ship the same `com.ore.okincomfortbed` code base.
 Bedsense Bases is a separate package, but its accepted report proves the same
 frames, screens, timing, release, massage, light and reply handling, so all
-three share this profile. INNOVA (`com.ore.sfm`), Bedsense's cluster sibling,
+three share this profile. AMERICANSTAR 1.0 (1) (`com.ore.americanstar`)
+independently proves the same commands, layouts and timing and also uses this controller. INNOVA (`com.ore.sfm`), Bedsense's cluster sibling,
 uses different frames and has its own [INNOVA profile](keeson.md#innova-profile).
 
 ## Setup
 
-Choose **Keeson**, then the protocol variant for your app:
+Choose your app by name in the bed-type list, or choose **Keeson** and its
+matching protocol variant:
 
 | App | Protocol variant |
 |-----|------------------|
 | MaxCoil Una | `maxcoil_una` |
 | Dynasty Bases | `dynasty_bases` |
 | Bedsense Bases | `bedsense_bases` |
+| AMERICANSTAR | `americanstar` |
 
 Set the **motor count** to the screen you pick in the app:
 
@@ -125,8 +129,8 @@ discards them. No position, light, massage or acknowledgement state exists.
 - The app's phone settings (haptic feedback, actuator 1/2, installation) do not
   change any packet.
 - Dead legacy screens (sofa, seating, fridge, music, lamp, others and the 500
-  ms "others" repeat) are unreachable in all three apps.
-- Bluetooth Classic, Wi-Fi, cloud and OTA paths are absent from all three apps.
+  ms "others" repeat) are unreachable in all four apps.
+- Bluetooth Classic, Wi-Fi, cloud and OTA paths are absent from all four apps.
 
 ## Deferred validation
 

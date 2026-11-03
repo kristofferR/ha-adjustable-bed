@@ -1,7 +1,8 @@
 """MaxCoil Una / Dynasty Bases app profile (com.ore.okincomfortbed code base).
 
 Every frame literal is a test vector from the accepted clean-room reports
-(row056, cluster-013); none comes from captured traffic.
+(rows 056, 059 and 062); none comes from captured traffic.
+AMERICANSTAR row062 independently verifies the same 34 unique payloads.
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
+    KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
@@ -42,7 +44,12 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
-APPS = (KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_BEDSENSE_BASES)
+APPS = (
+    KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_DYNASTY_BASES,
+    KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_AMERICANSTAR,
+)
 ADDRESS = "AA:BB:CC:DD:05:60"
 STOP_FRAME = "e5fe160000000006"
 STORE_KEY = f"{DOMAIN}.app_state_{ADDRESS.replace(':', '_').lower()}"
@@ -232,11 +239,12 @@ async def test_motor_count_selects_the_app_screen(
 
 
 @pytest.mark.parametrize(("motor_count", "key", "up", "down"), MOVEMENT_ROWS)
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_hold_repeats_every_100ms_then_releases_with_zero(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, motor_count: int, key: str, up: str, down: str,
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client, motor_count=motor_count)
+    controller = await _controller(hass, mock_bleak_client, variant, motor_count=motor_count)
     spec = next(s for s in controller.motor_control_specs if s.key == key)
     for action, frame in ((spec.open_fn, up), (spec.close_fn, down)):
         mock_bleak_client.write_gatt_char.reset_mock()
@@ -248,11 +256,12 @@ async def test_hold_repeats_every_100ms_then_releases_with_zero(
         assert _waits(sleeps) == [0.1] * count
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_release_is_sent_even_when_the_hold_was_cancelled(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock,
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client)
+    controller = await _controller(hass, mock_bleak_client, variant)
     controller._coordinator.cancel_command.set()
     try:
         await controller.move_back_up()
@@ -272,11 +281,12 @@ async def test_head_exists_only_on_the_three_motor_screen(
 
 
 @pytest.mark.parametrize(("name", "action", "frames"), SINGLE_ROWS, ids=[r[0] for r in SINGLE_ROWS])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_single_actions_wait_100ms_then_write_the_app_frame_once(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, name: str, action: Action, frames: list[str],
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client)
+    controller = await _controller(hass, mock_bleak_client, variant)
     await action(controller)
     assert _written(mock_bleak_client) == frames
     assert _waits(sleeps) == [0.1] * len(frames)
@@ -292,22 +302,24 @@ async def test_single_actions_wait_100ms_then_write_the_app_frame_once(
     ((3, 0, 2), ["e5fe1610000023d3", "e5fe1610000010e6", "e5fe1611000012e3"]),
     ((0, 3, 0), ["e5fe1610000020d6", "e5fe1610000013e3", "e5fe1611000010e5"]),
 ])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_start_sends_current_wave_head_foot_levels(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, levels: tuple[int, int, int], frames: list[str],
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client)
+    controller = await _controller(hass, mock_bleak_client, variant)
     controller.restore_persisted_app_state(dict(zip(("wave", "head", "foot"), levels, strict=True)))
     await controller.massage_start()
     assert _written(mock_bleak_client) == frames
     assert _waits(sleeps) == [0.1, 0.1, 0.1]
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_massage_levels_timer_and_stop_publish_app_state(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock,
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client)
+    controller = await _controller(hass, mock_bleak_client, variant)
     state = controller._coordinator.controller_state
     # A fresh install restores slider progress 10, i.e. level 1, for every zone.
     assert {state[STATE_LEVEL[z]] for z in ("wave", "head", "foot")} == {1}
@@ -326,11 +338,12 @@ async def test_massage_levels_timer_and_stop_publish_app_state(
         controller.restore_persisted_app_state({"head": 7})
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_write_roles_follow_the_app_scan(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock,
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client)
+    controller = await _controller(hass, mock_bleak_client, variant)
     first = _char(KEESON_BASE_WRITE_CHAR_UUID, ["write-without-response"])
     last = _char(KEESON_BASE_WRITE_CHAR_UUID, ["write"])
     notify = _char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
@@ -352,10 +365,11 @@ async def test_write_roles_follow_the_app_scan(
         await controller.preset_flat()
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_notifications_are_never_subscribed(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client)
+    controller = await _controller(hass, mock_bleak_client, variant)
     mock_bleak_client.start_notify.reset_mock()
     await controller.start_notify(lambda _key, _value: None)
     # The app enables FFE4 locally only: no CCCD write, and it discards replies.
@@ -380,16 +394,17 @@ async def test_profile_is_explicit_and_auto_keeps_keeson(
     assert isinstance(auto, KeesonController)
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_slider_levels_persist_across_restarts(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, hass_storage: dict,
 ) -> None:
-    controller = await _controller(hass, mock_bleak_client)
+    controller = await _controller(hass, mock_bleak_client, variant)
     await controller.set_massage_level("wave", 0)
     await controller.set_massage_level("foot", 2)
     coordinator = controller._coordinator
     await coordinator.async_shutdown()
-    assert hass_storage[STORE_KEY]["data"] == {SLOT: {"wave": 0, "head": 1, "foot": 2}}
+    assert hass_storage[STORE_KEY]["data"] == {f"keeson:{variant}": {"wave": 0, "head": 1, "foot": 2}}
 
     restarted = AdjustableBedCoordinator(hass, coordinator.entry)
     await restarted.async_connect()
@@ -519,8 +534,9 @@ async def test_failed_store_deletion_does_not_block_entry_removal(
     assert "Could not delete stored app preferences" in caplog.text
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_AMERICANSTAR])
 async def test_setup_exposes_the_app_surface(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     enable_custom_integrations,
 ) -> None:
     from homeassistant.helpers import entity_registry as er
@@ -528,7 +544,7 @@ async def test_setup_exposes_the_app_surface(
     mock_bleak_client.services = _services(
         _char(KEESON_BASE_WRITE_CHAR_UUID, ["write"]), _char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
     )
-    entry = _entry(hass, KEESON_VARIANT_DYNASTY_BASES, 4)
+    entry = _entry(hass, variant, 4)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     registry = er.async_get(hass)
@@ -614,8 +630,9 @@ def test_two_address_pairs_refuse_a_shared_profile_change() -> None:
         assert refusal is not None and refusal[0] == CONF_PROTOCOL_VARIANT
 
 
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
 async def test_light_switch_reports_assumed_state(
-    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, enable_custom_integrations,
 ) -> None:
     from homeassistant.const import ATTR_ASSUMED_STATE, ATTR_ENTITY_ID, STATE_ON, STATE_UNKNOWN
@@ -624,7 +641,7 @@ async def test_light_switch_reports_assumed_state(
     mock_bleak_client.services = _services(
         _char(KEESON_BASE_WRITE_CHAR_UUID, ["write"]), _char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
     )
-    entry = _entry(hass, KEESON_VARIANT_MAXCOIL_UNA, 2)
+    entry = _entry(hass, variant, 2)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     entity_id = er.async_get(hass).async_get_entity_id("switch", DOMAIN, f"{ADDRESS}_under_bed_lights")
