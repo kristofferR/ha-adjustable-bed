@@ -2786,6 +2786,15 @@
       },
       "bedsense_light": {
         "name": "{action}"
+      },
+      "bf_cherish_both_up": {
+        "name": "Back and legs up"
+      },
+      "bf_cherish_both_down": {
+        "name": "Back and legs down"
+      },
+      "bf_query_alarm": {
+        "name": "Query bed alarm"
       }
     },
     "cover": {
@@ -4170,6 +4179,9 @@
       },
       "bedsense_wave_steps": {
         "name": "Wave frequency (app steps)"
+      },
+      "bf_cherish_alarm": {
+        "name": "Bed alarm"
       }
     },
     "light": {
@@ -4667,6 +4679,12 @@
       },
       "sleepys_app_color_code_right": {
         "name": "Right: App color code"
+      },
+      "bf_cherish_intensity": {
+        "name": "Massage intensity"
+      },
+      "bf_cherish_wave": {
+        "name": "Massage wave"
       }
     },
     "select": {
@@ -6605,6 +6623,29 @@
         "wake_mode": {
           "name": "Wake mode",
           "description": "No bed movement, Memory A (memory_1), or Memory B (memory_2)."
+        }
+      }
+    },
+    "bf_cherish_set_alarm": {
+      "name": "Set BF or Cherish bed alarm",
+      "description": "Set or disable the bed alarm using Home Assistant local time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling. Uses Home Assistant local time with minute precision."
+        },
+        "memory": {
+          "name": "Wake memory",
+          "description": "Memory A/B is a wake position, not a bed side."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

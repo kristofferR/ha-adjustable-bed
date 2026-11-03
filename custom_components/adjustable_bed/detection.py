@@ -23,6 +23,8 @@ from .const import (
     # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
+    BED_TYPE_BF,
+    BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -557,6 +559,8 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
+    BED_TYPE_BF: "BF (com.BF app, three motors)",
+    BED_TYPE_CHERISH: "Cherish (com.okin.ore.cherish app)",
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 

@@ -22,6 +22,8 @@ from typing import Final
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BF,
+    BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
@@ -121,6 +123,8 @@ _APP_DEFINED: Final = GENERIC_FIELDS
 _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -191,6 +195,8 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    BED_TYPE_BF: SideProfile("BF"),
+    BED_TYPE_CHERISH: SideProfile("Cherish"),
     BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
     BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
