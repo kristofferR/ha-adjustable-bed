@@ -118,7 +118,7 @@ movement. Hardware behavior remains unverified.
 
 | Action | Required fields besides `device_id` | Behavior |
 |--------|------------------------------------|----------|
-| `goto_preset` | `preset` | Recall a memory slot, 1–8 where supported. Optional `duration` sets the recall hold where the bed supports it |
+| `goto_preset` | `preset` | Recall a supported memory slot, 1–255 where the controller advertises it. Optional `duration` sets the recall hold where supported |
 | `save_preset` | `preset` | Overwrite a supported memory slot with the current position |
 | `stop_all` | None | Cancel pending/active movement and perform the controller's STOP or release cleanup |
 | `set_position` | `motor`, `position` | Move one supported axis to a target |
@@ -211,16 +211,16 @@ accepts. Save controls can change stored positions. Svane Remote and Limoss
 Remote beds validate and release through their own live session, so a single
 call cannot mix them with other profiles.
 
-```yaml
-action: adjustable_bed.hold_control
-data:
-  device_id: YOUR_DEVICE_ID
-  control: head_up
-  duration: 2.5
-```
+Sleepy's Elite uses selector-supported static controls here. Numeric and select
+entities remain separate commit paths. Its accepted palette commits select
+codes `1`–`7`, each as one writer attempt without repeat or STOP. Caller timing
+for the other dynamic app values remains under source-to-caller reconciliation;
+they are not exposed through `hold_control`.
 
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
+| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
+| [Glideaway Motion / Montion](beds/glideaway-motion.md) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
 | [Leggett Okin app profiles](beds/leggett-okin.md) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide. `leggett_hold_control` remains as an alias limited to this list |
 | [Jordan's Serenity](beds/serenity.md#reachable-commands) | 31 literal app actions | Two-frame release |
 | [Jordan's Tranquil](beds/tranquil.md#reachable-commands) | 30 literal app actions | Two-frame release |
@@ -234,9 +234,11 @@ data:
 | [Adjustable Comfort M1X12](beds/starcode-m1x12.md) | Parts 1, 2, 4, 8, 16 and union movement, massage wave/intensity, plus explicit ELEVATE actions | 100 ms held refresh, 0.1–60 seconds, fresh STOP on release/cancellation. The native card invokes one bounded service window and routes STOP to the owning side |
 | [Caresse / Werkmeister](beds/vibradorm_app.md) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
 | [V-MAT Basic](beds/vmatbasic.md) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
+| [OCTO Smart Control](beds/octo.md) | Advertised motor directions and `memory_1` through the discovered memory count | P1 commands repeat every 350 ms inside each bounded operation, which ends with STOP. The 60-second service maximum is a Home Assistant safety bound; the card starts another bounded call only while the user still holds the control. |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss-remote.md) | Controls rendered for the receiver's layout | Five-frame release |
 | [FSM Relax](beds/fsm_relax.md) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
+| [TiMOTION AHF](beds/timotion-ahf.md) | `control_1_up`/`control_1_down` through `control_5_up`/`control_5_down`, `night`, `light`, `chair` | First 100 ms wait is inside the requested bound; a 100 ms wait separates writes, plus BLE write latency. Release sends three neutral STOP writes. This is bounded HA behavior, not Android timing parity or a firmware maximum |
 
 Customatic Clarity, Remedy and Jerome's C use
 [`customatic_hold_memory` and `customatic_move_simultaneously`](beds/customatic.md),
@@ -271,7 +273,7 @@ still work, with their original name checks.
 
 Set each targeted controller's clock to Home Assistant's local time. Supported
 by the [Malouf Base / Lucid Base](beds/malouf-app.md) app profile on its OKIN
-transports, [SIMMONS](beds/simmons.md#alarms-and-clock), and
+transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/simmons.md#alarms-and-clock), and
 [Customatic Z-Series](beds/customatic-z-series.md) controllers whose
 manufacturer string enables the alarm page (see
 [`zseries_set_alarm`](#zseries_set_alarm)). Z-Series beds cannot share a call
@@ -288,6 +290,7 @@ enable additional commands.
 
 | Controller/profile | Actions | Guide |
 |--------------------|---------|-------|
+| Sleepy's Elite app | Selector-backed controls are exposed as Home Assistant entities; there is no separate alarm action | [Sleepy's Elite app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) |
 | Linak Bed Control | `linak_move_simultaneously`, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Jensen JMC400 | `linak_move_simultaneously` (back and legs only; the action keeps its original name) | [Jensen](beds/jensen.md) |
 | Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |
@@ -295,6 +298,7 @@ enable additional commands.
 | Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer` | [Prodigy / U Series](beds/leggett-okin.md) |
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
+| Glideaway Motion / Montion app | `glideaway_set_alarm` | [Glideaway Motion](beds/glideaway-motion.md#alarm-and-clock) |
 | Customatic Z-Series app | `zseries_set_alarm` | [Z-Series](beds/customatic-z-series.md) |
 | SIMMONS app | `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
@@ -317,6 +321,17 @@ For the explicit Richmat app profiles. Each action checks every targeted bed bef
 - `richmat_mh_light_color` takes `rgb_color` and writes the LED or button-light page's colour frame. Models whose motor page has no light toggle have no on/off command, so they get no Home Assistant light and set the colour with this action.
 
 Alarm countdowns and the waist alarm's current time are read for each bed just before its frames are built, after any reconnect.
+
+### `glideaway_set_alarm`
+
+For the explicit MOTION 400/450/500/600 profiles. Accepts `device_id`, `enabled`,
+`time` (minute precision, required when enabling), `wake_mode` (`none`,
+`memory_1`, `memory_2`, default `none`) and optional `side`. Sends HA local RTC,
+then the alarm 300 ms later. Time is the wire 24-hour value; the app sends one
+hour below its 1–12 wheel label. The app's unusual automatic weekday rule and
+RTC offsets are preserved. Read the [calendar details](beds/glideaway-motion.md#alarm-and-clock)
+before use. `sync_clock` sends only RTC; Refresh alarm queries twice, 200 ms apart.
+Alarm state is reported by a sensor. Hardware semantics remain unverified.
 
 ### `zseries_set_alarm`
 
@@ -371,7 +386,8 @@ The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_rem
 ### FSM Relax app actions
 
 [`hold_control`](#hold_control) accepts a supported `command_XX` and explicit
-`duration` in seconds. `goto_preset` accepts local `preset` 1–8 and an optional
+`duration` in seconds. `goto_preset` accepts local `preset` 1–255, subject to the
+selected controller's live capacity, and an optional
 `duration`; `fsm_relax_calibrate` requires `confirmed: true` and makes one
 write attempt.
 Native Save/Memory buttons and generic memory actions expose up to eight slots
@@ -391,3 +407,13 @@ data:
 ```
 
 Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memory slots, three named-save buttons and reset. Programming sends 55 attempts and reports transport completion, not proof that firmware retained the setting. RGB palette indices and brightness use controller-declared select/number entities. Alarm, sound/EQ, sonic and kneading feedback are read-only.
+
+## Comfort Enhancements alarm
+
+`adjustable_bed.comfort_enhancements_set_alarm` programs or disables the app's
+current-day BLE alarm. Supply `device_id`, `enabled`, and `time: "06:45:00"`
+when enabling. Optional `memory` is 0 (none), 1 (A/single Memory), or 2 (B,
+MC2/MC3 only); `massage` defaults to false. Paired `side` routing is supported.
+Disable with `enabled: false`, without a time. `adjustable_bed.sync_clock`
+synchronizes the clock and sends the app query. There is no alarm feedback or
+phone scheduler. See [packet behavior and limits](beds/comfort-enhancements.md#clock-and-alarm).

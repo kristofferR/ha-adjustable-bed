@@ -22,7 +22,7 @@ export function presentSections(
       Boolean(bed.massage.states?.length) ||
       !!bed.massage.selects?.length ||
       !!bed.massage.timer,
-    utility: bed.utility.length > 0 || Boolean(bed.utilitySelects?.length) || Boolean(bed.utilityStates?.length),
+    utility: bed.utility.length > 0,
     climate:
       bed.climate.entities.length > 0 ||
       bed.climate.selects.length > 0 ||

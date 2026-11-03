@@ -1,4 +1,4 @@
-# v4 Documentation
+# Documentation
 
 These guides describe `main`. The integration requires **Home Assistant
 2026.9.0+**. The release version lives in
@@ -10,13 +10,12 @@ These guides describe `main`. The integration requires **Home Assistant
 | Guide | Contents |
 |-------|----------|
 | [Project README](../README.md) | Installation, supported beds, dashboard card and YAML options |
-| [Compatibility and migration](HA_2026_9.md) | HA minimum, v3 backup/rollback, native child devices |
 | [Connection guide](CONNECTION_GUIDE.md) | Discovery, adapters, proxies and Bluetooth bonds |
 | [Configuration](CONFIGURATION.md) | Options, choosing your remote, combined beds and restoring standalone controls |
 | [Actions and automations](SERVICES.md) | Memory, movement, side targeting and specialized actions |
 | [Wake-up automation](WAKE_UP.md) | Importable scheduled raise or memory recall, with optional lighting |
 | [Apple Home and Siri](HOMEKIT.md) | Importable control blueprint, HomeKit scenes and Siri Shortcuts |
-| [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and migration problems |
+| [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and upgrade problems |
 | [Getting help](GETTING_HELP.md) | Support bundles, diagnostics, issue reports and app traffic captures |
 
 ## Controller and Protocol Reference
@@ -38,19 +37,29 @@ including direct BLE controls, explicit exclusions and hardware validation statu
 The [Adjustable Comfort M1X12 protocol guide](beds/starcode-m1x12.md) links its
 sealed accepted evidence to the complete 970-ID implementation ledger.
 
+The [row030 OCTO Smart Control disposition ledger](apk-analysis/dispositions/row030-octo-smart-control.md)
+maps the accepted 1.03.02 artifact to the existing OCTO Standard protocol, including
+direct BLE controls, explicit exclusions and deferred hardware validation.
+
+The [row042 Nectar Move ledger](apk-analysis/dispositions/row042-nectar-motion.md)
+maps all 43 accepted comparison rows to implementation proof or exact exclusions.
+
+The [row068 Glideaway Motion ledger](apk-analysis/dispositions/row068-glideaway-motion.md)
+accounts for the accepted 1.0.3 revision01 commands, models, parsers, timing and
+explicit safety/product exclusions.
+
 ## Development and Validation
 
-Work from `main` for v4 changes. Development uses Python **3.14.2+** with
-`uv`, and Bun for the Lit/TypeScript card. Follow the environment and test commands
-in the [v4 validation matrix](V4_VALIDATION.md#reproduce-automated-validation),
-including the Bluetooth dependencies from Home Assistant's own manifests.
+Work from `main`. Development uses Python **3.14.2+** with `uv`, and Bun for
+the Lit/TypeScript card. Follow the environment and test commands in the
+[repository instructions](../AGENTS.md#running-tests), including the Bluetooth
+dependencies from Home Assistant's own manifests.
 
 | Reference | Contents |
 |-----------|----------|
 | [Repository instructions](../AGENTS.md) | Architecture, controller contracts, contribution and release rules |
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer/rollback |
-| [v4 validation matrix](V4_VALIDATION.md) | Automated coverage and installed release-candidate gates |
 | [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
 | [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |
@@ -59,4 +68,4 @@ including the Bluetooth dependencies from Home Assistant's own manifests.
 
 APK artifacts and frozen reports stay local and ignored. Consult the repository's
 clean-room rules before protocol work. Documentation updates do not establish new
-hardware evidence or complete the release-candidate gates.
+hardware evidence.

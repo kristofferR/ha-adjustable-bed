@@ -262,11 +262,6 @@ async def delete_pairing_required_issue(hass: HomeAssistant, address: str) -> No
     async_delete_issue(hass, DOMAIN, _pairing_required_issue_id(address))
 
 
-# OCTO's own lost-PIN recovery page. Passed to the Repairs issue as a
-# placeholder because hassfest rejects literal URLs inside translation strings.
-OCTO_PIN_RECOVERY_URL = "https://octo-customer.com/pinlost/"
-
-
 def _octo_pin_required_issue_id(address: str) -> str:
     """Return the stable Repairs issue id for a PIN-locked Octo receiver."""
     return f"octo_pin_required_{address.replace(':', '_').lower()}"
@@ -298,16 +293,12 @@ def update_octo_pin_required_issue(
         async_delete_issue(hass, DOMAIN, issue_id)
         return
 
-    # A locked receiver drops the link roughly every 30 seconds and every
-    # reconnect rediscovers the same lock, so log only on the transition.
-    # The issue registry survives the controller being recreated; an instance
-    # flag would not.
+    # The issue registry survives the controller being recreated, so log only
+    # on the transition instead of on every reconnect.
     if async_get_issue_registry(hass).async_get_issue(DOMAIN, issue_id) is None:
         _LOGGER.warning(
             "Octo bed %s (%s) reports its PIN lock engaged but no PIN is configured. "
-            "The bed stays connected and reports its capabilities, but will not act on "
-            "commands until it is authenticated. Enter the receiver's 4-digit OCTO app "
-            "PIN in the integration options",
+            "Save the receiver's PIN in the integration options to unlock normal controls",
             name,
             address,
         )
@@ -323,11 +314,10 @@ def update_octo_pin_required_issue(
         translation_placeholders={
             "name": name,
             "address": address,
-            "recovery_url": OCTO_PIN_RECOVERY_URL,
         },
         learn_more_url=(
             "https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/beds/octo.md"
-            "#lost-pin-factory-reset"
+            "#pin-control"
         ),
     )
 

@@ -246,6 +246,13 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
 
     entity_description: AdjustableBedClimateEntityDescription
 
+    # These entities report no temperatures; ClimateEntity still requires a unit.
+    # HA 2026.11 renamed it to native_temperature_unit. Core ignores the legacy
+    # name without warning when a class sets both, so keep both until the
+    # minimum Home Assistant version is 2026.11.
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+
     def __init__(
         self,
         coordinator: EntityRuntime,
@@ -295,11 +302,6 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             relevant_keys.add(self.entity_description.backend_state_key)
         if relevant_keys & state.keys():
             self.async_write_ha_state()
-
-    @property
-    def temperature_unit(self) -> str:
-        """Return a temperature unit for ClimateEntity compatibility."""
-        return UnitOfTemperature.CELSIUS
 
     @property
     def hvac_modes(self) -> list[HVACMode]:

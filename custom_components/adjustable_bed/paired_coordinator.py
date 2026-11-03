@@ -629,7 +629,9 @@ class PairedBedCoordinator:
                     side, resources, entry_cancel
                 ) or not self._expected_stop_epochs_match(
                     [(side, child)],
-                    {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                    {side: expected_stop_epoch}
+                    if expected_stop_epoch is not None
+                    else None,
                 ):
                     return
                 await op(child)
@@ -643,7 +645,9 @@ class PairedBedCoordinator:
                 side, resources, entry_cancel
             ) or not self._expected_stop_epochs_match(
                 [(side, child)],
-                {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                {side: expected_stop_epoch}
+                if expected_stop_epoch is not None
+                else None,
             ):
                 return
             if expected_stop_epoch is None:
@@ -683,7 +687,9 @@ class PairedBedCoordinator:
                     side, resources, entry_cancel
                 ) or not self._expected_stop_epochs_match(
                     [(side, child)],
-                    {side: expected_stop_epoch} if expected_stop_epoch is not None else None,
+                    {side: expected_stop_epoch}
+                    if expected_stop_epoch is not None
+                    else None,
                 ):
                     await child.async_abort_prepared_command(handle)
                     return
@@ -757,7 +763,8 @@ class PairedBedCoordinator:
 
         def is_expected_invalidation(side: str, error: BaseException | None) -> bool:
             return isinstance(error, PreparedCommandInvalidated) and (
-                prepared[side][1].outcome in {CommandOutcome.REPLACED, CommandOutcome.STOPPED}
+                prepared[side][1].outcome
+                in {CommandOutcome.REPLACED, CommandOutcome.STOPPED}
             )
 
         try:
@@ -767,15 +774,18 @@ class PairedBedCoordinator:
                 ):
                     return
 
-                async def prepare_side(side: str, child: BedChild) -> CommandHandle | None:
-                    # STOP or a newer side command may run after task creation
-                    # but before this coroutine gets its first turn.
+                async def prepare_side(
+                    side: str, child: BedChild
+                ) -> CommandHandle | None:
+                    # STOP or newer side work may run before this task's first turn.
                     if self._pair_admission_was_cancelled(
                         targets, resources, entry_cancel, expected_stop_epochs
                     ):
                         return None
                     expected_stop_epoch = (
-                        expected_stop_epochs.get(side) if expected_stop_epochs is not None else None
+                        expected_stop_epochs.get(side)
+                        if expected_stop_epochs is not None
+                        else None
                     )
                     if expected_stop_epoch is None:
                         return await child.async_prepare_command_operation(
@@ -793,7 +803,8 @@ class PairedBedCoordinator:
                     )
 
                 enqueue_tasks = {
-                    side: asyncio.create_task(prepare_side(side, child)) for side, child in targets
+                    side: asyncio.create_task(prepare_side(side, child))
+                    for side, child in targets
                 }
                 try:
                     await asyncio.gather(

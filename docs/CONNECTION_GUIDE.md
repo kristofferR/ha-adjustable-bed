@@ -1,8 +1,7 @@
 # Adjustable Bed Connection Guide
 
-This guide explains how to connect your adjustable bed with v4, which requires
-Home Assistant 2026.9.0 or newer. See the [migration notes](HA_2026_9.md) when
-upgrading from v3.
+This guide explains how to connect your adjustable bed. The integration requires
+Home Assistant 2026.9.0 or newer.
 
 ## Understanding Bluetooth Connectivity
 
@@ -196,10 +195,10 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
    **Standard Octo is different:** its PIN check must report **accepted** or
    **not required** before the entry is saved. A required, rejected, or
    inconclusive PIN check offers a retry. This check does not move the bed.
-   Star2 keeps its separate setup behavior. See [Octo setup](beds/octo.md#pin-verification-during-setup-v4).
+   Star2 keeps its separate setup behavior. See [Octo setup](beds/octo.md#pin-verification-during-setup).
 
 For a split bed with independent controllers, add and verify each side first,
-then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames-in-v4).
+then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames).
 
 ---
 
