@@ -1805,6 +1805,14 @@ class AdjustableBedCoordinator:
         self._begin_internal_entry_update(False)
         self._async_persist_config(data, keys=RUNTIME_BOND_KEYS)
 
+    def _has_unresolved_auth_failure(self) -> bool:
+        """Return whether an observed GATT auth failure still warrants the repair."""
+        return (
+            supports_runtime_authentication_recovery(self._bed_type, self._protocol_variant)
+            and self._last_bond_evidence is not None
+            and self._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
+        )
+
     async def async_clear_obsolete_pairing_state(self) -> None:
         """Remove stale pairing state when this protocol no longer requires it."""
         if (
@@ -3505,11 +3513,7 @@ class AdjustableBedCoordinator:
         finally:
             # A verified retry clears this evidence. An inconclusive retry,
             # exhausted attempts or cancellation must still surface the repair.
-            if (
-                supports_runtime_authentication_recovery(self._bed_type, self._protocol_variant)
-                and self._last_bond_evidence is not None
-                and self._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
-            ):
+            if self._has_unresolved_auth_failure():
                 await self._async_raise_pairing_issue()
 
     async def _async_connect_attempts_locked(  # pyright: ignore[reportGeneralTypeIssues]
@@ -4636,6 +4640,10 @@ class AdjustableBedCoordinator:
                 # instead of staying "unknown" until the user moves it.
                 self._schedule_position_hydration()
 
+                if not bed_requires_pairing and self._has_unresolved_auth_failure():
+                    # Controller startup ran on this unpaired link, so the GATT
+                    # access that failed earlier works and its repair is resolved.
+                    self._last_bond_evidence = None
                 await self.async_clear_obsolete_pairing_state()
 
                 return True

@@ -589,6 +589,13 @@ class OkinCstController(BedController):
         except BleakError as err:
             _LOGGER.debug("Could not stop CST notifications: %s", err)
 
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """Keep the configured count; Nectar Move refreshes at the app's interval."""
+        pulse_count, pulse_delay_ms = super().motor_pulse_settings()
+        if self._profile.key == OKIN_CST_VARIANT_NECTAR_MOVE:
+            return pulse_count, _NECTAR_HOLD_REFRESH_DELAY_MS
+        return pulse_count, pulse_delay_ms
+
     # Motor movement helpers
 
     def _get_motor_command(self) -> int:
@@ -654,25 +661,20 @@ class OkinCstController(BedController):
         await self._send_stop_sequence()
 
     async def _send_nectar_held_command(self, motor_value: int) -> None:
-        """Refresh a held Nectar Move axis until coordinator cancellation."""
-        cancel_event = self._coordinator.cancel_command
+        """Refresh one Nectar Move axis for a bounded HA movement, then release.
+
+        The app refreshes a held axis every 100 ms until release. HA movement
+        commands are finite, so the configured pulse count bounds each one;
+        the card's hold loop re-issues them while a control stays pressed.
+        """
+        pulse_count, refresh_delay_ms = self.motor_pulse_settings()
         self._cleanup_stop_cancel_counter = None
         try:
-            while not cancel_event.is_set():
-                await self.write_command(
-                    build_cst_command(motor_value=motor_value),
-                    cancel_event=cancel_event,
-                )
-                if cancel_event.is_set():
-                    break
-                try:
-                    await asyncio.wait_for(
-                        cancel_event.wait(),
-                        timeout=_NECTAR_HOLD_REFRESH_DELAY_MS / 1000,
-                    )
-                except TimeoutError:
-                    continue
-                break
+            await self.write_command(
+                build_cst_command(motor_value=motor_value),
+                repeat_count=pulse_count,
+                repeat_delay_ms=refresh_delay_ms,
+            )
         finally:
             try:
                 await self._send_stop_sequence_after_command()

@@ -121,14 +121,8 @@ _FIXED_LAYOUT: Final = frozenset({CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS})
 # The app step defines every control and its held behavior.
 _APP_DEFINED: Final = GENERIC_FIELDS
 _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
-_NECTAR_MOVE: Final = (
-    _FIXED_LAYOUT
-    | _ALWAYS_MASSAGE
-    | {
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_PULSE_COUNT,
-    }
-)
+# The pulse count stays visible: it bounds each HA movement at the app's cadence.
+_NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -161,7 +155,7 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SVANE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
 }
 _HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
-    # Nectar Move fixes two axes, has massage, and uses its own refresh cadence.
+    # Nectar Move fixes two axes, has massage, and uses its own refresh interval.
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): _NECTAR_MOVE,
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
     (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(

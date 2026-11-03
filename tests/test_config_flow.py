@@ -2976,10 +2976,11 @@ class TestManualFlow:
             )
 
         assert result["step_id"] == "manual_entry"
-        markers = {marker.schema for marker in result["data_schema"].schema}
+        markers = {marker.schema: marker for marker in result["data_schema"].schema}
         assert CONF_MOTOR_COUNT not in markers
         assert CONF_HAS_MASSAGE not in markers
-        assert CONF_MOTOR_PULSE_COUNT not in markers
+        # The count bounds each HA movement; the app fixes the refresh interval.
+        assert markers[CONF_MOTOR_PULSE_COUNT].default() == "10"
         assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
         choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
@@ -3974,7 +3975,7 @@ class TestOptionsFlow:
         assert CONF_MOTOR_COUNT not in markers
         assert CONF_HAS_MASSAGE not in markers
         assert CONF_DISABLE_ANGLE_SENSING not in markers
-        assert CONF_MOTOR_PULSE_COUNT not in markers
+        assert CONF_MOTOR_PULSE_COUNT in markers
         assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
         saved = await hass.config_entries.options.async_configure(

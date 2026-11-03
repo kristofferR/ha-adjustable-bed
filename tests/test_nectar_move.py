@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Awaitable
+import itertools
+from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.exc import BleakError
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
@@ -26,6 +29,7 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -46,6 +50,36 @@ from custom_components.adjustable_bed.detection import (
     resolve_bed_type_choice,
 )
 
+# A short configured pulse count keeps bounded movements quick in tests; the
+# long one keeps a movement running until the test cancels it.
+_PULSE_COUNT = 3
+_LONG_PULSE_COUNT = 100
+
+
+class _WireLog:
+    """Record real-time GATT writes while keeping the mock client's behavior."""
+
+    def __init__(self, client: MagicMock) -> None:
+        self.frames: list[bytes] = []
+        self.times: list[float] = []
+        client.write_gatt_char.reset_mock()
+        original = client.write_gatt_char.side_effect
+
+        async def record(char_uuid: str, data: bytes, response: bool = False) -> None:
+            self.frames.append(bytes(data))
+            self.times.append(asyncio.get_running_loop().time())
+            await original(char_uuid, data, response=response)
+
+        client.write_gatt_char.side_effect = record
+
+    def gaps(self) -> list[float]:
+        return [later - earlier for earlier, later in itertools.pairwise(self.times)]
+
+    async def wait_for(self, count: int) -> None:
+        async with asyncio.timeout(5):
+            while len(self.frames) < count:
+                await asyncio.sleep(0.005)
+
 
 @pytest.fixture
 async def nectar_move_coordinator(
@@ -65,6 +99,7 @@ async def nectar_move_coordinator(
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_COUNT: _PULSE_COUNT,
             CONF_PREFERRED_ADAPTER: "auto",
         },
         unique_id="AA:BB:CC:DD:EE:FF",
@@ -214,49 +249,42 @@ def test_memory_save_response_is_a_typed_read_only_binary_sensor(
 async def test_held_motor_vectors_refresh_then_release(
     nectar_move_coordinator: AdjustableBedCoordinator,
     mock_bleak_client: MagicMock,
-    monkeypatch: pytest.MonkeyPatch,
     method_name: str,
     value: int,
 ) -> None:
+    """One HA movement refreshes the axis for the pulse count, then releases."""
     controller = _controller(nectar_move_coordinator)
-    client = mock_bleak_client
-    client.write_gatt_char.reset_mock()
-    nectar_move_coordinator.cancel_command.clear()
-    refresh_timeouts: list[float] = []
-    cleanup_delays: list[float] = []
-    original_sleep = asyncio.sleep
+    wire = _WireLog(mock_bleak_client)
 
-    async def cancel_on_first_refresh(awaitable: Awaitable[bool], timeout: float) -> bool:
-        assert timeout == pytest.approx(0.1)
-        refresh_timeouts.append(timeout)
-        if len(refresh_timeouts) == 1:
-            nectar_move_coordinator.cancel_command.set()
-        return await awaitable
-
-    async def controlled_cleanup_sleep(delay: float) -> None:
-        if delay == 0.1:
-            cleanup_delays.append(delay)
-            return
-        await original_sleep(delay)
-
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.wait_for",
-        cancel_on_first_refresh,
-    )
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        controlled_cleanup_sleep,
-    )
     await getattr(controller, method_name)()
 
-    assert _writes(client) == _expected_tap(value)[:1] + [build_cst_command()] * 2
-    assert refresh_timeouts == [0.1]
-    assert cleanup_delays == [0.1, 0.1]
-    assert [record.kwargs["response"] for record in client.write_gatt_char.call_args_list] == [
-        True,
-        True,
-        True,
-    ]
+    assert wire.frames == [build_cst_command(value)] * _PULSE_COUNT + [build_cst_command()] * 2
+    # Refreshes and both release frames are 100 ms apart, per the app.
+    assert all(gap >= 0.09 for gap in wire.gaps())
+    assert all(
+        record.args[0] == OKIMAT_WRITE_CHAR_UUID and record.kwargs["response"] is True
+        for record in mock_bleak_client.write_gatt_char.call_args_list
+    )
+
+
+async def test_cover_open_returns_after_bounded_movement(
+    nectar_move_coordinator: AdjustableBedCoordinator,
+    mock_bleak_client: MagicMock,
+) -> None:
+    """cover.open_cover finishes on its own instead of driving to the end stop."""
+    coordinator = nectar_move_coordinator
+    controller = _controller(coordinator)
+    wire = _WireLog(mock_bleak_client)
+    spec = next(spec for spec in controller.motor_control_specs if spec.key == "head")
+    cover = AdjustableBedCover(coordinator, _build_cover_description(spec))
+    cover.async_write_ha_state = MagicMock()
+
+    async with asyncio.timeout(5):
+        await cover.async_open_cover()
+
+    assert wire.frames == [build_cst_command(0x00000001)] * _PULSE_COUNT + [
+        build_cst_command()
+    ] * 2
 
 
 async def test_held_cleanup_uses_one_fresh_uncancellable_stop_event(
@@ -264,9 +292,7 @@ async def test_held_cleanup_uses_one_fresh_uncancellable_stop_event(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     controller = _controller(nectar_move_coordinator)
-    writes: list[tuple[bytes, asyncio.Event | None]] = []
-    cleanup_delays: list[float] = []
-    nectar_move_coordinator.cancel_command.clear()
+    writes: list[tuple[bytes, int, int, asyncio.Event | None]] = []
 
     async def record_write(
         payload: bytes,
@@ -275,42 +301,22 @@ async def test_held_cleanup_uses_one_fresh_uncancellable_stop_event(
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        assert repeat_count == 1
-        assert repeat_delay_ms == 100
-        writes.append((payload, cancel_event))
-
-    async def cancel_after_first_refresh(awaitable: Awaitable[bool], timeout: float) -> bool:
-        assert timeout == pytest.approx(0.1)
-        if len(writes) == 1:
-            nectar_move_coordinator.cancel_command.set()
-        return await awaitable
-
-    async def controlled_cleanup_sleep(delay: float) -> None:
-        if delay == 0.1:
-            cleanup_delays.append(delay)
+        writes.append((payload, repeat_count, repeat_delay_ms, cancel_event))
 
     monkeypatch.setattr(controller, "write_command", record_write)
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        controlled_cleanup_sleep,
-    )
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.wait_for",
-        cancel_after_first_refresh,
-    )
     await controller.move_head_up()
 
-    assert [payload for payload, _event in writes] == [
-        build_cst_command(motor_value=0x00000001),
-        build_cst_command(),
-        build_cst_command(),
+    assert [write[:3] for write in writes] == [
+        (build_cst_command(motor_value=0x00000001), _PULSE_COUNT, 100),
+        (build_cst_command(), 1, 100),
+        (build_cst_command(), 1, 100),
     ]
-    assert writes[0][1] is nectar_move_coordinator.cancel_command
-    stop_event = writes[1][1]
+    # The movement observes the coordinator's cancellation; the release cannot.
+    assert writes[0][3] is None
+    stop_event = writes[1][3]
     assert isinstance(stop_event, asyncio.Event)
-    assert not stop_event.is_set()
-    assert writes[2][1] is stop_event
-    assert cleanup_delays == [0.1, 0.1]
+    assert stop_event is not nectar_move_coordinator.cancel_command
+    assert writes[2][3] is stop_event
 
 
 async def test_held_write_error_still_releases_with_fresh_stop_event(
@@ -319,8 +325,6 @@ async def test_held_write_error_still_releases_with_fresh_stop_event(
 ) -> None:
     controller = _controller(nectar_move_coordinator)
     writes: list[tuple[bytes, asyncio.Event | None]] = []
-    sleep_delays: list[float] = []
-    original_sleep = asyncio.sleep
 
     async def record_write(
         payload: bytes,
@@ -329,22 +333,12 @@ async def test_held_write_error_still_releases_with_fresh_stop_event(
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        assert repeat_count == 1
-        assert repeat_delay_ms == 100
+        del repeat_count, repeat_delay_ms
         writes.append((payload, cancel_event))
         if payload != build_cst_command():
             raise BleakError("movement write failed")
 
-    async def controlled_sleep(delay: float) -> None:
-        if delay == 0.1:
-            sleep_delays.append(delay)
-            return
-        await original_sleep(delay)
-
     monkeypatch.setattr(controller, "write_command", record_write)
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep", controlled_sleep
-    )
     with pytest.raises(BleakError, match="movement write failed"):
         await controller.move_head_up()
 
@@ -353,10 +347,8 @@ async def test_held_write_error_still_releases_with_fresh_stop_event(
         build_cst_command(),
         build_cst_command(),
     ]
-    assert writes[0][1] is nectar_move_coordinator.cancel_command
-    assert writes[1][1] is not writes[0][1]
+    assert isinstance(writes[1][1], asyncio.Event)
     assert writes[1][1] is writes[2][1]
-    assert sleep_delays == [0.1, 0.1]
 
 
 @pytest.mark.parametrize(
@@ -641,57 +633,104 @@ async def test_auth_gated_notify_startup_pair_repair_pairs_on_reconnect(
     await coordinator.async_disconnect(reason="test_cleanup")
 
 
+async def test_setup_auth_failure_keeps_pair_now_repair(
+    hass: HomeAssistant,
+    enable_custom_integrations: None,
+    mock_coordinator_connected: None,
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Failed setup must not clear the repair its own auth failure raised."""
+    del enable_custom_integrations, mock_coordinator_connected
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Nectar Move",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:F2",
+            CONF_NAME: "OKIN-Receiver",
+            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+            CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        },
+        unique_id="AA:BB:CC:DD:EE:F2",
+    )
+    entry.add_to_hass(hass)
+    mock_bleak_client.start_notify.side_effect = BleakError("Insufficient authentication")
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "pairing_required_aa_bb_cc_dd_ee_f2")
+    assert issue is not None
+    assert issue.translation_key == "pairing_required"
+
+
+async def test_successful_retry_retires_startup_auth_failure(
+    hass: HomeAssistant,
+    mock_coordinator_connected: None,
+    mock_bleak_client: MagicMock,
+) -> None:
+    """A retry whose startup succeeds unpaired resolves the earlier auth failure."""
+    del mock_coordinator_connected
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Nectar Move",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:F3",
+            CONF_NAME: "OKIN-Receiver",
+            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+            CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        },
+        unique_id="AA:BB:CC:DD:EE:F3",
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator._max_retries = 2
+    mock_bleak_client.start_notify.side_effect = [
+        BleakError("Insufficient authentication"),
+        None,
+    ]
+
+    assert await coordinator.async_connect() is True
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "pairing_required_aa_bb_cc_dd_ee_f3") is None
+    await coordinator.async_disconnect(reason="test_cleanup")
+
+
 async def test_coordinator_serializes_replacement_and_stop_cleanup(
     nectar_move_coordinator: AdjustableBedCoordinator,
     mock_bleak_client: MagicMock,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """A replacement releases the old axis first; STOP then releases only once."""
     coordinator = nectar_move_coordinator
-    client = mock_bleak_client
-    client.write_gatt_char.reset_mock()
-    refresh_timeouts: list[float] = []
-    cleanup_delays: list[float] = []
-    first_hold = asyncio.Event()
-    second_hold = asyncio.Event()
+    coordinator._motor_pulse_count = _LONG_PULSE_COUNT
+    wire = _WireLog(mock_bleak_client)
 
-    async def controlled_wait_for(awaitable: Awaitable[bool], timeout: float) -> bool:
-        assert timeout == pytest.approx(0.1)
-        refresh_timeouts.append(timeout)
-        if len(refresh_timeouts) == 1:
-            first_hold.set()
-        elif len(refresh_timeouts) == 2:
-            second_hold.set()
-        return await awaitable
-
-    async def controlled_cleanup_sleep(delay: float) -> None:
-        if delay == 0.1:
-            cleanup_delays.append(delay)
-
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.wait_for", controlled_wait_for
-    )
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        controlled_cleanup_sleep,
-    )
     first = asyncio.create_task(
         coordinator.async_execute_controller_command(
             lambda current: current.move_head_up(),
             read_positions_after_operation=False,
         )
     )
-    await first_hold.wait()
+    await wire.wait_for(1)
     replacement = asyncio.create_task(
         coordinator.async_execute_controller_command(
             lambda current: current.move_head_down(),
             read_positions_after_operation=False,
         )
     )
-    await second_hold.wait()
+    await wire.wait_for(4)
     await coordinator.async_stop_command()
-    await asyncio.gather(first, replacement)
+    async with asyncio.timeout(5):
+        await asyncio.gather(first, replacement)
 
-    assert _writes(client) == [
+    assert wire.frames == [
         build_cst_command(motor_value=0x00000001),
         build_cst_command(),
         build_cst_command(),
@@ -699,48 +738,17 @@ async def test_coordinator_serializes_replacement_and_stop_cleanup(
         build_cst_command(),
         build_cst_command(),
     ]
-    assert refresh_timeouts == [0.1, 0.1]
-    assert cleanup_delays == [0.1] * 4
-    assert all(
-        record.args[0] == OKIMAT_WRITE_CHAR_UUID for record in client.write_gatt_char.call_args_list
-    )
-    assert all(
-        record.kwargs["response"] is True for record in client.write_gatt_char.call_args_list
-    )
 
 
 async def test_normal_cover_resources_replace_nectar_head_with_feet(
     nectar_move_coordinator: AdjustableBedCoordinator,
     mock_bleak_client: MagicMock,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Different normal cover axes share only Nectar's movement cancellation scope."""
     coordinator = nectar_move_coordinator
+    coordinator._motor_pulse_count = _LONG_PULSE_COUNT
     controller = _controller(coordinator)
-    client = mock_bleak_client
-    client.write_gatt_char.reset_mock()
-    coordinator.cancel_command.clear()
-    original_sleep = asyncio.sleep
-    waiting_refreshes: list[float] = []
-    cleanup_delays: list[float] = []
-
-    async def controlled_wait_for(awaitable: Awaitable[bool], timeout: float) -> bool:
-        assert timeout == pytest.approx(0.1)
-        waiting_refreshes.append(timeout)
-        return await awaitable
-
-    async def controlled_sleep(delay: float) -> None:
-        if delay == 0.1:
-            cleanup_delays.append(delay)
-            return
-        await original_sleep(0)
-
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.wait_for", controlled_wait_for
-    )
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep", controlled_sleep
-    )
+    wire = _WireLog(mock_bleak_client)
     covers = {
         spec.key: AdjustableBedCover(coordinator, _build_cover_description(spec))
         for spec in controller.motor_control_specs
@@ -750,35 +758,24 @@ async def test_normal_cover_resources_replace_nectar_head_with_feet(
     head = covers["head"]
     feet = covers["feet"]
     assert head._motor_resource == feet._motor_resource == "motor:*"
-    assert "*" not in {head._motor_resource, feet._motor_resource}
 
     head_task = asyncio.create_task(head.async_open_cover())
-    while not waiting_refreshes:
-        await original_sleep(0)
+    await wire.wait_for(1)
     feet_task = asyncio.create_task(feet.async_open_cover())
-    while len(waiting_refreshes) < 2:
-        await original_sleep(0)
+    await wire.wait_for(4)
 
-    # Feet was admitted through its ordinary cover resource, after Head's finally
-    # completed both release frames under the shared motor-prefix scope.
-    assert _writes(client)[:4] == [
+    # Feet was admitted after Head's finally sent both release frames.
+    assert wire.frames == [
         build_cst_command(motor_value=0x00000001),
         build_cst_command(),
         build_cst_command(),
         build_cst_command(motor_value=0x00000004),
     ]
     await coordinator.async_stop_command()
-    await asyncio.gather(head_task, feet_task)
+    async with asyncio.timeout(5):
+        await asyncio.gather(head_task, feet_task)
 
-    assert _writes(client) == [
-        build_cst_command(motor_value=0x00000001),
-        build_cst_command(),
-        build_cst_command(),
-        build_cst_command(motor_value=0x00000004),
-        build_cst_command(),
-        build_cst_command(),
-    ]
-    assert cleanup_delays == [0.1] * 4
+    assert wire.frames[4:] == [build_cst_command(), build_cst_command()]
 
 
 async def test_coordinator_stop_settles_held_refresh_before_explicit_stop(
@@ -786,48 +783,19 @@ async def test_coordinator_stop_settles_held_refresh_before_explicit_stop(
     mock_bleak_client: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """The cancelled movement's own release satisfies the STOP that cancelled it."""
     coordinator = nectar_move_coordinator
-    client = mock_bleak_client
+    coordinator._motor_pulse_count = _LONG_PULSE_COUNT
     controller = _controller(coordinator)
-    client.write_gatt_char.reset_mock()
-    coordinator.cancel_command.clear()
-    original_sleep = asyncio.sleep
-    refresh_wait_started = asyncio.Event()
-    synthetic_midpoint = asyncio.Event()
-    midpoint_reached = asyncio.Event()
-    timeline: list[str] = []
-
-    async def controlled_wait_for(awaitable: Awaitable[bool], timeout: float) -> bool:
-        assert timeout == pytest.approx(0.1)
-        timeline.append("refresh-wait-pending")
-        refresh_wait_started.set()
-        await synthetic_midpoint.wait()
-        timeline.append("refresh-wait-at-midpoint")
-        midpoint_reached.set()
-        result = await awaitable
-        timeline.append("cancel-observed")
-        return result
-
-    async def controlled_cleanup_sleep(delay: float) -> None:
-        if delay == 0.1:
-            timeline.append("cleanup-delay")
-            return
-        await original_sleep(0)
-
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.wait_for", controlled_wait_for
-    )
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        controlled_cleanup_sleep,
-    )
+    wire = _WireLog(mock_bleak_client)
+    frames_at_stop: list[int] = []
     original_stop_all = controller.stop_all
 
-    async def verify_stop_uses_the_same_cancellation() -> None:
-        assert controller._cleanup_stop_cancel_counter == coordinator._cancel_counter
+    async def observe_stop_all() -> None:
+        frames_at_stop.append(len(wire.frames))
         await original_stop_all()
 
-    monkeypatch.setattr(controller, "stop_all", verify_stop_uses_the_same_cancellation)
+    monkeypatch.setattr(controller, "stop_all", observe_stop_all)
     movement = asyncio.create_task(
         coordinator.async_execute_controller_command(
             lambda current: current.move_head_up(),
@@ -835,76 +803,41 @@ async def test_coordinator_stop_settles_held_refresh_before_explicit_stop(
             read_positions_after_operation=False,
         )
     )
-    await refresh_wait_started.wait()
-    assert coordinator.cancel_command.is_set() is False
-    assert _writes(client) == [build_cst_command(motor_value=0x00000001)]
-    timeline.append("synthetic-midpoint")
-    synthetic_midpoint.set()
-    await midpoint_reached.wait()
-    timeline.append("stop-request")
-    stop = asyncio.create_task(coordinator.async_stop_command())
-    await coordinator.cancel_command.wait()
-    await asyncio.gather(movement, stop)
+    await wire.wait_for(1)
+    await coordinator.async_stop_command()
+    async with asyncio.timeout(5):
+        await movement
 
-    assert timeline == [
-        "refresh-wait-pending",
-        "synthetic-midpoint",
-        "refresh-wait-at-midpoint",
-        "stop-request",
-        "cancel-observed",
-        "cleanup-delay",
-        "cleanup-delay",
-    ]
-    assert _writes(client) == [
+    # STOP waited for the movement's release frames, then sent no duplicate pair.
+    assert frames_at_stop == [3]
+    assert wire.frames == [
         build_cst_command(motor_value=0x00000001),
         build_cst_command(),
         build_cst_command(),
     ]
-    assert all(
-        record.args[0] == OKIMAT_WRITE_CHAR_UUID for record in client.write_gatt_char.call_args_list
-    )
 
 
 async def test_later_explicit_stop_is_not_suppressed_by_old_cancel_cleanup(
     nectar_move_coordinator: AdjustableBedCoordinator,
     mock_bleak_client: MagicMock,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     coordinator = nectar_move_coordinator
-    client = mock_bleak_client
-    client.write_gatt_char.reset_mock()
-    coordinator.cancel_command.clear()
-    original_sleep = asyncio.sleep
-    refresh_wait_started = asyncio.Event()
+    coordinator._motor_pulse_count = _LONG_PULSE_COUNT
+    wire = _WireLog(mock_bleak_client)
 
-    async def controlled_wait_for(awaitable: Awaitable[bool], timeout: float) -> bool:
-        assert timeout == pytest.approx(0.1)
-        refresh_wait_started.set()
-        return await awaitable
-
-    async def controlled_cleanup_sleep(delay: float) -> None:
-        if delay != 0.1:
-            await original_sleep(0)
-
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.wait_for", controlled_wait_for
-    )
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        controlled_cleanup_sleep,
-    )
     movement = asyncio.create_task(
         coordinator.async_execute_controller_command(
             lambda current: current.move_head_up(),
             read_positions_after_operation=False,
         )
     )
-    await refresh_wait_started.wait()
+    await wire.wait_for(1)
     coordinator.request_command_cancel()
-    await movement
+    async with asyncio.timeout(5):
+        await movement
     await coordinator.async_stop_command()
 
-    assert _writes(client) == [
+    assert wire.frames == [
         build_cst_command(motor_value=0x00000001),
         build_cst_command(),
         build_cst_command(),

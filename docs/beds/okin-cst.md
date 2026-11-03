@@ -58,8 +58,9 @@ with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on ESPHome
 
 Nectar Move's accepted app has no app-issued bond request or authentication gate. Its
 profile therefore skips proactive pairing. Home Assistant still routes an
-actual GATT authentication failure through the existing bond-recovery repair;
-this does not change pairing policy for other CST profiles.
+actual GATT authentication failure through the existing bond-recovery repair.
+That repair, with its **Pair Now** action, stays until a later connection
+succeeds; this does not change pairing policy for other CST profiles.
 
 ## Protocol
 
@@ -153,9 +154,13 @@ configurable.
 
 Nectar Move uses the same 100 ms held-command refresh and delayed STOP pair, but
 its app also repeats every other reachable action only while held. Home
-Assistant motors use coordinator cancellation for that held stream. Stateless
-preset, save, light, and massage buttons send one selected frame, then STOP at
-+100 ms and +200 ms as a bounded Home Assistant tap mapping.
+Assistant movement commands are finite, so each one refreshes the axis at the
+app's 100 ms interval for the configured **Motor pulse count** (default 10,
+about one second), then sends the STOP pair. The card's hold loop re-issues
+movements while a control stays pressed, and a STOP or replacement command ends
+the refresh early with the same release. Stateless preset, save, light, and
+massage buttons send one selected frame, then STOP at +100 ms and +200 ms as a
+bounded Home Assistant tap mapping.
 
 ### Memory Slots
 
