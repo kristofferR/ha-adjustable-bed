@@ -68,16 +68,17 @@ Each 3-byte command therefore becomes `C0`, length `0A`, 8 encrypted bytes,
 ### XXTEA Encryption
 
 - Algorithm: Corrected Block TEA (XXTEA)
-- Key: 16-byte static key (`LogicLink_BT_Key` encoded as 4x uint32 LE)
+- Key: 16-byte static key `6C 4F 42 F5 67 68 02 E2 53 AC 9A 27 02 A6 37 AB`,
+  packed as four little-endian uint32 words
 - DELTA: `0x9E3779B9`
 - Rounds: `6 + 52/n` where n = number of 32-bit words
 - Word packing: Little-endian
 
-> [!WARNING]
-> The key bytes shipped in `beds/logicdata.py` are
-> `6C 4F 42 F5 67 68 02 E2 53 AC 9A 27 02 A6 37 AB`, not the ASCII encoding of
-> the text `LogicLink_BT_Key`. The code is what ships; treat the name above as a
-> label, not the key material.
+> [!NOTE]
+> Earlier versions of this guide described the key as `LogicLink_BT_Key`. That is
+> not the key material: the ASCII text differs from the bytes above. The bytes in
+> `beds/logicdata.py` match the key an independent clean-room analysis recovered
+> from the related LOGICDATA SimplicityFrame app's native library.
 
 ### CRC-CCITT
 

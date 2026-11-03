@@ -69,7 +69,7 @@ Nectar Move uses the separate Okin CST framing and actions documented on the
 - The `62741523-...` OKIN service, `90311623-...` CSS service, and Nordic DFU
   service `00001530-...` are not sufficient by themselves to identify CST
   because RF ECO BT stair actuators share that GATT inventory. Choose **Okin
-  CST / Nectar Motion** only when the known base or app identity also
+  CST (Rize product profiles, 14-byte dual-field)** only when the known base or app identity also
   corroborates CST. Device Information model `MEGAMAT MBZ` identifies RF ECO BT
   instead.
 - Or manually configured with bed type: `nectar` (a legacy alias that resolves

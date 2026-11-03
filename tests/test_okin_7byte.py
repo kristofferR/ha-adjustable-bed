@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.okin_7byte import (
     OKIN_7BYTE_CONFIG,
     _cmd,
 )
+from custom_components.adjustable_bed.beds.okin_nordic import OkinNordicController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_7BYTE,
     CONF_BED_TYPE,
@@ -397,6 +398,23 @@ class TestOkin7ByteMassage:
         calls = mock_client.write_gatt_char.call_args_list
         call_data = calls[0][0][1]
         assert call_data == _cmd(0x5A)
+
+    async def test_massage_intensity_follows_variant(
+        self,
+        hass: HomeAssistant,
+        mock_okin_7byte_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Nectar has no intensity bytes, so no intensity buttons are advertised."""
+        del mock_coordinator_connected
+
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert controller.supports_massage_intensity_step_control is False
+        assert controller.supports_massage_intensity_up_control is False
+        assert OkinNordicController(coordinator).supports_massage_intensity_step_control is True
 
 
 class TestOkin7ByteLights:
