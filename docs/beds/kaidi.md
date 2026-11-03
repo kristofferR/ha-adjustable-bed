@@ -16,7 +16,10 @@
 - Floyd Home (`com.kaidi_test4.floyd`)
 - ISleep (`com.kaidi_test4.isleep`)
 
-These apps share the same Kaidi OEM transport and command family.
+Floyd Home now has a separately audited [product 139 profile](floyd.md).
+Its capabilities and control behavior come from its accepted artifact, not from
+other apps sharing this transport. The remaining sections describe the legacy
+Seat profiles unless stated otherwise.
 
 ## Discovery And Transport
 
@@ -31,7 +34,8 @@ service UUIDs.
 > accepts that payload too and filters on mesh room-ID membership, which the
 > integration cannot replicate. Detection therefore requires a corroborating
 > Kaidi signal — the `Mouselet` name, the FFC0/mesh service UUID, or a known
-> Kaidi MAC OUI — alongside a parseable payload.
+> Kaidi MAC OUI — alongside a parseable payload. The separately audited Floyd
+> product 139 signature can also admit a bed without those shared signals.
 
 | Signal | Value |
 |--------|-------|
@@ -70,12 +74,14 @@ Home Assistant follows the same bootstrap flow as the OEM apps:
 
 ## Command Families
 
-The integration exposes four variants under the shared `kaidi` bed type.
+The integration exposes the Floyd app profile and four legacy Seat variants
+under the shared `kaidi` bed type.
 The current implementation uses the OEM apps' Seat commands; the old `bed_1`,
 `bed_2`, and `bed_12` choices are not current variants.
 
 | Variant | Use |
 |---------|-----|
+| `floyd` | Floyd Home product 139, see [dedicated guide](floyd.md) |
 | `seat_1` | Single-base / lane 1 commands |
 | `seat_2` | Lane 2 commands |
 | `seat_3` | Lane 3 commands |
@@ -88,8 +94,9 @@ and Floyd 1.0.7:
 
 | Product IDs | Auto family |
 |-------------|-------------|
-| `129`, `131`, `132`, `135`, `136`, `137`, `138`, `139`, `142` | `seat_1` |
+| `129`, `131`, `132`, `135`, `136`, `137`, `138`, `142` | `seat_1` |
 | `130`, `133`, `134`, `143` | `seat_1_2` |
+| `139` | `floyd` |
 
 IDs `140` and `141` are not in those app versions and are not inferred from
 neighboring values. Other IDs use the narrow fallback below or require an
@@ -110,7 +117,9 @@ and a manual Kaidi variant override is required.
 
 ## Features By Family
 
-- All current variants expose core movement and four memory recall/save slots.
+- The legacy Seat variants expose core movement and four memory recall/save slots.
+- Floyd exposes three slots, a corrected Flat/release mapping, light controls and
+  confirmed built-in preset programming. It has no direct position or massage controls.
 - Seat 1, Seat 2, and Seat 1+2 expose Flat, Zero G, Anti-Snore, direct back/legs
   percentage targets, and massage start/stop and 15/30/45-minute timers. Massage
   entities also require **Has massage** in configuration.

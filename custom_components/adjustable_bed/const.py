@@ -1718,11 +1718,13 @@ SLEEP_NUMBER_VARIANTS: Final = {
 # Kaidi variants — all OEM apps use SEAT_* commands exclusively.
 # BED_* constants from PLDataTrans.java are legacy/enterprise firmware and are
 # NOT used by any consumer mobile app (Rize, Floyd, ISleep).
+KAIDI_VARIANT_FLOYD: Final = "floyd"
 KAIDI_VARIANT_SEAT_1: Final = "seat_1"
 KAIDI_VARIANT_SEAT_2: Final = "seat_2"
 KAIDI_VARIANT_SEAT_3: Final = "seat_3"
 KAIDI_VARIANT_SEAT_1_2: Final = "seat_1_2"
 KAIDI_VARIANTS: Final = {
+    KAIDI_VARIANT_FLOYD: "Floyd Home (product 139)",
     VARIANT_AUTO: "Auto-detect (recommended)",
     KAIDI_VARIANT_SEAT_1: "Seat 1 (single base)",
     KAIDI_VARIANT_SEAT_2: "Seat 2",

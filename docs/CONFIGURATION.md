@@ -946,6 +946,15 @@ generic motor count, massage and angle-sensing choices are hidden. The original
 Bluetooth name and layout belong to each side of a two-address pair. There is no
 single-address left/right command. See [BedSense](beds/bedsense.md) for all nine
 layouts, memory indicators and app-labelled massage/light actions.
+### Floyd Home profile
+
+Choose **Floyd Home app (product 139)** under the Kaidi transport. Auto selects
+this profile for advertised product139. It owns its two-axis layout and disables
+unsupported massage/position controls. Pulse count and delay bound an HA hold,
+not a hardware repeat loop. Each physical address keeps its own BLE room and
+node metadata; do not copy those fields to another side. See the
+[Floyd Home guide](beds/floyd.md) for confirmation, conditional internal preset
+selectors and explicit assignment of an unassigned BLE room.
 
 ### BF and Cherish app profiles
 
