@@ -94,6 +94,19 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > paths also share a per-address lock so two attempts cannot collide into
 > `org.bluez.Error.InProgress` and abort each other.
 >
+> **An unpaired reconnect is unencrypted, not unbonded.** Through an ESP32
+> Bluetooth proxy, a reconnect that skips the bond request leaves the link
+> unencrypted even though the bed still holds the bond, so commands fail with
+> "Insufficient encryption" (issue #709). BlueZ raises link security on that
+> reply by itself; the proxy in that report did not. When a command hits that
+> error on a link that has not paired, the integration first pairs the live
+> link in place.
+> With stored keys this needs no pairing mode. The repair is raised only when
+> the bed refuses, or when a link that already paired fails again. After the
+> first such failure, every reconnect requests the bond after service discovery,
+> and a reconnect that bonds clears any earlier repair, because this bed has no
+> Device Information characteristic for the usual bond probe.
+>
 > Pairing should still happen during the pairing window:
 >
 > - **Entering pairing mode** (per the LP Control app): unplug the bed, remove

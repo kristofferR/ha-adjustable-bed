@@ -23,10 +23,8 @@ This guide covers common issues and their solutions when using the Adjustable Be
 
 ## Upgrade and Migration
 
-v4 requires **Home Assistant 2026.9.0+**. If setup fails after upgrading, check
-the HA version before changing Bluetooth settings. Restore a pre-v4 backup to
-return to v3; reinstalling the older integration files alone cannot reverse the
-config-entry migration. See [compatibility and rollback](HA_2026_9.md).
+The integration requires **Home Assistant 2026.9.0+**. If setup fails after
+upgrading, check the HA version before changing Bluetooth settings.
 
 After an integration update, restart Home Assistant and reload the dashboard
 page so it loads the matching card version. For paired-bed conversion, existing

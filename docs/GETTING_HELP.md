@@ -99,8 +99,8 @@ Generate a support bundle if possible, then fill in the issue template with the
 problem, steps to reproduce, and any other context. If capture fails, describe the
 failure instead so the report can still be tracked.
 
-For v4, include the exact beta version, Home Assistant version, whether this was
-a v3 upgrade, and whether the bed is standalone or combined. For a combined bed,
+Include the exact integration version, Home Assistant version, and whether the
+bed is standalone or combined. For a combined bed,
 name the affected side and whether the action targeted the parent or a child.
 
 ### Generating a Support Bundle

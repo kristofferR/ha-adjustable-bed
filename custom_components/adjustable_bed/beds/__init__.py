@@ -11,6 +11,8 @@ from .base import BedController
 
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
+    from .bedsense import BedSenseController as BedSenseController
+    from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
@@ -19,8 +21,10 @@ if TYPE_CHECKING:
     from .dewertokin_rf_gateway import (
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
+    from .eshine import EshineController as EshineController
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
+    from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
     from .innova import InnovaController as InnovaController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
@@ -84,6 +88,10 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "ComfortEnhancementsController": "comfort_enhancements",
+    "EshineController": "eshine",
+    "GlideawayMotionController": "glideaway_motion",
+    "BedSenseController": "bedsense",
     "InnovaController": "innova",
     "StarcodeM5X5Controller": "starcode_m5x5",
     "FurniMoveController": "furnimove",

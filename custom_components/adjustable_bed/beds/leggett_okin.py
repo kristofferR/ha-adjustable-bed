@@ -747,11 +747,7 @@ class LeggettOkinController(BedController):
             # Receipts contain the pre-command state; subsequent spontaneous
             # notifications contain the new state. Process both, without
             # consuming one notification as an acknowledgement of one write.
-            if (
-                len(payload) != 20
-                or payload[10] != 0xFF
-                or payload[2:6] != payload[6:10]
-            ):
+            if len(payload) != 20 or payload[2:6] != payload[6:10]:
                 return
             mask = int.from_bytes(payload[2:6], "big")
             self._cu170_status_mask = mask
