@@ -1640,6 +1640,13 @@ class ReveriePairlinkController(BedController):
             elif key == "legs_position" and isinstance(value, int):
                 self._notify_position("legs", value)
 
+        if any(key.startswith("reverie_pairlink_rgb_") for key, _ in events):
+            rgb = tuple(state.get(f"reverie_pairlink_rgb_{index}") for index in (1, 2, 3))
+            if all(type(channel) is int for channel in rgb):
+                state["under_bed_lights_rgb"] = rgb
+                if is_active_peer:
+                    self.forward_controller_state_update("under_bed_lights_rgb", rgb)
+
         if self._event_callback is not None and is_active_peer:
             self._event_callback(event_type, event_data, broadcast_flag)
         return events

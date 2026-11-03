@@ -257,19 +257,11 @@ class ReverieNightstandController(BedController):
         return self.model.massage
 
     @property
-    def supports_massage_toggle_control(self) -> bool:
-        return self.model.massage
-
-    @property
     def supports_head_massage_intensity_step_control(self) -> bool:
         return self.model.massage
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
-        return self.model.massage
-
-    @property
-    def supports_massage_mode_step_control(self) -> bool:
         return self.model.massage
 
     @property
@@ -1549,25 +1541,11 @@ class ReverieNightstandController(BedController):
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity (0-10, written as level * 4)."""
-        if not self.model.massage:
-            raise ValueError(f"Model {self.model_id} does not support massage")
-        level = min(10, self._massage_head_level + 1)
-        await self._write_to_char(
-            REVERIE_NIGHTSTAND_HEAD_WAVE_UUID, level * 4
-        )
-        self._massage_head_level = level
-        self.forward_controller_state_update("massage_head_intensity", self._massage_head_level)
+        await self.set_massage_intensity("head", min(10, self._massage_head_level + 1))
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity (0-10, written as level * 4)."""
-        if not self.model.massage:
-            raise ValueError(f"Model {self.model_id} does not support massage")
-        level = max(0, self._massage_head_level - 1)
-        await self._write_to_char(
-            REVERIE_NIGHTSTAND_HEAD_WAVE_UUID, level * 4
-        )
-        self._massage_head_level = level
-        self.forward_controller_state_update("massage_head_intensity", self._massage_head_level)
+        await self.set_massage_intensity("head", max(0, self._massage_head_level - 1))
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity (0-10, written as level * 4)."""

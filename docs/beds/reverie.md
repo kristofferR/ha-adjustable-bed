@@ -99,6 +99,8 @@ bed left/right routing. The integration does not infer a left/right mapping.
 The controller follows the accepted data-bearing and no-data characteristic
 routes, preserves side-specific feedback, and uses the V1 Composer route for
 routines. The STK V2 comfort method is empty in the app and is excluded.
+Head massage step buttons follow the same selected numeric side as the head
+strength slider.
 
 Paired local Pairlink entries reserve each selected adapter separately. Combining
 existing singles validates their exact config-entry and physical-address ownership
@@ -316,8 +318,9 @@ session and the same authentication, sign, target, and readiness checks as
 ordinary actions. The diagnostic retains the command connection until its timed
 cleanup completes, including with Disconnect After Command enabled. Pairlink's
 massage mode and rhythm selects display receiver feedback; the mode sensor
-retains its numeric value for automations. A successful GATT write only shows
-transport acceptance, not physical bed behavior.
+retains its numeric value for automations. Pairlink RGB light color follows
+receiver feedback once all three channels are known for the current peer.
+A successful GATT write only shows transport acceptance, not physical bed behavior.
 
 See [Actions and Automations](../SERVICES.md) for action schemas and examples.
 

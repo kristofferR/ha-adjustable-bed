@@ -260,10 +260,6 @@ class ReverieController(BedController):
         return self.model.massage
 
     @property
-    def supports_massage_toggle_control(self) -> bool:
-        return self.model.massage
-
-    @property
     def supports_head_massage_intensity_step_control(self) -> bool:
         return self.model.massage
 
