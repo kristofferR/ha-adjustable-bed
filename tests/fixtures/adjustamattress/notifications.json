@@ -1,0 +1,338 @@
+[
+  {
+    "protocol": "P1",
+    "input": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      6,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      7,
+      0,
+      4,
+      0
+    ],
+    "expected_state": {
+      "massageTime": 7,
+      "headIntensity": 3,
+      "footIntensity": 2,
+      "wave": 4
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P1",
+    "input": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      69,
+      0
+    ],
+    "expected_state": {
+      "massageTime": 5,
+      "headIntensity": 2,
+      "footIntensity": 3,
+      "wave": 4
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P1",
+    "input": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      9,
+      0
+    ],
+    "expected_state": {
+      "massageTime": 9,
+      "headIntensity": 0,
+      "wave": 0
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P1",
+    "input": [
+      237,
+      128,
+      0,
+      7,
+      15,
+      3,
+      17,
+      0,
+      0,
+      0
+    ],
+    "expected_state": {
+      "alarmHour": 7,
+      "alarmMin": 15,
+      "alarmRepeat": 3,
+      "alarmType": 17,
+      "alarmOn": true
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P2",
+    "input": [
+      226,
+      254,
+      0,
+      12,
+      6,
+      0,
+      5,
+      0,
+      0,
+      8
+    ],
+    "expected_state": {
+      "alarmMin": 12,
+      "alarmHour": 6,
+      "alarmType": 17,
+      "alarmRepeat": 5,
+      "alarmOn": true
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P2",
+    "input": [
+      226,
+      254,
+      0,
+      255,
+      255,
+      0,
+      5,
+      1,
+      1,
+      9
+    ],
+    "expected_state": {
+      "alarmType": 9,
+      "alarmOn": false
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P4",
+    "input": [
+      165,
+      11,
+      0,
+      0,
+      89,
+      2,
+      4,
+      3,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      2,
+      6,
+      0,
+      0,
+      6
+    ],
+    "expected_state": {
+      "massageTime": 2,
+      "headIntensity": 2,
+      "footIntensity": 3,
+      "wave": 4,
+      "sensitivity": 2,
+      "demonstration": true,
+      "antiSnoreEnabled": false,
+      "strengthIndex": 2,
+      "sleeping": true,
+      "auxiliary_status_bit_1": true
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P4",
+    "input": [
+      165,
+      11,
+      0,
+      0,
+      0,
+      0,
+      9,
+      9,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      99,
+      0,
+      99,
+      0,
+      0,
+      0
+    ],
+    "expected_state": {
+      "headIntensity": 3,
+      "footIntensity": 3,
+      "wave": 4,
+      "sensitivity": 1,
+      "strengthIndex": 0
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P4",
+    "input": [
+      165,
+      12,
+      0,
+      0,
+      127,
+      6,
+      7,
+      30,
+      0,
+      2
+    ],
+    "expected_state": {
+      "alarmRepeat": 127,
+      "alarmType": 19,
+      "alarmHour": 7,
+      "alarmMin": 30,
+      "alarmOn": false
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P4",
+    "input": [
+      166,
+      64
+    ],
+    "expected_state": {
+      "busy": true
+    },
+    "changed": false,
+    "effects": [
+      "show blocking HUD",
+      "cancel prior HUD timer",
+      "schedule busy=false and dismiss HUD after 300000us"
+    ]
+  },
+  {
+    "protocol": "P3",
+    "input": [
+      165,
+      12,
+      0,
+      0,
+      3,
+      5,
+      8,
+      45,
+      0,
+      2
+    ],
+    "expected_state": {
+      "alarmRepeat": 3,
+      "alarmType": 17,
+      "alarmHour": 8,
+      "alarmMin": 45,
+      "alarmOn": true
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P3",
+    "input": [
+      165,
+      11,
+      14,
+      0,
+      2,
+      89,
+      4,
+      3,
+      6
+    ],
+    "expected_state": {
+      "massageTime": 2,
+      "headIntensity": 2,
+      "footIntensity": 3,
+      "wave": 4
+    },
+    "changed": true,
+    "effects": []
+  },
+  {
+    "protocol": "P3",
+    "input": [
+      165,
+      11,
+      14,
+      0,
+      0,
+      1,
+      9,
+      15,
+      255
+    ],
+    "expected_state": {
+      "headIntensity": 6,
+      "footIntensity": 86,
+      "wave": 9
+    },
+    "changed": true,
+    "effects": []
+  }
+]

@@ -22,6 +22,7 @@ from typing import Final
 from .cluster033_profiles import SERTA_MEMORY_KEYS
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
     BED_TYPE_CHERISH,
@@ -165,6 +166,7 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # AHF has no massage. Motor count still sizes the legacy covers.
     BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
     # These apps always show their massage page.
+    BED_TYPE_ADJUSTAMATTRESS: _FIXED_LAYOUT | {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING},
     BED_TYPE_ADJUSTABLE_LUMBAR: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     BED_TYPE_STARCODE_ABM5_4: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     # The handset table sets the layout and massage; the receiver sets the protocol.
@@ -329,6 +331,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_ESHINE: SideProfile("Eshine E6000"),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
     BED_TYPE_ZSERIES: SideProfile("Customatic Z-Series", variant_owned=True),
+    BED_TYPE_ADJUSTAMATTRESS: SideProfile("AdjustaMattress", variant_owned=True),
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),

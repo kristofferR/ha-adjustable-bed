@@ -496,6 +496,7 @@ OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
+BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
 BED_TYPE_CASPER_BASE: Final = "casper_base"
@@ -682,6 +683,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
     BED_TYPE_SIMMONS,
+    BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
@@ -1593,6 +1595,17 @@ SIMMONS_VARIANTS: Final = {
     SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, OKIN-name protocol",
     SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, SmartBed-name protocol",
 }
+# AdjustaMattress 1.6.0: model and manual layout are independent choices.
+ADJUSTAMATTRESS_LAYOUTS: Final = (
+    "AdjustaLumbarHeadTilt", "AdjustaBed", "AdjustaMattress", "AdjustaBedLumbar",
+    "FoldingBed", "HilowBed", "Lolobed",
+)
+ADJUSTAMATTRESS_VARIANTS: Final = {
+    VARIANT_AUTO: "AdjustaBed layout, model from Bluetooth name and GATT",
+    **{f"P{model}_L{layout}": f"{name} (P{model}: {transport})"
+       for model, transport in enumerate(("CB", "JLDP", "CB24", "SleepSnore"), 1)
+       for layout, name in enumerate(ADJUSTAMATTRESS_LAYOUTS)},
+}
 # Adjustable bed (Lumbar) app: "auto" applies the app's Bluetooth-name rule.
 # The Star branch still reads the manufacturer to choose its table.
 ADJUSTABLE_LUMBAR_VARIANT_OKIN: Final = "adjustable_lumbar_okin"
@@ -1637,6 +1650,7 @@ RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
+    BED_TYPE_ADJUSTAMATTRESS: frozenset({VARIANT_AUTO}),
     BED_TYPE_ADJUSTABLE_LUMBAR: frozenset({VARIANT_AUTO}),
     BED_TYPE_STARCODE_M1X12: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
@@ -1817,6 +1831,7 @@ OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
     ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
     BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
@@ -2706,6 +2721,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
     *(_variant for _variant in SIMMONS_VARIANTS if _variant != VARIANT_AUTO),
+    *(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     *dict.fromkeys(
@@ -2917,6 +2933,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_TRANQUIL,
         BED_TYPE_ZSERIES,
         BED_TYPE_SIMMONS,
+        BED_TYPE_ADJUSTAMATTRESS,
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_COMFORT_ENHANCEMENTS,
         BED_TYPE_ESHINE,
@@ -3148,6 +3165,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
+    BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
     # every motor); the count bounds an HA hold.
