@@ -124,6 +124,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, hardware unverified |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's BOX15 / BOX24 / BOX25 and the explicit Sleepy's Elite app profile |
 | ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/starcode-abm5-4.md); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |
+| 🧪 [Adjustable Comfort M1X12 app](docs/beds/starcode-m1x12.md) | Explicit CB25, F23 or kneading app profile, with up to two explicitly configured M1X12 ELEVATE accessories |
 | ✅ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | [Caresse / Werkmeister](docs/beds/vibradorm_app.md), [VMAT](docs/beds/vmat.md), [V-MAT Basic / CBI / XT-Box](docs/beds/vmatbasic.md) |
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
@@ -143,7 +144,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [TEMPUR AU app](docs/beds/tempur-au.md) | Explicit B1/B2/C1/D1/E1 app layouts; hardware unverified |
 | ✅ [LOGICDATA](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame; [MOTIONrelax](docs/beds/logicdata-app.md), [Sleep Smart](docs/beds/logicdata-sleep-smart.md) Vienna / Toronto / Middle Rail and air mattress pump |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
-| ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift |
+| ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
 | 🧪 [BF / Cherish](docs/beds/bf-cherish.md) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
 | ✅ [Motion Bed](docs/beds/motion_bed.md) | QMS/SealyMF and TL beds, air and thermal controls |
@@ -151,8 +152,9 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 | ✅ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF34/RF6707 handset beds (new RF1058 setups use FurniMove) |
 
-✅ means supported by the integration. Some models are verified from their app
-rather than physical hardware; each linked guide records its testing status.
+✅ means supported by the integration. 🧪 marks app behavior implemented from
+accepted artifact evidence while hardware remains unverified. Each linked guide
+records its testing status.
 When setup asks for an app, model or remote, choose the one supplied with your
 bed. Grouping them here does not make their commands interchangeable.
 

@@ -67,6 +67,7 @@ CONF_MOTION_BED_MOVEMENT: Final = "motion_bed_movement"
 MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
 
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
+CONF_STARCODE_M1X12_PROFILE: Final = "starcode_m1x12_profile"
 CONF_STARCODE_LIFT_ENTRIES: Final = "starcode_lift_entries"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
 CONF_SLEEPYS_ELITE_SELECTOR: Final = "sleepys_elite_selector"
@@ -539,12 +540,16 @@ BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NU
 BED_TYPE_SLEEPYS_ELITE_APP: Final = "sleepys_elite_app"
 BED_TYPE_SLEEPSTAR: Final = "sleepstar"  # SleepSpa S9000AI / SLEEPSTAR transparent StarCode
 BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
+STAR_ELEVATE_VARIANT_M1X12: Final = "adjustable_comfort_m1x12"
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_STARCODE_M5X5: Final = "starcode_m5x5"
+BED_TYPE_STARCODE_M1X12: Final = "starcode_m1x12"
 # AdjustableM5X5 groups: a main plus independently addressed lifts. ELEVATE
 # accessories join through their own bed type.
-STARCODE_GROUP_BED_TYPES: Final = frozenset({BED_TYPE_STARCODE_M5X5, BED_TYPE_STAR_ELEVATE})
+STARCODE_GROUP_BED_TYPES: Final = frozenset(
+    {BED_TYPE_STARCODE_M1X12, BED_TYPE_STARCODE_M5X5, BED_TYPE_STAR_ELEVATE}
+)
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
@@ -712,6 +717,7 @@ SUPPORTED_BED_TYPES: Final = [
     # Svane
     BED_TYPE_SVANE,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_STARCODE_M1X12,
     # Vibradorm
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
@@ -1544,6 +1550,10 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
+STAR_ELEVATE_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect",
+    STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 ELEVATE",
+}
 
 # SIMMONS app: the regular/inclined bed type is independent of the packet
 # format. "auto" applies the app's Bluetooth-name rule to a regular bed.
@@ -1607,6 +1617,7 @@ NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: frozenset({VARIANT_AUTO}),
+    BED_TYPE_STARCODE_M1X12: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
 }
 SOLACE_VARIANT_WOOSA: Final = "woosa"
@@ -2598,6 +2609,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     *COMFORT_ENHANCEMENTS_VARIANTS,
     *(v for v in BEDSENSE_VARIANTS if v != "auto"),
     VARIANT_AUTO,
+    STAR_ELEVATE_VARIANT_M1X12,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
@@ -2894,6 +2906,8 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
         BED_TYPE_STARCODE_ABM5_4,
+        # M1X12 feedback reports opaque Part percentages, not named degree axes.
+        BED_TYPE_STARCODE_M1X12,
         BED_TYPE_MOTION_BED,
         BED_TYPE_SLEEPTRACKER,
         BED_TYPE_OKIN_CST,
