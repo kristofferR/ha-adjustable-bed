@@ -36,6 +36,7 @@ from ..gmmotor_protocol import (
     stop_packet,
 )
 from ..gmmotor_requests import Request
+from ..gmmotor_sessions import product_ui_states
 from ..gmmotor_transport import Transport, native_write_lock, select_p1
 from .base import (
     BedController,
@@ -74,7 +75,9 @@ class GmmotorController(BedController):
         if side not in ("left", "right", "both"):
             raise ValueError("Invalid GM Control bed side")
         self._side = side
-        self._ui_state = self.profile.initial_state
+        self._ui_states = product_ui_states(
+            coordinator.hass, str(coordinator.address), self.profile.key
+        )
         self._transport: Transport | None = None
         self._subscribed = False
         self._last_write: float | None = None
@@ -133,6 +136,14 @@ class GmmotorController(BedController):
     @property
     def _side_value(self) -> int:
         return {"left": 0, "right": 1, "both": 2}[self.command_side or self._side]
+
+    @property
+    def _ui_state(self) -> int:
+        return self._ui_states.get(self._side_value, self.profile.initial_state)
+
+    @_ui_state.setter
+    def _ui_state(self, state: int) -> None:
+        self._ui_states[self._side_value] = state
 
     @property
     def _single(self) -> bool:

@@ -28,6 +28,7 @@ def controller(hass: HomeAssistant, *, sxb: bool = True) -> GmmotorSleepControll
     coordinator.client.mtu_size = 23
     coordinator.client.write_gatt_char = AsyncMock()
     ctrl = GmmotorSleepController(coordinator, sxb=sxb)
+    coordinator.controller = ctrl
     write = MagicMock(uuid=SLEEP_WRITE, handle=7)
     notify = MagicMock(uuid=SLEEP_NOTIFY, handle=8)
     ctrl._transport = Transport(write, (notify,), response=sxb)
@@ -237,7 +238,7 @@ async def test_sxb_stale_window_keeps_a_seen_side_then_clears_each_empty_window(
     assert ctrl._stale_timer is None
 
 
-async def test_disconnect_clears_subscriptions_and_timer_but_preserves_live_intent(
+async def test_notification_cleanup_clears_resources_without_ending_live_intent(
     hass: HomeAssistant,
 ) -> None:
     ctrl = controller(hass)

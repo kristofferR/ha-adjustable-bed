@@ -89,6 +89,12 @@ that admit Right. If the product has Left and Right without Both, HA serializes
 the two admitted sides. Separate physical receivers retain independent products,
 side settings and session state.
 
+New product entries disable Disconnect After Command by default. Product UI
+flags remain local to the physical address, exact product and app side when HA
+replaces a BLE controller, including when quick handoff is explicitly enabled.
+Changing product or restarting HA starts a fresh app view. Live capability
+replies are still obtained separately for each connection.
+
 ## Commands
 
 The named buttons come from the selected catalog. The card displays them as
@@ -190,6 +196,14 @@ date. `sensor_live` uses `enabled` to start or stop polling. Clock synchronizati
 uses HA's configured timezone. SXB time replies publish in source order and
 follow up with `q_time`, then `q_part`. MM's compiled `q_time` selector consumes
 an ID and sends no bytes.
+
+An unexpected BLE drop schedules coordinator recovery. Active live monitoring
+resumes once on the replacement controller. `sensor_stop`, intentional
+disconnect, unload and canceled startup clear that intent, so a later explicit
+connection does not restart polling. Timers, receive buffers and queued callbacks
+belong to their original connection and are invalidated when it ends.
+Cleanup after a recoverable startup failure keeps the monitoring request for
+the coordinator's next connection attempt.
 
 ## Position Feedback / Notifications
 

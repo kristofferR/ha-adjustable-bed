@@ -153,6 +153,31 @@ an explicit HA ownership adaptation, not an extra wire protocol or an exclusion
 of either mode. Querying the selected bed's advertised sleep name remains
 available, including source character-code conversion for its byte list.
 
+IMPLEMENTED: app-lifetime product gesture flags survive HA's connection-scoped
+controller replacement. The existing `app_session` registry holds the flags by
+physical address, exact product and app side (`gmmotor_sessions.py`), including
+opt-in quick handoff. A changed product starts a new view; these transient flags
+are not written to disk. New product entries default quick handoff off. This HA
+lifetime adaptation retains the accepted widget's stateful callback selection;
+it does not preserve connection-owned ACKs or invent a hardware state.
+
+IMPLEMENTED: MM/SXB live intent survives an unexpected BLE drop independently
+of the discarded controller. The coordinator's tracked reconnect task restores
+the link and one polling timer on the replacement. Intentional teardown clears
+the intent even if the client was already lost; explicit stop, unload and
+canceled startup cannot silently restart monitoring. Old callbacks retain their
+generation and controller ownership checks. These HA recovery/lifetime choices
+do not claim new source wire behavior. Native SDK waits, packet builders and
+receive/dispatch ordering remain as documented below.
+Recoverable subscription or initialization-write failures release only the failed
+connection's resources; the monitoring request survives for the next attempt.
+
+Code: `gmmotor_sessions.py`, `beds/gmmotor.py`, `beds/gmmotor_sleep.py`,
+`coordinator.py` and `const.py`. Tests: `test_gmmotor_reconnect.py` exercises real
+connect, factory replacement, one-second/ordinary idle teardown, programming
+selection, address/product/side isolation, both sleep modes, duplicate recovery,
+late callbacks, explicit stop/disconnect, offline unload and startup cancellation.
+
 ## Builders, native writes and command lifecycle
 
 IMPLEMENTED: all effective ordinary/special P1 prefixes, short/long/single-byte

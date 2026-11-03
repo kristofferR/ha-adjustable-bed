@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.gmmotor_transport import E0FF, P1_SERVICES
 
 def controller(profile: str = "6BRM", side: str = "left") -> GmmotorController:
     coordinator = MagicMock()
+    coordinator.hass.data = {}
     coordinator.cancel_command = asyncio.Event()
     coordinator.client.is_connected = True
     coordinator.client.mtu_size = 23

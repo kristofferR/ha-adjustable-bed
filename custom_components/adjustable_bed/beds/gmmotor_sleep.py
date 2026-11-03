@@ -17,6 +17,7 @@ from homeassistant.util import dt as dt_util
 from ..gmmotor_notifications import Value
 from ..gmmotor_protocol import MalformedNotification
 from ..gmmotor_requests import Operation, Request
+from ..gmmotor_sessions import sleep_intent
 from ..gmmotor_sleep_protocol import (
     LiveState,
     ReceiveBuffer,
@@ -86,8 +87,16 @@ class GmmotorSleepController(BedController):
         self._poll_timer: asyncio.TimerHandle | None = None
         self._stale_timer: asyncio.TimerHandle | None = None
         self._live_seen = {"left": 0, "right": 0}
-        self._live_enabled = False
+        self._intent = sleep_intent(coordinator.hass, str(coordinator.address), sxb=sxb)
         self._invalid = 0
+
+    @property
+    def _live_enabled(self) -> bool:
+        return self._intent.live_enabled
+
+    @_live_enabled.setter
+    def _live_enabled(self, enabled: bool) -> None:
+        self._intent.live_enabled = enabled
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -223,13 +232,21 @@ class GmmotorSleepController(BedController):
         async def run() -> None:
             if delayed:
                 await asyncio.sleep(0)  # Source zero-duration Future callback.
-            if generation != self._generation or self._transport is None:
+            if (
+                generation != self._generation
+                or self._transport is None
+                or self._coordinator.controller is not self
+            ):
                 return
             if command == "q_report_allow" and self._report_type not in (1, 2):
                 return
 
             async def execute(_controller: BedController) -> None:
-                if generation == self._generation and self._transport is not None:
+                if (
+                    generation == self._generation
+                    and self._transport is not None
+                    and self._coordinator.controller is self
+                ):
                     await self._send(command)
 
             try:
@@ -317,6 +334,8 @@ class GmmotorSleepController(BedController):
         self.forward_controller_state_updates(updates)
 
     def _receive(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
+        if self._transport is None or self._coordinator.controller is not self:
+            return
         self.forward_raw_notification(sender.uuid, bytes(data))
         try:
             payload = self._receive_buffer.feed(bytes(data))
@@ -447,7 +466,9 @@ class GmmotorSleepController(BedController):
             await self._send("s_time")
             if self._live_enabled:
                 self._start_live_timers()
-        except BaseException:
+        except BaseException as err:
+            if isinstance(err, asyncio.CancelledError) and self._coordinator.controller is self:
+                self._live_enabled = False
             await self.stop_notify()
             raise
 

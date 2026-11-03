@@ -11,6 +11,7 @@ from custom_components.adjustable_bed.gmmotor_requests import Request
 
 def controller(profile: str = "FWRM") -> GmmotorDeskController:
     coordinator = MagicMock()
+    coordinator.hass.data = {}
     coordinator.cancel_command = asyncio.Event()
     ctrl = GmmotorDeskController(coordinator, profile=profile)
     ctrl.write_command = AsyncMock()
