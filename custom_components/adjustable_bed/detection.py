@@ -610,7 +610,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
     BED_TYPE_MOTOSLEEP: "MotoSleep",
-    BED_TYPE_OCTO: "Octo",
+    BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie (Protocol 108)",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
     BED_TYPE_RICHMAT: "Richmat / RMControl app",
@@ -724,9 +724,7 @@ def get_bed_type_options() -> list[SelectOptionDict]:
         if bed_type not in VARIANT_REQUIRED_BED_TYPES
         and bed_type not in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
     }
-    choices.update(
-        {bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()}
-    )
+    choices.update({bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()})
     return [
         SelectOptionDict(value=value, label=label)
         for value, label in sorted(choices.items(), key=lambda item: item[1].lower())
@@ -753,9 +751,7 @@ def _is_leggett_okin_name(device_name: str | None) -> bool:
     """Return whether a BLE name identifies LP Control's Okin protocol."""
     normalized_name = (device_name or "").strip().lower()
     return _is_lp_control_okin_name(device_name) or any(
-        pattern in normalized_name
-        for pattern in LEGGETT_OKIN_NAME_PATTERNS
-        if pattern != "lp bed"
+        pattern in normalized_name for pattern in LEGGETT_OKIN_NAME_PATTERNS if pattern != "lp bed"
     )
 
 
@@ -1278,7 +1274,8 @@ def _detect_bed_type_detailed(
                 other.signals.append("manufacturer:vmatbasic_conditional_record")
                 return other
             return DetectionResult(
-                bed_type=BED_TYPE_VMATBASIC, confidence=0.6,
+                bed_type=BED_TYPE_VMATBASIC,
+                confidence=0.6,
                 signals=["manufacturer:vmatbasic_conditional_record", "raw_first_ad_order:unknown"],
                 manufacturer_id=company,
                 requires_characteristic_check=True,
@@ -1300,8 +1297,7 @@ def _detect_bed_type_detailed(
             confidence=mfr_confidence,
             signals=signals,
             manufacturer_id=mfr_id,
-            ambiguous_types=[BED_TYPE_FURNIMOVE]
-            if mfr_bed_type == BED_TYPE_DEWERTOKIN else [],
+            ambiguous_types=[BED_TYPE_FURNIMOVE] if mfr_bed_type == BED_TYPE_DEWERTOKIN else [],
         )
 
     # Priority 2: Kaidi detection - manufacturer data is the primary signal.
@@ -1639,7 +1635,8 @@ def _detect_bed_type_detailed(
 
     if (service_info.name or "").startswith("STAR25"):
         return DetectionResult(
-            bed_type=BED_TYPE_SLEEPYS_BOX25, confidence=0.65,
+            bed_type=BED_TYPE_SLEEPYS_BOX25,
+            confidence=0.65,
             signals=[*signals, "name:starcode_bedding_app_choices"],
             ambiguous_types=[BED_TYPE_STARCODE_M5X5],
         )
@@ -2046,12 +2043,11 @@ def _detect_bed_type_detailed(
     # Check for BedTech before Richmat WiLinke since they share FEE9 and QRRM
     # names. Confirmed BedTech QRRM controllers advertise their MAC suffix under
     # manufacturer ID 0x4C57; confirmed Casper/Richmat QRRM RGB controllers do not.
-    has_bedtech_manufacturer = (
-        BEDTECH_MANUFACTURER_ID in (service_info.manufacturer_data or {})
-        and (
-            device_name.startswith("qrrm")
-            or any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS)
-        )
+    has_bedtech_manufacturer = BEDTECH_MANUFACTURER_ID in (
+        service_info.manufacturer_data or {}
+    ) and (
+        device_name.startswith("qrrm")
+        or any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS)
     )
     if has_bedtech_manufacturer and BEDTECH_SERVICE_UUID.lower() in service_uuids:
         signals.extend(
@@ -2103,10 +2099,10 @@ def _detect_bed_type_detailed(
     # Home Assistant's Bluetooth index requires three literal leading characters,
     # so automatic discovery is limited to the accepted prefixes represented in
     # the manifest. Shared accepted app names require an explicit profile choice.
-    if any(device_name.startswith(pattern) for pattern in SOLACE_NAME_PATTERNS) or (
-        device_name.startswith("my qms2")
-    ) or (
-        SOLACE_NAME_PATTERN.fullmatch(device_name)
+    if (
+        any(device_name.startswith(pattern) for pattern in SOLACE_NAME_PATTERNS)
+        or (device_name.startswith("my qms2"))
+        or (SOLACE_NAME_PATTERN.fullmatch(device_name))
     ):
         motion_overlap = motion_name
         signals.append("name:solace")
@@ -2142,7 +2138,9 @@ def _detect_bed_type_detailed(
                 bed_type=BED_TYPE_LIMOSS,
                 confidence=0.6 if matches_fsm_relax_candidate(service_info.name) else 0.9,
                 signals=signals,
-                ambiguous_types=[BED_TYPE_FSM_RELAX] if matches_fsm_relax_candidate(service_info.name) else [],
+                ambiguous_types=[BED_TYPE_FSM_RELAX]
+                if matches_fsm_relax_candidate(service_info.name)
+                else [],
             )
 
         # MotoSleep and Power Bob use HHC names; the current MotoSleep app also
@@ -2167,7 +2165,8 @@ def _detect_bed_type_detailed(
             confidence=0.5,
             signals=signals,
             ambiguous_types=[
-                BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP,
+                BED_TYPE_SOLACE,
+                BED_TYPE_MOTOSLEEP,
                 *([BED_TYPE_MOTION_BED] if motion_name else []),
             ],
         )
@@ -2285,8 +2284,12 @@ def _detect_bed_type_detailed(
             service_info.name,
         )
         return DetectionResult(
-            bed_type=BED_TYPE_LIMOSS, confidence=confidence, signals=signals,
-            ambiguous_types=[BED_TYPE_FSM_RELAX] if matches_fsm_relax_candidate(service_info.name) else [],
+            bed_type=BED_TYPE_LIMOSS,
+            confidence=confidence,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_FSM_RELAX]
+            if matches_fsm_relax_candidate(service_info.name)
+            else [],
         )
 
     # Check for Ergomotion - name-based detection (before Keeson since same UUID)

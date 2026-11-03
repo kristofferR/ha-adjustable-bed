@@ -126,7 +126,7 @@ export class AdjustableBedCard extends LitElement {
   public setConfig(config: AdjustableBedCardConfig): void {
     if (!config) throw new Error("Invalid configuration");
     if (this._config) {
-      this._hold.abandon();
+      // _stopCompact abandons the hold itself and skips the targets it stopped.
       this._stopCompact();
     }
     if (config.device_id !== this._config?.device_id ||
@@ -514,11 +514,13 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _stopCompact(bed?: BedEntities): void {
-    this._hold.abandon();
+    const alreadyStopped = new Set(this._hold.abandon());
     for (const id of bed ? compactStopEntities(bed) : []) {
       if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
     }
-    for (const id of this._compactStopTargets.keys()) this._stopCompactTarget(id);
+    for (const id of this._compactStopTargets.keys()) {
+      if (!alreadyStopped.has(id)) this._stopCompactTarget(id);
+    }
     if (this._compactStopTargets.size) this.requestUpdate();
   }
 
@@ -1588,8 +1590,8 @@ export class AdjustableBedCard extends LitElement {
 
   private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) {
-      // This typed hold metadata currently comes only from Sleepy's explicit
-      // MotorControlSpec, whose stop_fn is stop_all. Plain covers stay scoped
+      // Typed hold metadata comes from explicit MotorControlSpecs (Sleepy's,
+      // OCTO) whose stop_fn stops the whole side. Plain covers stay scoped
       // to their motor key.
       const scope: CoverStopScope = m.heldControls ? "side" : "motor";
       this._hold.stopCover(
