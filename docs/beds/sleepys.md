@@ -1,6 +1,6 @@
 # Sleepy's Elite (MFRM)
 
-**Status:** ✅ Protocol implemented; hardware unverified
+**Status:** ❓ Needs testing (protocol implemented; hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [SethCalkins](https://github.com/SethCalkins) (BOX25 Star, ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed))
 

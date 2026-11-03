@@ -4,6 +4,8 @@
 fan and memory recall, and every LinOn control, are implemented from app
 evidence and await user confirmation.
 
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
 ## Known Models
 - Jensen JMC400 (JMC 400), including its LinON Entry box
 - Jensen LinOn beds named "Adjustable Bed" or "Jensen Bed" (LinonPI services)
