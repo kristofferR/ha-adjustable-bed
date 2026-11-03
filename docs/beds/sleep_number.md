@@ -151,13 +151,13 @@ pair a connection whose bond is still usable.
 **Service UUID:** `09d23fae-90e6-44c2-95b6-0b3d0f1abf25`
 **BamKey UUID (write/notify):** `421e00f3-ae76-4c49-ab6e-39e4df4a5333`
 **Auth UUID:** `8d4675a5-b5fa-42b2-b587-0ee71c46b709`
-**Transfer Info UUID:** `e8d06e2a-c987-48f8-93a8-4d18d56b4337` (earlier releases primed it before occupancy reads; the current controller does not read it)
-**Bulk Transfer Notify UUID:** `0ec9a5a3-8ac3-4582-92f3-1666421f323d`
+**Transfer Info UUID:** `e8d06e2a-c987-48f8-93a8-4d18d56b4337` (earlier releases primed it before occupancy reads; the integration no longer uses it)
+**Bulk Transfer Notify UUID:** `0ec9a5a3-8ac3-4582-92f3-1666421f323d` (not used by the integration)
 **Format:** `fUzIoN` framed bamkey blobs with CRC validation
 
 - Fuzion reads Auth (`8d4675a5-b5fa-42b2-b587-0ee71c46b709`) before subscribing
-  to BamKey (`421e00f3-ae76-4c49-ab6e-39e4df4a5333`) and bulk notifications
-  (`0ec9a5a3-8ac3-4582-92f3-1666421f323d`).
+  to BamKey (`421e00f3-ae76-4c49-ab6e-39e4df4a5333`) notifications. It does not
+  subscribe to bulk transfer notifications (`0ec9a5a3-8ac3-4582-92f3-1666421f323d`).
 - The logical command payloads are bamkey strings, `<BAMKEY> <arg1> <arg2> ...`.
   Text commands, including the trailing space on commands without arguments,
   are wrapped in CRC-checked `fUzIoN` frames.
