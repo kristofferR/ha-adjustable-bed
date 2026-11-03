@@ -56,6 +56,10 @@ explicit safety/product exclusions.
 
 ## Development and Validation
 
+The [row107 SleepEase disposition ledger](apk-analysis/dispositions/row107-doublesleep.md)
+maps the accepted DoubleSleep 1.2.24 artifact to all three drivers, controls,
+sensor/report consumers and explicit safety/product exclusions.
+
 Work from `main`. Development uses Python **3.14.2+** with `uv`, and Bun for
 the Lit/TypeScript card. Follow the environment and test commands in the
 [repository instructions](../AGENTS.md#running-tests), including the Bluetooth

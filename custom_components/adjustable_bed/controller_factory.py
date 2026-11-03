@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
@@ -478,6 +479,7 @@ async def create_controller(
     capability_snapshot: Mapping[str, Any] | None = None,
     rmcontrol_product: str = "",
     rmcontrol_side: str = "left",
+    advertisement_name: str | None = None,
 ) -> BedController:
     """Create the appropriate bed controller.
 
@@ -795,6 +797,21 @@ async def create_controller(
             ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
             transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
         )
+
+    if bed_type == BED_TYPE_DOUBLESLEEP:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.doublesleep", __package__)
+        from .beds.doublesleep import DoubleSleepController
+        from .doublesleep_protocol import real_mac, select_model, select_protocol
+
+        data = {**coordinator.entry.data, **coordinator.entry.options}
+        name = advertisement_name or data.get(CONF_BLE_DEVICE_NAME, device_name or "")
+        if protocol_variant not in ("p1", "p2", "p3") and manufacturer_data is None:
+            raise ConnectionError("SleepEase automatic driver selection requires a live advertisement")
+        protocol = select_protocol(name, manufacturer_data or {})
+        if protocol_variant in ("p1", "p2", "p3"):
+            protocol = protocol_variant
+        model = int(data.get(CONF_PRODUCT_TYPE, select_model(device_name or name, manufacturer_data or {})))
+        return DoubleSleepController(coordinator, protocol=protocol, model=model, advertised_identity=real_mac(name, manufacturer_data or {}))
 
     if bed_type == BED_TYPE_SLEEPTRACKER:
         await coordinator.hass.async_add_import_executor_job(

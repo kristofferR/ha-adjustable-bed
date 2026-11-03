@@ -130,6 +130,7 @@ def _make_service_info(
     """Create a mock BluetoothServiceInfoBleak."""
     service_info = MagicMock()
     service_info.name = name
+    service_info.device.name = name
     service_info.address = address
     service_info.service_uuids = service_uuids or []
     service_info.manufacturer_data = manufacturer_data or {}

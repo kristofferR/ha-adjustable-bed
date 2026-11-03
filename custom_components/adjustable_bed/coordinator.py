@@ -4507,6 +4507,7 @@ class AdjustableBedCoordinator:
                     ble_manufacturer=ble_manufacturer,
                     ble_model=ble_model,
                     manufacturer_data=manufacturer_data,
+                    advertisement_name=advertisement.name if advertisement is not None else None,
                     capability_snapshot=stored_capability_snapshot,
                 )
                 if self._bed_type == BED_TYPE_SLEEPYS_BOX25:

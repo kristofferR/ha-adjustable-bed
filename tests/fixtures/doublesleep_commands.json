@@ -1,0 +1,407 @@
+[
+  {
+    "driver": "p1",
+    "index": 1,
+    "expected": "05 02 00 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 2,
+    "expected": "05 02 00 00 00 01 00"
+  },
+  {
+    "driver": "p1",
+    "index": 3,
+    "expected": "05 02 00 00 00 02 00"
+  },
+  {
+    "driver": "p1",
+    "index": 4,
+    "expected": "05 02 00 00 00 04 00"
+  },
+  {
+    "driver": "p1",
+    "index": 5,
+    "expected": "05 02 00 00 00 08 00"
+  },
+  {
+    "driver": "p1",
+    "index": 8,
+    "expected": "05 02 00 00 00 40 00"
+  },
+  {
+    "driver": "p1",
+    "index": 9,
+    "expected": "05 02 00 00 00 80 00"
+  },
+  {
+    "driver": "p1",
+    "index": 10,
+    "expected": "05 02 00 00 00 10 00"
+  },
+  {
+    "driver": "p1",
+    "index": 11,
+    "expected": "05 02 00 00 00 20 00"
+  },
+  {
+    "driver": "p1",
+    "index": 12,
+    "expected": "05 02 40 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 13,
+    "expected": "05 02 80 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 14,
+    "expected": "05 02 00 01 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 15,
+    "expected": "05 02 00 04 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 16,
+    "expected": "05 02 00 00 80 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 17,
+    "expected": "05 02 00 00 20 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 18,
+    "expected": "05 02 00 00 40 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 19,
+    "expected": "05 02 00 00 10 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 26,
+    "expected": "05 02 08 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 27,
+    "expected": "05 02 00"
+  },
+  {
+    "driver": "p1",
+    "index": 28,
+    "expected": "05 02 00 00 01 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 29,
+    "expected": "05 02 00 00 01 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 31,
+    "expected": "05 02 00 00 02 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 35,
+    "expected": "05 02 00 00 08 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 36,
+    "expected": "05 02 00 80 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 37,
+    "expected": "05 02 00 00 04 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 38,
+    "expected": "05 02 10 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 40,
+    "expected": "05 02 10 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 41,
+    "expected": "05 02 04 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 48,
+    "expected": "07 05 00 00 00 00 00 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 50,
+    "expected": "00 b0"
+  },
+  {
+    "driver": "p1",
+    "index": 52,
+    "expected": "00 c0"
+  },
+  {
+    "driver": "p1",
+    "index": 53,
+    "expected": "00 b0"
+  },
+  {
+    "driver": "p1",
+    "index": 58,
+    "expected": "05 02 00 02 00 00 00"
+  },
+  {
+    "driver": "p1",
+    "index": 59,
+    "expected": "01 b2 01"
+  },
+  {
+    "driver": "p1",
+    "index": 60,
+    "expected": "01 b2 00"
+  },
+  {
+    "driver": "p1",
+    "index": 63,
+    "expected": "02 0b 00 00 01"
+  },
+  {
+    "driver": "p1",
+    "index": 64,
+    "expected": "01 b3 01"
+  },
+  {
+    "driver": "p1",
+    "index": 66,
+    "expected": "01 b1 02"
+  },
+  {
+    "driver": "p2",
+    "index": 1,
+    "expected": "aa 00 00 01 01 04 00 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 2,
+    "expected": "aa 00 00 01 01 04 01 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 3,
+    "expected": "aa 00 00 01 01 04 02 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 4,
+    "expected": "aa 00 00 01 01 04 04 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 5,
+    "expected": "aa 00 00 01 01 04 08 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 8,
+    "expected": "aa 00 00 01 01 04 10 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 9,
+    "expected": "aa 00 00 01 01 04 20 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 10,
+    "expected": "aa 00 00 01 01 04 40 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 11,
+    "expected": "aa 00 00 01 01 04 80 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 12,
+    "expected": "aa 00 00 01 01 04 00 01 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 13,
+    "expected": "aa 00 00 01 01 04 00 02 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 14,
+    "expected": "aa 00 00 01 03 01 05"
+  },
+  {
+    "driver": "p2",
+    "index": 15,
+    "expected": "aa 00 00 01 03 01 06"
+  },
+  {
+    "driver": "p2",
+    "index": 16,
+    "expected": "aa 00 00 01 03 01 04"
+  },
+  {
+    "driver": "p2",
+    "index": 17,
+    "expected": "aa 00 00 01 03 01 02"
+  },
+  {
+    "driver": "p2",
+    "index": 18,
+    "expected": "aa 00 00 01 03 01 03"
+  },
+  {
+    "driver": "p2",
+    "index": 19,
+    "expected": "aa 00 00 01 03 01 01"
+  },
+  {
+    "driver": "p2",
+    "index": 20,
+    "expected": "aa 00 00 01 05 01 25"
+  },
+  {
+    "driver": "p2",
+    "index": 21,
+    "expected": "aa 00 00 01 05 01 26"
+  },
+  {
+    "driver": "p2",
+    "index": 22,
+    "expected": "aa 00 00 01 05 01 24"
+  },
+  {
+    "driver": "p2",
+    "index": 23,
+    "expected": "aa 00 00 01 05 01 22"
+  },
+  {
+    "driver": "p2",
+    "index": 24,
+    "expected": "aa 00 00 01 05 01 23"
+  },
+  {
+    "driver": "p2",
+    "index": 25,
+    "expected": "aa 00 00 01 05 01 21"
+  },
+  {
+    "driver": "p2",
+    "index": 26,
+    "expected": "aa 00 00 01 03 01 09"
+  },
+  {
+    "driver": "p2",
+    "index": 27,
+    "expected": "aa 00 00 01 02 00"
+  },
+  {
+    "driver": "p2",
+    "index": 28,
+    "expected": "aa 00 00 02 01 01 40"
+  },
+  {
+    "driver": "p2",
+    "index": 29,
+    "expected": "aa 00 00 02 01 01 41"
+  },
+  {
+    "driver": "p2",
+    "index": 48,
+    "expected": "aa 00 00 03 02 08 01 00 00 00 00 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 50,
+    "expected": "2a 00 00 02 81 01 03"
+  },
+  {
+    "driver": "p2",
+    "index": 51,
+    "expected": "2a 00 00 06 81 00"
+  },
+  {
+    "driver": "p2",
+    "index": 52,
+    "expected": "2a 00 00 03 81 01 01"
+  },
+  {
+    "driver": "p2",
+    "index": 53,
+    "expected": "2a 00 00 07 81 00"
+  },
+  {
+    "driver": "p2",
+    "index": 54,
+    "expected": "2a 00 00 04 81 00"
+  },
+  {
+    "driver": "p2",
+    "index": 59,
+    "expected": "aa 00 00 07 02 01 01"
+  },
+  {
+    "driver": "p2",
+    "index": 60,
+    "expected": "aa 00 00 07 02 01 00"
+  },
+  {
+    "driver": "p2",
+    "index": 63,
+    "expected": "aa 00 00 07 01 08 00 02 01 01 00 00 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 64,
+    "expected": "01 b3 01"
+  },
+  {
+    "driver": "p2",
+    "index": 66,
+    "expected": "01 b1 02"
+  },
+  {
+    "driver": "p2",
+    "index": 73,
+    "expected": "2a 00 00 08 81 00"
+  },
+  {
+    "driver": "p2",
+    "index": 87,
+    "expected": "aa 00 00 06 05 02 00 00"
+  },
+  {
+    "driver": "p2",
+    "index": 88,
+    "expected": "aa 00 00 06 05 02 00 01"
+  },
+  {
+    "driver": "p2",
+    "index": 89,
+    "expected": "aa 00 00 06 0c 02 00 01"
+  },
+  {
+    "driver": "p2",
+    "index": 90,
+    "expected": "aa 00 00 06 0c 02 00 00"
+  }
+]

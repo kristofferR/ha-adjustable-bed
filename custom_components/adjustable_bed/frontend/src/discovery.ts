@@ -217,6 +217,12 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key.startsWith("doublesleep_")) {
+          if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
+          else if (key === "doublesleep_light") (bed.lights.states ??= []).push(id);
+          else bed.utilityStates?.push(id);
+          break;
+        }
         if (key.startsWith("starcode_m1x12_part_") && key.endsWith("_position"))
           motor(key.slice(0, -9)).position = id;
         else if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
@@ -278,6 +284,9 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
+        if (key === "doublesleep_massage_action") { bed.massage.buttons.push(id); break; }
+        if (key === "doublesleep_light_action") { (bed.lights.buttons ??= []).push(id); break; }
+        if (key === "doublesleep_action") { bed.utility.push(id); break; }
         if (PRESET_ORDER.includes(key) || key.startsWith("preset_") || key.startsWith("sleepys_app_preset_")) {
           if ((match = key.match(/^preset_memory_(\d+)$/)))
             memory(Number(match[1])).goto = id;
@@ -449,6 +458,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "binary_sensor":
+        if (key.startsWith("doublesleep_")) { bed.utilityStates?.push(id); break; }
         if (key === "ble_connection") bed.connectivity = id;
         else if (key === "memory_save_response_observed") bed.utilityStates?.push(id);
         else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
@@ -460,6 +470,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
+        if (key === "doublesleep_child_lock") { (bed.utilitySelects ??= []).push(id); break; }
         if (key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
         else if (key === "sleepys_app_massage_timer_code")
