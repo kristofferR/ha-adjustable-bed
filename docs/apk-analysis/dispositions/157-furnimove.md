@@ -65,6 +65,24 @@ Assistant (#336). **Disconnect** clears the stall until the next one. This is re
 connection policy, not app behavior: frames, timing, bond policy and the
 ledger totals are unchanged. Other receivers keep their configured handoff.
 
+## OKIMAT drives saved as Okin CST (#555)
+
+[Issue #555](https://github.com/kristofferR/ha-adjustable-bed/issues/555)
+reports two `OKIMAT 4 IPS` drives used with FurniMove. Their support bundle
+shows the Okin service and write characteristic, CSS and Nordic DFU. Version
+3.5.0 read that combination as Okin CST and saved it, so every movement was a
+14-byte CST frame that the drives ignored. FurniMove has no reachable CSS
+command (D021), and cluster 011 found no GATT, name or Device Information signal
+that selects a CST product. Shared GATT therefore never selects CST any more.
+An existing CST entry whose drive reports an `OKIMAT` model gets a repair:
+Okimat, FurniMove with a captured handset, or keep CST
+([furnimove_repair.py](../../../custom_components/adjustable_bed/furnimove_repair.py),
+[test_furnimove_repair.py](../../../tests/test_furnimove_repair.py),
+[test_detection.py](../../../tests/test_detection.py)). The remote code printed
+on the #555 handset, `90569`, returned `Item not found` from the production
+object and button endpoints on 2026-11-03, so it stays unselectable. Frames,
+timing, bond policy, catalog and the 60-item totals are unchanged.
+
 ## Behavior decisions
 
 | ID | Behavior | Disposition and evidence |

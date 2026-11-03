@@ -7549,6 +7549,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_LEGGETT_APP_PROFILE, None)
         if bed_type != BED_TYPE_FURNIMOVE:
             data.pop(CONF_FURNIMOVE_REMOTE, None)
+        if bed_type != BED_TYPE_OKIN_CST:
+            from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, CONF_OKIN_CST_KEPT
+
+            data.pop(CONF_OKIMAT_MODEL_ON_CST, None)
+            data.pop(CONF_OKIN_CST_KEPT, None)
         if bed_type != BED_TYPE_LOGICDATA_APP:
             for key in (
                 CONF_LOGICDATA_APP_PROFILE,

@@ -234,6 +234,7 @@ from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     detect_richmat_remote_from_name,
     is_mac_like_name,
+    is_okimat_bed_model,
     refine_dewertokin_star_protocol_from_name,
     refine_malouf_protocol_from_gatt,
     refine_nordic_uart_protocol_from_device_info,
@@ -242,6 +243,7 @@ from .detection import (
     refine_qrrm_protocol_from_device_info,
 )
 from .diagnostic_payloads import new_connection_attempt_details
+from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 from .pairing import inheritable_child_fields, octo_snapshot_from_descriptor
 from .position_seek import (
     PositionFeedbackError,
@@ -732,6 +734,23 @@ class AdjustableBedCoordinator:
                 {**self.entry.data, CONF_BLE_DEVICE_NAME: device_name},
                 keys={CONF_BLE_DEVICE_NAME},
             )
+
+    def _record_okimat_model_on_cst(self, ble_model: str | None) -> None:
+        """Offer the route repair when an OKIMAT drive is configured as Okin CST (#555)."""
+        if (
+            self._bed_type != BED_TYPE_OKIN_CST
+            or not is_okimat_bed_model(ble_model)
+            or self.entry.data.get(CONF_OKIMAT_MODEL_ON_CST) == ble_model
+        ):
+            return
+        # Internal write: keep this link instead of reloading the entry.
+        self._begin_internal_entry_update(
+            bool(self.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
+        )
+        # Full data: a paired side's persist callback drops bond keys it is not sent.
+        self._async_persist_config({**self.entry.data, CONF_OKIMAT_MODEL_ON_CST: ble_model})
+        if (entry := self.hass.config_entries.async_get_entry(self.entry.entry_id)) is not None:
+            async_refresh_furnimove_layout_issues(self.hass, entry)
 
     def _schedule_pending_capability_reload(self) -> None:
         """Reload capability-gated entities once this BLE link is released."""
@@ -4395,6 +4414,7 @@ class AdjustableBedCoordinator:
                     self._client.services,
                 )
                 bed_type_corrected = self._apply_runtime_bed_type_correction(corrected_bed_type)
+                self._record_okimat_model_on_cst(ble_model)
                 if (
                     bed_type_corrected
                     and not bed_requires_pairing

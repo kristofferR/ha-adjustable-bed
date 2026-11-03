@@ -1,12 +1,15 @@
 """Resolve legacy receiver-based classifications without guessing a handset.
 
-Two fixable issues share this flow, one per physical bed or paired side:
+Three fixable issues share this flow, one per physical bed or paired side:
 
 - ``furnimove_layout``: an RF ECO BT entry, or a FurniMove entry without a
   captured handset, must confirm its product.
 - ``furnimove_handset_route``: an Okin DOT entry using a handset that new setups
   now configure with the FurniMove app profile may switch to it, or keep its
   working configuration.
+- ``okimat_cst_route``: an Okin CST entry whose drive reports an OKIMAT model
+  was most likely moved there by the old CSS plus DFU guess (#555). It may
+  switch to Okimat or FurniMove, or keep CST.
 """
 
 from __future__ import annotations
@@ -27,6 +30,8 @@ from homeassistant.helpers.issue_registry import (
 
 from .const import (
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
     CONF_BED_TYPE,
@@ -51,8 +56,12 @@ from .unsupported import delete_pairing_required_issue
 ISSUE_PREFIX = "furnimove_layout_"
 CONF_STAIRCASE_LAYOUT_CONFIRMED = "rf_eco_staircase_confirmed"
 CONF_FURNIMOVE_ROUTE_KEPT = "furnimove_route_kept"
+# Device Information model last read from an Okin CST entry's OKIMAT drive.
+CONF_OKIMAT_MODEL_ON_CST = "okimat_model_on_cst"
+CONF_OKIN_CST_KEPT = "okin_cst_kept"
 _LAYOUT = "furnimove_layout"
 _ROUTE = "furnimove_handset_route"
+_OKIMAT_CST = "okimat_cst_route"
 
 
 def _issue_id(entry_id: str, side: str | None) -> str:
@@ -72,6 +81,12 @@ def _issue_kind(data: dict[str, Any]) -> str | None:
         and not data.get(CONF_FURNIMOVE_ROUTE_KEPT, False)
     ):
         return _ROUTE
+    if (
+        bed_type == BED_TYPE_OKIN_CST
+        and data.get(CONF_OKIMAT_MODEL_ON_CST)
+        and not data.get(CONF_OKIN_CST_KEPT, False)
+    ):
+        return _OKIMAT_CST
     return None
 
 
@@ -99,15 +114,18 @@ def async_refresh_furnimove_layout_issues(hass: HomeAssistant, entry: ConfigEntr
             async_delete_issue(hass, DOMAIN, issue_id)
             continue
         name = entry.title if side is None else f"{entry.title} ({side})"
+        placeholders = {"name": name}
+        if kind == _ROUTE:
+            placeholders["handset"] = str(data.get(CONF_PROTOCOL_VARIANT))
+        elif kind == _OKIMAT_CST:
+            placeholders["model"] = str(data[CONF_OKIMAT_MODEL_ON_CST])
         async_create_issue(
             hass, DOMAIN, issue_id,
             is_fixable=True,
             is_persistent=True,
             severity=IssueSeverity.WARNING,
             translation_key=kind,
-            translation_placeholders={"name": name, "handset": str(data.get(CONF_PROTOCOL_VARIANT))}
-            if kind == _ROUTE
-            else {"name": name},
+            translation_placeholders=placeholders,
             data={"entry_id": entry.entry_id, "side": side},
         )
 
@@ -162,8 +180,11 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
         if entry is None:
             return self.async_abort(reason="entry_missing")
         data = _target_data(entry, self._side)
-        if _issue_kind(data) == _ROUTE:
+        kind = _issue_kind(data)
+        if kind == _ROUTE:
             return await self._route_step(entry, data, user_input)
+        if kind == _OKIMAT_CST:
+            return await self._okimat_cst_step(entry, data, user_input)
         is_rf_eco_bt = data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT
         if user_input is not None and "layout" in user_input:
             if user_input["layout"] == "furnimove":
@@ -198,6 +219,28 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
             step_id="init",
             description_placeholders={"name": entry.title, "handset": handset},
             data_schema=_choice_schema("route", ["furnimove", "keep"], _ROUTE),
+        )
+
+    async def _okimat_cst_step(
+        self, entry: ConfigEntry, data: dict[str, Any], user_input: dict[str, Any] | None
+    ) -> RepairsFlowResult:
+        """Move an OKIMAT drive off Okin CST, or keep it on request."""
+        choice = (user_input or {}).get("route")
+        if choice == "okimat":
+            # Same route a new setup selects for this drive; the CST product
+            # variant is dropped so the Okimat remote starts on auto.
+            return await self._save({CONF_BED_TYPE: BED_TYPE_OKIMAT})
+        if choice == "furnimove":
+            return await self.async_step_handset()
+        if choice == "keep":
+            return await self._keep_current(entry, {CONF_OKIN_CST_KEPT: True})
+        return self.async_show_form(
+            step_id="init",
+            description_placeholders={
+                "name": entry.title,
+                "model": str(data.get(CONF_OKIMAT_MODEL_ON_CST)),
+            },
+            data_schema=_choice_schema("route", ["okimat", "furnimove", "keep"], _OKIMAT_CST),
         )
 
     async def _keep_current(self, entry: ConfigEntry, confirmed: dict[str, Any]) -> RepairsFlowResult:
@@ -246,6 +289,8 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
             CONF_FURNIMOVE_REMOTE,
             CONF_STAIRCASE_LAYOUT_CONFIRMED,
             CONF_FURNIMOVE_ROUTE_KEPT,
+            CONF_OKIMAT_MODEL_ON_CST,
+            CONF_OKIN_CST_KEPT,
         } - patch.keys()
         if patch[CONF_BED_TYPE] == BED_TYPE_FURNIMOVE:
             remove.update(RUNTIME_BOND_KEYS)
