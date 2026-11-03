@@ -288,6 +288,7 @@ def _async_remove_stale_cover_entities(
         axis for layout in LAYOUTS for axis in layout_axes(layout)
     } | {
         "both", "right_back", "right_legs", "both_backs", "both_legs", "waist",
+        "hip", "lift", "rise_and_fall", "back_and_leg",
         "malouf_tilt_head", "malouf_full_tilt", "back_legs",
         "motor_1", "motor_2", "motor_3", "motor_4",
     }

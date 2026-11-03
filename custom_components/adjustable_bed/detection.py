@@ -16,6 +16,7 @@ from bleak.exc import BleakError
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
     # - BedTech: By name pattern ("bedtech") or post-connection characteristic check
@@ -555,6 +556,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 

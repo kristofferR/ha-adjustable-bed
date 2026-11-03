@@ -2777,6 +2777,15 @@
       },
       "glideaway_motion_query_alarm": {
         "name": "Refresh alarm"
+      },
+      "bedsense_action": {
+        "name": "{action}"
+      },
+      "bedsense_massage": {
+        "name": "{action}"
+      },
+      "bedsense_light": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -3142,6 +3151,30 @@
       },
       "richmat_mh_pillow_lumbar": {
         "name": "Pillow and lumbar"
+      },
+      "bedsense_back": {
+        "name": "Back"
+      },
+      "bedsense_waist": {
+        "name": "Waist (app label)"
+      },
+      "bedsense_head": {
+        "name": "Head"
+      },
+      "bedsense_hip": {
+        "name": "Hip (app label)"
+      },
+      "bedsense_legs": {
+        "name": "Legs"
+      },
+      "bedsense_lift": {
+        "name": "Lift (app label)"
+      },
+      "bedsense_rise_and_fall": {
+        "name": "Rise and fall"
+      },
+      "bedsense_back_and_leg": {
+        "name": "Back and leg"
       }
     },
     "sensor": {
@@ -4113,6 +4146,30 @@
       },
       "glideaway_motion_massage_timer": {
         "name": "Massage timer"
+      },
+      "bedsense_head_bar": {
+        "name": "Head bar (app display width)"
+      },
+      "bedsense_wave_bar": {
+        "name": "Wave bar (app display width)"
+      },
+      "bedsense_circulation": {
+        "name": "Circulation (app indicator)"
+      },
+      "bedsense_massage_timer": {
+        "name": "Massage timer (app selection, minutes)"
+      },
+      "bedsense_light_duration": {
+        "name": "Light duration (app selection)"
+      },
+      "bedsense_head_steps": {
+        "name": "Head massage (app steps)"
+      },
+      "bedsense_foot_steps": {
+        "name": "Foot massage (app steps)"
+      },
+      "bedsense_wave_steps": {
+        "name": "Wave frequency (app steps)"
       }
     },
     "light": {
@@ -4368,6 +4425,21 @@
       },
       "sleeptracker_wind_down_running": {
         "name": "Wind-down running (reported)"
+      },
+      "bedsense_m1_saved": {
+        "name": "M1 saved (app indicator)"
+      },
+      "bedsense_m2_saved": {
+        "name": "M2 saved (app indicator)"
+      },
+      "bedsense_m3_saved": {
+        "name": "M3 saved (app indicator)"
+      },
+      "bedsense_m4_saved": {
+        "name": "M4 saved (app indicator)"
+      },
+      "bedsense_m5_saved": {
+        "name": "M5 saved (app indicator)"
       }
     },
     "number": {
