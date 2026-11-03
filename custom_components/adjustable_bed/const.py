@@ -1393,9 +1393,10 @@ OCTO_NAME_PATTERNS: Final = (
     "da1458x",
 )
 
-# Exact case-folded prefixes accepted for automatic discovery. The separate
-# S-series app is pending APK Protocol Audit; only exact S4-Y has legacy hardware evidence
-# and is handled by the narrow regex in detection.py.
+# Exact case-folded prefixes accepted for automatic discovery. Other S-series names
+# belong to the separately audited Motion Bed app profile (docs/beds/motion_bed.md);
+# only exact S4-Y has legacy Solace hardware evidence and is handled by the narrow
+# regex in detection.py.
 SOLACE_NAME_PATTERNS: Final = (
     "qms-iq",
     "qms-i06",
@@ -1492,8 +1493,6 @@ JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
 SLEEP_NUMBER_SERVICE_UUID: Final = "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
 SLEEP_NUMBER_BAMKEY_CHAR_UUID: Final = "421e00f3-ae76-4c49-ab6e-39e4df4a5333"
 SLEEP_NUMBER_AUTH_CHAR_UUID: Final = "8d4675a5-b5fa-42b2-b587-0ee71c46b709"
-SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID: Final = "e8d06e2a-c987-48f8-93a8-4d18d56b4337"
-SLEEP_NUMBER_BULK_TRANSFER_CHAR_UUID: Final = "0ec9a5a3-8ac3-4582-92f3-1666421f323d"
 
 # Sleep Number BAM / MCR specific UUIDs (older 360 / i8 FlexFit bases)
 # Protocol reverse-engineered from com.selectcomfort.SleepIQ APK and live testing
@@ -1502,7 +1501,8 @@ SLEEP_NUMBER_MCR_TX_CHAR_UUID: Final = "ffffd1fd-388d-938b-344a-939d1f6efee1"
 SLEEP_NUMBER_MCR_RX_CHAR_UUID: Final = "ffffd1fd-388d-938b-344a-939d1f6efee2"
 
 # Svane LinonPI specific UUIDs (multi-service architecture)
-# Protocol reverse-engineered from com.produktide.svane.svaneremote APK
+# Protocol first reverse-engineered from the legacy com.produktide.svane.svaneremote
+# APK; the audited app is com.svane.svaneremote 1.8 (8), see docs/beds/svane.md
 # Each motor has its own service with direction-specific characteristics
 SVANE_HEAD_SERVICE_UUID: Final = "0000abcb-0000-1000-8000-00805f9b34fb"
 SVANE_FEET_SERVICE_UUID: Final = "0000c258-0000-1000-8000-00805f9b34fb"
@@ -3217,7 +3217,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Source: air.no.jensen.adjustablesleep 2.0.29 audit (held frames re-sent every 300 ms)
     BED_TYPE_JENSEN: (4, 300),
     # Svane: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.produktide.svane.svaneremote ANALYSIS.md (motorRunnable posts every 100ms)
+    # Source: legacy com.produktide.svane.svaneremote analysis (motorRunnable posts every
+    # 100ms). The audited com.svane.svaneremote profiles use their own held refreshes.
     BED_TYPE_SVANE: (10, 100),
     # Vibradorm: 100ms delay → 10 repeats = 1.0s total
     # Source: de.vibradorm.vra APK analysis (CmdMotorVMAT uses 100ms intervals)

@@ -1,25 +1,74 @@
 # ORE comfort-bed app profiles
 
-**Status:** ✅ artifact-verified, hardware unverified. Clean-room analysis of
-MaxCoil Una 1.1.0 (5) (`com.ore.maxcoil`) and Dynasty Bases 1.0.2 (3)
-(`com.ore.Dynasty`) is complete and accepted (formal cluster-013), as is
-Bedsense Bases 1.1 (3) (`com.ore.sfmc2bedsence`, formal cluster-015). See the
-[MaxCoil Una / Dynasty Bases dispositions](../apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md)
-and the [Bedsense Bases / INNOVA dispositions](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
-Avanti Bases 1.0.5 (7) (`com.ore.AvantiBases`, standalone FULL row065) is
-independently accepted; see its [discovery ledger](../apk-analysis/dispositions/row065-avanti-bases.md).
-AMERICANSTAR 1.0 (1) (`com.ore.americanstar`) is independently accepted too; see its
-[dispositions](../apk-analysis/dispositions/row062-americanstar.md).
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
-MaxCoil Una and Dynasty Bases ship the same `com.ore.okincomfortbed` code base.
-Bedsense Bases is a separate package, but its accepted report proves the same
-frames, screens, timing, release, massage, light and reply handling, so all
-three share this profile. The separate Avanti artifact proves every command,
-layout, timing and reply behavior below as well, and so does AMERICANSTAR 1.0 (1)
-(`com.ore.americanstar`). INNOVA (`com.ore.sfm`), Bedsense's cluster sibling,
-uses different frames and has its own [INNOVA profile](keeson.md#innova-profile).
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-## Setup
+## Known Models
+
+- Bases controlled by MaxCoil Una, Dynasty Bases, Bedsense Bases, Avanti Bases
+  and AMERICANSTAR
+- App screens 2M, 3M and 4M (chosen by hand in the app)
+
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | [MaxCoil Una](https://play.google.com/store/apps/details?id=com.ore.maxcoil) 1.1.0 (5) | `com.ore.maxcoil` |
+| ✅ | [Dynasty Bases](https://play.google.com/store/apps/details?id=com.ore.Dynasty) 1.0.2 (3) | `com.ore.Dynasty` |
+| ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) 1.1 (3) | `com.ore.sfmc2bedsence` |
+| ✅ | [Avanti Bases](https://play.google.com/store/apps/details?id=com.ore.AvantiBases) 1.0.5 (7) | `com.ore.AvantiBases` |
+| ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1) | `com.ore.americanstar` |
+
+- MaxCoil Una and Dynasty Bases ship the same `com.ore.okincomfortbed` code base.
+- Bedsense Bases is a separate package, but its accepted report proves the same
+  frames, screens, timing, release, massage, light and reply handling, so all
+  three share this profile.
+- The separate Avanti artifact proves every command, layout, timing and reply
+  behavior below as well, and so does AMERICANSTAR 1.0 (1) (`com.ore.americanstar`).
+- INNOVA (`com.ore.sfm`), Bedsense's cluster sibling, uses different frames and
+  has its own [INNOVA profile](keeson.md#innova-profile).
+
+## Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (2M: Back, Feet, Back and legs; 3M: Back, Feet, Head; 4M: Back, Feet, Waist, Lumbar) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (Memory A and B, recall and save) |
+| Flat / Zero G | ✅ (recall and save) |
+| Massage | ✅ (head, foot and wave levels 0-3; 10/20/30 minute timer) |
+| Under-bed Light | ✅ (on/off switch, assumed state) |
+
+## Protocol Details
+
+**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb` (last match across all services; the service UUID is ignored)
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb` (must exist; the app enables it locally only and writes no CCCD)
+**Format:** 8-byte frame, `E5 FE 16` + big-endian 32-bit action word + checksum
+
+### Write Mode
+
+- Controls stay unavailable unless both characteristics exist.
+- The app never sets a write type, so Android's default applies: write without
+  response when the characteristic offers it, otherwise with response.
+- There is no PIN, pairing, handshake, MTU request or initialization packet.
+
+### Packet Format
+
+```text
+E5 FE 16 | w3 w2 w1 w0 | checksum
+```
+
+The 32-bit action word is big-endian. The checksum is
+`(~sum(first seven bytes)) & 0xFF`, so all eight bytes sum to `0xFF`.
+
+```python
+def frame(word):
+    body = bytes([0xE5, 0xFE, 0x16]) + (word & 0xFFFFFFFF).to_bytes(4, "big")
+    return body + bytes([(~sum(body)) & 0xFF])
+```
+
+## Detection / Setup
 
 Choose the app by name in the bed-type list, or choose **Keeson**, then the
 protocol variant for your app:
@@ -40,44 +89,20 @@ Set the **motor count** to the screen you pick in the app:
 | 3M | 3 | Back, Feet, Head |
 | 4M | 4 | Back, Feet, Waist, Lumbar |
 
-The apps scan for every Bluetooth device and let you choose one by address.
-They have no name, service or manufacturer rule, so **Auto never selects this
-profile**. The older `sino` variant (Dynasty, BetterLiving) is
-unchanged; it sends different preset and massage values. For a two-address
-pair, split the pair before changing the profile. A pair side that is out of
-range keeps its controls, built from the stored profile. Avanti
-motor layout is a per-side setting too; split before changing it. Its massage
-page is always enabled, refresh timing is fixed, and angle sensing is absent.
-Those three generic options are hidden for Avanti.
-
-## Transport
-
-| Role | UUID | Behavior |
-|------|------|----------|
-| Write | `0000ffe9-0000-1000-8000-00805f9b34fb` | Last match across all services; the service UUID is ignored |
-| Notify | `0000ffe4-0000-1000-8000-00805f9b34fb` | Must exist; the app enables it locally only and writes no CCCD |
-
-Controls stay unavailable unless both characteristics exist. The app never
-sets a write type, so Android's default applies: write without response when
-the characteristic offers it, otherwise with response. There is no PIN,
-pairing, handshake, MTU request or initialization packet.
-
-## Frame
-
-```text
-E5 FE 16 | w3 w2 w1 w0 | checksum
-```
-
-The 32-bit action word is big-endian. The checksum is
-`(~sum(first seven bytes)) & 0xFF`, so all eight bytes sum to `0xFF`.
-
-```python
-def frame(word):
-    body = bytes([0xE5, 0xFE, 0x16]) + (word & 0xFFFFFFFF).to_bytes(4, "big")
-    return body + bytes([(~sum(body)) & 0xFF])
-```
+- The apps scan for every Bluetooth device and let you choose one by address.
+  They have no name, service or manufacturer rule, so **Auto never selects this
+  profile**.
+- The older `sino` variant (Dynasty, BetterLiving) is unchanged; it sends
+  different preset and massage values.
+- For a two-address pair, split the pair before changing the profile. A pair
+  side that is out of range keeps its controls, built from the stored profile.
+- Avanti motor layout is a per-side setting too; split before changing it. Its
+  massage page is always enabled, refresh timing is fixed, and angle sensing is
+  absent. Those three generic options are hidden for Avanti.
 
 ## Commands
+
+### Motor Control
 
 | Action | Word | Frame |
 |--------|------|-------|
@@ -86,20 +111,50 @@ def frame(word):
 | 2M Back and legs, 3M Head, 4M Waist up / down | `00000010` / `00000020` | `e5 fe 16 00 00 00 10 f6` / `… 20 e6` |
 | 4M Lumbar up / down | `00000040` / `00000080` | `e5 fe 16 00 00 00 40 c6` / `… 80 86` |
 | Release / STOP | `00000000` | `e5 fe 16 00 00 00 00 06` |
+
+### Presets and Memory
+
+| Action | Word | Frame |
+|--------|------|-------|
 | Zero G (ZG) recall / save | `01000001` / `20000001` | `e5 fe 16 01 00 00 01 04` / `e5 fe 16 20 00 00 01 e5` |
 | Flat recall / save | `01000002` / `20000002` | `e5 fe 16 01 00 00 02 03` / `e5 fe 16 20 00 00 02 e4` |
 | Memory A recall / save | `01000008` / `20000008` | `e5 fe 16 01 00 00 08 fd` / `e5 fe 16 20 00 00 08 de` |
 | Memory B recall / save | `01000009` / `20000009` | `e5 fe 16 01 00 00 09 fc` / `e5 fe 16 20 00 00 09 dd` |
+
+Memory A and B are position slots, not bed sides. Flat and Zero G can be saved
+like the memory slots.
+
+### Lights
+
+| Action | Word | Frame |
+|--------|------|-------|
 | Light on / off | `31000001` / `31000000` | `e5 fe 16 31 00 00 01 d4` / `… 00 d5` |
+
+The app toggles a local flag and sends explicit on and off words, so the
+integration exposes an under-bed light switch with assumed state.
+
+### Massage
+
+| Action | Word | Frame |
+|--------|------|-------|
 | Head massage level 0-3 | `10000010` + level | `e5 fe 16 10 00 00 10 e6` … `13 e3` |
 | Foot massage level 0-3 | `11000010` + level | `e5 fe 16 11 00 00 10 e5` … `13 e2` |
 | Wave level 0-3 | `10000020` + level | `e5 fe 16 10 00 00 20 d6` … `23 d3` |
 | Massage timer 10 / 20 / 30 min | `10000030` / `31` / `32` | `e5 fe 16 10 00 00 30 c6` / `31 c5` / `32 c4` |
 
-Memory A and B are position slots, not bed sides. Flat and Zero G can be saved
-like the memory slots.
+| Entity | Behavior |
+|--------|----------|
+| Head, Foot and Wave massage numbers (0-3) | A slider change sends that zone's level word. Levels persist across restarts like the app's preferences; a fresh install starts at level 1. |
+| **Start massage** button | Sends the current wave, head and foot levels, in that order. |
+| **Massage off** button | Sends head level 0, then foot level 0. The sliders keep their levels and the timer indicator resets. No wave-off frame exists. |
+| **Massage timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
 
-## Timing and release
+## Position Feedback
+
+None. The app accepts any nine-byte FFE4 value, extracts bits from byte 7 and
+discards them. No position, light, massage or acknowledgement state exists.
+
+## Command Timing
 
 - **Held movement:** the key is written at 0 ms and again 100 ms after each
   write while held. On release the app sleeps 100 ms and writes the zero word.
@@ -113,26 +168,9 @@ like the memory slots.
 - **Long press** on a preset saves it. The integration uses Save buttons
   (**Save Memory A/B**, **Save Flat**, **Save Zero G**).
 
-## Massage
+## Notes
 
-| Entity | Behavior |
-|--------|----------|
-| Head, Foot and Wave massage numbers (0-3) | A slider change sends that zone's level word. Levels persist across restarts like the app's preferences; a fresh install starts at level 1. |
-| **Start massage** button | Sends the current wave, head and foot levels, in that order. |
-| **Massage off** button | Sends head level 0, then foot level 0. The sliders keep their levels and the timer indicator resets. No wave-off frame exists. |
-| **Massage timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
-
-## Light
-
-The app toggles a local flag and sends explicit on and off words, so the
-integration exposes an under-bed light switch with assumed state.
-
-## Feedback
-
-None. The app accepts any nine-byte FFE4 value, extracts bits from byte 7 and
-discards them. No position, light, massage or acknowledgement state exists.
-
-## Excluded
+### Excluded
 
 - The app's phone settings (haptic feedback, actuator 1/2, installation) do not
   change any packet.
@@ -140,9 +178,21 @@ discards them. No position, light, massage or acknowledgement state exists.
   ms "others" repeat) are unreachable in all four apps.
 - Bluetooth Classic, Wi-Fi, cloud and OTA paths are absent from all four apps.
 
-## Deferred validation
+### Hardware validation
 
 Hardware is unverified. Real users should confirm after a beta or release:
 the physical axis for each layout (especially 2M's combined key and 4M's
 waist), hold and release behavior, preset save/recall, massage levels and
 timer durations, and the actual write type.
+
+### Analysis provenance
+
+- MaxCoil Una 1.1.0 (5) (`com.ore.maxcoil`) and Dynasty Bases 1.0.2 (3)
+  (`com.ore.Dynasty`): clean-room analysis complete and accepted (formal
+  cluster-013). See the [MaxCoil Una / Dynasty Bases dispositions](../apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md).
+- Bedsense Bases 1.1 (3) (`com.ore.sfmc2bedsence`): complete and accepted
+  (formal cluster-015). See the [Bedsense Bases / INNOVA dispositions](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
+- Avanti Bases 1.0.5 (7) (`com.ore.AvantiBases`, standalone FULL row065):
+  independently accepted. See its [discovery ledger](../apk-analysis/dispositions/row065-avanti-bases.md).
+- AMERICANSTAR 1.0 (1) (`com.ore.americanstar`): independently accepted. See its
+  [dispositions](../apk-analysis/dispositions/row062-americanstar.md).

@@ -26,7 +26,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     SLEEP_NUMBER_AUTH_CHAR_UUID,
     SLEEP_NUMBER_BAMKEY_CHAR_UUID,
-    SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
@@ -406,20 +405,11 @@ class TestSleepNumberController:
         async def _read_sleep(side: str) -> None:
             call_order.append(f"sleep:{side}")
 
-        async def _query_feature(
-            *,
-            side: str,
-            presence_bamkey: str,
-            **_ignored: object,
-        ) -> None:
-            call_order.append(f"{presence_bamkey}:{side}")
-
         async def _read_presence() -> None:
             call_order.append("presence")
 
         controller._ensure_notifications_started = AsyncMock(side_effect=_prime)
         controller.read_sleep_number_setting_for_side = AsyncMock(side_effect=_read_sleep)
-        controller._query_optional_presence_feature_for_side = AsyncMock(side_effect=_query_feature)
         controller.read_bed_presence = AsyncMock(side_effect=_read_presence)
 
         await controller.query_config()
@@ -429,9 +419,6 @@ class TestSleepNumberController:
             "sleep:left",
             "sleep:right",
         ]
-        assert "CLPG:left" not in call_order
-        assert "THPG:left" not in call_order
-        controller._query_optional_presence_feature_for_side.assert_not_awaited()
 
     async def test_set_thermal_preset_uses_heidi_for_cooling_when_present(
         self,
@@ -777,10 +764,7 @@ class TestSleepNumberController:
             )
 
         async def _read_side_effect(target) -> bytes:
-            if str(target) in {
-                SLEEP_NUMBER_AUTH_CHAR_UUID,
-                SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID,
-            }:
+            if str(target) == SLEEP_NUMBER_AUTH_CHAR_UUID:
                 return b""
             if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
                 return _build_sleep_number_blob('PASS:["PASS:in","PASS:out"]')

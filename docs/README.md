@@ -23,7 +23,8 @@ These guides describe `main`. The integration requires **Home Assistant
 Start with the [Supported Beds table](../README.md#supported-beds), where related
 brands, models and apps are grouped together. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
 to identify your controller and compare features. The detailed guides in
-[`beds/`](beds/) cover model-specific setup and testing status.
+[`beds/`](beds/) cover model-specific setup and testing status, and follow the
+[bed guide format](BED_GUIDE_FORMAT.md).
 
 ## Protocol Research
 
