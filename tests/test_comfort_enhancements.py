@@ -529,3 +529,18 @@ async def test_new_entries_keep_connection_state_and_layout_change_retires_actio
                 )
             ) == (layout != "mc3")
     assert await hass.config_entries.async_unload(e.entry_id)
+
+
+@pytest.mark.parametrize("layout", [*COMFORT_ENHANCEMENTS_VARIANTS, None, "auto"])
+async def test_offline_capabilities_require_the_saved_layout(hass, layout) -> None:
+    e = entry(hass, layout)
+    c = AdjustableBedCoordinator(hass, e)
+    await c.async_prime_offline_controller()
+    if layout in COMFORT_ENHANCEMENTS_VARIANTS:
+        assert isinstance(c.capability_controller, ComfortEnhancementsController)
+        assert c.capability_controller.layout == layout
+        assert len(c.capability_controller.motor_control_specs) == 3
+    else:
+        assert c.capability_controller is None
+    assert c.client is None
+    assert c.controller is None

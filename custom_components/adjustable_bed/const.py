@@ -729,7 +729,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SIMMONS,
         # Controls are identical for all three tables; only the live link picks one.
         BED_TYPE_ADJUSTABLE_LUMBAR,
-        BED_TYPE_COMFORT_ENHANCEMENTS,
         # Fixed pump controls; pressure is live-link state only.
         BED_TYPE_LOGICDATA_AIR_PUMP,
         # The constructor refuses offline UART catalogs whose nonpositive C
@@ -1706,6 +1705,7 @@ OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
     ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
 }
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
