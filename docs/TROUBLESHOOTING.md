@@ -301,7 +301,7 @@ and failed cleanup are still reported.
 1. **Enable "Disconnect after each command" where supported:** The connection is released one second after operations finish; rapid commands reuse that window
 2. **Disable position monitoring if necessary:** Enable "Disable angle sensing"; Linak's "Refresh positions while idle" can also be turned off
 3. **Press "Disconnect" button:** Manually disconnect HA to use the physical remote
-4. **Idle timeout:** When quick handoff is off, the configured idle timeout applies (default 40 seconds). Controllers requiring persistent connections are exceptions.
+4. **Idle timeout:** When quick handoff is off, the configured idle timeout applies (default 40 seconds). An idle timeout of `0` and controllers requiring persistent connections hold the link instead.
 
 ### BLE connection shows "Disconnected" shortly after adding the bed
 
