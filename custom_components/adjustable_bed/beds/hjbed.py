@@ -471,6 +471,9 @@ class HJBedController(BedController):
                 )
                 start = monotonic()
                 deadline = start + duration / 1000
+                # A finite pulse needs one serialized pacing slot per side
+                # after its last nominal tick. Explicit holds end at duration.
+                write_deadline = deadline + (len(sides) * 0.1 if hold_ms is None else 0)
                 tick = 1
                 while tick * 100 <= duration:
                     if not await self._delay(max(0, start + tick * 0.1 - monotonic()), cancel):
@@ -481,7 +484,7 @@ class HJBedController(BedController):
                             session,
                             cancel,
                             on_attempt=partial(fired.add, side),
-                            deadline=deadline,
+                            deadline=write_deadline,
                         ):
                             break
                     # Periodic ticks do not inherit write latency or drain stale refreshes.

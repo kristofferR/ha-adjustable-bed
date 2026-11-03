@@ -291,6 +291,10 @@ single-address paired side controls are offered only by the four coupled profile
 The `hold_control` action accepts a listed `hjbed_*` control and a finite duration
 up to 60 seconds. Sub-100 ms sustained actions send nothing. Save and recall are
 separate actions, so holding recall never overwrites a memory.
+Finite pulse actions share a deadline allowing one 100 ms pacing slot per
+selected side after the final nominal tick. Explicit held durations keep their
+requested end. Card release works for standalone,
+single-address side controls and two-address pairs.
 
 ## Configuration actions
 

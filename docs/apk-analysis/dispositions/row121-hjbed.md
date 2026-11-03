@@ -82,8 +82,11 @@ action's recovered release. This does not add STOP to presets or sofa reset.
 
 HA's scheduler owns finite holds, cancellation and serialization. Both-side
 frames share one bounded hold window; fixed monotonic 100 ms tick deadlines
-avoid accumulating write latency. Stale refreshes are dropped at that window's
-end; an in-flight write and required release may finish afterward. Every
+avoid accumulating write latency. Count-based finite pulses share one write
+deadline, allowing one recovered 100 ms pacing slot per selected side after the
+last nominal tick. This admits a late one-pulse callback and its serialized side
+attempts; explicit held durations retain their hard end. Stale refreshes are dropped at
+the applicable deadline; an in-flight write and required release may finish afterward. Every
 attempted side receives its own cleanup, even if another side's release fails.
 Each cleanup
 retains the original physical session and side; no frame crosses to a replacement
@@ -92,6 +95,9 @@ stale motion. Releasing the card's gesture uses STOP admission to invalidate hol
 awaiting Bluetooth preflight, with a task-local context suppressing only the
 extra STOP write. The controller's own cleanup remains responsible for release,
 so presets and sofa reset do not acquire an extra STOP. Explicit Stop is separate.
+Card release lookup follows the held entity's actual translation-key scheme:
+single-address side children use suffixed keys, while physical two-address
+children retain unsuffixed keys. Both remain confined to their own device.
 Android widget mounting, camera input, SQLite implementation, permission UI,
 reconnect dialogs and plugin MTU defaults are platform machinery, not extra bed
 features. HA stores explicit profile/layout and acknowledged alarm preferences

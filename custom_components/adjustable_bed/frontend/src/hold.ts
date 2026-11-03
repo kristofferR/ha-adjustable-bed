@@ -15,9 +15,11 @@ export function heldReleaseButton(hass: HomeAssistant | undefined, entityId: str
   const key = attributes?.hold_release_button_key;
   if (!owner?.device_id || typeof key !== "string") return undefined;
   const side = attributes?.bed_side;
+  const releaseKey = (side === "left" || side === "right") &&
+    owner.translation_key?.endsWith(`_${side}`) ? `${key}_${side}` : key;
   return Object.values(hass?.entities ?? {}).find((entry) =>
     entry.device_id === owner.device_id && entry.entity_id.startsWith("button.") &&
-    entry.translation_key === (side === "left" || side === "right" ? `${key}_${side}` : key),
+    entry.translation_key === releaseKey,
   )?.entity_id;
 }
 

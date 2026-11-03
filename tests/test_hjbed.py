@@ -186,6 +186,95 @@ async def test_preset_save_and_no_release(coordinator, instant):
     assert instant == [3]
 
 
+@pytest.mark.parametrize("detail,code,release", [("974261", 36, True), ("974e61", 46, False)])
+async def test_one_pulse_accepts_late_timer_within_its_tick(
+    coordinator, clocked, monkeypatch, detail, code, release
+):
+    coordinator.motor_pulse_count = 1
+    c = controller(coordinator, "990871")
+
+    async def late_timer(self, seconds, cancel):
+        clocked[0] += seconds + 0.002
+        return not cancel.is_set()
+
+    monkeypatch.setattr(bed.HJBedController, "_delay", late_timer)
+    await c.execute_action(detail)
+    frames = [bytes.fromhex(frame) for frame in written(coordinator)]
+    assert [frame[3] for frame in frames] == [code] + ([110] if release else [])
+    assert clocked[0] == pytest.approx(0.202 if release else 0.102)
+
+
+@pytest.mark.parametrize("pulse_count", [1, 3])
+@pytest.mark.parametrize("action,code,release", [("motor", 36, True), ("preset", 46, False)])
+async def test_both_finite_pulses_share_a_bounded_window(
+    coordinator, clocked, monkeypatch, pulse_count, action, code, release
+):
+    coordinator.motor_pulse_count = pulse_count
+    c = controller(coordinator, "dream_orange")
+    writes = []
+
+    async def late_timer(self, seconds, cancel):
+        clocked[0] += seconds + 0.002
+        return not cancel.is_set()
+
+    async def record_write(_char, frame, **_kwargs):
+        writes.append((frame[2], frame[3], clocked[0]))
+
+    monkeypatch.setattr(bed.HJBedController, "_delay", late_timer)
+    coordinator.client.write_gatt_char.side_effect = record_write
+    both = c.bind_side("both")
+    if action == "motor":
+        await both.move_head_up()
+    else:
+        await both.preset_memory(1)
+    movement = [(side, at) for side, command, at in writes if command == code]
+    expected = (
+        [0.0, 0.1]
+        if action == "preset"  # This coupled product selects the short preset detail.
+        else [0.102, 0.202]
+        if pulse_count == 1
+        else [0.102, 0.202, 0.302, 0.402]
+    )
+    assert [side for side, _ in movement] == [0, 1] * (len(expected) // 2)
+    assert [at for _, at in movement] == pytest.approx(expected)
+    assert [(side, command) for side, command, _ in writes if command != code] == (
+        [(0, 110), (1, 110)] if release else []
+    )
+
+
+@pytest.mark.parametrize("late_at", ["timer", "pacing", "lock", "cancel", "duration"])
+async def test_one_pulse_rejects_stale_or_cancelled_tick(
+    coordinator, clocked, monkeypatch, late_at
+):
+    coordinator.motor_pulse_count = 1
+    c = controller(coordinator, "990871")
+
+    async def late_timer(self, seconds, cancel):
+        clocked[0] += seconds + (0.101 if late_at == "timer" else 0.002)
+        if late_at == "cancel":
+            cancel.set()
+        return not cancel.is_set()
+
+    monkeypatch.setattr(bed.HJBedController, "_delay", late_timer)
+    if late_at == "pacing":
+        c._last_write = 0.15
+    if late_at == "lock":
+
+        class LateLock:
+            async def __aenter__(self):
+                clocked[0] += 0.1
+
+            async def __aexit__(self, *_exc):
+                pass
+
+        monkeypatch.setattr(c, "_ble_lock", LateLock())
+    if late_at == "duration":
+        await c.hold_control("hjbed_head_up", 100)
+    else:
+        await c.execute_action("974261")
+    assert written(coordinator) == []
+
+
 async def test_sofa_reset_has_no_invented_stop(coordinator, instant):
     c = controller(coordinator, "990751")
     await c.execute_action("9753e1")

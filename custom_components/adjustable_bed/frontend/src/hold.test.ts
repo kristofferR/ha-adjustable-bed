@@ -180,6 +180,36 @@ test("button hold metadata uses the bounded side-scoped service", async () => {
   ]]);
 });
 
+for (const scheme of ["single-address", "two-address", "standalone"] as const) {
+  test(`HJBed ${scheme} holds resolve and retain their own release button`, () => {
+    const side = scheme === "standalone" ? undefined : "right";
+    const suffix = scheme === "single-address" ? "_right" : "";
+    const entityId = "button.memory";
+    const hass = {
+      entities: {
+        [entityId]: { entity_id: entityId, device_id: "child", translation_key: `hjbed_action${suffix}` },
+        "button.peer_release": { entity_id: "button.peer_release", device_id: "peer", translation_key: `hjbed_release${suffix}` },
+        "button.other_side": { entity_id: "button.other_side", device_id: "child", translation_key: "hjbed_release_left" },
+        "button.release": { entity_id: "button.release", device_id: "child", translation_key: `hjbed_release${suffix}` },
+      },
+      states: { [entityId]: { attributes: {
+        ...(side ? { bed_side: side } : {}),
+        held_control: "hjbed_memory_position1", hold_start_delay_ms: 0,
+        hold_release_delay_ms: 0, hold_release_button_key: "hjbed_release",
+      } } },
+    } as unknown as HomeAssistant;
+    const motor = heldButtonMotor(hass, entityId);
+    expect(motor?.releaseButton).toBe("button.release");
+    const events: string[] = [];
+    const hold = new MotorHold(heldActions(events));
+    hold.start(motor!, "up", 1, "button.general_stop");
+    hold.end(motor!, 1);
+    expect(events).toEqual(["start:button.memory:up", "stop:button.release"]);
+    delete hass.entities["button.release"];
+    expect(heldButtonMotor(hass, entityId)).toBeUndefined();
+  });
+}
+
 test("eligible Both holds use the parent timed action and retain combined Stop", async () => {
   const calls: unknown[] = [];
   let finish!: () => void;

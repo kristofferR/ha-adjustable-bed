@@ -662,7 +662,12 @@
       "tests/test_hjbed.py:test_cancel_releases_original_side",
       "tests/test_hjbed.py:test_both_hold_refreshes_and_releases_each_attempted_side",
       "tests/test_hjbed.py:test_both_cleanup_attempts_right_even_if_left_release_fails",
-      "tests/test_hjbed.py:test_refresh_deadlines_do_not_accumulate_write_latency"
+      "tests/test_hjbed.py:test_refresh_deadlines_do_not_accumulate_write_latency",
+      "tests/test_hjbed.py:test_one_pulse_accepts_late_timer_within_its_tick",
+      "tests/test_hjbed.py:test_one_pulse_rejects_stale_or_cancelled_tick",
+      "tests/test_hjbed.py:test_both_finite_pulses_share_a_bounded_window",
+      "custom_components/adjustable_bed/frontend/src/hold.ts:heldReleaseButton",
+      "custom_components/adjustable_bed/frontend/src/hold.test.ts"
     ],
     "gatt": [
       "custom_components/adjustable_bed/detection.py:detect_bed_type_detailed",
@@ -30180,7 +30185,12 @@
       "tests/test_hjbed.py:test_cancel_releases_original_side",
       "tests/test_hjbed.py:test_both_hold_refreshes_and_releases_each_attempted_side",
       "tests/test_hjbed.py:test_both_cleanup_attempts_right_even_if_left_release_fails",
-      "tests/test_hjbed.py:test_refresh_deadlines_do_not_accumulate_write_latency"
+      "tests/test_hjbed.py:test_refresh_deadlines_do_not_accumulate_write_latency",
+      "tests/test_hjbed.py:test_one_pulse_accepts_late_timer_within_its_tick",
+      "tests/test_hjbed.py:test_one_pulse_rejects_stale_or_cancelled_tick",
+      "tests/test_hjbed.py:test_both_finite_pulses_share_a_bounded_window",
+      "custom_components/adjustable_bed/frontend/src/hold.ts:heldReleaseButton",
+      "custom_components/adjustable_bed/frontend/src/hold.test.ts"
     ],
     "P07": [
       "custom_components/adjustable_bed/hjbed_state.py:Stream.feed",
@@ -30201,6 +30211,11 @@
       "tests/test_hjbed.py:test_both_hold_refreshes_and_releases_each_attempted_side",
       "tests/test_hjbed.py:test_both_cleanup_attempts_right_even_if_left_release_fails",
       "tests/test_hjbed.py:test_refresh_deadlines_do_not_accumulate_write_latency",
+      "tests/test_hjbed.py:test_one_pulse_accepts_late_timer_within_its_tick",
+      "tests/test_hjbed.py:test_one_pulse_rejects_stale_or_cancelled_tick",
+      "tests/test_hjbed.py:test_both_finite_pulses_share_a_bounded_window",
+      "custom_components/adjustable_bed/frontend/src/hold.ts:heldReleaseButton",
+      "custom_components/adjustable_bed/frontend/src/hold.test.ts",
       "custom_components/adjustable_bed/beds/hjbed.py:validate_hjbed_request/async_execute_hjbed_request",
       "custom_components/adjustable_bed/hjbed_services.py:handle_hjbed",
       "tests/test_hjbed.py:test_alarm_gates_slots_toggle_and_ack_persistence",
