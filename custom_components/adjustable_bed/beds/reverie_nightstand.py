@@ -1221,6 +1221,7 @@ class ReverieNightstandController(BedController):
 
     async def stop_all(self) -> None:
         """Release each axis exposed by the selected model."""
+        self._cancel_routine()
         if not self.model.positions:
             raise ValueError(f"Model {self.model_id} has no motor controls")
         stops = [self.move_head_stop, self.move_legs_stop]

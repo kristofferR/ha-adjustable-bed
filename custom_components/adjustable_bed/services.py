@@ -1651,6 +1651,21 @@ async def handle_reverie_pairlink_alarm_comfort(call: ServiceCall) -> None:
         raise
 
 
+def _validate_reverie_deferred_target(
+    coordinator: BedTarget, controller: BedController | SideBoundController
+) -> None:
+    """Deferred work must survive the paired command's connection policy."""
+    if (
+        isinstance(coordinator, PairedBedCoordinator)
+        and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        and not controller.requires_disconnected_transport
+    ):
+        raise ServiceValidationError(
+            "Reverie routines and diagnostics require concurrent paired connection mode "
+            "for central Bluetooth receivers"
+        )
+
+
 async def handle_reverie_run_routine(call: ServiceCall) -> None:
     """Preflight all routine rows on every target before starting any queue."""
     explicit_side = call.data.get(ATTR_SIDE)
@@ -1671,22 +1686,25 @@ async def handle_reverie_run_routine(call: ServiceCall) -> None:
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
-                controller = _reverie_comfort_controller(
-                    target, await _validation_controller(coordinator, target, preflighted)
-                )
+                controller = await _validation_controller(coordinator, target, preflighted)
+                _validate_reverie_deferred_target(coordinator, controller)
+                reverie = _reverie_comfort_controller(target, controller)
                 try:
-                    controller.validate_routine(steps)
+                    reverie.validate_routine(steps)
                 except ValueError as err:
                     raise ServiceValidationError(str(err)) from err
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
-    async def start_routine(controller: BedController) -> None:
-        await cast(_ReverieComfortController, controller).async_start_routine(steps)
-
     try:
         for coordinator, side in targets:
+            async def start_routine(
+                controller: BedController, parent: BedTarget = coordinator
+            ) -> None:
+                _validate_reverie_deferred_target(parent, controller)
+                await cast(_ReverieComfortController, controller).async_start_routine(steps)
+
             await _execute_sided(
                 coordinator,
                 side,
@@ -1710,22 +1728,25 @@ async def handle_reverie_test(call: ServiceCall) -> None:
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
-                controller = _reverie_comfort_controller(
-                    target, await _validation_controller(coordinator, target, preflighted)
-                )
+                controller = await _validation_controller(coordinator, target, preflighted)
+                _validate_reverie_deferred_target(coordinator, controller)
+                reverie = _reverie_comfort_controller(target, controller)
                 try:
-                    controller.validate_diagnostic()
+                    reverie.validate_diagnostic()
                 except ValueError as err:
                     raise ServiceValidationError(str(err)) from err
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
-    async def start_diagnostic(controller: BedController) -> None:
-        await cast(_ReverieComfortController, controller).async_start_diagnostic()
-
     try:
         for coordinator, side in targets:
+            async def start_diagnostic(
+                controller: BedController, parent: BedTarget = coordinator
+            ) -> None:
+                _validate_reverie_deferred_target(parent, controller)
+                await cast(_ReverieComfortController, controller).async_start_diagnostic()
+
             await _execute_sided(
                 coordinator,
                 side,

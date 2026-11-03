@@ -975,6 +975,7 @@ class ReverieController(BedController):
 
     async def stop_all(self) -> None:
         """Stop all motors."""
+        self._cancel_routine()
         await self._send_stop()
 
     # Preset methods

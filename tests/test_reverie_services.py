@@ -15,8 +15,11 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE_PAIRLINK,
     DOMAIN,
     SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
 
 
@@ -200,3 +203,51 @@ async def test_routine_service_uses_selected_target_queue_without_scheduler(
     expected_steps = [(request, 4), (None, 0)]
     controller.validate_routine.assert_called_once_with(expected_steps)
     controller.async_start_routine.assert_awaited_once_with(expected_steps)
+
+
+@pytest.mark.parametrize("service", ["reverie_run_routine", "reverie_test"])
+@pytest.mark.parametrize("mode", ["sequential", "concurrent"])
+@pytest.mark.parametrize("local_role", [False, True])
+@pytest.mark.parametrize("side", [SIDE_BOTH, SIDE_LEFT])
+async def test_deferred_actions_preflight_pair_connection_policy(
+    hass, service, mode, local_role, side,
+):
+    first, first_controller = _target()
+    left, left_controller = _target(bed_type=BED_TYPE_REVERIE_PAIRLINK)
+    right, right_controller = _target(bed_type=BED_TYPE_REVERIE_PAIRLINK)
+    pair = MagicMock(spec=PairedBedCoordinator)
+    pair.connection_mode = mode
+    pair.children = {SIDE_LEFT: left, SIDE_RIGHT: right}
+    pair.child_for_side.side_effect = pair.children.get
+    for controller in (left_controller, right_controller):
+        controller.requires_disconnected_transport = local_role
+        controller.disconnected_transport_ready = True
+
+    async def execute(command, *, side, **_kwargs):
+        selected = pair.children.values() if side == SIDE_BOTH else [pair.children[side]]
+        for target in selected:
+            await command(target.controller)
+
+    pair.async_execute_controller_command = AsyncMock(side_effect=execute)
+    await async_register_services(hass)
+    data = {"device_id": ["first", "pair"], "side": side}
+    if service == "reverie_run_routine":
+        data["steps"] = [{"comfort": {"head_position": 25}, "duration_minutes": 1}]
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(first, SIDE_BOTH), (pair, side)], []),
+    ):
+        if mode == "sequential" and not local_role:
+            with pytest.raises(ServiceValidationError, match="require concurrent"):
+                await hass.services.async_call(DOMAIN, service, data, blocking=True)
+            first.async_execute_controller_command.assert_not_awaited()
+            pair.async_execute_controller_command.assert_not_awaited()
+        else:
+            await hass.services.async_call(DOMAIN, service, data, blocking=True)
+            first.async_execute_controller_command.assert_awaited_once()
+            pair.async_execute_controller_command.assert_awaited_once()
+    method = "async_start_routine" if service == "reverie_run_routine" else "async_start_diagnostic"
+    rejected = mode == "sequential" and not local_role
+    assert getattr(first_controller, method).await_count == (0 if rejected else 1)
+    assert getattr(left_controller, method).await_count == (0 if rejected else 1)
+    assert getattr(right_controller, method).await_count == (1 if not rejected and side == SIDE_BOTH else 0)

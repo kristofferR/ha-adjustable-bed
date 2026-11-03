@@ -2213,6 +2213,7 @@ class ReveriePairlinkController(BedController):
         await self._stop_axis(9)
 
     async def stop_all(self) -> None:
+        self._cancel_routine()
         failures: list[Exception] = []
         commands = (3, 6, 9) if self.has_lumbar_support else (3, 6)
         for command in commands:

@@ -141,6 +141,106 @@ async def test_pairlink_feedback_populates_selects_and_preserves_numeric_mode(ha
     await coordinator.async_shutdown()
 
 
+@pytest.mark.parametrize("controller_type", [ReverieController, ReverieNightstandController, ReveriePairlinkController])
+@pytest.mark.parametrize("stop_failure", [False, True])
+async def test_public_stop_cancels_routine_and_invalidates_future_steps(
+    hass, mock_coordinator_connected, monkeypatch, controller_type, stop_failure,
+):
+    if controller_type is ReveriePairlinkController:
+        coordinator, controller = await _pairlink_central(hass)
+        write_method = "async_send_payload"
+    else:
+        coordinator = await _central(hass)
+        controller = controller_type(coordinator, model="9T" if controller_type is ReverieController else "R510L")
+        coordinator._controller = controller
+        write_method = "write_command" if controller_type is ReverieController else "_write_to_char"
+    writes = AsyncMock()
+    monkeypatch.setattr(controller, write_method, writes)
+    request = ReverieComfortRequest(
+        head_position=25,
+        foot_position=40,
+        lumbar_position=None if controller_type is ReverieController else 0,
+        head_massage=0,
+        foot_massage=0,
+        timer_byte=0 if controller_type is ReveriePairlinkController else None,
+        mode=0 if controller_type is ReveriePairlinkController else None,
+    )
+    await coordinator.async_execute_controller_command(
+        lambda ctrl: ctrl.async_start_routine([(request, 1), (request, 1)]),
+        read_positions_after_operation=False,
+    )
+    timer = controller._routine_timer
+    generation = controller._routine_generation
+    assert timer is not None
+    assert coordinator._command_connection_holds > 0
+    writes.reset_mock()
+    if stop_failure:
+        writes.side_effect = ConnectionError("STOP failed")
+        with pytest.raises((ConnectionError, ExceptionGroup)):
+            await coordinator.async_stop_command()
+    else:
+        await coordinator.async_stop_command()
+    assert writes.await_count > 0
+    assert timer.cancelled()
+    assert controller._routine_timer is None
+    assert controller._routine_generation > generation
+    assert coordinator._command_connection_holds == 0
+    writes.reset_mock()
+    controller._enqueue_routine_step(generation)
+    await hass.async_block_till_done()
+    writes.assert_not_awaited()
+    await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize("side", ["left", "both"])
+async def test_sequential_pair_stop_cancels_ready_local_routine_without_central_reconnect(
+    hass, monkeypatch, enable_custom_integrations, side,
+):
+    from custom_components.adjustable_bed.const import CONF_PAIR_ID
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+    from tests.test_reverie_review_regressions import _ready_local
+
+    async with _ready_local(hass, monkeypatch, "R510L") as (_, left, _sock):
+        entry = MockConfigEntry(domain=DOMAIN, data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:FE", CONF_BED_TYPE: BED_TYPE_REVERIE,
+        })
+        right = AdjustableBedCoordinator(hass, entry)
+        right._controller = ReverieController(right, model="9T")
+        central_connect = AsyncMock(side_effect=AssertionError("must not reconnect central side"))
+        monkeypatch.setattr(right, "async_ensure_connected", central_connect)
+        pair = PairedBedCoordinator(
+            hass, MockConfigEntry(domain=DOMAIN, data={CONF_PAIR_ID: "local-routine-stop"}),
+            {"left": left, "right": right}, connection_mode="sequential",
+        )
+        controller = left.controller
+        comfort = AsyncMock()
+        monkeypatch.setattr(controller, "async_set_comfort", comfort)
+        request = ReverieComfortRequest(head_position=25)
+        await pair.async_execute_controller_command(
+            lambda ctrl: ctrl.async_start_routine([(request, 1), (request, 1)]),
+            side="left", resource="reverie:routine",
+        )
+        timer, generation = controller._routine_timer, controller._routine_generation
+        assert timer is not None
+        assert controller.disconnected_transport_ready
+        assert not left.is_connected and not right.is_connected
+        comfort.assert_awaited_once()
+
+        await pair.async_stop_command(side=side)
+
+        assert timer.cancelled()
+        assert controller._routine_timer is None
+        assert controller._routine_generation > generation
+        assert controller._routine_settings == []
+        assert controller._routine_connection_release is None
+        assert left._command_connection_holds == 0
+        controller._enqueue_routine_step(generation)
+        await hass.async_block_till_done()
+        comfort.assert_awaited_once()
+        central_connect.assert_not_awaited()
+        await pair.async_shutdown()
+
+
 async def test_stk_local_selection_uses_reconnected_controller_without_ble(hass, mock_coordinator_connected):
     coordinator = await _central(hass)
     old = ReverieNightstandController(coordinator, model="STK")

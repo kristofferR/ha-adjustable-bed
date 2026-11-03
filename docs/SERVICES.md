@@ -176,6 +176,12 @@ its last resolved setting. Other Reverie profiles still require a duration.
 The paired-bed `side` field remains the separate Home Assistant left/right/both
 target selector.
 
+STOP cancels the selected target's remaining routine steps as well as current
+movement. Routines and diagnostics require concurrent connection mode for
+two-address pairs using central Bluetooth connections, including side-only
+targets. Sequential mode disconnects each receiver before deferred work can
+finish. Local Pairlink peripheral transports do not have that restriction.
+
 `reverie_test` starts the accepted Protocol 108 or 110 ten-second bed test and
 schedules its matching protocol stop writes. Pairlink's two-second diagnostic
 uses the central encrypted route and has the same explicit runtime-input

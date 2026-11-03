@@ -1228,13 +1228,16 @@ class PairedBedCoordinator:
         Returns the per-side errors (if any). Always attempts every side — a STOP
         failure on one must never prevent stopping another.
 
-        In sequential mode only a side that is still CONNECTED is stopped: a
-        disconnected side already halted when its link dropped (dead-man model),
+        In sequential mode connected central receivers and ready local transports
+        are stopped. A disconnected central side already halted on link drop,
         and stopping it would reconnect it (async_stop_command ensures a link),
         momentarily creating the two-link state the sequential profile avoids.
         """
         if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
-            targets = [(side, child) for side, child in targets if child.is_connected]
+            targets = [
+                (side, child) for side, child in targets
+                if child.is_connected or self._ready_disconnected_transport(child)
+            ]
         with self._hold_command_connections(targets):
             results = await asyncio.gather(
                 *(child.async_stop_command() for _, child in targets),

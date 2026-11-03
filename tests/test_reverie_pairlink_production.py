@@ -570,6 +570,7 @@ async def test_entry_setup_registered_service_and_two_peer_clear_route(
         "massage_head_intensity": 3,
         "massage_foot_intensity": 5,
         "reverie_massage_mode": 2,
+        "reverie_massage_mode_option": "2",
         "reverie_massage_timer": 4,
     }
 
