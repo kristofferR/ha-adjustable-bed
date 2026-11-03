@@ -225,7 +225,7 @@ feedback or change which commands a bed supports.
 - Higher values reduce reconnection overhead for frequent Home Assistant use
 - `0` keeps the bed connected while Home Assistant runs, so commands respond without reconnecting. Use it only for mains-powered beds: the held link blocks the vendor app and any Bluetooth remote (RF remotes are unaffected), and it keeps the bed's Bluetooth radio active.
 - `0` applies only while Disconnect After Command is off; when that option is on, its one-second handoff wins.
-- If a kept link drops, the next command reconnects it. There is no background reconnect timer, because some receivers drop idle links and stop advertising after repeated reconnects.
+- If a kept link drops, the next command reconnects it. Most beds get no background reconnect timer, because some receivers drop idle links and stop advertising after repeated reconnects. Bed types that already reconnect automatically after a drop keep doing so.
 
 **Timed Move**
 - `adjustable_bed.timed_move` treats the requested milliseconds as an elapsed movement ceiling, starting after connection and movement preparation. Linak completes its readiness handshake before this timer starts. Bluetooth write latency counts toward the ceiling instead of extending it.
