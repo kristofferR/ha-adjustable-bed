@@ -36,7 +36,7 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 - Better Living
 - LevaSleep
 - American Star
-- Avanti Bases
+- Avanti Bases (current app: explicit [Avanti Bases profile](ore-comfort-bed.md), `avanti_bases`)
 - Comfort Furniture
 - Hestia Motion
 - Maxcoil Una (current app: [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](ore-comfort-bed.md))

@@ -38,10 +38,12 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
+    BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -74,8 +76,11 @@ from .const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
+    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
@@ -120,6 +125,8 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SIMMONS: _FIXED_LAYOUT,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
     BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
+    # AHF has no massage. Motor count still sizes the legacy covers.
+    BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
     # These apps always show their massage page.
     BED_TYPE_ADJUSTABLE_LUMBAR: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     BED_TYPE_STARCODE_ABM5_4: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
@@ -133,17 +140,22 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_VMATBASIC: _APP_DEFINED,
     BED_TYPE_MOTION_BED: _APP_DEFINED,
     BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
+    BED_TYPE_SLEEPYS_ELITE_APP: _APP_DEFINED,
     # The variant selects the Svane Remote app profile or Jensen LinOn.
     BED_TYPE_SVANE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
 }
 _HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(
+        {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
+    ),
     **{
         (BED_TYPE_KEESON, variant): _ALWAYS_MASSAGE
         for variant in (
             KEESON_VARIANT_INNOVA,
             KEESON_VARIANT_MAXCOIL_UNA,
             KEESON_VARIANT_DYNASTY_BASES,
+            KEESON_VARIANT_AMERICANSTAR,
             KEESON_VARIANT_BEDSENSE_BASES,
             KEESON_VARIANT_HEAL_EVERY_NIGHT,
         )
@@ -177,7 +189,13 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_FSM_RELAX: SideProfile(
         "FSM Relax",
         frozenset(
-            {CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_REVERSE_MOTORS}
+            {
+                CONF_PRODUCT_TYPE,
+                CONF_HAS_LIGHT,
+                CONF_HAS_MASSAGE,
+                CONF_FSM_RELAX_MEMORY_NAMES,
+                *CONF_REVERSE_MOTORS,
+            }
         ),
     ),
     BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote", LIMOSS_REMOTE_CONFIG_KEYS),
@@ -197,30 +215,53 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_JIECANG_APP: SideProfile(
         "Jiecang app",
         frozenset(
-            {CONF_JIECANG_APP_PROFILE, CONF_JIECANG_APP_LAYOUT, CONF_JIECANG_APP_TRANSPORT, CONF_HAS_LIGHT}
+            {
+                CONF_JIECANG_APP_PROFILE,
+                CONF_JIECANG_APP_LAYOUT,
+                CONF_JIECANG_APP_TRANSPORT,
+                CONF_HAS_LIGHT,
+            }
         ),
     ),
     BED_TYPE_MALOUF_APP: SideProfile(
         "Malouf / Lucid app",
         frozenset(
-            {CONF_MALOUF_APP_PROFILE, CONF_MALOUF_APP_MODEL, CONF_MALOUF_APP_TRANSPORT, CONF_MALOUF_APP_PRIMARY}
+            {
+                CONF_MALOUF_APP_PROFILE,
+                CONF_MALOUF_APP_MODEL,
+                CONF_MALOUF_APP_TRANSPORT,
+                CONF_MALOUF_APP_PRIMARY,
+            }
         ),
     ),
     BED_TYPE_LEGGETT_LP_LEGACY: SideProfile(
         "L&P legacy app",
         frozenset(
-            {CONF_LP_LEGACY_MODEL, CONF_LP_LEGACY_MODE, CONF_LP_LEGACY_WRITE_UUID, CONF_LP_LEGACY_READ_UUID}
+            {
+                CONF_LP_LEGACY_MODEL,
+                CONF_LP_LEGACY_MODE,
+                CONF_LP_LEGACY_WRITE_UUID,
+                CONF_LP_LEGACY_READ_UUID,
+            }
         ),
     ),
-    BED_TYPE_LEGGETT_OKIN: SideProfile("Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})),
+    BED_TYPE_LEGGETT_OKIN: SideProfile(
+        "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})
+    ),
     BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed", SLEEPTRACKER_CONFIG_KEYS),
+    BED_TYPE_SLEEPYS_ELITE_APP: SideProfile(
+        "Sleepy's Elite app",
+        frozenset({CONF_SLEEPYS_ELITE_SELECTOR}),
+    ),
     BED_TYPE_MOTION_BED: SideProfile("Motion Bed", MOTION_BED_CONFIG_KEYS | {CONF_BLE_DEVICE_NAME}),
     BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", STARCODE_APP_CONFIG_KEYS),
     BED_TYPE_STARCODE_M5X5: SideProfile(
         "AdjustableM5X5",
         frozenset({CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
     ),
-    BED_TYPE_VIBRADORM_APP: SideProfile("Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}),
+    BED_TYPE_VIBRADORM_APP: SideProfile(
+        "Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}
+    ),
     BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic", VMATBASIC_CONFIG_KEYS),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
     BED_TYPE_ZSERIES: SideProfile("Customatic Z-Series", variant_owned=True),
@@ -241,6 +282,12 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
         "Heal Every Night", frozenset({CONF_MOTOR_COUNT})
     ),
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): SideProfile("OKIN-Seating"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): SideProfile(
+        "Avanti Bases", frozenset({CONF_MOTOR_COUNT})
+    ),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): SideProfile(
+        "AMERICANSTAR", frozenset({CONF_MOTOR_COUNT})
+    ),
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): SideProfile("Bedsense Bases"),
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): SideProfile("INNOVA"),
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): SideProfile("MaxCoil Una"),

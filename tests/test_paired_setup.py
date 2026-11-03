@@ -46,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
@@ -72,6 +73,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
     CONF_VMATBASIC_PROFILE,
@@ -3235,6 +3237,100 @@ class TestSideServiceRouting:
         unknown = SimpleNamespace(capability_controller=None)
         assert _combined_motor_buttons_for(coord, [left, unknown]) == []
 
+    def test_combined_app_holds_intersect_direction_and_timing_metadata(self):
+        """Both sides must declare the same held route and cadence per direction."""
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import (
+            ControllerMotorHoldSpec,
+            MotorControlSpec,
+        )
+        from custom_components.adjustable_bed.button import _combined_motor_buttons_for
+
+        def motor_spec(hold):
+            return MotorControlSpec(
+                key="head",
+                translation_key="head",
+                open_fn=AsyncMock(),
+                close_fn=AsyncMock(),
+                stop_fn=AsyncMock(),
+                hold=hold,
+            )
+
+        def make_combined(left_hold, right_hold):
+            left = SimpleNamespace(
+                capability_controller=SimpleNamespace(
+                    supports_motor_control=True,
+                    has_discrete_motor_control=False,
+                    motor_control_specs=[motor_spec(left_hold)],
+                )
+            )
+            right = SimpleNamespace(
+                capability_controller=SimpleNamespace(
+                    supports_motor_control=True,
+                    has_discrete_motor_control=False,
+                    motor_control_specs=[motor_spec(right_hold)],
+                )
+            )
+            coord = MagicMock(
+                pair_id="pair_x",
+                device_info={},
+                connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
+            )
+            coord.children = {
+                side: SimpleNamespace(bed_type=BED_TYPE_OCTO) for side in (SIDE_LEFT, SIDE_RIGHT)
+            }
+            return coord, _combined_motor_buttons_for(coord, [left, right])
+
+        def combined(left_hold, right_hold):
+            coord, buttons = make_combined(left_hold, right_hold)
+            return {
+                button._direction: button.extra_state_attributes
+                for button in buttons
+                if button._motor_key == "head"
+            }
+
+        matched = ControllerMotorHoldSpec("headUp", "headDown", 100, 100)
+        assert combined(matched, matched) == {
+            "up": {
+                "held_control": "headUp",
+                "hold_start_delay_ms": 100,
+                "hold_release_delay_ms": 100,
+            },
+            "down": {
+                "held_control": "headDown",
+                "hold_start_delay_ms": 100,
+                "hold_release_delay_ms": 100,
+            },
+        }
+
+        direction_mismatch = ControllerMotorHoldSpec("headUp", "otherDown", 100, 100)
+        assert combined(matched, direction_mismatch) == {
+            "up": {
+                "held_control": "headUp",
+                "hold_start_delay_ms": 100,
+                "hold_release_delay_ms": 100,
+            },
+            "down": {},
+        }
+
+        timing_mismatch = ControllerMotorHoldSpec("headUp", "headDown", 100, 200)
+        assert combined(matched, timing_mismatch) == {"up": {}, "down": {}}
+        assert combined(matched, None) == {"up": {}, "down": {}}
+
+        coord, buttons = make_combined(matched, matched)
+        up_button = next(
+            button
+            for button in buttons
+            if button._motor_key == "head" and button._direction == "up"
+        )
+        assert up_button.extra_state_attributes["held_control"] == "headUp"
+        coord.connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
+        assert "held_control" not in up_button.extra_state_attributes
+        coord.connection_mode = PAIR_CONNECTION_MODE_CONCURRENT
+        assert up_button.extra_state_attributes["held_control"] == "headUp"
+
 
 class TestPairedReceiverSettings:
     @pytest.mark.parametrize("failed_release", [False, True])
@@ -3975,6 +4071,8 @@ class TestOfflineSafeBedTypes:
                     CONF_VIBRADORM_APP_PROFILE: "caresse",
                     CONF_VIBRADORM_CONTROL_TYPE: "2",
                 })
+            elif bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                child[CONF_SLEEPYS_ELITE_SELECTOR] = "BOX25"
             elif bed_type == BED_TYPE_VMATBASIC:
                 child[CONF_VMATBASIC_PROFILE] = "cbi"
             elif bed_type == "starcode_abm5_4":

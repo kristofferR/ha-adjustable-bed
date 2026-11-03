@@ -95,8 +95,9 @@ class Box25Commands:
     STAR_STORE_MEMORY_2 = _star_command(0x95)
     STAR_MEMORY_STORE = (STAR_STORE_MEMORY_1, STAR_STORE_MEMORY_2)
 
-    # The dedicated ON resets the LEDs to white. An RGB frame also lights them
-    # from OFF, so turning on with a selected colour skips ON entirely (#557).
+    # The dedicated ON resets the LEDs to white (#557). Some Star firmware
+    # ignores RGB and brightness frames while the LEDs are off, so turning on
+    # always starts with ON and reapplies colour and level afterwards (#702).
     LIGHT_ON_WHITE = _star_command(0x73)
     LIGHT_OFF = _star_command(0x74)
     LIGHT_TOGGLE = _star_command(0x71)
@@ -156,7 +157,6 @@ class SleepysBox25Controller(BedController):
         self._massage_intensity = 0
         self._massage_timer_minutes = 0
         self._light_level: int | None = None
-        self._light_rgb: tuple[int, int, int] = _DEFAULT_LIGHT_RGB
 
     # ─── BLE Properties ──────────────────────────────────────────────────
 
@@ -214,11 +214,6 @@ class SleepysBox25Controller(BedController):
     @property
     def supports_discrete_light_control(self) -> bool:
         return True
-
-    @property
-    def supports_explicit_light_on_control(self) -> bool:
-        """Light the LEDs through RGB instead of the white-resetting ON frame."""
-        return False
 
     @property
     def supports_light_color_control(self) -> bool:
@@ -662,14 +657,16 @@ class SleepysBox25Controller(BedController):
     # ─── Lights ──────────────────────────────────────────────────────────
 
     async def lights_on(self) -> None:
-        """Turn on in the last colour and level, without the white ON flash.
+        """Send the dedicated ON frame, which also resets the LEDs to white.
 
-        Hardware-tested by the #557 reporter: the RGB frame turns the LEDs on
-        from OFF, and a following brightness frame keeps the colour.
+        An RGB frame lights the LEDs from OFF on the #557 reporter's base but
+        is ignored on others (#702), so the light entity sends ON first and
+        reapplies the selected colour and level afterwards.
         """
-        await self.set_light_color(self._light_rgb)
-        if self._light_level:
-            await self.set_light_level(self._light_level)
+        await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
+        self.forward_controller_state_updates(
+            {"under_bed_lights_on": True, "under_bed_lights_rgb": _DEFAULT_LIGHT_RGB}
+        )
 
     async def lights_off(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
@@ -679,14 +676,13 @@ class SleepysBox25Controller(BedController):
         await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
-        """Show an RGB colour; this also lights the LEDs from OFF."""
+        """Show an RGB colour on lit LEDs; not every base turns on from it."""
         red, green, blue = (max(0, min(255, int(channel))) for channel in rgb_color)
         await self._write_massage_light_command(
             bytes([0x5A, 0xE0, 0x04, 0x02, red, green, blue, 0xA5])
         )
-        self._light_rgb = (red, green, blue)
         self.forward_controller_state_updates(
-            {"under_bed_lights_on": True, "under_bed_lights_rgb": self._light_rgb}
+            {"under_bed_lights_on": True, "under_bed_lights_rgb": (red, green, blue)}
         )
 
     async def set_light_level(self, level: int) -> None:
@@ -888,10 +884,6 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
         )
 
     @property
-    def supports_explicit_light_on_control(self) -> bool:
-        return True
-
-    @property
     def supports_light_color_control(self) -> bool:
         """RGB is only proven for StarCode; legacy extended frames carry two values."""
         return False
@@ -903,9 +895,6 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
     @property
     def default_light_rgb_color(self) -> tuple[int, int, int] | None:
         return None
-
-    async def lights_on(self) -> None:
-        await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         raise NotImplementedError("Light color control not supported on legacy BOX25")
