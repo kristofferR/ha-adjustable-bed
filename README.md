@@ -79,7 +79,7 @@ Enjoying Adjustable Bed? Sponsoring its development is a lovely way to say thank
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor_on_GitHub-%E2%99%A1-ec6cb9?style=for-the-badge)](https://github.com/sponsors/kristofferR)
 
 <p align="center">
-  <img src="https://files.kristofferr.com/artifacts/adjustable-bed-v4-dual-controls.png?k=HdLGHefHqT2P" alt="Adjustable Bed v4 dashboard with independent left and right positions" width="432">
+  <img src="https://files.kristofferr.com/artifacts/adjustable-bed-v4-dual-controls.png?k=HdLGHefHqT2P" alt="Adjustable Bed dashboard with independent left and right positions" width="432">
 </p>
 
 ## Supported Beds
@@ -163,11 +163,7 @@ when choosing manually.
 
 ## Installation
 
-v4 requires **Home Assistant 2026.9.0 or newer**. See the [compatibility and migration notes](docs/HA_2026_9.md).
-
-**Before upgrading from v3, save a Home Assistant backup.** v4 migrates stored
-configuration; reinstalling v3 alone cannot undo it. Follow the
-[backup and rollback instructions](docs/HA_2026_9.md#backup-and-rollback).
+Requires **Home Assistant 2026.9.0 or newer**.
 
 ### HACS (Recommended)
 
@@ -178,7 +174,7 @@ configuration; reinstalling v3 alone cannot undo it. Follow the
 
 ### Manual
 
-Use a v4 release archive, or check out `main` for the current development
+Use a release archive, or check out `main` for the current development
 code. Copy `custom_components/adjustable_bed` to your
 `config/custom_components/` directory and restart. The committed frontend bundle
 is included; an end-user installation does not require Bun or a frontend build.
@@ -251,7 +247,7 @@ controls expose shared capabilities; select a side for its additional features.
 The **Match both to** controls copy the selected side's reported positions to the
 other side when both provide the required feedback. This is a one-time move.
 
-See [paired-bed configuration](docs/CONFIGURATION.md#two-independent-frames-in-v4)
+See [paired-bed configuration](docs/CONFIGURATION.md#two-independent-frames)
 and [action targeting](docs/SERVICES.md#targeting-a-bed-or-side) for setup and
 automation behavior.
 
@@ -376,7 +372,7 @@ See the [Connection Guide](docs/CONNECTION_GUIDE.md) for setup help.
 - **Bug reports** - Found something wrong? [Open an issue](https://github.com/kristofferR/ha-adjustable-bed/issues)
 - **Code contributions** - PRs welcome!
 
-For v4 changes, work from `main`. See the [developer documentation](docs/README.md#development-and-validation)
+See the [developer documentation](docs/README.md#development-and-validation)
 for environment setup, validation, architecture, and the APK Protocol Audit workflow.
 
 ## Credits

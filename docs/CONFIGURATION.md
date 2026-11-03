@@ -1,9 +1,8 @@
 # Configuration Guide
 
-This guide covers v4 configuration. Options depend on the selected controller
-and its reported capabilities; not every bed shows every field. v4 requires
-Home Assistant 2026.9.0 or newer. Read the [migration notes](HA_2026_9.md) before
-upgrading from v3.
+Options depend on the selected controller and its reported capabilities; not
+every bed shows every field. The integration requires Home Assistant 2026.9.0 or
+newer.
 
 ## Table of Contents
 
@@ -777,7 +776,7 @@ To enable it, open **Settings → Devices & Services → Adjustable Bed**, selec
 bed, and enable **Controller Sync** under **Entities**. Existing custom entity
 names may still show the old label.
 
-### Two Independent Frames in v4
+### Two Independent Frames
 
 Add each frame as its own Adjustable Bed entry and confirm that each controls
 only its intended side. For compatible entries, start **Add Integration →
@@ -827,8 +826,7 @@ offline-safe capabilities still support setup with one side unavailable.
 Existing side entity IDs, device IDs, names, areas, and history are retained when
 combining entries. To undo it, choose **Split paired bed** in the pair's options;
 the side entries are restored and combined controls are removed. Update any
-automation that targeted the combined controls. This restores standalone controls,
-not the v3 storage schema; [rollback requires a pre-v4 backup](HA_2026_9.md#backup-and-rollback).
+automation that targeted the combined controls.
 
 Use the [service targeting rules](SERVICES.md#targeting-a-bed-or-side) for
 automations. A child device defaults to its side; a parent defaults to both.
@@ -857,7 +855,7 @@ sequence:
 
 This runs each cover's normal movement action; it does not make movement
 continuous or synchronize positions. To stop, call `cover.stop_cover` targeting
-both covers. Unlike the v4 paired-bed controls, this simple script does not stop
+both covers. Unlike the paired-bed controls, this simple script does not stop
 the other side automatically if one side fails.
 
 ---
