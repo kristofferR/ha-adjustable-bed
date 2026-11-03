@@ -12,6 +12,7 @@ from .base import BedController
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .bedsense import BedSenseController as BedSenseController
+    from .bf_cherish import BfCherishController as BfCherishController
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
@@ -153,6 +154,7 @@ _EXPORT_MODULES = {
     "OkinDotController": "okin_dot",
     "OkinHandleController": "okin_handle",
     "OkinNordicController": "okin_nordic",
+    "BfCherishController": "bf_cherish",
     "OkinOreController": "okin_ore",
     "OkinRfEcoBtController": "okin_rf_eco_bt",
     "OkinUuidController": "okin_uuid",
@@ -202,6 +204,7 @@ __all__ = [
     "OkinCstController",
     "OkinDotController",
     "OkinHandleController",
+    "BfCherishController",
     "OkinOreController",
     "OkinRfEcoBtController",
     "OkinUuidController",

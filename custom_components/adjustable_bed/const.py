@@ -408,6 +408,8 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
+BED_TYPE_BF: Final = "bf"
+BED_TYPE_CHERISH: Final = "cherish"
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # Single-actuator staircase
@@ -628,6 +630,8 @@ SUPPORTED_BED_TYPES: Final = [
     *sorted(CLUSTER033_BED_TYPES),
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BF,
+    BED_TYPE_CHERISH,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,
@@ -2885,6 +2889,8 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_ISLEEP,
         BED_TYPE_BEDSENSE,
+        BED_TYPE_BF,
+        BED_TYPE_CHERISH,
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,
