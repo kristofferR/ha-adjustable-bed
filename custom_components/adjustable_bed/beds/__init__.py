@@ -11,6 +11,7 @@ from .base import BedController
 
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
+    from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
@@ -85,6 +86,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "ComfortEnhancementsController": "comfort_enhancements",
     "EshineController": "eshine",
     "InnovaController": "innova",
     "StarcodeM5X5Controller": "starcode_m5x5",

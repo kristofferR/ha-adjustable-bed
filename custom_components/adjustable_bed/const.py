@@ -461,7 +461,14 @@ ZSERIES_VARIANTS: Final = {
     ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
 }
 # Bed types whose variant is a user choice with no automatic default.
-VARIANT_REQUIRED_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES})
+BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
+COMFORT_ENHANCEMENTS_VARIANTS: Final = {
+    "mc2": "MC2: AC-1/BC3, Massage Plus / Comfort Position",
+    "mc3": "MC3: Comfort Position (no massage or light)",
+    "mc4": "MC4: Lumbar Support / Massage Plus",
+    "mc5": "MC5: Hi Lo Lift / Massage Plus",
+}
+VARIANT_REQUIRED_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES, BED_TYPE_COMFORT_ENHANCEMENTS})
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
     {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES}
@@ -605,6 +612,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_TRANQUIL,
     BED_TYPE_SIMMONS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
     # Explicit Richmat MH app profiles
     BED_TYPE_RICHMAT_REVIVE,
@@ -1727,6 +1735,7 @@ OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
     ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
 }
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
@@ -2537,6 +2546,7 @@ OKIN_64BIT_VARIANTS: Final = {
 
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
+    *COMFORT_ENHANCEMENTS_VARIANTS,
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
@@ -2799,6 +2809,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_ZSERIES,
         BED_TYPE_SIMMONS,
         BED_TYPE_ADJUSTABLE_LUMBAR,
+        BED_TYPE_COMFORT_ENHANCEMENTS,
         BED_TYPE_ESHINE,
         # VER1 angle replies feed the app's arc labels, not the shared angle axes.
         *RICHMAT_MH_BED_TYPES,
@@ -2881,6 +2892,8 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
     BEDS_REQUIRING_PERSISTENT_CONNECTION
     | frozenset(
         {
+            # Preset repeat-tap and massage cycles depend on connection-local state.
+            BED_TYPE_COMFORT_ENHANCEMENTS,
             BED_TYPE_COMFORT_MOTION,
             BED_TYPE_ERGOMOTION,
             BED_TYPE_JENSEN,
@@ -3019,6 +3032,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
+    BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for

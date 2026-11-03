@@ -63,7 +63,7 @@ an OEM absent here can still use OCTO hardware.
 
 Some Octo beds require a 4-digit PIN to maintain the Bluetooth connection. Without the PIN, the bed will disconnect after ~30 seconds.
 
-### PIN verification during setup (v4)
+### PIN verification during setup
 
 Standard Octo setup checks the bed's PIN requirements before saving the entry.
 If a PIN is set, Home Assistant sends the entered PIN and waits for the bed's
@@ -248,7 +248,7 @@ Bluetooth proxies behave differently from one. It also does not establish a
 shared connection limit across two independent receivers. Single-proxy and
 dual-proxy operation remain hardware-validation items.
 
-In 4.0, two compatible bed-side receivers can be paired into one Home Assistant
+Two compatible bed-side receivers can be paired into one Home Assistant
 device. Automatic connection mode preserves each receiver's standalone connection
 policy and runs Both commands concurrently. The previous bed-type-based default
 forced a disconnect after every command, overriding each side's idle settings
@@ -263,7 +263,7 @@ not be added as a bed side. Pairing requires compatible bed-side actuator
 layouts, so a one-motor RTV cannot be paired with a two-motor RC2.
 
 This design matches three-device installations such as two `RC2` bed sides plus
-one `RTV` TV lift. The 4.0 dual-bed implementation has extensive failure,
+one `RTV` TV lift. The dual-bed implementation has extensive failure,
 cancellation, and one-link ordering tests, but still needs validation on real
 dual OCTO hardware. `Synchro Mode`, when advertised by a receiver, remains a
 hardware capability and is not software grouping across arbitrary entries.
@@ -458,7 +458,7 @@ The app re-authenticates on an event, not on a timer: the device pushes a
 integration handles the LOCK push immediately, tracks STATE responses, and
 retains a 25-second keepalive fallback when authentication requires it. Standard
 Octo setup reports rejected or inconclusive PIN checks before saving the entry;
-see [PIN verification](#pin-verification-during-setup-v4).
+see [PIN verification](#pin-verification-during-setup).
 
 The PIN feature does not exist in OCTO Smart Control 1.1.57 (versionCode
 10157); it was added by versionCode 10301.
