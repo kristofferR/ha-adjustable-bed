@@ -461,6 +461,34 @@ async def test_pending_ack_requires_matching_live_roster_and_successful_write():
     assert co.async_write_app_state.call_args.args[1]["pending_ack"] is False
 
 
+async def test_failed_ack_is_retried_on_the_established_session():
+    c, co, client = make_controller(ready=False)
+    c.restore_persisted_app_state({"pending_ack": True, "room": 10001})
+    ack = "030000000020ffffffff01450000"
+    failed = []
+
+    async def write(uuid, data, **kwargs):
+        if data[:2] == b"\x01\x16":
+            notify(c, "021600")
+            notify(c, "010a00000000")
+        elif data[5] == 0xFE:
+            notify(c, "0300000000ffffeeddccbbaa00000000")
+        elif data.hex() == ack and not failed:
+            failed.append(data)
+            raise BleakError("ack write failed")
+
+    client.write_gatt_char.side_effect = write
+    with pytest.raises(BleakError):
+        await c.preset_flat()
+    assert c._pending_ack
+    client.write_gatt_char.reset_mock()
+
+    await c.preset_flat()  # same connection: no re-authentication or roster query
+    assert [p.hex() for p in packets(client)] == [ack, "030000000020ffffffff011c0000"]
+    assert not c._pending_ack
+    assert co.async_write_app_state.call_args.args[1]["pending_ack"] is False
+
+
 async def test_setup_and_options_preserve_explicit_profile(hass):
     from homeassistant.const import CONF_ADDRESS
     from pytest_homeassistant_custom_component.common import MockConfigEntry

@@ -427,6 +427,8 @@ class IsleepController(BedController):
     async def _ensure_session(self) -> None:
         async with self._session_lock:
             if self._ready and self._target is not None:
+                # A failed acknowledgment stays pending on a live session too.
+                await self._flush_pending_ack()
                 return
             await self.start_notify()
             generation = self._generation
@@ -448,11 +450,16 @@ class IsleepController(BedController):
                 b"\x03\xff\xff\xff\xff\xfe" + cast(int, self._own).to_bytes(4, "little")
             )
             await self._wait(self._roster, 5, generation)
-            if self._pending_ack:
-                await self._send_opcode(69, cancel=asyncio.Event())
-                self._pending_ack = False
-                self._pending_room = None
-                await self._coordinator.async_write_app_state(self, self.persisted_app_state)
+            await self._flush_pending_ack()
+
+    async def _flush_pending_ack(self) -> None:
+        """Send a pending enrollment acknowledgment, clearing it only on success."""
+        if not self._pending_ack:
+            return
+        await self._send_opcode(69, cancel=asyncio.Event())
+        self._pending_ack = False
+        self._pending_room = None
+        await self._coordinator.async_write_app_state(self, self.persisted_app_state)
 
     async def _send_opcode(self, opcode: int, *, cancel: asyncio.Event | None = None) -> None:
         if self._own is None or self._target is None:
