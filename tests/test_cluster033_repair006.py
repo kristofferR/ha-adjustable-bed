@@ -482,7 +482,11 @@ async def test_row_reset_supplemental_production_paths(hass, monkeypatch, layout
         "button", "press", {"entity_id": button.entity_id}, blocking=True
     )
     assert frames(client) == [RESET] * 3 + [ZERO]
-    assert [c.args[0] for c in ctrl._wait.await_args_list] == [100, 100, 100]
+    waits = [c.args[0] for c in ctrl._wait.await_args_list]
+    # The hold is bounded by wall-clock time, so the last step is whatever
+    # remains of the 300 ms budget after the real write time on this runner.
+    assert waits[:2] == [100, 100]
+    assert len(waits) == 3 and 0 < waits[2] <= 100
     await async_register_services(hass)
     client.write_gatt_char.reset_mock()
     await call(hass, device, "hold_control", control="reset", duration=0.3)
