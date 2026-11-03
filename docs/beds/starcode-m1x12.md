@@ -80,7 +80,7 @@ Movement and held massage wave/intensity controls refresh at 100 ms. The first
 refresh is delayed by 100 ms, and busy ticks are skipped. The Lovelace card
 uses each entity's typed `held_control` metadata and invokes the existing
 bounded `adjustable_bed.hold_control` service once, for at most 60 seconds. A
-pointer/keyboard release, STOP, or card teardown routes STOP through the owning
+pointer/keyboard release, STOP, or card teardown immediately routes STOP through the owning
 device and paired side. The controller also sends its protocol STOP after
 cancellation, failure, replacement or expiry, using a fresh cancellation
 event. Finite app actions keep their accepted repeat counts and cleanup frames.

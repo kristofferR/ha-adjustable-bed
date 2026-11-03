@@ -133,7 +133,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
         held_control_up: `part_${part}_up`,
         held_control_down: `part_${part}_down`,
         hold_start_delay_ms: 100,
-        hold_release_delay_ms: 100,
+        hold_release_delay_ms: 0,
       });
     }
   }
@@ -145,7 +145,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     ...(combinedHold ? {
       held_control: "part_1_up",
       hold_start_delay_ms: 100,
-      hold_release_delay_ms: 100,
+      hold_release_delay_ms: 0,
     } : {}),
   });
   add(ids.rightWave, nativeTwoAddress ? "right-device" : root,
@@ -154,7 +154,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
       ...sideAttributes("right"),
       held_control: "massage_wave_up",
       hold_start_delay_ms: 100,
-      hold_release_delay_ms: 100,
+      hold_release_delay_ms: 0,
     });
 
   const clock = new FakeClock();
@@ -344,7 +344,7 @@ test("an explicit unsided STOP remains broad within its own device", async () =>
           held_control_up: "part_1_up",
           held_control_down: "part_1_down",
           hold_start_delay_ms: 100,
-          hold_release_delay_ms: 100,
+          hold_release_delay_ms: 0,
         },
       },
       "button.stop": {

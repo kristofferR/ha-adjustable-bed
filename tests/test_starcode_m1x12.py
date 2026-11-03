@@ -264,7 +264,8 @@ async def test_held_entity_metadata_reaches_real_bounded_service_and_controller(
         assert attributes["held_control_down"] == control.replace("_up", "_down")
     else:
         assert attributes["held_control"] == control
-    assert attributes["hold_start_delay_ms"] == attributes["hold_release_delay_ms"] == 100
+    assert attributes["hold_start_delay_ms"] == 100
+    assert attributes["hold_release_delay_ms"] == 0
 
     button_entities = _button_entities_for(hass, coordinator)
     stop_button = next(

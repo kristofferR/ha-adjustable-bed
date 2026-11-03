@@ -339,8 +339,10 @@ class StarcodeM1X12Controller(BedController):
                 hold=ControllerMotorHoldSpec(
                     up_control=up,
                     down_control=down,
+                    # First app refresh tick is 100 ms after press; release
+                    # replaces the refresh with STOP immediately.
                     start_delay_ms=100,
-                    release_delay_ms=100,
+                    release_delay_ms=0,
                 ),
             )
             for part, translation_key, up, down in _PARTS
@@ -390,8 +392,10 @@ class StarcodeM1X12Controller(BedController):
                 translation_key=f"starcode_m1x12_hold_{key}",
                 hold=ControllerHoldSpec(
                     control=key,
+                    # First app refresh tick is 100 ms after press; release
+                    # replaces the refresh with STOP immediately.
                     start_delay_ms=100,
-                    release_delay_ms=100,
+                    release_delay_ms=0,
                 ),
             )
             for key, name in held
@@ -1178,8 +1182,10 @@ class StarElevateM1X12Controller(StarElevateController):
                 hold=ControllerMotorHoldSpec(
                     up_control=control_pair[0],
                     down_control=control_pair[1],
+                    # First app refresh tick is 100 ms after press; release
+                    # replaces the refresh with STOP immediately.
                     start_delay_ms=100,
-                    release_delay_ms=100,
+                    release_delay_ms=0,
                 ),
             )
             for spec, control_pair in zip(
