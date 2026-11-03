@@ -730,6 +730,14 @@
           "product_type": "Saved app model",
           "protocol_variant": "BLE driver"
         }
+      },
+      "gmmotor": {
+        "title": "GM Control product",
+        "description": "Choose the exact product code used by GM Control. Remote pickers and QR codes need the concrete selected product. Bluetooth services alone cannot identify the layout. Standard and split-head configurations are separate choices.",
+        "data": {
+          "product_type": "Exact GM Control product / configuration",
+          "gmmotor_side": "App bed side"
+        }
       }
     },
     "progress": {
@@ -827,7 +835,9 @@
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
       "cluster033_layout": "Choose a layout belonging to the selected app.",
-      "doublesleep_profile": "Select a supported SleepEase model and BLE driver."
+      "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
+      "gmmotor_product": "Choose an exact admitted GM Control product.",
+      "gmmotor_side": "This product does not expose the selected app side."
     }
   },
   "options": {
@@ -925,7 +935,8 @@
           "sleeptracker_processor_type": "Processor type (0 if unknown)",
           "sleepys_elite_selector": "Sleepy's Elite control box selector",
           "kaidi_sofa_acu_no": "Advertised actuator descriptor",
-          "kaidi_room_id": "Room ID"
+          "kaidi_room_id": "Room ID",
+          "gmmotor_side": "GM Control app bed side"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1141,7 +1152,9 @@
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
       "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls.",
-      "doublesleep_profile": "Select a supported SleepEase model and BLE driver."
+      "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
+      "gmmotor_product": "Choose an exact admitted GM Control product.",
+      "gmmotor_side": "This product does not expose the selected app side."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -4703,6 +4716,12 @@
       },
       "adjustamattress_strength_index": {
         "name": "Reported anti-snore strength index"
+      },
+      "gmmotor_state": {
+        "name": "GM Control state"
+      },
+      "gmmotor_sleep_state": {
+        "name": "GM Control sleep module state"
       }
     },
     "light": {
@@ -7536,6 +7555,63 @@
         },
         "capability_page": {
           "name": "Capability page byte"
+        }
+      }
+    },
+    "gmmotor": {
+      "name": "GM Control action",
+      "description": "Run a product-admitted direct Bluetooth action. Use hold_control or the named buttons for catalog controls. Sleep data has unverified physiological semantics.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "value": {
+          "name": "Operation value"
+        },
+        "mode": {
+          "name": "Exact alarm action name"
+        },
+        "slot": {
+          "name": "Alarm ID"
+        },
+        "repeat": {
+          "name": "Repeat mask"
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "status": {
+          "name": "Alarm status"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "rgb_color": {
+          "name": "RGB color"
+        },
+        "part": {
+          "name": "Report side (1 left, 2 right)"
+        },
+        "report_type": {
+          "name": "Report type (1 day, 2 month)"
+        },
+        "report_date": {
+          "name": "Report date"
+        },
+        "height": {
+          "name": "Desk height"
+        },
+        "unit": {
+          "name": "Height unit"
+        },
+        "side": {
+          "name": "Bed side"
         }
       }
     }

@@ -82,6 +82,10 @@ from .profile_review import (
 )
 from .validators import get_variants_for_bed_type
 
+# These name hints ask the user which companion app they use. They are not
+# competing receiver signatures for an already configured physical device.
+_GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
+
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
 
@@ -167,7 +171,7 @@ def _reported_recommendation(
     if (
         detected.bed_type != BED_TYPE_SLEEPYS_BOX25
         or detected.requires_characteristic_check
-        or set(detected.ambiguous_types or ()) - {BED_TYPE_STARCODE_ABM5_4}
+        or set(detected.ambiguous_types or ()) - {BED_TYPE_STARCODE_ABM5_4} - _GMMOTOR_APP_HINTS
     ):
         return None
     # This key changes only for materially different evidence, not releases,
@@ -215,6 +219,11 @@ def recommend_profile(
         return None
     current = bed_type_choice(bed_type, variant if isinstance(variant, str) else None)
     detected = detect_bed_type_detailed(info)
+    if bed_type in _GMMOTOR_APP_HINTS and bed_type in (detected.ambiguous_types or ()):
+        return None  # The user's explicit companion app resolves this shared identity.
+    detected.ambiguous_types = [
+        choice for choice in detected.ambiguous_types or () if choice not in _GMMOTOR_APP_HINTS
+    ] or None
     if detected.bed_type not in SUPPORTED_BED_TYPES or detected.confidence < 0.6:
         return None
     assert detected.bed_type is not None

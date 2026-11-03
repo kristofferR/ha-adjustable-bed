@@ -261,6 +261,7 @@ CONF_OCTO_MOTOR_COUNT_OVERRIDE: Final = "octo_motor_count_override"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_RMCONTROL_PRODUCT: Final = "rmcontrol_product"
 CONF_RMCONTROL_SIDE: Final = "rmcontrol_side"
+CONF_GMMOTOR_SIDE: Final = "gmmotor_side"
 CONF_LP_LEGACY_MODEL: Final = "lp_legacy_model"
 CONF_LP_LEGACY_MODE: Final = "lp_legacy_mode"
 CONF_LP_LEGACY_WRITE_UUID: Final = "lp_legacy_write_uuid"
@@ -500,6 +501,9 @@ BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
 BED_TYPE_CASPER_BASE: Final = "casper_base"
+BED_TYPE_GMMOTOR: Final = "gmmotor"
+BED_TYPE_GMMOTOR_SLEEP_MM: Final = "gmmotor_sleep_mm"
+BED_TYPE_GMMOTOR_SLEEP_SXB: Final = "gmmotor_sleep_sxb"
 BED_TYPE_CASPER_SLEEP_MM: Final = "casper_sleep_mm"
 BED_TYPE_CASPER_SLEEP_SXB: Final = "casper_sleep_sxb"
 CASPER_BASE_VARIANTS: Final = {
@@ -643,6 +647,7 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
@@ -2925,6 +2930,9 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_DOUBLESLEEP,
+        # The app exposes raw motor-index/desk reports, without a proven
+        # mapping to HA's generic head/back/legs/feet angle entities.
+        BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_ISLEEP,

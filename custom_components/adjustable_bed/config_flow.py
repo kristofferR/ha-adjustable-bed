@@ -105,6 +105,7 @@ from .const import (
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GMMOTOR,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
@@ -163,6 +164,7 @@ from .const import (
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
+    CONF_GMMOTOR_SIDE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
@@ -411,7 +413,8 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE}
+    {BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+     BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
 
@@ -869,6 +872,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_ISLEEP: "isleep",
     BED_TYPE_LIMOSS_REMOTE: "limoss_remote",
     BED_TYPE_FSM_RELAX: "fsm_relax",
+    BED_TYPE_GMMOTOR: "gmmotor",
     BED_TYPE_STARCODE_M1X12: "starcode_m1x12",
     BED_TYPE_STARCODE_M5X5: "starcode_m5x5",
     BED_TYPE_VIBRADORM_APP: "vibradorm",
@@ -881,7 +885,9 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
-    if bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE or name is None or is_mac_like_name(name):
+    if (
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type != BED_TYPE_GMMOTOR
+    ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
 
@@ -1446,6 +1452,40 @@ def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
         )
     except TypeError, ValueError:
         return {"base": "limoss_remote_invalid"}
+    return {}
+
+
+def _add_gmmotor_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    from .gmmotor_discovery import resolve_selection, selector_from_name
+    from .gmmotor_profiles import profile_choices
+
+    suggested = data.get(CONF_PRODUCT_TYPE)
+    if suggested is None:
+        try:
+            suggested = resolve_selection(selector_from_name(data.get(CONF_BLE_DEVICE_NAME, "")))
+        except ValueError:
+            suggested = ""
+    choices = profile_choices()
+    schema[vol.Required(CONF_PRODUCT_TYPE, default=suggested if suggested in choices else "")] = (
+        SelectSelector(SelectSelectorConfig(
+            options=[SelectOptionDict(value=key, label=label) for key, label in choices.items()],
+            mode=SelectSelectorMode.DROPDOWN,
+        ))
+    )
+    schema[vol.Required(CONF_GMMOTOR_SIDE, default=data.get(CONF_GMMOTOR_SIDE, "left"))] = vol.In(
+        {"left": "Left", "right": "Right", "both": "Both"}
+    )
+
+
+def _gmmotor_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .gmmotor_profiles import load_profile
+
+    try:
+        profile = load_profile(data.get(CONF_PRODUCT_TYPE, ""))
+    except ValueError:
+        return {CONF_PRODUCT_TYPE: "gmmotor_product"}
+    if {"left": 0, "right": 1, "both": 2}.get(data.get(CONF_GMMOTOR_SIDE, "left")) not in profile.sides:
+        return {CONF_GMMOTOR_SIDE: "gmmotor_side"}
     return {}
 
 
@@ -2140,6 +2180,7 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
     BED_TYPE_SLEEPTRACKER: _add_sleeptracker_schema_fields,
     BED_TYPE_ISLEEP: _add_isleep_schema_fields,
     BED_TYPE_FSM_RELAX: _add_fsm_relax_schema_fields,
+    BED_TYPE_GMMOTOR: _add_gmmotor_schema_fields,
     BED_TYPE_VIBRADORM_APP: _add_vibradorm_app_schema_fields,
     BED_TYPE_VMATBASIC: _add_vmatbasic_schema_fields,
     BED_TYPE_LIMOSS_REMOTE: _add_limoss_remote_schema_fields,
@@ -2714,6 +2755,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         schema: dict[vol.Marker, Any] = {}
         _add_cluster033_schema_fields(schema, data)
         return self.async_show_form(step_id="cluster033_app", data_schema=vol.Schema(schema), errors=errors)
+
+    async def async_step_gmmotor(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the exact catalog route only after the GM Control app is selected."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = _gmmotor_errors(data) if user_input is not None else {}
+        self._manual_data = data
+        if user_input is not None and not errors:
+            data[CONF_DISABLE_ANGLE_SENSING] = True
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "GM Control"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_gmmotor_schema_fields(schema, data)
+        return self.async_show_form(step_id="gmmotor", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_fsm_relax(
         self, user_input: dict[str, Any] | None = None
@@ -7709,6 +7765,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.get(CONF_BED_TYPE),
             data.get(CONF_PROTOCOL_VARIANT),
             resolved_variant=data.get(CONF_KAIDI_RESOLVED_VARIANT),
+            product_type=data.get(CONF_PRODUCT_TYPE),
         ):
             menu_options.append("pair_sides")
         if data.get(CONF_ADDRESS) or (
@@ -8721,6 +8778,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
                 user_input[CONF_MOTOR_PULSE_USER_SET] = False
 
+            if bed_type == BED_TYPE_GMMOTOR and not separate_address_pair:
+                if errors := _gmmotor_errors({**current_data, **user_input}):
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=errors
+                    )
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+
             if bed_type == BED_TYPE_FSM_RELAX and not separate_address_pair:
                 if errors := _fsm_relax_errors({**current_data, **user_input}):
                     return self.async_show_form(
@@ -8901,6 +8965,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
                 ),
                 resolved_variant=current_data.get(CONF_KAIDI_RESOLVED_VARIANT),
+                product_type=user_input.get(CONF_PRODUCT_TYPE, current_data.get(CONF_PRODUCT_TYPE)),
             ):
                 return self.async_show_form(
                     step_id=step_id,

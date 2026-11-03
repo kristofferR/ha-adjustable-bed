@@ -1,0 +1,60 @@
+"""Generate compact GM Control sleep DTO layouts from accepted row102 evidence.
+
+The output is executable protocol schema data only. Audit fixtures, source,
+provenance payloads and raw APK material remain machine-local.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+from pprint import pformat
+
+ROOT = Path(__file__).resolve().parents[1]
+SEAL = "2251d01a96c95b4d5c15c369fe67202f2e8c7d513c91db88fc8b4ec31fb396d7"
+
+
+def generate(report: Path) -> None:
+    assert hashlib.sha256((report / "REPORT.SHA256").read_bytes()).hexdigest() == SEAL
+    for line in (report / "REPORT.SHA256").read_text().splitlines():
+        digest, name = line.split("  ", 1)
+        assert hashlib.sha256((report / name).read_bytes()).hexdigest() == digest, name
+    layouts = json.loads((report / "SLEEP_JSON_FIELD_LAYOUT_WORK.json").read_text())["records"]
+    branches = json.loads((report / "SLEEP_NULL_FIELD_VECTORS_WORK.json").read_text())["rows"]
+    models = {row["address"]: row["model"] for row in layouts}
+    nulls = {}
+    for row in branches:
+        key = row.get("nullable_key", row.get("key"))
+        assert key is not None
+        if "expected_exception" in row:
+            nulls[row["address"], key] = None
+        else:
+            baseline = models[row["address"]]["fields"]
+            nulls[row["address"], key] = {
+                offset: value
+                for offset, value in row["model"]["fields"].items()
+                if value != baseline[offset]
+            }
+    output = "\n".join(
+        [
+            '"""GM Control sleep DTO runtime schemas. Generated; do not edit."""',
+            "from typing import Final",
+            "",
+            "from .gmmotor_notifications import Value",
+            "",
+            "# fmt: off",
+            "LAYOUTS: Final[dict[str, Value]] = " + pformat(models, width=110),
+            "NULL_BRANCHES: Final[dict[tuple[str, str], Value]] = " + pformat(nulls, width=110),
+            "",
+        ]
+    )
+    (ROOT / "custom_components/adjustable_bed/gmmotor_sleep_layouts.py").write_text(output)
+    print(json.dumps({"layouts": len(models), "null_branches": len(nulls), "bytes": len(output)}))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("report", type=Path)
+    generate(parser.parse_args().report.resolve())

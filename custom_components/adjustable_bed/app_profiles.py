@@ -144,6 +144,9 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    "gmmotor": GENERIC_FIELDS,
+    "gmmotor_sleep_mm": GENERIC_FIELDS,
+    "gmmotor_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
@@ -232,6 +235,9 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    "gmmotor": SideProfile("GM Control product", frozenset({CONF_PRODUCT_TYPE, "gmmotor_side", CONF_BLE_DEVICE_NAME})),
+    "gmmotor_sleep_mm": SideProfile("GM Control MM sleep module"),
+    "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
     BED_TYPE_BF: SideProfile("BF"),
     BED_TYPE_CHERISH: SideProfile("Cherish"),
     'tempur_curve': SideProfile('Tempur Curve', frozenset({CONF_PRODUCT_TYPE})),

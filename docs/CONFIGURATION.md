@@ -470,6 +470,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Motion Bed | [Layout and retained settings](beds/motion_bed.md); preserve the original Bluetooth name. |
 | Limoss | [Limoss Remote](beds/limoss-remote.md): bed/chair layout, light/massage and reversal settings. |
 | FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/fsm_relax.md). |
+| GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |
 | Legacy OKIN CB24 | [Single-address controls](#single-address-left--right-controls): both sides, Side A / Left, or Side B / Right. |
 
 <details>
@@ -972,3 +973,17 @@ stored-product choices are conditional records from this package, not inferred
 app compatibility. The product owns the motor layout and accessory controls.
 Configure two-address paired sides separately. Sleep sensors and the RCRM handset
 use separate entries. See the [Casper Base guide](beds/casper-base.md).
+
+### GM Control
+
+Choose **GM Control**, its exact product/configuration and the app bed side.
+Standard and split-head catalogs remain distinct. Remote pickers and QR codes
+require the resulting concrete product; shared services cannot select it.
+Product-owned controls use their exact labels and gestures, without generic
+motor-count or inferred-axis settings. FWRM/WFRM select a dedicated desk route.
+
+**GM Control MM sleep module** and **GM Control SXB sleep module** are separate
+Bluetooth entries. Each physical address owns its session, and a paired bed
+retains each receiver's product and wire side. **Pair sides** for one address
+requires the selected product's actual side choices. See the
+[GM Control guide](beds/gmmotor.md) for commands, raw state and static-only status.
