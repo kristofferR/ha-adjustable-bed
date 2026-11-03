@@ -33,6 +33,9 @@ if TYPE_CHECKING:
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
     from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
+    from .gmmotor import GmmotorController as GmmotorController
+    from .gmmotor_desk import GmmotorDeskController as GmmotorDeskController
+    from .gmmotor_sleep import GmmotorSleepController as GmmotorSleepController
     from .hjbed import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
     from .isleep import IsleepController as IsleepController
@@ -106,6 +109,9 @@ if TYPE_CHECKING:
 _EXPORT_MODULES = {
     "HJBedController": "hjbed",
     "DoubleSleepController": "doublesleep",
+    "GmmotorController": "gmmotor",
+    "GmmotorDeskController": "gmmotor_desk",
+    "GmmotorSleepController": "gmmotor_sleep",
     'TempurCurveController': 'tempur_curve',
     'QPlusAppController': 'sbi',
     'SertaMPRemoteController': 'serta_mp_remote',

@@ -525,6 +525,29 @@ and `operation`; paired targets are validated together before sending commands.
 The [Casper Base guide](beds/casper-base.md#configuration-actions) lists each
 operation's fields and the separate sensor/remote entry types.
 
+### GM Control
+
+`adjustable_bed.gmmotor` runs finite, product-admitted Bluetooth operations.
+Choose `device_id` and `operation`, with optional paired `side`. Every selected
+target is validated before its operation is scheduled. Named product controls
+use their button or `hold_control`; no raw-write action is exposed.
+
+The [GM Control command reference](beds/gmmotor.md#specialized-actions) lists
+clock/countdown/repeat alarm, RGB/timeout, anti-snore, bottom massage timer and
+sleep-name operations. The state sensor's `gmmotor_alarm_choices` attribute lists
+the exact accepted `mode` names for that product. Countdown alarms use `value`
+in minutes, or `alarm_at` with local `hour`/`minute`. Repeat records use `slot`,
+`repeat`, `hour`, `minute`, `mode`, `status`. Clock and light menus require their
+source capability replies.
+
+Independent MM/SXB entries expose `sensor_time`, `sensor_part`,
+`sensor_query_part`, `sensor_live`, `sensor_report`, `sensor_stop`, and the
+SXB-only `sensor_sensitivity` query. Device-part setting uses `value` (MM 1/2,
+SXB 11/12/13). Reports use `part` (1 left, 2 right), `report_type` (1 day, 2 month)
+and optional `report_date`. Live polling uses `enabled`. Local stop sends no
+hardware STOP. The [sleep-module reference](beds/gmmotor.md#sleep-modules) records
+the distinct wire builders and raw-data limitations.
+
 ### HJBed configuration
 
 `adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/hjbed.md#configuration-actions).

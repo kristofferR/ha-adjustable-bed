@@ -18,6 +18,9 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_GMMOTOR,
+    BED_TYPE_GMMOTOR_SLEEP_MM,
+    BED_TYPE_GMMOTOR_SLEEP_SXB,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -112,6 +115,7 @@ class ActuatorGroup(TypedDict):
 
 # Groups are in alphabetical order by key
 ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
+
     "starcode_abm5_4": {
         "display": "AdjustableM5X4 app",
         "description": "Explicit app profile with independent command and Bluetooth selectors",
@@ -190,6 +194,30 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         "display": "Ergomotion",
         "description": "Ergomotion, Serta Motion (not Motion Perfect), some Tempur-Pedic",
         "variants": None,  # Single protocol
+    },
+    "gmmotor": {
+        "display": "GM Control app",
+        "description": "Exact GM Control products and independently addressed sleep modules",
+        "variants": [
+            {
+                "type": BED_TYPE_GMMOTOR,
+                "label": "Product / desk",
+                "description": "Choose the exact product and configuration next",
+                "hint": "Use the concrete product selected by the GM Control app.",
+            },
+            {
+                "type": BED_TYPE_GMMOTOR_SLEEP_MM,
+                "label": "MM sleep module",
+                "description": "Separate MM Bluetooth session",
+                "hint": "Select this module's own Bluetooth address.",
+            },
+            {
+                "type": BED_TYPE_GMMOTOR_SLEEP_SXB,
+                "label": "SXB sleep module",
+                "description": "Separate SXB Bluetooth session",
+                "hint": "Select this module's own Bluetooth address.",
+            },
+        ],
     },
     "jensen": {
         "display": "Jensen",

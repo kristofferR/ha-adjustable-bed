@@ -90,6 +90,8 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GMMOTOR_SLEEP_MM,
+    BED_TYPE_GMMOTOR_SLEEP_SXB,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_KAIDI,
@@ -3227,6 +3229,9 @@ class AdjustableBedCoordinator:
         if self._bed_type in (BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_FURNIMOVE):
             return True
 
+        if self._bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
+            return True
+
         # LP Comfort Connect is kept connected conservatively, and the new bond
         # makes an unexpected drop recoverable. Reconnect promptly while leaving
         # the established lifecycle behavior of other persistent protocols (such
@@ -5647,6 +5652,15 @@ class AdjustableBedCoordinator:
         ``_async_connect_locked`` (lock already held) and would otherwise
         deadlock on the public ``async_disconnect`` re-acquiring the lock.
         """
+        if self._bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
+            from .gmmotor_sessions import sleep_intent
+
+            # An explicit release also stops monitoring when a prior BLE drop
+            # already discarded the live controller and client.
+            sleep_intent(
+                self.hass, self._address, sxb=self._bed_type == BED_TYPE_GMMOTOR_SLEEP_SXB
+            ).live_enabled = False
+
         # Recovery may have launched while this caller waited for the lock.
         self._cancel_auto_reconnect()
         await self._async_cancel_furnimove_bond_request()

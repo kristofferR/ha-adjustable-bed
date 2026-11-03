@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from ..casper_base_protocol import Request as CasperBaseRequest
     from ..coordinator import AdjustableBedCoordinator
+    from ..gmmotor_requests import Request as GmmotorRequest
     from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
@@ -1683,6 +1684,19 @@ class BedController(ABC):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """Return controller-state diagnostic sensors exposed by this protocol."""
         return ()
+
+    @property
+    def supports_gmmotor_controls(self) -> bool:
+        """Whether the exact GM Control app profile admits specialized actions."""
+        return False
+
+    def validate_gmmotor_request(self, request: GmmotorRequest) -> None:
+        """Validate a model/session request before any selected target writes."""
+        raise NotImplementedError("GM Control actions are unavailable")
+
+    async def async_execute_gmmotor_request(self, request: GmmotorRequest) -> None:
+        """Execute one admitted GM Control direct BLE action."""
+        raise NotImplementedError("GM Control actions are unavailable")
 
     @property
     def controller_state_binary_sensor_specs(

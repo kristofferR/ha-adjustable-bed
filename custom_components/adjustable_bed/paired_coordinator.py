@@ -36,11 +36,13 @@ from .command_scheduler import (
     command_resources,
 )
 from .const import (
+    BED_TYPE_GMMOTOR,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
+    CONF_PRODUCT_TYPE,
     DEFAULT_PAIR_CONNECTION_MODE,
     DOMAIN,
     PAIR_CONNECTION_MODE_AUTO,
@@ -2013,6 +2015,12 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
     ) -> None:
         self._single_inner = inner
         self._single_native_both = entry.data.get(CONF_BED_TYPE) != BED_TYPE_SLEEP_NUMBER
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_GMMOTOR:
+            from .gmmotor_profiles import load_profile
+
+            # Some exact products admit left/right but no native Both choice.
+            # The parent then runs the two admitted side frames on one link.
+            self._single_native_both = 2 in load_profile(entry.data.get(CONF_PRODUCT_TYPE, "")).sides
         self._single_position_hydration_task: asyncio.Task[None] | None = None
         self._single_position_hydration_pause_count = 0
         children = {

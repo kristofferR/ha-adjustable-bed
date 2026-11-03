@@ -235,7 +235,9 @@ export function bedEntitiesForDevice(
           bed.utilityStates?.push(id);
           break;
         }
-        if (key.startsWith("starcode_m1x12_part_") && key.endsWith("_position"))
+        if (key === "gmmotor_state" || key === "gmmotor_sleep_state")
+          bed.utilityStates?.push(id);
+        else if (key.startsWith("starcode_m1x12_part_") && key.endsWith("_position"))
           motor(key.slice(0, -9)).position = id;
         else if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
         else if (key.startsWith("sleepys_app_position_") || key.startsWith("sleepys_app_field_"))
