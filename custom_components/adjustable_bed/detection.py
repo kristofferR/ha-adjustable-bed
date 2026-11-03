@@ -600,7 +600,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OCTO: "Octo",
     BED_TYPE_REVERIE: "Reverie (Protocol 108)",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
-    BED_TYPE_RICHMAT: "Richmat",
+    BED_TYPE_RICHMAT: "Richmat / RMControl app",
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
     BED_TYPE_REMACRO: "Slumberland app (Remacro)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
