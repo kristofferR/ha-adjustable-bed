@@ -446,7 +446,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Leggett & Platt | [Prodigy / U Series](beds/leggett-okin.md): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
 | Solace / Woosa | [Woosa Sleep](beds/woosa.md): protocol variant `woosa`; `auto` retains name-based Solace routing. |
 | Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
-| Jiecang | [ERGOBALANCE / Dream Motion](beds/jiecang-app.md): app, layout, transport and light. |
+| Jiecang | [ERGOBALANCE / Dream Motion](beds/jiecang-app.md) and [Comfort Motion](beds/comfort-motion.md): explicit app, layout, transport and local light/massage presence. Comfort Motion supports three layouts and G1/G2 only. |
 | LOGICDATA | [MOTIONrelax](beds/logicdata-app.md): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/logicdata-sleep-smart.md): bed layout and series, or separate air pump. |
 | Malouf / Lucid | [Base apps](beds/malouf-app.md): app, exact model, transport and primary/secondary role. |
 | Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/customatic.md), [Z-Series](beds/customatic-z-series.md), [Serenity](beds/serenity.md), [Tranquil](beds/tranquil.md): select the matching app and model. |

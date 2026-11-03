@@ -218,13 +218,14 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         ),
     ),
     BED_TYPE_JIECANG_APP: SideProfile(
-        "Jiecang app",
+        "Jiecang / Comfort Motion app",
         frozenset(
             {
                 CONF_JIECANG_APP_PROFILE,
                 CONF_JIECANG_APP_LAYOUT,
                 CONF_JIECANG_APP_TRANSPORT,
                 CONF_HAS_LIGHT,
+                CONF_HAS_MASSAGE,
             }
         ),
     ),
