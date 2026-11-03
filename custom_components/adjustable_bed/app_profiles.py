@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
+from .cluster033_profiles import SERTA_MEMORY_KEYS
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
@@ -55,6 +56,7 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
+    CLUSTER033_BED_TYPES,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FSM_RELAX_MEMORY_NAMES,
@@ -130,6 +132,7 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
     # OCTO motor layout comes from its advertised capability record, with an
     # OCTO-specific explicit override in the profile's own setup/options UI.
     BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
@@ -207,6 +210,14 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    'tempur_curve': SideProfile('Tempur Curve', frozenset({CONF_PRODUCT_TYPE})),
+    'qplus_app': SideProfile('Q-Plus Adjustable Remote', frozenset({CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT})),
+    'serta_mp_remote': SideProfile('Serta MP Remote', SERTA_MEMORY_KEYS | {CONF_PRODUCT_TYPE}),
+    'omazz_adjusto_iii': SideProfile('Omazz Adjusto III', frozenset({CONF_PRODUCT_TYPE})),
+    'ergomotion_app': SideProfile('Ergomotion (app)', frozenset({CONF_PRODUCT_TYPE})),
+    'row_control': SideProfile('ROW Control', frozenset({CONF_PRODUCT_TYPE})),
+    'ergo_slim': SideProfile('Ergo Slim', frozenset({CONF_PRODUCT_TYPE})),
+    'tempur_au': SideProfile('TEMPUR AU', frozenset({CONF_PRODUCT_TYPE})),
     BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
     BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),

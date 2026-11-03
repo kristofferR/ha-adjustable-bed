@@ -1,3 +1,29 @@
+configure_alarm_schedule:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    weekly:
+      required: true
+      selector:
+        object:
+    one_time:
+      required: true
+      selector:
+        object:
+    dispatch:
+      required: true
+      selector:
+        select:
+          options: [both, weekly, one_time]
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+
 rmcontrol_alarm:
   fields:
     device_id:

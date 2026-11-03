@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     CONF_STARCODE_LIFT_ENTRIES,
     DOMAIN,
+    PAIR_CONNECTION_MODE_CONCURRENT,
     STAR_ELEVATE_VARIANT_M1X12,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -334,8 +335,12 @@ def test_combined_motor_hold_intersection_checks_direction_and_timing(
             motor_control_specs=other_side_specs,
         )
     )
+    # Main advertises combined holds only where a held Both can be routed.
     pair = SimpleNamespace(
-        pair_id="pair", device_info={}, children={}, connection_mode="sequential"
+        pair_id="pair",
+        device_info={},
+        children={"left": left, "right": right},
+        connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
     )
     button = next(
         item

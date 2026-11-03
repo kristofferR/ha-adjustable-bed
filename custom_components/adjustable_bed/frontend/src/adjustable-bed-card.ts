@@ -1593,8 +1593,8 @@ export class AdjustableBedCard extends LitElement {
   private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) {
       // Typed hold metadata comes from explicit MotorControlSpecs (Sleepy's,
-      // OCTO) whose stop_fn stops the whole side. Plain covers stay scoped
-      // to their motor key.
+      // OCTO and the stop_all-backed app profiles) whose stop_fn stops the
+      // whole side. Plain covers stay scoped to their motor key.
       const scope: CoverStopScope = m.heldControls ? "side" : "motor";
       this._hold.stopCover(
         m,
