@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Sequence
 from datetime import datetime
+from time import monotonic_ns
 from typing import TYPE_CHECKING, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -206,13 +207,14 @@ class GlideawayMotionController(BedController):
     async def _hold(self, mask: int, duration: float) -> None:
         """End a bounded held stream with the proven zero-mask release pair."""
         event = self._coordinator.cancel_command
-        remaining_ms = round(duration * 1000)
+        deadline = monotonic_ns() + round(duration * 1_000_000_000)
         try:
-            while remaining_ms > 0 and not event.is_set():
+            while monotonic_ns() < deadline and not event.is_set():
+                next_refresh = monotonic_ns() + round(HOLD_INTERVAL * 1_000_000_000)
                 await self.write_command(command_frame(mask))
-                delay_ms = min(300, remaining_ms)
-                await _wait_for_cancel(event, delay_ms / 1000)
-                remaining_ms -= delay_ms
+                delay = (min(next_refresh, deadline) - monotonic_ns()) / 1_000_000_000
+                if delay > 0:
+                    await _wait_for_cancel(event, delay)
         finally:
             await self.stop_all()
 
@@ -506,7 +508,7 @@ class GlideawayMotionController(BedController):
         # Preserve all five live forms but reject truncation/overflow and never
         # share a fragment between devices or connections. No checksum contract
         # is proven for replies; do not invent one from the outbound frames.
-        if len(packet) < 2:
+        if not packet or (len(packet) < 2 and not self._fragment):
             self._fragment = b""
             return
         prefix = packet[:2]
@@ -535,7 +537,7 @@ class GlideawayMotionController(BedController):
         elif prefix == b"\xf4\xfe" and len(packet) > 20:
             self._fragment = b""
             self._timer(packet[19])
-        elif packet[0] == 0xF4:
+        elif len(packet) >= 2 and packet[0] == 0xF4:
             self._fragment = packet if len(packet) <= 30 else b""
             self._fragment_time = asyncio.get_running_loop().time()
         elif self._fragment:

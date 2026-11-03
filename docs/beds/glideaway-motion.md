@@ -35,8 +35,11 @@ paired-bed routing; there is no app-proven single-address side protocol.
 
 ## Timing and actions
 
-Held packets refresh every **300 ms**. Normal cover movements run for the
-configured pulse count, then send the zero-mask release at **+300 and +600 ms**.
+Held packets refresh every **300 ms**, accounting for elapsed BLE write time.
+Normal cover movements use the configured pulse count times 300 ms as a
+monotonic deadline. No further held write starts after that deadline; an
+in-flight write finishes before cleanup. The zero-mask release follows at
+**+300 and +600 ms**.
 Cancellation uses the same release pair with fresh cancellation events and
 keeps the serialized command lane until cleanup finishes.
 Both release writes are attempted even if the first fails, then the error is
@@ -152,7 +155,8 @@ contract was proven, so none is invented.
 HA rejects truncated/overflowing fragments, uses a per-controller buffer, clears
 it on recognized frames/disconnect and expires it after two seconds. This is a
 local stale-data guard, not a protocol timeout. It avoids the app's global
-buffer, unsafe copies and stale joins. Complete F4 FE frames are not subject to
+buffer, unsafe copies and stale joins. A buffered response accepts a one-byte
+continuation. Complete F4 FE frames are not subject to
 the fragment buffer's 30-byte limit. No position, battery, firmware, capability,
 error or light-state parser exists in the accepted artifact.
 

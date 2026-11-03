@@ -105,8 +105,17 @@ def coordinator():
 
 @pytest.fixture
 def instant(monkeypatch):
-    wait = AsyncMock()
-    sleep = AsyncMock()
+    clock = [0.0]
+
+    async def advance_wait(_event, delay):
+        clock[0] += delay
+
+    async def advance_sleep(delay):
+        clock[0] += delay
+
+    wait = AsyncMock(side_effect=advance_wait)
+    sleep = AsyncMock(side_effect=advance_sleep)
+    monkeypatch.setattr(gm, "monotonic_ns", lambda: round(clock[0] * 1_000_000_000))
     monkeypatch.setattr(gm, "_wait_for_cancel", wait)
     monkeypatch.setattr(gm.asyncio, "sleep", sleep)
     return wait, sleep
@@ -164,7 +173,7 @@ async def test_models_and_cover_controls(coordinator, instant, model, axes, extr
         await spec.open_fn(controller)
         assert written(coordinator) == [gm.command_frame(gm.AXES[spec.key][0])] * 3 + [ZERO, ZERO]
         assert spec.scheduler_resource == "*"
-    assert all(call.args[1] == 0.3 for call in instant[0].await_args_list)
+    assert all(call.args[1] == pytest.approx(0.3) for call in instant[0].await_args_list)
     for unsupported in set(gm.AXES) - set(axes):
         with pytest.raises(ValueError):
             await controller._move_axis(unsupported, True)
@@ -189,6 +198,34 @@ async def test_event_cancel_still_releases_twice(coordinator, instant):
     instant[0].side_effect = lambda *_: coordinator.cancel_command.set()
     await controller.move_back_up()
     assert written(coordinator) == [bytes.fromhex("e6fe16010000000004"), ZERO, ZERO]
+
+
+@pytest.mark.parametrize("latency,starts,hold_end", [(0.2, [0.0, 0.3], 0.6), (0.7, [0.0], 0.7)])
+async def test_hold_deadline_includes_write_latency(
+    coordinator, monkeypatch, latency, starts, hold_end
+):
+    controller = gm.GlideawayMotionController(coordinator, model="motion_400")
+    clock = [0.0]
+    writes = []
+    release_started = []
+
+    async def write(*_args, **_kwargs):
+        writes.append(clock[0])
+        clock[0] += latency
+
+    async def wait(_event, delay):
+        clock[0] += delay
+
+    async def release():
+        release_started.append(clock[0])
+
+    monkeypatch.setattr(gm, "monotonic_ns", lambda: round(clock[0] * 1_000_000_000))
+    monkeypatch.setattr(gm, "_wait_for_cancel", wait)
+    monkeypatch.setattr(controller, "write_command", write)
+    monkeypatch.setattr(controller, "stop_all", release)
+    await controller.hold_control("back_up", 600)
+    assert writes == pytest.approx(starts)
+    assert release_started == pytest.approx([hold_end])
 
 
 async def test_repeated_task_cancellation_cannot_abandon_release(coordinator, monkeypatch):
@@ -231,7 +268,8 @@ async def test_first_release_failure_still_attempts_second(coordinator, instant,
     controller = gm.GlideawayMotionController(coordinator, model="motion_400")
     first_error = BleakError("first release failed")
     coordinator.client.write_gatt_char.side_effect = [
-        first_error, BleakError("second release failed") if second_fails else None
+        first_error,
+        BleakError("second release failed") if second_fails else None,
     ]
     with pytest.raises(BleakError) as raised:
         await controller.stop_all()
@@ -311,6 +349,27 @@ async def test_fragmentation_and_safe_bounds(coordinator):
     controller.invalidate_diagnostics()
     controller._on_notification(MagicMock(), packet[18:])
     assert coordinator.controller_state[gm.STATE_TIMER] is None
+
+
+@pytest.mark.parametrize("tail", [0x00, 0xF4])
+async def test_one_byte_fragment_continuation(coordinator, tail):
+    controller = gm.GlideawayMotionController(coordinator, model="motion_500")
+    packet = bytearray(21)
+    packet[:2] = b"\xf4\xfe"
+    packet[19] = 3
+    packet[20] = tail
+    controller._on_notification(MagicMock(), packet[:20])
+    assert not coordinator.controller_state
+    controller._on_notification(MagicMock(), packet[20:])
+    assert coordinator.controller_state[gm.STATE_TIMER] == 30
+    assert controller._fragment == b""
+
+    controller.invalidate_diagnostics()
+    controller._on_notification(MagicMock(), packet[:20])
+    controller._fragment_time -= 3
+    controller._on_notification(MagicMock(), packet[20:])
+    assert coordinator.controller_state[gm.STATE_TIMER] is None
+    assert controller._fragment == b""
 
 
 @pytest.mark.parametrize(
@@ -562,7 +621,8 @@ async def test_complete_f4_and_signed_alarm_state(coordinator):
 async def test_public_hold_and_sync_clock_dispatch(hass, alarm_target):
     coordinator, device_id = alarm_target
     await hass.services.async_call(
-        DOMAIN, "hold_control",
+        DOMAIN,
+        "hold_control",
         {"device_id": [device_id], "control": "back_up", "duration": 0.6},
         blocking=True,
     )
@@ -573,7 +633,8 @@ async def test_public_hold_and_sync_clock_dispatch(hass, alarm_target):
     coordinator.async_execute_controller_command.reset_mock()
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
-            DOMAIN, "hold_control",
+            DOMAIN,
+            "hold_control",
             {"device_id": [device_id], "control": "tilt_up", "duration": 0.6},
             blocking=True,
         )
@@ -600,7 +661,8 @@ async def test_alarm_whole_selection_validation_before_dispatch(hass, alarm_targ
     )
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
-            DOMAIN, "glideaway_set_alarm",
+            DOMAIN,
+            "glideaway_set_alarm",
             {"device_id": [device_id, device.id], "enabled": True, "time": "06:30:00"},
             blocking=True,
         )
