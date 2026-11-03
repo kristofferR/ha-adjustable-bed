@@ -639,7 +639,13 @@
       "custom_components/adjustable_bed/hjbed_state.py:State.accept",
       "tests/test_hjbed.py:test_receive_vectors",
       "tests/test_hjbed.py:test_alarm_consumer_equality_and_escalation",
-      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records"
+      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation"
     ],
     "stream": [
       "custom_components/adjustable_bed/hjbed_state.py:Stream.feed",
@@ -677,7 +683,13 @@
       "tests/test_hjbed.py:test_alarm_gates_slots_toggle_and_ack_persistence",
       "tests/test_hjbed.py:test_safety_and_valid_product_service_limits",
       "tests/test_hjbed.py:test_single_alarm_epoch_minutes_across_dst",
-      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records"
+      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation"
     ]
   },
   "items": [
@@ -30151,7 +30163,13 @@
       "custom_components/adjustable_bed/hjbed_state.py:State.accept",
       "tests/test_hjbed.py:test_receive_vectors",
       "tests/test_hjbed.py:test_alarm_consumer_equality_and_escalation",
-      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records"
+      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation"
     ],
     "P06": [
       "custom_components/adjustable_bed/button.py:ControllerActionButton.async_press",
@@ -30188,7 +30206,13 @@
       "tests/test_hjbed.py:test_alarm_gates_slots_toggle_and_ack_persistence",
       "tests/test_hjbed.py:test_safety_and_valid_product_service_limits",
       "tests/test_hjbed.py:test_single_alarm_epoch_minutes_across_dst",
-      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records"
+      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation"
     ],
     "P09": [
       "custom_components/adjustable_bed/hjbed_receive.py:parse_frame/parse_common",
@@ -30196,6 +30220,12 @@
       "tests/test_hjbed.py:test_receive_vectors",
       "tests/test_hjbed.py:test_alarm_consumer_equality_and_escalation",
       "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation",
       "custom_components/adjustable_bed/hjbed_state.py:Stream.feed",
       "custom_components/adjustable_bed/beds/hjbed.py:_notification/_arm_timer",
       "tests/test_hjbed.py:test_stream_error_order_remainder_recovery",
@@ -30211,11 +30241,23 @@
       "tests/test_hjbed.py:test_safety_and_valid_product_service_limits",
       "tests/test_hjbed.py:test_single_alarm_epoch_minutes_across_dst",
       "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation",
       "custom_components/adjustable_bed/hjbed_receive.py:parse_frame/parse_common",
       "custom_components/adjustable_bed/hjbed_state.py:State.accept",
       "tests/test_hjbed.py:test_receive_vectors",
       "tests/test_hjbed.py:test_alarm_consumer_equality_and_escalation",
-      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records"
+      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation"
     ],
     "P11": [
       "custom_components/adjustable_bed/beds/hjbed.py:validate_hjbed_request/async_execute_hjbed_request",
@@ -30223,7 +30265,13 @@
       "tests/test_hjbed.py:test_alarm_gates_slots_toggle_and_ack_persistence",
       "tests/test_hjbed.py:test_safety_and_valid_product_service_limits",
       "tests/test_hjbed.py:test_single_alarm_epoch_minutes_across_dst",
-      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records"
+      "tests/test_hjbed.py:test_query_and_delete_retire_only_the_source_alarm_records",
+      "custom_components/adjustable_bed/select.py:AdjustableBedControllerSelect.async_select_option",
+      "tests/test_hjbed.py:test_local_layout_select_uses_replacement_controller",
+      "tests/test_hjbed.py:test_repeat_allocation_requires_known_free_slot_and_reserves_attempt",
+      "tests/test_hjbed.py:test_alarm_free_slots_expire_on_query_notification_and_replacement",
+      "tests/test_hjbed.py:test_failed_alarm_write_does_not_reallocate_an_uncertain_slot",
+      "tests/test_hjbed.py:test_alarm_reply_during_pacing_revokes_implicit_allocation"
     ]
   },
   "reasons": {
@@ -30288,12 +30336,12 @@
     "R059": "The four active coupled flags gate native single-address pairing. Select the exact19current or24conditionally restored first-match products through HA app choices; two shadowed FlexxLink objects and None cannot become control profiles. Text/QR camera acquisition is phone UI, not an additional selector or command.",
     "R060": "Delayed100ms first tick and refresh; fast releases send nothing; same-sideSTOP only where actual callback supplies it. Preset/sofa-reset end refresh without an extraSTOP. BJRNsave3seconds, other saves once. HA finite durations use one monotonic deadline. Both-side frames share that window; cleanup runs for every attempted side. Periodic ticks follow fixed100ms deadlines rather than write-completion-relative waits; stale refreshes are dropped and in-flight writes/cleanup may finish afterward.",
     "R061": "Controller-owned release uses scheduler STOP admission to invalidate preflight-pending holds and cancel active refresh. A task-local context suppresses only the extra STOP write; the action finally retains its protocol release. ExplicitSTOP remains independently available.",
-    "R062": "Local Normal/Motion layout retains page-specific reset behavior and mode-query3/2 predicates. Model methods share behavior; source closures/callsites are independently preserved in callback_bindings.",
+    "R062": "Local select resolves the current capability controller/spec synchronously, not the stale bound instance captured before reconnect; no BLE connection is opened. Local Normal/Motion layout retains page-specific reset behavior and mode-query3/2 predicates. Model methods share behavior; source closures/callsites are independently preserved in callback_bindings.",
     "R063": "Profile flags AND source clock/lightACK; all current19 flagsfalse. A reply never selects a profile. Music named-route senders remain independent.",
     "R064": "Source6f07c0/DeviceClockBean6d9c00 stores selected epochmilliseconds, action title, enum identity and nullable repeatType. HA persists these fields plus localhour/minute/action per physicaladdress/profile; unsolicited ACK cannot invent selection metadata. Epoch-second subtraction at DeviceCommonUtil7952f4/7956a8–79571c preserves DST offset changes, truncates minutes and applies86400seconds when not later. Minute precision countdown low/high writes, next-day adjustment, local saved alarm committed only on add-success and removed only on cancel-success; HA persistence per physicaladdress/profile.",
     "R065": "Full-bean duplicate equality; same-number different beans append; escalation replaces first matching number with insert/remove equality; unknown number ignored. requestAlarmList6daf40 clears the observed list at6daf80 before querying. RepeatAlarmListPage7b7ed0 enqueues deletion, then7b7efc calls deleteAlarmFromList7b2f50, removing the first full-equal selected bean; same-number other beans remain. Once/repeat masks and custom data retained.",
     "R066": "S02: toggling importedkind1 preserves data instead of the app constructor dropping it. Normalkind0 frames and exact serializer remain unchanged.",
-    "R067": "S04: reject creation when all7numbers are in use rather than send source-1 maskedff. Existing records, explicitvalid1..7 selection, delete/query and once/day masks remain.",
+    "R067": "S04: reject creation when all7numbers are in use rather than send source-1 maskedff. S06: source706f68 emits per-bean op2/op3 events only, with no proven end/empty-table event. The app first-unobserved selection can overwrite unobserved/pending records. HA requires an explicit1..7 slot while occupancy is unknown; automatic selection chooses the smallest slot freed by a successful explicitdelete in this connection and not later observed occupied. The write-attempt callback revalidates implicit availability after pacing under the BLE lock, rejecting a late occupied-slot notification before reserving or writing, then reserves before awaiting ATT, including uncertain failures; two creates cannot allocate it before replies. Query/reconnect/disconnect invalidate free-slot knowledge; availability is host metadata, not a firmware capability. Existing records, explicitvalid1..7 selection, delete/query and once/day masks remain.",
     "R068": "S05: app custom/generic gesture states have no own dispose, MotorPage86b13c sends no STOP. HA lifecycle cancellation runs only the recovered action release. Captured physicalclient/characteristics/address for each write and cleanup. Stop refreshing on cancellation; fresh event cannot suppress the source release. No release/queued traffic crosses a replacement session.",
     "R069": "One awaited write; minimum100ms FIFO pacing without app retry. HA scheduler serializes actions; cancelled future refresh is discarded instead of allowing stale queued motion to drain. Configuration frame pairs remain ordered.",
     "R070": "Raw diagnostic capture precedes split, old timer cancellation precedes split, all complete frames destructively split before dispatch; prior event effects retained on error; failing/later local frames lost and remainder not timed until next successful dispatch.",

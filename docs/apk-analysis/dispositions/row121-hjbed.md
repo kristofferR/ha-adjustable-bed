@@ -62,6 +62,18 @@ stay machine-local. Only durable implementation, vectors and dispositions ship.
 - **S04, full alarm table:** the source returns -1, masked to `ff` by the plugin.
   Reject a new implicit slot when all seven valid numbers are occupied. Existing
   alarms and valid explicit slots remain available.
+- **S06, unknown/pending alarm occupancy:** `_handleExtraProtocolAlarm@706f68`
+  emits individual list/escalation beans, with no proven end or empty-table
+  marker. The app's first-unobserved slot selection cannot prove a slot is free.
+  HA therefore requires an explicit slot unless one was deleted in this live
+  connection and has not since been observed occupied. Automatic reuse selects
+  the smallest such slot, rechecks availability after write pacing under the BLE
+  lock, and reserves it before awaiting the write. A late occupied-slot reply
+  rejects implicit allocation before any add frame is sent. Query,
+  disconnect and controller replacement discard free-slot knowledge. Uncertain
+  write failures retain the reservation; no query-completion timer is invented.
+  Explicit slot writes, received beans, delete/query behavior and packet builders
+  remain available unchanged. Availability is host metadata, not a bed reading.
 
 **S05, lifecycle cleanup:** the app's custom/generic gesture states have no own
 `dispose`, and MotorPage `86b13c` unregisters callbacks without STOP. HA ends the

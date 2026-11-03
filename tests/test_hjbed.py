@@ -303,7 +303,7 @@ def test_alarm_consumer_equality_and_escalation():
 
 async def test_alarm_gates_slots_toggle_and_ack_persistence(coordinator, instant):
     c = controller(coordinator, "98ff11")
-    request = Request("repeat", action="zero_gravity", when=time(7), weekdays=(0, 6))
+    request = Request("repeat", action="zero_gravity", when=time(7), alarm_id=1, weekdays=(0, 6))
     with pytest.raises(ValueError):
         c.validate_hjbed_request(request)
     c._event("deviceCharacteristicsSubscriptionClockEvent", None)
@@ -854,3 +854,117 @@ async def test_single_alarm_epoch_minutes_across_dst(
         Request("single", action="zero_gravity", when=time(hour, 30))
     )
     assert written(coordinator) == [frame.hex() for frame in clock(minutes, 69)]
+
+
+async def test_repeat_allocation_requires_known_free_slot_and_reserves_attempt(
+    coordinator, clocked
+):
+    c = controller(coordinator, "98ff11")
+    c._state.features.add("alarm")
+    auto = Request("repeat", action="zero_gravity", when=time(7))
+    with pytest.raises(ValueError, match="explicit alarm_id"):
+        await c.async_execute_hjbed_request(auto)
+    assert written(coordinator) == []
+    await c.async_execute_hjbed_request(
+        Request("repeat", action="zero_gravity", when=time(7), alarm_id=1)
+    )
+    with pytest.raises(ValueError, match="explicit alarm_id"):
+        await c.async_execute_hjbed_request(auto)
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=2))
+    assert c._available_alarm_slots() == [2]
+    await c.async_execute_hjbed_request(auto)
+    assert bytes.fromhex(written(coordinator)[-1])[6] == 2
+    assert coordinator.controller_state["hjbed_available_alarm_slots"] == []
+    count = len(written(coordinator))
+    with pytest.raises(ValueError, match="explicit alarm_id"):
+        await c.async_execute_hjbed_request(auto)
+    assert len(written(coordinator)) == count  # No notification is needed to reserve it.
+
+
+async def test_alarm_free_slots_expire_on_query_notification_and_replacement(coordinator, clocked):
+    c = controller(coordinator, "98ff11")
+    c._state.features.add("alarm")
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=3))
+    c._event("deviceRepeatAlarmListStatusEvent", {"number": 3})
+    assert c._available_alarm_slots() == []
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=4))
+    coordinator.capability_controller = c
+    replacement = controller(coordinator, "98ff11")
+    assert replacement._available_alarm_slots() == []
+    await c.async_execute_hjbed_request(Request("query"))
+    assert c._available_alarm_slots() == []
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=5))
+    await c.stop_notify()
+    assert c._available_alarm_slots() == []
+
+
+async def test_failed_alarm_write_does_not_reallocate_an_uncertain_slot(coordinator, clocked):
+    c = controller(coordinator, "98ff11")
+    c._state.features.add("alarm")
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=6))
+    coordinator.client.write_gatt_char.side_effect = ConnectionError("write uncertain")
+    auto = Request("repeat", action="zero_gravity", when=time(7))
+    with pytest.raises(ConnectionError, match="uncertain"):
+        await c.async_execute_hjbed_request(auto)
+    with pytest.raises(ValueError, match="explicit alarm_id"):
+        await c.async_execute_hjbed_request(auto)
+
+
+async def test_alarm_reply_during_pacing_revokes_implicit_allocation(
+    coordinator, clocked, monkeypatch
+):
+    c = controller(coordinator, "98ff11")
+    c._state.features.add("alarm")
+    await c.async_execute_hjbed_request(Request("query"))
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=1))
+    assert c._available_alarm_slots() == [1]
+    frame = next(
+        v["inputs"]["frame"] for v in RX if v["inputs"]["frame"] == "6e200d0501020100071e2efff6"
+    )
+
+    async def occupied_reply(seconds):
+        clocked[0] += seconds
+        c._notification(c._session, c._session.notify, bytearray.fromhex(frame))
+
+    monkeypatch.setattr(bed.asyncio, "sleep", occupied_reply)
+    coordinator.client.write_gatt_char.reset_mock()
+    with pytest.raises(ValueError, match="no longer free"):
+        await c.async_execute_hjbed_request(Request("repeat", action="zero_gravity", when=time(9)))
+    assert c._available_alarm_slots() == []
+    assert written(coordinator) == []
+    # An explicit slot remains an intentional edit, including when occupied.
+    await c.async_execute_hjbed_request(
+        Request("repeat", action="zero_gravity", when=time(9), alarm_id=1)
+    )
+    assert written(coordinator) == ["6e0d20050101010009004501f2"]
+
+
+@pytest.mark.parametrize("profile", ["990871", "98fcd1"])
+async def test_local_layout_select_uses_replacement_controller(coordinator, instant, profile):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+
+    coordinator.device_info = {}
+    coordinator.entity_side = None
+    coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
+    coordinator.entity_translation_key.side_effect = lambda key: key
+    old = controller(coordinator, profile)
+    coordinator.capability_controller = old
+    entity = AdjustableBedControllerSelect(coordinator, old.controller_select_specs[0])
+    live = controller(coordinator, profile)
+    coordinator.capability_controller = live
+    await entity.async_select_option("Motion")
+    assert not old._motion and live._motion
+    assert entity.current_option == "Motion"
+    coordinator.async_execute_controller_command.assert_not_called()
+    if profile == "990871":
+        await live.execute_action("974f61")
+        assert written(coordinator) == ["6e010031a0", "6e01006edd"]
+    else:
+        with pytest.raises(ValueError, match="Normal layout"):
+            live.validate_hjbed_request(Request("mode", mode="standard"))
+    coordinator.capability_controller = None
+    with pytest.raises(ServiceValidationError, match="local option"):
+        await entity.async_select_option("Normal")
+    assert live._motion

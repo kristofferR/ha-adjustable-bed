@@ -322,7 +322,7 @@ receiver, while generic motion frames select left 0 or right 1. Music stays left
 | --- | --- | --- |
 | `single` | `time`, `action` | Single-alarm product flag and clock acknowledgement |
 | `cancel_single` | none | Same single-alarm gate |
-| `repeat` | `time`, `action`, optional `alarm_id`, `weekdays`, `enabled` | Repeat-alarm flag and clock acknowledgement |
+| `repeat` | `time`, `action`, `alarm_id` unless a slot is known free, `weekdays`, `enabled` | Repeat-alarm flag and clock acknowledgement |
 | `query`, `delete` | `alarm_id` for delete | Repeat-alarm gate |
 | `toggle` | observed `alarm_id`, `enabled` | Repeat-alarm gate |
 | `sync` | none | Clock synchronization used by the app's product menu |
@@ -331,8 +331,12 @@ receiver, while generic motion frames select left 0 or right 1. Music stays left
 | `mode` | `mode: split_head` or `standard` | Normal layout, blue/green/orange only |
 
 Alarm time uses minute precision. Empty weekdays means once; Monday is bit 7,
-Sunday bit 1, enabled bit 0. New alarms choose the smallest unused slot 1 through
-7 unless a valid slot is supplied. A full table is rejected rather than sending
+Sunday bit 1, enabled bit 0. Use an explicit `alarm_id` from 1 through 7 when
+occupancy is unknown. Automatic allocation chooses the smallest slot freed by a
+delete in the current connection, provided no later reply reports it occupied.
+Availability is rechecked after pacing; a late occupied-slot reply rejects the
+automatic create. The slot is reserved before writing, including when write success is uncertain.
+Query, reconnect and disconnect clear this knowledge. A full table is rejected rather than sending
 an invalid slot. Imported custom alarm data is retained when toggling a record.
 Single-alarm preferences are persisted only after the bed's success reply and
 removed on cancellation success. The saved selected date/time, function identity,
@@ -359,7 +363,8 @@ selected product's alarm list.
 ## Telemetry and transport
 
 **HJBed status** exposes the last event, structured `hjbed_events`, complete
-`hjbed_alarms`, `hjbed_saved_alarm` and parser rejection information. Bed
+`hjbed_alarms`, `hjbed_saved_alarm`, host-only `hjbed_available_alarm_slots` and
+parser rejection information. Bed
 observations include motor travel/angles/height, version/control modes, massage,
 white/RGB lighting, music, snore/off-bed/name/locks, coaxing, aroma, heating, fan,
 blanket and detection data. These passive readings do not enable an outbound

@@ -7400,7 +7400,8 @@
           "name": "Time"
         },
         "alarm_id": {
-          "name": "Alarm number"
+          "name": "Alarm number",
+          "description": "Choose a slot from 1 to 7. Leave blank only to reuse a slot deleted during this Bluetooth connection."
         },
         "weekdays": {
           "name": "Weekdays (empty means once)"

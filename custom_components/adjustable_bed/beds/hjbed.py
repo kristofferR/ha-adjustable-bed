@@ -122,6 +122,9 @@ class HJBedController(BedController):
         self._state = State()
         self._rejection: str | None = None
         self._motion = False
+        # No wire event proves a complete/empty alarm table. Only a slot freed
+        # by this session is safe to allocate without an explicit user choice.
+        self._free_alarm_slots: set[int] = set()
         self._stream = Stream(self._event, self._arm_timer, self._cancel_timer)
         previous = coordinator.capability_controller
         if (
@@ -229,6 +232,7 @@ class HJBedController(BedController):
             "events": deepcopy(self._state.values),
             "alarm_records": deepcopy(self._state.alarms),
             "saved_alarm": deepcopy(self._state.saved_alarm),
+            "available_alarm_slots": self._available_alarm_slots(),
             "last_rejection": self._rejection,
             "remainder": bytes(self._stream.buffer).hex(),
             "features": sorted(self._state.features),
@@ -242,11 +246,19 @@ class HJBedController(BedController):
                 "hjbed_events": deepcopy(self._state.values),
                 "hjbed_alarms": deepcopy(self._state.alarms),
                 "hjbed_saved_alarm": deepcopy(self._state.saved_alarm),
+                "hjbed_available_alarm_slots": self._available_alarm_slots(),
                 "hjbed_rejection": self._rejection,
             }
         )
 
     def _event(self, event: str, value: Value) -> None:
+        if event in (
+            "deviceRepeatAlarmListStatusEvent",
+            "deviceRepeatAlarmListEscalationStatusEvent",
+        ) and isinstance(value, dict):
+            number = value.get("number")
+            if type(number) is int:
+                self._free_alarm_slots.discard(number)
         self._state.accept(event, value)
         self._publish()
 
@@ -262,6 +274,7 @@ class HJBedController(BedController):
                     "hjbed_events",
                     "hjbed_alarms",
                     "hjbed_saved_alarm",
+                    "hjbed_available_alarm_slots",
                     "hjbed_rejection",
                 ),
             ),
@@ -299,6 +312,7 @@ class HJBedController(BedController):
         if client is None or not client.is_connected:
             raise ConnectionError("HJBed is disconnected")
         self._stream.clear()
+        self._free_alarm_slots.clear()
         write, notify, single = select_transport(client)
         session = Session(client, write, notify, single, self._coordinator.address)
         self._session = session
@@ -337,6 +351,8 @@ class HJBedController(BedController):
         session, self._session = self._session, None
         self._stream.clear()
         self._state.pending_alarm = None
+        self._free_alarm_slots.clear()
+        self._publish()
         if session is not None and session.client.is_connected:
             await session.client.stop_notify(session.notify)
 
@@ -726,7 +742,7 @@ class HJBedController(BedController):
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         async def select(controller: BedController, option: str) -> None:
-            # local_select_fn runs this without connecting; fallback uses the live controller.
+            # Local selections resolve the current spec in the entity platform.
             if not isinstance(controller, HJBedController):
                 raise TypeError("HJBed layout requires HJBed")
             controller._layout(option)
@@ -768,6 +784,13 @@ class HJBedController(BedController):
             raise ValueError("Invalid received alarm bean")
         return Alarm(*(cast(int, v) for v in values), data=tuple(cast(int, v) for v in data))
 
+    def _available_alarm_slots(self) -> list[int]:
+        return sorted(
+            number
+            for number in self._free_alarm_slots
+            if not any(row.get("number") == number for row in self._state.alarms)
+        )
+
     def validate_hjbed_request(self, request: Request) -> None:
         op = request.operation
         if op in ("single", "cancel_single", "repeat", "delete", "query", "toggle"):
@@ -797,6 +820,11 @@ class HJBedController(BedController):
                 any(row.get("number") == i for row in self._state.alarms) for i in range(1, 8)
             ):
                 raise ValueError("All seven HJBed alarm slots are occupied")
+            if request.alarm_id is None and not self._available_alarm_slots():
+                raise ValueError(
+                    "Choose an explicit alarm_id; unobserved slots are not known to be free. "
+                    "Automatic allocation can reuse a slot deleted in this connection."
+                )
         if op in ("light_timeout", "light_color") and not self._eligible("light"):
             raise ValueError(
                 "This product requires its light-page eligibility and light acknowledgement"
@@ -829,6 +857,7 @@ class HJBedController(BedController):
         session = self._current_session()
         op = request.operation
         frames: tuple[bytes, ...]
+        reserved_slot: int | None = None
         if op == "sync":
             frames = sync_time(dt_util.now(), dt_util.now())
         elif op == "light_timeout":
@@ -843,6 +872,7 @@ class HJBedController(BedController):
             frames = (control_mode(0 if request.mode == "split_head" else 2),)
         elif op == "query":
             self._state.alarms.clear()
+            self._free_alarm_slots.clear()
             self._publish()
             frames = (query_alarms(),)
         elif op == "delete":
@@ -850,6 +880,7 @@ class HJBedController(BedController):
             frames = (delete_alarm(request.alarm_id),)
         elif op == "toggle":
             record = self._alarm_record(request.alarm_id)
+            reserved_slot = record.number
             # Preserve imported/custom payloads. The app's toggle constructor drops
             # kind1 data, a narrow safety deviation documented in the ledger.
             from dataclasses import replace
@@ -857,11 +888,8 @@ class HJBedController(BedController):
             frames = (add_alarm(replace(record, repeat=(record.repeat & 254) | request.enabled)),)
         elif op == "repeat":
             assert request.when is not None
-            number = request.alarm_id or next(
-                i
-                for i in range(1, 8)
-                if not any(row.get("number") == i for row in self._state.alarms)
-            )
+            number = request.alarm_id or self._available_alarm_slots()[0]
+            reserved_slot = number
             repeat = sum(1 << (7 - day) for day in set(request.weekdays)) | request.enabled
             record = Alarm(
                 number,
@@ -897,9 +925,29 @@ class HJBedController(BedController):
             if op == "delete"
             else None
         )
+
+        def reserve_alarm_slot() -> None:
+            if reserved_slot is not None:
+                if (
+                    op == "repeat"
+                    and request.alarm_id is None
+                    and reserved_slot not in self._available_alarm_slots()
+                ):
+                    raise ValueError(
+                        "The automatically selected alarm slot is no longer free; "
+                        "choose an explicit alarm_id."
+                    )
+                self._free_alarm_slots.discard(reserved_slot)
+                self._publish()
+
         for frame in frames:
-            if not await self._send(frame, session, self._coordinator.cancel_command):
+            if not await self._send(
+                frame, session, self._coordinator.cancel_command, on_attempt=reserve_alarm_slot
+            ):
                 return
         if deleted_alarm is not None and deleted_alarm in self._state.alarms:
             self._state.alarms.remove(deleted_alarm)
+        if op == "delete":
+            assert request.alarm_id is not None
+            self._free_alarm_slots.add(request.alarm_id)
         self._publish()
