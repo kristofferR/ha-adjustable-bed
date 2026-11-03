@@ -331,6 +331,35 @@ rename:
         select:
           options: [both, left, right]
 
+comfort_enhancements_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    memory:
+      default: 0
+      selector:
+        select:
+          options: ["0", "1", "2"]
+    massage:
+      default: false
+      selector:
+        boolean:
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
 sync_clock:
   fields:
     device_id:

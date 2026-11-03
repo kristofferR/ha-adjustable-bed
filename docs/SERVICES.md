@@ -404,3 +404,13 @@ data:
 ```
 
 Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memory slots, three named-save buttons and reset. Programming sends 55 attempts and reports transport completion, not proof that firmware retained the setting. RGB palette indices and brightness use controller-declared select/number entities. Alarm, sound/EQ, sonic and kneading feedback are read-only.
+
+## Comfort Enhancements alarm
+
+`adjustable_bed.comfort_enhancements_set_alarm` programs or disables the app's
+current-day BLE alarm. Supply `device_id`, `enabled`, and `time: "06:45:00"`
+when enabling. Optional `memory` is 0 (none), 1 (A/single Memory), or 2 (B,
+MC2/MC3 only); `massage` defaults to false. Paired `side` routing is supported.
+Disable with `enabled: false`, without a time. `adjustable_bed.sync_clock`
+synchronizes the clock and sends the app query. There is no alarm feedback or
+phone scheduler. See [packet behavior and limits](beds/comfort-enhancements.md#clock-and-alarm).

@@ -21,6 +21,8 @@ from typing import Final
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -118,6 +120,8 @@ _APP_DEFINED: Final = GENERIC_FIELDS
 _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SERENITY: _FIXED_LAYOUT,
     BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
@@ -185,6 +189,7 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
     BED_TYPE_FSM_RELAX: SideProfile(
         "FSM Relax",
@@ -263,6 +268,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}
     ),
     BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic", VMATBASIC_CONFIG_KEYS),
+    BED_TYPE_ESHINE: SideProfile("Eshine E6000"),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
     BED_TYPE_ZSERIES: SideProfile("Customatic Z-Series", variant_owned=True),
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),

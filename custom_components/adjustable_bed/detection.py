@@ -22,6 +22,7 @@ from .const import (
     # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -30,6 +31,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -563,6 +565,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
+    BED_TYPE_ESHINE: "Eshine app (E6000)",
     BED_TYPE_RICHMAT_REVIVE: "Revive Control app (Richmat)",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "Best Mattress app (Richmat)",
     BED_TYPE_RICHMAT_BLVD_HOME: "Blvd Home app (Richmat)",
