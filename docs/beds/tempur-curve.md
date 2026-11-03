@@ -65,10 +65,10 @@ enabled slots in each table. Disabled rows consume no slots; `wake: false`
 enabled rows still consume a slot. Both full tables and every physical target
 are checked before checksums or any sends, including an unselected table.
 
-Weekday encoding: marker bit7 plus weekday bits; Monday through Saturday use bits1..6,
-Sunday bit0. Wake byte: **0x03**, otherwise zero.
+Weekday encoding: marker bit 7 plus weekday bits; Monday through Saturday use bits 1..6,
+Sunday bit 0. Wake byte: **0x03**, otherwise zero.
 The frames are `ED 80 03` (weekly) and `ED 80 02` (one-time), each 16 bytes,
-with three four-byte records and an inverted-sum checksum at15. `both` sends
+with three four-byte records and an inverted-sum checksum at 15. `both` sends
 weekly then waits 500 ms then one-time; selected single-table dispatch still
 waits 500 ms after the send. A transport failure can leave only one table sent;
 there is no wire rollback. Empty-table bytes are attempted writes, not proof
@@ -93,7 +93,7 @@ prior value unchanged. The parser does not infer acknowledgement, battery,
 physical motor count, light state or physical memory meaning. Incoming packets
 are not reassembled or given invented header/checksum guards.
 
-Accept lengths 16/19/20:16 drops byte13 bit5;19 drops byte14 bit5;20 has no such gate. Status is14/15/14.
+Accept lengths 16/19/20: 16 drops byte 13 bit 5; 19 drops byte 14 bit 5; 20 has no such gate. Status is 14/15/14.
 
 The app queues its initial clock after 2 seconds, with 500 ms post-write pacing.
 

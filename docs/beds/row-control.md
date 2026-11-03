@@ -8,7 +8,7 @@ Generic SBI, Keeson and other app profiles keep their existing behavior.
 
 **Reset** is an opaque app-named held action for Elevate, Lifestyle and Curve.
 Its physical effect is unverified; the name does not promise a factory reset.
-It sends `e5fe1600100008ee` every100ms while held and the ordinary zero release
+It sends `e5fe1600100008ee` every 100 ms while held and the ordinary zero release
 `e5fe160000000006` when ended or cancelled. The card button also offers the
 existing finite press adapter. Lifestyle Plus and Zero-G Box do not expose
 Reset, because their Reset views are inactive in the accepted app source.
@@ -126,10 +126,10 @@ enabled slots in each table. Disabled rows consume no slots; `wake: false`
 enabled rows still consume a slot. Both full tables and every physical target
 are checked before checksums or any sends, including an unselected table.
 
-Weekday encoding: marker bit7 plus weekday bits; Monday through Saturday use bits1..6,
-Sunday bit0. Wake byte: **0x03**, otherwise zero.
+Weekday encoding: marker bit 7 plus weekday bits; Monday through Saturday use bits 1..6,
+Sunday bit 0. Wake byte: **0x03**, otherwise zero.
 The frames are `ED 80 03` (weekly) and `ED 80 02` (one-time), each 16 bytes,
-with three four-byte records and an inverted-sum checksum at15. `both` sends
+with three four-byte records and an inverted-sum checksum at 15. `both` sends
 weekly then waits 500 ms then one-time; selected single-table dispatch still
 waits 500 ms after the send. A transport failure can leave only one table sent;
 there is no wire rollback. Empty-table bytes are attempted writes, not proof
@@ -154,7 +154,7 @@ prior value unchanged. The parser does not infer acknowledgement, battery,
 physical motor count, light state or physical memory meaning. Incoming packets
 are not reassembled or given invented header/checksum guards.
 
-Accept 16/19/20 with bit5 gates at13 for16 and14 for19; status14/15/14. Zero-G Box has an empty timer-update method, so it gets no invented timer state.
+Accept 16/19/20 with bit 5 gates at 13 for 16 and 14 for 19; status 14/15/14. Zero-G Box has an empty timer-update method, so it gets no invented timer state.
 
 The app queues its initial clock after 2 seconds, with 500 ms post-write pacing.
 

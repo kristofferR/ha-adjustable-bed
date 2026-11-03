@@ -12,9 +12,11 @@ from .base import BedController
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .bedsense import BedSenseController as BedSenseController
+    from .bf_cherish import BfCherishController as BfCherishController
     from .casper_base import CasperBaseController as CasperBaseController
     from .casper_sleep import CasperSleepController as CasperSleepController
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
+    from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
@@ -30,6 +32,7 @@ if TYPE_CHECKING:
     from .furnimove import FurniMoveController as FurniMoveController
     from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
     from .innova import InnovaController as InnovaController
+    from .isleep import IsleepController as IsleepController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
     from .jiecang import JiecangController as JiecangController
@@ -128,8 +131,10 @@ _EXPORT_MODULES = {
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",
     "JensenController": "jensen",
     "JensenLinonController": "jensen_linon",
+    "ComfortMotionController": "comfort_motion",
     "JiecangController": "jiecang",
     "JiecangAppController": "jiecang_app",
+    "IsleepController": "isleep",
     "KaidiController": "kaidi",
     "KeesonController": "keeson",
     "LeggettGen2Controller": "leggett_gen2",
@@ -153,6 +158,7 @@ _EXPORT_MODULES = {
     "OkinDotController": "okin_dot",
     "OkinHandleController": "okin_handle",
     "OkinNordicController": "okin_nordic",
+    "BfCherishController": "bf_cherish",
     "OkinOreController": "okin_ore",
     "OkinRfEcoBtController": "okin_rf_eco_bt",
     "OkinUuidController": "okin_uuid",
@@ -202,6 +208,7 @@ __all__ = [
     "OkinCstController",
     "OkinDotController",
     "OkinHandleController",
+    "BfCherishController",
     "OkinOreController",
     "OkinRfEcoBtController",
     "OkinUuidController",
@@ -215,6 +222,7 @@ __all__ = [
     "LeggettWilinkeController",
     # Brand-specific controllers
     "CoolBaseController",
+    "ComfortMotionController",
     "JiecangController",
     "JiecangAppController",
     "JensenController",

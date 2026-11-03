@@ -23,6 +23,8 @@ from .const import (
     # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
+    BED_TYPE_BF,
+    BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -36,6 +38,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -134,6 +137,7 @@ from .const import (
     KAIDI_MAC_PREFIXES,
     KAIDI_MESH_SERVICE_UUID,
     KAIDI_NAME_PATTERNS,
+    KAIDI_VARIANT_FLOYD,
     KEESON_BASE_SERVICE_UUID,
     KEESON_EXTENDED_NORDIC_SERVICE_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
@@ -235,7 +239,7 @@ from .const import (
     DetectionResult,
 )
 from .fsm_relax_discovery import matches_fsm_relax_candidate
-from .kaidi_protocol import extract_kaidi_advertisement
+from .kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
 from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
@@ -568,6 +572,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     'ergo_slim': 'Ergo Slim',
     'tempur_au': 'TEMPUR AU',
     BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
+    BED_TYPE_BF: "BF (com.BF app, three motors)",
+    BED_TYPE_CHERISH: "Cherish (com.okin.ore.cherish app)",
     "casper_remote": "Casper Base remote finder (RCRM handset)",
     "casper_base": "Casper Base app (select product)",
     "casper_sleep_mm": "Casper Base sleep sensor (RM- / MM)",
@@ -617,10 +623,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_COOLBASE: "Cool Base (BaseI5 with fan)",
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_JIECANG: "Jiecang (legacy Glide / Comfort Motion)",
-    BED_TYPE_JIECANG_APP: "Jiecang (ERGOBALANCE / Dream Motion apps)",
+    BED_TYPE_JIECANG_APP: "Jiecang (ERGOBALANCE / Dream Motion / Dream Motion HD / Comfort Motion apps)",
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
     BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, some Ergomotion Sync beds)",
-    BED_TYPE_KAIDI: "Kaidi (Rize, Floyd, ISleep)",
+    BED_TYPE_ISLEEP: "ISleep (com.kaidi_test4)",
+    BED_TYPE_KAIDI: "Kaidi (Rize, Floyd; legacy ISleep)",
     BED_TYPE_LINAK: "Linak",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
@@ -676,6 +683,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
+    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (product 139)",
     (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",
@@ -1347,7 +1355,10 @@ def _detect_bed_type_detailed(
     has_kaidi_mac = any(
         service_info.address.upper().startswith(prefix) for prefix in KAIDI_MAC_PREFIXES
     )
-    if kaidi_adv and not (has_kaidi_uuid or has_kaidi_name or has_kaidi_mac):
+    floyd_payload = (service_info.manufacturer_data or {}).get(0xFFFF)
+    floyd_adv = extract_kaidi_advertisement({0xFFFF: floyd_payload}) if floyd_payload else None
+    has_floyd_product = is_floyd_advertisement(floyd_adv) and service_info.rssi >= -92
+    if kaidi_adv and not (has_kaidi_uuid or has_kaidi_name or has_kaidi_mac or has_floyd_product):
         _LOGGER.debug(
             "Ignoring PairLink-format manufacturer data for %s (name: %s): "
             "no Kaidi name, UUID, or MAC OUI to corroborate",
@@ -1355,6 +1366,8 @@ def _detect_bed_type_detailed(
             service_info.name,
         )
     elif kaidi_adv:
+        if has_floyd_product:
+            signals.append("product:floyd_139")
         signals.append(f"manufacturer_payload:kaidi_type_{kaidi_adv.adv_type}")
         if has_kaidi_uuid:
             signals.append("uuid:kaidi")
@@ -1373,6 +1386,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_KAIDI,
             confidence=confidence,
             signals=signals,
+            ambiguous_types=[BED_TYPE_ISLEEP],
         )
 
     if DEWERTOKIN_SERVICE_UUID.lower() in service_uuids:

@@ -92,6 +92,7 @@ from .const import (
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -143,6 +144,8 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_TARGET_VADDR,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_STATE,
     CONF_MALOUF_LAYOUT,
@@ -188,6 +191,7 @@ from .const import (
     DEVICE_INFO_READ_TIMEOUT,
     DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
@@ -2171,6 +2175,16 @@ class AdjustableBedCoordinator:
             return False
         return True
 
+    def remember_floyd_room(self, room_id: int) -> None:
+        """Persist acknowledged BLE membership without reloading mid-service."""
+        if self._bed_type != BED_TYPE_KAIDI or not 1 <= room_id <= 0xFFFFFFFF:
+            raise ValueError("Invalid Floyd BLE room")
+        data = {**self.entry.data, CONF_KAIDI_ROOM_ID: room_id}
+        data.pop(CONF_KAIDI_TARGET_VADDR, None)
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._offline_controller = None
+        self._async_persist_config(data)
+
     def remember_limoss_remote_capabilities(self, capabilities: Mapping[str, int]) -> None:
         """Persist the reported capability record, which decides the entity layout."""
         from .limoss_remote_state import validate_limoss_remote_state
@@ -3112,7 +3126,17 @@ class AdjustableBedCoordinator:
         3. A pre-first-connect bed-type heuristic. Only ``auto``/``gen2``
            ``leggett_platt`` entries are assumed persistent here; ``okin`` and
            ``mlrm`` are not (they reconnect normally).
+
+        An idle timeout of 0 opts any bed into the same lifecycle unless
+        Disconnect After Command is on (issue #700). Like persistent
+        controllers, a dropped link then reconnects on the next command rather
+        than on a timer, so receivers that drop idle links cannot storm.
         """
+        if (
+            self._idle_disconnect_seconds == IDLE_DISCONNECT_KEEP_CONNECTED
+            and not self._disconnect_after_command
+        ):
+            return True
         controller = self._controller
         if controller is not None:
             return controller.requires_persistent_connection or (

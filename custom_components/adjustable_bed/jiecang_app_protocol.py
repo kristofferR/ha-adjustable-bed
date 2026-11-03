@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-AppProfile = Literal["dreamask", "dreamotion"]
+AppProfile = Literal["dreamask", "dreamotion", "dreamhd"]
 Layout = Literal[
     "standard_2",
     "standard_3_neck",
@@ -86,7 +86,7 @@ _WAKE_CODES: dict[Wake, int] = {
 _CODE_TO_WAKE: dict[int, Wake] = {code: wake for wake, code in _WAKE_CODES.items()}
 WIRE_MASSAGE_LEVELS = (0, 2, 3, 4)
 LIGHT_TIMEOUTS = (0, 60, 120, 180, 240, 300, 600, 900, 1200, 1500, 1800)
-APP_PROFILES: tuple[AppProfile, ...] = ("dreamask", "dreamotion")
+APP_PROFILES: tuple[AppProfile, ...] = ("dreamask", "dreamotion", "dreamhd")
 LAYOUTS: tuple[Layout, ...] = tuple(LAYOUT_AXES)
 
 
@@ -128,6 +128,24 @@ BOOTSTRAP_SCHEDULE: Schedule = tuple(
 )
 
 
+# Dream Motion HD 1.0.4 has no light-status query in its startup burst.
+DREAMHD_BOOTSTRAP: Schedule = tuple(
+    (offset + repeat, command)
+    for offset, command in (
+        (0, build_frame(0)),
+        (1000, build_frame(0, b"\x01")),
+        (1200, QUERY_HARDWARE),
+        (1400, QUERY_VIBRATION),
+        (1600, QUERY_ALARM),
+        (1800, QUERY_SOFTWARE),
+    )
+    for repeat in (0, 100)
+)
+DREAMHD_LAYOUTS: tuple[Layout, ...] = tuple(
+    layout for layout in LAYOUTS if layout not in ("standard_4_bilateral", "split_after_bilateral")
+)
+
+
 def is_bilateral(layout: Layout) -> bool:
     """Global controls retain bilateral routing in the explicit mixed layout."""
     return layout in ("standard_4_bilateral", "split_after_bilateral")
@@ -149,6 +167,8 @@ def movement_releases(profile: AppProfile) -> Schedule:
         return ((50, LONG_RELEASE), (150, LONG_RELEASE))
     if profile == "dreamotion":
         return ((100, SHORT_RELEASE), (800, LONG_RELEASE))
+    if profile == "dreamhd":
+        return ((100, SHORT_RELEASE),)
     raise ValueError(f"Unknown app profile: {profile}")
 
 
@@ -157,9 +177,12 @@ def preset_command(layout: Layout, preset: Preset) -> bytes:
     return build_frame(_PRESET_OPCODES[preset], payload)
 
 
-def memory_command(slot: int, save: bool = False) -> bytes:
+def memory_command(slot: int, save: bool = False, profile: AppProfile = "dreamask") -> bytes:
     _range("memory slot", slot, 1, 2)
-    return build_frame(0x0A + 2 * (slot - 1) + (0 if save else 1), b"\x00\x00")
+    return build_frame(
+        0x0A + 2 * (slot - 1) + (0 if save else 1),
+        b"\x01" if profile == "dreamhd" else b"\x00\x00",
+    )
 
 
 def massage_zones(layout: Layout) -> tuple[MassageZone, ...]:
@@ -251,8 +274,11 @@ def clock_command(value: datetime) -> bytes:
     )
 
 
-def rename_command(name: str, g1: bool, g3: bool) -> bytes:
-    if not name.isascii() or not name.isalnum() or not 1 <= len(name) <= 20:
+def rename_command(name: str, g1: bool, g3: bool, profile: AppProfile = "dreamask") -> bytes:
+    if profile == "dreamhd":
+        if not name.isascii() or not name.isprintable() or not 1 <= len(name) <= 20:
+            raise ValueError("Name must contain 1..20 printable ASCII characters")
+    elif not name.isascii() or not name.isalnum() or not 1 <= len(name) <= 20:
         raise ValueError("Name must contain 1..20 ASCII letters or digits")
     payload = name.encode("ascii")
     if g1:
@@ -268,6 +294,7 @@ def wake_schedule(
     back_level: int = 0,
     leg_level: int = 0,
     right_level: int | None = None,
+    profile: AppProfile = "dreamask",
 ) -> Schedule:
     """Return the artifact's absolute alarm execution offsets, preserving duplicates.
 
@@ -279,11 +306,16 @@ def wake_schedule(
     for level in (back_level, leg_level):
         _range("alarm massage level", level, 0, 3)
     split = layout in ("split_series", "split_after_bilateral")
+    if profile == "dreamhd":
+        split = layout in ("standard_3_split_upper", "split_series")
     expected_right = back_level if split else 0
     if right_level is not None and right_level != expected_right:
         raise ValueError("Split alarm right massage must match the back level")
     result: list[tuple[int, bytes]] = []
-    zones = [(0, 0x12, back_level), (500 if split else 300, 0x14, leg_level)]
+    zones = [
+        (0, 0x12, back_level),
+        (500 if split or profile == "dreamhd" else 300, 0x14, leg_level),
+    ]
     if split:
         zones.append((180, 0x22, back_level))
     for offset, opcode, level in zones:
@@ -292,12 +324,14 @@ def wake_schedule(
             result.extend((offset + delay, command) for delay in (0, 30, 60))
             result.extend((offset + delay, SHORT_RELEASE) for delay in (90, 120, 150))
     if wake == "memory_1":
-        command = memory_command(1)
+        command = memory_command(1, profile=profile)
     elif wake == "memory_2":
-        command = memory_command(2)
+        command = memory_command(2, profile=profile)
     else:
         command = preset_command(layout, wake)
     result.extend((offset, command) for offset in (800, 830, 860, 890, 920))
+    if profile == "dreamhd":
+        return tuple(sorted(result, key=lambda item: item[0]))
     if wake == "memory_2" and not split:
         result.append((1600, LONG_RELEASE))
     result.extend((offset, LONG_RELEASE) for offset in (1690, 1720))
@@ -345,7 +379,7 @@ class Notification:
     legacy_light: bool | None = None
 
 
-def parse_notification(data: bytes) -> Notification | None:
+def parse_notification(data: bytes, profile: AppProfile = "dreamask") -> Notification | None:
     """Parse one callback without reading incomplete fields or trusting invalid ranges.
 
     No response checksum requirement is invented: both apps accept bad trailers.
@@ -379,7 +413,9 @@ def parse_notification(data: bytes) -> Notification | None:
             ),
         )
     if prefix == b"\xf2\xf2\x53" and len(data) >= 7:
-        return Notification(automatic_light=data[4] == 0)
+        return Notification(
+            automatic_light=(data[4] != 0 if profile == "dreamhd" else data[4] == 0)
+        )
     if data[:4] == b"\xf2\xf2\x52\x07" and len(data) >= 13:
         if data[7] > 100 or data[10] not in (0, 1):
             return None
@@ -395,3 +431,35 @@ def parse_notification(data: bytes) -> Notification | None:
             massage_legs=data[6] if data[2] == 6 and data[6] in WIRE_MASSAGE_LEVELS else None,
         )
     return None
+
+
+@dataclass
+class DreamHDLightControls:
+    """E18 consumer state, distinct from a physical RGB/sensor capability claim.
+
+    Android visibility constants are retained in diagnostics: 0 visible, 4 hidden,
+    8 gone. A positive feature reply deliberately does not clear suppression.
+    HA additionally honors the user's explicit has_light gate.
+    """
+
+    picker: int = 4
+    human: int = 4
+    container: int = 4
+    suppressed: bool = False
+
+    def connected(self) -> None:
+        self.picker = self.human = self.container = 4
+        self.suppressed = False
+
+    def receive(self, update: Notification, *, has_light: bool, split_series: bool) -> None:
+        if update.rgb is not None and not self.suppressed:
+            self.picker = 0
+        if update.capabilities is not None and has_light:
+            if update.capabilities.light_config:
+                self.picker = self.human = self.container = 0
+            else:
+                self.picker = 8
+                self.human = self.container = 4
+                self.suppressed = True
+        if update.reapply_layout and not has_light and not split_series:
+            self.picker = self.human = self.container = 4

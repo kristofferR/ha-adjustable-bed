@@ -75,3 +75,6 @@ dependencies from Home Assistant's own manifests.
 APK artifacts and frozen reports stay local and ignored. Consult the repository's
 clean-room rules before protocol work. Documentation updates do not establish new
 hardware evidence.
+
+[Comfort Motion app setup and BLE behavior](beds/comfort-motion.md), including the
+[row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).

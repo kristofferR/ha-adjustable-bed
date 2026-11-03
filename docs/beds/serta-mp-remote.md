@@ -72,7 +72,7 @@ a calibrated axis target with the other field `0x8000`; no physical meaning for
 that other-axis field is assumed. Local angle up/down actions update a bounded
 target every 200 ms and send only one pulse frame on release.
 
-Notifications are exactly 16 bytes and require byte13 bit5 clear. Pulse words
+Notifications are exactly 16 bytes and require byte 13 bit 5 clear. Pulse words
 at 3..4 and 5..6 are little-endian; values >=32768 are complemented. Conversion
 uses the nearest shipped table value, midpoint ties lower, head >15430 saturates
 at 60° and foot >11667 at 45°. The reported angles are table estimates. The app's
@@ -89,7 +89,7 @@ prior value unchanged. The parser does not infer acknowledgement, battery,
 physical motor count, light state or physical memory meaning. Incoming packets
 are not reassembled or given invented header/checksum guards.
 
-See the calibrated16-byte parser above. Timer status is signed byte14.
+See the calibrated 16-byte parser above. Timer status is signed byte 14.
 
 The GATT selector independently retains the last matching notification and
 write characteristics across all services. Both are required. FFE4/FFE9 are
@@ -141,12 +141,12 @@ conditional UTF-8/code-unit-copy model above remains qualified as documented.
 Local-edit cancellation acknowledgement also applies to this physical
 scheduler's paired GROUP reservation, including native Left/Right/Both targets.
 The same successful-write, STOP-epoch and current-session checks apply. Covers
-use the already-declared60° back and45° legs calibration limits: their accepted
-endpoints show100%, while30° back and15° legs show50% and33%.
+use the already-declared 60° back and 45° legs calibration limits: their accepted
+endpoints show 100%, while 30° back and 15° legs show 50% and 33%.
 
 The registered `set_position` and `set_positions` actions validate the fixed
-native ranges, back0–60° and legs0–45°, for every requested axis and physical
+native ranges, back 0–60° and legs 0–45°, for every requested axis and physical
 target before scheduling movement. This also works from offline capabilities.
 Generic angle overrides do not change this app's calibration. A request for
-legs35° followed by back61° is rejected before either axis writes; other bed
+legs 35° followed by back 61° is rejected before either axis writes; other bed
 profiles retain their own limits.

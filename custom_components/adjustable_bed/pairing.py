@@ -24,6 +24,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
     BED_TYPE_CASPER_BASE,
+    BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_OKIN_CB24,
@@ -142,6 +143,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_OKIN_CB24,
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
+        BED_TYPE_ISLEEP,
         BED_TYPE_CASPER_BASE,
     }
 )
