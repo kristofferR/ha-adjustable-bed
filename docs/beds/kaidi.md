@@ -1,14 +1,15 @@
-> For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](isleep.md).
-> Its accepted row064 audit corrects movement lifecycle, side routing, massage
-> strengths and memory capacity independently of this legacy Kaidi route.
-> Existing entries do not change automatically. Reconfigure or add the explicit
-> ISleep profile and confirm product, actuator descriptor and room ID.
-
 # Kaidi
 
 **Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
+> [!NOTE]
+> For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](isleep.md).
+> Its accepted row064 audit corrects movement lifecycle, side routing, massage
+> strengths and memory capacity independently of this legacy Kaidi route.
+> Existing entries do not change automatically. Reconfigure or add the explicit
+> ISleep profile and confirm product, actuator descriptor and room ID.
 
 ## Known Models
 
@@ -24,7 +25,7 @@
 |----------|-----|------------|
 | ✅ | [Rize](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.3.0 | `com.kaidi_test4.rize` |
 | ✅ | [Floyd Home](https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd) 1.0.7 | `com.kaidi_test4.floyd` |
-| ✅ | [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4.isleep) 1.6.3 | `com.kaidi_test4.isleep` |
+| ✅ | [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 | `com.kaidi_test4` |
 
 Floyd Home now has a separately audited [product 139 profile](floyd.md).
 Its capabilities and control behavior come from its accepted artifact, not from
