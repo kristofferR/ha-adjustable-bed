@@ -288,11 +288,11 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
-        if (key === "adjustamattress_underbedLighting") {
+        if (key === "adjustamattress_underbed_lighting") {
           (bed.lights.buttons ??= []).push(id);
           break;
         }
-        if (/^adjustamattress_(headStrengthAdd|footStrengthAdd|waveAdd|massageTimer|timer\d+|query_massage.*)$/.test(key)) {
+        if (/^adjustamattress_(head_strength_add|foot_strength_add|wave_add|massage_timer|timer\d+|query_massage.*)$/.test(key)) {
           bed.massage.buttons.push(id);
           break;
         }

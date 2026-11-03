@@ -1339,8 +1339,8 @@ test("BedSense app actions retain distinct entities and app indicators", () => {
 
 test("AdjustaMattress model-gated controls and neutral reported fields stay visible", () => {
   const bed = bedEntitiesForDevice(hassWith([
-    entry("button.light", "adjustamattress_underbedLighting"),
-    entry("button.head_step", "adjustamattress_headStrengthAdd"),
+    entry("button.light", "adjustamattress_underbed_lighting"),
+    entry("button.head_step", "adjustamattress_head_strength_add"),
     entry("button.timer", "adjustamattress_timer20"),
     entry("button.m1", "adjustamattress_m1"),
     entry("button.sleep", "adjustamattress_sleep"),

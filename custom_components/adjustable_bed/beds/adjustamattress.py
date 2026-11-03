@@ -57,7 +57,17 @@ FFE_WRITE = "0000ffe9-0000-1000-8000-00805f9b34fb"
 FFE_NOTIFY = "0000ffe4-0000-1000-8000-00805f9b34fb"
 FFF0 = "0000fff0-0000-1000-8000-00805f9b34fb"
 INTERVAL_S = 0.2
+STATUS_TIMEOUT_S = 5.0  # HA readiness guard, not a device protocol timeout.
 NS = "adjustamattress_"
+BUTTON_KEYS = {
+    "headStrengthAdd": "head_strength_add",
+    "footStrengthAdd": "foot_strength_add",
+    "waveAdd": "wave_add",
+    "massageTimer": "massage_timer",
+    "underbedLighting": "underbed_lighting",
+    "liftHead": "lift_head",
+    "liftFoot": "lift_foot",
+}
 MAX_HOLD_MS = 60000  # Integration bound, also used by the card's hold service.
 
 
@@ -110,6 +120,7 @@ class AdjustaMattressController(BedController):
             self.model = cast(Model, parts[0])
             self.layout = int(parts[1])
         self.state = State()
+        self._sleep_status = asyncio.Event()
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
         self._busy_timer: asyncio.TimerHandle | None = None
@@ -338,7 +349,21 @@ class AdjustaMattressController(BedController):
             ):
                 self._preferences.strength_edited = False
 
+    async def _refresh_sleep_state(self) -> None:
+        self._sleep_status.clear()
+        await self._send("queryControlBoxStatus")
+        try:
+            async with asyncio.timeout(STATUS_TIMEOUT_S):
+                await self._sleep_status.wait()
+        except TimeoutError as error:
+            raise ConnectionError(
+                "No fresh sleep status received; no sleep command sent"
+            ) from error
+        if self._coordinator.cancel_command.is_set():
+            raise asyncio.CancelledError
+
     async def _toggle_sleep(self) -> None:
+        await self._refresh_sleep_state()
         started = asyncio.get_running_loop().time()
         start = not self.state.sleeping
         prelude = start and not self.state.snore_enabled
@@ -391,6 +416,7 @@ class AdjustaMattressController(BedController):
                 await self.client.stop_notify(self._notify_char)
 
     def on_disconnect(self) -> None:
+        self._sleep_status.clear()
         self._subscribed = False
         if self._busy_timer is not None:
             self._busy_timer.cancel()
@@ -411,6 +437,8 @@ class AdjustaMattressController(BedController):
             NUS_NOTIFY if self.model in ("P3", "P4") else FFE_NOTIFY, bytes(data)
         )
         fields = parse(self.model, bytes(data), self.state)
+        if "sleeping" in fields:
+            self._sleep_status.set()
         if "alarm_hour" in fields and not self._preferences.alarm_edited:
             if self.state.alarm_hour < 24 and self.state.alarm_minute < 60:
                 self._preferences.alarm_hour = self.state.alarm_hour
@@ -609,10 +637,10 @@ class AdjustaMattressController(BedController):
             )
         return tuple(
             ControllerButtonSpec(
-                NS + key,
+                NS + BUTTON_KEYS.get(key, key),
                 label,
                 _action(key),
-                translation_key=NS + key,
+                translation_key=NS + BUTTON_KEYS.get(key, key),
                 scheduler_resource="*",
                 hold=ControllerHoldSpec(key, 0, 0) if key in self.held_control_options else None,
             )

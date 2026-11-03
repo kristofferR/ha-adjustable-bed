@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -314,6 +315,7 @@ async def test_all_32_p4_sleep_states(sleeping, enabled, demo, strength):
     with (
         patch.object(c, "_delay", side_effect=delay),
         patch.object(c, "write_command", side_effect=write),
+        patch.object(c, "_refresh_sleep_state", new=AsyncMock()),
         patch("asyncio.get_running_loop", return_value=SimpleNamespace(time=lambda: clock[0])),
     ):
         await c.execute_action("sleep")
@@ -645,3 +647,104 @@ async def test_alarm_edit_during_awaited_write_stays_uncommitted(model, commit):
         c._notification(None, bytearray((165, 12, 0, 0, 255, 5, 7, 30, 0, 1)))
         assert c.state.alarm_type == 17
         assert c._preferences.alarm_type == 9
+
+
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("layout", range(7))
+def test_native_translation_keys_are_valid_and_have_english_names(model, layout):
+    c = make_controller(model, layout)
+    english = json.loads(
+        (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+    )["entity"]
+    for domain, specs in (
+        ("button", c.controller_button_specs),
+        ("select", c.controller_select_specs),
+        ("number", c.controller_number_specs),
+        ("sensor", c.controller_state_sensor_specs),
+        ("binary_sensor", c.controller_state_binary_sensor_specs),
+    ):
+        for spec in specs:
+            assert isinstance(spec.translation_key, str)
+            assert re.fullmatch(r"[a-z0-9][a-z0-9_-]*[a-z0-9]", spec.translation_key)
+            assert english[domain][spec.translation_key]["name"]
+
+
+@pytest.mark.parametrize("sleeping", (False, True))
+@pytest.mark.parametrize("enabled", (False, True))
+async def test_sleep_toggle_uses_fresh_report_instead_of_reconnect_defaults(sleeping, enabled):
+    c = await ready("P4")
+    c.state.sleeping = not sleeping
+    c.state.snore_enabled = not enabled
+    packets = []
+    status = bytearray(
+        (
+            165,
+            11,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            int(enabled),
+            1,
+            0,
+            0,
+            4 if sleeping else 0,
+        )
+    )
+
+    async def write(packet, **kwargs):
+        packets.append(packet)
+        if len(packets) == 1:
+            assert packet == b"\x00\xb0"
+            c._notification(None, status)
+
+    with (
+        patch.object(c, "write_command", side_effect=write),
+        patch.object(c, "_delay", new=AsyncMock()),
+    ):
+        await c.execute_action("sleep")
+    expected = [b"\x00\xb0"]
+    if not sleeping and not enabled:
+        expected.append(bytes.fromhex("050b0103012300"))
+    expected += [bytes((1, 181, int(not sleeping))), b"\x00\xb0"]
+    assert packets == expected
+
+
+async def test_sleep_status_timeout_cannot_reuse_earlier_reply_or_send_toggle():
+    c = await ready("P4")
+    c._notification(
+        None, bytearray((165, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 1, 0, 0, 4))
+    )
+    assert c._sleep_status.is_set()
+    c.write_command = AsyncMock()
+    with (
+        patch("custom_components.adjustable_bed.beds.adjustamattress.STATUS_TIMEOUT_S", 0),
+        pytest.raises(ConnectionError, match="No fresh sleep status"),
+    ):
+        await c.execute_action("sleep")
+    assert [call.args[0] for call in c.write_command.call_args_list] == [b"\x00\xb0"]
+
+
+async def test_cancelled_sleep_status_wait_sends_no_toggle():
+    c = await ready("P4")
+    requested = asyncio.Event()
+
+    async def write(packet, **kwargs):
+        assert packet == b"\x00\xb0"
+        requested.set()
+
+    with patch.object(c, "write_command", side_effect=write):
+        task = asyncio.create_task(c.execute_action("sleep"))
+        await requested.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task

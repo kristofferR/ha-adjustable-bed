@@ -83,6 +83,12 @@ it, so a retained demonstration can still select wire mode 2. Demonstration
 requires intelligent anti-snore to be disabled. Strength selection changes the
 next command, without an immediate write.
 
+Before each Sleep action, HA queries and awaits a fresh P4 status report. A
+five-second HA readiness guard rejects a missing reply without sending a sleep
+command. This is an integration guard, not a discovered device timer; old replies
+or reconnect defaults cannot determine the direction. The following app sequence
+starts only after that fresh report.
+
 Sleep follows the app's separate path without the privacy gate. Starting while
 anti-snore is disabled enables it, forces strength index 1/threshold 35, preserves
 demonstration, sends the anti-snore helper immediately and sleep at +200 ms.

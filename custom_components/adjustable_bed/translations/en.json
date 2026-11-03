@@ -2901,29 +2901,8 @@
       "adjustamattress_query_massage": {
         "name": "Refresh massage"
       },
-      "adjustamattress_headStrengthAdd": {
-        "name": "Head massage step"
-      },
-      "adjustamattress_footStrengthAdd": {
-        "name": "Foot massage step"
-      },
-      "adjustamattress_waveAdd": {
-        "name": "Wave step"
-      },
-      "adjustamattress_massageTimer": {
-        "name": "Massage timer step"
-      },
       "adjustamattress_m1": {
         "name": "M1"
-      },
-      "adjustamattress_underbedLighting": {
-        "name": "Underbed lighting"
-      },
-      "adjustamattress_liftHead": {
-        "name": "Lift head"
-      },
-      "adjustamattress_liftFoot": {
-        "name": "Lift foot"
       },
       "adjustamattress_timer10": {
         "name": "Massage timer 10 minutes"
@@ -2945,6 +2924,27 @@
       },
       "adjustamattress_query_status": {
         "name": "Refresh anti-snore status"
+      },
+      "adjustamattress_head_strength_add": {
+        "name": "Head massage step"
+      },
+      "adjustamattress_foot_strength_add": {
+        "name": "Foot massage step"
+      },
+      "adjustamattress_wave_add": {
+        "name": "Wave step"
+      },
+      "adjustamattress_massage_timer": {
+        "name": "Massage timer step"
+      },
+      "adjustamattress_underbed_lighting": {
+        "name": "Underbed lighting"
+      },
+      "adjustamattress_lift_head": {
+        "name": "Lift head"
+      },
+      "adjustamattress_lift_foot": {
+        "name": "Lift foot"
       }
     },
     "cover": {
