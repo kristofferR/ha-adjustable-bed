@@ -249,6 +249,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     HAS_LIGHT_DEFAULTS,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
@@ -3885,7 +3886,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): bool,
             vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
         }
 
         schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=form_variant)] = vol.In(
@@ -4804,7 +4805,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): bool,
                 vol.Optional(
                     CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+                ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
             }
         )
         if defaults_bed_type in MALOUF_BED_TYPES:
@@ -5056,7 +5057,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): TextSelector(TextSelectorConfig()),
                 vol.Optional(
                     CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+                ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
             }
         )
         schema_dict[
@@ -7641,7 +7642,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS,
                 default=current.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
         }
         _hide_owned_generic_fields(schema, bed_type, variant)
         errors: dict[str, str] = {}
@@ -7928,7 +7929,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 default=current_data.get(
                     CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                 ),
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
             vol.Optional(
                 CONF_DISABLE_DISCOVERY,
                 default=discovery_disabled,

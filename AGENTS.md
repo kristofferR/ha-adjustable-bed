@@ -254,7 +254,7 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 | `motor_pulse_count` | Command repeat count | 10 |
 | `motor_pulse_delay_ms` | Delay between repeats | 100 |
 | `disconnect_after_command` | Disconnect immediately after commands | per bed type (`disconnect_after_command_default_enabled`) |
-| `idle_disconnect_seconds` | Idle timeout before disconnect | 40 |
+| `idle_disconnect_seconds` | Idle timeout before disconnect; 0 keeps connected unless `disconnect_after_command` | 40 |
 | `disable_discovery` | Suppress automatic discovery (global, stored via `discovery_settings`) | false |
 | `position_mode` | Speed vs accuracy tradeoff | speed |
 | `octo_pin` | PIN for Octo beds | "" |

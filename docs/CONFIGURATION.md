@@ -172,7 +172,7 @@ feedback or change which commands a bed supports.
 | **Refresh Positions While Idle** | On/Off, Linak only | On | Periodically reconcile positions when idle polling is allowed |
 | **Connection Profile** | Balanced / Reliable | Balanced | Connection timeout and retry behavior |
 | **Disconnect After Command** | On/Off | Bed/variant-specific | Release the connection promptly after commands |
-| **Idle Disconnect Seconds** | 10-300 | 40 | Auto-disconnect timeout when idle |
+| **Idle Disconnect Seconds** | 0-300 | 40 | Auto-disconnect timeout when idle; 0 keeps the bed connected |
 | **Stop Discovering New Bluetooth Devices** | On/Off | Off | Suppress automatic discovery of new beds (integration-wide) |
 | **Maximum Back Angle** | Greater than 0, up to 180° | 68° | Back/head range for controllers reporting angles |
 | **Maximum Legs Angle** | Greater than 0, up to 180° | 45° | Legs/feet range for controllers reporting angles |
@@ -223,6 +223,9 @@ feedback or change which commands a bed supports.
 - How long to wait before automatically disconnecting when idle
 - Lower values free the connection faster for physical remotes
 - Higher values reduce reconnection overhead for frequent Home Assistant use
+- `0` keeps the bed connected while Home Assistant runs, so commands respond without reconnecting. Use it only for mains-powered beds: the held link blocks the vendor app and any Bluetooth remote (RF remotes are unaffected), and it keeps the bed's Bluetooth radio active.
+- `0` applies only while Disconnect After Command is off; when that option is on, its one-second handoff wins.
+- If a kept link drops, the next command reconnects it. Most beds get no background reconnect timer, because some receivers drop idle links and stop advertising after repeated reconnects. Bed types that already reconnect automatically after a drop keep doing so.
 
 **Timed Move**
 - `adjustable_bed.timed_move` treats the requested milliseconds as an elapsed movement ceiling, starting after connection and movement preparation. Linak completes its readiness handshake before this timer starts. Bluetooth write latency counts toward the ceiling instead of extending it.
@@ -719,7 +722,7 @@ This is expected when Home Assistant is connected. Most beds only support one BL
 
 **Solutions:**
 1. Enable "Disconnect after each command" where supported, or press Disconnect
-2. Reduce "Idle disconnect seconds" for faster automatic disconnection
+2. Reduce "Idle disconnect seconds" for faster automatic disconnection (and avoid `0`, which keeps the bed connected)
 3. Enable "Disable angle sensing" if position monitoring causes conflicts
 
 ### Commands Are Slow or Unresponsive
