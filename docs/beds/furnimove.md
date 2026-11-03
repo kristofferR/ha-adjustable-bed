@@ -1,38 +1,120 @@
 # FurniMove / OKIN Smart Remote
 
-**Status:** APK and production API behavior verified; hardware validation pending.
+**Status:** ❓ Needs testing (APK and production API behavior verified; hardware validation pending)
 
-This explicit app profile comes from `com.okin.okinsmartcomfort` **2.2.0 (19)**,
-including its complete 19-APK artifact set and production API tables captured
-on 2026-09-30. The clean-room report passed independent acceptance before the
-integration comparison. [The discovery ledger](../apk-analysis/dispositions/157-furnimove.md)
-records every implemented behavior and exclusion. Ref [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)
-and [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556).
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-## Choosing the layout
+## Known Models
 
-Choose **FurniMove / OKIN Smart Remote** and select the exact handset ID used
-in the FurniMove app, matching the physical remote. There is no automatic
-handset choice. RF ECO BT, P1103 and shared OKIN UUIDs identify a receiver or
-transport, not its number of motors or command layout. Issue #633 establishes
-use of FurniMove; #556's receiver label alone does not establish its app.
-For another app, select that app's documented integration profile.
+- OKIN receivers used with the FurniMove app, selected by the exact handset ID
+  shown in the app (see [Captured layouts](#captured-layouts))
+- Handset families in the catalog: RF-TOPLINE, RF-TOUCH, RF-TOUCHLINE, RF-STYLE,
+  RF-LITE / RF-LITELINE, RF-FLASHLINE, RF-ECO+, RFS-ELLIPSE, RF HS-Elegance,
+  "REMOTE CONTROL 2,4GHz ECO", and the RF1058 DOT handsets
+- RF ECO BT receivers (Device Information model `RF eco BT`, part 88802); see
+  [Connection](#connection)
+- RF ECO BT, P1103 and shared OKIN UUIDs identify a receiver or transport, not
+  its number of motors or command layout
 
-A configured catalog layout loads its control and diagnostic entities even
-if the first BLE connection fails or times out. Commands and **Connect** retry
-the connection on demand. **BLE Connection** remains disconnected and live
-feedback stays unknown until startup succeeds. This uses the selected handset
-table; it does not confirm that the receiver supports it. An unknown/missing
-handset ID still prevents setup. The RF ECO BT label alone cannot select `90167`
-or another layout, including when no physical wireless handset is present.
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) **2.2.0 (19)** | `com.okin.okinsmartcomfort` |
+
+## Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (per handset table: `M1` Head, `M2` Back, `M3` Legs, `M4` Feet) |
+| Position Feedback | ❌ (the app reports no motor positions; no position or angle sliders) |
+| Memory Presets | ✅ (per handset table, up to 4 slots; save-memory per ordered slot) |
+| Named presets and utility buttons | ✅ (every reachable non-actuator row, e.g. Flat, QuietSleep, Snore) |
+| Massage | ✅ (handsets with massage rows: intensity, zones, programs 1-3 and Wave) |
+| Under-bed light (UBL) | ✅ (toggle button plus reported binary state) |
+| Sync / Child Lock | ✅ (command buttons plus reported booleans) |
+| Simultaneous movement | ✅ (`adjustable_bed.furnimove_move_simultaneously`) |
+| Rename | ✅ (`adjustable_bed.rename`) |
+| Bonding | ⚠️ (advisory background bond request; never required) |
+
+## Protocol Details
+
+| Role | UUID |
+|------|------|
+| Ordinary command | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
+| Ordinary feedback | `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| DOT command | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| DOT feedback | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+| CSS write / feedback | `90311625-25fa-3346-12ef-3cfb7a2556ac` / `90311725-25fa-3346-12ef-3cfb7a2556ac` |
+| RF rename | `92111422-72ab-4564-62ef-2a881286a6b0` |
+| GAP name | `00002a00-0000-1000-8000-00805f9b34fb` |
+
+**Format:** Four-byte keycodes from the selected handset table, wrapped as P1, P2 (RF) or P3 (DOT)
+
+### Transport selection
+
+- GATT roles are selected across all discovered services, preserving ordered
+  last-match characteristic instances.
+- RF rename presence selects the old frame; CSS feedback can clear that flag.
+  DOT selection is independent.
+- A characteristic instance is used for writes when UUIDs repeat.
+
+### Packet Format
+
+Valid four-byte keycodes produce these frames:
+
+| Frame | Layout | Checksum |
+|-------|--------|----------|
+| P1 (ordinary) | `04 02` followed by the big-endian payload | None |
+| P2 (RF) | `e5 fe 16`, four payload bytes, checksum | Complemented low byte of the sum of all initialized frame bytes |
+| P3 (DOT) | `05 02`, four payload bytes and `00` | None |
+
+- RF wins when RF and DOT flags are both set.
+- DOT is passed by main controls, favorites and Sync/Child Lock. Memory
+  programming, massage, functioning-mode controls and widgets omit DOT, so they
+  use P1 even on a DOT connection unless RF selects P2.
+- Composite commands OR complete frames; RF combinations recalculate the
+  checksum over the first seven bytes.
+
+### Write Mode
+
+Bleak's write response mode follows the discovered write properties; the APK
+sets no explicit Android write type.
+
+## Detection / Setup
+
+### Choosing the layout
+
+- Choose **FurniMove / OKIN Smart Remote** and select the exact handset ID used
+  in the FurniMove app, matching the physical remote. There is no automatic
+  handset choice.
+- Issue #633 establishes use of FurniMove; #556's receiver label alone does not
+  establish its app. For another app, select that app's documented integration
+  profile.
+- Motor count, massage availability and action ordering come from the selected
+  table.
+- An unknown/missing handset ID still prevents setup. An unavailable ID requires
+  a new verified table; the integration does not contact the cloud or ship the
+  app's API credential.
+- The RF ECO BT label alone cannot select `90167` or another layout, including
+  when no physical wireless handset is present.
+- A configured catalog layout loads its control and diagnostic entities even if
+  the first BLE connection fails or times out. Commands and **Connect** retry
+  the connection on demand. **BLE Connection** remains disconnected and live
+  feedback stays unknown until startup succeeds. This uses the selected handset
+  table; it does not confirm that the receiver supports it.
+
+### Handset catalog
 
 The integration includes **87 production IDs, 39 distinct tables and 1,092
 ordered rows**, plus the two shipped local aliases `280702`/`280703` and the
-five-row offline table `00000`. All known IDs and metadata references were
-queried in production and the four shipped alternate environments; filtered
-brand/active queries found no further referenced production mappings.
-Alternate debug-environment tables do not replace missing production IDs.
-The captured catalog is finite, not a claim to enumerate every future API ID.
+five-row offline table `00000`.
+
+- All known IDs and metadata references were queried in production and the four
+  shipped alternate environments; filtered brand/active queries found no further
+  referenced production mappings.
+- Alternate debug-environment tables do not replace missing production IDs.
+- The captured catalog is finite, not a claim to enumerate every future API ID.
 
 ### Select the app as well as the handset
 
@@ -51,14 +133,29 @@ setup offers every captured handset, including `82417`:
 | DOT handsets 97450, 97544, 98035 | Okin DOT | They are not in the FurniMove capture. |
 
 Existing entries keep working unchanged. An Okin DOT entry using 90167, 91983
-or 93558 receives the repair described below.
+or 93558 receives the [repair](#repairing-existing-configurations) described
+below.
 
-For the FurniMove app showing handset **82417**, choose **FurniMove / OKIN Smart
-Remote → 82417: RF TOPLINE SI/BK/BK/07**. This table exposes Back and Legs,
-with no massage or memory slots. `90167: RF1058` is a different layout and is
-not a fallback for this receiver. Correct an existing entry through its
-integration options; selecting `82417` does not require replacing the entry or
-removing an operating-system bond.
+> [!NOTE]
+> For the FurniMove app showing handset **82417**, choose **FurniMove / OKIN
+> Smart Remote → 82417: RF TOPLINE SI/BK/BK/07**. This table exposes Back and
+> Legs, with no massage or memory slots. `90167: RF1058` is a different layout
+> and is not a fallback for this receiver. Correct an existing entry through its
+> integration options; selecting `82417` does not require replacing the entry or
+> removing an operating-system bond.
+
+### Discovery
+
+Discovery follows the same split:
+
+- DewertOkin manufacturer data, the `1523` service and the RF-Gateway service
+  keep their confident DewertOkin route, with FurniMove listed as an optional
+  app candidate.
+- The app's gateway service `00001420-0000-1000-8000-00805f9b34fb` is its last
+  acceptance rule, so it only proposes FurniMove when nothing else matched; with
+  another match it adds FurniMove as a candidate without overriding it.
+
+### Service discovery race
 
 FurniMove connections and setup verification wait for live GATT service
 discovery before starting subscriptions. A cached BlueZ service collection can
@@ -66,18 +163,6 @@ otherwise arrive before its characteristic objects exist, producing
 `org.freedesktop.DBus.Error.UnknownObject` on reads and notifications. This fixes
 the race observed in #633, but does not establish the cause of a link that
 disconnects before service discovery completes.
-
-Discovery follows the same split. DewertOkin manufacturer data, the `1523`
-service and the RF-Gateway service keep their confident DewertOkin route, with
-FurniMove listed as an optional app candidate. The app's gateway service
-`00001420-0000-1000-8000-00805f9b34fb` is its last acceptance rule, so it only
-proposes FurniMove when nothing else matched; with another match it adds
-FurniMove as a candidate without overriding it.
-
-Motor count, massage availability and action ordering come from the selected
-table. An unavailable ID requires a new verified table; the integration does
-not contact the cloud or ship the app's API credential. Motor position and
-angle sliders are absent because this app reports no motor positions.
 
 ## Repairing existing configurations
 
@@ -100,29 +185,36 @@ fixable warning offering **Switch to the FurniMove profile** or **Keep current
 configuration**. Switching keeps the handset and derives the axes and massage
 availability from its table.
 
-Each repair updates the same config entry. Bluetooth address, device ownership,
-entry identity and matching entity IDs remain intact. A retired Stair cover,
-unsupported axes and obsolete app action/state entities are removed. A paired
-repair changes only its selected physical side. FurniMove conversion clears
-obsolete mandatory-pairing state and the old pairing repair; it never removes
-an operating-system bond. Saving the matching profile in integration options
-also clears the layout repair on the next setup.
+Every repair:
+
+- Updates the same config entry. Bluetooth address, device ownership, entry
+  identity and matching entity IDs remain intact.
+- Removes a retired Stair cover, unsupported axes and obsolete app action/state
+  entities.
+- Changes only its selected physical side when paired.
+- For FurniMove conversion, clears obsolete mandatory-pairing state and the old
+  pairing repair; it never removes an operating-system bond.
+
+Saving the matching profile in integration options also clears the layout repair
+on the next setup.
 
 ## Controls and actions
 
-Motor rows map `M1` to Head, `M2` to Back, `M3` to Legs and `M4` to Feet.
-Only axes with their exact Out/In rows are exposed. Named presets and utility
-buttons are selected by the first exact name, independently of category.
-Memory slots preserve all ordered `memory` rows; arbitrary `memory-preset`
-labels remain separate named buttons. QuietSleep and Snore are separate
-commands. Save-memory uses the requested ordered slot.
-
-All reachable non-actuator rows also have named buttons, with indexed keys
-that distinguish duplicate labels. Diagnostics list every captured row and the
-reachable row indexes. Actions use the shared command lock and all-target
-validation; paired sides retain their own profiles.
-An ordered row must have the same action name and category on every target.
-If it differs, select one device or physical side instead.
+- Motor rows map `M1` to Head, `M2` to Back, `M3` to Legs and `M4` to Feet. Only
+  axes with their exact Out/In rows are exposed. Motor position and angle sliders
+  are absent because this app reports no motor positions.
+- Named presets and utility buttons are selected by the first exact name,
+  independently of category. QuietSleep and Snore are separate commands.
+- Memory slots preserve all ordered `memory` rows; arbitrary `memory-preset`
+  labels remain separate named buttons. Save-memory uses the requested ordered
+  slot.
+- All reachable non-actuator rows also have named buttons, with indexed keys
+  that distinguish duplicate labels. Diagnostics list every captured row and the
+  reachable row indexes.
+- Actions use the shared command lock and all-target validation; paired sides
+  retain their own profiles. An ordered row must have the same action name and
+  category on every target. If it differs, select one device or physical side
+  instead.
 
 | Action | Parameters | Behavior |
 |--------|------------|----------|
@@ -132,112 +224,147 @@ If it differs, select one device or physical side instead.
 | `adjustable_bed.furnimove_massage_duration` | `minutes` 10, 15, 20 or 30, target | Local advisory preference, not a hardware timer. It sends no duration packet and expiry does not stop massage. |
 | `adjustable_bed.rename` | `name`, one physical target | Unique name, at most 18 UTF-16 units after trimming. Writes the original untrimmed UTF-8 text, then saves the trimmed name. |
 
-Massage intensity and zone controls use the exact app factory, including its
-150 ms queues, Head/Feet ordering, Wave behavior and missing-key zero frames.
-Those factory frames do not authorize a generic zero STOP. Massage running,
-zone, intensity, program and duration sensors describe **local app state**,
-not receiver acknowledgement. Active zone/intensity and duration survive HA
-restarts; the program-click counter is retained across reconnects within one
-coordinator, matching the app's separate in-process behavior.
-Program selection accepts only programs present in the selected handset table;
-the mode-step button cycles those programs and is hidden when none are available.
-Wave intensity requires a `Massager3` row. The separate Wave program (4)
-requires `MassagerWave`, so a handset can offer that program without wave intensity.
+### Massage
 
-UBL is a toggle button plus reported binary state, rather than a fabricated
-discrete on/off switch. Sync and Child Lock have exact command buttons and
-reported booleans; Sync does not infer physical paired-side addressing.
-Hardware booleans are retained across the same coordinator's reconnects, but
-are not restored from storage as proof of current receiver state.
-The first valid feedback publishes reported off values even when they match
-the controller's defaults, so HA sensors leave unknown without needing an on transition.
+- Massage intensity and zone controls use the exact app factory, including its
+  150 ms queues, Head/Feet ordering, Wave behavior and missing-key zero frames.
+  Those factory frames do not authorize a generic zero STOP.
+- Massage running, zone, intensity, program and duration sensors describe
+  **local app state**, not receiver acknowledgement. Active zone/intensity and
+  duration survive HA restarts; the program-click counter is retained across
+  reconnects within one coordinator, matching the app's separate in-process
+  behavior.
+- Program selection accepts only programs present in the selected handset table;
+  the mode-step button cycles those programs and is hidden when none are
+  available.
+- Wave intensity requires a `Massager3` row. The separate Wave program (4)
+  requires `MassagerWave`, so a handset can offer that program without wave
+  intensity.
 
-## Transport and packet construction
+### UBL, Sync and Child Lock
 
-GATT roles are selected across all discovered services, preserving ordered
-last-match characteristic instances. RF rename presence selects the old frame;
-CSS feedback can clear that flag. DOT selection is independent. A characteristic
-instance is used for writes when UUIDs repeat. Bleak's write response mode follows
-the discovered write properties; the APK sets no explicit Android write type.
+- UBL is a toggle button plus reported binary state, rather than a fabricated
+  discrete on/off switch.
+- Sync and Child Lock have exact command buttons and reported booleans; Sync
+  does not infer physical paired-side addressing.
+- Hardware booleans are retained across the same coordinator's reconnects, but
+  are not restored from storage as proof of current receiver state.
+- The first valid feedback publishes reported off values even when they match
+  the controller's defaults, so HA sensors leave unknown without needing an on
+  transition.
 
-| Role | UUID |
-|------|------|
-| Ordinary command | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
-| Ordinary feedback | `62741625-52f9-8864-b1ab-3b3a8d65950b` |
-| DOT command | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
-| DOT feedback | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
-| CSS write / feedback | `90311625-25fa-3346-12ef-3cfb7a2556ac` / `90311725-25fa-3346-12ef-3cfb7a2556ac` |
-| RF rename | `92111422-72ab-4564-62ef-2a881286a6b0` |
-| GAP name | `00002a00-0000-1000-8000-00805f9b34fb` |
+## Commands
 
-Valid four-byte keycodes produce these frames:
+Keycodes are per handset and come from the pinned tables in
+`custom_components/adjustable_bed/furnimove_profiles.py`. The two app-shipped
+tables below show how keycodes become frames.
 
-- P1: `04 02` followed by the big-endian payload.
-- P2: `e5 fe 16`, four payload bytes and the complemented low byte of the sum
-  of all initialized frame bytes. RF wins when RF and DOT flags are both set.
-- P3: `05 02`, four payload bytes and `00`.
+### Offline table `00000`
 
-DOT is passed by main controls, favorites and Sync/Child Lock. Memory
-programming, massage, functioning-mode controls and widgets omit DOT, so they
-use P1 even on a DOT connection unless RF selects P2. Composite commands OR
-complete frames; RF combinations recalculate the checksum over the first
-seven bytes.
+| Row | Keycode | P1 | P2 (RF) | P3 (DOT) |
+|-----|---------|----|---------|----------|
+| `M2Out` (Back) | `0x00000001` | `04 02 00 00 00 01` | `e5 fe 16 00 00 00 01 05` | `05 02 00 00 00 01 00` |
+| `M2In` (Back) | `0x00000002` | `04 02 00 00 00 02` | `e5 fe 16 00 00 00 02 04` | `05 02 00 00 00 02 00` |
+| `M3Out` (Legs) | `0x00000004` | `04 02 00 00 00 04` | `e5 fe 16 00 00 00 04 02` | `05 02 00 00 00 04 00` |
+| `M3In` (Legs) | `0x00000008` | `04 02 00 00 00 08` | `e5 fe 16 00 00 00 08 fe` | `05 02 00 00 00 08 00` |
+| `Flat` | `0x10000000` | `04 02 10 00 00 00` | `e5 fe 16 10 00 00 00 f6` | `05 02 10 00 00 00 00` |
 
-## Timing, release and connection
-
-Held main/favorite commands refresh at **100 ms**. HA bounds and serializes
-that refresh instead of reproducing Android callback races. Release uses the
-first `DisobeyStandbyTime` row only when present, with an uncancelled cleanup
-signal. Main release stops refresh at 100 ms and, for non-DOT, sends the optional
-second release at 200 ms. DOT queries `00 b0` after 400 ms at startup and
-200 ms after **UBL** release; ordinary axis release has no such query.
 The offline table has no release row: ending refresh is its entire STOP.
 
-Memory programming sends MemoSave, its row-duration/frequency repeats, ends
-refresh after one frequency interval, sends the selected slot after two, then
-ends refresh after three. It does not invent a release opcode. Functions use
-their row timers and source-specific completion checks. Consumer cleanup is
-completed inside the command lock; an explicit STOP after cancellation does
-not append a release from a different consumer.
+### Shipped local aliases `280702` / `280703`
 
-The app's `createBond()` request is advisory and immediately followed by
-connection; it does not await or prove a bond. HA connects without `pair=True`
-and does not gate FurniMove startup on an encrypted probe. For eligible named,
-unbonded receivers it makes an owned background bond request after GATT discovery,
-as a Bleak adaptation. Failure, unsupported backends or the operational five-second
-bound leave ordinary control available. Client replacement, disconnect and unload
-cancel and join that task. An existing OS bond or an `okinmat`-prefixed name skips
-it; request completion never becomes a persisted bond-proof marker.
+| Row | Keycode | P1 | P2 (RF) | P3 (DOT) |
+|-----|---------|----|---------|----------|
+| `DisobeyStandbyTime` (release) | `0x00000000` | `04 02 00 00 00 00` | `e5 fe 16 00 00 00 00 06` | `05 02 00 00 00 00 00` |
+| `Flat` | `0x08000000` | `04 02 08 00 00 00` | `e5 fe 16 08 00 00 00 fe` | `05 02 08 00 00 00 00` |
+| `M2In`, `M2Out` (Back) | `0x00000002`, `0x00000001` | `04 02 00 00 00 02`, `04 02 00 00 00 01` | `e5 fe 16 00 00 00 02 04`, `e5 fe 16 00 00 00 01 05` | `05 02 00 00 00 02 00`, `05 02 00 00 00 01 00` |
+| `M3In`, `M3Out` (Legs) | `0x00000008`, `0x00000004` | `04 02 00 00 00 08`, `04 02 00 00 00 04` | `e5 fe 16 00 00 00 08 fe`, `e5 fe 16 00 00 00 04 02` | `05 02 00 00 00 08 00`, `05 02 00 00 00 04 00` |
+| `ResetIn` | `0x100000AA` | `04 02 10 00 00 aa` | `e5 fe 16 10 00 00 aa 4c` | `05 02 10 00 00 aa 00` |
+| `ResetOut` | `0x00000055` | `04 02 00 00 00 55` | `e5 fe 16 00 00 00 55 b1` | `05 02 00 00 00 55 00` |
+| `UBL` | `0x00020000` | `04 02 00 02 00 00` | `e5 fe 16 00 02 00 00 04` | `05 02 00 02 00 00 00` |
+
+### Fixed frames
+
+| Command | Bytes | Description |
+|---------|-------|-------------|
+| DOT status query | `00 b0` | Sent after 400 ms at startup and 200 ms after **UBL** release on DOT connections |
+| RF composite (example) | `e5 fe 16 00 00 00 05 01` | `M2Out` OR `M3Out` with the checksum recalculated over the first seven bytes |
+
+## Feedback
+
+- At least ten bytes are required.
+- Ordinary `08/09 0b` frames AND the two big-endian 32-bit words at offsets 2
+  and 6.
+- RF `*5/*6 fe` frames use the word at offset 3 or 4 and state selector
+  `06`/`07`; RF and ordinary parsing are gated by the live RF selection.
+- UBL, Sync and Lock masks are respectively `0x00020000`, `0x10000000` and
+  `0x04000000`.
+- Exact CU170 uses its separate byte masks and retains Sync for byte 9 equal
+  to 4.
+- DOT's preliminary byte-13 UBL update can then be overridden by the
+  ordinary/CU170 path.
+- CSS notifications have no payload consumer.
+- These paths report no motor angle, battery or current measurement.
+
+## Command Timing
+
+- Held main/favorite commands refresh at **100 ms**. HA bounds and serializes
+  that refresh instead of reproducing Android callback races.
+- Release uses the first `DisobeyStandbyTime` row only when present, with an
+  uncancelled cleanup signal. Main release stops refresh at 100 ms and, for
+  non-DOT, sends the optional second release at 200 ms.
+- DOT queries `00 b0` after 400 ms at startup and 200 ms after **UBL** release;
+  ordinary axis release has no such query.
+- The offline table has no release row: ending refresh is its entire STOP.
+- Memory programming sends MemoSave, its row-duration/frequency repeats, ends
+  refresh after one frequency interval, sends the selected slot after two, then
+  ends refresh after three. It does not invent a release opcode.
+- Functions use their row timers and source-specific completion checks.
+- Consumer cleanup is completed inside the command lock; an explicit STOP after
+  cancellation does not append a release from a different consumer.
+
+## Connection
+
+### Bonding
+
+- The app's `createBond()` request is advisory and immediately followed by
+  connection; it does not await or prove a bond.
+- HA connects without `pair=True` and does not gate FurniMove startup on an
+  encrypted probe.
+- For eligible named, unbonded receivers it makes an owned background bond
+  request after GATT discovery, as a Bleak adaptation. Failure, unsupported
+  backends or the operational five-second bound leave ordinary control
+  available.
+- Client replacement, disconnect and unload cancel and join that task.
+- An existing OS bond or an `okinmat`-prefixed name skips it; request completion
+  never becomes a persisted bond-proof marker.
+
+### RF eco BT receivers
 
 An RF eco BT receiver (Device Information model `RF eco BT`, part 88802) can
 keep advertising after a disconnect but refuse or time out reconnects
 ([#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344),
 [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)).
-Once a connect to it has timed out or aborted since Home Assistant started, it
-is held connected, overriding **Disconnect After Command** and the idle timeout,
-and an unexpected drop schedules one automatic reconnect. Until then it keeps
-the configured handoff, so a receiver that reconnects normally stays free for
-the FurniMove app ([#336](https://github.com/kristofferR/ha-adjustable-bed/issues/336)).
-Holding the link blocks the app; press **Disconnect** to hand the receiver back
-until the next stalled connect. Other receivers keep the configured handoff.
 
-The controller owns Device Information reads: it subscribes first, then reads
-model, hardware, software and firmware in the app's staggered order. The generic
-manufacturer/model read pass is skipped for this profile. Debug logs identify
-each subscription and information/feedback read by characteristic, so a startup
-drop can be correlated with the last attempted operation. No extra handshake or
-command is sent to compensate for a disconnect.
+- Once a connect to it has timed out or aborted since Home Assistant started, it
+  is held connected, overriding **Disconnect After Command** and the idle
+  timeout, and an unexpected drop schedules one automatic reconnect.
+- Until then it keeps the configured handoff, so a receiver that reconnects
+  normally stays free for the FurniMove app
+  ([#336](https://github.com/kristofferR/ha-adjustable-bed/issues/336)).
+- Holding the link blocks the app; press **Disconnect** to hand the receiver
+  back until the next stalled connect. Other receivers keep the configured
+  handoff.
 
-## Feedback
+### Device Information reads
 
-At least ten bytes are required. Ordinary `08/09 0b` frames AND the two big-endian
-32-bit words at offsets 2 and 6. RF `*5/*6 fe` frames use the word at offset 3 or
-4 and state selector `06`/`07`; RF and ordinary parsing are gated by the live
-RF selection. UBL, Sync and Lock masks are respectively `0x00020000`,
-`0x10000000` and `0x04000000`. Exact CU170 uses its separate byte masks and
-retains Sync for byte 9 equal to 4. DOT's preliminary byte-13 UBL update can
-then be overridden by the ordinary/CU170 path. CSS notifications have no payload
-consumer. These paths report no motor angle, battery or current measurement.
+- The controller owns Device Information reads: it subscribes first, then reads
+  model, hardware, software and firmware in the app's staggered order. The
+  generic manufacturer/model read pass is skipped for this profile.
+- Debug logs identify each subscription and information/feedback read by
+  characteristic, so a startup drop can be correlated with the last attempted
+  operation.
+- No extra handshake or command is sent to compensate for a disconnect.
 
 ## Captured layouts
 
@@ -336,3 +463,17 @@ commands; action and memory counts preserve captured ordering and aliases.
 | `00000` | Offline two-motor controls | Back, Legs | 5 | 0 | No | shipped-offline |
 | `280702` | RF-TOPLINE SI/BK/BK/11 | Back, Legs | 9 | 0 | No | shipped-local |
 | `280703` | RF-TOPLINE SI/BK/BK/11 | Back, Legs | 9 | 0 | No | shipped-local |
+
+## Notes
+
+### Analysis provenance
+
+- This explicit app profile comes from `com.okin.okinsmartcomfort`
+  **2.2.0 (19)**, including its complete 19-APK artifact set and production API
+  tables captured on 2026-09-30.
+- The clean-room report passed independent acceptance before the integration
+  comparison.
+- [The discovery ledger](../apk-analysis/dispositions/157-furnimove.md) records
+  every implemented behavior and exclusion.
+- Ref [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633) and
+  [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556).
