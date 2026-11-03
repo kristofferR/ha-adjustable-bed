@@ -150,6 +150,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
+            hass,
             entry,
             runtime,
             async_add_entities,
@@ -472,7 +473,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             timer_mode = (
                 state.get("okin_app_massage_timer")
                 if "okin_app_massage_timer" in state
-                else state.get("woosa_massage_timer", 0)
+                else state.get("bf_cherish_massage_timer", state.get("woosa_massage_timer", 0))
             )
         else:
             timer_mode = controller.get_massage_state().get("timer_mode")
@@ -519,6 +520,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
 class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
     """Select entity backed by controller state updates."""
+
+    _attr_should_poll = False
 
     entity_description: AdjustableBedControllerStateSelectDescription
 

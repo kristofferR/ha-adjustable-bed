@@ -15,6 +15,7 @@ import {
   attachHoldLifecycle,
   heldButtonMotor,
   holdTargetForEntity,
+  pairedPeerStopEntityIds,
   type HoldTimers,
   type HoldLifecycleTarget,
   movementHold,
@@ -287,6 +288,26 @@ test("ownership survives the card rebuilding the motor object", async () => {
   expect(rec.pulses.length).toBe(1);
 });
 
+test("one side's release does not end the other side's hold on a motor with the same key", async () => {
+  // A paired bed renders one section per side, each with its own "back".
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const left: MotorEntity = { key: "back", cover: "cover.left_back" };
+  const right: MotorEntity = { key: "back", cover: "cover.right_back" };
+
+  hold.start(right, "up", 1);
+  await tick();
+  hold.end(left);
+
+  expect(hold.heldKey).toBe("back");
+  expect(rec.stoppedCovers).toEqual([]);
+
+  hold.end({ ...right });
+  expect(rec.stoppedCovers).toEqual(["cover.right_back"]);
+  rec.release();
+  await tick();
+});
+
 test("releasing one motor does not end another motor's hold", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
@@ -373,7 +394,7 @@ test("release keeps the start-time cover and STOP after render metadata changes"
 
   hold.start(coverMotor, "down", 1, "button.left_stop");
   await tick();
-  hold.end({ key: "legs", up: "button.changed_up" });
+  hold.end({ key: "legs", up: "button.changed_up" }, "button.left_stop");
   rec.release();
   await tick();
 
@@ -1202,6 +1223,168 @@ for (const phase of ["active", "pending-release"] as const) {
     ]);
   });
 }
+
+function twoAddressCoverHass(): HomeAssistant {
+  const hass = twoAddressHass();
+  for (const [entityId, deviceId] of [
+    ["cover.left_back", "left"],
+    ["cover.right_back", "right"],
+    ["cover.both_back", "parent"],
+  ] as const) {
+    hass.entities[entityId] = {
+      entity_id: entityId,
+      device_id: deviceId,
+      platform: "adjustable_bed",
+      translation_key: "back",
+    } as HomeAssistant["entities"][string];
+  }
+  hass.states["cover.both_back"] = {
+    entity_id: "cover.both_back",
+    state: "open",
+    attributes: { bed_side: "both" },
+  } as unknown as HomeAssistant["states"][string];
+  return hass;
+}
+
+const leftHeldCover: MotorEntity = {
+  key: "back",
+  cover: "cover.left_back",
+  heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 } },
+};
+
+for (const phase of ["active", "pending-release"] as const) {
+  test(`a one-side cover stop also stops the peer of a started held Both operation (${phase})`, () => {
+    const hass = twoAddressCoverHass();
+    const events: string[] = [];
+    const timers = new FakeTimers();
+    const hold = new MotorHold(heldActions(events), timers);
+
+    hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+    if (phase === "pending-release") hold.end(bothHeld);
+    // The card stops the clicked cover itself; the hold must stop the other side.
+    hold.stopCover(
+      leftHeldCover,
+      holdTargetForEntity(hass, "cover.left_back"),
+      "side",
+      undefined,
+      pairedPeerStopEntityIds(hass, "cover.left_back"),
+    );
+    timers.advance(100);
+
+    expect(hold.heldKey).toBeNull();
+    expect(events).toEqual(["start:both-back:up", "stop:button.right_stop"]);
+  });
+}
+
+// Single-address pairs give each native child a side-suffixed Stop key.
+function singleAddressCoverHass(): HomeAssistant {
+  const hass = twoAddressCoverHass();
+  hass.entities["button.left_stop"].translation_key = "stop_left";
+  hass.entities["button.right_stop"].translation_key = "stop_right";
+  for (const [entityId, side] of [
+    ["button.left_stop", "left"],
+    ["button.right_stop", "right"],
+    ["cover.left_back", "left"],
+  ] as const) {
+    hass.states[entityId] = {
+      entity_id: entityId,
+      state: "unknown",
+      attributes: { bed_side: side },
+    } as unknown as HomeAssistant["states"][string];
+  }
+  return hass;
+}
+
+for (const phase of ["active", "pending-release"] as const) {
+  test(`a single-address side cover stop also stops the suffixed peer Stop (${phase})`, () => {
+    const hass = singleAddressCoverHass();
+    const events: string[] = [];
+    const timers = new FakeTimers();
+    const hold = new MotorHold(heldActions(events), timers);
+
+    hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+    if (phase === "pending-release") hold.end(bothHeld);
+    hold.stopCover(
+      leftHeldCover,
+      holdTargetForEntity(hass, "cover.left_back"),
+      "side",
+      undefined,
+      pairedPeerStopEntityIds(hass, "cover.left_back"),
+    );
+    timers.advance(100);
+
+    expect(hold.heldKey).toBeNull();
+    expect(events).toEqual(["start:both-back:up", "stop:button.right_stop"]);
+  });
+}
+
+test("a Both cover stop leaves the peer Stops to the combined cover", () => {
+  const hass = twoAddressCoverHass();
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+
+  hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  hold.stopCover(
+    { ...leftHeldCover, cover: "cover.both_back" },
+    holdTargetForEntity(hass, "cover.both_back"),
+    "side",
+    undefined,
+    pairedPeerStopEntityIds(hass, "cover.both_back"),
+  );
+
+  expect(hold.heldKey).toBeNull();
+  expect(events).toEqual(["start:both-back:up"]);
+});
+
+test("a one-side cover stop before a held Both operation starts leaves the peer alone", () => {
+  const hass = twoAddressCoverHass();
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const delayed = { ...bothHeld, heldControl: { ...bothHeld.heldControl!, startDelayMs: 100 } };
+
+  hold.start(delayed, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  hold.stopCover(
+    leftHeldCover,
+    holdTargetForEntity(hass, "cover.left_back"),
+    "side",
+    undefined,
+    pairedPeerStopEntityIds(hass, "cover.left_back"),
+  );
+  timers.advance(200);
+
+  expect(events).toEqual([]);
+});
+
+test("a cover stop discards stale Both cleanup while preserving the newer peer release", () => {
+  const hass = twoAddressCoverHass();
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const right = { ...leftHeldCover, key: "right-back", cover: "cover.right_back" };
+  hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  hold.end(bothHeld);
+  hold.start(right, "up", 2, "button.right_stop", holdTargetForEntity(hass, "cover.right_back"));
+  hold.end(right);
+  hold.stopCover(leftHeldCover, holdTargetForEntity(hass, "cover.left_back"), "side",
+    "button.left_stop", pairedPeerStopEntityIds(hass, "cover.left_back"));
+  expect(events).toEqual(["start:both-back:up", "start:right-back:up"]);
+  timers.advance(100);
+  expect(events).toEqual([
+    "start:both-back:up", "start:right-back:up", "cover-stop:cover.right_back:button.right_stop",
+  ]);
+});
+
+test("captured Both STOP scope cleans up its peer without live target metadata", () => {
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  hold.start(bothHeld, "up", 1, "button.parent_stop",
+    ["button.parent_stop", "button.left_stop", "button.right_stop"],
+    ["button.left_stop", "button.right_stop"]);
+  hold.stopCover(leftHeldCover, undefined, "side", "button.left_stop");
+  expect(hold.heldKey).toBeNull();
+  expect(events).toEqual(["start:both-back:up", "stop:button.right_stop"]);
+});
 
 test("a child Stop leaves the peer alone before a held Both operation starts", () => {
   const hass = twoAddressHass();

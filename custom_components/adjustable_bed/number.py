@@ -324,7 +324,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
+            hass, entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
         )
     if isinstance(coordinator, PairedBedCoordinator):
         paired_entities: list[NumberEntity] = []
@@ -1046,7 +1046,8 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         }
         state_key = key_map.get(zone)
         if state_key and state_key in state:
-            return float(state[state_key])
+            value = state[state_key]
+            return float(value) if value is not None else None
         return 0.0
 
     async def async_set_native_value(self, value: float) -> None:

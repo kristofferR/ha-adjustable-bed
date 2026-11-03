@@ -318,6 +318,7 @@ its app's name rule to every target before any write:
 | [Linak Bed Control](beds/linak.md) | 1–17 UTF-8 bytes. The controller then disconnects so it can advertise the new name |
 | [LOGICDATA app profiles](beds/logicdata-app.md) | Phone and tablet: 1–255 printable ASCII characters. [Sleep Smart](beds/logicdata-sleep-smart.md) beds and pumps: 1–20 letters, digits, ä, ö, ü or ß |
 | [Jiecang app profiles](beds/jiecang-app.md) | 1–20 ASCII letters or digits |
+| [Comfort Motion app](beds/comfort-motion.md) | 1–18 ASCII letters, digits, dots or underscores, discovered G1 name role required |
 | [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, then trimmed and non-empty |
 | [FurniMove](beds/furnimove.md#controls-and-actions) | One physical receiver; a unique name of at most 18 UTF-16 units after trimming |
 | [V-MAT Basic](beds/vmatbasic.md) | One physical receiver; Java-style trim, at most ten UTF-16 units (empty allowed) and 20 UTF-8 bytes |
@@ -367,6 +368,7 @@ enable additional commands.
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
 | LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1) | [Sleep Smart](beds/logicdata-sleep-smart.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake` | [Jiecang](beds/jiecang-app.md) |
+| Comfort Motion app | `jiecang_wake`, `jiecang_stop_wake`; use HA automations for scheduling | [Comfort Motion](beds/comfort-motion.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
 | Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat-mh.md#actions) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
@@ -494,8 +496,8 @@ data:
 
 Both lists are required and may be empty. `dispatch` is required and is `both`,
 `weekly`, or `one_time`. Records default to `enabled: false`, `wake: false`,
-`hour: 0`, `minute: 0`. Hours are0..23 and minutes0..59. Weekly days are unique
-integers, Monday0 through Sunday6; an enabled weekly record requires a day.
+`hour: 0`, `minute: 0`. Hours are 0..23 and minutes 0..59. Weekly days are unique
+integers, Monday 0 through Sunday 6; an enabled weekly record requires a day.
 Each table permits at most three enabled records. Disabled rows consume no
 slots; an enabled `wake: false` row does consume a slot.
 
@@ -510,7 +512,7 @@ for relative hour/minute/second fields; zero bytes do not establish firmware cle
 Both complete tables, including the unselected table, and every physical
 target must pass validation before checksums or writes. Fourth rows, source
 partial-overflow corruption and negative deltas are rejected. `both` sends
-weekly first, waits500 ms, then sends one-time; single-table dispatch retains
+weekly first, waits 500 ms, then sends one-time; single-table dispatch retains
 500 ms post-write pacing. Configuration uses the existing command lock and
 scheduler with `cancel_running: false`. Native child targets and optional
 `side` retain their existing routing and conflict checks.
@@ -532,3 +534,21 @@ MC2/MC3 only); `massage` defaults to false. Paired `side` routing is supported.
 Disable with `enabled: false`, without a time. `adjustable_bed.sync_clock`
 synchronizes the clock and sends the app query. There is no alarm feedback or
 phone scheduler. See [packet behavior and limits](beds/comfort-enhancements.md#clock-and-alarm).
+### Floyd Home actions
+
+`adjustable_bed.floyd_action` exposes confirmed `save_zero_g`,
+`save_anti_snore`, unassigned BLE `assign_room` / `confirm_add`, and preset
+recall with explicit conditional `internal_side` selection. All controls use
+normal `device_id` and paired physical `side` routing. See the
+[Floyd action table](beds/floyd.md#movement-and-presets) before programming a
+preset or assigning membership. Combined movement uses `hold_control` with
+`head_feet_up` or `head_feet_down` and a duration up to 30 seconds. HA automations
+schedule these presets; the app's phone alarms are not on-bed alarm storage.
+
+### BF and Cherish bed alarms
+
+`adjustable_bed.bf_cherish_set_alarm` accepts `device_id`, `enabled`, optional
+`side`, `time` (required when enabling, minute precision), and `memory` (`none`,
+`memory_1`, `memory_2`, default `none`). The clock uses HA local time. All
+targets must be BF or Cherish profiles. [Profile details and example](beds/bf-cherish.md#alarm-action)
+cover distinct packet formats, retained intent and report limitations.

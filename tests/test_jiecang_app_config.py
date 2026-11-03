@@ -160,7 +160,7 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
                 CONF_JIECANG_APP_TRANSPORT: "g2",
                 CONF_HAS_LIGHT: False,
             }
-        )
+        ),
     )
     with patch(
         "custom_components.adjustable_bed.beds.jiecang_app.JiecangAppController"
@@ -233,3 +233,56 @@ async def test_paired_options_cannot_create_unconfigured_app_sides(hass):
     result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_JIECANG_APP})
     assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
     assert entry.data == data
+
+
+@pytest.mark.parametrize("layout", ["standard_4_bilateral", "split_after_bilateral"])
+async def test_dreamhd_setup_rejects_other_apps_layouts(hass, layout):
+    flow = AdjustableBedConfigFlow()
+    flow.context = {}
+    flow.hass = hass
+    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP}
+    result = await flow.async_step_jiecang_app(
+        {CONF_JIECANG_APP_PROFILE: "dreamhd", CONF_JIECANG_APP_LAYOUT: layout}
+    )
+    assert result["errors"] == {CONF_JIECANG_APP_LAYOUT: "jiecang_app_required"}
+
+
+@pytest.mark.parametrize(
+    "layout",
+    [
+        "standard_2",
+        "standard_3_neck",
+        "standard_3_lumbar",
+        "standard_3_hi_low",
+        "standard_3_split_upper",
+        "standard_4_legacy",
+        "split_series",
+    ],
+)
+async def test_dreamhd_setup_and_factory_keep_explicit_profile(hass, layout):
+    flow = AdjustableBedConfigFlow()
+    flow.context = {}
+    flow.hass = hass
+    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP}
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_jiecang_app(
+            {
+                CONF_JIECANG_APP_PROFILE: "dreamhd",
+                CONF_JIECANG_APP_LAYOUT: layout,
+                CONF_JIECANG_APP_TRANSPORT: "g3",
+                CONF_HAS_LIGHT: False,
+            }
+        )
+    data = finish.call_args.args[0]
+    assert data[CONF_JIECANG_APP_PROFILE] == "dreamhd"
+    coordinator = SimpleNamespace(hass=hass, entry=SimpleNamespace(data=data))
+    with patch(
+        "custom_components.adjustable_bed.beds.jiecang_app.JiecangAppController"
+    ) as controller:
+        await create_controller(coordinator, BED_TYPE_JIECANG_APP, None, None)
+    assert controller.call_args.kwargs == {
+        "profile": "dreamhd",
+        "layout": layout,
+        "transport": "g3",
+        "has_light": False,
+    }

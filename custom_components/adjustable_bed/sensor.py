@@ -148,7 +148,7 @@ async def async_setup_entry(
     for runtime in entity_runtimes(coordinator):
         async_remove_retired_rmcontrol_telemetry(hass, entry, runtime, "sensor")
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities,
+            hass, entry, runtime, async_add_entities,
             partial(_sensor_entities_for, hass, runtime),
         )
 

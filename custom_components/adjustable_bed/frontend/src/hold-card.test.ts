@@ -222,6 +222,31 @@ test("real Python standalone cover metadata reaches the registered bounded card 
   } });
 });
 
+for (const ending of ["pointer-row", "key-row", "pointer-window", "key-window"] as const) {
+  test(`registered ${ending} release retains its original cover across a live projection change`, () => {
+    const { api, hass } = fixture();
+    useCover(hass, "left");
+    const before = row(api, hass, "left");
+    if (ending.startsWith("pointer")) handler(before.template, "@pointerdown")(down(61));
+    else handler(before.template, "@keydown")(new KeyEvent("Enter"));
+
+    delete hass.entities["cover.left_back"];
+    const entity_id = "button.left_changed_up";
+    hass.entities[entity_id] = { entity_id, device_id: "left", platform: "adjustable_bed", translation_key: "back_up" };
+    hass.states[entity_id] = { entity_id, state: "unknown", last_changed: "", last_updated: "", attributes: {} };
+    const after = row(api, hass, "left");
+    expect(after.bed.motors[0].up).toBe(entity_id);
+    expect(after.bed.stop).toBe(before.bed.stop);
+    if (ending === "pointer-row") handler(after.template, "@pointerup")(up(61));
+    else if (ending === "key-row") handler(after.template, "@keyup")(new KeyEvent("Enter", false, "keyup"));
+    else if (ending === "pointer-window") {
+      browser.dispatchEvent(Object.assign(new Event("pointerup"), { pointerId: 61, button: 0 }));
+    } else browser.dispatchEvent(Object.assign(new Event("keyup"), { key: "Enter" }));
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).toEqual({ domain: "cover", service: "stop_cover", data: { entity_id: "cover.left_back" } });
+  });
+}
+
 test("legacy strings-only cover projection retains the finite timed action", () => {
   const { api, hass } = fixture();
   useCover(hass, "left");

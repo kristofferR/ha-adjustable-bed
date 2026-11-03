@@ -23,12 +23,15 @@ from .cluster033_profiles import SERTA_MEMORY_KEYS
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BF,
+    BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -69,6 +72,10 @@ from .const import (
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
+    CONF_KAIDI_TARGET_VADDR,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
@@ -97,6 +104,7 @@ from .const import (
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
+    KAIDI_VARIANT_FLOYD,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
@@ -140,6 +148,8 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
     # OCTO motor layout comes from its advertised capability record, with an
     # OCTO-specific explicit override in the profile's own setup/options UI.
@@ -177,6 +187,7 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
 _HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     # Nectar Move fixes two axes, has massage, and uses its own refresh interval.
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): _NECTAR_MOVE,
+    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS},
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): _FIXED_LAYOUT | {CONF_PROTOCOL_VARIANT},
     (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(
@@ -218,6 +229,8 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    BED_TYPE_BF: SideProfile("BF"),
+    BED_TYPE_CHERISH: SideProfile("Cherish"),
     'tempur_curve': SideProfile('Tempur Curve', frozenset({CONF_PRODUCT_TYPE})),
     'qplus_app': SideProfile('Q-Plus Adjustable Remote', frozenset({CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT})),
     'serta_mp_remote': SideProfile('Serta MP Remote', SERTA_MEMORY_KEYS | {CONF_PRODUCT_TYPE}),
@@ -256,13 +269,14 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         ),
     ),
     BED_TYPE_JIECANG_APP: SideProfile(
-        "Jiecang app",
+        "Jiecang / Comfort Motion app",
         frozenset(
             {
                 CONF_JIECANG_APP_PROFILE,
                 CONF_JIECANG_APP_LAYOUT,
                 CONF_JIECANG_APP_TRANSPORT,
                 CONF_HAS_LIGHT,
+                CONF_HAS_MASSAGE,
             }
         ),
     ),
@@ -358,6 +372,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
         "Adjustable Comfort M1X12 ELEVATE", frozenset({CONF_PROTOCOL_VARIANT})
+    ),
+    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): SideProfile(
+        "Floyd Home", frozenset({CONF_KAIDI_ROOM_ID, CONF_KAIDI_TARGET_VADDR,
+                                 CONF_KAIDI_PRODUCT_ID, CONF_KAIDI_SOFA_ACU_NO}),
     ),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): SideProfile("Nectar Move"),

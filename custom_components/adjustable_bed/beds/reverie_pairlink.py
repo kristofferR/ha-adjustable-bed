@@ -1752,14 +1752,34 @@ class ReveriePairlinkController(BedController):
                 await self.async_send_payload(payload)
 
         try:
-            await self._coordinator.async_execute_controller_command(
-                send_requests,
-                cancel_running=False,
-                resource="reverie:pairlink:status-sync",
-                read_positions_after_operation=False,
-            )
+            if self._runtime.role is PairlinkRole.CENTRAL:
+                await self._coordinator.async_execute_controller_query(
+                    send_requests,
+                    cancel_running=False,
+                    skip_disconnect=True,
+                    run_if=lambda: (
+                        generation == self._status_sync_generation
+                        and self._active_control_session
+                    ),
+                    preserve_idle_deadline=True,
+                )
+            else:
+                await self._coordinator.async_execute_controller_command(
+                    send_requests,
+                    cancel_running=False,
+                    resource="reverie:pairlink:status-sync",
+                    read_positions_after_operation=False,
+                )
         except asyncio.CancelledError:
-            raise
+            caller = asyncio.current_task()
+            if (
+                self._runtime.role is not PairlinkRole.CENTRAL
+                or caller is None
+                or caller.cancelling()
+            ):
+                raise
+            # Live queries report command preemption without cancelling this task.
+            self._status_sync_error = None
         except Exception as err:
             self._status_sync_error = err
             _LOGGER.warning("Pairlink active status synchronization failed")

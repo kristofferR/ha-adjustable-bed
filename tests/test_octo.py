@@ -3608,7 +3608,7 @@ class TestOctoDynamicEntities:
         regained = MagicMock()
         regained.unique_id = "bed_octo_light"
         current = [initial]
-        async_setup_dynamic_entities(entry, coordinator, add, lambda: tuple(current))
+        async_setup_dynamic_entities(MagicMock(), entry, coordinator, add, lambda: tuple(current))
         callback = coordinator.register_controller_state_callback.call_args.args[0]
         add.assert_called_once_with([initial])
 

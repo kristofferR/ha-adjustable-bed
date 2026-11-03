@@ -34,6 +34,7 @@ import {
   attachHoldLifecycle,
   heldButtonMotor,
   holdTargetForEntity,
+  pairedPeerStopEntityIds,
   movementHold,
   MotorHold,
   movementPulse,
@@ -1693,6 +1694,7 @@ export class AdjustableBedCard extends LitElement {
           holdTargetForEntity(this.hass, m.cover),
           m.coverStopScope ?? "motor",
           stopId,
+          pairedPeerStopEntityIds(this.hass, m.cover),
         );
         this._cover(m.cover, "stop_cover");
       }

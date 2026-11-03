@@ -151,6 +151,7 @@ def _controller(model: str = "R510L") -> tuple[
         await command(controller)
 
     coordinator.async_execute_controller_command = execute_controller_command
+    coordinator.async_execute_controller_query = execute_controller_command
     return controller, client, runtime, tasks
 
 

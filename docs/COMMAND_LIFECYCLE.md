@@ -26,6 +26,8 @@ notification requirements, or preset semantics of other beds.
 ## Boundaries
 
 - Persistent-connection controllers keep their existing connection requirement.
+  An idle timeout of `0` gives any bed the same lifecycle while Disconnect After
+  Command is off: no idle timer, and a dropped link reconnects on demand.
   Sequential pairs still explicitly disconnect before switching sides; a group
   hold never overrides explicit disconnect.
 - The scheduler continues to serialize opaque controller operations. Same-resource
@@ -71,8 +73,10 @@ and cover identities remain owned even if composite scope metadata disappears;
 a newer hold or assistive activation supersedes older deferred cleanup.
 Keyboard release matches the original activation key and STOP target.
 
-Registered hold/timed operations capture physical STOP epochs and pair resource
-generations before preflight. Paired admission rechecks them after lane waits,
+Registered hold/timed and Reverie comfort, routine, and diagnostic operations
+capture physical STOP epochs and pair resource generations before preflight.
+A STOP on a later target also invalidates its pending dispatch while an earlier
+target is still starting. Paired admission rechecks ownership after lane waits,
 before reservations can cancel newer work, and before committing movement.
 
 ## Useful regression scenarios

@@ -255,6 +255,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     HAS_LIGHT_DEFAULTS,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
@@ -1854,6 +1855,17 @@ def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
         errors[CONF_JIECANG_APP_PROFILE] = "jiecang_app_required"
     if data.get(CONF_JIECANG_APP_LAYOUT) not in JIECANG_APP_LAYOUTS:
         errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
+    if data.get(CONF_JIECANG_APP_PROFILE) == "dreamhd" and data.get(CONF_JIECANG_APP_LAYOUT) in (
+        "standard_4_bilateral", "split_after_bilateral"
+    ):
+        errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
+    if data.get(CONF_JIECANG_APP_PROFILE) == "comfort_motion":
+        if data.get(CONF_JIECANG_APP_LAYOUT) not in (
+            "standard_2", "standard_3_neck", "standard_4_legacy"
+        ):
+            errors[CONF_JIECANG_APP_LAYOUT] = "comfort_motion_selection"
+        if data.get(CONF_JIECANG_APP_TRANSPORT, "auto") not in ("auto", "g1", "g2"):
+            errors[CONF_JIECANG_APP_TRANSPORT] = "comfort_motion_selection"
     return errors
 
 
@@ -3893,7 +3905,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): bool,
             vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
         }
 
         schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=form_variant)] = vol.In(
@@ -4812,7 +4824,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): bool,
                 vol.Optional(
                     CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+                ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
             }
         )
         if defaults_bed_type in MALOUF_BED_TYPES:
@@ -5064,7 +5076,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): TextSelector(TextSelectorConfig()),
                 vol.Optional(
                     CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+                ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
             }
         )
         schema_dict[
@@ -7808,7 +7820,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS,
                 default=current.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
         }
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             schema.update(_pairlink_settings_schema(self.hass, current))
@@ -8105,7 +8117,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 default=current_data.get(
                     CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                 ),
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
             vol.Optional(
                 CONF_DISABLE_DISCOVERY,
                 default=discovery_disabled,

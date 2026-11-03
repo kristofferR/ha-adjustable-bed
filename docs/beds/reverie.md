@@ -176,7 +176,9 @@ replacement, own-address changes, fragmented packets, registered channel-32
 state, and eligible SDK status consumers. The accepted state request order is
 `01 A7 20` with types `01,02,03,05,06,11,07,08,09,0A,0B,0C,0D,0E`; active
 status sync uses separate `01 A8 00 00` and `01 A9 00 00` requests. Generated
-queries use the existing coordinator scheduler. Central frames use the
+queries use existing coordinator serialization. Central status polling preserves
+the current idle-disconnect deadline and never reconnects an idle-disconnected
+receiver. Central frames use the
 accepted target/MAC session key and actual ATT MTU. A GATT write completion is
 transport acceptance, not confirmation that the bed moved.
 

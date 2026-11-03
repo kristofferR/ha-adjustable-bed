@@ -17,6 +17,7 @@ from homeassistant.helpers.typing import UndefinedType
 
 from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
@@ -748,38 +749,60 @@ async def async_setup_entry(
     # both sides support (since paired setup omits a combined cover, these buttons
     # are how the whole bed is driven from the parent device/card).
     if isinstance(coordinator, PairedBedCoordinator):
-        entities: list[ButtonEntity] = []
         children = list(coordinator.children.values())
         _async_migrate_massage_intensity_button_unique_ids(hass, coordinator, key_suffix="_both")
+        # OCTO sides add their own controls once their capability list is known.
+        static_runtimes: list[EntityRuntime] = []
         for runtime in entity_runtimes(coordinator):
-            controller = runtime.capability_controller
-            if octo_controller(controller) is not None:
+            if octo_controller(runtime.capability_controller) is not None:
                 async_setup_dynamic_entities(
+                    hass,
                     entry,
                     runtime,
                     async_add_entities,
                     lambda runtime=runtime: _button_entities_for(hass, runtime),
                 )
             else:
+                static_runtimes.append(runtime)
+
+        def build_paired_buttons() -> list[ButtonEntity]:
+            entities: list[ButtonEntity] = []
+            for runtime in static_runtimes:
                 entities.extend(_button_entities_for(hass, runtime))
-        # A pair whose every side lacks a global STOP frame gets no combined Stop.
-        if not all(remacro_side_lacks_global_stop(child) for child in children):
-            entities.append(PairedBedStopButton(coordinator))
-        # Combined buttons read both children's live capabilities, so pass the
-        # raw children (the button itself dispatches via the parent, side=both).
-        entities.extend(_combined_button_entities_for(coordinator, children))
-        _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
-        async_add_entities(entities)
-        _async_follow_motion_bed_module_actions(
-            hass, entry, coordinator, async_add_entities, entities
-        )
+            # A pair whose every side lacks a global STOP frame gets no combined Stop.
+            if not all(remacro_side_lacks_global_stop(child) for child in children):
+                entities.append(PairedBedStopButton(coordinator))
+            # Combined buttons read both children's live capabilities, so pass the
+            # raw children (the button itself dispatches via the parent, side=both).
+            entities.extend(_combined_button_entities_for(coordinator, children))
+            _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
+            return entities
+
+        if any(runtime.bed_type == BED_TYPE_JIECANG_APP for runtime in static_runtimes):
+            async_setup_dynamic_entities(
+                hass,
+                entry,
+                static_runtimes[0],
+                async_add_entities,
+                build_paired_buttons,
+                additional_coordinators=static_runtimes[1:],
+            )
+        else:
+            entities = build_paired_buttons()
+            async_add_entities(entities)
+            _async_follow_motion_bed_module_actions(
+                hass, entry, coordinator, async_add_entities, entities
+            )
         return
 
     initial: list[ButtonEntity] = []
     for runtime in entity_runtimes(coordinator):
-        controller = runtime.capability_controller
-        if octo_controller(controller) is not None:
+        if (
+            octo_controller(runtime.capability_controller) is not None
+            or runtime.bed_type == BED_TYPE_JIECANG_APP
+        ):
             async_setup_dynamic_entities(
+                hass,
                 entry,
                 runtime,
                 async_add_entities,
