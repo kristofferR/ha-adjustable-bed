@@ -939,7 +939,7 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_"):
+        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1356,6 +1356,16 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         slot_name = _discovered_memory_slot_name(coordinator, description)
         if slot_name is not None:
             self._attr_name = slot_name
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        controller = self._coordinator.capability_controller
+        hold = controller.standard_button_hold_spec(self.entity_description.key) if controller else None
+        if hold is not None:
+            attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
+                              hold_release_delay_ms=hold.release_delay_ms)
+        return attributes
 
     async def async_press(self) -> None:
         """Handle button press."""

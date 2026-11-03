@@ -722,6 +722,14 @@
           "kaidi_room_id": "Room ID",
           "kaidi_sofa_acu_no": "Advertised actuator descriptor"
         }
+      },
+      "doublesleep": {
+        "title": "OKIN SleepEase app profile",
+        "description": "Select the saved app model independently of its advertised BLE driver. Sensor-only models have no motor controls.",
+        "data": {
+          "product_type": "Saved app model",
+          "protocol_variant": "BLE driver"
+        }
       }
     },
     "progress": {
@@ -818,7 +826,8 @@
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
-      "cluster033_layout": "Choose a layout belonging to the selected app."
+      "cluster033_layout": "Choose a layout belonging to the selected app.",
+      "doublesleep_profile": "Select a supported SleepEase model and BLE driver."
     }
   },
   "options": {
@@ -1145,7 +1154,8 @@
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
-      "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls."
+      "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls.",
+      "doublesleep_profile": "Select a supported SleepEase model and BLE driver."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -2931,6 +2941,27 @@
       "bedsense_light": {
         "name": "{action}"
       },
+      "casper_base_action": {
+        "name": "{action}"
+      },
+      "bf_cherish_both_up": {
+        "name": "Back and legs up"
+      },
+      "bf_cherish_both_down": {
+        "name": "Back and legs down"
+      },
+      "bf_query_alarm": {
+        "name": "Query bed alarm"
+      },
+      "doublesleep_action": {
+        "name": "{action}"
+      },
+      "doublesleep_massage_action": {
+        "name": "{action}"
+      },
+      "doublesleep_light_action": {
+        "name": "{action}"
+      },
       "adjustamattress_lift_up": {
         "name": "Lift up"
       },
@@ -2990,18 +3021,6 @@
       },
       "adjustamattress_lift_foot": {
         "name": "Lift foot"
-      },
-      "casper_base_action": {
-        "name": "{action}"
-      },
-      "bf_cherish_both_up": {
-        "name": "Back and legs up"
-      },
-      "bf_cherish_both_down": {
-        "name": "Back and legs down"
-      },
-      "bf_query_alarm": {
-        "name": "Query bed alarm"
       }
     },
     "cover": {
@@ -4543,36 +4562,6 @@
       "bedsense_wave_steps": {
         "name": "Wave frequency (app steps)"
       },
-      "adjustamattress_alarm_hour": {
-        "name": "Reported alarm hour"
-      },
-      "adjustamattress_alarm_minute": {
-        "name": "Reported alarm minute"
-      },
-      "adjustamattress_alarm_type": {
-        "name": "Reported alarm action code"
-      },
-      "adjustamattress_alarm_repeat": {
-        "name": "Reported alarm repeat byte"
-      },
-      "adjustamattress_massage_time": {
-        "name": "Reported massage time"
-      },
-      "adjustamattress_head_intensity": {
-        "name": "Reported head intensity"
-      },
-      "adjustamattress_foot_intensity": {
-        "name": "Reported foot intensity"
-      },
-      "adjustamattress_wave": {
-        "name": "Reported wave"
-      },
-      "adjustamattress_sensitivity": {
-        "name": "Reported sensitivity index"
-      },
-      "adjustamattress_strength_index": {
-        "name": "Reported anti-snore strength index"
-      },
       "casper_sleep_l_body_move": {
         "name": "Left body movement"
       },
@@ -4614,6 +4603,135 @@
       },
       "bf_cherish_alarm": {
         "name": "Bed alarm"
+      },
+      "doublesleep_model": {
+        "name": "App model"
+      },
+      "doublesleep_sensor_version": {
+        "name": "Sensor version"
+      },
+      "doublesleep_firmware_version": {
+        "name": "Firmware version"
+      },
+      "doublesleep_privacy": {
+        "name": "Privacy"
+      },
+      "doublesleep_use_side": {
+        "name": "Sensor sides"
+      },
+      "doublesleep_parser_error": {
+        "name": "Last parser error"
+      },
+      "doublesleep_report": {
+        "name": "Sleep report status"
+      },
+      "doublesleep_legacy_report": {
+        "name": "Legacy sleep history"
+      },
+      "doublesleep_configuration": {
+        "name": "Sensor configuration"
+      },
+      "doublesleep_alarm": {
+        "name": "Alarm"
+      },
+      "doublesleep_light": {
+        "name": "Light"
+      },
+      "doublesleep_left_sensitivity": {
+        "name": "Left sensitivity"
+      },
+      "doublesleep_left_heart_rate": {
+        "name": "Left heart rate"
+      },
+      "doublesleep_left_breath_rate": {
+        "name": "Left breath rate"
+      },
+      "doublesleep_left_status": {
+        "name": "Left sensor status"
+      },
+      "doublesleep_right_sensitivity": {
+        "name": "Right sensitivity"
+      },
+      "doublesleep_right_heart_rate": {
+        "name": "Right heart rate"
+      },
+      "doublesleep_right_breath_rate": {
+        "name": "Right breath rate"
+      },
+      "doublesleep_right_status": {
+        "name": "Right sensor status"
+      },
+      "doublesleep_massage_mode": {
+        "name": "Massage mode"
+      },
+      "doublesleep_massage_strength": {
+        "name": "Massage strength"
+      },
+      "doublesleep_massage_head": {
+        "name": "Massage head"
+      },
+      "doublesleep_massage_foot": {
+        "name": "Massage foot"
+      },
+      "doublesleep_massage_time": {
+        "name": "Massage time"
+      },
+      "doublesleep_massage_running": {
+        "name": "Massage running"
+      },
+      "doublesleep_massage_source": {
+        "name": "Massage source"
+      },
+      "doublesleep_sonic_mode": {
+        "name": "Sonic mode"
+      },
+      "doublesleep_sonic_strength": {
+        "name": "Sonic strength"
+      },
+      "doublesleep_sonic_head": {
+        "name": "Sonic head"
+      },
+      "doublesleep_sonic_foot": {
+        "name": "Sonic foot"
+      },
+      "doublesleep_sonic_time": {
+        "name": "Sonic time"
+      },
+      "doublesleep_sonic_running": {
+        "name": "Sonic running"
+      },
+      "doublesleep_sonic_source": {
+        "name": "Sonic source"
+      },
+      "adjustamattress_alarm_hour": {
+        "name": "Reported alarm hour"
+      },
+      "adjustamattress_alarm_minute": {
+        "name": "Reported alarm minute"
+      },
+      "adjustamattress_alarm_type": {
+        "name": "Reported alarm action code"
+      },
+      "adjustamattress_alarm_repeat": {
+        "name": "Reported alarm repeat byte"
+      },
+      "adjustamattress_massage_time": {
+        "name": "Reported massage time"
+      },
+      "adjustamattress_head_intensity": {
+        "name": "Reported head intensity"
+      },
+      "adjustamattress_foot_intensity": {
+        "name": "Reported foot intensity"
+      },
+      "adjustamattress_wave": {
+        "name": "Reported wave"
+      },
+      "adjustamattress_sensitivity": {
+        "name": "Reported sensitivity index"
+      },
+      "adjustamattress_strength_index": {
+        "name": "Reported anti-snore strength index"
       }
     },
     "light": {
@@ -4912,6 +5030,21 @@
       "bedsense_m5_saved": {
         "name": "M5 saved (app indicator)"
       },
+      "floyd_battery_mode": {
+        "name": "Battery power mode"
+      },
+      "doublesleep_left_flag1": {
+        "name": "Left sensor flag1"
+      },
+      "doublesleep_left_flag2": {
+        "name": "Left sensor flag2"
+      },
+      "doublesleep_right_flag1": {
+        "name": "Right sensor flag1"
+      },
+      "doublesleep_right_flag2": {
+        "name": "Right sensor flag2"
+      },
       "adjustamattress_alarm_on": {
         "name": "Reported alarm enabled"
       },
@@ -4929,9 +5062,6 @@
       },
       "adjustamattress_busy": {
         "name": "Control box busy"
-      },
-      "floyd_battery_mode": {
-        "name": "Battery power mode"
       }
     },
     "number": {
@@ -5616,6 +5746,13 @@
       },
       "sleepys_app_massage_timer_code_right": {
         "name": "Right: Massage time code"
+      },
+      "doublesleep_child_lock": {
+        "name": "Child lock",
+        "state": {
+          "off": "Off",
+          "on": "On"
+        }
       },
       "adjustamattress_alarm_draft_type": {
         "name": "Alarm action (draft)",
@@ -7470,6 +7607,73 @@
         },
         "side": {
           "name": "Side"
+        }
+      }
+    },
+    "doublesleep_configure": {
+      "name": "Configure OKIN SleepEase",
+      "description": "Alarm, anti-snore, sensor settings, report retrieval and named preset programming for the SleepEase app profile. Reports remain on the selected physical bed's report sensors.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Paired target"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "hour": {
+          "name": "Alarm hour"
+        },
+        "minute": {
+          "name": "Alarm minute"
+        },
+        "weekdays": {
+          "name": "Repeat on",
+          "description": "Leave empty for a one-time alarm at the next occurrence of the selected time."
+        },
+        "alarm_preset": {
+          "name": "Alarm action"
+        },
+        "alarm_massage": {
+          "name": "Alarm massage"
+        },
+        "mode": {
+          "name": "Anti-snore mode"
+        },
+        "pwm": {
+          "name": "Slow anti-snore PWM byte"
+        },
+        "timer": {
+          "name": "Slow anti-snore timer byte"
+        },
+        "sensor_side": {
+          "name": "P2 sensor sides",
+          "description": "App side value1,2 or3. Omit to retain the reported setting. P3 supports reading this setting only."
+        },
+        "left_sensitivity": {
+          "name": "Left sensitivity",
+          "description": "Omit to retain the reported value."
+        },
+        "right_sensitivity": {
+          "name": "Right sensitivity",
+          "description": "Omit to retain the reported value."
+        },
+        "date": {
+          "name": "Report date"
+        },
+        "report_side": {
+          "name": "Report sensor side"
+        },
+        "report_kind": {
+          "name": "Report period"
+        },
+        "preset": {
+          "name": "Preset to program"
+        },
+        "capability_page": {
+          "name": "Capability page byte"
         }
       }
     }

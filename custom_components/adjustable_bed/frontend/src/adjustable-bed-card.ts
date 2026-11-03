@@ -1131,6 +1131,7 @@ export class AdjustableBedCard extends LitElement {
           e, m, direction, stopId, stopScope, remainingStopIds,
         )}
         @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m, stopId)}
+        @blur=${() => this._hold.endKeyboard(m, stopId)}
         @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, direction, stopId, stopScope)}
         ?disabled=${!entityId || (this._config?.layout === "compact" && (!canStop || !this._available(entityId)))}
       ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
@@ -1598,8 +1599,9 @@ export class AdjustableBedCard extends LitElement {
     if (e instanceof KeyboardEvent) {
       // Ignore the auto-repeat the OS generates while a key stays down: the
       // repeat loop already keeps the motor moving.
-      if (e.repeat || (e.key !== "Enter" && e.key !== " ")) return;
+      if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
+      if (e.repeat) return;
     } else {
       // Only the primary button of the primary pointer moves the bed. Without
       // this a right-click, a stylus barrel button or a secondary touch starts

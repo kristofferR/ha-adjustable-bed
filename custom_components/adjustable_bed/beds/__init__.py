@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from .dewertokin_rf_gateway import (
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
+    from .doublesleep import DoubleSleepController as DoubleSleepController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine import EshineController as EshineController
@@ -102,6 +103,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "DoubleSleepController": "doublesleep",
     'TempurCurveController': 'tempur_curve',
     'QPlusAppController': 'sbi',
     'SertaMPRemoteController': 'serta_mp_remote',
@@ -191,6 +193,7 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "DoubleSleepController",
     'TempurCurveController',
     'QPlusAppController',
     'SertaMPRemoteController',

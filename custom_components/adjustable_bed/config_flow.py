@@ -102,6 +102,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DOUBLESLEEP,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_ISLEEP,
@@ -871,6 +872,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_JIECANG_APP: "jiecang_app",
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
+    BED_TYPE_DOUBLESLEEP: "doublesleep",
     BED_TYPE_SLEEPTRACKER: "sleeptracker",
     BED_TYPE_ISLEEP: "isleep",
     BED_TYPE_LIMOSS_REMOTE: "limoss_remote",
@@ -1222,6 +1224,43 @@ def _normalize_isleep_data(data: dict[str, Any]) -> None:
     data[CONF_HAS_MASSAGE] = True
     data[CONF_DISABLE_ANGLE_SENSING] = True
     data[CONF_MOTOR_PULSE_DELAY_MS] = 100
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+
+
+def _add_doublesleep_schema_fields(schema: dict[vol.Marker, Any], data: dict[str, Any]) -> None:
+    from .doublesleep_protocol import MODELS
+
+    schema[vol.Required(CONF_PRODUCT_TYPE, default=str(data.get(CONF_PRODUCT_TYPE, "3")))] = (
+        SelectSelector(
+            SelectSelectorConfig(
+                options=[{"value": str(key), "label": label} for key, label in MODELS.items()],
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        )
+    )
+    schema[vol.Required(CONF_PROTOCOL_VARIANT, default=data.get(CONF_PROTOCOL_VARIANT, "auto"))] = (
+        vol.In(
+            {
+                "auto": "From advertisement",
+                "p1": "SleepDriver (P1)",
+                "p2": "XiaoBao (P2)",
+                "p3": "XiaoBao Only sensor (P3)",
+            }
+        )
+    )
+
+
+def _normalize_doublesleep_data(data: dict[str, Any]) -> None:
+    from .doublesleep_protocol import MODELS
+
+    if str(data.get(CONF_PRODUCT_TYPE)) not in {str(key) for key in MODELS} or data.get(
+        CONF_PROTOCOL_VARIANT, "auto"
+    ) not in ("auto", "p1", "p2", "p3"):
+        raise ValueError("Select a SleepEase app model and driver")
+    data[CONF_PRODUCT_TYPE] = str(data[CONF_PRODUCT_TYPE])
+    data[CONF_DISABLE_ANGLE_SENSING] = True
+    data[CONF_HAS_MASSAGE] = False  # Controller-declared app actions own these controls.
+    data[CONF_MOTOR_PULSE_DELAY_MS] = 300
     data[CONF_MOTOR_PULSE_USER_SET] = False
 
 
@@ -2105,6 +2144,7 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
     BED_TYPE_JIECANG_APP: _add_jiecang_app_schema_fields,
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
     BED_TYPE_MOTION_BED: _add_motion_bed_schema_fields,
+    BED_TYPE_DOUBLESLEEP: _add_doublesleep_schema_fields,
     BED_TYPE_SLEEPTRACKER: _add_sleeptracker_schema_fields,
     BED_TYPE_ISLEEP: _add_isleep_schema_fields,
     BED_TYPE_FSM_RELAX: _add_fsm_relax_schema_fields,
@@ -2806,6 +2846,41 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         schema: dict[vol.Marker, Any] = {}
         _add_isleep_schema_fields(schema, data)
         return self.async_show_form(step_id="isleep", data_schema=vol.Schema(schema), errors=errors)
+
+    async def async_step_doublesleep(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Keep the saved UI model separate from the advertised BLE driver."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        if self._discovery_info is not None:
+            from .doublesleep_protocol import select_model
+
+            data.setdefault(
+                CONF_PRODUCT_TYPE,
+                str(
+                    select_model(
+                        self._discovery_info.device.name or "",
+                        self._discovery_info.manufacturer_data,
+                    )
+                ),
+            )
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                _normalize_doublesleep_data(data)
+            except ValueError:
+                errors["base"] = "doublesleep_profile"
+            else:
+                self._manual_data = data
+                return await self._finish_with_verify(data, data.get(CONF_NAME, "OKIN SleepEase"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_doublesleep_schema_fields(schema, data)
+        return self.async_show_form(
+            step_id="doublesleep",
+            data_schema=cast("probatio.Schema", vol.Schema(schema)),
+            errors=errors,
+        )
 
     async def async_step_sleeptracker(
         self, user_input: dict[str, Any] | None = None
@@ -8776,6 +8851,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     )
                 _normalize_isleep_data(app_data)
                 user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_KAIDI_ROOM_ID, CONF_KAIDI_SOFA_ACU_NO, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS, CONF_MOTOR_PULSE_USER_SET) if key in app_data})
+
+            if bed_type == BED_TYPE_DOUBLESLEEP and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                try:
+                    _normalize_doublesleep_data(app_data)
+                except ValueError:
+                    return self.async_show_form(step_id=step_id, data_schema=cast("probatio.Schema", vol.Schema(schema_dict)), errors={"base": "doublesleep_profile"})
+                else:
+                    user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT, CONF_DISABLE_ANGLE_SENSING, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_DELAY_MS, CONF_MOTOR_PULSE_USER_SET)})
             if bed_type == BED_TYPE_SLEEPTRACKER and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 app_errors = _sleeptracker_errors(app_data)

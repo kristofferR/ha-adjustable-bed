@@ -245,6 +245,12 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key.startsWith("doublesleep_")) {
+          if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
+          else if (key === "doublesleep_light") (bed.lights.states ??= []).push(id);
+          else bed.utilityStates?.push(id);
+          break;
+        }
         if (/^adjustamattress_(massage_time|head_intensity|foot_intensity|wave)$/.test(key)) {
           (bed.massage.states ??= []).push(id);
           break;
@@ -339,6 +345,9 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
+        if (key === "doublesleep_massage_action") { bed.massage.buttons.push(id); break; }
+        if (key === "doublesleep_light_action") { (bed.lights.buttons ??= []).push(id); break; }
+        if (key === "doublesleep_action") { bed.utility.push(id); break; }
         if (key === "adjustamattress_underbed_lighting") {
           (bed.lights.buttons ??= []).push(id);
           break;
@@ -526,6 +535,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "binary_sensor":
+        if (key.startsWith("doublesleep_")) { bed.utilityStates?.push(id); break; }
         if (key.startsWith("adjustamattress_")) {
           bed.utilityStates?.push(id);
           break;
@@ -542,6 +552,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
+        if (key === "doublesleep_child_lock") { (bed.utilitySelects ??= []).push(id); break; }
         if (/^adjustamattress_(head|foot|wave)_selector$/.test(key)) {
           (bed.massage.selects ??= []).push(id);
           break;

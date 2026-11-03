@@ -6247,25 +6247,25 @@
           "scope": "Specific P2 discovery UUID, detection and config-flow path only.",
           "code_refs": [
             {
-              "ref": "custom_components/adjustable_bed/const.py:1095-1095",
+              "ref": "custom_components/adjustable_bed/const.py:1099-1099",
               "snapshot_path": "custom_components/adjustable_bed/const.py",
-              "snapshot_sha256": "e8dd0ae01a3a8e4cc4636258aa7fd7cc4d942294ee148fe5e7f2e5da16c773c7",
+              "snapshot_sha256": "2ca5b8c0c71dab1fa3d96e5bb8e9df4ce176cfc499d6ccb5002252012ff8f95d",
               "excerpt_sha256": "a4cd6f6c29d17f10718d1c20364febd23172a1ca453ffc3fd48e81679ed54817",
               "symbol": "REVERIE_SERVICE_UUID",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/detection.py:1966-1973",
+              "ref": "custom_components/adjustable_bed/detection.py:1981-1988",
               "snapshot_path": "custom_components/adjustable_bed/detection.py",
-              "snapshot_sha256": "4359c54ab203a8bf8be58d477beb27ddf25225a6250e3d9f430f8bfff14ae44a",
+              "snapshot_sha256": "3882ffe1864bf9b22e6ed2f8e47216d579d7e6bcef1dfe0769659493fb0db41d",
               "excerpt_sha256": "7f49263a29057387ba1d1f837e4baa50fea14eb42ab989bc503c6e04e9883769",
               "symbol": "REVERIE_SERVICE_UUID matcher",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/config_flow.py:3403-3505",
+              "ref": "custom_components/adjustable_bed/config_flow.py:3478-3580",
               "snapshot_path": "custom_components/adjustable_bed/config_flow.py",
-              "snapshot_sha256": "7164a7ec9903ee47bbc659381d14933fb90c30afa125b319fad239653412db7f",
+              "snapshot_sha256": "d4133de1c48efc3a57e52b414521b1e4b2ac78f2561fbc4d2c6af00a4100dcd6",
               "excerpt_sha256": "0e95c4904fac1c27e4ea2634cd71ccae41228f51b4acf4638f3e90b35fd83759",
               "symbol": "async_step_bluetooth",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
@@ -6281,9 +6281,9 @@
           ],
           "test_refs": [
             {
-              "ref": "tests/test_detection.py:416-422",
+              "ref": "tests/test_detection.py:417-423",
               "snapshot_path": "tests/test_detection.py",
-              "snapshot_sha256": "5d333960d2df1e06d63d815f8975c96c0cdea0c460de65299ff1c99f86b69c2c",
+              "snapshot_sha256": "4068ff049f8981dc1bcf19d509bc9e7d279ab892f4c3541e503b8b867a4dc9b5",
               "excerpt_sha256": "1a8381d0c8b50f9d09c81601c15decdc3297a3d42030098c49b8b43c5f875ccf",
               "symbol": "test_detect_reverie_by_uuid",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"

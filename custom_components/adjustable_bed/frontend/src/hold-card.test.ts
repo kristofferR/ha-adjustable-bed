@@ -408,3 +408,79 @@ test.each(["Enter", " "])("stale %s row ending cannot escape to the window fallb
     expect(calls.at(-1)?.data).toEqual({ entity_id: `button.${newSide}_stop` });
   }
 });
+
+
+for (const key of ["Enter", " "]) for (const metadata of [false, true]) {
+  test(`motor keyboard release after row focus moves: ${JSON.stringify(key)}, held=${metadata}`, () => {
+    const { card, api, hass } = fixture();
+    delete hass.entities["button.left_back_up"];
+    delete hass.states["button.left_back_up"];
+    for (const axis of ["back", "legs"]) {
+      const id = "cover.left_" + axis;
+      hass.entities[id] = { entity_id: id, device_id: "left", platform: "adjustable_bed", translation_key: axis };
+      hass.states[id] = { entity_id: id, state: "open", last_changed: "", last_updated: "", attributes: metadata ? {
+        held_control_up: axis + "_up", held_control_down: axis + "_down", held_stop_scope: "motor",
+        hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+      } : {} };
+    }
+    const bed = bedEntitiesForDevice(hass, "left");
+    const back = bed.motors.find((m) => m.key === "back")!;
+    const legs = bed.motors.find((m) => m.key === "legs")!;
+    const first = api._motorDirection(back, "up", bed.stop);
+    const second = api._motorDirection(legs, "up", bed.stop);
+    handler(first, "@keydown")(new KeyEvent(key));
+    const owner = (card as unknown as { _hold: { heldKey: string | null } })._hold;
+    expect(owner.heldKey).toBe("back");
+    let onBlur: ((event: Event) => void) | undefined;
+    try { onBlur = handler(first, "@blur"); } catch {}
+    onBlur?.(new Event("blur"));
+    const release = new KeyEvent(key, false, "keyup");
+    handler(second, "@keyup")(release);
+    if (!release.cancelBubble) browser.dispatchEvent(release);
+    expect(owner.heldKey).toBeNull();
+  });
+}
+
+test("motor blur preserves a pointer hold until its captured pointer releases", () => {
+  const { card, api, hass } = fixture();
+  const { template } = row(api, hass, "left");
+  handler(template, "@pointerdown")(down(73));
+  const owner = (card as unknown as { _hold: { heldKey: string | null } })._hold;
+  const count = calls.length;
+  handler(template, "@blur")(new Event("blur"));
+  expect(owner.heldKey).toBe("back");
+  expect(calls.length).toBe(count);
+  handler(template, "@pointerup")(up(73));
+  expect(owner.heldKey).toBeNull();
+});
+
+test("a departed row blur cannot release a newer keyboard owner on another side", () => {
+  const { card, api, hass } = fixture();
+  const left = row(api, hass, "left").template;
+  const right = row(api, hass, "right").template;
+  handler(left, "@keydown")(new KeyEvent("Enter"));
+  handler(left, "@keyup")(new KeyEvent("Enter", false, "keyup"));
+  handler(right, "@keydown")(new KeyEvent("Enter"));
+  const count = calls.length;
+  handler(left, "@blur")(new Event("blur"));
+  expect(calls.length).toBe(count);
+  expect((card as unknown as { _hold: { heldKey: string | null } })._hold.heldKey).toBe("back");
+  handler(right, "@keyup")(new KeyEvent("Enter", false, "keyup"));
+  expect((card as unknown as { _hold: { heldKey: string | null } })._hold.heldKey).toBeNull();
+});
+
+
+for (const key of ["Enter", " "]) {
+  test(`repeat activation after keyboard focus leaves stays prevented: ${JSON.stringify(key)}`, () => {
+    const { api, hass } = fixture();
+    const left = row(api, hass, "left").template;
+    const right = row(api, hass, "right").template;
+    handler(left, "@keydown")(new KeyEvent(key));
+    handler(left, "@blur")(new Event("blur"));
+    const count = calls.length;
+    const repeat = new KeyEvent(key, true);
+    handler(right, "@keydown")(repeat);
+    expect(repeat.defaultPrevented).toBe(true);
+    expect(calls.length).toBe(count);
+  });
+}

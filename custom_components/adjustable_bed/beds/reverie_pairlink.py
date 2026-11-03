@@ -2729,7 +2729,9 @@ class ReveriePairlinkController(BedController):
         failures: list[Exception] = []
         for payload in (dashboard_payload(79, 20), dashboard_payload(92, 0)):
             try:
-                await self.async_send_payload(payload, prepared_snapshot=captured)
+                await self.async_send_payload(
+                    payload, prepared_snapshot=captured, refresh_telemetry=True
+                )
             except Exception as err:
                 failures.append(err)
         if failures:
