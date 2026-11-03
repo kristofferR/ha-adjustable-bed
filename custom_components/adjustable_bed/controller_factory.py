@@ -15,6 +15,7 @@ from .adapter import discover_services
 from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -1627,6 +1628,19 @@ async def create_controller(
         )
         _LOGGER.debug("Using SBI controller with variant: %s", variant)
         return SBIController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_BEDSENSE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.bedsense", __package__
+        )
+        from .beds.bedsense import BedSenseController, BedSenseSession
+
+        return BedSenseController(
+            coordinator,
+            variant=protocol_variant or "auto",
+            device_name=device_name if client is not None else None,
+            session=app_session(coordinator.hass, coordinator.address, "bedsense", BedSenseSession),
+        )
 
     controller = await _create_from_registry(coordinator, bed_type)
     if controller is not None:

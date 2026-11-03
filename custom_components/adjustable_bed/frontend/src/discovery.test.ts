@@ -1063,3 +1063,26 @@ test("ISleep controls retain each pattern and keep enrollment outside the everyd
   expect(bed.utility).toEqual(["button.all_up", "button.all_down"]);
   expect(bed.massage.buttons).toEqual(["button.pattern_1", "button.pattern_cancel"]);
 });
+
+test("BedSense app actions retain distinct entities and app indicators", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("cover.bed_hip", "bedsense_hip"),
+    entry("button.bed_8h", "bedsense_light"),
+    entry("button.bed_10h", "bedsense_light"),
+    entry("button.bed_head_up", "bedsense_massage"),
+    entry("button.bed_timer_10", "bedsense_massage"),
+    entry("button.bed_cycle", "bedsense_action"),
+    entry("button.bed_clear", "bedsense_action"),
+    entry("sensor.bed_light", "bedsense_light_duration"),
+    entry("sensor.bed_head", "bedsense_head_bar"),
+    entry("sensor.bed_steps", "bedsense_foot_steps"),
+    entry("sensor.bed_timer", "bedsense_massage_timer"),
+  ]), "dev1");
+  expect(bed.motors[0].cover).toBe("cover.bed_hip");
+  expect(bed.lights.buttons).toEqual(["button.bed_8h", "button.bed_10h"]);
+  expect(bed.lights.state).toBe("sensor.bed_light");
+  expect(bed.massage.buttons).toEqual(["button.bed_head_up", "button.bed_timer_10"]);
+  expect(bed.massage.states).toEqual(["sensor.bed_head", "sensor.bed_steps"]);
+  expect(bed.massage.timer).toBe("sensor.bed_timer");
+  expect(bed.utility).toEqual(["button.bed_cycle", "button.bed_clear"]);
+});

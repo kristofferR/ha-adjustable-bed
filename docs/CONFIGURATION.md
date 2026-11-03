@@ -884,3 +884,12 @@ feedback and movement timing. A two-address pair keeps these settings per side.
 Adopt existing rooms explicitly; enrollment of fresh mode09 devices is a
 separate device action. HA never resets an existing room. See the
 [ISleep guide](beds/isleep.md) and [row064 ledger](apk-analysis/dispositions/row064-isleep.md).
+
+### BedSense app
+
+Select **BedSense app (com.fenmenbielei.bedsense)** and a layout, or select its
+case-sensitive Bluetooth-name layout rule. Layout owns the motion controls;
+generic motor count, massage and angle-sensing choices are hidden. The original
+Bluetooth name and layout belong to each side of a two-address pair. There is no
+single-address left/right command. See [BedSense](beds/bedsense.md) for all nine
+layouts, memory indicators and app-labelled massage/light actions.

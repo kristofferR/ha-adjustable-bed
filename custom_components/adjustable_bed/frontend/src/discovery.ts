@@ -222,7 +222,14 @@ export function bedEntitiesForDevice(
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
         // These apps report a massage timer indicator without a timer select.
-        else if (key === "innova_massage_timer" || key === "glideaway_motion_massage_timer") bed.massage.timer = id;
+        else if (
+          key === "innova_massage_timer" ||
+          key === "glideaway_motion_massage_timer" ||
+          key === "bedsense_massage_timer"
+        ) bed.massage.timer = id;
+        else if (key === "bedsense_light_duration") bed.lights.state = id;
+        else if (/^bedsense_(head_bar|wave_bar|head_steps|foot_steps|wave_steps)$/.test(key))
+          (bed.massage.states ??= []).push(id);
         break;
 
       case "number":
@@ -275,6 +282,12 @@ export function bedEntitiesForDevice(
           bed.connect = id;
         } else if (key === "disconnect") {
           bed.disconnect = id;
+        } else if (key === "bedsense_light") {
+          (bed.lights.buttons ??= []).push(id);
+        } else if (key === "bedsense_massage") {
+          bed.massage.buttons.push(id);
+        } else if (key === "bedsense_action") {
+          bed.utility.push(id);
         } else if (key === "sleeptracker_light_toggle") {
           bed.lights.toggle = id;
         } else if (key === "sleeptracker_light_off") {
