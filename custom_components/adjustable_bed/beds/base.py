@@ -1424,6 +1424,10 @@ class BedController(ABC):
         """Whether a named action remains valid for current discovered capabilities."""
         return True
 
+    def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
+        """Optional held-control metadata for an existing standard button."""
+        return None
+
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         """Return additional, product-gated actions for the button platform."""
@@ -1619,6 +1623,11 @@ class BedController(ABC):
     ) -> None:
         """Execute an explicit Floyd Home BLE room or preset action."""
         raise NotImplementedError("Floyd Home actions are unavailable")
+
+    @property
+    def supports_doublesleep_controls(self) -> bool:
+        """Whether the controller accepts validated OKIN SleepEase actions."""
+        return False
 
     @property
     def supports_sleeptracker_controls(self) -> bool:
