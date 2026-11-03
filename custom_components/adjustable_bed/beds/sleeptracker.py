@@ -590,11 +590,17 @@ class SleeptrackerController(BedController):
             raise ConnectionError("Sleeptracker session is not ready")
         count, planning_delay = self.motor_pulse_settings()
         # HA bounds a button/timed hold; this is not a BLE refresh interval.
-        deadline = asyncio.get_running_loop().time() + count * planning_delay / 1000
-        hold = asyncio.timeout_at(deadline)
+        loop = asyncio.get_running_loop()
+        budget = count * planning_delay / 1000
+        hold_end = loop.time() + budget
+        # Increments start only before hold_end. The last one may still await
+        # its reply for one more budget: abandoning it would leave a reply with
+        # no request ID, so the session could not acknowledge the axis stop and
+        # would have to disconnect after every hold.
+        bound = asyncio.timeout_at(hold_end + budget)
         try:
-            async with hold:
-                while not self._coordinator.cancel_command.is_set():
+            async with bound:
+                while not self._coordinator.cancel_command.is_set() and loop.time() < hold_end:
                     self._update_status(
                         await self._exchange(
                             p.CONTROL_UUID,
@@ -602,10 +608,9 @@ class SleeptrackerController(BedController):
                             fast=True,
                         )
                     )
-                    if asyncio.get_running_loop().time() >= deadline:
-                        break
         except TimeoutError:
-            if not hold.expired():
+            # The abandoned exchange tainted the session; release closes it.
+            if not bound.expired():
                 self._tainted = True
                 raise
         except BaseException:

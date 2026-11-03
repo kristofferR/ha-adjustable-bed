@@ -585,6 +585,46 @@ async def test_completed_movement_has_axis_release_and_no_fixed_refresh_delay() 
     await target.bed.stop_notify()
 
 
+async def test_hold_ending_mid_reply_keeps_session_and_reported_state() -> None:
+    """Issue #693: each lumbar hold ended by disconnecting, and its snapshot-less
+    replies showed pattern 0 and unknown massage selects."""
+    target = Processor()
+    await target.bed.start_notify()
+    reported = dict(target.states)
+    assert reported["sleeptracker_massage_pattern_option"] == "one"
+    encoded = json.dumps({"details": {"body": {}}}).encode()
+    loop = asyncio.get_running_loop()
+
+    async def slow_reply(char, data, response):
+        target.frames.append((char.uuid, bytes(data), response))
+        if (payload := target.outgoing[char.uuid].feed(bytes(data))) is None:
+            return
+        target.requests.append((char.uuid, json.loads(payload)))
+        for frame in p.frames(encoded, 500):
+            loop.call_later(0.004, target.receivers[char.uuid], char, bytearray(frame))
+
+    target.client.write_gatt_char.side_effect = slow_reply
+    await target.bed.move_lumbar_up()
+    movements = [
+        value["request"]["movement"]["action"]
+        for _, value in target.requests
+        if "movement" in value.get("request", {})
+    ]
+    assert movements[0] == "up" and movements[-1] == "stop"
+    assert "stop" not in movements[:-1]
+    target.client.disconnect.assert_not_awaited()
+    assert target.bed.protocol_diagnostics["session_ready"] is True
+    for key in (
+        "sleeptracker_massage_pattern",
+        "sleeptracker_massage_pattern_option",
+        "sleeptracker_massage_head_level",
+        "sleeptracker_massage_foot_level",
+        "sleeptracker_light_on",
+    ):
+        assert target.states[key] == reported[key]
+    await target.bed.stop_notify()
+
+
 async def test_service_and_entity_climate_model_gates() -> None:
     target = Processor(model="activebreeze_small")
     await target.bed.start_notify()
@@ -963,9 +1003,10 @@ async def test_pattern_off_sends_selected_unit_massage_stop(pattern) -> None:
 
 async def test_pattern_off_needs_no_prior_state_and_does_not_assume_a_stop() -> None:
     target = Processor()
+    reply_with(target, {"details": {"body": {"snapshots": []}}})
     await target.bed.start_notify()
-    target.bed._update_status({"details": {"body": {"snapshots": []}}})
-    assert target.states["sleeptracker_massage_pattern_option"] is None
+    assert "sleeptracker_massage_pattern_option" not in target.states
+    target.client.write_gatt_char.side_effect = target.write
     target.requests.clear()
 
     # The default mock still reports One. Sending stop is not proof of stopping.
@@ -994,9 +1035,9 @@ async def test_pattern_select_steps_from_an_idle_unlisted_pattern() -> None:
 
 async def test_massage_select_refuses_without_a_reported_value() -> None:
     target = Processor()
-    await target.bed.start_notify()
+    # A split reply carries no strength, so this session never saw one.
     reply_with(target, {"details": {"body": {"snapshots": [{"side": 0}, {"side": 1}]}}})
-    await target.bed.read_positions()
+    await target.bed.start_notify()
     target.requests.clear()
     with pytest.raises(ValueError, match="has not reported"):
         await massage_select(target, "sleeptracker_massage_head_level").select_fn(target.bed, "2")
