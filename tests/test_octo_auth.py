@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
+from typing import TypeVar, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,6 +14,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
+from custom_components.adjustable_bed import octo_auth as octo_auth_module
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     CapabilityReport,
@@ -35,14 +37,51 @@ from custom_components.adjustable_bed.setup_operation import (
     SetupOperationState,
 )
 
-# Derived from the frozen 1.03.01 PIN report's packet/checksum rules.
-# Deliberately independent of the production encoder.
+# Fixed vectors for the accepted 1.03.02 setup/PIN flow, encoded independently
+# of the production packet builder.
 PIN_ACCEPTED = bytes.fromhex("40 21 43 00 01 1a 01 40")
 PIN_REJECTED = bytes.fromhex("40 21 43 00 01 1b 00 40")
 PIN_CAP_SET = bytes.fromhex("40 21 71 00 09 dd 00 00 03 00 01 01 02 01 00 40")
 CAP_END = bytes.fromhex("40 21 71 00 06 eb ff ff ff 00 00 00 40")
+PING = bytes.fromhex("40 20 7f 00 00 e1 40")
+PING_REPLY = bytes.fromhex("40 21 7f 00 00 e0 40")
+DEVICEINFO_QUERY = bytes.fromhex("40 20 70 00 00 f0 40")
+DEVICEINFO_REPLY = bytes.fromhex("40 21 70 00 0a 01 02 03 04 05 06 07 08 09 0a ae 40")
+DEVICEINFO_REPLY_9 = bytes.fromhex("40 21 70 00 09 01 02 03 04 05 06 07 08 09 b9 40")
+DEVICEINFO_REPLY_11 = bytes.fromhex("40 21 70 00 0b 01 02 03 04 05 06 07 08 09 0a 0b a2 40")
+DEVICEINFO_REPLY_BAD_CHECKSUM = bytes.fromhex("40 21 70 00 0a 01 02 03 04 05 06 07 08 09 0a af 40")
 CAP_QUERY = bytes.fromhex("40 20 71 00 00 ef 40")
 PIN_TRANSMIT = bytes.fromhex("40 20 43 00 04 0f 01 02 03 04 40")
+
+_WaitResult = TypeVar("_WaitResult")
+
+
+@pytest.fixture(autouse=True)
+def virtual_setup_waits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make setup response deadlines deterministic without wall-clock waits."""
+    real_wait_for = asyncio.wait_for
+
+    async def wait_for_response(
+        awaitable: Awaitable[_WaitResult], timeout: float | None = None
+    ) -> _WaitResult:
+        if isinstance(awaitable, asyncio.Future):
+            if awaitable.done():
+                return cast(_WaitResult, awaitable.result())
+            raise TimeoutError
+
+        frame = getattr(awaitable, "cr_frame", None)
+        event = frame.f_locals.get("self") if frame is not None else None
+        if isinstance(event, asyncio.Event):
+            close = getattr(awaitable, "close", None)
+            if callable(close):
+                close()
+            if event.is_set():
+                return cast(_WaitResult, True)
+            raise TimeoutError
+
+        return await real_wait_for(awaitable, timeout=timeout)
+
+    monkeypatch.setattr(octo_auth_module.asyncio, "wait_for", wait_for_response)
 
 
 @pytest.fixture
@@ -65,6 +104,8 @@ def respond(
     *,
     fragment: bool = False,
     before_pin: bytes = b"",
+    ping_reply: bytes = PING_REPLY,
+    device_info_reply: bytes = DEVICEINFO_REPLY,
 ) -> None:
     """Deliver only the traffic requested by a discovery or PIN write."""
     callback: Callable[..., None] | None = None
@@ -78,8 +119,13 @@ def respond(
     async def write(_uuid: str, data: bytes, *, response: bool) -> None:
         assert response is False
         assert callback is not None
-        assert data in (CAP_QUERY, PIN_TRANSMIT), "Setup must never send control commands"
-        output = capabilities if data == CAP_QUERY else reply
+        assert data in (PING, DEVICEINFO_QUERY, CAP_QUERY, PIN_TRANSMIT)
+        output = {
+            PING: ping_reply,
+            DEVICEINFO_QUERY: device_info_reply,
+            CAP_QUERY: capabilities,
+            PIN_TRANSMIT: reply,
+        }[data]
         chunks = (output[:4], output[4:]) if fragment else (output,)
         for chunk in chunks:
             callback(MagicMock(), bytearray(chunk))
@@ -97,6 +143,8 @@ async def test_acceptance_requires_device_reply(client, fragment, reply, expecte
     respond(client, reply=reply, fragment=fragment)
     assert await async_verify_octo_pin(client, "1234", VARIANT_AUTO) is expected
     assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+        PING,
+        DEVICEINFO_QUERY,
         CAP_QUERY,
         PIN_TRANSMIT,
     ]
@@ -113,7 +161,266 @@ async def test_acceptance_requires_device_reply(client, fragment, reply, expecte
 async def test_discover_requirements_before_sending_pin(client, caps, pin, expected):
     respond(client, capabilities=caps)
     assert await async_verify_octo_pin(client, pin, VARIANT_AUTO) is expected
-    assert client.write_gatt_char.await_count == 1
+    assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+        PING,
+        DEVICEINFO_QUERY,
+        CAP_QUERY,
+    ]
+
+
+@pytest.mark.parametrize(
+    ("ping_reply", "device_info_reply"),
+    [
+        (b"", DEVICEINFO_REPLY),
+        (PING_REPLY, b""),
+        (b"", b""),
+    ],
+)
+async def test_absent_optional_replies_reach_caps_and_verified_setup_flow(
+    hass: HomeAssistant,
+    client: MagicMock,
+    ping_reply: bytes,
+    device_info_reply: bytes,
+) -> None:
+    """A complete CAPS-only no-PIN response still completes the setup step."""
+    respond(
+        client,
+        capabilities=CAP_END,
+        ping_reply=ping_reply,
+        device_info_reply=device_info_reply,
+    )
+
+    status = await async_verify_octo_pin(client, "", VARIANT_AUTO)
+
+    assert status is OctoPinStatus.NOT_REQUIRED
+    assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+        PING,
+        DEVICEINFO_QUERY,
+        CAP_QUERY,
+    ]
+    client.stop_notify.assert_awaited_once_with(OCTO_CHAR_UUID)
+
+    flow = pin_flow(hass, status, pin="")
+    shown = await flow.async_step_verify_octo_pin()
+    assert shown["type"] is FlowResultType.FORM
+    created = await flow.async_step_verify_octo_pin({})
+    assert created["type"] is FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_OCTO_PIN] == ""
+
+
+@pytest.mark.parametrize(
+    ("reply", "expected"),
+    [(PIN_ACCEPTED, OctoPinStatus.ACCEPTED), (PIN_REJECTED, OctoPinStatus.REJECTED)],
+)
+async def test_absent_optional_replies_keep_current_pin_proof_and_setup_outcome(
+    hass: HomeAssistant,
+    client: MagicMock,
+    reply: bytes,
+    expected: OctoPinStatus,
+) -> None:
+    """Missing optional session replies cannot replace the live PIN result."""
+    respond(
+        client,
+        capabilities=PIN_CAP_SET + CAP_END,
+        reply=reply,
+        ping_reply=b"",
+        device_info_reply=b"",
+    )
+
+    status = await async_verify_octo_pin(client, "1234", VARIANT_AUTO)
+
+    assert status is expected
+    writes = [call.args[1] for call in client.write_gatt_char.call_args_list]
+    assert writes == [PING, DEVICEINFO_QUERY, CAP_QUERY, PIN_TRANSMIT]
+    client.stop_notify.assert_awaited_once_with(OCTO_CHAR_UUID)
+
+    flow = pin_flow(hass, status)
+    shown = await flow.async_step_verify_octo_pin()
+    assert shown["type"] is FlowResultType.FORM
+    if expected is OctoPinStatus.ACCEPTED:
+        created = await flow.async_step_verify_octo_pin({})
+        assert created["type"] is FlowResultType.CREATE_ENTRY
+    else:
+        assert shown["errors"]["base"] == "octo_pin_rejected"
+        assert flow._pending_entry is not None
+        assert flow._pending_entry[CONF_OCTO_PIN] == "1234"
+
+
+@pytest.mark.parametrize(
+    "arrival",
+    [
+        "ping_during_info",
+        "ping_during_caps",
+        "info_during_caps",
+        "ping_invalid_then_valid_during_info",
+        "info_invalid_then_valid_during_caps",
+        "ping_during_pin",
+    ],
+)
+async def test_late_malformed_optional_reply_stays_strict_for_setup_attempt(
+    client: MagicMock,
+    arrival: str,
+) -> None:
+    """A later valid packet cannot erase malformed optional setup evidence."""
+    malformed_ping = bytes.fromhex("40 21 7f 00 01 00 df 40")
+    ping_reply = PING_REPLY if arrival == "info_during_caps" else b""
+    device_info_reply = b"" if arrival == "info_during_caps" else DEVICEINFO_REPLY
+    capabilities = CAP_END
+    pin_reply = PIN_ACCEPTED
+
+    if arrival == "ping_during_info":
+        device_info_reply = malformed_ping + DEVICEINFO_REPLY
+    elif arrival == "ping_during_caps":
+        capabilities = malformed_ping + CAP_END
+    elif arrival == "info_during_caps":
+        capabilities = DEVICEINFO_REPLY_9 + CAP_END
+    elif arrival == "ping_invalid_then_valid_during_info":
+        device_info_reply = malformed_ping + PING_REPLY + DEVICEINFO_REPLY
+    elif arrival == "info_invalid_then_valid_during_caps":
+        ping_reply = PING_REPLY
+        device_info_reply = b""
+        capabilities = DEVICEINFO_REPLY_9 + DEVICEINFO_REPLY + CAP_END
+    else:
+        capabilities = PIN_CAP_SET + CAP_END
+        pin_reply = malformed_ping + PIN_ACCEPTED
+
+    respond(
+        client,
+        capabilities=capabilities,
+        reply=pin_reply,
+        ping_reply=ping_reply,
+        device_info_reply=device_info_reply,
+    )
+    pin = "1234" if arrival == "ping_during_pin" else ""
+
+    assert await async_verify_octo_pin(client, pin, VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE
+
+
+@pytest.mark.parametrize("stage", ["caps_no_pin", "caps_before_pin", "pin_response"])
+@pytest.mark.parametrize(
+    ("partial", "partial_id"),
+    [(PING_REPLY[:-1], "ping"), (DEVICEINFO_REPLY[:-1], "device_info")],
+)
+async def test_late_partial_optional_reply_is_not_absence(
+    client: MagicMock,
+    stage: str,
+    partial: bytes,
+    partial_id: str,
+) -> None:
+    """An unresolved PING or info frame cannot be erased by later proof."""
+    if stage == "caps_no_pin":
+        respond(client, capabilities=CAP_END + partial, ping_reply=b"", device_info_reply=b"")
+        pin = ""
+    elif stage == "caps_before_pin":
+        respond(
+            client,
+            capabilities=PIN_CAP_SET + CAP_END + partial,
+            ping_reply=b"",
+            device_info_reply=b"",
+        )
+        pin = "1234"
+    else:
+        respond(
+            client,
+            reply=PIN_ACCEPTED + partial,
+            ping_reply=b"",
+            device_info_reply=b"",
+        )
+        pin = "1234"
+
+    assert await async_verify_octo_pin(client, pin, VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE, (
+        f"{stage} accepted unresolved {partial_id} frame"
+    )
+    writes = [call.args[1] for call in client.write_gatt_char.call_args_list]
+    assert writes == [PING, DEVICEINFO_QUERY, CAP_QUERY] + (
+        [PIN_TRANSMIT] if stage == "pin_response" else []
+    )
+    client.stop_notify.assert_awaited_once_with(OCTO_CHAR_UUID)
+
+
+@pytest.mark.parametrize(
+    ("partial", "partial_id"),
+    [(PING_REPLY[:-1], "ping"), (DEVICEINFO_REPLY[:-1], "device_info")],
+)
+async def test_partial_optional_reply_is_not_cleared_before_capabilities(
+    client: MagicMock,
+    partial: bytes,
+    partial_id: str,
+) -> None:
+    """A valid info reply cannot hide an unresolved frame before CAPS."""
+    respond(
+        client,
+        capabilities=CAP_END,
+        ping_reply=b"",
+        device_info_reply=DEVICEINFO_REPLY + partial,
+    )
+
+    assert await async_verify_octo_pin(client, "", VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE, (
+        f"pre-CAPS clear erased unresolved {partial_id} frame"
+    )
+    assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+        PING,
+        DEVICEINFO_QUERY,
+    ]
+    client.stop_notify.assert_awaited_once_with(OCTO_CHAR_UUID)
+
+
+async def test_absent_pin_state_after_optional_replies_is_inconclusive_and_cleans_up(
+    client: MagicMock,
+) -> None:
+    """A stale pre-PIN reply does not prove acceptance for the current attempt."""
+    respond(
+        client,
+        capabilities=PIN_CAP_SET + CAP_END,
+        reply=b"",
+        before_pin=PIN_ACCEPTED,
+        ping_reply=b"",
+        device_info_reply=b"",
+    )
+
+    assert await async_verify_octo_pin(client, "1234", VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE
+    assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+        PING,
+        DEVICEINFO_QUERY,
+        CAP_QUERY,
+        PIN_TRANSMIT,
+    ]
+    client.stop_notify.assert_awaited_once_with(OCTO_CHAR_UUID)
+
+
+@pytest.mark.parametrize(
+    "ping_reply",
+    [
+        bytes.fromhex("40 21 7f 00 01 00 df 40"),  # valid checksum, invalid ping payload
+        bytes.fromhex("40 21 7f 00 00 e1 40"),  # invalid checksum
+        PING_REPLY[:-1],  # incomplete frame
+    ],
+)
+async def test_invalid_ping_reply_stops_setup_before_device_info_or_pin(client, ping_reply):
+    respond(client, ping_reply=ping_reply)
+    result = await async_verify_octo_pin(client, "1234", VARIANT_AUTO)
+    assert result is OctoPinStatus.INCONCLUSIVE
+    assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [PING]
+    client.stop_notify.assert_awaited_once_with(OCTO_CHAR_UUID)
+
+
+@pytest.mark.parametrize(
+    "device_info",
+    [
+        DEVICEINFO_REPLY_9,
+        DEVICEINFO_REPLY_11,
+        DEVICEINFO_REPLY[:-1],
+        DEVICEINFO_REPLY_BAD_CHECKSUM,
+    ],
+)
+async def test_invalid_device_info_stops_setup_before_capabilities_or_pin(client, device_info):
+    respond(client, device_info_reply=device_info)
+    assert await async_verify_octo_pin(client, "1234", VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE
+    assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+        PING,
+        DEVICEINFO_QUERY,
+    ]
+    client.stop_notify.assert_awaited_once_with(OCTO_CHAR_UUID)
 
 
 @pytest.mark.parametrize(
@@ -166,14 +473,16 @@ async def test_star2_does_not_receive_standard_auth_commands(client, variant):
     client.write_gatt_char.assert_not_awaited()
 
 
-def pin_flow(hass: HomeAssistant, status: OctoPinStatus | None) -> AdjustableBedConfigFlow:
+def pin_flow(
+    hass: HomeAssistant, status: OctoPinStatus | None, *, pin: str = "1234"
+) -> AdjustableBedConfigFlow:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow._pending_entry = {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
         CONF_NAME: "Octo bed",
         CONF_BED_TYPE: BED_TYPE_OCTO,
-        CONF_OCTO_PIN: "1234",
+        CONF_OCTO_PIN: pin,
         CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
     }
     flow._pending_title = "Octo bed"
@@ -255,4 +564,8 @@ async def test_no_scanner_cannot_bypass_octo_pin_check(hass):
 async def test_corrupt_pin_capability_cannot_look_like_pin_free_bed(client, cap):
     respond(client, capabilities=cap + CAP_END)
     assert await async_verify_octo_pin(client, "1234", VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE
-    assert client.write_gatt_char.await_count == 1
+    assert [call.args[1] for call in client.write_gatt_char.call_args_list] == [
+        PING,
+        DEVICEINFO_QUERY,
+        CAP_QUERY,
+    ]
