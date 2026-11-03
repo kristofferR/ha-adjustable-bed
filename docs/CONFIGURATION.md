@@ -856,3 +856,13 @@ the other side automatically if one side fails.
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### Floyd Home profile
+
+Choose **Floyd Home app (product 139)** under the Kaidi transport. Auto selects
+this profile for advertised product139. It owns its two-axis layout and disables
+unsupported massage/position controls. Pulse count and delay bound an HA hold,
+not a hardware repeat loop. Each physical address keeps its own BLE room and
+node metadata; do not copy those fields to another side. See the
+[Floyd Home guide](beds/floyd.md) for confirmation, conditional internal preset
+selectors and explicit assignment of an unassigned BLE room.

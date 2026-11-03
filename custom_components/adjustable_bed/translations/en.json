@@ -3807,6 +3807,9 @@
       },
       "sleeptracker_wind_down_running": {
         "name": "Wind-down running (reported)"
+      },
+      "floyd_battery_mode": {
+        "name": "Battery power mode"
       }
     },
     "number": {
@@ -5874,6 +5877,33 @@
         },
         "action": {
           "name": "Action"
+        }
+      }
+    },
+    "floyd_action": {
+      "name": "Floyd Home action",
+      "description": "Recall a preset, confirm a built-in preset overwrite, or assign an unassigned BLE room. Conditional internal selectors are hardware-unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "internal_side": {
+          "name": "Internal preset selector",
+          "description": "First is the normal Floyd UI. Both and second are conditional exported-alarm selectors, not physical Left/Right targets."
+        },
+        "confirm": {
+          "name": "Confirm configuration write",
+          "description": "Required for preset overwrites and BLE room assignment."
+        },
+        "room_id": {
+          "name": "BLE room ID",
+          "description": "Only for assign_room on one unassigned standalone bed. Does not change bed Wi-Fi."
+        },
+        "side": {
+          "name": "Physical side"
         }
       }
     }

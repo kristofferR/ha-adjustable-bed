@@ -92,6 +92,7 @@ from .const import (
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -142,6 +143,8 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_TARGET_VADDR,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_STATE,
     CONF_MALOUF_LAYOUT,
@@ -2096,6 +2099,16 @@ class AdjustableBedCoordinator:
             await self._async_raise_pairing_issue()
             return False
         return True
+
+    def remember_floyd_room(self, room_id: int) -> None:
+        """Persist acknowledged BLE membership without reloading mid-service."""
+        if self._bed_type != BED_TYPE_KAIDI or not 1 <= room_id <= 0xFFFFFFFF:
+            raise ValueError("Invalid Floyd BLE room")
+        data = {**self.entry.data, CONF_KAIDI_ROOM_ID: room_id}
+        data.pop(CONF_KAIDI_TARGET_VADDR, None)
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._offline_controller = None
+        self._async_persist_config(data)
 
     def remember_limoss_remote_capabilities(self, capabilities: Mapping[str, int]) -> None:
         """Persist the reported capability record, which decides the entity layout."""

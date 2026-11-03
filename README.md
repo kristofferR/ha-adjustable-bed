@@ -106,7 +106,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [FSM Relax](docs/beds/fsm_relax.md) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE / Dream Motion apps](docs/beds/jiecang-app.md) |
-| ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, Floyd Home, ISleep |
+| ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md), ISleep |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett; [Limoss Remote](docs/beds/limoss-remote.md) bed and chair layouts |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | ✅ [Svane](docs/beds/svane.md) | Svane Remote, JMC400, Jensen LinOn |

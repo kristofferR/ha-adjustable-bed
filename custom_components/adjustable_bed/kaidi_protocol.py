@@ -267,3 +267,15 @@ def format_kaidi_node_address(node_bytes: bytes) -> str:
     if len(node_bytes) != 6:
         raise ValueError(f"Kaidi node address must be 6 bytes, got {len(node_bytes)}")
     return ":".join(f"{byte:02X}" for byte in reversed(node_bytes))
+
+
+def is_floyd_advertisement(advertisement: KaidiAdvertisement | None) -> bool:
+    """Match Floyd's admitted product and exact actuator/company gates (E3/E8)."""
+    if advertisement is None or advertisement.product_id != 139:
+        return False
+    if advertisement.adv_type == KAIDI_ADV_TYPE_DISCOVERABLE and advertisement.company_id != 0x4B44:
+        return False
+    actuator = advertisement.sofa_acu_no
+    return actuator is not None and (
+        (actuator >> 8) & 7 <= 5 and actuator & 15 <= 5 and actuator & 0xF0 <= 5
+    )
