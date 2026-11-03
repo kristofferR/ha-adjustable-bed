@@ -63,6 +63,7 @@ export const PRESET_ORDER = [
   "preset_anti_snore",
   "preset_tv",
   "preset_lounge",
+  "preset_reading",
   "preset_swing",
   "preset_incline",
   "preset_both_up",
@@ -216,13 +217,28 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
-        if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
+        if (key.startsWith("starcode_m1x12_part_") && key.endsWith("_position"))
+          motor(key.slice(0, -9)).position = id;
+        else if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
         else if (key.startsWith("sleepys_app_position_") || key.startsWith("sleepys_app_field_"))
           bed.utilityStates?.push(id);
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
         // These apps report a massage timer indicator without a timer select.
-        else if (key === "innova_massage_timer" || key === "glideaway_motion_massage_timer") bed.massage.timer = id;
+        else if (
+          key === "innova_massage_timer" ||
+          key === "glideaway_motion_massage_timer" ||
+          key === "bedsense_massage_timer" ||
+          key === "app_timer_status"
+        ) bed.massage.timer = id;
+        else if (key === "bedsense_light_duration") bed.lights.state = id;
+        else if (/^bedsense_(head_bar|wave_bar|head_steps|foot_steps|wave_steps)$/.test(key))
+          (bed.massage.states ??= []).push(id);
+        else if (key.startsWith("starcode_m1x12_light_"))
+          (bed.lights.states ??= []).push(id);
+        else if (/^starcode_m1x12_(massage_|sonic_|kneading_)/.test(key))
+          (bed.massage.states ??= []).push(id);
+        else if (key.startsWith("starcode_m1x12_")) bed.utilityStates?.push(id);
         break;
 
       case "number":
@@ -231,7 +247,7 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
-        else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
+        else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "starcode_m1x12_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
           bed.lights.timerAppliesImmediately = true;
@@ -275,6 +291,12 @@ export function bedEntitiesForDevice(
           bed.connect = id;
         } else if (key === "disconnect") {
           bed.disconnect = id;
+        } else if (key === "bedsense_light") {
+          (bed.lights.buttons ??= []).push(id);
+        } else if (key === "bedsense_massage") {
+          bed.massage.buttons.push(id);
+        } else if (key === "bedsense_action") {
+          bed.utility.push(id);
         } else if (key === "sleeptracker_light_toggle") {
           bed.lights.toggle = id;
         } else if (key === "sleeptracker_light_off") {
@@ -369,6 +391,10 @@ export function bedEntitiesForDevice(
           key === "vibradorm_app_massage_individual"
         ) {
           bed.massage.buttons.push(id);
+        } else if (key.startsWith("starcode_m1x12_hold_")) {
+          bed.massage.buttons.push(id);
+        } else if ((match = key.match(/^(starcode_m1x12_part_\d+)_(up|down)$/))) {
+          motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         } else if (
           key === "sync_positions" ||
           key === "child_lock_toggle" ||
@@ -377,6 +403,7 @@ export function bedEntitiesForDevice(
           key === "solace_music_toggle" ||
           key === "solace_music_off" ||
           key === "wake_controller" ||
+          key === "octo_all_down" ||
           key === "reset_defaults" ||
           key === "factory_reset" ||
           key === "vibradorm_app_all_up" ||
@@ -387,7 +414,8 @@ export function bedEntitiesForDevice(
           key.startsWith("starcode_save_") ||
           key === "starcode_reset" ||
           key === "starcode_query" ||
-          key === "starcode_light_mode"
+          key === "starcode_light_mode" ||
+          key.startsWith("starcode_m1x12_")
         ) {
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
@@ -402,7 +430,11 @@ export function bedEntitiesForDevice(
       case "switch":
         if (key === "under_bed_lights") bed.lights.switch = id;
         else if (key === "synchro_mode") bed.synchro = id;
-        else if (key === "linak_automatic_drive" || key === "automatic_light")
+        else if (
+          key === "linak_automatic_drive" ||
+          key === "automatic_light" ||
+          key === "remote_control_lock"
+        )
           bed.utility.push(id);
         break;
 
@@ -412,8 +444,12 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
+        else if (key === "memory_save_response_observed") bed.utilityStates?.push(id);
         else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
-        else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on") bed.lights.state = id;
+        else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on" || key === "starcode_m1x12_light_on") bed.lights.state = id;
+        else if (/^starcode_m1x12_(massage_|sonic_|kneading_)/.test(key))
+          (bed.massage.states ??= []).push(id);
+        else if (key.startsWith("starcode_m1x12_")) bed.utilityStates?.push(id);
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
 
@@ -573,7 +609,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
 export function hasLightingControls(lights: LightEntities): boolean {
   return !!(
     lights.light || lights.switch || lights.level || lights.toggle ||
-    lights.numbers?.length || lights.buttons?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
+    lights.numbers?.length || lights.buttons?.length || lights.states?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
     lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length || lights.mood?.buttons?.length
   );
 }

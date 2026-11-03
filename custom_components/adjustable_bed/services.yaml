@@ -1,3 +1,29 @@
+configure_alarm_schedule:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    weekly:
+      required: true
+      selector:
+        object:
+    one_time:
+      required: true
+      selector:
+        object:
+    dispatch:
+      required: true
+      selector:
+        select:
+          options: [both, weekly, one_time]
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+
 rmcontrol_alarm:
   fields:
     device_id:
@@ -80,7 +106,7 @@ goto_preset:
       selector:
         number:
           min: 1
-          max: 8
+          max: 255
           mode: box
     duration:
       required: false
@@ -115,7 +141,7 @@ save_preset:
       selector:
         number:
           min: 1
-          max: 8
+          max: 255
           mode: box
     side:
       required: false
@@ -309,6 +335,46 @@ hold_control:
           step: 0.001
           unit_of_measurement: seconds
           mode: box
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+octo_enroll_pin:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    octo_pin:
+      required: true
+      selector:
+        text:
+          type: password
+    octo_pin_confirmation:
+      required: true
+      selector:
+        text:
+          type: password
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+octo_reset_defaults:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    confirmed:
+      required: true
+      selector:
+        boolean:
     side:
       selector:
         select:

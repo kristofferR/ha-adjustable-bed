@@ -188,6 +188,7 @@ from .const import (
     DEVICE_INFO_READ_TIMEOUT,
     DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
@@ -199,6 +200,7 @@ from .const import (
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OFFLINE_CAPABILITY_SAFE_VARIANTS,
     OKIMAT_SERVICE_UUID,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
     POSITION_FEEDBACK_TIMEOUT,
     POSITION_MODE_ACCURACY,
     REVERIE_BACK_MAX_ANGLE,
@@ -222,6 +224,7 @@ from .const import (
     requires_pairing_after_service_discovery,
     resolve_explicit_bed_type,
     resolve_richmat_remote_code,
+    supports_runtime_authentication_recovery,
 )
 from .controller_factory import create_controller
 from .detection import (
@@ -618,6 +621,10 @@ class AdjustableBedCoordinator:
         # marker, this never poisons the config entry, so a transient pairing
         # failure cannot permanently prevent future pairing attempts.
         self._skip_pair_next_attempt: bool = False
+        # Pair Now is an explicit user repair for Nectar Move, whose ordinary
+        # profile deliberately does not request a bond. Scope this override to
+        # that locked repair operation only.
+        self._force_pairing_requested: bool = False
         # True when the most recent attempt skipped pair=True purely because
         # CONF_BLE_BOND_ESTABLISHED said we were already bonded. An auth failure
         # under that condition is what proves the marker unreliable.
@@ -1799,9 +1806,21 @@ class AdjustableBedCoordinator:
         self._begin_internal_entry_update(False)
         self._async_persist_config(data, keys=RUNTIME_BOND_KEYS)
 
+    def _has_unresolved_auth_failure(self) -> bool:
+        """Return whether an observed GATT auth failure still warrants the repair."""
+        return (
+            supports_runtime_authentication_recovery(self._bed_type, self._protocol_variant)
+            and self._last_bond_evidence is not None
+            and self._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
+        )
+
     async def async_clear_obsolete_pairing_state(self) -> None:
         """Remove stale pairing state when this protocol no longer requires it."""
-        if requires_pairing(self._bed_type, self._protocol_variant):
+        if (
+            self._force_pairing_requested
+            and self._bed_type == BED_TYPE_OKIN_CST
+            and self._protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
+        ) or requires_pairing(self._bed_type, self._protocol_variant):
             return
         self._discard_bond_tracking()
         await delete_pairing_required_issue(self.hass, self._address)
@@ -1847,7 +1866,7 @@ class AdjustableBedCoordinator:
         Connection retries defer the repair until their final outcome; runtime
         command failures still report it immediately.
         """
-        if not requires_pairing(self._bed_type, self._protocol_variant):
+        if not supports_runtime_authentication_recovery(self._bed_type, self._protocol_variant):
             return
 
         keep_link = retain_link and grants_one_connection_per_pairing_window(
@@ -2451,13 +2470,23 @@ class AdjustableBedCoordinator:
                         return await self._async_pair_live_and_verify()
                 return await self._async_pair_live_and_verify()
 
-            if not await self._async_connect_locked():
+            self._force_pairing_requested = (
+                self._bed_type == BED_TYPE_OKIN_CST
+                and self._protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
+            )
+            try:
+                if not await self._async_connect_locked():
+                    if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                        self._persist_bond_flags(established=False)
+                    return False
                 if self._bed_type == BED_TYPE_VIBRADORM_APP:
-                    self._persist_bond_flags(established=False)
-                return False
-            if self._bed_type == BED_TYPE_VIBRADORM_APP:
-                return self._last_bond_evidence is not None and self._last_bond_evidence.proves_bond
-            return self._ble_bond_established
+                    return (
+                        self._last_bond_evidence is not None
+                        and self._last_bond_evidence.proves_bond
+                    )
+                return self._ble_bond_established
+            finally:
+                self._force_pairing_requested = False
 
     async def _async_pair_live_and_verify(self) -> bool:
         """Pair and verify the live link while the coordinator lock is held."""
@@ -3084,7 +3113,17 @@ class AdjustableBedCoordinator:
         3. A pre-first-connect bed-type heuristic. Only ``auto``/``gen2``
            ``leggett_platt`` entries are assumed persistent here; ``okin`` and
            ``mlrm`` are not (they reconnect normally).
+
+        An idle timeout of 0 opts any bed into the same lifecycle unless
+        Disconnect After Command is on (issue #700). Like persistent
+        controllers, a dropped link then reconnects on the next command rather
+        than on a timer, so receivers that drop idle links cannot storm.
         """
+        if (
+            self._idle_disconnect_seconds == IDLE_DISCONNECT_KEEP_CONNECTED
+            and not self._disconnect_after_command
+        ):
+            return True
         controller = self._controller
         if controller is not None:
             return controller.requires_persistent_connection or (
@@ -3210,10 +3249,21 @@ class AdjustableBedCoordinator:
         source: str | None = None,
     ) -> tuple[bool, bool, bool]:
         """Resolve pairing policy and diagnostics for one connection attempt."""
-        bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
+        force_pairing = (
+            self._force_pairing_requested
+            and self._bed_type == BED_TYPE_OKIN_CST
+            and self._protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
+        )
+        bed_requires_pairing = force_pairing or requires_pairing(
+            self._bed_type, self._protocol_variant
+        )
         bond_marker_before_attempt = self._ble_bond_established
         transient_skip_was_set = self._skip_pair_next_attempt
-        os_bond_reported = bed_requires_pairing and self._device_reports_existing_bond(device)
+        os_bond_reported = (
+            bed_requires_pairing
+            and not force_pairing
+            and self._device_reports_existing_bond(device)
+        )
         if bed_requires_pairing and not self._ble_bond_established and os_bond_reported:
             _LOGGER.info(
                 "Existing BLE bond detected for %s; skipping pair=True",
@@ -3243,11 +3293,13 @@ class AdjustableBedCoordinator:
             and not marker_out_of_scope
         )
 
-        use_pairing = (
-            bed_requires_pairing
-            and not bond_marker_trusted
-            and not self._skip_pair_next_attempt
-            and self._pairing_supported is not False
+        use_pairing = (force_pairing and not self._skip_pair_next_attempt) or (
+            self._pairing_supported is not False
+            and (
+                bed_requires_pairing
+                and not bond_marker_trusted
+                and not self._skip_pair_next_attempt
+            )
         )
         pair_after_service_discovery = bool(
             use_pairing
@@ -3261,7 +3313,9 @@ class AdjustableBedCoordinator:
             pairing_ordering = (
                 "connect_discover_then_pair" if pair_after_service_discovery else "backend_default"
             )
-        if not bed_requires_pairing:
+        if force_pairing and use_pairing:
+            pairing_decision = "explicit_pair_repair"
+        elif not bed_requires_pairing:
             pairing_decision = "not_required"
         elif self._ble_bond_marker_unreliable:
             pairing_decision = "bond_marker_unreliable"
@@ -3470,11 +3524,7 @@ class AdjustableBedCoordinator:
         finally:
             # A verified retry clears this evidence. An inconclusive retry,
             # exhausted attempts or cancellation must still surface the repair.
-            if (
-                requires_pairing(self._bed_type, self._protocol_variant)
-                and self._last_bond_evidence is not None
-                and self._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
-            ):
+            if self._has_unresolved_auth_failure():
                 await self._async_raise_pairing_issue()
 
     async def _async_connect_attempts_locked(  # pyright: ignore[reportGeneralTypeIssues]
@@ -4504,30 +4554,33 @@ class AdjustableBedCoordinator:
                         # again after subscriptions have been established.
                         await self._async_record_verified_bond(attempt_details)
 
-                # Notification startup may finish deferred capability discovery
-                # after the BLE authentication window, so schedule from the final
-                # resolved controller state.
-                self._refresh_passive_position_reconciliation_schedule()
-                self._refresh_diagnostic_polling_schedule()
-
                 if self._bed_type == BED_TYPE_LINAK:
                     self._backfill_linak_snapshot()
 
                 # For Octo beds: discover features and handle PIN if needed
                 if self._bed_type == BED_TYPE_OCTO:
-                    # Discover features to detect PIN requirement
-                    if hasattr(self._controller, "discover_features"):
+                    # Standard Octo Smart Control declares this ordered session
+                    # handshake as required. Star2 and legacy optional discovery
+                    # controllers retain their existing startup behavior.
+                    if getattr(self._controller, "requires_ordered_discovery", False):
+                        discovery_complete = await cast(Any, self._controller).discover_features()
+                        if discovery_complete is False:
+                            raise ConnectionError(
+                                "Octo Smart Control session discovery did not complete"
+                            )
+                    elif hasattr(self._controller, "discover_features"):
                         await cast(Any, self._controller).discover_features()
                     # Persist this paired side's freshly-discovered capabilities so
                     # the OFFLINE side / a reload mints correct entities (no-op for
                     # a single bed or if nothing was discovered).
                     self._backfill_octo_snapshot()
-                    # Send initial PIN and start keep-alive if bed requires it
+                    # Send initial PIN if the authoritative capability state requires it.
                     if hasattr(self._controller, "send_pin"):
                         await cast(Any, self._controller).send_pin()
+                    if hasattr(self._controller, "start_keepalive"):
                         await cast(Any, self._controller).start_keepalive()
-                    # A PIN-locked receiver accepts lights but ignores motors, so
-                    # surface the missing PIN instead of looking simply broken.
+                    # Surface the missing credential when this receiver reports
+                    # an active PIN lock and no local PIN is configured.
                     if hasattr(self._controller, "pin_locked_without_pin"):
                         update_octo_pin_required_issue(
                             self.hass,
@@ -4535,6 +4588,12 @@ class AdjustableBedCoordinator:
                             self._name,
                             cast(Any, self._controller).pin_locked_without_pin,
                         )
+
+                # Startup discovery can change which work is safe to schedule.
+                # In particular, an Octo Smart Control session that did not
+                # complete must not leave capability-driven polling behind.
+                self._refresh_passive_position_reconciliation_schedule()
+                self._refresh_diagnostic_polling_schedule()
 
                 # Beds with connect-time feature discovery/state hydration.
                 if self._bed_type in {BED_TYPE_JENSEN, BED_TYPE_SLEEP_NUMBER} and hasattr(
@@ -4601,6 +4660,10 @@ class AdjustableBedCoordinator:
                 # instead of staying "unknown" until the user moves it.
                 self._schedule_position_hydration()
 
+                if not bed_requires_pairing and self._has_unresolved_auth_failure():
+                    # Controller startup ran on this unpaired link, so the GATT
+                    # access that failed earlier works and its repair is resolved.
+                    self._last_bond_evidence = None
                 await self.async_clear_obsolete_pairing_state()
 
                 return True
@@ -5447,8 +5510,7 @@ class AdjustableBedCoordinator:
                 self._reset_disconnect_timer()
         except TimeoutError:
             _LOGGER.warning(
-                "Timed out restoring controller tasks for %s after pairing transfer "
-                "cancellation",
+                "Timed out restoring controller tasks for %s after pairing transfer cancellation",
                 self._address,
             )
         except Exception:
@@ -5771,9 +5833,14 @@ class AdjustableBedCoordinator:
                 # Clear cancel signal for this command
                 self._cancel_command.clear()
 
+                logged_command = command.hex()
+                if self._bed_type == BED_TYPE_OCTO and self._controller is not None:
+                    trace_payload = self._controller._format_command_trace_payload(command)
+                    if trace_payload is not None:
+                        logged_command = str(trace_payload.get("hex", "**REDACTED**"))
                 _LOGGER.debug(
                     "async_write_command: %s (repeat: %d, delay: %dms)",
-                    command.hex(),
+                    logged_command,
                     repeat_count,
                     repeat_delay_ms,
                 )
@@ -5943,6 +6010,12 @@ class AdjustableBedCoordinator:
             raise RuntimeError("No controller available")
 
         await self._async_refresh_controller_auth()
+        if self._bed_type == BED_TYPE_OCTO:
+            from .octo_runtime import octo_controller
+
+            octo = octo_controller(controller)
+            if octo is not None:
+                await octo.async_wait_for_pin_acceptance(self.cancel_command)
         return controller
 
     async def _async_finish_controller_operation(
@@ -6529,10 +6602,13 @@ class AdjustableBedCoordinator:
         sample_interval = controller.diagnostic_advertisement_interval
         if sample_interval is not None:
             if not math.isfinite(sample_interval) or sample_interval <= 0:
-                _LOGGER.warning("Ignoring invalid advertisement diagnostic interval %s", sample_interval)
+                _LOGGER.warning(
+                    "Ignoring invalid advertisement diagnostic interval %s", sample_interval
+                )
                 return
             self._diagnostic_advertisement_task = self.entry.async_create_background_task(
-                self.hass, self._async_diagnostic_advertisement_loop(controller, sample_interval),
+                self.hass,
+                self._async_diagnostic_advertisement_loop(controller, sample_interval),
                 name=f"adjustable_bed_advertisement_diagnostics_{self._address}",
             )
 
@@ -7073,7 +7149,7 @@ class AdjustableBedCoordinator:
         try:
             try:
                 controller.restore_persisted_app_state(stored)
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 _LOGGER.warning("Ignoring invalid stored app state for %s", self._address)
                 controller.restore_persisted_app_state({})
             self._app_state_slots[controller] = slot

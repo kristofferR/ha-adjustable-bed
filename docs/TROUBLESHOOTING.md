@@ -242,7 +242,7 @@ show why browser JavaScript failed to load.
 
 **Solutions:**
 1. **Verify features:** Check if your bed actually has the feature (massage, lights, etc.)
-2. **Update motor count:** Set the correct number of motors in options (2, 3, or 4; use 1 only for a one-motor Standard OCTO lift, with `RTV` detected automatically)
+2. **Update motor layout:** Standard OCTO uses its advertised motor count in Auto; choose an explicit OCTO override only when the receiver's advertised layout needs correction. Other profiles use the Motor Count setting when available.
 3. **Enable massage:** If bed has massage, enable it in integration options
 
 ### Commands are slow or delayed
@@ -301,7 +301,7 @@ and failed cleanup are still reported.
 1. **Enable "Disconnect after each command" where supported:** The connection is released one second after operations finish; rapid commands reuse that window
 2. **Disable position monitoring if necessary:** Enable "Disable angle sensing"; Linak's "Refresh positions while idle" can also be turned off
 3. **Press "Disconnect" button:** Manually disconnect HA to use the physical remote
-4. **Idle timeout:** When quick handoff is off, the configured idle timeout applies (default 40 seconds). Controllers requiring persistent connections are exceptions.
+4. **Idle timeout:** When quick handoff is off, the configured idle timeout applies (default 40 seconds). An idle timeout of `0` and controllers requiring persistent connections hold the link instead.
 
 ### BLE connection shows "Disconnected" shortly after adding the bed
 
