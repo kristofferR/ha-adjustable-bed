@@ -85,6 +85,7 @@ def _coordinator(*, events: list[tuple[str, object]] | None = None):
         ),
         handle_controller_state_update=Mock(),
         handle_controller_state_updates=Mock(),
+        clear_position_feedback=Mock(),
     )
     return coordinator, calls, timer
 

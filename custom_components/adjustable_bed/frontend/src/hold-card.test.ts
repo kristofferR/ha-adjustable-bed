@@ -110,13 +110,9 @@ test("actual card handlers route discovered standalone and Both holds, then capt
     const { api, hass } = fixture();
     const { template } = row(api, hass, device);
     handler(template, "@pointerdown")(down(1));
-    expect(calls.at(-1)).toEqual(device === "left"
-      ? { domain: "adjustable_bed", service: "hold_control", data: {
-          device_id: [device], control: "back_up", duration: 60,
-        } }
-      : { domain: "adjustable_bed", service: "timed_move", data: {
-          device_id: device, side: "both", motor: "back", direction: "up", duration_ms: 1000,
-        } });
+    expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "hold_control", data: {
+      device_id: [device], control: "back_up", duration: 60,
+    } });
     delete hass.entities["button." + device + "_stop"];
     page.visibilityState = "visible";
     page.dispatchEvent(new Event("visibilitychange"));
@@ -245,7 +241,8 @@ test("live sequential or mismatched Both metadata keeps the existing finite butt
     hass.states["button.pair_back_up"].attributes = attributes;
     const both = row(api, hass, "pair");
     handler(both.template, "@pointerdown")(down(6));
-    expect(calls.at(-1)?.service).toBe("paired_hold_motor" in attributes ? "timed_move" : "press");
+    expect(calls.at(-1)?.service).toBe("held_control" in attributes ? "hold_control" : "press");
+    expect(both.bed.motors[0].heldControls !== undefined).toBe("held_control" in attributes);
     if (!("paired_hold_motor" in attributes)) {
       expect(calls.at(-1)?.data).toEqual({ entity_id: "button.pair_back_up" });
     }
@@ -320,6 +317,9 @@ test.each([
 
 test("same-axis child Stop still invalidates Both and settles its remaining side", async () => {
   const { api, hass } = fixture();
+  hass.states["button.pair_back_up"].attributes = {
+    paired_hold_motor: "back", paired_hold_side: "both",
+  };
   const pending = deferred();
   hass.callService = async (domain, service, data) => {
     calls.push({ domain, service, data });

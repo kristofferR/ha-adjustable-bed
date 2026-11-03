@@ -22,13 +22,18 @@ _CREDENTIAL_KEYS = {
     CONF_OCTO_PIN,
     CONF_PAIRLINK_PASSWORD_HEX,
     CONF_PAIRLINK_PASSWORD_TEXT,
+    "octo_pin_confirmation",
     "authcode",
     "authtoken",
     "token",
     "password",
 }
 KEYS_TO_REDACT = {
-    CONF_NAME, "title", "serial", "serial_number", "configuration_url"
+    CONF_NAME,
+    "title",
+    "serial",
+    "serial_number",
+    "configuration_url",
 } | _CREDENTIAL_KEYS
 
 # Keys containing MAC addresses (partial redaction - keep OUI)
@@ -160,11 +165,13 @@ def redact_sleep_number_sessions(report: dict[str, Any]) -> None:
         summary["ascii_previews"] = []
 
 
-SLEEPTRACKER_SECRET_CHARACTERISTICS = frozenset({
-    "4bc4783d-64a3-45b0-9a4a-06cb7713e32b",
-    "a5a25fb5-500f-436b-8d36-447bc5f30a29",
-    "3d91d13b-2310-43d1-b991-9e915b047653",
-})
+SLEEPTRACKER_SECRET_CHARACTERISTICS = frozenset(
+    {
+        "4bc4783d-64a3-45b0-9a4a-06cb7713e32b",
+        "a5a25fb5-500f-436b-8d36-447bc5f30a29",
+        "3d91d13b-2310-43d1-b991-9e915b047653",
+    }
+)
 
 
 def redact_sleeptracker_sessions(report: dict[str, Any]) -> None:
@@ -177,9 +184,14 @@ def redact_sleeptracker_sessions(report: dict[str, Any]) -> None:
                     result["hex"] = "**REDACTED**"
                     result["ascii_preview"] = None
     for notification in report.get("notifications", []):
-        if str(notification.get("characteristic", "")).lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+        if (
+            str(notification.get("characteristic", "")).lower()
+            in SLEEPTRACKER_SECRET_CHARACTERISTICS
+        ):
             notification["data_hex"] = "**REDACTED**"
-    for uuid, summary in report.get("notification_summary", {}).get("by_characteristic", {}).items():
+    for uuid, summary in (
+        report.get("notification_summary", {}).get("by_characteristic", {}).items()
+    ):
         if uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
             summary["top_repeated_payloads"] = []
             summary["ascii_previews"] = []

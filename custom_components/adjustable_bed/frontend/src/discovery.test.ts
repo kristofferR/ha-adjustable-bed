@@ -9,6 +9,7 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
+import { heldButtonMotor } from "./hold";
 import type { EntityRegistryDisplayEntry, HomeAssistant } from "./types";
 
 function entry(
@@ -54,6 +55,54 @@ test("standalone held motor metadata selects the bounded timed action", () => {
   };
   expect(bedEntitiesForDevice(hass, "dev1").motors[0].timedMove)
     .toEqual({ deviceId: "dev1", motor: "back" });
+});
+
+test("Octo backend motor and dynamic memory metadata is retained for the card", () => {
+  const hass = hassWith([
+    entry("cover.octo_back", "back", "octo"),
+    entry("button.octo_memory_9", "preset_memory_9", "octo"),
+    entry("button.octo_save_memory_9", "program_memory_9", "octo"),
+  ]);
+  hass.states["cover.octo_back"] = {
+    entity_id: "cover.octo_back", state: "closed", last_changed: "", last_updated: "",
+    attributes: {
+      held_control_up: "back_up", held_control_down: "back_down",
+      held_stop_scope: "side", hold_start_delay_ms: 100, hold_release_delay_ms: 100,
+    },
+  };
+  hass.states["button.octo_memory_9"] = {
+    entity_id: "button.octo_memory_9", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      held_control: "memory_9", hold_start_delay_ms: 100, hold_release_delay_ms: 200,
+    },
+  };
+  hass.states["button.octo_save_memory_9"] = {
+    entity_id: "button.octo_save_memory_9", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {},
+  };
+  const bed = bedEntitiesForDevice(hass, "octo");
+  expect(bed.motors[0].heldControls).toEqual({
+    up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 },
+    down: { control: "back_down", startDelayMs: 100, releaseDelayMs: 100 },
+  });
+  expect(bed.memory[0]).toMatchObject({
+    slot: 9,
+    goto: "button.octo_memory_9",
+    save: "button.octo_save_memory_9",
+  });
+  // The card renders the recall tile from the button's own hold metadata.
+  expect(heldButtonMotor(hass, bed.memory[0].goto!)?.heldControl).toEqual({
+    control: "memory_9", startDelayMs: 100, releaseDelayMs: 200,
+  });
+});
+
+test("OCTO all-down and remote lock are utility controls", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.octo_all_down", "octo_all_down", "octo"),
+    entry("switch.octo_remote_lock", "remote_control_lock", "octo"),
+  ]), "octo");
+  expect(bed.utility).toEqual(["button.octo_all_down", "switch.octo_remote_lock"]);
+  expect(bed.presets).toEqual([]);
 });
 
 test("Motion hub module selector is a nonempty utility control", () => {

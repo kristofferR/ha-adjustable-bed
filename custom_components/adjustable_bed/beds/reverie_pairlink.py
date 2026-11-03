@@ -1532,7 +1532,7 @@ class ReveriePairlinkController(BedController):
 
     def _clear_peer_state(self, address: str, *, clear_positions: bool = False) -> None:
         state = self._peer_states.pop(address, {})
-        if state:
+        if state and state is self._state:
             self.forward_controller_state_updates(dict.fromkeys(state))
         if clear_positions:
             self._coordinator.clear_position_feedback(("back", "legs"))
@@ -1989,6 +1989,7 @@ class ReveriePairlinkController(BedController):
         send_appearance: bool = False,
         cancel_event: asyncio.Event | None = None,
         prepared_snapshot: PairlinkSendSnapshot | None = None,
+        refresh_telemetry: bool = False,
     ) -> None:
         """Send one source-framed action through the already selected Pairlink role."""
         if not self._has_supported_model:
@@ -2017,7 +2018,9 @@ class ReveriePairlinkController(BedController):
             own_virtual_address=snapshot.own_virtual_address,
             send_appearance=send_appearance,
         )
-        await self._async_send_profile_frame(frame, snapshot, cancel_event=cancel_event)
+        await self._async_send_profile_frame(
+            frame, snapshot, cancel_event=cancel_event, refresh_telemetry=refresh_telemetry
+        )
 
     async def _async_send_profile_frame(
         self,
@@ -2025,8 +2028,11 @@ class ReveriePairlinkController(BedController):
         snapshot: PairlinkSendSnapshot,
         *,
         cancel_event: asyncio.Event | None = None,
+        refresh_telemetry: bool = False,
     ) -> None:
         """Use the existing role/security/transport path for private profile consumers."""
+        if refresh_telemetry:
+            snapshot = self._refresh_comfort_snapshot(snapshot)
         client = self.client
         if not self._runtime.allows_send(
             snapshot,
@@ -2054,13 +2060,23 @@ class ReveriePairlinkController(BedController):
         if cancel is not None and cancel.is_set():
             raise asyncio.CancelledError
 
-        async def send_current() -> None:
+        def validate_current() -> None:
+            nonlocal snapshot
             if cancel is not None and cancel.is_set():
                 raise asyncio.CancelledError
+            if refresh_telemetry:
+                snapshot = self._refresh_comfort_snapshot(snapshot)
             if not self._runtime.snapshot_is_current(snapshot):
                 raise PairlinkRuntimeNotReadyError(
                     "Pairlink session changed before the action reached transport"
                 )
+            if not self._runtime.allows_send(
+                snapshot, destination=frame[1:5], channel=frame[5]
+            ):
+                raise PermissionError("Pairlink signing state changed before transport")
+
+        async def send_current() -> None:
+            validate_current()
             try:
                 if snapshot.role is PairlinkRole.CENTRAL:
                     if client is None or not client.is_connected:
@@ -2072,7 +2088,9 @@ class ReveriePairlinkController(BedController):
                         att_mtu=snapshot.mtu,
                     )
                 else:
-                    await self._runtime.async_notify_to_peer(snapshot, outbound)
+                    await self._runtime.async_notify_to_peer(
+                        snapshot, outbound, validate_send=validate_current
+                    )
             except BleakError:
                 _LOGGER.warning("Pairlink central GATT write failed")
                 raise
@@ -2103,6 +2121,17 @@ class ReveriePairlinkController(BedController):
                 raise ConnectionError("Pairlink BLE client reported an invalid ATT MTU")
             return self._runtime.prepare_send(mtu=mtu)
         return self._runtime.prepare_send()
+
+    def _refresh_comfort_snapshot(self, captured: PairlinkSendSnapshot) -> PairlinkSendSnapshot:
+        """Accept telemetry changes within a burst, keeping its transport and auth fixed."""
+        current = self._capture_current_send_snapshot()
+        if replace(
+            current,
+            state_generation=captured.state_generation,
+            peer_state_generation=captured.peer_state_generation,
+        ) != captured:
+            raise PairlinkRuntimeNotReadyError("Pairlink comfort transport or authentication changed")
+        return current
 
     async def _async_release_to_captured_target(
         self,
@@ -2530,8 +2559,10 @@ class ReveriePairlinkController(BedController):
             raise PairlinkRuntimeNotReadyError(
                 "Pairlink comfort preflight no longer matches the current session"
             )
-        for payload in plan.payloads:
-            await self.async_send_payload(payload, prepared_snapshot=plan.snapshot)
+        for index, payload in enumerate(plan.payloads):
+            await self.async_send_payload(
+                payload, prepared_snapshot=plan.snapshot, refresh_telemetry=index > 0
+            )
 
     def _comfort_current_values(self) -> dict[str, int]:
         current: dict[str, int] = {}

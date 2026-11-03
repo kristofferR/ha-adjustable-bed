@@ -37,6 +37,7 @@ from .const import (
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_OCTO,
     BED_TYPE_OKIN_CST,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -133,6 +134,9 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    # OCTO motor layout comes from its advertised capability record, with an
+    # OCTO-specific explicit override in the profile's own setup/options UI.
+    BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},

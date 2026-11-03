@@ -101,6 +101,9 @@ routes, preserves side-specific feedback, and uses the V1 Composer route for
 routines. The STK V2 comfort method is empty in the app and is excluded.
 Head massage step buttons follow the same selected numeric side as the head
 strength slider.
+The back position follows the selected head. Selecting Both reports an unknown
+back position until both heads report the same value; the two raw head readings
+remain separate for Composer routines.
 
 Paired local Pairlink entries reserve each selected adapter separately. Combining
 existing singles validates their exact config-entry and physical-address ownership
@@ -303,6 +306,10 @@ ordinary requests send only changed values. Its alarm route starts alarm mode
 and writes every field supported by the selected profile, even when values
 match current state. Lumbar is required for R510L and must be omitted for
 Harmoniq Upgrade.
+An admitted Pairlink comfort burst accepts ordinary telemetry between writes,
+but a changed peer, physical session, authentication, or STOP aborts the remaining
+writes. Removing a backup peer clears only that peer's cached telemetry and
+preserves the primary peer's exposed state.
 
 `reverie_run_routine` replaces the selected physical target's protocol queue.
 Routine capability is independent of standalone comfort capability: `3EMT`

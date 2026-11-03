@@ -152,10 +152,9 @@ export function bedEntitiesForDevice(
     const releaseDelayMs = attributes?.hold_release_delay_ms;
     if (
       typeof control === "string" &&
-      typeof startDelayMs === "number" &&
-      typeof releaseDelayMs === "number" &&
-      ownerDeviceId &&
-      attributes?.paired_hold_motor === undefined
+      typeof startDelayMs === "number" && Number.isFinite(startDelayMs) && startDelayMs >= 0 &&
+      typeof releaseDelayMs === "number" && Number.isFinite(releaseDelayMs) && releaseDelayMs >= 0 &&
+      ownerDeviceId
     ) {
       item.deviceId = ownerDeviceId;
       item.holdEntityId = id;
@@ -174,7 +173,11 @@ export function bedEntitiesForDevice(
     } else if (
       (key === "back" || key === "legs" || key === "lumbar") &&
       typeof control === "string"
-    ) item.timedMove = { deviceId, motor: key };
+    ) item.timedMove = {
+      deviceId,
+      motor: key,
+      ...(attributes?.bed_side === "both" ? { side: "both" as const } : {}),
+    };
   };
   const presetMap = new Map<string, string>();
   const memoryMap = new Map<number, MemorySlot>();
@@ -437,6 +440,7 @@ export function bedEntitiesForDevice(
           key === "solace_music_toggle" ||
           key === "solace_music_off" ||
           key === "wake_controller" ||
+          key === "octo_all_down" ||
           key === "reset_defaults" ||
           key === "factory_reset" ||
           key === "vibradorm_app_all_up" ||
@@ -462,7 +466,11 @@ export function bedEntitiesForDevice(
       case "switch":
         if (key === "under_bed_lights") bed.lights.switch = id;
         else if (key === "synchro_mode") bed.synchro = id;
-        else if (key === "linak_automatic_drive" || key === "automatic_light")
+        else if (
+          key === "linak_automatic_drive" ||
+          key === "automatic_light" ||
+          key === "remote_control_lock"
+        )
           bed.utility.push(id);
         break;
 

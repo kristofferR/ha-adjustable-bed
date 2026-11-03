@@ -1047,7 +1047,7 @@ export class AdjustableBedCard extends LitElement {
       ${
         bed.stop
           ? html`<button class="stop-all" @click=${() => stopCardMotorHold(
-              this._hold, bed.stop, routedStopScope,
+              this._hold, bed.stop, routedStopScope, undefined, this.hass,
             )}>
               <ha-icon icon="mdi:stop"></ha-icon>
               <span>${localize(this.hass, "action.stop_all")}</span>
@@ -1684,7 +1684,7 @@ export class AdjustableBedCard extends LitElement {
         stopCardMotorHold(this._hold, m.cover, [
           ...stopScope,
           m.cover,
-        ], m.coverStopScope === "side" ? undefined : m.key);
+        ], m.coverStopScope === "side" ? undefined : m.key, this.hass);
       } else {
         this._hold.stopCover(
           m,
@@ -1699,7 +1699,7 @@ export class AdjustableBedCard extends LitElement {
     // A button-backed row has no stop of its own and falls through to the stop
     // of the bed it belongs to, which halts whatever is moving on that bed. So
     // it has to invalidate any active hold, not just this row's.
-    stopCardMotorHold(this._hold, stopId, stopScope);
+    stopCardMotorHold(this._hold, stopId, stopScope, undefined, this.hass);
   }
 
   // Toggle save mode for ONE section: entering it on a section cancels any other

@@ -899,7 +899,13 @@ class PairlinkPeripheralBackend:
             "Pairlink notifications require a verified peer identity"
         )
 
-    async def async_notify_to_peer(self, peer: PairlinkPeerIdentity, value: bytes) -> None:
+    async def async_notify_to_peer(
+        self,
+        peer: PairlinkPeerIdentity,
+        value: bytes,
+        *,
+        validate_send: Callable[[], None] | None = None,
+    ) -> None:
         """Queue one notification through the exact peer's acquired BlueZ socket."""
         if not isinstance(peer, PairlinkPeerIdentity):
             raise TypeError("Pairlink notification peer must use the immutable identity record")
@@ -924,6 +930,9 @@ class PairlinkPeripheralBackend:
                 raise PairlinkTransportStateError("Pairlink peripheral role is not active")
             if len(value) > min(_MAX_ATTRIBUTE_VALUE_LENGTH, session.mtu - 3):
                 raise PairlinkTransportError("Pairlink notification exceeds the peer MTU")
+            # Keep action validation and socket admission in the same lock turn.
+            if validate_send is not None:
+                validate_send()
             try:
                 sent = session.local_socket.send(value)
             except BlockingIOError:

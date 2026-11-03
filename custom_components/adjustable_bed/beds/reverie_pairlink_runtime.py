@@ -636,6 +636,8 @@ class PairlinkRuntime:
         self,
         snapshot: PairlinkSendSnapshot,
         value: bytes,
+        *,
+        validate_send: Callable[[], None] | None = None,
     ) -> None:
         backend = self.peripheral_backend
         peer = snapshot.peer
@@ -646,7 +648,7 @@ class PairlinkRuntime:
             or not self.snapshot_is_current(snapshot)
         ):
             raise PairlinkRuntimeNotReadyError("Pairlink local peer session changed")
-        await backend.async_notify_to_peer(peer, value)
+        await backend.async_notify_to_peer(peer, value, validate_send=validate_send)
 
     async def async_reply_to_peer(
         self,

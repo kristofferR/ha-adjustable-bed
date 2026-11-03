@@ -136,6 +136,7 @@ class ReverieNightstandController(BedController):
             "reverie_stk_side", "1"
         )
         self._stk_selected_side = retained_side if retained_side in ("1", "2", "3") else "1"
+        self._stk_head_positions: dict[str, int] = {}
         self._active_stk_motion_side: int | None = None
         self._diagnostic_timer: asyncio.TimerHandle | None = None
         self._diagnostic_connection_release: Callable[[], None] | None = None
@@ -686,6 +687,7 @@ class ReverieNightstandController(BedController):
     def on_disconnect(self) -> None:
         self._cancel_protocol_timers()
         self._active_stk_motion_side = None
+        self._stk_head_positions.clear()
         super().on_disconnect()
 
     def validate_comfort_request(self, request: ReverieComfortRequest) -> None:
@@ -982,10 +984,14 @@ class ReverieNightstandController(BedController):
     def _handle_position(self, axis: str, raw_position: int) -> None:
         value: float = float(raw_position)
         if self.model.tandem and axis == "back":
+            self._stk_head_positions["1"] = raw_position
             self.forward_controller_state_update("reverie_stk_head_position", raw_position)
+            self._publish_stk_head_position()
+            return
         elif self.model.tandem and axis == "lumbar":
             # The accepted Protocol 110 profile names this characteristic
             # lumbar/head2. Preserve its raw byte without deriving it from legs.
+            self._stk_head_positions["2"] = raw_position
             self.forward_controller_state_update("reverie_stk_head2_position", raw_position)
         if axis == "lumbar" and self.model.body_tilt:
             value = self._body_tilt_from_wire(raw_position)
@@ -993,6 +999,21 @@ class ReverieNightstandController(BedController):
         self.forward_controller_state_update(f"reverie_{axis}_position", value)
         if self._notify_callback is not None:
             self._notify_callback(axis, value)
+        if self.model.tandem and axis == "lumbar":
+            self._publish_stk_head_position()
+
+    def _publish_stk_head_position(self) -> None:
+        """Expose the selected head, or unknown when Both heads do not agree."""
+        sides = ("1", "2") if self._stk_selected_side == "3" else (self._stk_selected_side,)
+        values = tuple(self._stk_head_positions.get(side) for side in sides)
+        value = values[0]
+        if value is None or any(other != value for other in values):
+            self.forward_controller_state_update("reverie_back_position", None)
+            self._coordinator.clear_position_feedback(("back",))
+            return
+        self.forward_controller_state_update("reverie_back_position", float(value))
+        if self._notify_callback is not None:
+            self._notify_callback("back", float(value))
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Return the P1 raw percentage for direct position writes."""
@@ -1055,6 +1076,7 @@ class ReverieNightstandController(BedController):
             raise ValueError("STK side must be 1, 2, or 3")
         self._stk_selected_side = side
         self.forward_controller_state_update("reverie_stk_side", side)
+        self._publish_stk_head_position()
 
     async def _select_stk_side(self, side: str) -> None:
         self._set_stk_side(side)

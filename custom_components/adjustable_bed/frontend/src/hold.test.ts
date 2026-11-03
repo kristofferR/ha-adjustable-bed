@@ -998,3 +998,240 @@ test("hidden and pagehide abandon holds, then remove their lifecycle listeners",
   expect(hold.heldKey).toBe("left-head");
   hold.abandon();
 });
+
+// Two-address OCTO children publish no logical side, so the registry graph and
+// the Stop translation keys are what keep one side from owning its sibling.
+function twoAddressHass(
+  relation: "parent_device_id" | "via_device_id" = "parent_device_id",
+): HomeAssistant {
+  const stop = (entityId: string, deviceId: string, translationKey: string) => ({
+    entity_id: entityId,
+    device_id: deviceId,
+    platform: "adjustable_bed",
+    translation_key: translationKey,
+  });
+  return {
+    entities: {
+      "button.parent_stop": stop("button.parent_stop", "parent", "stop_both"),
+      "button.left_stop": stop("button.left_stop", "left", "stop"),
+      "button.right_stop": stop("button.right_stop", "right", "stop"),
+    },
+    states: {},
+    devices: {
+      parent: { id: "parent" },
+      left: { id: "left", [relation]: "parent" },
+      right: { id: "right", [relation]: "parent" },
+    },
+  } as unknown as HomeAssistant;
+}
+
+for (const relation of ["parent_device_id", "via_device_id"] as const) {
+  test(`a side-less child Stop leaves its sibling's hold running (${relation})`, async () => {
+    const hass = twoAddressHass(relation);
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const right: MotorEntity = { key: "right-back", up: "button.right_back_up" };
+
+    expect(holdTargetForEntity(hass, "button.right_stop")).toEqual({
+      deviceId: "right",
+      side: undefined,
+      physicalDeviceId: "right",
+      parentDeviceId: "parent",
+    });
+    expect(holdTargetForEntity(hass, "button.parent_stop")?.side).toBe("both");
+
+    hold.start(right, "up", 1, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
+    await tick();
+    stopFromCard(hold, hass, "button.left_stop");
+    expect(hold.heldKey).toBe("right-back");
+
+    stopFromCard(hold, hass, "button.parent_stop");
+    expect(hold.heldKey).toBeNull();
+    expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.parent_stop"]);
+    rec.release();
+    await tick();
+  });
+}
+
+for (const topology of ["missing-parent", "missing-graph"] as const) {
+  test(`a side-less child Stop stays device-scoped with ${topology}`, async () => {
+    const hass = twoAddressHass();
+    hass.devices = topology === "missing-parent"
+      ? {
+          left: { id: "left", parent_device_id: "deleted" },
+          right: { id: "right", parent_device_id: "deleted" },
+        }
+      : {};
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const right: MotorEntity = { key: "right-back", up: "button.right_back_up" };
+
+    expect(holdTargetForEntity(hass, "button.left_stop")?.deviceId).toBe("left");
+    hold.start(right, "up", 1, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
+    await tick();
+    stopFromCard(hold, hass, "button.left_stop");
+    expect(hold.heldKey).toBe("right-back");
+    hold.end(right);
+    expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
+  });
+}
+
+test("a sided Stop translation key names its side when state attributes are missing", () => {
+  const hass = {
+    entities: {
+      "button.stop_left": {
+        entity_id: "button.stop_left",
+        device_id: "bed",
+        platform: "adjustable_bed",
+        translation_key: "stop_left",
+      },
+    },
+    states: {},
+    devices: { bed: { id: "bed" } },
+  } as unknown as HomeAssistant;
+  expect(holdTargetForEntity(hass, "button.stop_left")).toEqual({
+    deviceId: "bed",
+    side: "left",
+    physicalDeviceId: "bed",
+  });
+});
+
+const bothHeld: MotorEntity = {
+  key: "both-back",
+  up: "button.parent_back_up",
+  heldControl: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 },
+};
+
+for (const phase of ["active", "pending-release"] as const) {
+  test(`a child Stop also stops the peer of a started held Both operation (${phase})`, () => {
+    const hass = twoAddressHass();
+    const events: string[] = [];
+    const timers = new FakeTimers();
+    const hold = new MotorHold(heldActions(events), timers);
+
+    hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+    if (phase === "pending-release") hold.end(bothHeld);
+    stopFromCard(hold, hass, "button.left_stop");
+    timers.advance(100);
+
+    expect(hold.heldKey).toBeNull();
+    expect(events).toEqual([
+      "start:both-back:up",
+      "stop:button.left_stop",
+      "stop:button.right_stop",
+    ]);
+  });
+}
+
+test("a child Stop leaves the peer alone before a held Both operation starts", () => {
+  const hass = twoAddressHass();
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const delayed = { ...bothHeld, heldControl: { ...bothHeld.heldControl!, startDelayMs: 100 } };
+
+  hold.start(delayed, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  stopFromCard(hold, hass, "button.left_stop");
+  timers.advance(200);
+
+  expect(events).toEqual(["stop:button.left_stop"]);
+});
+
+test("a peer owned by a newer hold keeps moving after the stale Both release is dropped", () => {
+  const hass = twoAddressHass();
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const right: MotorEntity = {
+    key: "right-back",
+    up: "button.right_back_up",
+    heldControl: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 },
+  };
+
+  hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  hold.end(bothHeld);
+  hold.start(right, "up", 2, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
+  stopFromCard(hold, hass, "button.left_stop");
+  timers.advance(100);
+
+  expect(hold.heldKey).toBe("right-back");
+  expect(events).toEqual([
+    "start:both-back:up",
+    "start:right-back:up",
+    "stop:button.left_stop",
+  ]);
+  hold.abandon();
+});
+
+test("a newer side-less peer release fences the old Both cleanup after graph loss", () => {
+  const hass = twoAddressHass();
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const right: MotorEntity = {
+    key: "right-back",
+    up: "button.right_back_up",
+    heldControl: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 },
+  };
+  hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  hold.end(bothHeld);
+  hass.devices = {};
+  hold.start(right, "up", 2, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
+  hold.end(right);
+  stopFromCard(hold, hass, "button.left_stop");
+  expect(events).toEqual(["start:both-back:up", "start:right-back:up", "stop:button.left_stop"]);
+  timers.advance(100);
+  expect(events).toEqual([
+    "start:both-back:up", "start:right-back:up", "stop:button.left_stop", "stop:button.right_stop",
+  ]);
+});
+
+test("abandon reports the entities it stopped", () => {
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const left: MotorEntity = {
+    key: "left-head",
+    up: "button.left_head_up",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+  };
+  const cover: MotorEntity = {
+    key: "right-back",
+    cover: "cover.right_back",
+    heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 } },
+  };
+
+  expect(hold.abandon()).toEqual([]);
+  hold.start(left, "up", 1, "button.left_stop");
+  hold.end(left);
+  hold.start(cover, "up", 2, "button.right_stop");
+  expect(hold.abandon().sort()).toEqual(["button.left_stop", "cover.right_back"]);
+  timers.advance(100);
+  expect(events).toEqual([
+    "start:left-head:up",
+    "start:right-back:up",
+    "cover-stop:cover.right_back:button.right_stop",
+    "stop:button.left_stop",
+  ]);
+});
+
+test("held cover metadata uses the bounded service with the cover's side", async () => {
+  const calls: unknown[] = [];
+  const hass = {
+    states: { "cover.left_back": { attributes: { bed_side: "left" } } },
+    callService: async (...args: unknown[]) => { calls.push(args); },
+  } as unknown as HomeAssistant;
+  const motor: MotorEntity = {
+    key: "back",
+    cover: "cover.left_back",
+    deviceId: "left-device",
+    holdEntityId: "cover.left_back",
+    heldControls: { up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 } },
+  };
+  await movementHold(hass, motor, "up");
+  expect(calls).toEqual([[
+    "adjustable_bed",
+    "hold_control",
+    { device_id: ["left-device"], control: "back_up", duration: 60, side: "left" },
+  ]]);
+});
