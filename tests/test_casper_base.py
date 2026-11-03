@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.beds.casper_base import CasperBaseControll
 from custom_components.adjustable_bed.beds.casper_sleep import CasperSleepController
 from custom_components.adjustable_bed.casper_base_catalog import ACTIONS, PRODUCTS
 from custom_components.adjustable_bed.casper_base_protocol import GATT, Event, Request
-from custom_components.adjustable_bed.casper_sleep_protocol import NOTIFY, SERVICES, WRITE
+from custom_components.adjustable_bed.casper_sleep_protocol import NOTIFY, SERVICES, WRITE, envelope
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 
@@ -207,6 +207,24 @@ async def test_sensor_mtu_write_type_and_per_device_sequence(kind):
         "val": None,
     }
     assert ctrl._sequence == 2
+
+
+@pytest.mark.parametrize("kind", ["mm", "sxb"])
+async def test_late_reply_to_another_command_cannot_complete_a_query(kind):
+    ctrl, c = make(kind=kind)
+    await ctrl.start_notify()  # sends s_time without awaiting its reply
+    ctrl._receive.reset("q_part")
+    ctrl._pending = asyncio.get_running_loop().create_future()
+
+    late = {"id": 1, "cmd": "s_time", "val": {"error": 0, "type": "bed-sensor", "ver": "1"}}
+    ctrl._on_notification(None, bytearray(envelope(late, 1)))
+    assert not ctrl._pending.done()
+    assert "casper_sleep_part" not in c.controller_state
+
+    reply = {"id": 2, "cmd": "s_part" if kind == "mm" else "q_part", "val": 3}
+    ctrl._on_notification(None, bytearray(envelope(reply, 2)))
+    assert ctrl._pending.result() == reply
+    assert c.controller_state["casper_sleep_part"] == 3
 
 
 async def test_information_nullable_error_ignoring_merge():

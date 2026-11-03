@@ -43,6 +43,15 @@ def envelope(payload: dict[str, Json], sequence: int) -> bytes:
     )
 
 
+def wire_command(kind: SensorKind, action: str) -> str:
+    """Return the JSON `cmd` sent, and echoed by replies, for an HA sensor action."""
+    if action == "q_part" and kind == "mm":
+        return "s_part"
+    if action in ("q_report", "q_report_allow"):
+        return "q_report"
+    return action
+
+
 def command(
     kind: SensorKind,
     action: str,
@@ -52,18 +61,14 @@ def command(
     ts: int = 0,
     zone: str | int = 0,
 ) -> bytes:
-    wire_command = action
     val: Json = None
     if action == "s_time":
         val = {"ts": ts, "tz" if kind == "mm" else "utc": zone}
-    elif action == "q_part" and kind == "mm":
-        wire_command = "s_part"
     elif action == "s_part":
         val = request.part
     elif action == "q_realtime":
         val = {"type": 0, "time": 1}
     elif action in ("q_report", "q_report_allow"):
-        wire_command = "q_report"
         val = {
             "part": request.part,
             "type": request.report_type,
@@ -78,7 +83,7 @@ def command(
                 val["allow"] = 1
     elif action == "s_init":
         val = 0
-    return envelope({"id": sequence, "cmd": wire_command, "val": val}, sequence)
+    return envelope({"id": sequence, "cmd": wire_command(kind, action), "val": val}, sequence)
 
 
 class Receive:

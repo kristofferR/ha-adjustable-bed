@@ -20,6 +20,7 @@ from ..casper_sleep_protocol import (
     command,
     decode_bean,
     mapping,
+    wire_command,
 )
 from .base import BedController, ControllerStateSensorSpec
 
@@ -205,6 +206,18 @@ class CasperSleepController(BedController):
         try:
             data = self._receive.feed(bytes(raw))
             if data is None:
+                return
+            action = self._receive.action
+            reply_cmd = data.get("cmd") if isinstance(data, dict) else None
+            if (
+                action is not None
+                and action != "q_report_allow"
+                and isinstance(reply_cmd, str)
+                and reply_cmd != wire_command(self.kind, action)
+            ):
+                # A late reply to an earlier request, such as the connect-time
+                # s_time, must not be decoded as or complete the current query.
+                _LOGGER.debug("Ignoring %s reply while awaiting %s", reply_cmd, action)
                 return
             self._consume(data)
             if self._pending is not None and not self._pending.done():
