@@ -136,22 +136,28 @@ async def test_write_uses_selected_role_no_retry_and_att_limit() -> None:
     ctrl.client.stop_notify.assert_awaited_once_with(notify)
 
 
-def test_secondary_gates_are_exact_not_legacy_capabilities() -> None:
+async def test_secondary_gates_are_exact_not_legacy_capabilities() -> None:
     ctrl = controller("FTRN")
     assert ctrl.profile.repeat_alarm and ctrl.profile.sleep_kind == "none"
     with pytest.raises(ValueError, match="BLE sleep"):
         ctrl.validate_gmmotor_request(Request("sleep_name"))
-    with pytest.raises(ValueError, match="Light menu"):
-        ctrl.validate_gmmotor_request(Request("light_color"))
-    ctrl._accept(Event("light_capability"))
+    ctrl.write_command = AsyncMock()
     ctrl.validate_gmmotor_request(Request("light_color"))
+    with pytest.raises(ValueError, match="live light_capability"):
+        await ctrl.async_execute_gmmotor_request(Request("light_color"))
+    ctrl.write_command.assert_not_awaited()
+    ctrl._accept(Event("light_capability"))
+    await ctrl.async_execute_gmmotor_request(Request("light_color"))
+    ctrl.write_command.assert_awaited_once()
 
 
-def test_alarm_and_snore_pages_require_their_actual_admission_paths() -> None:
+async def test_alarm_and_snore_pages_require_their_actual_admission_paths() -> None:
     countdown = controller("A0RN")
     mode = countdown.profile.alarm_choices[0][0]
-    with pytest.raises(ValueError, match="live clock"):
-        countdown.validate_gmmotor_request(Request("alarm_at", mode=mode, hour=7))
+    countdown.write_command = AsyncMock()
+    with pytest.raises(ValueError, match="live clock_capability"):
+        await countdown.async_execute_gmmotor_request(Request("alarm_at", mode=mode, hour=7))
+    countdown.write_command.assert_not_awaited()
     countdown._accept(Event("clock_capability"))
     countdown.validate_gmmotor_request(Request("alarm_at", mode=mode, hour=7))
     repeat = controller("FTRN")
@@ -165,3 +171,37 @@ def test_alarm_and_snore_pages_require_their_actual_admission_paths() -> None:
     snore.validate_gmmotor_request(Request("snore_time", value=5))
     with pytest.raises(ValueError, match="slider range"):
         snore.validate_gmmotor_request(Request("snore_count", value=0))
+
+
+@pytest.mark.parametrize("end", ["timeout", "disconnect", "stop", "cancel"])
+async def test_missing_capability_never_writes_and_wait_ends(monkeypatch, end) -> None:
+    ctrl = controller("FTRN")
+    ctrl._subscribed = True
+    ctrl.write_command = AsyncMock()
+    waiting = asyncio.Event()
+    wait = ctrl._capability_changed.wait
+
+    async def observed_wait():
+        waiting.set()
+        await wait()
+
+    monkeypatch.setattr(ctrl._capability_changed, "wait", observed_wait)
+    if end == "timeout":
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.gmmotor._CAPABILITY_TIMEOUT", 0)
+        with pytest.raises(ValueError, match="live light_capability"):
+            await ctrl.async_execute_gmmotor_request(Request("light_off"))
+    else:
+        task = asyncio.create_task(ctrl.async_execute_gmmotor_request(Request("light_off")))
+        await asyncio.wait_for(waiting.wait(), 1)
+        if end == "cancel":
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+        else:
+            if end == "disconnect":
+                ctrl.on_disconnect()
+            else:
+                await ctrl.stop_notify()
+            with pytest.raises(ValueError, match="live light_capability"):
+                await task
+    ctrl.write_command.assert_not_awaited()

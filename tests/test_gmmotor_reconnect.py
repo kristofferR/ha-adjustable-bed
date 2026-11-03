@@ -14,7 +14,9 @@ from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepCont
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import DOMAIN, disconnect_after_command_default_enabled
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.gmmotor_notifications import Event
 from custom_components.adjustable_bed.gmmotor_requests import Request
+from custom_components.adjustable_bed.gmmotor_services import async_register_gmmotor_services
 from custom_components.adjustable_bed.gmmotor_sessions import sleep_intent
 from custom_components.adjustable_bed.gmmotor_sleep_protocol import frame
 from custom_components.adjustable_bed.gmmotor_transport import E0FF, SLEEP_NOTIFY, SLEEP_WRITE
@@ -111,6 +113,66 @@ async def test_memory_program_mode_survives_actual_idle_disconnect_and_new_contr
     packets = [call.args[1] for call in gm_link.write_gatt_char.await_args_list]
     assert bytes.fromhex("6e01002b9a") in packets
     assert bytes.fromhex("6e01002e9d") not in packets
+
+
+@pytest.mark.parametrize(
+    ("product", "fields", "reply"),
+    [
+        ("FTRN", {"operation": "light_off"}, "6e0e00037f"),
+        ("FTRN", {"operation": "light_color", "rgb_color": [255, 0, 0]}, "6e0e00037f"),
+        ("FTRN", {"operation": "light_timeout", "value": 135}, "6e0e00037f"),
+        ("A0RN", {"operation": "alarm_cancel"}, "6e09010078"),
+        ("A0RN", {"operation": "alarm", "value": 30}, "6e09010078"),
+        ("A0RN", {"operation": "alarm_at", "hour": 7}, "6e09010078"),
+        ("FTRN", {"operation": "repeat_alarm", "hour": 7}, "6e09010078"),
+        ("FTRN", {"operation": "repeat_delete"}, "6e09010078"),
+        ("FTRN", {"operation": "repeat_query"}, "6e09010078"),
+    ],
+)
+async def test_gated_service_waits_for_replacement_connection_reply(
+    hass, gm_link, monkeypatch, product, fields, reply
+):
+    c = coordinator(hass, product=product)
+    assert await c.async_connect()
+    first = c.controller
+    first._accept(Event("light_capability"))
+    first._accept(Event("clock_capability"))
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+    assert c.controller is None
+    assert not {"light_capability", "clock_capability"}.intersection(first._events)
+    async_register_gmmotor_services(hass)
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        lambda *_args: ([(c, "both")], []),
+    )
+    queried = asyncio.Event()
+
+    async def write(_characteristic, payload, **_kwargs):
+        if payload == bytes.fromhex("6e0a000179"):
+            queried.set()
+
+    gm_link.write_gatt_char.reset_mock()
+    gm_link.write_gatt_char.side_effect = write
+    if fields["operation"] in ("alarm", "alarm_at", "repeat_alarm"):
+        fields = {**fields, "mode": first.profile.alarm_choices[0][0]}
+    task = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN, "gmmotor", {"device_id": "bed", **fields}, blocking=True
+        )
+    )
+    await asyncio.wait_for(queried.wait(), 1)
+    assert c.controller is not first
+    receive = gm_link.start_notify.await_args.args[1]
+    wrong_reply = "6e09010078" if reply == "6e0e00037f" else "6e0e00037f"
+    receive(SimpleNamespace(uuid="notify"), bytearray.fromhex(wrong_reply))
+    await asyncio.sleep(0)
+    assert not task.done()
+    startup_writes = gm_link.write_gatt_char.await_count
+    receive(SimpleNamespace(uuid="notify"), bytearray.fromhex(reply))
+    await task
+    assert gm_link.write_gatt_char.await_count > startup_writes
+    c._cancel_disconnect_timer()
 
 
 async def test_product_state_isolated_from_other_address_profile_and_admitted_right_side(

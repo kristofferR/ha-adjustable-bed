@@ -135,8 +135,11 @@ Desk height is checked against reported bounds, or the source defaults
 
 ### Specialized actions
 
-Use `adjustable_bed.gmmotor`. The controller validates the selected product,
-session reply and operation fields before scheduling the action.
+Use `adjustable_bed.gmmotor`. Service preflight validates every selected product
+and the operation fields. Before sending a light or alarm action, the executing
+connection waits up to five seconds for its required capability reply, including
+after an idle reconnect. A missing reply rejects the action without sending its
+commands.
 
 | Operation | Exact construction / field meaning |
 |-----------|------------------------------------|

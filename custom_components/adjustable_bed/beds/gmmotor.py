@@ -55,6 +55,8 @@ _LOGGER = logging.getLogger(__name__)
 _WRITE_INTERVAL = 0.1
 _MENU_INTERVAL = 0.3
 _REMAINDER_TIMEOUT = 0.5
+# HA action-readiness bound, not a protocol command interval.
+_CAPABILITY_TIMEOUT = 5.0
 
 
 def _label(action: Action) -> str:
@@ -84,6 +86,7 @@ class GmmotorController(BedController):
         self._buffer = FrameBuffer()
         self._remainder_timer: asyncio.TimerHandle | None = None
         self._events: dict[str, Value] = {}
+        self._capability_changed = asyncio.Event()
         self._alarms: list[dict[str, Value]] = []
         self._invalid_notifications = 0
         self._write_lock = native_write_lock(coordinator.hass)
@@ -351,6 +354,8 @@ class GmmotorController(BedController):
 
     def _accept(self, event: Event) -> None:
         self._events[event.name] = event.value
+        if event.name in ("clock_capability", "light_capability"):
+            self._capability_changed.set()
         if (
             event.name == "sleep_name"
             and isinstance(event.value, list)
@@ -416,11 +421,8 @@ class GmmotorController(BedController):
             )
 
     async def stop_notify(self) -> None:
-        self._cancel_remainder()
-        self._buffer.clear()
-        transport, self._transport = self._transport, None
-        subscribed, self._subscribed = self._subscribed, False
-        self._last_write = None
+        transport, subscribed = self._transport, self._subscribed
+        self.on_disconnect()
         client = self.client
         if subscribed and transport is not None and client is not None and client.is_connected:
             async with self.ble_lock:
@@ -432,8 +434,12 @@ class GmmotorController(BedController):
         self._transport = None
         self._subscribed = False
         self._last_write = None
+        for name in ("clock_capability", "light_capability"):
+            self._events.pop(name, None)
+        self._capability_changed.set()
 
     def validate_gmmotor_request(self, request: Request) -> None:
+        """Preflight product/input gates without trusting a cached session's ACKs."""
         op = request.operation
         if op.startswith(("sensor_", "desk_")):
             raise ValueError("This action requires an independent GM Control sleep module")
@@ -449,19 +455,13 @@ class GmmotorController(BedController):
             raise ValueError("Selected product does not admit repeat alarms")
         if op in ("alarm", "alarm_at", "alarm_cancel") and self.profile.repeat_alarm:
             raise ValueError("This product opens the repeat-alarm page instead of a countdown")
-        if (op.startswith("repeat_") or op in ("alarm", "alarm_at", "alarm_cancel")) and (
-            "clock_capability" not in self._events
-        ):
-            raise ValueError("Alarm menu requires the source's live clock capability reply")
         if (
             op in ("alarm", "alarm_at", "alarm_cancel", "clock_sync")
             and not self.profile.alarm_choices
         ):
             raise ValueError("Selected product has no alarm catalog")
-        if op.startswith("light_") and not (
-            self.profile.has_light and "light_capability" in self._events
-        ):
-            raise ValueError("Light menu is not admitted by this product and session reply")
+        if op.startswith("light_") and not self.profile.has_light:
+            raise ValueError("Light menu is not admitted by this product")
         if op == "light_timeout" and request.value > 900:
             raise ValueError("Light timeout is outside the source's 0 to 900 second slider")
         if op == "light_color" and self.profile.eight_colors:
@@ -490,6 +490,25 @@ class GmmotorController(BedController):
     async def async_execute_gmmotor_request(self, request: Request) -> None:
         self.validate_gmmotor_request(request)
         op = request.operation
+        capability = (
+            "light_capability"
+            if op.startswith("light_")
+            else "clock_capability"
+            if op.startswith("repeat_") or op in ("alarm", "alarm_at", "alarm_cancel")
+            else None
+        )
+        if capability is not None:
+            # Startup sends the queries, but BLE replies can arrive after it
+            # returns. Only the executing connection can admit this action.
+            try:
+                async with asyncio.timeout(_CAPABILITY_TIMEOUT):
+                    while capability not in self._events and self._subscribed:
+                        self._capability_changed.clear()
+                        await self._capability_changed.wait()
+            except TimeoutError:
+                pass
+            if capability not in self._events:
+                raise ValueError(f"GM Control action requires a live {capability} reply")
         packets: tuple[bytes, ...]
         if op == "clock_sync":
             packets = clock_frames(dt_util.now())

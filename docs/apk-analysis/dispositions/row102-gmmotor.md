@@ -289,6 +289,15 @@ names independent of its status listener. Count/time slider ranges and 0–900
 second light timeout are admitted explicitly. Bottom massage countdown follows
 the actual offset-8B getter and D9RM's separate zero-choice opcode.
 
+Service preflight checks product and input admission across all targets. Before
+sending a gated action, the executing controller waits up to five seconds for
+its own clock or light reply from the startup queries. This HA readiness bound
+is not a source protocol interval. Timeout or disconnect rejects the action
+without its command writes; cancellation propagates. Teardown discards these
+connection-owned ACKs. `test_gmmotor_reconnect.py` exercises delayed replies
+through actual service-driven controller replacement for all gated actions;
+`test_gmmotor.py` covers absent replies, timeout, teardown and cancellation.
+
 Every reachable ordinary named control, including massage, memory, position,
 light, music and other catalog functions, uses its own captured material and
 gesture. All reachable unsolicited notification domains are retained as raw
