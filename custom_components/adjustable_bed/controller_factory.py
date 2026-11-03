@@ -18,6 +18,7 @@ from .const import (
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
+    BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -362,6 +363,13 @@ class _ControllerSpec:
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_ESHINE: _ControllerSpec("eshine", "EshineController"),
+    "casper_remote": _ControllerSpec("casper_sleep", "CasperRemoteController"),
+    "casper_sleep_mm": _ControllerSpec(
+        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "mm"})
+    ),
+    "casper_sleep_sxb": _ControllerSpec(
+        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "sxb"})
+    ),
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
@@ -500,6 +508,14 @@ async def create_controller(
         from .beds.comfort_enhancements import ComfortEnhancementsController
 
         return ComfortEnhancementsController(coordinator, layout=protocol_variant or "")
+
+    if bed_type == BED_TYPE_CASPER_BASE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.casper_base", __package__
+        )
+        from .beds.casper_base import CasperBaseController
+
+        return CasperBaseController(coordinator, product=protocol_variant or "")
 
     if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
         # The app's name rule picks the table unless the variant fixes the

@@ -408,7 +408,7 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
-        } else if (key.startsWith("sleepys_app_")) {
+        } else if (key.startsWith("sleepys_app_") || key === "casper_base_action") {
           bed.utility.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
           motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);

@@ -1179,3 +1179,12 @@ test("BedSense app actions retain distinct entities and app indicators", () => {
   expect(bed.massage.timer).toBe("sensor.bed_timer");
   expect(bed.utility).toEqual(["button.bed_cycle", "button.bed_clear"]);
 });
+
+test("Casper Base product actions stay available in the card utility section", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.casper_save_tv", "casper_base_action"),
+    entry("button.casper_fan", "casper_base_action"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.casper_save_tv", "button.casper_fan"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});

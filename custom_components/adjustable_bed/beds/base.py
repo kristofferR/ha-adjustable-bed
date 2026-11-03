@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
+    from ..casper_base_protocol import Request as CasperBaseRequest
     from ..coordinator import AdjustableBedCoordinator
     from ..motion_bed_requests import MotionBedWrite
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
@@ -1606,6 +1607,23 @@ class BedController(ABC):
     def supports_sleeptracker_controls(self) -> bool:
         """Whether typed local Sleeptracker processor actions are available."""
         return False
+
+    @property
+    def supports_casper_base_controls(self) -> bool:
+        """Whether the explicit Casper Base app's named actions are available."""
+        return False
+
+    def validate_casper_base_request(self, request: CasperBaseRequest) -> None:
+        raise NotImplementedError("Casper Base controls are unavailable")
+
+    async def async_perform_casper_base_action(
+        self, action: str, *, save: bool = False, music_page: bool = False
+    ) -> None:
+        """Run one product action through the same typed side-bound controller view."""
+        raise NotImplementedError("Casper Base actions are unavailable")
+
+    async def async_execute_casper_base_request(self, request: CasperBaseRequest) -> None:
+        raise NotImplementedError("Casper Base controls are unavailable")
 
     def validate_sleeptracker_request(self, request: SleeptrackerRequest) -> None:
         """Preflight every target before sending local processor controls."""

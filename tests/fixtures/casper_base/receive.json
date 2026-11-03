@@ -1,0 +1,524 @@
+[
+  {
+    "id": "capability-clock",
+    "parser": "ordinary",
+    "bytes": "6e09010078",
+    "expected": {
+      "event": "clock_available"
+    }
+  },
+  {
+    "id": "capability-light",
+    "parser": "ordinary",
+    "bytes": "6e0e00037f",
+    "expected": {
+      "event": "light_available"
+    }
+  },
+  {
+    "id": "capability-aroma",
+    "parser": "ordinary",
+    "bytes": "6e1a000189",
+    "expected": {
+      "event": "aroma_available"
+    }
+  },
+  {
+    "id": "ack-clock-add",
+    "parser": "ordinary",
+    "bytes": "6e07010177",
+    "expected": {
+      "event": "clock_add_ok"
+    }
+  },
+  {
+    "id": "ack-clock-cancel",
+    "parser": "ordinary",
+    "bytes": "6e07010278",
+    "expected": {
+      "event": "clock_cancel_ok"
+    }
+  },
+  {
+    "id": "capability-music",
+    "parser": "ordinary",
+    "bytes": "6e16010186",
+    "expected": {
+      "event": "music_available"
+    }
+  },
+  {
+    "id": "capability-detection",
+    "parser": "ordinary",
+    "bytes": "6e90c101c0",
+    "expected": {
+      "event": "detection_available"
+    }
+  },
+  {
+    "id": "capability-snore",
+    "parser": "ordinary",
+    "bytes": "6e2100008f",
+    "expected": {
+      "event": "snore_available"
+    }
+  },
+  {
+    "id": "version",
+    "parser": "ordinary",
+    "bytes": "6e90000700",
+    "expected": {
+      "event": "protocol_version",
+      "value": 7
+    }
+  },
+  {
+    "id": "bed-mode-low-nibble",
+    "parser": "ordinary",
+    "bytes": "6e90120700",
+    "expected": {
+      "event": "bed_mode",
+      "value": 2
+    }
+  },
+  {
+    "id": "motor",
+    "parser": "ordinary",
+    "bytes": "6e90352a00",
+    "expected": {
+      "event": "motor",
+      "no": 1,
+      "status": 1,
+      "angle": 42
+    }
+  },
+  {
+    "id": "motor-boundary",
+    "parser": "ordinary",
+    "bytes": "6e903fff00",
+    "expected": {
+      "event": "motor",
+      "no": 3,
+      "status": 3,
+      "angle": 255
+    }
+  },
+  {
+    "id": "massage-packed",
+    "parser": "ordinary",
+    "bytes": "6e90a95500",
+    "expected": {
+      "event": "massage",
+      "mode": 4,
+      "massage1": 5,
+      "massage2": 2,
+      "massage3": 5
+    }
+  },
+  {
+    "id": "accessories-on",
+    "parser": "ordinary",
+    "bytes": "6e90b1e000",
+    "expected": {
+      "event": "accessories",
+      "usb": true,
+      "play": true,
+      "music_follow": true,
+      "bluetooth": true
+    }
+  },
+  {
+    "id": "accessories-off",
+    "parser": "ordinary",
+    "bytes": "6e90b00000",
+    "expected": {
+      "event": "accessories",
+      "usb": false,
+      "play": false,
+      "music_follow": false,
+      "bluetooth": false
+    }
+  },
+  {
+    "id": "detection-valid",
+    "parser": "ordinary",
+    "bytes": "6e90c24000",
+    "expected": {
+      "event": "detection_status",
+      "value": "repeat"
+    }
+  },
+  {
+    "id": "detection-default",
+    "parser": "ordinary",
+    "bytes": "6e90c2f000",
+    "expected": {
+      "event": "detection_status",
+      "value": "start"
+    }
+  },
+  {
+    "id": "detection-details-empty",
+    "parser": "ordinary",
+    "bytes": "6e90c3a100",
+    "expected": {
+      "event": "detection_details",
+      "value": {},
+      "logged_status": "normal"
+    }
+  },
+  {
+    "id": "detection-details-default",
+    "parser": "ordinary",
+    "bytes": "6e90c6af00",
+    "expected": {
+      "event": "detection_details",
+      "value": {},
+      "logged_status": "notPluggedIn"
+    }
+  },
+  {
+    "id": "volume",
+    "parser": "ordinary",
+    "bytes": "6e90d11000",
+    "expected": {
+      "event": "music_volume",
+      "value": 16
+    }
+  },
+  {
+    "id": "shake-gear",
+    "parser": "ordinary",
+    "bytes": "6e90d20300",
+    "expected": {
+      "event": "shake_gear",
+      "value": 3
+    }
+  },
+  {
+    "id": "seven-byte-height",
+    "parser": "ordinary",
+    "bytes": "6e900000062500",
+    "expected": {
+      "event": "desk_height",
+      "current_inch": 63.7,
+      "current_cm": 63.7
+    }
+  },
+  {
+    "id": "sixteen-byte-no-header",
+    "parser": "ordinary",
+    "bytes": "0000000102030405060708090a0b0c00",
+    "expected": {
+      "event": "desk_bounds",
+      "min_inch": 10.2,
+      "max_inch": 30.4,
+      "min_cm": 50.6,
+      "max_cm": 70.8,
+      "current_inch": 91.0,
+      "current_cm": 111.2
+    }
+  },
+  {
+    "id": "unknown",
+    "parser": "ordinary",
+    "bytes": "6e90700100",
+    "expected": null
+  },
+  {
+    "id": "capability-bad-checksum",
+    "parser": "ordinary",
+    "bytes": "6e09010000",
+    "expected": null
+  },
+  {
+    "id": "short",
+    "parser": "ordinary",
+    "bytes": "6e20",
+    "expected": null
+  },
+  {
+    "id": "motor-height-angle",
+    "parser": "extra",
+    "bytes": "6e200c01020300012c022af9",
+    "expected": {
+      "event": "motor_extra",
+      "height": 30.0,
+      "type": 2,
+      "angle": 42
+    }
+  },
+  {
+    "id": "motor-no-angle",
+    "parser": "extra",
+    "bytes": "6e200b0102020000ff019e",
+    "expected": {
+      "event": "motor_extra",
+      "height": 25.5,
+      "type": 1,
+      "angle": -1
+    }
+  },
+  {
+    "id": "massage-pairs",
+    "parser": "extra",
+    "bytes": "6e200d020102010307080205ba",
+    "expected": {
+      "event": "massage_strength_pairs",
+      "values": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          5
+        ]
+      ]
+    }
+  },
+  {
+    "id": "massage-mode",
+    "parser": "extra",
+    "bytes": "6e20090202030006a4",
+    "expected": {
+      "event": "massage_mode",
+      "value": 6
+    }
+  },
+  {
+    "id": "massage-frequency",
+    "parser": "extra",
+    "bytes": "6e20090204020004a3",
+    "expected": {
+      "event": "massage_frequency",
+      "value": 4
+    }
+  },
+  {
+    "id": "follow-intensity",
+    "parser": "extra",
+    "bytes": "6e20090205030007a8",
+    "expected": {
+      "event": "music_follow_intensity",
+      "value": 7
+    }
+  },
+  {
+    "id": "follow-power",
+    "parser": "extra",
+    "bytes": "6e20090206020002a3",
+    "expected": {
+      "event": "music_follow_power",
+      "value": false
+    }
+  },
+  {
+    "id": "white-led",
+    "parser": "extra",
+    "bytes": "6e200903010300019f",
+    "expected": {
+      "event": "white_led_power",
+      "value": true
+    }
+  },
+  {
+    "id": "rgb-color",
+    "parser": "extra",
+    "bytes": "6e200b04010200010203a6",
+    "expected": {
+      "event": "rgb_color",
+      "rgb": [
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  {
+    "id": "rgb-time",
+    "parser": "extra",
+    "bytes": "6e200a04020200012ccd",
+    "expected": {
+      "event": "rgb_timer",
+      "minutes": 104
+    }
+  },
+  {
+    "id": "rgb-sensor",
+    "parser": "extra",
+    "bytes": "6e20090403030001a2",
+    "expected": {
+      "event": "rgb_sensor",
+      "value": true
+    }
+  },
+  {
+    "id": "rgb-power",
+    "parser": "extra",
+    "bytes": "6e20090404020000a1",
+    "expected": {
+      "event": "rgb_power",
+      "value": false
+    }
+  },
+  {
+    "id": "alarm-list",
+    "parser": "extra",
+    "bytes": "6e200d0501020100071e45818f",
+    "expected": {
+      "event": "alarm_list",
+      "id": 1,
+      "reserved": 0,
+      "hour": 7,
+      "minute": 30,
+      "mode": 69,
+      "mask": 129
+    }
+  },
+  {
+    "id": "alarm-update",
+    "parser": "extra",
+    "bytes": "6e200d0501030701173b2efe2a",
+    "expected": {
+      "event": "alarm_update",
+      "id": 7,
+      "reserved": 1,
+      "hour": 23,
+      "minute": 59,
+      "mode": 46,
+      "mask": 254
+    }
+  },
+  {
+    "id": "snore",
+    "parser": "extra",
+    "bytes": "6e20090601020001a1",
+    "expected": {
+      "event": "snore_detection",
+      "value": true
+    }
+  },
+  {
+    "id": "exit",
+    "parser": "extra",
+    "bytes": "6e20090602030000a2",
+    "expected": {
+      "event": "bed_exit",
+      "value": false
+    }
+  },
+  {
+    "id": "sleep-adv",
+    "parser": "extra",
+    "bytes": "6e200c06030200484a2d3195",
+    "expected": {
+      "event": "sleep_name_bytes",
+      "value": [
+        72,
+        74,
+        45,
+        49
+      ]
+    }
+  },
+  {
+    "id": "music-play",
+    "parser": "extra",
+    "bytes": "6e20090901020001a4",
+    "expected": {
+      "event": "music_play",
+      "value": true
+    }
+  },
+  {
+    "id": "music-bt",
+    "parser": "extra",
+    "bytes": "6e20090903030002a8",
+    "expected": {
+      "event": "music_bluetooth",
+      "value": false
+    }
+  },
+  {
+    "id": "press-mode",
+    "parser": "extra",
+    "bytes": "6e20090b01020003a8",
+    "expected": {
+      "event": "press_mode",
+      "value": 3
+    }
+  },
+  {
+    "id": "same-control",
+    "parser": "extra",
+    "bytes": "6e20090b02030002a9",
+    "expected": {
+      "event": "same_control",
+      "value": true
+    }
+  },
+  {
+    "id": "other-control",
+    "parser": "extra",
+    "bytes": "6e20090b02030001a8",
+    "expected": {
+      "event": "same_control",
+      "value": false
+    }
+  },
+  {
+    "id": "desk",
+    "parser": "extra",
+    "bytes": "6e20140f0102180102030405060708090a0b0c1a",
+    "expected": {
+      "event": "desk_extra",
+      "long_press": true,
+      "reset": true,
+      "min_inch": 10.2,
+      "max_inch": 30.4,
+      "min_cm": 50.6,
+      "max_cm": 70.8,
+      "current_inch": 91.0,
+      "current_cm": 111.2,
+      "angles": [
+        0,
+        10,
+        0
+      ]
+    }
+  },
+  {
+    "id": "desk-angles",
+    "parser": "extra",
+    "bytes": "6e20170f0903000102030405060708090a0b0c16212c71",
+    "expected": {
+      "event": "desk_extra",
+      "long_press": false,
+      "reset": false,
+      "min_inch": 10.2,
+      "max_inch": 30.4,
+      "min_cm": 50.6,
+      "max_cm": 70.8,
+      "current_inch": 91.0,
+      "current_cm": 111.2,
+      "angles": [
+        22,
+        33,
+        44
+      ]
+    }
+  },
+  {
+    "id": "write-ignored",
+    "parser": "extra",
+    "bytes": "6e20090404010001a1",
+    "expected": null
+  },
+  {
+    "id": "unknown-category",
+    "parser": "extra",
+    "bytes": "6e20090701020001a2",
+    "expected": null
+  }
+]

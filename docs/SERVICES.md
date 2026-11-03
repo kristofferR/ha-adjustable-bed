@@ -474,3 +474,11 @@ MC2/MC3 only); `massage` defaults to false. Paired `side` routing is supported.
 Disable with `enabled: false`, without a time. `adjustable_bed.sync_clock`
 synchronizes the clock and sends the app query. There is no alarm feedback or
 phone scheduler. See [packet behavior and limits](beds/comfort-enhancements.md#clock-and-alarm).
+
+### Casper Base
+
+`adjustable_bed.casper_base` provides capability-validated alarm, light, automatic
+external-detector, sleep sensor and remote-finder operations. Select a `device_id`
+and `operation`; paired targets are validated together before sending commands.
+The [Casper Base guide](beds/casper-base.md#configuration-actions) lists each
+operation's fields and the separate sensor/remote entry types.

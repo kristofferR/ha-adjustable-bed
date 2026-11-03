@@ -927,3 +927,11 @@ generic motor count, massage and angle-sensing choices are hidden. The original
 Bluetooth name and layout belong to each side of a two-address pair. There is no
 single-address left/right command. See [BedSense](beds/bedsense.md) for all nine
 layouts, memory indicators and app-labelled massage/light actions.
+
+### Casper Base
+
+Choose the explicit **Casper Base app** profile and its PRO/MAX product. Other
+stored-product choices are conditional records from this package, not inferred
+app compatibility. The product owns the motor layout and accessory controls.
+Configure two-address paired sides separately. Sleep sensors and the RCRM handset
+use separate entries. See the [Casper Base guide](beds/casper-base.md).

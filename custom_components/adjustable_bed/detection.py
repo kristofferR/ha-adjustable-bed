@@ -566,6 +566,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     'ergo_slim': 'Ergo Slim',
     'tempur_au': 'TEMPUR AU',
     BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
+    "casper_remote": "Casper Base remote finder (RCRM handset)",
+    "casper_base": "Casper Base app (select product)",
+    "casper_sleep_mm": "Casper Base sleep sensor (RM- / MM)",
+    "casper_sleep_sxb": "Casper Base sleep sensor (HJ- / SXB)",
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 
@@ -1203,6 +1207,15 @@ def _detect_bed_type_detailed(
     # Handle devices that report None for service_uuids
     raw_uuids = service_info.service_uuids
     service_uuids = [str(uuid).lower() for uuid in raw_uuids] if raw_uuids else []
+    # The Casper Base sensor classifier uses case-sensitive startsWith; its bed
+    # product codes and the shared service UUID cannot select an app layout.
+    raw_name = service_info.name or ""
+    if raw_name.startswith(("RM-", "HJ-")):
+        return DetectionResult(
+            bed_type="casper_sleep_mm" if raw_name.startswith("RM-") else "casper_sleep_sxb",
+            confidence=0.9,
+            signals=["name:casper_base_sleep_sensor"],
+        )
     device_name = (service_info.name or "").lower()
     signals: list[str] = []
     detected_remote = detect_richmat_remote_from_name(service_info.name)

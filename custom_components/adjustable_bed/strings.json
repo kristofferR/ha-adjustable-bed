@@ -1061,7 +1061,7 @@
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
-      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
+      "single_address_pairing_unsupported": "This bed's current Bluetooth protocol does not expose paired-side controls.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
       "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
@@ -1092,7 +1092,8 @@
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
       "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
-      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
+      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -2811,6 +2812,9 @@
       },
       "bedsense_light": {
         "name": "{action}"
+      },
+      "casper_base_action": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -3203,6 +3207,9 @@
       },
       "bedsense_back_and_leg": {
         "name": "Back and leg"
+      },
+      "motor_3": {
+        "name": "Motor 3"
       }
     },
     "sensor": {
@@ -4204,6 +4211,45 @@
       },
       "bedsense_wave_steps": {
         "name": "Wave frequency (app steps)"
+      },
+      "casper_sleep_R_body_move": {
+        "name": "Right body movement"
+      },
+      "casper_sleep_R_heart": {
+        "name": "Right heart rate"
+      },
+      "casper_remote": {
+        "name": "Remote finder state"
+      },
+      "casper_sleep_L_on_bed": {
+        "name": "Left on bed"
+      },
+      "casper_sleep_R_on_bed": {
+        "name": "Right on bed"
+      },
+      "casper_sleep_L_heart": {
+        "name": "Left heart rate"
+      },
+      "casper_sleep": {
+        "name": "Sleep sensor state"
+      },
+      "casper_sleep_L_body_move": {
+        "name": "Left body movement"
+      },
+      "casper_sleep_R_snoring": {
+        "name": "Right snoring"
+      },
+      "casper_sleep_L_breath": {
+        "name": "Left breathing rate"
+      },
+      "casper_sleep_L_snoring": {
+        "name": "Left snoring"
+      },
+      "casper_sleep_R_breath": {
+        "name": "Right breathing rate"
+      },
+      "casper_base": {
+        "name": "Casper Base state"
       }
     },
     "light": {
@@ -6687,7 +6733,7 @@
     },
     "glideaway_set_alarm": {
       "name": "Glideaway Motion alarm",
-      "description": "Set or disable the MOTION 400/450/500/600 bed alarm. Uses the app's unusual automatic weekday selection and clock offsets. Time is the transmitted 24-hour value, one hour below the app's 1\u201312 wheel label. Hardware unverified.",
+      "description": "Set or disable the MOTION 400/450/500/600 bed alarm. Uses the app's unusual automatic weekday selection and clock offsets. Time is the transmitted 24-hour value, one hour below the app's 1–12 wheel label. Hardware unverified.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -6707,6 +6753,10 @@
           "description": "No bed movement, Memory A (memory_1), or Memory B (memory_2)."
         }
       }
+    },
+    "casper_base": {
+      "name": "Casper Base controls",
+      "description": "Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields."
     }
   },
   "exceptions": {

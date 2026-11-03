@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
+from . import casper_base_catalog as _casper_base_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
 
 DOMAIN: Final = "adjustable_bed"
@@ -477,7 +478,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS}
+    {BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -489,6 +490,16 @@ BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.si
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
+BED_TYPE_CASPER_BASE: Final = "casper_base"
+BED_TYPE_CASPER_SLEEP_MM: Final = "casper_sleep_mm"
+BED_TYPE_CASPER_SLEEP_SXB: Final = "casper_sleep_sxb"
+CASPER_BASE_VARIANTS: Final = {
+    key: value[0] + (" (stored profile)" if key not in ("casperpro", "caspermax") else "")
+    for key, value in _casper_base_catalog.PRODUCTS.items()
+}
+CASPER_BASE_SIDE_VARIANTS: Final = frozenset(
+    key for key, value in _casper_base_catalog.PRODUCTS.items() if value[11]
+)
 BED_TYPE_RICHMAT_REVIVE: Final = "richmat_revive"  # com.richmat.revive3
 BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.best_mattress
 BED_TYPE_RICHMAT_BLVD_HOME: Final = "richmat_blvd_home"  # com.richmat.blvd_home
@@ -618,6 +629,8 @@ SUPPORTED_BED_TYPES: Final = [
     *sorted(CLUSTER033_BED_TYPES),
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
+    "casper_remote",
+    BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,
@@ -2591,6 +2604,7 @@ OKIN_64BIT_VARIANTS: Final = {
 
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
+    *CASPER_BASE_VARIANTS,
     *COMFORT_ENHANCEMENTS_VARIANTS,
     *(v for v in BEDSENSE_VARIANTS if v != "auto"),
     VARIANT_AUTO,
@@ -2865,6 +2879,8 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_BEDSENSE,
+        "casper_remote",
+        BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,

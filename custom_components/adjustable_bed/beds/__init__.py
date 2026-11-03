@@ -12,6 +12,8 @@ from .base import BedController
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .bedsense import BedSenseController as BedSenseController
+    from .casper_base import CasperBaseController as CasperBaseController
+    from .casper_sleep import CasperSleepController as CasperSleepController
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
@@ -104,6 +106,8 @@ _EXPORT_MODULES = {
     'RowControlController': 'row_control',
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
+    "CasperBaseController": "casper_base",
+    "CasperSleepController": "casper_sleep",
     "ComfortEnhancementsController": "comfort_enhancements",
     "EshineController": "eshine",
     "GlideawayMotionController": "glideaway_motion",

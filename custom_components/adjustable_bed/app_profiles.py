@@ -132,6 +132,10 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # OCTO motor layout comes from its advertised capability record, with an
     # OCTO-specific explicit override in the profile's own setup/options UI.
     BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
+    "casper_remote": GENERIC_FIELDS,
+    "casper_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
+    "casper_sleep_mm": GENERIC_FIELDS,
+    "casper_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -212,6 +216,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     'row_control': SideProfile('ROW Control', frozenset({CONF_PRODUCT_TYPE})),
     'ergo_slim': SideProfile('Ergo Slim', frozenset({CONF_PRODUCT_TYPE})),
     'tempur_au': SideProfile('TEMPUR AU', frozenset({CONF_PRODUCT_TYPE})),
+    "casper_base": SideProfile("Casper Base product", variant_owned=True),
+    "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
+    "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
     BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
     BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
