@@ -487,19 +487,41 @@ def test_cu170_receipt_then_spontaneous_status_uses_latest_state():
     assert controller.protocol_diagnostics["sleep_timer_armed"] is True
 
 
-@pytest.mark.parametrize("mutation", ["short", "footer", "duplicate"])
+@pytest.mark.parametrize("mutation", ["short", "duplicate"])
 def test_malformed_cu170_status_cannot_change_known_state(mutation):
     controller = make_controller()
     report_cu170(controller, 0x20000)
     payload = cu170_status(0)
     if mutation == "short":
         payload.pop()
-    elif mutation == "footer":
-        payload[10] = 0
     else:
         payload[6] = 1
     controller._handle_notification(LEGGETT_OKIN_NOTIFY_CHAR_UUID, payload)
     assert controller.protocol_diagnostics["under_bed_lights_on"] is True
+
+
+def test_cu170_status_from_massage_wave_mode_log_updates_state():
+    """Hardware frames logged with massage wave mode on, then off (2026-10-01)."""
+    controller = make_controller()
+    updates = controller._coordinator.handle_controller_state_updates
+    for frame in [
+        "090b800200008002000001000020002000000000",
+        "090b000200000002000001000020002000000000",
+        "090b800200008002000001ff010000000000fd00",
+        "090b000200000002000001ff010000000000fd00",
+        "090b000000000000000001200000000000000000",
+        "090b0002000000020000016e0006014000000000",
+        "090b0000000000000000016e0006014000000000",
+        "090b0002000000020000016e0006014000000000",
+        "090b000000000000000001000100000000000000",
+        "090b8000000080000000ff400000000000000000",
+        "090b0000000000000000ff000002002100000000",
+    ]:
+        payload = bytearray.fromhex(frame)
+        mask = int.from_bytes(payload[2:6], "big")
+        controller._handle_notification(LEGGETT_OKIN_NOTIFY_CHAR_UUID, payload)
+        assert controller.protocol_diagnostics["under_bed_lights_on"] is bool(mask & 0x20000)
+        assert updates.call_args.args[0]["leggett_led_mask"] == mask
 
 
 @pytest.mark.parametrize("profile", ["prodigy2", "prodigy2l", "useries"])

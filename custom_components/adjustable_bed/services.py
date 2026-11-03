@@ -13,7 +13,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine
+from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
+from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, cast
 
@@ -27,13 +28,16 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
+from .command_scheduler import ALL_COMMAND_RESOURCES, current_command_context
 from .const import (
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -45,6 +49,7 @@ from .const import (
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
@@ -65,6 +70,7 @@ from .pairing import is_paired, iter_children, pair_member_addresses
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
+    from .beds.comfort_enhancements import ComfortEnhancementsController
     from .beds.limoss_remote import LimossRemoteController
     from .beds.serenity import ZSeriesController
     from .beds.svane import SvaneHoldAdmission
@@ -103,6 +109,7 @@ SERVICE_LOGICDATA_RENAME = "logicdata_rename"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
 SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
+SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 ATTR_SLOT = "slot"
@@ -495,6 +502,9 @@ async def _execute_sided(
     skip_disconnect: bool = False,
     resource: str | None = None,
     resources: Collection[str] | None = None,
+    expected_stop_epoch: int | None = None,
+    expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
+    expected_stop_epochs: Mapping[str, int] | None = None,
 ) -> None:
     """Run a command on the targeted side(s).
 
@@ -509,15 +519,27 @@ async def _execute_sided(
             skip_disconnect=skip_disconnect,
             resource=resource,
             resources=resources,
+            expected_pair_generations=expected_pair_generations,
+            expected_stop_epochs=expected_stop_epochs,
         )
     else:
-        await coordinator.async_execute_controller_command(
-            command_fn,
-            cancel_running=cancel_running,
-            skip_disconnect=skip_disconnect,
-            resource=resource,
-            resources=resources,
-        )
+        if expected_stop_epoch is None:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+            )
+        else:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                expected_stop_epoch=expected_stop_epoch,
+            )
 
 
 async def _release_preflighted(preflighted: PreflightedSides) -> None:
@@ -1129,7 +1151,19 @@ async def _timed_move_plan(
                 f"{'head' if motor == 'back' else 'feet'}_{direction}", duration_ms,
             )
 
-        # Get the appropriate move function based on direction
+        # The explicit app profile's direction is a held route. timed_move has
+        # an elapsed duration, so delegate its bounded window and release to
+        # the controller instead of treating one press frame as a full move.
+        hold_control = None
+        if coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP and spec.hold is not None:
+            hold_control = (
+                spec.hold.up_control if direction == "up" else spec.hold.down_control
+            )
+            try:
+                controller.validate_hold_control(hold_control, duration_ms)
+            except ValueError as err:
+                raise ServiceValidationError(str(err)) from err
+
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
         stop_fn = spec.stop_fn
 
@@ -1160,6 +1194,7 @@ async def _timed_move_plan(
             *,
             _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
             _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
+            _hold_control: str | None = hold_control,
         ) -> None:
             """Execute movement for specified duration, always sending stop."""
             with contextlib.ExitStack() as admission_scope:
@@ -1168,28 +1203,35 @@ async def _timed_move_plan(
                 controller_timed_out = False
                 try:
                     await ctrl.prepare_for_movement()
-                    deadline = asyncio.timeout(duration_ms / 1000)
-                    try:
-                        async with deadline:
-                            try:
-                                await _move_fn(ctrl)
-                            except TimeoutError:
-                                # Controller cleanup can time out while responding
-                                # to our cancellation; that is still a real failure.
-                                controller_timed_out = True
+                    if _hold_control is not None:
+                        await ctrl.hold_control(_hold_control, duration_ms)
+                    else:
+                        deadline = asyncio.timeout(duration_ms / 1000)
+                        try:
+                            async with deadline:
+                                try:
+                                    await _move_fn(ctrl)
+                                except TimeoutError:
+                                    # Controller cleanup can time out while responding
+                                    # to our cancellation; that is still a real failure.
+                                    controller_timed_out = True
+                                    raise
+                        except TimeoutError:
+                            if controller_timed_out or not deadline.expired():
                                 raise
-                    except TimeoutError:
-                        if controller_timed_out or not deadline.expired():
-                            raise
                 finally:
                     # Release is outside the movement ceiling. Keep the wire lane
                     # until it settles even if the caller is cancelled during STOP.
-                    stop_task = asyncio.create_task(_stop_fn(ctrl))
-                    try:
-                        await asyncio.shield(stop_task)
-                    except asyncio.CancelledError:
-                        await stop_task
-                        raise
+                    context = current_command_context()
+                    # Leave a completed controller release for its admitted
+                    # external STOP owner to consume after this wrapper returns.
+                    if context is None or not context.cleanup_stop_sent:
+                        stop_task = asyncio.create_task(_stop_fn(ctrl))
+                        try:
+                            await asyncio.shield(stop_task)
+                        except asyncio.CancelledError:
+                            await stop_task
+                            raise
 
         return (
             timed_movement,
@@ -1734,6 +1776,43 @@ async def handle_hold_control(call: ServiceCall) -> None:
         await _hold_targets(targets, control, duration_ms)
 
 
+@dataclass(frozen=True, slots=True)
+class _HoldAdmission:
+    """Cancellation state captured before hold capability preflight awaits."""
+
+    stop_epoch: int | None = None
+    pair_generations: Mapping[str, tuple[int, ...]] | None = None
+    stop_epochs: Mapping[str, int] | None = None
+
+
+def _target_stop_epoch(target: BedChild) -> int | None:
+    """Read the owning physical scheduler's STOP epoch for one service target."""
+    owner = getattr(target, "_single_inner", target)
+    scheduler = getattr(owner, "_command_scheduler", None)
+    epoch = getattr(scheduler, "stop_epoch", None)
+    return epoch if isinstance(epoch, int) else None
+
+
+def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
+    """Snapshot STOP ownership before a hold's possibly blocking preflight."""
+    if not isinstance(coordinator, PairedBedCoordinator):
+        return _HoldAdmission(stop_epoch=_target_stop_epoch(coordinator))
+
+    pair_generations: dict[str, tuple[int, ...]] = {}
+    stop_epochs: dict[str, int] = {}
+    for target_side, target in coordinator._targets_for(side):
+        pair_generations[target_side] = coordinator._pair_cancel_generation(
+            target_side, ALL_COMMAND_RESOURCES
+        )
+        stop_epoch = _target_stop_epoch(target)
+        if stop_epoch is not None:
+            stop_epochs[target_side] = stop_epoch
+    return _HoldAdmission(
+        pair_generations=pair_generations,
+        stop_epochs=stop_epochs or None,
+    )
+
+
 def _require_held_control(
     target: BedChild, controller: BedController | SideBoundController, control: str
 ) -> None:
@@ -1769,17 +1848,30 @@ async def _hold_targets(
         _require_held_control(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
 
+    admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController | SideBoundController) -> None:
         await controller.hold_control(control, duration_ms)
 
     try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, hold, cancel_running=True)
+        for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            await _execute_sided(
+                coordinator,
+                side,
+                hold,
+                cancel_running=True,
+                expected_stop_epoch=admission.stop_epoch,
+                expected_pair_generations=admission.pair_generations,
+                expected_stop_epochs=admission.stop_epochs,
+            )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
+    else:
+        # A stale scheduler admission is a normal no-op after STOP, so restore
+        # the idle deadline on links opened during preflight on either path.
+        await _release_preflighted(preflighted)
 
 
 CUSTOMATIC_MEMORY_ACTIONS = ("flat", "zg", "anti", "program", "incline")
@@ -2457,6 +2549,37 @@ async def _execute_zseries_alarm(
         raise
 
 
+async def handle_glideaway_set_alarm(call: ServiceCall) -> None:
+    """Use the Glideaway app's automatic day selection and exact clock encoding."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    if enabled and alarm_time is None:
+        raise ServiceValidationError("Choose a Glideaway alarm time")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("Glideaway alarms use minute precision")
+    targets = _call_targets(call)
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_GLIDEAWAY_MOTION:
+                raise ServiceValidationError(f"Device '{target.name}' is not a Glideaway Motion app bed")
+    preflighted = await _preflight_capability(targets, "supports_clock_alarm", "Glideaway alarms")
+
+    async def program(controller: BedController | SideBoundController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=enabled, weekdays=(),
+            hour=alarm_time.hour if alarm_time is not None else 0,
+            minute=alarm_time.minute if alarm_time is not None else 0,
+            preset=call.data[ATTR_WAKE_MODE],
+        )
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, program)
+    except (Exception, asyncio.CancelledError):
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_zseries_set_alarm(call: ServiceCall) -> None:
     """Set or clear the Z-Series app alarm, using Home Assistant's local time."""
     enabled = call.data[ATTR_ENABLED]
@@ -2687,6 +2810,41 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
             await _execute_sided(
                 coordinator, side, program, cancel_running=False, resource="configuration"
             )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
+    """Program the app's current-day alarm, validating every side before writes."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    if enabled and alarm_time is None:
+        raise ServiceValidationError("Choose an alarm time")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("Comfort Enhancements alarms use minute precision")
+    fields = {
+        "enabled": enabled,
+        "hour": alarm_time.hour if alarm_time is not None else 0,
+        "minute": alarm_time.minute if alarm_time is not None else 0,
+        "memory": call.data["memory"],
+        "massage": call.data["massage"],
+    }
+    targets = _call_targets(call)
+
+    def validate(target: BedChild, controller: BedController | SideBoundController) -> None:
+        if target.bed_type != BED_TYPE_COMFORT_ENHANCEMENTS:
+            raise ServiceValidationError("Choose a Comfort Enhancements app controller")
+        cast("ComfortEnhancementsController", controller).validate_alarm(**fields)
+
+    preflighted = await _preflight_each(targets, validate)
+
+    async def program(controller: BedController | SideBoundController) -> None:
+        await cast("ComfortEnhancementsController", controller).set_alarm(**fields)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, program, cancel_running=False, resource="configuration")
     except Exception:
         await _release_preflighted(preflighted)
         raise
@@ -3439,7 +3597,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
         SERVICE_HOLD_CONTROL,
         handle_hold_control,
         # Each target's controller declares its valid controls.
-        schema=vol.Schema({**hold_fields, vol.Required(ATTR_CONTROL): cv.string}),
+        schema=vol.Schema(
+            {
+                **hold_fields,
+                vol.Required(ATTR_CONTROL): cv.string,
+            }
+        ),
     )
     hass.services.async_register(
         DOMAIN,
@@ -3448,6 +3611,17 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {**hold_fields, vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS)}
         ),
+    )
+    hass.services.async_register(
+        DOMAIN, "comfort_enhancements_set_alarm", handle_comfort_enhancements_set_alarm,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_TIME): cv.time,
+            vol.Optional("memory", default=0): vol.All(vol.Coerce(int), vol.In((0, 1, 2))),
+            vol.Optional("massage", default=False): cv.boolean,
+            **SIDE_FIELD,
+        }),
     )
     device_fields = {
         vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
@@ -3514,6 +3688,16 @@ async def async_register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, SERVICE_FSM_RELAX_CALIBRATE, handle_fsm_relax_calibrate,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                            vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,))), **SIDE_FIELD}))
+    hass.services.async_register(
+        DOMAIN, SERVICE_GLIDEAWAY_SET_ALARM, handle_glideaway_set_alarm,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_TIME): cv.time,
+            vol.Optional(ATTR_WAKE_MODE, default="none"): vol.In(("none", "memory_1", "memory_2")),
+            **SIDE_FIELD,
+        }),
+    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_ZSERIES_SET_ALARM,

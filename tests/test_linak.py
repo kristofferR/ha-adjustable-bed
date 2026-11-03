@@ -1023,6 +1023,113 @@ class TestLinakCorpusProfiles:
             LinakCommands.MOVE_HEAD_UP,
         ]
 
+    async def test_unanswered_mask_read_falls_back_to_configured_layout(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A mask read that never answers (#714) is bounded and keeps 3.x features."""
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.linak.LINAK_CAPABILITY_MASK_READ_TIMEOUT_S",
+            0,
+        )
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+
+        async def read(uuid: str) -> bytes:
+            if str(uuid).lower() == LINAK_POSITION_MASK_UUID:
+                await asyncio.Event().wait()
+            return await original_read(uuid)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        assert controller.controller_entity_discovery_complete
+        assert controller.memory_slot_count == 4
+        assert [spec.key for spec in controller.position_number_specs] == [
+            "back_position",
+            "legs_position",
+        ]
+        assert mock_config_entry.data["capabilities"]["linak"] == {
+            "profile": "bed_control",
+            "model_variant": "advanced",
+            "actuator_mask": 0xC0,
+            "timer_supported": False,
+            "discovery_complete": True,
+            "actuator_mask_inferred": True,
+        }
+        subscribed_uuids = {call.args[0] for call in mock_bleak_client.start_notify.call_args_list}
+        assert {LINAK_POSITION_BACK_UUID, LINAK_POSITION_LEG_UUID} <= subscribed_uuids
+
+    @pytest.mark.parametrize(
+        ("stored", "expected_axes"),
+        [
+            # A mask the controller once reported stays authoritative.
+            (
+                {"model_variant": "advanced", "actuator_mask": 0x90},
+                ("back", "feet"),
+            ),
+            # An inferred layout follows the current motor count and only uses
+            # reference outputs the GATT table actually exposes.
+            (
+                {"model_variant": "advanced", "actuator_mask": 0xC0, "actuator_mask_inferred": True},
+                ("back", "legs", "head"),
+            ),
+        ],
+    )
+    async def test_unreadable_mask_refreshes_only_inferred_cache(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        stored: dict,
+        expected_axes: tuple[str, ...],
+    ) -> None:
+        from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.adjustable_bed.const import CONF_MOTOR_COUNT, DOMAIN
+
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+
+        async def read(uuid: str) -> bytes:
+            if str(uuid).lower() == LINAK_POSITION_MASK_UUID:
+                raise BleakError(
+                    "changed connection status while waiting for BluetoothGATTReadResponse, "
+                    "BluetoothGATTErrorResponse: Insufficient authorization (8)"
+                )
+            return await original_read(uuid)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        mock_bleak_client.services.get_characteristic = MagicMock(
+            side_effect=lambda uuid: None if uuid == LINAK_POSITION_FEET_UUID else object()
+        )
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                **mock_config_entry_data,
+                CONF_MOTOR_COUNT: 4,
+                "capabilities": {
+                    "linak": {"profile": "bed_control", "discovery_complete": True, **stored}
+                },
+            },
+            unique_id="AA:BB:CC:DD:EE:FF",
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+
+        await coordinator.async_connect()
+
+        assert coordinator.controller.protocol_diagnostics["position_axes"] == list(
+            expected_axes
+        )
+
     async def test_direct_ble_factory_reset_uses_configuration_characteristic(
         self,
         hass: HomeAssistant,

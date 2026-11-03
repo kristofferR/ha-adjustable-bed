@@ -367,7 +367,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         target_rgb = requested_rgb or self._attr_rgb_color or self._default_rgb_color
         # Turning on from off resends the known brightness: the bed may not keep
-        # its level across an RGB power-on, or may have lost it across an HA restart.
+        # its level across a power-on, or may have lost it across an HA restart.
         requested_brightness = kwargs.get(ATTR_BRIGHTNESS)
         brightness = requested_brightness or (None if self._attr_is_on else self._attr_brightness)
         level = (

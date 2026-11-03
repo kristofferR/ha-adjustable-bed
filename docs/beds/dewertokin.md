@@ -29,14 +29,14 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 - Ultra
 
 **ORE/Glideaway Family:**
-- Glideaway Motion
+- Glideaway Motion (current app: [explicit MOTION 400/450/500/600 profile](glideaway-motion.md))
 - Symphony Sleep
 - Movita
 - Dynasty Bases (current app: [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](ore-comfort-bed.md))
 - Better Living
 - LevaSleep
 - American Star
-- Avanti Bases
+- Avanti Bases (current app: explicit [Avanti Bases profile](ore-comfort-bed.md), `avanti_bases`)
 - Comfort Furniture
 - Hestia Motion
 - Maxcoil Una (current app: [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](ore-comfort-bed.md))
@@ -88,7 +88,7 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 | Resident | `com.okin.resident.release` | Flutter |
 | Rize II | `com.okin.bedding.rizeii` | OKIN UUID |
 | Simmons | `com.okin.simmons` | Flutter; own frames, see [SIMMONS app](simmons.md) |
-| Glideaway | `com.ore.bedding.glideawaymontion` | FFE5 |
+| Glideaway | `com.ore.bedding.glideawaymontion` | E6 FE 16 on FFE5/FFE9, [explicit Motion app profile](glideaway-motion.md) |
 | Symphony | `com.ore.bedding.symphony` | FFE5 + Nordic |
 | INNOVA/SFM | `com.ore.sfm` | FFE9/FFE4, little-endian E5 FE 16; see the [INNOVA profile](keeson.md#innova-profile) |
 | OkinSmartComfort | `com.okin.okinsmartcomfort` | OKIN UUID + Nordic |
