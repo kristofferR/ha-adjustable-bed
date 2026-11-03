@@ -945,6 +945,18 @@ async def create_controller(
         from .beds.jiecang_app import JiecangAppController
 
         entry_data = coordinator.entry.data
+        if entry_data[CONF_JIECANG_APP_PROFILE] == "comfort_motion":
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.comfort_motion", __package__
+            )
+            from .beds.comfort_motion import ComfortMotionController
+
+            return ComfortMotionController(
+                coordinator,
+                layout=entry_data[CONF_JIECANG_APP_LAYOUT],
+                transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+                has_light=entry_data.get(CONF_HAS_LIGHT, True),
+            )
         return JiecangAppController(
             coordinator,
             profile=entry_data[CONF_JIECANG_APP_PROFILE],

@@ -1035,7 +1035,8 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         }
         state_key = key_map.get(zone)
         if state_key and state_key in state:
-            return float(state[state_key])
+            value = state[state_key]
+            return float(value) if value is not None else None
         return 0.0
 
     async def async_set_native_value(self, value: float) -> None:
