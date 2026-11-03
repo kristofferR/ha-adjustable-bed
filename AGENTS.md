@@ -225,7 +225,10 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
    sensors stuck at "unknown". Note that `position_number_specs` requires a live
    controller, so these entities only appear once the bed has connected.
 
-10. **Create documentation** in `docs/beds/newbed.md`
+10. **Create documentation** in `docs/beds/newbed.md` using the
+    [bed guide format](docs/BED_GUIDE_FORMAT.md): Status, Credit, Known Models,
+    Apps and Features tables, Protocol Details and command tables. Evidence and
+    dispositions go in the discovery ledger, not the guide.
 
 11. **For an app profile, make the app findable and declare what it owns.**
     Users search the bed-type list by app name. An app that is its own bed type
@@ -404,6 +407,7 @@ The `generate_support_bundle` service captures protocol data for debugging and a
 | `docs/SERVICES.md` | All public actions, paired side routing and automation examples |
 | `docs/COMMAND_LIFECYCLE.md` | Scheduling, cancellation and connection ownership |
 | `docs/beds/*.md` | Per-actuator protocol documentation |
+| `docs/BED_GUIDE_FORMAT.md` | Required layout for bed guides |
 
 ## Reference Materials
 
@@ -441,7 +445,7 @@ account for every reachable discovery before the task can be called complete.
 
 - Build a discovery ledger covering every reachable BLE behavior, including commands, packet builders, responses and notifications, parsers, timing, release behavior, pairing/authentication, discovery rules, model/variant selection, capability gates, configuration writes, and user-visible state.
 - Give every ledger item exactly one disposition: `IMPLEMENTED`, `ALREADY_IMPLEMENTED`, or `EXCLUDED`.
-- Implement every in-scope item marked `IMPLEMENTED` in the same task, with focused artifact-vector tests, entity or service exposure where users need it, and durable protocol documentation. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
+- Implement every in-scope item marked `IMPLEMENTED` in the same task, with focused artifact-vector tests, entity or service exposure where users need it, and durable protocol documentation: a bed guide in the [bed guide format](docs/BED_GUIDE_FORMAT.md) with command tables from the shipped code, plus the discovery ledger for evidence and dispositions. Never write the guide as audit prose. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
 - `ALREADY_IMPLEMENTED` requires a concrete code and test reference showing behavior equivalent to the frozen artifact, not a family resemblance or an assumed shared protocol.
 - `EXCLUDED` requires the exact evidence and reason. Valid reasons are an out-of-scope transport or product boundary (for example WiFi/cloud behavior in this BLE-only integration), a safety constraint, dead or unreachable artifact code, or behavior unrelated to bed integration. Convenience, uncertain model prevalence, missing maintainer hardware, or lack of an existing entity are not valid exclusions.
 - Static artifact evidence can complete the implementation even without physical hardware. Keep hardware status explicit and defer only physical validation, never the implementation itself, when the behavior is exhaustively proven.

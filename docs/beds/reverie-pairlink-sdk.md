@@ -1,9 +1,43 @@
 # Private Pairlink SDK receive consumers
 
+**Status:** ❓ Needs testing (hardware delivery unverified)
+
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
+## Known Models
+
+- The private SDK consumers serve the [Reverie Pairlink profiles](reverie.md#pairlink-central-route), including R510L and Harmoniq Upgrade.
+- This is a receive/metadata reference, not a separate selectable bed type or a generic lighting integration.
+
+## Apps
+
+| Analyzed | App | Package ID |
+| --- | --- | --- |
+| ✅ | [Reverie Nightstand](https://play.google.com/store/apps/details?id=com.reverie.reverie) 3.3.3.8, private Pairlink SDK | `com.reverie.reverie` |
+
+## Features
+
+| Feature | Supported |
+| --- | --- |
+| Central / local receive consumers | ✅ (entry-owned runtime reducer, verified physical receive owner) |
+| Device identity / online state | ✅ (full, TLV and FF ping; exact MAC/vAddr associations) |
+| Calendar response | ✅ (known-device request, current session and signing gates) |
+| Metadata / composition / fingerprint persistence | ✅ (entry-owned canonical beans and HA Store) |
+| Direct bed controls | See [Reverie](reverie.md#commands); this SDK layer adds no public arbitrary-packet action |
+| Generic lighting prediction / acquisition worker | ❌ (no lighting entities; worker disabled) |
+
+## Protocol Details
+
+Transport UUIDs, framing, crypto and central/local setup are documented in
+[Reverie](reverie.md#protocol-details). Private opcode tables are decoded only
+after their enclosing receive mode and physical session have been validated.
+
 The entry-owned central notification and verified local WriteValue paths feed
 the same runtime reducer. Registered channel `0x20` continues to preempt SDK
 parsing, including ignored or throwing app callbacks. Registration by itself
 does not preempt when the internal MeshCallback is absent.
+
+### Mode-zero dispatch
 
 The private mode-zero dispatch entry reads the LE16 opcode only after two
 remaining bytes are available. Address types 1/3 resolve the received virtual
@@ -28,6 +62,10 @@ has no downstream effect; an earlier completed record is not rolled back when
 a later record fails. Channel, sensor and key callbacks inherited as no-ops by
 the actual app remain private no-ops, with their source callback gates.
 
+## Position Feedback / Notifications
+
+### Ping and device state
+
 For channel `0xff`, the ordinary app route's transient join-check getter is
 source-initialized to zero. A complete 20-byte ping response learns or updates
 the DeviceBean MAC/vAddr association from received bytes. MAC bytes use the
@@ -44,6 +82,22 @@ returning parser, including a TLV parser with no complete basic record.
 Malformed full-ping reads or truncated TLV copies do not reach that callback.
 Mode-8 opcode 7 marks an existing matching MAC online and emits status 8
 without replacing its vAddr or inventing a new DeviceBean.
+
+## Commands
+
+| Private consumer / response | Exact opcode or bytes |
+| --- | --- |
+| Full ping / TLV ping | `0x0003` / `0x0004` |
+| Existing-device online, mode 8 | `0x0007` |
+| Known-device calendar request / response | `0x049B` / `0x0492` |
+| Composition | `0x0001` |
+| Native fingerprint request / response | `01 42` / `02 42` |
+
+Values above come from `reverie_pairlink_sdk_dispatch.py` and
+`reverie_pairlink.py`; they are private receive/response consumers, not public
+arbitrary-packet actions.
+
+### Calendar response
 
 A known-device `0x049b` event reads that DeviceBean's virtual address and samples
 the local calendar and timezone separately. Mode zero produces a 13-byte
@@ -65,6 +119,8 @@ gates remain in charge; the callback does not make an unready transport writable
 Unknown DeviceBeans do not inherit a transport MAC or a virtual address.
 Disconnect, identity replacement, stale authentication, a changed target vAddr,
 or a replaced controller prevents a queued response from using a newer route.
+
+## Metadata and persistence
 
 One entry runtime owns the canonical device list, metadata reducer, preference
 adapter and receive lock across controller replacement. Full/TLV ping uses fresh
@@ -111,6 +167,21 @@ Native packet reduction and SDK persistence execute in the same entry receive
 lane, so a later native event cannot change keys while an earlier metadata
 write is suspended. Physical teardown still invalidates queued work.
 
-Hardware delivery remains unverified. Source scope and release adoption belong
-to the integrating author. Root source overlays are separate from this receive
-patch.
+## Command Timing
+
+| Path | Timing / ownership |
+| --- | --- |
+| Eligible central fingerprint callback | Existing 500 ms callback |
+| Metadata and native receive processing | One entry receive lane; suspended metadata persistence cannot be overtaken by a later native key event |
+| Deferred query / calendar / fingerprint callback | Current entry, physical peer and receive generation required |
+
+## Notes
+
+Hardware delivery remains unverified. Source scope, release adoption and root
+source overlays are recorded in the
+[disposition crosswalk](../apk-analysis/dispositions/row041-reverie.md#guide-evidence-and-scope-notes).
+
+### Analysis provenance
+
+- Package `com.reverie.reverie`, version 3.3.3.8, accepted row041 audit.
+- [Evidence and exact dispositions](../apk-analysis/dispositions/row041-reverie.md).

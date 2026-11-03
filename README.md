@@ -92,6 +92,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 |-----------------------|----------------------------------|
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
 | ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](docs/beds/ore-comfort-bed.md), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
+| 🧪 [Casper Base app](docs/beds/casper-base.md) | PRO / MAX, conditional stored products, separate MM/SXB sensors and RCRM remote; artifact-proven, hardware unverified |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
@@ -109,7 +110,8 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
 | ✅ [Glideaway Motion / Montion app](docs/beds/glideaway-motion.md) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE / Dream Motion / Dream Motion HD apps](docs/beds/jiecang-app.md), [Comfort Motion app](docs/beds/comfort-motion.md) |
-| ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md), ISleep |
+| ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md); legacy ISleep entries |
+| 🔬 [ISleep](docs/beds/isleep.md) | Explicit com.kaidi_test4 1.6.3 profile, products 129–134, 142, 143 (artifact verified, hardware unverified) |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett; [Limoss Remote](docs/beds/limoss-remote.md) bed and chair layouts |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | ✅ [Svane](docs/beds/svane.md) | Svane Remote, JMC400, Jensen LinOn |

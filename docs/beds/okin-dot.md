@@ -1,32 +1,21 @@
 # Okin DOT (DewertOkin "DOT PROTOCOL")
 
-**Status:** ⚠️ Untested (protocol from APK + live handset backend, no hardware confirmation yet)
+**Status:** ❓ Needs testing (untested: protocol from APK + live handset backend, no hardware confirmation yet)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) from the FurniMove app (`com.okin.okinsmartcomfort`) and the DewertOkin handset backend
 
-## Overview
+## Known Models
 
 "DOT PROTOCOL" is DewertOkin's name (it appears verbatim in RF34 handset
 descriptions) for receiver boxes that pair with the RF1058, RF34, and RF6707
-RF handsets. The handset remote codes resolve through the same FurniMove
-backend as the [Okimat](okimat.md) codes, but the box itself is a CB24-family
-receiver: it exposes the Nordic UART service instead of the Okin `62741523`
-service and takes CB24-style 7-byte frames.
+RF handsets.
 
-If the code printed on your remote is **97450, 97544 or 98035**, select the
-**Okin DOT** bed type and pick that code as the protocol variant. For
-**90167, 91983 or 93558**, new setups use the [FurniMove](furnimove.md) app
-profile instead: its pinned catalog covers those handsets and follows the
-app's per-control frame format. Existing Okin DOT entries with those codes keep
-working and receive a repair offering the switch. Their keycodes come from the
-FurniMove catalog either way. Entries configured as Okimat/Okin UUID are also rescued
-automatically: if the connected box has no Okin `62741525` characteristic but
-does expose Nordic UART, the integration promotes the entry to the Okin DOT
-bed type (persisted, which also drops the Okimat pairing requirement) and
-falls back to the default DOT remote until a printed DOT code is selected —
-standard Okimat keycodes are never wrapped in DOT frames.
+- The handset remote codes resolve through the same FurniMove backend as the
+  [Okimat](okimat.md) codes.
+- The box itself is a CB24-family receiver: it exposes the Nordic UART service
+  instead of the Okin `62741523` service and takes CB24-style 7-byte frames.
 
-## Remote codes
+### Remote codes
 
 | Code | Handset | Motors | Extras |
 |------|---------|--------|--------|
@@ -37,30 +26,44 @@ standard Okimat keycodes are never wrapped in DOT frames.
 | 97544 | RF34/09/BK/BK | Back + Legs | 2 memories |
 | 98035 | RF6707 | Head + Back | Motors + light only |
 
-Note the motor keycodes are **renumbered per handset**: whichever two motor
-channels the handset drives, the first pair is `0x1`/`0x2` and the second is
-`0x4`/`0x8` (unlike the fixed Okimat bit assignment). The channels keep their
-section meaning (M1=Head, M2=Back, M3=Legs, M4=Feet in FurniMove), and the
-integration exposes correspondingly named controls — an RF1058 bed gets Head
-and Feet covers, an RF6707 bed gets Head and Back.
+The motor keycodes are **renumbered per handset**: whichever two motor channels
+the handset drives, the first pair is `0x1`/`0x2` and the second is `0x4`/`0x8`
+(unlike the fixed Okimat bit assignment). The channels keep their section
+meaning (M1=Head, M2=Back, M3=Legs, M4=Feet in FurniMove), and the integration
+exposes correspondingly named controls: an RF1058 bed gets Head and Feet
+covers, an RF6707 bed gets Head and Back.
 
-## BLE Protocol
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) (earlier analysis; accepted 2.2.0 audit) | `com.okin.okinsmartcomfort` |
+
+All keycodes come live from the DewertOkin handset backend
+(`GET /mobile-data/button/{code}`); the snapshot lives in
+`tools/okin_remotes/master.json` with `protocol: "dot"`.
+
+## Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Two motors per handset (Head + Feet, Back + Legs, or Head + Back) |
+| Position Feedback | ❌ (none known) |
+| Memory Presets | ✅ RF1058 and RF34 codes (recall is a short press, save is a hold) |
+| Massage | ✅ RF1058 codes (head/feet +/−, wave, stop) |
+| Under-bed Lights | ✅ Toggle |
+| Flat | ✅ |
+| Zero-G / Quiet Sleep / Anti-Snore | ✅ RF1058 codes |
+| BLE Pairing | ❌ Not required |
+
+## Protocol Details
 
 **Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART)
 **Write Characteristic:** `6e400002-b5a3-f393-e0a9-e50e24dcca9e` (write without response)
+**Format:** 7 bytes, `[0x05, 0x02, kc3, kc2, kc1, kc0, 0x00]`
 
 FurniMove calls this characteristic `CB24_WRITE_CHARACTERISTIC` and flags the
 connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
-
-### Handshake
-
-The earlier FurniMove analysis this bed type came from recorded an ASCII
-`affirm` write to the write characteristic on discovery. The integration
-mirrors it once per connection before the first command. The accepted
-FurniMove 2.2.0 audit has no such write, and it also sends memory save,
-massage and some utility controls in the six-byte `04 02` format even on a DOT
-receiver. Okin DOT keeps its released behavior for existing entries; the
-FurniMove profile follows 2.2.0 exactly.
 
 ### Packet Format
 
@@ -75,19 +78,38 @@ FurniMove profile follows 2.2.0 exactly.
 - Identical to the [Okin CB24](../SUPPORTED_ACTUATORS.md) frame with bed
   selection byte `0x00`
 
-### Command Timing
+### Handshake
 
-- Held buttons are re-sent ~every 100ms (the app rewrites the characteristic
-  on each write completion after a 100ms sleep)
-- Release sends keycode `0x00000000` (`DisobeyStandbyTime`) as the stop
-- Memory recall is a **short press** (one frame + STOP); save is the hold:
-  5s @ 200ms on RF1058, 2s @ 200ms on RF34. On 97544 recall and save share
-  keycode `0x10000` — only the press duration distinguishes them
-- The light key is a hold too (5s @ 100ms per the backend)
+- The earlier FurniMove analysis this bed type came from recorded an ASCII
+  `affirm` write to the write characteristic on discovery. The integration
+  mirrors it once per connection before the first command.
+- The accepted FurniMove 2.2.0 audit has no such write, and it also sends
+  memory save, massage and some utility controls in the six-byte `04 02` format
+  even on a DOT receiver.
+- Okin DOT keeps its released behavior for existing entries; the FurniMove
+  profile follows 2.2.0 exactly.
 
-## Commands (32-bit keycodes)
+## Detection / Setup
 
-Shared across all six codes:
+- If the code printed on your remote is **97450, 97544 or 98035**, select the
+  **Okin DOT** bed type and pick that code as the protocol variant.
+- For **90167, 91983 or 93558**, new setups use the [FurniMove](furnimove.md)
+  app profile instead: its pinned catalog covers those handsets and follows the
+  app's per-control frame format. Existing Okin DOT entries with those codes
+  keep working and receive a repair offering the switch. Their keycodes come
+  from the FurniMove catalog either way.
+- Entries configured as Okimat/Okin UUID are also rescued automatically: if the
+  connected box has no Okin `62741525` characteristic but does expose Nordic
+  UART, the integration promotes the entry to the Okin DOT bed type (persisted,
+  which also drops the Okimat pairing requirement) and falls back to the default
+  DOT remote (`97450`) until a printed DOT code is selected. Standard Okimat
+  keycodes are never wrapped in DOT frames.
+
+## Commands
+
+Values are 32-bit keycodes placed in the DOT frame.
+
+### Shared (all six codes)
 
 | Command | Value |
 |---------|-------|
@@ -97,11 +119,10 @@ Shared across all six codes:
 | Flat | `0x08000000` |
 | Toggle Lights (UBL) | `0x00020000` |
 
-Note the DOT Flat value `0x08000000` equals the standard Okimat child-lock
-keycode — one of the reasons these codes must not be driven with the Okimat
-profile.
+The DOT Flat value `0x08000000` equals the standard Okimat child-lock keycode,
+one of the reasons these codes must not be driven with the Okimat profile.
 
-Per-code extras (RF1058 family):
+### RF1058 extras
 
 | Command | Value |
 |---------|-------|
@@ -115,18 +136,34 @@ Per-code extras (RF1058 family):
 | Massage wave | `0x10000000` |
 | Massage stop | `0x00000100` |
 
-RF34 codes (97450, 97544):
+### RF34 extras (97450, 97544)
 
 | Command | Value |
 |---------|-------|
 | Memory 1 / Memory 2 | `0x00010000` / `0x00040000` |
 | Memory save (hold 2s) | `0x0001f000` (97450), `0x00010000` (97544) |
 
-All keycodes come live from the DewertOkin handset backend
-(`GET /mobile-data/button/{code}`); the snapshot lives in
-`tools/okin_remotes/master.json` with `protocol: "dot"`.
+## Command Timing
 
-## Differences from Okimat
+- Held buttons are re-sent ~every 100ms (the app rewrites the characteristic
+  on each write completion after a 100ms sleep).
+- Release sends keycode `0x00000000` (`DisobeyStandbyTime`) as the stop.
+- Memory recall is a **short press** (one frame + STOP); save is the hold:
+  5s @ 200ms on RF1058, 2s @ 200ms on RF34. On 97544 recall and save share
+  keycode `0x10000`; only the press duration distinguishes them.
+- The light key is a hold too (5s @ 100ms per the backend).
+
+## Notes
+
+- After releasing a button, FurniMove also writes a raw 2-byte `00 B0` packet
+  ~400ms after the stop keycode. Its function is unknown (possibly re-arming
+  the box's standby timer); the integration does not send it. If a tester
+  reports motors that keep creeping after stop, this is the first thing to try.
+- The RF34 97544 handset uses the same keycode (`0x00010000`) for Memory 1
+  recall and memory save. On the physical remote, saving is holding the
+  memory button. A short press recalls, the 2s hold stream saves.
+
+### Differences from Okimat
 
 | | Okimat (okin_uuid) | Okin DOT |
 |---|---|---|
@@ -137,18 +174,8 @@ All keycodes come live from the DewertOkin handset backend
 | Position feedback | Yes (FFE4 notify) | None known |
 | Handshake | None | `affirm` on connect |
 
-## Source Code References
+### Source Code References
 
 - `custom_components/adjustable_bed/beds/okin_dot.py` — controller
 - `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/utils/HexValueConverter.java` — DOT framing
 - `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/bleModule/bluetooth/BluetoothLeService.java` — DOT detection + `affirm` handshake
-
-## Notes
-
-- After releasing a button, FurniMove also writes a raw 2-byte `00 B0` packet
-  ~400ms after the stop keycode. Its function is unknown (possibly re-arming
-  the box's standby timer); the integration does not send it. If a tester
-  reports motors that keep creeping after stop, this is the first thing to try.
-- The RF34 97544 handset uses the same keycode (`0x00010000`) for Memory 1
-  recall and memory save — on the physical remote, saving is holding the
-  memory button. A short press recalls, the 2s hold stream saves.

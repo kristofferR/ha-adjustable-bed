@@ -1,10 +1,46 @@
 # Adjustable bed (Lumbar) app profile
 
-Select **Adjustable bed (Lumbar) app** manually when the bed uses the Android app `com.okin.bedding.adjustablelumbar` (shown as "Adjustable bed(Lumbar)"). The profile follows the accepted APK Protocol Audit of version 1.2.2 (code 33), a 20-APK Flutter XAPK with SHA-256 `ed65ed1b4970c95c2b1744687f94401447f851f23e81f8af6699a68854988b08`. Behavior is static-verified only: **hardware unverified**. The comparison ledger is [row054](../apk-analysis/dispositions/row054-adjustable-lumbar.md).
+**Status:** ❓ Needs testing (static-verified only, **hardware unverified**)
 
-OKIN and Star Bluetooth names, the Nordic UART service and the OKIN `62741523` service are shared with other apps and bed types ([Okin 64-Bit](okin-64bit.md), [Sleepy's BOX25](sleepys.md) and others), so they never select this profile. Existing entries keep their bed type until you change it.
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-## Command tables
+Select **Adjustable bed (Lumbar) app** manually when the bed uses the Android
+app `com.okin.bedding.adjustablelumbar` (shown as "Adjustable bed(Lumbar)").
+
+## Known Models
+
+- Beds controlled by the "Adjustable bed(Lumbar)" app
+- Bluetooth names starting with `okin` or `star` (lowercased prefix); see
+  [Detection / Setup](#detection--setup)
+
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` |
+
+## Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Head, Feet, Lumbar |
+| Position Feedback | ❌ |
+| Memory Presets | ❌ No reachable numbered-memory action (see [Notes](#notes)) |
+| Flat / Zero Gravity / Lounge / Incline / Anti-Snore | ✅ |
+| Preset saves | ⚠️ Save Zero Gravity / Lounge / Incline / Anti-Snore (storage unverified) |
+| Massage | ✅ Wave 1–3, intensity +/−, off, on (voice route), check |
+| Lights | ⚠️ One light frame (Toggle Light); no light on/off |
+| Timers / Alarms | ❌ |
+| BLE Pairing | ❌ No pairing, PIN or handshake |
+
+## Protocol Details
+
+**Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b` or `6e400001-b5a3-f393-e0a9-e50e24dcca9e`, per table
+**Write Characteristic:** `62741525-…` or `6e400002-…`
+**Notify Characteristic:** `62741625-…` or `6e400003-…`
+**Format:** `08 02` + eight table bytes, or `5A 01` + four table bytes + `A5`
+
+### Command tables
 
 The app ships three tables and picks one per connection:
 
@@ -14,7 +50,36 @@ The app ships three tables and picks one per connection:
 | `star` | exactly the four bytes `STAR` | `35_22_01` | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-…` | `6e400003-…` | Without response |
 | `star` | anything else, unreadable or absent | `25_42_02` | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-…` | `6e400003-…` | Without response |
 
-The manufacturer match is case-sensitive and exact: `STAR` followed by a NUL byte selects `25_42_02`. Any other name, including `smartbed` (which the app's scan accepts), has no table in the app, so the connection is refused with `auto`.
+### Packet Format
+
+- `25_42_02` and `36_33_04a`: `08 02` + eight table bytes (identical payloads, different transport).
+- `35_22_01`: `5A 01` + four table bytes + `A5`.
+- No checksum, sequence, side byte or encryption.
+
+### Connection requirements
+
+- Like the app, the profile requires the table's service with its write and
+  notify characteristics, a write property matching the table's write type,
+  and the Device Information service (`0x180A`). The `okin` row also requires
+  the manufacturer characteristic. A missing requirement refuses the
+  connection.
+- The manufacturer is read once per connection before notifications are
+  enabled; the generic Device Information read is skipped for this profile.
+- Notifications stay enabled with angle sensing off, because the app only
+  allows control after enabling them.
+- No pairing, PIN or handshake exists.
+
+## Detection / Setup
+
+OKIN and Star Bluetooth names, the Nordic UART service and the OKIN `62741523`
+service are shared with other apps and bed types ([Okin 64-Bit](okin-64bit.md),
+[Sleepy's BOX25](sleepys.md) and others), so they never select this profile.
+Existing entries keep their bed type until you change it.
+
+- The manufacturer match is case-sensitive and exact: `STAR` followed by a NUL
+  byte selects `25_42_02`.
+- Any other name, including `smartbed` (which the app's scan accepts), has no
+  table in the app, so the connection is refused with `auto`.
 
 | Variant | Meaning |
 |---|---|
@@ -22,19 +87,16 @@ The manufacturer match is case-sensitive and exact: `STAR` followed by a NUL byt
 | `adjustable_lumbar_okin` | Always use the `okin` row |
 | `adjustable_lumbar_star` | Always use the `star` rows; the manufacturer read still chooses between them |
 
-The name rule reads the raw Bluetooth name, not the entry's display name. HA stores the raw name at setup and on later real (non-address) observations; an address-like live name falls back to it. Use a fixed variant if Home Assistant sees a different name than the phone. In a two-address pair the variant belongs to each physical bed: unpair, set each bed, then combine them again.
+- The name rule reads the raw Bluetooth name, not the entry's display name. HA
+  stores the raw name at setup and on later real (non-address) observations; an
+  address-like live name falls back to it.
+- Use a fixed variant if Home Assistant sees a different name than the phone.
+- In a two-address pair the variant belongs to each physical bed: unpair, set
+  each bed, then combine them again.
 
-## Connection requirements
+## Commands
 
-Like the app, the profile requires the table's service with its write and notify characteristics, a write property matching the table's write type, and the Device Information service (`0x180A`). The `okin` row also requires the manufacturer characteristic. A missing requirement refuses the connection. The manufacturer is read once per connection before notifications are enabled; the generic Device Information read is skipped for this profile. Notifications stay enabled with angle sensing off, because the app only allows control after enabling them. No pairing, PIN or handshake exists.
-
-Replies are not parsed. In every shipped table the massage-status dispatch can never match, alarm frames are only logged and the remaining callbacks have no consumers. Raw replies still appear in support bundles.
-
-## Frames
-
-- `25_42_02` and `36_33_04a`: `08 02` + eight table bytes (identical payloads, different transport).
-- `35_22_01`: `5A 01` + four table bytes + `A5`.
-- No checksum, sequence, side byte or encryption.
+### Motor Control
 
 | Control | `25_42_02` / `36_33_04a` | `35_22_01` |
 |---|---|---|
@@ -42,13 +104,28 @@ Replies are not parsed. In every shipped table the massage-status dispatch can n
 | Foot up / down | `08 02 00 00 00 04 00 00 00 00` / `…08…` | `5A 01 03 10 30 02 A5` / `…30 03 A5` |
 | Lumbar up / down | `08 02 00 00 00 10 00 00 00 00` / `…20…` | `5A 01 03 10 30 06 A5` / `…30 07 A5` |
 | STOP | `08 02 00 00 00 00 00 00 00 00` | `5A 01 03 10 30 0F A5` |
+
+### Presets
+
+| Control | `25_42_02` / `36_33_04a` | `35_22_01` |
+|---|---|---|
 | Flat | `08 02 08 00 00 00 00 00 00 00` | `5A 01 03 10 30 10 A5` |
 | Zero gravity | `08 02 00 00 10 00 00 00 00 00` | `5A 01 03 10 30 13 A5` |
 | Lounge (app: LEISURE) | `08 02 00 00 20 00 00 00 00 00` | `5A 01 03 10 30 12 A5` |
 | Incline (app: INCLINE) | `08 02 00 00 40 00 00 00 00 00` | `5A 01 03 10 30 11 A5` |
 | Anti-snore | `08 02 00 00 80 00 00 00 00 00` | `5A 01 03 10 30 16 A5` |
 | Save zero gravity / lounge / incline / anti-snore | `08 02 08 00 10…` / `…20…` / `…40…` / `…80…` | `5A 01 03 10 30 90/91/92/93 A5` |
+
+### Lights
+
+| Control | `25_42_02` / `36_33_04a` | `35_22_01` |
+|---|---|---|
 | Light | `08 02 00 02 00 00 00 00 00 00` | `5A 01 03 10 30 71 A5` |
+
+### Massage
+
+| Control | `25_42_02` / `36_33_04a` | `35_22_01` |
+|---|---|---|
 | Massage wave 1 / 2 / 3 | `08 02 00 00 00 00 00 08 00 00` / `…10…` / `…20…` | `5A 01 03 10 30 52/53/54 A5` |
 | Massage stop | `08 02 02 00 00 00 00 00 00 00` | `5A 01 03 10 30 6F A5` |
 | Massage intensity + / − | `08 02 00 00 0C 00 00 00 00 00` / `08 02 01 80 00 00 00 00 00 00` | `5A 01 03 10 40 60 A5` / `…40 61 A5` |
@@ -56,9 +133,17 @@ Replies are not parsed. In every shipped table the massage-status dispatch can n
 | Voice pre-STOP | ordinary STOP | `5A 01 03 10 30 1F A5` |
 | Check massage (raw query) | `02 04` | `5A B0 00 A5` |
 
+## Notifications
+
+Replies are not parsed. In every shipped table the massage-status dispatch can
+never match, alarm frames are only logged and the remaining callbacks have no
+consumers. Raw replies still appear in support bundles.
+
 ## Timing and controls
 
-Held app controls write immediately and then every 100 ms. Releasing writes STOP immediately and again 300 ms later; both STOPs use fresh cancel events and are always attempted.
+Held app controls write immediately and then every 100 ms. Releasing writes
+STOP immediately and again 300 ms later; both STOPs use fresh cancel events and
+are always attempted.
 
 | Home Assistant control | Behavior |
 |---|---|
@@ -70,14 +155,28 @@ Held app controls write immediately and then every 100 ms. Releasing writes STOP
 | Check Massage | The massage page's raw query, written once. No reply is parsed. |
 | Stop | The release STOPs. STOP has no side parameter; its physical scope is unverified. |
 
-The app has no reachable numbered-memory action, position feedback, light on/off,
-timers, alarms or firmware update path. Constants for those in its tables are
-never sent. This describes the shipped app, not a hardware capability verdict.
-[Issue #670](https://github.com/kristofferR/ha-adjustable-bed/issues/670) reports
-working numbered memory controls before 4.1.0, so their loss is a compatibility
-regression requiring the previous working bed type/variant, exact recall/save
-buttons and current diagnostics. The accepted app report alone supplies no
-numbered-memory save sequence; named preset saves above must not be presented
-as equivalent replacements or guessed numbered-slot mappings.
+## Notes
 
-Not exposed: the app's speech-recognition commands (the same frames are available as buttons; voice movement is excluded because the app sends no STOP after it), and its chord edge cases (the first held preset briefly recalls before the save starts; an unsupported chord only stops).
+- The app has no reachable numbered-memory action, position feedback, light
+  on/off, timers, alarms or firmware update path. Constants for those in its
+  tables are never sent. This describes the shipped app, not a hardware
+  capability verdict.
+- [Issue #670](https://github.com/kristofferR/ha-adjustable-bed/issues/670)
+  reports working numbered memory controls before 4.1.0, so their loss is a
+  compatibility regression requiring the previous working bed type/variant,
+  exact recall/save buttons and current diagnostics. The accepted app report
+  alone supplies no numbered-memory save sequence; named preset saves above
+  must not be presented as equivalent replacements or guessed numbered-slot
+  mappings.
+- Not exposed: the app's speech-recognition commands (the same frames are
+  available as buttons; voice movement is excluded because the app sends no
+  STOP after it), and its chord edge cases (the first held preset briefly
+  recalls before the save starts; an unsupported chord only stops).
+
+### Analysis provenance
+
+The profile follows the accepted APK Protocol Audit of version 1.2.2 (code 33),
+a 20-APK Flutter XAPK with SHA-256
+`ed65ed1b4970c95c2b1744687f94401447f851f23e81f8af6699a68854988b08`. Behavior is
+static-verified only: **hardware unverified**. The comparison ledger is
+[row054](../apk-analysis/dispositions/row054-adjustable-lumbar.md).

@@ -1612,3 +1612,62 @@ Protocol 108 STOP clears pending comfort progression, including canceled queued 
 The final affected reviews close I041-005 and F06-05. All 827 canonical behavior owners are reconciled, with 50 source aliases verified separately and no duplicate behavior credit. Eight narrow existing rows and 560 exact exclusions retain their scopes. The 20,409-test Python suite passes; the unchanged frontend retains its 129-test, typecheck and bundle validation.
 
 The accepted D02, bounded ATT host mapping and malformed-only safe-drop qualifications remain explicit. Source-summary annotations copy four address bytes and advance six, including two UID bytes. The late AcquireNotify objection omitted the silent CONNECTED lifecycle fact already emitted after verifying Device1.Connected; a later known-member observation correctly reports status 3. Two root event-order probes verify that distinction. Hardware remains unverified and deferred to beta/release users. Publication is pending, so queue credit remains zero.
+
+
+## Guide evidence and scope notes
+
+The following evidence, exact exclusions and acceptance caveats are retained
+from the pre-format guides. Status statements in this historical source-scope
+text retain their original temporal scope; the ledger acceptance sections above
+record subsequent completion. This formatting migration changes no disposition
+or protocol behavior.
+
+The implementation follows the accepted row041 report for
+`com.reverie.reverie` 3.3.3.8 and comparison seal amendment 007.
+
+This candidate implements the reachable fixed-mode provisioning receive
+state machine, with per-peer state and actual central/local consumers. Root
+accepted the three-ID current-app fate overlay at `/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/queue-39bdcafa-20261026/041-THREE-FATE-ROOT-ADOPTION-20261102/FATE_OVERLAY.json` (SHA-256
+`984fbcf7dbe32b3d1468ceeb9165fd7fa8a8264039e1861361333f661517d582`). JNI-03's central level-at-most-1 branch is not selected by the
+shipped app's constant-level-4 add-device call. JNI-04 is reached only by the
+uncalled public `API_create_mesh_encry(SS)` entry; the reachable central branch
+calls the no-argument `genMeshSetData()` / JNI-03 path, not the SS overload.
+These are current-shipped-app route exclusions, not claims that the SDK
+functions are globally dead, and not evidence for a helper-only HA route.
+
+EDGE-0327 is excluded as the exact detector retry-to-exit edge: its activation
+cycle is not started by the ordinary app join routes. A separately reviewed
+overlay excludes EDGE-0330 only at the uncalled detector entry's exit. Other
+exit consumers and the distinct reachable P-256/session, receive, address and
+time owners retain their dispositions.
+
+Protocol110's existing unique-service UUID identity mapping has a narrow baseline
+code/test proof. The Android nearby-device list prefilter is an explicit UI
+infrastructure exclusion, separate from bed admission and connected-GATT service
+observation. HA retains unique-UUID discovery and explicit supported selections,
+including renamed, hyphenated and unnamed UUID-identified devices. No scan timing,
+model, command or session equivalence is inferred.
+See the [disposition crosswalk](row041-reverie.md)
+for the exact records and evidence.
+
+The channel-`FF` status producer retains its source join-check-state gate. The
+known-device `0x049b` response sends `0x0492` using the source calendar helper:
+the signed whole-hour timezone occupies application-data offset8 and offsets9–12
+are zero. The SDK model, list, composition/persistence, fingerprint and exit
+consumers are now connected to actual central/local receive paths. Disabled
+acquisition and excluded generic app features remain excluded. See the
+[SDK implementation notes](../../beds/reverie-pairlink-sdk.md) and
+[disposition crosswalk](row041-reverie.md) for source,
+code and focused-test references. Component semantics have independent approval;
+combined runtime and whole-unit acceptance remain pending. Hardware status stays
+unverified for deferred real-user validation after a beta or release.
+
+Protocol 108 motor STOP discards pending comfort fields, including a queued step canceled by the scheduler. Later feedback cannot revive that request; a new comfort action starts a new sequence.
+
+Local connection status 3 uses the SDK backup-list membership separately from the selected primary role. Welcome removes the new primary from that list. Its first later connection observation silently adds it back; a subsequent observation reports 3 when a callback is present, without replacing the peer identity, key or provisioning state.
+
+A verified initial `Device1.Connected` inventory read can bootstrap the local CONNECTED lifecycle during AcquireNotify. This first membership insertion is silent. Duplicate identity lookups are deduplicated; a later physical connection observation reaches an already-known member. This host bootstrap does not claim Android callback timing equivalence.
+
+Hardware delivery remains unverified. Source scope and release adoption belong
+to the integrating author. Root source overlays are separate from this receive
+patch.

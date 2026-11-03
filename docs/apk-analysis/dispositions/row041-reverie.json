@@ -6247,34 +6247,34 @@
           "scope": "Specific P2 discovery UUID, detection and config-flow path only.",
           "code_refs": [
             {
-              "ref": "custom_components/adjustable_bed/const.py:1077-1077",
+              "ref": "custom_components/adjustable_bed/const.py:1093-1093",
               "snapshot_path": "custom_components/adjustable_bed/const.py",
-              "snapshot_sha256": "cb52e91ee387659f52f5fb32cc823722b9148c2bd537f6ae2604178ef84e9a1a",
+              "snapshot_sha256": "0437e87ba12d88d43be44d748e64cd3f9a7f67e1240463822532a962abfa03bf",
               "excerpt_sha256": "a4cd6f6c29d17f10718d1c20364febd23172a1ca453ffc3fd48e81679ed54817",
               "symbol": "REVERIE_SERVICE_UUID",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/detection.py:1948-1955",
+              "ref": "custom_components/adjustable_bed/detection.py:1964-1971",
               "snapshot_path": "custom_components/adjustable_bed/detection.py",
-              "snapshot_sha256": "0457c9f34f2dfef9a0218854b0a1b13012886e5937733382beebe34b61d1c3d6",
+              "snapshot_sha256": "4aa1ba5238e89c6a9db6a35944f858995a06fba527e05bd4ae884d084fb8a183",
               "excerpt_sha256": "7f49263a29057387ba1d1f837e4baa50fea14eb42ab989bc503c6e04e9883769",
               "symbol": "REVERIE_SERVICE_UUID matcher",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/config_flow.py:3346-3448",
+              "ref": "custom_components/adjustable_bed/config_flow.py:3403-3505",
               "snapshot_path": "custom_components/adjustable_bed/config_flow.py",
-              "snapshot_sha256": "c14cde857a1dc9a193c13deb3a71cc4c6b9767682941f85fcb42b9a972503cb5",
+              "snapshot_sha256": "7164a7ec9903ee47bbc659381d14933fb90c30afa125b319fad239653412db7f",
               "excerpt_sha256": "0e95c4904fac1c27e4ea2634cd71ccae41228f51b4acf4638f3e90b35fd83759",
               "symbol": "async_step_bluetooth",
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             },
             {
-              "ref": "custom_components/adjustable_bed/manifest.json:1-392",
+              "ref": "custom_components/adjustable_bed/manifest.json:1-400",
               "snapshot_path": "custom_components/adjustable_bed/manifest.json",
-              "snapshot_sha256": "999db4f8a20e0862a1f63caea727fcb1b04269f6f8f81c9dc2e80dc6ab73f67f",
-              "excerpt_sha256": "999db4f8a20e0862a1f63caea727fcb1b04269f6f8f81c9dc2e80dc6ab73f67f",
+              "snapshot_sha256": "8c02f6f5e73fd9eee1fe894eb158eae6d9916aa2ae59dc6f05661a6829c45324",
+              "excerpt_sha256": "8c02f6f5e73fd9eee1fe894eb158eae6d9916aa2ae59dc6f05661a6829c45324",
               "symbol": null,
               "excerpt_encoding": "UTF8_EXACT_LINES_WITH_ENDINGS"
             }
@@ -71513,9 +71513,9 @@
         ],
         "status": "ADDRESSED_PENDING_DISTINCT_REVIEW",
         "coverage": "PATCH_AND_FOCUSED_PROOF_PRESENT",
-        "assertion_crosswalk": "Lengths 6\u20139 select registered event callbacks before parser-specific minimums; ignored callbacks do not fall through to SDK.",
+        "assertion_crosswalk": "Lengths 6–9 select registered event callbacks before parser-specific minimums; ignored callbacks do not fall through to SDK.",
         "accepted_source_refs": [
-          "accepted-addendum/SOURCE_ADDENDUM.md: receive entry steps 1\u20135",
+          "accepted-addendum/SOURCE_ADDENDUM.md: receive entry steps 1–5",
           "accepted-comparison/DISCOVERY_LEDGER.json: G14-6-CHANNEL / G14-6-CUSTOM"
         ],
         "code_refs": [

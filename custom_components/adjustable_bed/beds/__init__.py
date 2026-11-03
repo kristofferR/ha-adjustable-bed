@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish import BfCherishController as BfCherishController
+    from .casper_base import CasperBaseController as CasperBaseController
+    from .casper_sleep import CasperSleepController as CasperSleepController
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
@@ -30,6 +32,7 @@ if TYPE_CHECKING:
     from .furnimove import FurniMoveController as FurniMoveController
     from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
     from .innova import InnovaController as InnovaController
+    from .isleep import IsleepController as IsleepController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
     from .jiecang import JiecangController as JiecangController
@@ -106,6 +109,8 @@ _EXPORT_MODULES = {
     'RowControlController': 'row_control',
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
+    "CasperBaseController": "casper_base",
+    "CasperSleepController": "casper_sleep",
     "ComfortEnhancementsController": "comfort_enhancements",
     "EshineController": "eshine",
     "GlideawayMotionController": "glideaway_motion",
@@ -129,6 +134,7 @@ _EXPORT_MODULES = {
     "ComfortMotionController": "comfort_motion",
     "JiecangController": "jiecang",
     "JiecangAppController": "jiecang_app",
+    "IsleepController": "isleep",
     "KaidiController": "kaidi",
     "KeesonController": "keeson",
     "LeggettGen2Controller": "leggett_gen2",

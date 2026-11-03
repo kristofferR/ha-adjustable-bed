@@ -929,6 +929,14 @@ All eight profiles require both current-session write and notification roles.
 The seven profiles without position feedback keep angle sensing disabled and
 still subscribe for their proven timer state. Serta MP exposes calibrated angle
 feedback and direct pulse targets. Hardware behavior remains unverified.
+### ISleep
+
+Choose **ISleep (com.kaidi_test4)** and confirm its product ID, signed 32-bit
+room ID and advertised actuator descriptor. The profile owns layout, massage,
+feedback and movement timing. A two-address pair keeps these settings per side.
+Adopt existing rooms explicitly; enrollment of fresh mode09 devices is a
+separate device action. HA never resets an existing room. See the
+[ISleep guide](beds/isleep.md) and [row064 ledger](apk-analysis/dispositions/row064-isleep.md).
 
 ### BedSense app
 
@@ -954,3 +962,11 @@ Select the exact [BF or Cherish app](beds/bf-cherish.md) in manual setup.
 The app fixes its motor layout, capabilities and 200 ms movement refresh.
 Only the bounded pulse count is configurable. A shared FFE9 service does not
 select either app automatically. Each physical address keeps its own profile.
+
+### Casper Base
+
+Choose the explicit **Casper Base app** profile and its PRO/MAX product. Other
+stored-product choices are conditional records from this package, not inferred
+app compatibility. The product owns the motor layout and accessory controls.
+Configure two-address paired sides separately. Sleep sensors and the RCRM handset
+use separate entries. See the [Casper Base guide](beds/casper-base.md).

@@ -22,6 +22,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .const import (
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LINAK,
@@ -1024,6 +1025,14 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
     def native_value(self) -> float | None:
         """Return the current massage intensity from controller state."""
         controller = self._coordinator.controller
+        if controller is None and self._coordinator.bed_type == BED_TYPE_ISLEEP:
+            side = self._coordinator.entity_side or "both"
+            state = self._coordinator.controller_state.get(f"isleep_massage_{side}")
+            value = (
+                state.get(f"{self.entity_description.massage_zone}_intensity")
+                if isinstance(state, dict) else None
+            )
+            return float(value) if isinstance(value, (int, float)) else None
         if controller is None:
             state_key = {
                 "head": "woosa_head_level",
