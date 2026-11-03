@@ -11,6 +11,7 @@ from .base import BedController
 
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
+    from .adjustamattress import AdjustaMattressController as AdjustaMattressController
     from .bedsense import BedSenseController as BedSenseController
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .coolbase import CoolBaseController as CoolBaseController
@@ -116,6 +117,7 @@ _EXPORT_MODULES = {
     "TranquilController": "serenity",
     "ZSeriesController": "serenity",
     "SimmonsController": "simmons",
+    "AdjustaMattressController": "adjustamattress",
     "AdjustableLumbarController": "adjustable_lumbar",
     "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",

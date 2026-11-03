@@ -1335,3 +1335,29 @@ test("BedSense app actions retain distinct entities and app indicators", () => {
   expect(bed.massage.timer).toBe("sensor.bed_timer");
   expect(bed.utility).toEqual(["button.bed_cycle", "button.bed_clear"]);
 });
+
+
+test("AdjustaMattress model-gated controls and neutral reported fields stay visible", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.light", "adjustamattress_underbedLighting"),
+    entry("button.head_step", "adjustamattress_headStrengthAdd"),
+    entry("button.timer", "adjustamattress_timer20"),
+    entry("button.m1", "adjustamattress_m1"),
+    entry("button.sleep", "adjustamattress_sleep"),
+    entry("select.head", "adjustamattress_head_selector"),
+    entry("select.commit", "adjustamattress_alarm_commit"),
+    entry("number.hour", "adjustamattress_alarm_draft_hour"),
+    entry("sensor.head", "adjustamattress_head_intensity"),
+    entry("sensor.alarm", "adjustamattress_alarm_repeat"),
+    entry("binary_sensor.aux", "adjustamattress_auxiliary_status_bit_1"),
+  ]), "dev1");
+  expect(bed.lights.buttons).toEqual(["button.light"]);
+  expect(bed.massage.buttons).toEqual(["button.head_step", "button.timer"]);
+  expect(bed.massage.selects).toEqual(["select.head"]);
+  expect(bed.massage.states).toEqual(["sensor.head"]);
+  expect(bed.presets).toEqual(["button.m1"]);
+  expect(bed.utility).toEqual(["button.sleep"]);
+  expect(bed.utilitySelects).toEqual(["select.commit"]);
+  expect(bed.utilityNumbers).toEqual(["number.hour"]);
+  expect(bed.utilityStates).toEqual(["sensor.alarm", "binary_sensor.aux"]);
+});
