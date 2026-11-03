@@ -1092,6 +1092,18 @@
   },
   "entity": {
     "button": {
+      "comfort_enhancements_quiet_sleep": {
+        "name": "Quiet sleep"
+      },
+      "comfort_enhancements_head_cycle": {
+        "name": "Head massage intensity"
+      },
+      "comfort_enhancements_foot_cycle": {
+        "name": "Foot massage intensity"
+      },
+      "comfort_enhancements_timer_cycle": {
+        "name": "Massage timer / stop"
+      },
       "product_action": {
         "name": "{action}"
       },
@@ -4946,6 +4958,36 @@
     }
   },
   "services": {
+    "comfort_enhancements_set_alarm": {
+      "name": "Comfort Enhancements: set alarm",
+      "description": "Program or disable the BLE alarm for the current local day. No alarm feedback is available.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Comfort Enhancements bed."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling, with minute precision. The packet uses today even if this time has passed."
+        },
+        "memory": {
+          "name": "Memory",
+          "description": "0: none. MC2/MC3: 1 = A, 2 = B. MC4/MC5: 1 = Memory."
+        },
+        "massage": {
+          "name": "Massage",
+          "description": "Include the app alarm massage fields."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined two-address bed."
+        }
+      }
+    },
     "svane_release_axis": {
       "name": "Release Svane Remote axis",
       "description": "Signal the active writer to release one axis while the other continues.",

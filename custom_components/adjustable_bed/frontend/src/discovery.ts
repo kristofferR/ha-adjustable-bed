@@ -341,6 +341,7 @@ export function bedEntitiesForDevice(
           // Pump taps have no motor, preset or memory-slot meaning.
           bed.utility.push(id);
         } else if (
+          /^comfort_enhancements_(head|foot|timer)_cycle$/.test(key) ||
           key === "ore_comfort_massage_start" ||
           key === "innova_massage_level" ||
           key === "innova_massage_timer_hold"
@@ -351,6 +352,8 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
+        } else if (key === "comfort_enhancements_quiet_sleep") {
+          presetMap.set(key, id);
         } else if (key === "restonic_zzz") {
           // Restonic BT remote B's ZZZ tap; the app proves no preset or memory meaning.
           bed.utility.push(id);
