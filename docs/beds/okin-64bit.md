@@ -3,6 +3,8 @@
 **Status:** ❓ Needs testing
 **Ref:** Reverse-engineered from the `com.okin.bedding.adjustbed` APK
 
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
 ## Known Controllers
 
 - `NORA_CON` / `NORACON` Mattress Firm controllers
