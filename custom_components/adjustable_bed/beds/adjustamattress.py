@@ -14,6 +14,7 @@ from homeassistant.util import dt as dt_util
 from ..app_session import app_session
 from ..const import CONF_BLE_DEVICE_NAME
 from ..detection import is_mac_like_name
+from ..profiles import keeson as keeson_profiles
 from .adjustamattress_protocol import (
     BASE_ACTIONS,
     CYCLIC,
@@ -131,6 +132,14 @@ class AdjustaMattressController(BedController):
             ("adjustamattress", protocol_variant or "auto"),
             Preferences,
         )
+
+    @property
+    def profile(self) -> keeson_profiles.KeesonProfile | None:
+        """The Keeson profile of models P1 and P2; P3 and P4 send Okin N-frames."""
+        return {
+            "P1": keeson_profiles.ADJUSTAMATTRESS,
+            "P2": keeson_profiles.ADJUSTAMATTRESS_P2,
+        }.get(self.model)
 
     @property
     def supports_single_address_pairing(self) -> bool:
