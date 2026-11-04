@@ -93,7 +93,7 @@ class EstimatedPositionsFlowMixin:
     _est_initial: dict[str, tuple[float | None, float | None]]
     # Only a tracked move newer than this token belongs to the calibration.
     _est_after: int = 0
-    # Token of each measured motor's lowering move, which ended flat.
+    # Each measured motor's revision when its lowering ended flat.
     _est_bottom: dict[str, int]
     _est_queue: list[str]
     _est_motor: str | None = None
@@ -268,8 +268,10 @@ class EstimatedPositionsFlowMixin:
         self._est_task = None
         if manager is None or bed is None or motor is None or task is None:
             return None
-        # Only this calibration's own, unfailed move is a measurement.
-        elapsed = None if task.done() else bed.move_elapsed(motor, after=self._est_after)
+        # Only this calibration's own move is a measurement, and only if it
+        # still has not failed once STOP has settled.
+        running = None if task.done() else bed.running_move(motor, after=self._est_after)
+        elapsed = None if running is None else running[1]
         try:
             await async_stop_bed(self.hass, manager, bed)
         except Exception:  # noqa: BLE001 - the measurement fails, the flow reports it
@@ -284,6 +286,8 @@ class EstimatedPositionsFlowMixin:
                 raise
         except Exception:  # noqa: BLE001 - a failed move is not a measurement
             _LOGGER.debug("Calibration move ended with an error", exc_info=True)
+            elapsed = None
+        if running is not None and bed.move_failed(running[0]):
             elapsed = None
         if elapsed is None or not MIN_TRAVEL_S <= elapsed <= MAX_TRAVEL_S:
             return None
@@ -387,7 +391,7 @@ class EstimatedPositionsFlowMixin:
         self._est_times[self._est_motor][1] = elapsed
         self._est_measured.add(self._est_motor)
         assert self._est_bed is not None
-        self._est_bottom[self._est_motor] = self._est_bed.last_move(self._est_motor)
+        self._est_bottom[self._est_motor] = self._est_bed.revision(self._est_motor)
         self._est_queue.pop(0)
         return await self._async_estimate_next_motor()
 
@@ -436,8 +440,8 @@ class EstimatedPositionsFlowMixin:
             flat = [
                 motor
                 for motor in self._est_measured
-                if bed.last_move(motor) == self._est_bottom.get(motor)
-                and bed.move_elapsed(motor, after=0) is None
+                if bed.revision(motor) == self._est_bottom.get(motor)
+                and bed.running_move(motor, after=0) is None
             ]
             if flat:
                 bed.set_reference(flat)

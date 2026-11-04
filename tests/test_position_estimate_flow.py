@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock
 
@@ -38,6 +39,7 @@ class Bench:
         self.moves: list[tuple[str, str, int]] = []
         self.stops = 0
         self.fail_after_stop = False
+        self.release_fails_quietly = False
         self.started = asyncio.Event()
         self.admit = asyncio.Event()
         self.admit.set()
@@ -61,6 +63,14 @@ class Bench:
         if self.fail_after_stop:
             bed.end_move(token, direction, None)
             raise ConnectionError("lost during STOP")
+        if self.release_fails_quietly:
+            pe.notify_release_failed(
+                SimpleNamespace(
+                    hass=self.hass,
+                    entry=SimpleNamespace(entry_id="octo_flow_entry"),
+                    address=ADDRESS,
+                )
+            )
         bed.end_move(token, direction, 0.0)
 
     async def stop(self, *_args: object) -> None:
@@ -339,6 +349,47 @@ async def test_a_move_after_the_bottom_withholds_the_reference(
     bed = manager.beds[ADDRESS]
     later = bed.begin_move(("back",))  # someone raised the back before Submit
     bed.end_move(later, "up", 5.0)
+    await options.async_configure(flow_id, {"back_up": 18.0, "back_down": 16.0})
+    await hass.async_block_till_done()
+    manager = pe.position_estimates(hass, entry.entry_id)
+    assert manager is not None
+    assert manager.beds[ADDRESS].state("back") is EstimateState.UNKNOWN
+
+
+async def test_a_quiet_release_failure_during_stop_is_not_a_measurement(
+    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bench = Bench(hass, monkeypatch)
+    flow_id = await measure_back_from_flat(hass, entry)
+    bench.release_fails_quietly = True
+    bench.now += 12.0
+    result = await hass.config_entries.options.async_configure(
+        flow_id, {"next_step_id": "estimate_top"}
+    )
+    assert result["step_id"] == "estimate_retry"
+
+
+async def test_a_hardware_preset_after_the_bottom_withholds_the_reference(
+    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bench = Bench(hass, monkeypatch)
+    options = hass.config_entries.options
+    result = await open_estimates(hass, entry)
+    flow_id = result["flow_id"]
+    await options.async_configure(
+        flow_id, {"back": True, "legs": False, "measure": True, "acknowledge": True}
+    )
+    await options.async_configure(flow_id, {"next_step_id": "estimate_flat_confirm"})
+    await settle()
+    bench.now += 18.0
+    await options.async_configure(flow_id, {"next_step_id": "estimate_top"})
+    await settle()
+    bench.now += 16.0
+    await options.async_configure(flow_id, {"next_step_id": "estimate_bottom"})
+    manager = pe.position_estimates(hass, entry.entry_id)
+    assert manager is not None
+    # A hardware preset moved the (not yet calibrated) back before Submit.
+    manager.beds[ADDRESS].invalidate(pe.EstimateReason.HARDWARE_PRESET)
     await options.async_configure(flow_id, {"back_up": 18.0, "back_down": 16.0})
     await hass.async_block_till_done()
     manager = pe.position_estimates(hass, entry.entry_id)

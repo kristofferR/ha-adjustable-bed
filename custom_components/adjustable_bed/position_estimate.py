@@ -216,8 +216,11 @@ class BedEstimate:
         self.motors: dict[str, MotorEstimate] = {}
         self._moves: dict[int, _Move] = {}
         self._next_move = 0
-        # Token of the latest tracked move of each motor, started or finished.
-        self._last_move: dict[str, int] = {}
+        # Bumped per motor by every tracked move, invalidation and reference,
+        # calibrated or not, so a caller can tell whether anything touched it.
+        self._revision: dict[str, int] = {}
+        # Tracked moves that failed, by token.
+        self._failed_moves: set[int] = set()
 
     @property
     def key(self) -> str:
@@ -254,6 +257,7 @@ class BedEstimate:
     def set_reference(self, motors: Iterable[str] | None = None) -> None:
         """Record that the selected motors are flat now."""
         now = dt_util.utcnow()
+        self._bump(self._selected(motors))
         for motor in self._selected(motors):
             if self.motors[motor].calibrated:
                 self.motors[motor].set_reference(now)
@@ -270,6 +274,7 @@ class BedEstimate:
     def invalidate(self, reason: EstimateReason, motors: Iterable[str] | None = None) -> None:
         """Mark the selected motors unknown."""
         selected = self._selected(motors)
+        self._bump(selected)
         for motor in selected:
             if self.motors[motor].calibrated:
                 self.motors[motor].invalidate(reason)
@@ -282,26 +287,35 @@ class BedEstimate:
         self._moves[self._next_move] = _Move(
             motors, {motor: self.motors[motor].generation for motor in motors}, _clock()
         )
-        for motor in motors:
-            self._last_move[motor] = self._next_move
+        self._bump(motors)
         return self._next_move
+
+    def _bump(self, motors: Iterable[str]) -> None:
+        for motor in motors:
+            self._revision[motor] = self._revision.get(motor, 0) + 1
 
     @property
     def move_counter(self) -> int:
         """Token of the latest tracked move; later moves have larger tokens."""
         return self._next_move
 
-    def last_move(self, motor: str) -> int:
-        return self._last_move.get(motor, 0)
+    def revision(self, motor: str) -> int:
+        return self._revision.get(motor, 0)
 
-    def move_elapsed(self, motor: str, *, after: int) -> float | None:
-        """Seconds since a still-running, unfailed move of ``motor`` newer than ``after`` started."""
-        started = [
-            move.started
+    def running_move(self, motor: str, *, after: int) -> tuple[int, float] | None:
+        """Token and elapsed seconds of a running, unfailed move newer than ``after``."""
+        running = [
+            (token, move.started)
             for token, move in self._moves.items()
             if token > after and motor in move.motors and not move.failed
         ]
-        return _clock() - max(started) if started else None
+        if not running:
+            return None
+        token, started = max(running)
+        return token, _clock() - started
+
+    def move_failed(self, token: int) -> bool:
+        return token in self._failed_moves
 
     def end_move(self, token: int, direction: str, seconds: float | None) -> None:
         """Apply a finished move, or mark its motors unknown when it failed."""
@@ -309,6 +323,7 @@ class BedEstimate:
         if move is None or move.failed:
             return
         if seconds is None:
+            self._failed_moves.add(token)
             self.invalidate(EstimateReason.FAILED_MOVE, move.motors)
             return
         for motor in move.motors:
@@ -324,8 +339,9 @@ class BedEstimate:
     def abandon_moves(self, reason: EstimateReason) -> None:
         """A running tracked move ended in a way that cannot prove where it stopped."""
         motors: set[str] = set()
-        for move in self._moves.values():
+        for token, move in self._moves.items():
             move.failed = True
+            self._failed_moves.add(token)
             motors.update(move.motors)
         if motors:
             self.invalidate(reason, motors)
