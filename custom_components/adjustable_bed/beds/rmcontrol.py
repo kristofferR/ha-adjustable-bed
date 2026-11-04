@@ -280,7 +280,9 @@ class RmcontrolController(RichmatController):
         try:
             await self.write_command(
                 packet,
-                repeat_count=self._coordinator.motor_pulse_count,
+                # A leased hold (#483) refreshes until its lease ends.
+                repeat_count=self.leased_hold_refreshes(WRITE_SPACING_MS)
+                or self._coordinator.motor_pulse_count,
                 repeat_delay_ms=WRITE_SPACING_MS,
             )
         except BaseException:

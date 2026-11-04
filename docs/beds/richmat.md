@@ -72,6 +72,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed |
 |---------|-----------------|---------|----------|-----------|------------|-------|
 | Motor Control | ✅ (up to 7 motors) | ✅ Head, Foot, Leg/Pillow | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ (sustain presses) | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) |
 | [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units |
 | Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected |
@@ -96,27 +97,29 @@ product code, a Richmat MH app bed type, or HJBed with its product.
 
 Movement repeats the code at the entry's pulse count and delay, whose defaults are
 listed, then always sends STOP with a fresh cancel event. Every other button is
-one write.
+one write. Under a [renewable hold](../SERVICES.md#renewable-holds), movement
+repeats at the same delay until the lease ends or STOP arrives, up to 30 s, then
+sends STOP.
 
-| Profile | Bed type | Framing | STOP | Default pulses | Presets and recall | Memory |
-|---|---|---|---|---|---|---|
-| Richmat WiLinke | `richmat` | wilinke | `6E 01 00 6E DD` | 7 × 150 ms | once | 5 slots |
-| Richmat Nordic | `richmat` | nordic | `6E` | 7 × 150 ms | once | 5 slots |
-| Richmat Prefix55 | `richmat` | prefix55 | `55 01 00 6E C4` | 7 × 150 ms | once | 5 slots |
-| Richmat PrefixAA | `richmat` | prefixaa | `AA 01 00 6E 19` | 7 × 150 ms | once | 5 slots |
-| BedTech | `bedtech` | wilinke | `6E 01 00 5E CD` | 10 × 100 ms | once | 2 slots |
-| L&P MlRM | `leggett_wilinke` | wilinke | `6E 01 00 6E DD` | 10 × 110 ms | 100 × 300 ms, then STOP | 2 slots |
+| Profile | Bed type | Framing | STOP | Default pulses | Presets and recall | Memory | Hold until release |
+|---|---|---|---|---|---|---|---|
+| Richmat WiLinke | `richmat` | wilinke | `6E 01 00 6E DD` | 7 × 150 ms | once | 5 slots | renewable lease |
+| Richmat Nordic | `richmat` | nordic | `6E` | 7 × 150 ms | once | 5 slots | renewable lease |
+| Richmat Prefix55 | `richmat` | prefix55 | `55 01 00 6E C4` | 7 × 150 ms | once | 5 slots | renewable lease |
+| Richmat PrefixAA | `richmat` | prefixaa | `AA 01 00 6E 19` | 7 × 150 ms | once | 5 slots | renewable lease |
+| BedTech | `bedtech` | wilinke | `6E 01 00 5E CD` | 10 × 100 ms | once | 2 slots | no |
+| L&P MlRM | `leggett_wilinke` | wilinke | `6E 01 00 6E DD` | 10 × 110 ms | 100 × 300 ms, then STOP | 2 slots | renewable lease |
 
 ### Catalog apps
 
-| Profile | Bed type | Transport order | Commands |
-|---|---|---|---|
-| HJBed | `hjbed` | W1, N1, W5, W4, W3, W2 | per-product catalog |
-| Richmat MH Revive Control | `richmat_revive` | N1, W1, W2, W3, W4 | per-model catalog |
-| Richmat MH Best Mattress | `richmat_best_mattress` | N1, W1, W2, W3, W4 | per-model catalog |
-| Richmat MH Blvd Home | `richmat_blvd_home` | N1, W1, W2, W3, W4 | per-model catalog |
-| Richmat MH HARMONY | `richmat_harmony` | N1, W1, W2, W3, W4 | per-model catalog |
-| Richmat MH Idealbed | `richmat_idealbed` | N1, W1, W2, W3, W4 | per-model catalog |
+| Profile | Bed type | Transport order | Commands | Hold until release |
+|---|---|---|---|---|
+| HJBed | `hjbed` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease |
+| Richmat MH Revive Control | `richmat_revive` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH Best Mattress | `richmat_best_mattress` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH Blvd Home | `richmat_blvd_home` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH HARMONY | `richmat_harmony` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH Idealbed | `richmat_idealbed` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -347,6 +350,11 @@ profile's Notifications.
   others log it and keep the original error.
 - The catalog apps release per catalog entry: some actions are followed by STOP,
   others are not (see each profile's Controls).
+- A [renewable hold](../SERVICES.md#renewable-holds) keeps the held code
+  refreshing at the profile's own interval (the entry's pulse delay on the
+  fixed-table routes, the app's KEEP or sustain cadence on the catalog apps)
+  until the lease ends or a STOP arrives, up to 30 s, then sends the same STOP.
+  BedTech keeps finite pulses.
 
 ### Vectors
 

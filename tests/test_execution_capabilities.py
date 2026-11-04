@@ -43,14 +43,43 @@ APP_ROUTES = {
 }
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
+# Richmat 6E (R1) profiles with stream evidence. BedTech, GM Motor and Casper
+# Base are blocked and declare nothing.
+RICHMAT_STREAM: dict[str, tuple[str, ...]] = {
+    **{
+        f"richmat_{framing}": ("rmc2",)
+        for framing in ("wilinke", "nordic", "prefix55", "prefixaa")
+    },
+    "richmat_mh_revive": ("revive", "row055"),
+    "richmat_mh_best_mattress": ("best", "row055"),
+    "richmat_mh_blvd_home": ("blvd", "row055"),
+    "richmat_mh_harmony": ("harmony", "row055"),
+    "richmat_mh_idealbed": ("ideal", "row055"),
+    "leggett_wilinke": ("lp2",),
+    "hjbed": ("row121",),
+}
+
 # Declaration -> declared field -> evidence keys from the design document.
-EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {}
+EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"RichmatProfile:{key}": {"hold": keys} for key, keys in RICHMAT_STREAM.items()},
+}
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
-DECLARATION_SITES: dict[str, tuple[str, ...]] = {}
+DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/richmat.py:<module>.RICHMAT": tuple(
+        f"RichmatProfile:{key}"
+        for key in RICHMAT_STREAM
+        if key.startswith("richmat_") and not key.startswith("richmat_mh_")
+    ),
+    "profiles/richmat.py:<module>.RICHMAT_MH": tuple(
+        f"RichmatProfile:{key}" for key in RICHMAT_STREAM if key.startswith("richmat_mh_")
+    ),
+    "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
+    "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
+}
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent"})
