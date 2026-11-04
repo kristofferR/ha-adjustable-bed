@@ -254,11 +254,12 @@ class _MergedStream:
         del self.members[member.resource]
         member.outcome = outcome
         now = asyncio.get_running_loop().time()
-        # An expired member stopped moving at its deadline, however late the
-        # streamer noticed.
-        member.left_at = (
-            min(now, member.deadline) if outcome is CommandOutcome.EXPIRED else now
-        )
+        if member.left_at is None:
+            # An expired member stopped moving at its deadline, however late
+            # the streamer noticed; an interrupted write stamped it already.
+            member.left_at = (
+                min(now, member.deadline) if outcome is CommandOutcome.EXPIRED else now
+            )
         self.ending.append(member)
         self.scheduler._end_member_lease(member)
         self.membership_changed = True
@@ -360,8 +361,13 @@ class _MergedStream:
             )
             for member in tuple(self.members.values()):
                 self.retire(member, outcome)
-                if outcome is CommandOutcome.FAILED and failure is not None:
-                    member.error = failure
+            if outcome is CommandOutcome.FAILED and failure is not None:
+                # Members retired just before the failure have not settled yet;
+                # the failure is theirs too.
+                for member in (*self.ending, *self.awaiting_release):
+                    if not member.done.is_set():
+                        member.outcome = CommandOutcome.FAILED
+                        member.error = member.error or failure
             # A STOP arriving now cancels this task; the cleanup and release
             # still finish before the wire lane is handed on.
             await _settled(self._close(driver))
@@ -381,6 +387,7 @@ class _MergedStream:
         loop = asyncio.get_running_loop()
         tick = asyncio.ensure_future(driver.write_stream_tick(members))
         ours = False
+        stopping = False
         try:
             while not tick.done():
                 live = [m for m in members if self.members.get(m.resource) is m]
@@ -389,15 +396,29 @@ class _MergedStream:
                 # unwinding never counts as travel.
                 for member in overdue:
                     self.retire(member, CommandOutcome.EXPIRED)
-                if overdue or len(live) < len(members) or context.cancel_event.is_set():
+                if context.cancel_event.is_set():
+                    stopping = True
+                    break
+                if overdue or len(live) < len(members):
                     break
                 self.wake.clear()
                 timeout = max(0.0, min(m.deadline for m in live) - loop.time())
                 with contextlib.suppress(TimeoutError):
                     async with asyncio.timeout(timeout):
                         await _first_set_or_done(tick, self.wake, context.cancel_event)
+        except asyncio.CancelledError:
+            stopping = True  # STOP preempted the streamer task itself
+            raise
         finally:
             if not tick.done():
+                if stopping or context.cancel_event.is_set():
+                    # Every live member stops here; the write's unwinding below
+                    # is not travel. Members that keep moving after another
+                    # member left are not stamped.
+                    stopped_at = loop.time()
+                    for member in self.members.values():
+                        if member.left_at is None:
+                            member.left_at = stopped_at
                 ours = True
                 tick.cancel()
             # Never hand the wire on while this write is still running, even

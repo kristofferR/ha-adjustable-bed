@@ -608,3 +608,69 @@ async def test_a_slow_cancellation_is_not_counted_as_travel() -> None:
         scheduler.execute_stream_member(timed, CONCURRENT, runner_for(driver)), 1
     ) is CommandOutcome.EXPIRED
     assert reported[0] == pytest.approx(0.02, abs=0.01)
+
+
+@pytest.mark.parametrize("ending", ["stop", "replace"])
+async def test_teardown_after_stop_or_replacement_is_not_travel(ending: str) -> None:
+    scheduler = DeviceCommandScheduler(f"teardown-{ending}")
+    driver = FakeDriver()
+    reported: list[float | None] = []
+    writing = asyncio.Event()
+
+    async def tick(members: tuple[StreamMember, ...]) -> None:
+        driver.events.append(("tick",))
+        writing.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await asyncio.sleep(0.15)  # a slow teardown after cancellation
+            raise
+
+    driver.write_stream_tick = tick  # type: ignore[method-assign]
+    held = member("back")
+    held.on_wire = lambda: None
+    held.on_left = reported.append
+    back = join(scheduler, driver, held)
+    await asyncio.wait_for(writing.wait(), 1)
+    await asyncio.sleep(0.02)
+    if ending == "stop":
+        epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
+        await asyncio.wait_for(back, 1)
+        scheduler.finish_stop(epoch)
+    else:
+
+        async def preset(_context: CommandContext) -> None:
+            return None
+
+        await scheduler.execute(CommandIntent(preset))
+        await asyncio.wait_for(back, 1)
+    assert reported[0] == pytest.approx(0.02, abs=0.015)
+
+
+async def test_a_failed_write_reaches_a_member_retired_just_before() -> None:
+    scheduler = DeviceCommandScheduler("failed-retired")
+    driver = FakeDriver()
+    reported: list[float | None] = []
+
+    async def tick(members: tuple[StreamMember, ...]) -> None:
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            raise ConnectionError("link lost") from None
+
+    driver.write_stream_tick = tick  # type: ignore[method-assign]
+    timed = StreamMember(
+        motor="back",
+        resource="motor:back",
+        action="up",
+        deadline=math.inf,
+        duration_s=0.02,
+        on_left=reported.append,
+    )
+    timed.on_wire = lambda: None
+    with pytest.raises(ConnectionError, match="link lost"):
+        await asyncio.wait_for(
+            scheduler.execute_stream_member(timed, CONCURRENT, runner_for(driver)), 1
+        )
+    assert timed.outcome is CommandOutcome.FAILED
+    assert reported == [None]
