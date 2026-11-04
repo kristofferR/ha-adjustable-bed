@@ -42,6 +42,7 @@ from .entity_discovery import (
 )
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import entity_runtimes
+from .position_estimate_entities import async_setup_estimate_sensors
 
 if TYPE_CHECKING:
     from .beds.base import ControllerStateSensorSpec
@@ -145,6 +146,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed sensor entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    # Opt-in travel-time estimates and saved positions (#601).
+    async_setup_estimate_sensors(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):
         async_remove_retired_rmcontrol_telemetry(hass, entry, runtime, "sensor")
         async_setup_dynamic_entities(

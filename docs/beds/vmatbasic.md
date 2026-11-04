@@ -81,7 +81,7 @@ MTU command is added.
   **V-MAT Basic** and the product explicitly: V-MAT-BASIC-RF,
   V-MAT-BASIC-RF-CBI, or V-MAT-BASIC-RF-CBI with XT-Box.
 - Existing entries keep their controllers until a
-  [guided reconfigure](../CONFIGURATION.md#vibradorm-guided-setup-and-migration)
+  [guided reconfigure](vibradorm.md#guided-setup-and-migration)
   succeeds and you confirm it.
 - A shared Bluetooth identifier, device name or model string cannot choose one
   of these profiles.
@@ -105,6 +105,18 @@ MTU command is added.
 
 Bonded status is advisory in this app. The integration does not invent native
 bonding, a PIN, authentication exchange or authenticated-GATT proof.
+
+### Home Assistant setup
+
+Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic**, then
+**V-MAT Basic** and the exact Basic, CBI or CBI with XT-Box product. Bluetooth
+identifiers and diagnostic model strings do not choose this profile. CBI exposes
+saved floor level 0–255 and timer 0–1439 minutes; XT exposes level 1–6 and timer
+0–255 minutes. Leaving the optional level unset preserves the source distinction
+between the ON-button default and settings-screen default. Timer defaults to zero.
+Product changes use the guided reconfigure flow and discard incompatible floor
+values. Ordinary brightness/timer changes remain in Configure. Product profiles
+belong to one physical receiver; split a pair before changing them.
 
 ## Commands
 

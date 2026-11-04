@@ -187,6 +187,17 @@ Each query is listed with every offset it is sent at.
 | 1800 ms, 1900 ms | Software | `F1 F1 00 02 40 00 42 7E` |
 <!-- /generated -->
 
+### Aliases
+
+Bed types that build the same controller over the same profile with the same
+default timing, so they send identical bytes. They stay separate bed types so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type | Same as | Differs only in |
+|----------|---------|-----------------|
+| `comfort_motion` | `jiecang` | Detection signal, setup label and profile-review suggestions; both select the [legacy route](#legacy-route) |
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/jiecang.py`. Profiles

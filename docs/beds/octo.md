@@ -70,6 +70,7 @@ checked; see [Analysis provenance](#analysis-provenance).
 | Bed Motor Control | ✅ (1-4 motors from `CAP_MOTORCOUNT`; explicit 1-4 override) |
 | One-motor TV/Bed Lift | ✅ (Standard variant; dedicated TV Lift entity, hardware validation pending) |
 | Position Feedback | ❌ |
+| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ (opt-in, Standard variant; back, legs, head and feet, hardware validation pending) |
 | Memory Presets | ✅ (dynamically detected, Standard variant only) |
 | Combined Back + Legs Control | ✅ (two-motor Standard and Star2 variants; hold-capable in the bundled card) |
 | Under-bed Lights | ✅ (Standard variant only; on/off switch, RGB / RGBW light entity on `CAP_LIGHT_RGB` / `CAP_LIGHT_RGBWI`) |

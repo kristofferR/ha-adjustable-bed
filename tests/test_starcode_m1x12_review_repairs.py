@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     STAR_ELEVATE_VARIANT_M1X12,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.entity import hold_lease_attributes
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_devices import child_device_info
@@ -184,6 +185,8 @@ async def test_paired_motor_buttons_publish_declared_flat_hold_metadata(
             "held_control": expected_control,
             "hold_start_delay_ms": spec.hold.start_delay_ms,
             "hold_release_delay_ms": spec.hold.release_delay_ms,
+            # Both sides declare the same renewable hold (#483).
+            **hold_lease_attributes(controllers, button._motor_key),
         }
 
     if source_kind == "main":

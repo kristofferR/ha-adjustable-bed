@@ -52,6 +52,13 @@ class OkinNFrameController(BedController):
             repeat_delay_ms,
             self._write_with_response,
         )
+        self._record_command_trace(
+            self.control_characteristic_uuid,
+            command,
+            response=self._write_with_response,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+        )
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)

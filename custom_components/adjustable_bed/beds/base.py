@@ -2362,6 +2362,18 @@ class BedController(ABC):
         return tuple(specs)
 
     @property
+    def estimated_position_motor_groups(self) -> Mapping[str, tuple[str, ...]]:
+        """Map motor control keys to the motors a travel-time estimate can follow.
+
+        Only protocols with reliable directional movement and a protocol-defined
+        STOP declare this. Each estimated motor maps to itself; a combined
+        control maps to every motor it drives, and a control that drives no
+        estimated motor maps to ``()``. Using a motor control missing from the
+        map makes the bed's estimates unknown. The default declares no motors.
+        """
+        return {}
+
+    @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
         """Return motor entity keys that should be removed when this controller loads."""
         return frozenset()

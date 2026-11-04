@@ -64,6 +64,9 @@ a shared registry.
   stale blocks, one marked region per block, spelled frames are frozen vectors,
   and `bed_types()` matches the factory. Checks only one family needs go in
   `tests/test_codec_docs_<family>.py`.
+- **Discovery:** `custom_components/adjustable_bed/discovery_hints/<family>.py`
+  declares `HINTS`, from which the manifest's Bluetooth matchers are generated
+  (see [discovery hints](discovery-hints.md)).
 
 Profile keys are scoped to their profile class. Two families may use the same
 key (Jiecang and Limoss both call their pre-v5 route `legacy`); every lookup,
@@ -123,6 +126,15 @@ one section per profile. Tables the profile data already knows sit between
 `scripts/generate_codec_docs.py` from each family's `scripts/codec_docs/` module;
 `tests/test_codec_docs.py` fails when one is stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
 Discovery ledgers stay separate documents linked from each profile section.
+
+Byte-identical bed types kept for existing entries are listed under each codec
+guide's **Aliases**; `tests/test_codec_docs.py` fails when two codec-backed bed
+types build the same controller, profile and default timing without being
+listed there. The default pulse timing table in
+[Configuration](../CONFIGURATION.md#default-values-by-bed-type) is generated the
+same way, from `scripts/codec_docs/_configuration.py`. `scripts/check_doc_links.py`
+and `tests/test_doc_links.py` check every relative link and anchor in the README
+and `docs/`.
 
 ## Controller glue
 

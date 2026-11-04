@@ -173,6 +173,16 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 
 See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 
+### Aliases
+
+`leggett_platt` is kept for existing entries and is not offered in the bed-type
+list. With variant `gen2`, or `auto` when the bed exposes no WiLinke service,
+it builds the same Gen2 controller with the same timing as `leggett_gen2`, so
+the two send identical bytes; with variant
+`okin` it is an alias of `leggett_okin` (see the
+[Okin N-frame aliases](okin-nframe.md#aliases)). The
+[protocol inventory](../design/protocol-inventory.md) proves both by capture.
+
 ## Gen2 Variant (ASCII Commands)
 
 **Service UUID:** `45e25100-3171-4cfc-ae89-1d83cf8d8071`

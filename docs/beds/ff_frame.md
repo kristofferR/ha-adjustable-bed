@@ -663,6 +663,15 @@ select the layout. The first matching rule wins:
 - The type 3 waist label reads HIP while pressed in the app; HA keeps the idle
   label. Visible axes do not establish a physical motor count.
 
+##### Home Assistant setup
+
+Select **BedSense app (com.fenmenbielei.bedsense)** and a layout, or select its
+case-sensitive Bluetooth-name layout rule. Layout owns the motion controls;
+generic motor count, massage and angle-sensing choices are hidden. The original
+Bluetooth name and layout belong to each side of a two-address pair. There is no
+single-address left/right command. This profile section covers all nine
+layouts, memory indicators and app-labelled massage/light actions.
+
 #### Controls
 
 Every action is a row of the command table at the end of this section; **Types**
@@ -846,6 +855,10 @@ Bluetooth name the app used, preserving case.
   is unknown. Button identities survive temporarily unknown inventory; a
   process-local snapshot keeps validated controls for the same address and
   profile across reconnects.
+
+##### Home Assistant setup
+
+Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes.
 
 #### Controls
 
