@@ -278,3 +278,48 @@ async def test_hold_control_lease_streams_the_held_control(runtime) -> None:
     assert set(frames[:first_zero]) == {held}
     assert set(frames[first_zero:]) == {ZERO}
     assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
+
+
+async def test_held_move_feeds_the_estimate_like_a_timed_move(runtime) -> None:
+    """A lease-held move is timed by the same wrapper as a finite timed move (#601)."""
+    from custom_components.adjustable_bed import position_estimate as pe
+
+    hass, coordinator, case, frames = runtime
+    entry_id = coordinator.entry.entry_id
+    manager = await pe.async_setup_position_estimates(hass, entry_id, ((ADDRESS, None),))
+    bed = manager.beds[ADDRESS]
+    bed.configure({case.motor: (10.0, 10.0)})
+    bed.set_reference()
+    groups = property(lambda _self: {case.motor: (case.motor,)})
+    try:
+        with patch.object(type(coordinator.controller), "estimated_position_motor_groups", groups):
+            loop = asyncio.get_running_loop()
+            began = loop.time()
+            start = asyncio.create_task(_hold(hass, case, 5))
+            await _started(frames, case.held)
+            await asyncio.sleep(0.2)
+            await asyncio.wait_for(_hold(hass, case, 5), 0.1)
+            await asyncio.wait_for(start, 3)
+            held_s = loop.time() - began
+            hold_percent = bed.motors[case.motor].percent
+            assert hold_percent is not None
+            # One move, timed from its start through the profile's own release.
+            assert bed.motors[case.motor].moves_since_reference == 1
+            assert 0.5 <= hold_percent / 100 * 10.0 <= held_s + 0.05
+
+            # The same duration without a lease takes the same timing path.
+            bed.set_reference()
+            began = loop.time()
+            await hass.services.async_call(
+                DOMAIN,
+                "timed_move",
+                {"device_id": ["bed"], "motor": case.motor, "direction": "up", "duration_ms": 500},
+                blocking=True,
+            )
+            finite_s = loop.time() - began
+            finite_percent = bed.motors[case.motor].percent
+            assert finite_percent is not None
+            assert 0.5 <= finite_percent / 100 * 10.0 <= finite_s
+            assert abs(hold_percent - finite_percent) < 2.5
+    finally:
+        await pe.async_unload_position_estimates(hass, entry_id)
