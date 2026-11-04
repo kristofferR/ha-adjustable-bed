@@ -640,28 +640,19 @@ async def _run_tracked(
     direction: str,
     command: MotorCommand,
     controller: BedController,
-    start_s: float,
-    release_s: float,
-    max_travel_s: float | None,
 ) -> None:
-    def travel(seconds: float) -> float:
-        # The movement never outlasts its requested window, so time spent in a
-        # release delay that cancellation interrupted is not counted.
-        return seconds if max_travel_s is None else min(seconds, max_travel_s)
-
     token = bed.begin_move(motors)
     started = _clock()
     try:
         await command(controller)
     except asyncio.CancelledError:
         # STOP or a replacing command ended the move; the stop time is known.
-        elapsed = _clock() - started
-        bed.end_move(token, direction, travel(elapsed - min(start_s, elapsed)))
+        bed.end_move(token, direction, _clock() - started)
         raise
     except BaseException:
         bed.end_move(token, direction, None)
         raise
-    bed.end_move(token, direction, travel(_clock() - started - start_s - release_s))
+    bed.end_move(token, direction, _clock() - started)
 
 
 def track_motor_command(
@@ -669,16 +660,10 @@ def track_motor_command(
     motor_key: str,
     direction: str,
     command: MotorCommand,
-    *,
-    start_delay_ms: int = 0,
-    release_delay_ms: int = 0,
-    max_travel_ms: int | None = None,
 ) -> MotorCommand:
     """Time a motor control command, keyed like ``MotorControlSpec.key``.
 
-    The delays are wrapper time before and after the movement in which the
-    motor is not moving, such as a declared hold's start and release delays.
-    ``max_travel_ms`` is the movement window the command requests, if bounded.
+    Wrap only the movement itself, so delays around it are not counted.
     """
     if not _estimates_active(hass):
         return command
@@ -697,16 +682,7 @@ def track_motor_command(
         if not selected:
             await command(controller)
             return
-        await _run_tracked(
-            bed,
-            selected,
-            direction,
-            command,
-            controller,
-            start_delay_ms / 1000,
-            release_delay_ms / 1000,
-            None if max_travel_ms is None else max_travel_ms / 1000,
-        )
+        await _run_tracked(bed, selected, direction, command, controller)
 
     return tracked
 
@@ -735,7 +711,7 @@ def track_held_control(
                 await command(controller)
                 return
             direction = "up" if control == hold.up_control else "down"
-            await _run_tracked(bed, selected, direction, command, controller, 0.0, 0.0, None)
+            await _run_tracked(bed, selected, direction, command, controller)
             return
         bed.invalidate(
             EstimateReason.HARDWARE_PRESET
@@ -882,12 +858,17 @@ async def async_recall_position(
     plans: list[tuple[BedEstimate, dict[str, float]]] = []
     for key, targets in position.targets.items():
         bed = manager.bed_for_key(key)
-        if bed is None:
-            continue
-        motors = {motor: value for motor, value in targets.items() if motor in bed.motors}
-        if motors:
-            _require_tracking(bed, motors)
-            plans.append((bed, motors))
+        # Every saved side and motor must still be estimated: recalling only
+        # part of a position would report a position that was never reached.
+        if bed is None or not targets or any(motor not in bed.motors for motor in targets):
+            raise ServiceValidationError(
+                f"{position.name} includes a motor that is no longer estimated",
+                translation_domain=DOMAIN,
+                translation_key="saved_position_unavailable",
+                translation_placeholders={"position": position.name},
+            )
+        _require_tracking(bed, targets)
+        plans.append((bed, dict(targets)))
     if not plans:
         raise ServiceValidationError(
             "This saved position has no calibrated motors",

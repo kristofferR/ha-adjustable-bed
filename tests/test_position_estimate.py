@@ -123,32 +123,6 @@ async def test_tracked_moves_follow_direction_and_combined_motors(
     assert bed.tracking(["back", "legs"])
 
 
-async def test_declared_hold_overhead_is_not_travel(hass: HomeAssistant, clock: Clock) -> None:
-    manager = await calibrated(hass)
-    command = pe.track_motor_command(
-        hass, "back", "up", moving(clock, 2.2), start_delay_ms=100, release_delay_ms=100
-    )
-    await command(controller(hass, LEFT))
-    assert manager.beds[LEFT].motors["back"].percent == pytest.approx(10.0)
-
-
-async def test_cancelled_hold_subtracts_only_the_start_delay(
-    hass: HomeAssistant, clock: Clock
-) -> None:
-    manager = await calibrated(hass)
-    command = pe.track_motor_command(
-        hass,
-        "back",
-        "up",
-        moving(clock, 1.1, asyncio.CancelledError()),
-        start_delay_ms=100,
-        release_delay_ms=100,
-    )
-    with pytest.raises(asyncio.CancelledError):
-        await command(controller(hass, LEFT))
-    assert manager.beds[LEFT].motors["back"].percent == pytest.approx(5.0)
-
-
 async def test_swallowed_release_failure_is_not_travel(hass: HomeAssistant, clock: Clock) -> None:
     """A Richmat quiet release logs a failed STOP; the estimate must not trust it."""
     from unittest.mock import MagicMock
@@ -471,25 +445,6 @@ async def test_recall_refuses_while_a_tracked_move_runs(
         await pe.async_move_bed(hass, manager, bed, {"back": 50.0})
     assert err.value.translation_key == "position_estimate_moving"
     timed_move.assert_not_awaited()
-
-
-async def test_cancel_during_release_counts_no_more_than_the_window(
-    hass: HomeAssistant, clock: Clock
-) -> None:
-    manager = await calibrated(hass)
-    # 100 ms start, 1 s hold, cancelled 50 ms into the release delay.
-    command = pe.track_motor_command(
-        hass,
-        "back",
-        "up",
-        moving(clock, 1.15, asyncio.CancelledError()),
-        start_delay_ms=100,
-        release_delay_ms=100,
-        max_travel_ms=1000,
-    )
-    with pytest.raises(asyncio.CancelledError):
-        await command(controller(hass, LEFT))
-    assert manager.beds[LEFT].motors["back"].percent == pytest.approx(5.0)
 
 
 async def test_a_side_left_unknown_stops_the_other_side(

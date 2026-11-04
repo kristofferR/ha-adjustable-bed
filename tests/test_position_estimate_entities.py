@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -129,18 +129,22 @@ async def test_cover_moves_are_timed_and_remote_use_invalidates(
 
     async def hold(_self: OctoController, control: str, duration_ms: int) -> None:
         assert control == "back_up"
-        clock[0] += 1.2  # the declared 100 ms start and release delays are not travel
+        # Write latency stretches a requested 1 s stream; all of it is travel.
+        clock[0] += 1.2
+
+    async def delay(seconds: float) -> None:
+        clock[0] += seconds  # the declared start and release delays are not travel
 
     await call(hass, "set_position_reference", motors=["back"])
     with (
         patch.object(OctoController, "hold_control", hold),
-        patch("custom_components.adjustable_bed.cover.asyncio.sleep", AsyncMock()),
+        patch("custom_components.adjustable_bed.cover.asyncio.sleep", delay),
     ):
         await hass.services.async_call(
             "cover", "open_cover", {"entity_id": entity_id(hass, "cover", "back")}, blocking=True
         )
     back = entity_id(hass, "number", "back_position_estimated")
-    assert hass.states.get(back).state == "5"
+    assert hass.states.get(back).state == "6"
 
     await hass.services.async_call(
         "button",
@@ -304,8 +308,38 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
     manager.beds[right].configure({"back": (20.0, 10.0)})
     manager.beds[right].set_reference()
 
+    # A recall never silently skips a saved side that is no longer estimated.
+    manager.beds[right].configure({})
+    with pytest.raises(ServiceValidationError) as err:
+        await call_pair("recall_position", position="Read")
+    assert err.value.translation_key == "saved_position_unavailable"
+    manager.beds[right].configure({"back": (20.0, 10.0)})
+    manager.beds[right].set_reference()
+
     await call_pair("mark_position_unknown", side="right")
     assert manager.beds[left].tracking(["back"])
     with pytest.raises(ServiceValidationError):
         await call_pair("recall_position", position="Read")
     await pe.async_unload_position_estimates(hass, entry.entry_id)
+
+
+async def test_timed_move_times_only_the_hold(
+    hass: HomeAssistant, octo_bed: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    clock = [0.0]
+    monkeypatch.setattr(pe, "_clock", lambda: clock[0])
+
+    async def hold(_self: OctoController, control: str, duration_ms: int) -> None:
+        assert (control, duration_ms) == ("back_up", 2000)
+        clock[0] += 2.0
+
+    async def delay(seconds: float) -> None:
+        clock[0] += seconds
+
+    await call(hass, "set_position_reference", motors=["back"])
+    with (
+        patch.object(OctoController, "hold_control", hold),
+        patch("custom_components.adjustable_bed.services.asyncio.sleep", delay),
+    ):
+        await call(hass, "timed_move", motor="back", direction="up", duration_ms=2000)
+    assert hass.states.get(entity_id(hass, "number", "back_position_estimated")).state == "10"

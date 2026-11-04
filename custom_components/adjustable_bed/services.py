@@ -2082,11 +2082,23 @@ async def _timed_move_plan(
             calculated_repeat_count,
         )
 
+        async def held_movement(ctrl: BedController, _control: str | None = hold_control) -> None:
+            assert _control is not None
+            await ctrl.hold_control(_control, duration_ms)
+
+        # Only the movement itself is timed: hold start and release delays and
+        # the STOP cleanup around it are not travel. Single-address side views
+        # carry no hass and are never estimated.
+        estimate_hass = getattr(coordinator, "hass", None)
+        tracked_hold = track_motor_command(estimate_hass, motor, direction, held_movement)
+        tracked_move = track_motor_command(estimate_hass, motor, direction, move_fn)
+
         # Bind closure variables as defaults to avoid late-binding bugs
         async def timed_movement(
             ctrl: BedController,
             *,
-            _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
+            _move_fn: Callable[..., Coroutine[Any, Any, None]] = tracked_move,
+            _held: Callable[..., Coroutine[Any, Any, None]] = tracked_hold,
             _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
             _hold_control: str | None = hold_control,
             _hold_spec: ControllerMotorHoldSpec | None = hold_spec,
@@ -2103,7 +2115,7 @@ async def _timed_move_plan(
                     await ctrl.prepare_for_movement()
                     if _hold_spec.start_delay_ms:
                         await asyncio.sleep(_hold_spec.start_delay_ms / 1000)
-                    await ctrl.hold_control(_hold_control, duration_ms)
+                    await _held(ctrl)
                     if _hold_spec.release_delay_ms:
                         await asyncio.sleep(_hold_spec.release_delay_ms / 1000)
                     return
@@ -2111,7 +2123,7 @@ async def _timed_move_plan(
                 try:
                     await ctrl.prepare_for_movement()
                     if _hold_control is not None:
-                        await ctrl.hold_control(_hold_control, duration_ms)
+                        await _held(ctrl)
                     else:
                         deadline = asyncio.timeout(duration_ms / 1000)
                         try:
@@ -2140,19 +2152,8 @@ async def _timed_move_plan(
                             await stop_task
                             raise
 
-        # A declared hold's start and release delays are wrapper time, not travel.
-        delayed = hold_spec is not None and coordinator.bed_type != BED_TYPE_SLEEPYS_ELITE_APP
         return (
-            track_motor_command(
-                # Single-address side views carry no hass and are never estimated.
-                getattr(coordinator, "hass", None),
-                motor,
-                direction,
-                timed_movement,
-                start_delay_ms=hold_spec.start_delay_ms if delayed and hold_spec else 0,
-                release_delay_ms=hold_spec.release_delay_ms if delayed and hold_spec else 0,
-                max_travel_ms=duration_ms,
-            ),
+            timed_movement,
             calculated_repeat_count,
             pulse_delay_ms,
             spec.scheduler_resource or f"motor:{spec.position_key or spec.key}",

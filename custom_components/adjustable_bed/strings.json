@@ -8166,6 +8166,9 @@
     },
     "position_estimate_move_failed": {
       "message": "A movement failed, so the estimated position is unknown. Set the reference again."
+    },
+    "saved_position_unavailable": {
+      "message": "\"{position}\" includes a motor that is no longer estimated. Update or delete it."
     }
   },
   "issues": {

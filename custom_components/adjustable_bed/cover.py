@@ -482,37 +482,37 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             if hold is not None:
                 control = hold.up_control if direction == "open" else hold.down_control
 
+                duration_ms = (
+                    SLEEPYS_ELITE_NATIVE_ACTION_MS
+                    if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+                    else 1000
+                )
+
+                async def held(controller: BedController) -> None:
+                    await controller.hold_control(control, duration_ms)
+
+                # Only the hold is timed; its start and release delays are not travel.
+                tracked_hold = track_motor_command(
+                    self.hass,
+                    self.entity_description.key,
+                    "up" if direction == "open" else "down",
+                    held,
+                )
+
                 async def bounded_movement(controller: BedController) -> None:
-                    duration_ms = (
-                        SLEEPYS_ELITE_NATIVE_ACTION_MS
-                        if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
-                        else 1000
-                    )
                     controller.validate_hold_control(control, duration_ms)
                     if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
-                        await controller.hold_control(control, duration_ms)
+                        await tracked_hold(controller)
                         return
                     await controller.prepare_for_movement()
                     if hold.start_delay_ms:
                         await asyncio.sleep(hold.start_delay_ms / 1000)
-                    await controller.hold_control(control, duration_ms)
+                    await tracked_hold(controller)
                     if hold.release_delay_ms:
                         await asyncio.sleep(hold.release_delay_ms / 1000)
 
                 await self._coordinator.async_execute_controller_command(
-                    track_motor_command(
-                        self.hass,
-                        self.entity_description.key,
-                        "up" if direction == "open" else "down",
-                        bounded_movement,
-                        start_delay_ms=hold.start_delay_ms,
-                        release_delay_ms=hold.release_delay_ms,
-                        max_travel_ms=(
-                            SLEEPYS_ELITE_NATIVE_ACTION_MS
-                            if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
-                            else 1000
-                        ),
-                    ),
+                    bounded_movement,
                     resource=self._motor_resource,
                 )
             else:
