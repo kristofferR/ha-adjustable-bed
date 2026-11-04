@@ -476,11 +476,17 @@
         "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
         "data": {
           "jiecang_app_layout": "Physical actuator layout",
-          "has_light": "Enable light controls"
+          "has_light": "Enable light controls",
+          "furnimove_remote": "FurniMove handset ID",
+          "protocol_variant": "Remote code or layout",
+          "motor_count": "Number of motors or app screen"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
-          "has_light": "Expose light controls when this bed has under-bed lighting."
+          "has_light": "Expose light controls when this bed has under-bed lighting.",
+          "furnimove_remote": "The handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label doesn't identify the motor layout.",
+          "protocol_variant": "The code of the remote that controls the bed, or the layout its app shows. Keep Auto-detect if you don't know it.",
+          "motor_count": "How many motors the bed has. For an app with 2M, 3M and 4M screens, the screen you use in the app."
         },
         "sections": {
           "advanced": {
@@ -544,13 +550,6 @@
           "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
-        }
-      },
-      "furnimove": {
-        "title": "FurniMove handset",
-        "description": "Choose the handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label does not identify the motor layout. Use the shipped offline table only when that is the layout selected in the app.",
-        "data": {
-          "furnimove_remote": "FurniMove handset ID"
         }
       },
       "vibradorm_app": {
@@ -812,14 +811,6 @@
           "choice": "App or remote"
         }
       },
-      "okin_remote": {
-        "title": "Remote code and motors",
-        "description": "Choose the code of the remote that controls this bed (**{current}**), and how many motors the bed has. The code picks the buttons and presets. Keep Auto-detect if you don't know it.",
-        "data": {
-          "protocol_variant": "Remote code",
-          "motor_count": "Number of motors"
-        }
-      },
       "keeson_family": {
         "title": "Which app or remote controls this bed?",
         "description": "Choose the app you use on your phone, or the remote if you don't use an app. Keeson, Ergomotion, Serta and Cool Base beds share names and Bluetooth services, so they don't identify the app. Current or detected route: **{current}**.",
@@ -841,13 +832,6 @@
           "protocol_variant": "Remote style"
         }
       },
-      "keeson_screen": {
-        "title": "Which screen does the app show?",
-        "description": "{app} has a 2M, 3M and 4M screen. Choose the one you use: it sets the number of motors.",
-        "data": {
-          "motor_count": "App screen"
-        }
-      },
       "keeson_route": {
         "title": "Remote route and motors",
         "description": "Choose the route of the remote that controls this bed, and how many motors the bed has. Keep Auto-detect if you don't know it.",
@@ -866,13 +850,6 @@
       "solace_woosa": {
         "title": "Woosa Sleep controls",
         "description": "Woosa Sleep has its own Favourite memory, massage levels, lights and alarm, and no HomeKobo hip, lumbar or wave controls. Choose it only if you control the bed with the Woosa Sleep app."
-      },
-      "solace_bedsense": {
-        "title": "BedSense layout",
-        "description": "Choose the layout the BedSense app shows, or keep the layout from the bed's Bluetooth name.",
-        "data": {
-          "protocol_variant": "Layout"
-        }
       },
       "leggett_family": {
         "title": "Which app or remote controls this bed?",
@@ -9097,13 +9074,6 @@
       "options": {
         "restonic_a": "Remote A (6 buttons)",
         "restonic_b": "Remote B (10 buttons)"
-      }
-    },
-    "keeson_screen": {
-      "options": {
-        "2": "2M: back and feet",
-        "3": "3M: back, feet and head",
-        "4": "4M: back, feet, waist and lumbar"
       }
     },
     "solace_family_choice": {

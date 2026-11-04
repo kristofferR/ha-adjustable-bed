@@ -249,16 +249,18 @@ async def test_avanti_app_choice_and_side_owned_layout(hass: HomeAssistant) -> N
         }
     )
     # The app's screen sets the motor count; the entered one is its default.
-    screen = await flow.async_step_keeson_screen()
-    assert screen["step_id"] == "keeson_screen"
-    await flow.async_step_keeson_screen({CONF_MOTOR_COUNT: "4"})
+    screen = await flow.async_step_profile_questions()
+    assert screen["step_id"] == "profile_questions"
+    await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "4"})
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT], saved[CONF_MOTOR_COUNT]) == (
         BED_TYPE_KEESON,
         APP,
         4,
     )
+    # The screen question asks the motor count, so the generic form hides it too.
     assert hidden_generic_fields(BED_TYPE_KEESON, APP) == {
+        CONF_MOTOR_COUNT,
         CONF_HAS_MASSAGE,
         CONF_DISABLE_ANGLE_SENSING,
         CONF_MOTOR_PULSE_DELAY_MS,

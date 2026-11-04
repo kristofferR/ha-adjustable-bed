@@ -124,18 +124,18 @@ async def test_family_row_has_no_route_to_keep(hass):
     result = await flow.async_step_okin_family()
     assert "keep" not in choices(result)
     result = await flow.async_step_okin_family({"choice": "furnimove"})
-    assert result["step_id"] == "furnimove"
+    assert result["step_id"] == "profile_questions"
 
 
 async def test_dot_remote_asks_its_code_and_motors_with_its_own_cadence(hass):
     flow = setup_flow(hass, const.BED_TYPE_FURNIMOVE)
     result = await flow.async_step_okin_family({"choice": "okin_dot"})
-    assert result["step_id"] == "okin_remote"
-    codes = result["data_schema"].schema[const.CONF_PROTOCOL_VARIANT].config["options"]
+    assert result["step_id"] == "profile_questions"
+    codes = result["data_schema"].schema[const.CONF_PROTOCOL_VARIANT].container
     # FurniMove's DOT handsets belong to the app answer, not this one.
-    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(option["value"] for option in codes)
+    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(codes)
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_okin_remote(
+        await flow.async_step_profile_questions(
             {const.CONF_PROTOCOL_VARIANT: "97450", const.CONF_MOTOR_COUNT: "2"}
         )
     saved = finish.call_args.args[0]
@@ -181,7 +181,7 @@ async def test_okin_uuid_entry_changes_to_furnimove_after_checking_its_endpoint(
         assert result["step_id"] == "okin_family"
         assert "keep" in choices(result)
         result = await manager.async_configure(result["flow_id"], {"choice": "furnimove"})
-        assert result["step_id"] == "furnimove"
+        assert result["step_id"] == "profile_questions"
         result = await manager.async_configure(
             result["flow_id"], {const.CONF_FURNIMOVE_REMOTE: "82417"}
         )
@@ -253,7 +253,7 @@ async def test_okimat_code_change_keeps_the_saved_id_and_needs_the_bond(
         bluetooth_patches(stack, okin_client(OKIN))
         result = await reconfigure(hass, entry)
         result = await manager.async_configure(result["flow_id"], {"choice": "okin_uuid"})
-        assert result["step_id"] == "okin_remote"
+        assert result["step_id"] == "profile_questions"
         result = await manager.async_configure(
             result["flow_id"], {const.CONF_PROTOCOL_VARIANT: "62612", const.CONF_MOTOR_COUNT: 4}
         )

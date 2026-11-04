@@ -71,9 +71,9 @@ async def test_motion_bed_and_bedsense_stay_their_own_bed_types(hass):
 
     flow = setup_flow(hass)
     result = await flow.async_step_solace_family({"choice": "bedsense"})
-    assert result["step_id"] == "solace_bedsense"
+    assert result["step_id"] == "profile_questions"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_solace_bedsense({const.CONF_PROTOCOL_VARIANT: "bedsense_7"})
+        await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "bedsense_7"})
     saved = finish.call_args.args[0]
     assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (
         const.BED_TYPE_BEDSENSE,

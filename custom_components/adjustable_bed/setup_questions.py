@@ -13,7 +13,7 @@ specific key that matches a route wins.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Final
 
 from .const import (
@@ -41,7 +41,10 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_DOT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
@@ -59,6 +62,7 @@ from .const import (
     CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_LAYOUT,
@@ -195,7 +199,7 @@ SET_BY_PROFILE: Final = _SetByProfile()
 # A question without a default: setup cannot finish until it is answered.
 REQUIRED: Final = object()
 
-Choices = Mapping[str, str] | Callable[[Mapping[str, Any]], Mapping[str, str]]
+Choices = Mapping[Any, str] | Callable[[Mapping[str, Any]], Mapping[Any, str]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,7 +217,7 @@ class Question:
     default: Any = REQUIRED
     advanced: bool = False
 
-    def options(self, data: Mapping[str, Any]) -> Mapping[str, str] | None:
+    def options(self, data: Mapping[str, Any]) -> Mapping[Any, str] | None:
         if self.choices is None or isinstance(self.choices, Mapping):
             return self.choices
         return self.choices(data)
@@ -236,17 +240,28 @@ class SetupProfile:
 
     ``owns`` maps each generic field the profile owns to its fixed value, or to
     :data:`SET_BY_PROFILE` when the profile derives it. ``validate`` returns
-    errors by field for the staged setup with the answers applied.
+    errors by field for the staged setup with the answers applied, and
+    ``derive`` returns the fields the profile computes from them.
     """
 
     owns: Mapping[str, Any] = field(default_factory=dict)
     questions: tuple[Question, ...] = ()
     validate: Callable[[Mapping[str, Any]], dict[str, str]] | None = None
+    derive: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None
     title: Callable[[Mapping[str, Any]], str] | None = None
 
     def fixed_values(self) -> dict[str, Any]:
         """Return the owned fields that have a fixed value."""
         return {key: value for key, value in self.owns.items() if value is not SET_BY_PROFILE}
+
+    def settled(self, data: Mapping[str, Any]) -> dict[str, Any]:
+        """Return what saving sets beyond the answers: fixed and derived fields."""
+        return {**self.fixed_values(), **(self.derive(data) if self.derive else {})}
+
+    def hidden(self) -> frozenset[str]:
+        """Return the generic fields no generic form shows: owned or asked here."""
+        asked = {question.key for question in self.questions} & GENERIC_FIELDS
+        return frozenset(self.owns) | asked
 
 
 def _jiecang_profile(data: Mapping[str, Any]):  # noqa: ANN202 - a profiles.jiecang AppProfile
@@ -313,10 +328,117 @@ def _owned_only(fields: frozenset[str]) -> SetupProfile:
     return SetupProfile(owns=dict.fromkeys(fields, SET_BY_PROFILE))
 
 
-SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+def _routes(bed_type: str) -> Callable[[Mapping[str, Any]], Mapping[Any, str]]:
+    def choices(data: Mapping[str, Any]) -> Mapping[Any, str]:
+        from .config_flow import _labelled_routes, get_variants_for_bed_type
+
+        routes = dict(_labelled_routes(bed_type))
+        # A saved route that new setups no longer offer stays this entry's choice.
+        saved = data.get(CONF_PROTOCOL_VARIANT)
+        variants = get_variants_for_bed_type(bed_type) or {}
+        if data.get(CONF_BED_TYPE) == bed_type and saved in variants and saved not in routes:
+            routes[saved] = variants[saved]
+        return routes
+
+    return choices
+
+
+def _motor_counts(bed_type: str) -> Callable[[Mapping[str, Any]], Mapping[Any, str]]:
+    def choices(data: Mapping[str, Any]) -> Mapping[Any, str]:
+        from .config_flow import _motor_count_options
+
+        variant = data.get(CONF_PROTOCOL_VARIANT)
+        counts = _motor_count_options(bed_type, variant if isinstance(variant, str) else "auto")
+        return {count: str(count) for count in counts}
+
+    return choices
+
+
+def _furnimove_handsets(data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .furnimove_profiles import furnimove_handset_choices
+
+    return furnimove_handset_choices(data.get(CONF_FURNIMOVE_REMOTE))
+
+
+def _furnimove_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    if data.get(CONF_FURNIMOVE_REMOTE) not in _furnimove_handsets(data):
+        return {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
+    return {}
+
+
+def _furnimove_table(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """The handset's table sets the motors and massage."""
+    from .furnimove_profiles import get_furnimove_profile
+
+    profile = get_furnimove_profile(data[CONF_FURNIMOVE_REMOTE])
+    return {
+        CONF_FURNIMOVE_REMOTE: profile.handset_id,
+        CONF_MOTOR_COUNT: profile.motor_count,
+        CONF_HAS_MASSAGE: bool(profile.by_type("massage-function")),
+    }
+
+
+# The 2M, 3M and 4M screens of the ORE and INNOVA apps (keeson.md).
+_APP_SCREENS: Final[Mapping[Any, str]] = {
+    2: "2M: back and feet",
+    3: "3M: back, feet and head",
+    4: "4M: back, feet, waist and lumbar",
+}
+_SCREEN_VARIANTS: Final = (
+    KEESON_VARIANT_AVANTI_BASES,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_DYNASTY_BASES,
+    KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_MAXCOIL_UNA,
+)
+
+_BASE: Final[dict[str, SetupProfile]] = {
     **{key: _owned_only(fields) for key, fields in _OWNED_BY_BED_TYPE.items()},
     **{f"{bed}:{variant}": _owned_only(fields) for (bed, variant), fields in _OWNED_BY_VARIANT.items()},
+}
+
+
+def _asking(key: str, **declared: Any) -> SetupProfile:
+    """Add questions and rules to a profile's owned-field declaration."""
+    return replace(_BASE.get(key, SetupProfile()), **declared)
+
+
+SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    **_BASE,
     **_DECLARED,
+    # The handset table, chosen in the app, sets the layout and massage.
+    BED_TYPE_FURNIMOVE: _asking(
+        BED_TYPE_FURNIMOVE,
+        owns={**_BASE[BED_TYPE_FURNIMOVE].owns, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_FURNIMOVE_REMOTE, _furnimove_handsets),),
+        validate=_furnimove_errors,
+        derive=_furnimove_table,
+    ),
+    # The remote code picks the buttons and presets; the motor count sizes them.
+    **{
+        bed_type: _asking(
+            bed_type,
+            questions=(
+                Question(CONF_PROTOCOL_VARIANT, _routes(bed_type), "auto"),
+                Question(CONF_MOTOR_COUNT, _motor_counts(bed_type), 2),
+            ),
+        )
+        for bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT)
+    },
+    # The app's screen sets the motor count.
+    **{
+        f"{BED_TYPE_KEESON}:{variant}": _asking(
+            f"{BED_TYPE_KEESON}:{variant}",
+            questions=(Question(CONF_MOTOR_COUNT, _APP_SCREENS, 2),),
+        )
+        for variant in _SCREEN_VARIANTS
+    },
+    # The layout owns the motion controls; Auto reads it from the Bluetooth name.
+    BED_TYPE_BEDSENSE: _asking(
+        BED_TYPE_BEDSENSE,
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_BEDSENSE), "auto"),),
+    ),
 }
 
 
@@ -352,6 +474,6 @@ def setup_profile_for(data: Mapping[str, Any]) -> SetupProfile | None:
 
 
 def owned_fields(bed_type: str | None, variant: str | None) -> frozenset[str]:
-    """Return the generic fields no form shows for this route."""
+    """Return the generic fields no generic form shows for this route."""
     profile = setup_profile(bed_type, variant)
-    return frozenset(profile.owns) if profile is not None else frozenset()
+    return profile.hidden() if profile is not None else frozenset()
