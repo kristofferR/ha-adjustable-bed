@@ -127,7 +127,7 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
         else None
     )
     with (
-        patch("custom_components.adjustable_bed.coordinator.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native if verified else native_absent if absent else unknown])),
+        patch("custom_components.adjustable_bed.coordinator_bonds.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native if verified else native_absent if absent else unknown])),
         patch.object(coordinator, "_async_raise_pairing_issue", new=AsyncMock()),
         (pytest.raises(expected_error) if expected_error is not None else nullcontext()),
     ):
@@ -207,7 +207,7 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
             patch(module + "establish_connection", new=AsyncMock(return_value=c.client)) as establish,
             patch(module + "client_source", return_value=source),
             patch(module + "async_path_for_source", return_value=path),
-            patch(module + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native])) as native_probe,
+            patch("custom_components.adjustable_bed.coordinator_bonds.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native])) as native_probe,
             patch(module + "close_stale_connections_by_address", new=AsyncMock()),
             patch(module + "connection_reachability", return_value=None),
             patch.object(coordinator, "_async_raise_pairing_issue", new=AsyncMock()),
@@ -339,7 +339,7 @@ async def test_public_stop_reconnects_vmat_with_its_own_startup_cancellation(has
             patch(module + "establish_connection", new=AsyncMock(return_value=c.client)) as establish,
             patch(module + "client_source", return_value=source),
             patch(module + "async_path_for_source", return_value=path),
-            patch(module + "async_verify_native_bond", new=AsyncMock(return_value=native)),
+            patch("custom_components.adjustable_bed.coordinator_bonds.async_verify_native_bond", new=AsyncMock(return_value=native)),
             patch(module + "close_stale_connections_by_address", new=AsyncMock()),
             patch(module + "connection_reachability", return_value=None),
         ):

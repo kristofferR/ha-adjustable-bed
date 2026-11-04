@@ -53,6 +53,7 @@ from custom_components.adjustable_bed.services import async_register_services
 from .conftest import TEST_ADDRESS, TEST_NAME
 
 _MODULE = "custom_components.adjustable_bed.coordinator"
+_BONDS = "custom_components.adjustable_bed.coordinator_bonds"
 _LOCAL = ConnectionPath(source="local", transport=TransportClass.LOCAL, adapter="hci0")
 _T = TypeVar("_T")
 
@@ -269,7 +270,7 @@ async def _connect_with_real_startup(
         patch(f"{_MODULE}.select_adapter", return_value=adapter),
         patch(f"{_MODULE}.client_source", return_value=_LOCAL.source),
         patch(f"{_MODULE}.async_path_for_source", return_value=_LOCAL),
-        patch(f"{_MODULE}.async_verify_native_bond", return_value=_native_bond()),
+        patch(f"{_BONDS}.async_verify_native_bond", return_value=_native_bond()),
         patch(f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock),
         patch(f"{_MODULE}.read_ble_device_info", generic_dis),
     ):
