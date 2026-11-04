@@ -14,6 +14,10 @@ This is the **Ergomotion 4.0** app (`com.sfd.hump`), distinct from the older
 [Ergomotion app](keeson.md#ergomotion-app) B1/B2/C1/D1 profiles. Existing
 [Keeson and Ergomotion profiles](keeson.md) keep their controls and entities.
 
+It is the `ergomotion_4` app profile over the [Keeson codec](keeson.md#ergomotion-40),
+which builds all of its frames; this guide covers the product catalog and the
+app behavior the profile drives.
+
 ## Apps
 
 | Analyzed | App | Package ID |

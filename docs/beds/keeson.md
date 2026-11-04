@@ -52,7 +52,7 @@ using independently identified Keeson protocols remains supported. See the
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
-| ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [KSBT](#ksbt-family) |
+| ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
 | ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` | [KSBT](#ksbt-family) |
 | ✅ | [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) | `com.sbi.costco` | [Q-Plus Adjustable Remote](#q-plus-adjustable-remote); also [KSBT](#ksbt-family) |
 | ✅ | [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) | `com.sfd.ergomotion` | [Ergomotion app](#ergomotion-app); also [Ergomotion](#ergomotion) |
@@ -1917,6 +1917,21 @@ Bed type `tempur_au`. Memory Level 1-3 on B2 are opaque keys.
 | Anti Snooze | `anti_snooze` | `0x8000` | `E5 FE 16 00 80 00 00 86` | `single` | E1 |
 | Music | `music` | `0x10000` | `E5 FE 16 00 00 01 00 05` | `single` | E1 |
 <!-- /generated -->
+
+### Ergomotion 4.0
+
+**App:** [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) 3.7 (65), `com.sfd.hump`
+
+**Status:** ❓ Needs testing (3.7 app behavior verified; hardware unverified)
+
+The `ergomotion_4` bed type is an app profile over this codec, like the
+[cluster033 apps](#cluster033-app-family). This codec builds every frame it
+sends: the K1 and side frames for P1 products, the `04 02` frames and status
+query for P2 products, and its custom massage and RGB frames. Its product
+catalog, not the profile, picks the keys each product sends. Products, controls,
+timing, notifications and alarms are in the
+[Ergomotion 4.0 guide](ergomotion-4.md), and its frozen vectors are the
+`ergomotion_4` entry of `tests/keeson_vectors.py`.
 
 ### Controller profiles
 
