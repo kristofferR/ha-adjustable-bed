@@ -14,7 +14,7 @@ from custom_components.adjustable_bed.profiles import keeson as profiles
 from custom_components.adjustable_bed.profiles.keeson import KeesonCommands as K
 from custom_components.adjustable_bed.profiles.keeson import KeesonProfile
 from custom_components.adjustable_bed.profiles.keeson import SinoCommands as S
-from tests.keeson_vectors import FROZEN_FRAMES
+from tests.keeson_vectors import ERGOMOTION_4_P1_SIDE_VECTORS, FROZEN_FRAMES
 from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
 
 APP_REPORTED = frozenset(
@@ -110,6 +110,13 @@ def _keeson_census(profile: KeesonProfile, *, exposed: bool) -> set[bytes]:
     }
     if profile.status_poll_ms:
         frames.add(codec.STATUS_QUERY)
+    if profile.single_side:
+        # Every K1 word is also sent to one half.
+        frames |= {
+            profiles.encode(profile, int.from_bytes(frame[3:7], profile.order), side=side)
+            for frame in frames
+            for side in codec.SIDE_SELECTORS
+        }
     return frames
 
 
@@ -183,6 +190,19 @@ def test_k1_frame_layout() -> None:
         codec.frame(1 << 32)
     with pytest.raises(ValueError):
         codec.frame(0, header=0xE7)
+
+
+@pytest.mark.parametrize("key", ["base", "ergomotion"])
+@pytest.mark.parametrize("side", list(ERGOMOTION_4_P1_SIDE_VECTORS))
+def test_side_frames_match_the_ergomotion_4_report(key: str, side: codec.Side | None) -> None:
+    word, literal = ERGOMOTION_4_P1_SIDE_VECTORS[side]
+    assert profiles.encode(profiles.PROFILES[key], word, side=side).hex() == literal
+
+
+def test_only_base_and_ergomotion_have_side_frames() -> None:
+    assert {key for key, p in profiles.PROFILES.items() if p.single_side} == {"base", "ergomotion"}
+    with pytest.raises(ValueError):
+        profiles.encode(profiles.CB1322, 1, side="left")
 
 
 @pytest.mark.parametrize("variant", sorted(KEESON_VARIANTS))
