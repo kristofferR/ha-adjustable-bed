@@ -857,7 +857,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # Controls are identical for all three tables; only the live link picks one.
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_ESHINE,
-        BED_TYPE_ESHINE_OKIN,
         # Fixed pump controls; pressure is live-link state only.
         BED_TYPE_LOGICDATA_AIR_PUMP,
         # The constructor refuses offline UART catalogs whose nonpositive C

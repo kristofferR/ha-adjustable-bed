@@ -56,6 +56,11 @@ There is no app-specific authentication, bond request, or startup handshake.
 Select **eShine app** and the same E2000, E3000/E3100 or E5000 selector used in
 the app. `Smartbed` advertisements offer an app candidate; they never select the
 product. Identical names at different addresses remain separate devices.
+Automatic discovery uses the existing advertised Nordic UART service registration.
+HA rejects leading-wildcard name matchers, so a name-only advertisement with
+`Smartbed` in the middle of its name remains available through **Add integration**
+and the manual scan. No guessed name prefix or default product is substituted.
+The app search hint does not question an already matching receiver profile.
 
 Generic motor count, massage opt-in and refresh delay are owned by this profile.
 The pulse count bounds an ordinary HA press; sustained actions accept a duration.

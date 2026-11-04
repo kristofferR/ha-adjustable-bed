@@ -73,8 +73,8 @@ app behavior byte-for-byte in every malformed or lifecycle case.
 
 | Domain | Implementation and exposure |
 |--------|-----------------------------|
-| Product selection | Explicit `eshine_e2000`, `eshine_e30003100`, `eshine_e5000`; app-search choices, required variant, side-owned profile, hidden irrelevant generic settings |
-| Discovery | Case-sensitive `Smartbed` substring as a candidate only; exact address identity; existing confident receiver detection keeps priority |
+| Product selection | Explicit `eshine_e2000`, `eshine_e30003100`, `eshine_e5000`; app-search choices, required variant, side-owned profile, hidden irrelevant generic settings; only those explicit variants mint offline capabilities |
+| Discovery | Existing advertised UART service registration and manual case-sensitive `Smartbed` substring candidate; exact address identity; explicit app hints never compete with persistent receiver recommendations |
 | GATT/session | Exact UART service/write/notify roles; write-without-response required; notify or indicate; awaited subscription; connection-bound callbacks and writes |
 | Movement | Head, Foot, E5000 Head Tilt; covers, movement buttons and generic held actions; 300 ms refresh and captured 200 ms STOP release |
 | Presets | Flat, Zero Gravity, Anti Snore, Reading, Watch TV; Flat+Zero Gravity chord; bounded sustained recall through `hold_control` |
@@ -128,6 +128,13 @@ explicit and runs before enabling an alarm. Received values remain observations,
 not optimistic success or physical position. The local reference date/seconds
 for alarm display comes from HA's current local time, without recreating an
 unrelated stale Flutter picker object. Raw fields remain available.
+
+Home Assistant's indexed name matchers forbid wildcards in the first three
+characters. The app's arbitrary-position substring is therefore a manual-scan
+candidate, while automatic discovery reuses the existing advertised UART service
+registration. No guessed restrictive name prefix, generic Bluetooth catch-all or
+automatic product selection is introduced. This is supported HA discovery/setup
+infrastructure, not a new hardware-protocol claim or deferred feature.
 
 ## All exclusion classes
 

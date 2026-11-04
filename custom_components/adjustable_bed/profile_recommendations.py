@@ -30,6 +30,7 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_KEESON,
@@ -262,10 +263,10 @@ def recommend_profile(
             return _variant_review(bed_type, OCTO_VARIANT_STANDARD, OCTO_VARIANT_STAR2)
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
-    receiver_ambiguities = set(detected.ambiguous_types or ()) - {BED_TYPE_HJBED, BED_TYPE_GOODVIBE}
+    receiver_ambiguities = set(detected.ambiguous_types or ()) - {BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_ESHINE_OKIN}
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
         signal.startswith(("name:", "manufacturer", "mac:"))
-        and signal not in ("name:hjbed_app_candidate", "name:goodvibe_app_candidate")
+        and signal not in ("name:hjbed_app_candidate", "name:goodvibe_app_candidate", "name:eshine_okin_app_candidate")
         for signal in detected.signals
     ):
         return None
@@ -281,7 +282,7 @@ def recommend_profile(
         return None
     if bed_type in matches and bed_type != detected.bed_type:
         return None  # Detection explicitly accepts the selected alternative.
-    # HJBed names offer an opt-in app choice, not a competing receiver signature.
+    # App-name hints offer an opt-in choice, not a competing receiver signature.
     # Keep an already selected app above; assess other profiles by receiver evidence.
     matches = {detected.bed_type, *receiver_ambiguities}
     if variant in (None, VARIANT_AUTO) and (

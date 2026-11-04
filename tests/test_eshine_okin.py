@@ -735,3 +735,19 @@ async def test_motor_covers_publish_controller_owned_hold_metadata(hass, ha_targ
         assert cover.extra_state_attributes["held_control_up"] == f"{key}_up"
         assert cover.extra_state_attributes["held_control_down"] == f"{key}_down"
         assert cover.extra_state_attributes["hold_release_delay_ms"] == 0
+
+
+async def test_manual_scan_retains_nonprefixed_name_only_app_candidate(hass, monkeypatch):
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from tests.test_detection import _make_service_info
+
+    info = _make_service_info(name="prefix Smartbed suffix")
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+        lambda *args, **kwargs: [info],
+    )
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await flow.async_step_user()
+    assert result["type"] == "form"
+    assert info.address in flow._discovered_devices
