@@ -73,18 +73,14 @@ APP_ROUTES: dict[str, tuple[str, tuple[str, ...]]] = {
 
 UNMIGRATED: dict[str, str] = {
     "adjustable_lumbar": "#745 O1 Okin N-frame",
-    "bf": "#745 K1 Keeson E5/E6",
     "casper_base": "standalone: own wire format",
     "casper_remote": "standalone: remote without bed commands",
     "casper_sleep_mm": "standalone: sleep sensor without bed commands",
     "casper_sleep_sxb": "standalone: sleep sensor without bed commands",
-    "cherish": "#745 K1 Keeson E5/E6",
-    "comfort_enhancements": "#745 K1 Keeson E5/E6",
-    "coolbase": "#745 K1 Keeson E5/E6",
     "customatic_zseries": "#745 O1 Okin N-frame",
     "doublesleep": "#745 O1 Okin N-frame",
     "eshine": "standalone: own wire format",
-    "furnimove": "#745 K1 Keeson E5/E6",
+    "furnimove": "#745 K1 Keeson E5/E6: frames use codec/keeson.py, handset catalog profile stays",
     "gmmotor": "#745 R1 Richmat 6E: frames use codec/richmat.py, catalog session stays",
     "gmmotor_sleep_mm": "standalone: sleep sensor without bed commands",
     "gmmotor_sleep_sxb": "standalone: sleep sensor without bed commands",
@@ -109,8 +105,6 @@ UNMIGRATED: dict[str, str] = {
     "reverie": "standalone: own wire format",
     "reverie_nightstand": "standalone: own wire format",
     "reverie_pairlink": "standalone: own wire format behind a Pairlink session",
-    "rondure": "#745 K1 Keeson E5/E6",
-    "sbi": "#745 K1 Keeson E5/E6",
     "serenity": "#745 O1 Okin N-frame",
     # Its OKIN-format frames use codec/keeson.py (profile simmons_okin).
     "simmons": "#745 O1 Okin N-frame",

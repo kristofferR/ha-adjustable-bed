@@ -1021,9 +1021,15 @@ _KEESON_NAMES: dict[str, str] = {
     "simmons_okin": "SIMMONS (OKIN names)",
     "adjustamattress": "AdjustaMattress P1",
     "adjustamattress_p2": "AdjustaMattress P2",
+    "sbi": "SBI",
+    "rondure": "Rondure",
+    "coolbase": "Cool Base",
+    "bf": "BF",
+    "cherish": "Cherish",
+    "comfort_enhancements": "Comfort Enhancements",
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
-_KEESON_E6: dict[str, tuple[str, str]] = {
+_KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
     "glideaway_motion": ("`glideaway_motion`", "[Glideaway Motion](#glideaway-motion)"),
     "malouf_legacy_okin": ("`malouf_legacy_okin`", "[Malouf](malouf.md)"),
     "sleepys_box15": ("`sleepys_box15`", "[Sleepy's](sleepys.md)"),
@@ -1031,6 +1037,15 @@ _KEESON_E6: dict[str, tuple[str, str]] = {
     "simmons_okin": ("`simmons`, `okin` names", "[SIMMONS](simmons.md)"),
     "adjustamattress": ("`adjustamattress`, model P1", "[AdjustaMattress](adjustamattress.md)"),
     "adjustamattress_p2": ("`adjustamattress`, model P2", "[AdjustaMattress](adjustamattress.md)"),
+    "sbi": ("`sbi`", "[SBI / Q-Plus](#sbi--q-plus-costco)"),
+    "rondure": ("`rondure`", "[Rondure](#rondure)"),
+    "coolbase": ("`coolbase`", "[Cool Base](#cool-base)"),
+    "bf": ("`bf`", "[BF and Cherish](#bf-and-cherish)"),
+    "cherish": ("`cherish`", "[BF and Cherish](#bf-and-cherish)"),
+    "comfort_enhancements": (
+        "`comfort_enhancements`",
+        "[Comfort Enhancements](#comfort-enhancements)",
+    ),
 }
 # Profiles chosen inside a variant: (variant, rule). tests/test_codec_docs.py checks them.
 KEESON_SUB_ROUTES: dict[str, tuple[str, str]] = {
@@ -1046,7 +1061,14 @@ KEESON_SUB_ROUTES: dict[str, tuple[str, str]] = {
 }
 # Profiles whose app controller keeps its own key table (see the profile sections).
 _KEESON_APP_TABLES = frozenset(
-    {"innova", "simon_li", "okin_seating", "heal_every_night", *ORE_COMFORT_BED_APPS, *_KEESON_E6}
+    {
+        "innova",
+        "simon_li",
+        "okin_seating",
+        "heal_every_night",
+        *ORE_COMFORT_BED_APPS,
+        *_KEESON_CONTROLLERS,
+    }
 )
 _CARRIER_LAYOUTS = {
     "k1": "`header FE 16` + word + checksum",
@@ -1077,8 +1099,8 @@ def keeson_aliases() -> dict[str, tuple[str, ...]]:
 
 
 def _route(key: str) -> str:
-    if key in _KEESON_E6:
-        return f"bed type {_KEESON_E6[key][0]}"
+    if key in _KEESON_CONTROLLERS:
+        return f"bed type {_KEESON_CONTROLLERS[key][0]}"
     if key in KEESON_SUB_ROUTES:
         variant, rule = KEESON_SUB_ROUTES[key]
         route = f"`keeson` `{variant}`: {rule}"
@@ -1131,7 +1153,7 @@ def _hold(profile: keeson_profiles.KeesonProfile) -> str:
 
 def _keeson_timing_rows() -> Iterable[tuple[str, ...]]:
     for key, profile in keeson_profiles.PROFILES.items():
-        if key in _KEESON_E6:
+        if key in _KEESON_CONTROLLERS:
             continue  # Timing stays in these controllers; see their sections.
         release = profile.release
         if not release.steps:
@@ -1176,7 +1198,7 @@ def render_keeson_profiles() -> str:
                 _route(key),
                 _carrier(profile),
                 "app controller"
-                if key in _KEESON_E6
+                if key in _KEESON_CONTROLLERS
                 else profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
                 "app controller" if key in _KEESON_APP_TABLES else profile.lights or "none",
                 "app controller" if key in _KEESON_APP_TABLES else profile.massage,
@@ -1229,7 +1251,7 @@ def render_keeson_profiles() -> str:
         "A hold writes its frame the given number of times while the stored cadence is "
         "the Keeson default; a customized cadence wins. Release waits count from the "
         "previous write. An explicit stop sends the release without its waits. The "
-        "[E6 controller profiles](#e6-controller-profiles) keep their timing in their "
+        "[controller profiles](#controller-profiles) keep their timing in their "
         "controllers.",
         timing,
         "### Presets and memory",
@@ -1254,7 +1276,7 @@ def render_keeson_transports() -> str:
                     _knames(
                         name
                         for name, profile in profiles.items()
-                        if profile.transport == key and name not in _KEESON_E6
+                        if profile.transport == key and name not in _KEESON_CONTROLLERS
                     ),
                 )
                 for key, transport in keeson_codec.TRANSPORTS.items()
@@ -1588,15 +1610,22 @@ def render_keeson_ore() -> str:
     )
 
 
-def render_keeson_e6() -> str:
+def render_keeson_controllers() -> str:
     rows = []
-    for key, (route, guide) in _KEESON_E6.items():
+    for key, (route, guide) in _KEESON_CONTROLLERS.items():
         profile = keeson_profiles.PROFILES[key]
         rows.append(
             (
                 _kname(key),
                 route,
-                _carrier(profile),
+                _carrier(profile)
+                + (
+                    " (A/B: `E6`, side "
+                    + "/".join(f"`{byte:02X}`" for byte in profile.split_sides.values())
+                    + ")"
+                    if profile.split_sides
+                    else ""
+                ),
                 _kframe(profile, _K.MOTOR_HEAD_UP),
                 _kframe(profile, keeson_codec.RELEASE),
                 guide,
@@ -3504,7 +3533,7 @@ BLOCKS: dict[tuple[str, str], Callable[[], str]] = {
     ("docs/beds/keeson.md", "keeson-okin-apps"): render_keeson_okin_apps,
     ("docs/beds/keeson.md", "keeson-ore"): render_keeson_ore,
     ("docs/beds/keeson.md", "keeson-apps"): render_keeson_apps,
-    ("docs/beds/keeson.md", "keeson-e6"): render_keeson_e6,
+    ("docs/beds/keeson.md", "keeson-controllers"): render_keeson_controllers,
     ("docs/beds/keeson.md", "keeson-glideaway"): render_keeson_glideaway,
     ("docs/beds/keeson.md", "keeson-scott-living"): render_keeson_scott_living,
     **{
