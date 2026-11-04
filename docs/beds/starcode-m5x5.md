@@ -34,6 +34,7 @@ bed type, which joins this app's lift groups.
 | Lights | ✅ Feedback light on/off, cycle, palette, brightness 1–6, **Light mode 1** |
 | Alarm, EQ, sonic and kneading state | ⚠️ Read-only (no reachable setters were established) |
 | Lift groups | ✅ One main plus three lifts |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then STOP) |
 
 ## Protocol Details
 

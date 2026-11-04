@@ -38,6 +38,7 @@
 | Diagnostics | ✅ (model, controller temperature, floor status, firmware, ED, signal) |
 | Rename | ✅ |
 | Linked pair | ⚠️ CBI and CBI with XT-Box at two addresses only |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`, then STOP) |
 
 - These are two named movement groups, not proof of physical motor topology. No
   head/feet/extra-axis, position slider, automatic flat preset, memory,

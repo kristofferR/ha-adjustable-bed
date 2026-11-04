@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..execution import ExecutionCapabilities
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -135,6 +136,11 @@ class StarcodeM5X5Controller(BedController):
         self._write_session: ContextVar[tuple[BleakClient, int] | None] = ContextVar(
             f"starcode_write_session_{id(self)}", default=None
         )
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 100 ms, then sends STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def client(self) -> BleakClient | None:
@@ -648,7 +654,8 @@ class StarcodeM5X5Controller(BedController):
                 self._subscription_client = None
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        count, _ = super().motor_pulse_settings()
+        # A renewable hold (#483) refreshes until its lease ends.
+        count = self.leased_hold_refreshes(100) or super().motor_pulse_settings()[0]
         return count, 100
 
     def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:

@@ -31,7 +31,9 @@ example when the bed is flat at night.
 
 A motor qualifies only when its protocol has reliable directional movement and
 its own STOP. Other beds may follow once that is established for their
-protocol. Beds with position feedback do not need it. Single-address paired
+protocol. Where motors run together (concurrent `timed_move` calls), each
+motor's estimate counts from the first frame that moves it to the frame that
+stops it, so motors that stop at different moments each get their own time. Beds with position feedback do not need it. Single-address paired
 beds are not supported.
 
 ## Setting Up

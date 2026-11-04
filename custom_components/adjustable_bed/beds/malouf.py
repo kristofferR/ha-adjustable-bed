@@ -308,6 +308,8 @@ class MaloufNewOkinController(BedController):
         """Repeat a movement frame at the pulse settings, then always send STOP."""
         try:
             pulse_count, pulse_delay = self.motor_pulse_settings()
+            # A leased hold (#483) refreshes until its lease ends.
+            pulse_count = self.leased_hold_refreshes(pulse_delay) or pulse_count
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
         finally:
             try:
@@ -582,8 +584,11 @@ class MaloufLegacyOkinController(BedController):
         """Execute a movement command and always send STOP at the end."""
         command = self._build_command(command_value)
         try:
-            pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
+            # A leased hold (#483) refreshes until its lease ends.
+            pulse_count = (
+                self.leased_hold_refreshes(pulse_delay) or self._coordinator.motor_pulse_count
+            )
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
         finally:
             try:

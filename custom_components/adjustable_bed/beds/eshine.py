@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Final
 
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -102,6 +103,11 @@ class EshineController(BedController):
         self._observed: dict[str, dict[str, Value]] = {}
 
     @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 100 ms, then sends STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
+
+    @property
     def control_characteristic_uuid(self) -> str:
         return self._write_char.uuid if self._write_char else GATT_MAPS[1][1]
 
@@ -137,7 +143,9 @@ class EshineController(BedController):
         )
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        return self._coordinator.motor_pulse_count, REFRESH_MS
+        # A renewable hold (#483) refreshes until its lease ends.
+        count = self.leased_hold_refreshes(REFRESH_MS) or self._coordinator.motor_pulse_count
+        return count, REFRESH_MS
 
     @property
     def held_control_options(self) -> tuple[str, ...]:

@@ -159,7 +159,13 @@ async def leased_hold(
                     # The scheduler's expiry: the cancel event alone.
                     context.cancel_reason = CommandOutcome.EXPIRED
                     cancel.set()
-                    await asyncio.wait_for(task, 10)
+                    try:
+                        await asyncio.wait_for(task, 10)
+                    except asyncio.CancelledError:
+                        # A controller may raise on its cancel event, as the
+                        # scheduler accepts; only a real cancellation propagates.
+                        if not task.cancelled():
+                            raise
                 else:
                     context.cancel_reason = CommandOutcome.STOPPED
                     cancel.set()

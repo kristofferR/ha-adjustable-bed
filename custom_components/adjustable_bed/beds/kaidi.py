@@ -35,6 +35,7 @@ from ..const import (
     KAIDI_BROADCAST_VADDR,
     KAIDI_JOIN_PASSWORD,
     KAIDI_NOTIFY_CHAR_UUID,
+    KAIDI_VARIANT_FLOYD,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
@@ -44,6 +45,7 @@ from ..const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..kaidi_protocol import extract_kaidi_advertisement, format_kaidi_node_address
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -497,6 +499,15 @@ class KaidiController(BedController):
     # ------------------------------------------------------------------
     # Product family helpers
     # ------------------------------------------------------------------
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """One start per press, then a per-axis release (#483)."""
+        # Floyd has no complete report. A dual-seat bed starts seat 2 only after
+        # seat 1's repeats, so an open-ended hold would never move seat 2.
+        if self._variant in (KAIDI_VARIANT_FLOYD, KAIDI_VARIANT_SEAT_1_2):
+            return NO_EXECUTION_CAPABILITIES
+        return ExecutionCapabilities(hold="latched")
 
     @property
     def _product_family(self) -> KaidiProductFamily:
@@ -988,11 +999,16 @@ class KaidiController(BedController):
 
     async def _move_with_stop_command(self, move_command: int, stop_command: int) -> None:
         """Send a movement command, then stop that motor."""
+        count = self._coordinator.motor_pulse_count
+        delay = self._coordinator.motor_pulse_delay_ms
+        if delay > 0:
+            # A renewable hold (#483) repeats until its lease ends, within its ceiling.
+            count = self.leased_hold_ms(count * delay) // delay
         try:
             await self._write_control_command(
                 move_command,
-                repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                repeat_count=count,
+                repeat_delay_ms=delay,
             )
         finally:
             try:

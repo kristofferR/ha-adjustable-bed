@@ -491,7 +491,7 @@ MAXCOIL_UNA: Final = replace(_ORE, key="maxcoil_una", execution=STREAM_HOLD)
 # nine-byte E6 frame. Only the frame is profile data here.
 _E6: Final = KeesonProfile(key="e6", header=0xE6, side=0, hold=None)
 GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion", execution=STREAM_HOLD)  # row068
-MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin")
+MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin", execution=STREAM_HOLD)
 SLEEPYS_BOX15: Final = replace(_E6, key="sleepys_box15")
 SCOTT_LIVING: Final = replace(_E6, key="scott_living", side=1)
 # AdjustaMattress (row067): model P1 sends E6 frames, P2 big-endian E5 frames.

@@ -26,6 +26,7 @@
 | Massage | ✅ Head and foot strength, mode, off, 10/20/30-minute actions |
 | Lights | ✅ Toggle |
 | Reported State | ⚠️ Eleven read-only diagnostic sensors |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) |
 
 - Strength/mode labels do not establish physical cycle levels, persistence or
   discrete on/off values.

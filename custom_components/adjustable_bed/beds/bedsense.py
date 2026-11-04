@@ -427,7 +427,8 @@ class BedSenseController(BedController):
             try:
                 await self.write_command(action.frame)
                 try:
-                    async with asyncio.timeout(count * delay / 1000):
+                    # A renewable hold (#483) waits for its lease, within its ceiling.
+                    async with asyncio.timeout(self.leased_hold_ms(count * delay) / 1000):
                         await self._coordinator.cancel_command.wait()
                 except TimeoutError:
                     pass

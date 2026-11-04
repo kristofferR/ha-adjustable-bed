@@ -212,6 +212,8 @@ class MaloufAppController(BedController):
     async def _motion(self, action: str, duration_ms: int | None = None) -> None:
         frame = self._frame(action)
         count, delay = self.motor_pulse_settings()
+        # A leased hold (#483) refreshes until its lease ends.
+        count = self.leased_hold_refreshes(delay) or count
         if duration_ms is not None:
             if duration_ms <= 0:
                 raise ValueError("Movement duration must be positive")

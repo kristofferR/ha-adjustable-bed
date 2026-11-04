@@ -14,6 +14,7 @@ Position notifications are 9-byte packets containing head/foot position and wave
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections import deque
 from collections.abc import Callable
@@ -22,6 +23,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from bleak.exc import BleakError
 
 from ..const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
+from ..execution import ExecutionCapabilities
 from .base import (
     POSITION_UNIT_DEGREES,
     BedController,
@@ -142,6 +144,11 @@ class ReverieController(BedController):
         self._routine_generation = 0
         self._routine_connection_release: Callable[[], None] | None = None
         _LOGGER.debug("ReverieController initialized")
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """One press frame, then a per-axis STOP at release (#483)."""
+        return ExecutionCapabilities(hold="latched")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -914,7 +921,9 @@ class ReverieController(BedController):
         }[control]
         try:
             await self._move_linear(command)
-            await asyncio.sleep(duration_ms / 1000)
+            # STOP, a replacement or a renewable hold's expiry ends the wait.
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(self._coordinator.cancel_command.wait(), duration_ms / 1000)
         except BaseException as operation_error:
             try:
                 await self._send_stop()
