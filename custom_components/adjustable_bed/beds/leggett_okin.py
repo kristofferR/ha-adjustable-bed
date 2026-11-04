@@ -55,6 +55,7 @@ from .base import (
 )
 
 if TYPE_CHECKING:
+    from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -832,6 +833,37 @@ class LeggettOkinController(BedController):
             completed = True
         finally:
             await self._send_release_frames("stop_all", raise_on_error=completed)
+
+    # Merged stream (#516): Prodigy CE and U Series OR every held key into one
+    # word; releasing a key sends the next word without its bit.
+    @property
+    def stream_tick_s(self) -> float:
+        return LEGGETT_REFRESH_MS / 1000
+
+    def _stream_word(self, members: tuple[StreamMember, ...]) -> int:
+        word = 0
+        for member in members:
+            key = f"{member.motor}_{member.action}"
+            if key not in self.profile.keys:
+                raise ValueError(f"{self._app_profile} has no {key} key")
+            word |= self.profile.keys[key]
+        return word
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        await self.write_command(self._build_command(self._stream_word(members)))
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        # The last member out leaves its release to ``release_stream``.
+        if remaining:
+            await self.write_command(
+                self._build_command(self._stream_word(remaining)),
+                cancel_event=asyncio.Event(),
+            )
+
+    async def release_stream(self) -> None:
+        await self._send_release_frames("merged stream", raise_on_error=True)
 
     async def _recall(self, command: int) -> None:
         """Send a one-shot recall burst.

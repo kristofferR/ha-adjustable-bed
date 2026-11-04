@@ -86,7 +86,7 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 | Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
-| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Held motors combine |
+| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
 | Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
 | Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
@@ -1449,6 +1449,13 @@ See the [timing tables](#hold-and-release-timing).
   100 ms until the lease runs out or a Stop arrives, then the four zero frames
   follow. On Prodigy CE's CU170 box, motion stops 217 to 218 ms after the last
   frame (measured in #368 and #516), so a lost link cannot leave a motor running.
+- Prodigy CE and U Series combine held keys (#516). `timed_move` calls on
+  different motors, renewable or not, run together: each 100 ms frame carries
+  the OR of every moving motor's key. When one motor ends, the next frame drops
+  its key and the others keep moving; the four zero frames follow only when the
+  last motor ends. A motor's own Stop ends only that motor, while Stop All ends
+  them all. Prodigy 2 and 2L keep one motor at a time: their reports do not
+  prove that one key can be released while another stays held.
 
 #### Notifications
 

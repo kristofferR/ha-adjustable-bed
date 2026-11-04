@@ -321,9 +321,20 @@ LEGGETT_STORE_HOLD_MS: Final = (5_000, 2_000)
 LEGGETT_CONTROL_MODE: Final = Tap(repeats=55, repeat_ms=100, releases=1)
 """The settings dialog's 55 attempts, then one explicit zero frame."""
 LEGGETT_EXECUTION: Final = ExecutionCapabilities(hold="stream")
-"""Every Leggett app streams a held key until release (p2, p2l, p4, useries)."""
-CU170_EXECUTION: Final = ExecutionCapabilities(hold="stream", sustain_ms=217)
-"""Prodigy CE's CU170 box stops motion 217-218 ms after the last frame (#368, #483)."""
+"""Prodigy 2 and 2L stream a held key until release (p2, p2l); composition is unproven."""
+CU170_EXECUTION: Final = ExecutionCapabilities(
+    hold="stream",
+    sustain_ms=217,
+    concurrent=frozenset({"motor:head", "motor:feet", "motor:pillow", "motor:lumbar"}),
+)
+"""Prodigy CE: held keys OR into one word and a release removes one key (p4, #516).
+
+Its CU170 box stops motion 217-218 ms after the last frame (#368, #483).
+"""
+USERIES_EXECUTION: Final = ExecutionCapabilities(
+    hold="stream", concurrent=frozenset({"motor:head", "motor:feet", "motor:pillow"})
+)
+"""U Series ORs held keys in its output accumulator; a release removes one (useries)."""
 USERIES_SLEEP_MINUTES: Final = (15, 30, 45, 60, 75, 90)
 _USERIES_SLEEP_ACTIONS: Final = {0: 0x00100000, 1: 0, 2: 0x00010000, 3: 0x00020000}
 
@@ -359,7 +370,9 @@ def _leggett(
         axes=axes,
         keys=MappingProxyType(keys),
         hold=LEGGETT_HOLD,
-        execution=CU170_EXECUTION if key == "prodigy4" else LEGGETT_EXECUTION,
+        execution={"prodigy4": CU170_EXECUTION, "useries": USERIES_EXECUTION}.get(
+            key, LEGGETT_EXECUTION
+        ),
         # A recall is a fixed burst with no terminator: the box completes the
         # move itself, and a release could cancel it.
         recall=Tap(repeats=10, repeat_ms=100),

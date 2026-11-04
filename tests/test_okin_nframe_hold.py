@@ -181,6 +181,22 @@ def _assert_released(case: Case, frames: list[str], *, stop: bool = False) -> No
     assert ZERO in FROZEN_FRAMES[case.profile]
 
 
+async def _assert_lease_expired(coordinator: AdjustableBedCoordinator) -> None:
+    scheduler = coordinator._command_scheduler
+    async with asyncio.timeout(1):
+        while not scheduler.recent_records:
+            await asyncio.sleep(0.001)
+    record = scheduler.recent_records[-1]
+    controller = coordinator.controller
+    assert controller is not None
+    if controller.execution.concurrent:
+        # A concurrent motor holds as a member of the merged stream (#516).
+        assert record.kind is CommandKind.STREAM
+    else:
+        assert record.kind is CommandKind.HOLD
+        assert record.outcome is CommandOutcome.EXPIRED
+
+
 def test_only_cu170_declares_a_sustain_window() -> None:
     declared = {
         profile.key: profile.execution
@@ -191,8 +207,6 @@ def test_only_cu170_declares_a_sustain_window() -> None:
     }
     # Only CU170 (Prodigy CE) has a hardware-measured watchdog.
     assert {key: e.sustain_ms for key, e in declared.items() if e.sustain_ms} == {"prodigy4": 217}
-    # Composition is #516's opt-in, not part of the hold declaration.
-    assert not any(execution.concurrent for execution in declared.values())
 
 
 async def test_renewal_keeps_streaming_without_a_release(runtime) -> None:
@@ -212,9 +226,7 @@ async def test_renewal_keeps_streaming_without_a_release(runtime) -> None:
     assert loop.time() - began >= 0.9
     assert frames.count(case.held) >= 8
     _assert_released(case, frames)
-    record = coordinator._command_scheduler.recent_records[-1]
-    assert record.kind is CommandKind.HOLD
-    assert record.outcome is CommandOutcome.EXPIRED
+    await _assert_lease_expired(coordinator)
 
 
 async def test_expiry_runs_the_profile_release(runtime) -> None:
@@ -225,7 +237,7 @@ async def test_expiry_runs_the_profile_release(runtime) -> None:
     # The lease, not the 30 s ceiling, ended the hold.
     assert loop.time() - began < 1.5
     _assert_released(case, frames)
-    assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
+    await _assert_lease_expired(coordinator)
 
 
 async def test_stop_preempts_the_hold_and_refuses_renewal(runtime) -> None:

@@ -1298,6 +1298,16 @@ FIELD_FRAMES: dict[str, frozenset[str]] = {
     "prodigy4": frozenset({"040200040000", "e5fe160004000002"}),
 }
 
+# Words composed from held keys (#516), each with its evidence. Prodigy CE ORs
+# normal keys into one word and a release removes one key (p4 report, "Timing,
+# lifecycle, STOP"; CU170 measurements in #516); the report states the rule but
+# freezes no chord literal, so the head-and-foot chord is recorded here. The
+# partial-release frame is the remaining single key, and the release is the
+# zero word, both already frozen above.
+COMPOSED_FRAMES: dict[str, frozenset[str]] = {
+    "prodigy4": frozenset({"040200000005", "e5fe160000000501"}),
+}
+
 # Setup writes that are not N-frames: the settings-channel initialization.
 SETUP_FRAMES: dict[str, frozenset[str]] = {
     "prodigy2l": frozenset({"0102"}),

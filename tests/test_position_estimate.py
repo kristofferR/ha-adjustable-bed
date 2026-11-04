@@ -543,3 +543,37 @@ async def test_stop_during_lower_both_ends_the_whole_request(
     monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
     await pe.async_lower_to_flat(hass, manager, manager.beds.values())
     assert moved == ["left:back"]
+
+
+async def test_stream_members_end_at_their_own_cleanup(hass: HomeAssistant, clock: Clock) -> None:
+    """#516: a member ends at its reduced frame, the last one after the release."""
+    from custom_components.adjustable_bed.command_scheduler import StreamMember
+
+    manager = await calibrated(hass)
+    bed = manager.beds[LEFT]
+    ctrl = controller(hass, LEFT)
+    ctrl.stream_tick_s = 0.1
+    ctrl.write_stream_tick = AsyncMock()
+    ctrl.release_stream = AsyncMock(side_effect=lambda: setattr(clock, "now", clock.now + 0.5))
+
+    async def end(member: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        if member.motor == "legs":
+            raise BleakError("reduced frame lost")
+
+    ctrl.end_stream_member = end
+    stream = pe.track_stream(hass, ctrl)
+    back = StreamMember(motor="back", resource="motor:back", action="up", deadline=0.0)
+    legs = StreamMember(motor="legs", resource="motor:legs", action="up", deadline=0.0)
+
+    await stream.write_stream_tick((back, legs))
+    clock.now += 2.0
+    with pytest.raises(BleakError):
+        await stream.end_stream_member(legs, (back,))
+    clock.now += 2.0
+    await stream.end_stream_member(back, ())
+    assert bed.motors["back"].moves_since_reference == 0
+    await stream.release_stream()
+
+    # Back: 4 s of motion plus the 0.5 s release; legs' lost cleanup is unknown.
+    assert bed.motors["back"].percent == pytest.approx(4.5 / 20.0 * 100)
+    assert bed.motors["legs"].state is EstimateState.UNKNOWN
