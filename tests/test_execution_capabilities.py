@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.execution import (
     NO_EXECUTION_CAPABILITIES,
     ExecutionCapabilities,
 )
+from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
@@ -91,6 +92,12 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
     ]
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
+    # Layouts are built at runtime and never stored; reach every one.
+    profiles.extend(
+        keeson_profiles.app_profile(app, layout)
+        for app, layouts in keeson_profiles.APP_LAYOUTS.items()
+        for layout in layouts
+    )
     for bed_type, (config_key, choices) in APP_ROUTES.items():
         for choice in choices:
             coordinator = _FactoryCoordinator()
@@ -113,7 +120,7 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
     # profile that has them. Otherwise a declaration could hide.
     for name, family in FAMILIES.items():
         reached = {
-            identity.split(":", 1)[1]
+            identity.split(":", 1)[1].split("@", 1)[0]
             for identity in declared
             if identity.split(":", 1)[0] in {cls.__name__ for cls in family.profiles}
         }
@@ -123,7 +130,10 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
 
 
 def _identity(profile: object) -> str:
-    return f"{type(profile).__name__}:{getattr(profile, 'key', None)}"
+    """Profile class and key, plus the layout when one key has several."""
+    identity = f"{type(profile).__name__}:{getattr(profile, 'key', None)}"
+    layout = getattr(profile, "layout", None)
+    return f"{identity}@{layout}" if isinstance(layout, str) else identity
 
 
 async def _declarations() -> dict[str, frozenset[str]]:
@@ -175,9 +185,14 @@ async def test_evidence_rows_match_live_declarations() -> None:
     )
 
 
-def _declaration_sites(root: Path = PACKAGE) -> set[str]:
-    """Every source site that constructs, passes, assigns or overrides a declaration."""
-    sites: set[str] = set()
+def _declaration_sites(root: Path = PACKAGE) -> dict[str, set[str]]:
+    """Every source site that constructs, passes, assigns or overrides a declaration.
+
+    Maps each site to the capability fields its ``ExecutionCapabilities`` calls
+    name, so a conditional or layout-specific field cannot hide behind a
+    reviewed site. ``"**"`` marks a call whose fields cannot be read.
+    """
+    sites: dict[str, set[str]] = {}
     for path in sorted(root.rglob("*.py")):
         relative = path.relative_to(root).as_posix()
         if relative == "execution.py":
@@ -188,18 +203,22 @@ def _declaration_sites(root: Path = PACKAGE) -> set[str]:
                 name = node.func.attr if isinstance(node.func, ast.Attribute) else (
                     node.func.id if isinstance(node.func, ast.Name) else ""
                 )
+                site = f"{relative}:{scope}"
                 if name == "ExecutionCapabilities" and (node.args or node.keywords):
-                    sites.add(f"{relative}:{scope}")
+                    fields = sites.setdefault(site, set())
+                    fields.update(keyword.arg or "**" for keyword in node.keywords)
+                    if node.args:
+                        fields.add("**")
                 if any(keyword.arg == "execution" for keyword in node.keywords):
-                    sites.add(f"{relative}:{scope}")
+                    sites.setdefault(site, set())
                 if name == "replace" and "execution" in ast.unparse(node).lower():
-                    sites.add(f"{relative}:{scope}")
+                    sites.setdefault(site, set())
             elif (
                 isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                 and node.name == "execution"
                 and relative != "beds/base.py"
             ):
-                sites.add(f"{relative}:{scope}")
+                sites.setdefault(f"{relative}:{scope}", set())
             elif isinstance(node, (ast.Assign, ast.AnnAssign)) and relative != "beds/base.py":
                 targets = node.targets if isinstance(node, ast.Assign) else [node.target]
                 empty_default = (
@@ -210,7 +229,7 @@ def _declaration_sites(root: Path = PACKAGE) -> set[str]:
                     or (isinstance(t, ast.Attribute) and t.attr in ("execution", "_execution"))
                     for t in targets
                 ):
-                    sites.add(f"{relative}:{scope}")
+                    sites.setdefault(f"{relative}:{scope}", set())
     return sites
 
 
@@ -230,12 +249,17 @@ def _walk_scoped(node: ast.AST, scope: str) -> Iterator[tuple[str, ast.AST]]:
 
 def test_every_declaration_site_is_reviewed() -> None:
     """No variant, layout or runtime profile can declare a capability unlisted."""
-    assert _declaration_sites() == set(DECLARATION_SITES), (
+    sites = _declaration_sites()
+    assert set(sites) == set(DECLARATION_SITES), (
         "list each new execution declaration site in DECLARATION_SITES with its evidence"
     )
     for site, identities in DECLARATION_SITES.items():
         assert identities, site
         assert set(identities) <= set(EVIDENCE), (site, set(identities) - set(EVIDENCE))
+        # Every field a site can declare, on any branch, needs evidence on
+        # every identity the site produces.
+        for identity in identities:
+            assert sites[site] <= set(EVIDENCE[identity]), (site, identity, sites[site])
 
 
 def test_site_guard_finds_declarations(tmp_path: Path) -> None:
@@ -250,11 +274,17 @@ def test_site_guard_finds_declarations(tmp_path: Path) -> None:
         "assigned.py": "class P:\n    execution: ExecutionCapabilities = STREAM\n",
         "empty.py": "class P:\n    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES\n",
     }
+    samples["conditional.py"] = (
+        "def make(mx):\n"
+        "    return ExecutionCapabilities(hold='stream', concurrent=AXES if mx else frozenset())\n"
+    )
+    samples["spread.py"] = "X = ExecutionCapabilities(**FIELDS)\n"
     for name, source in samples.items():
         (tmp_path / name).write_text(source)
-    assert {site.split(":", 1)[0] for site in _declaration_sites(tmp_path)} == (
-        set(samples) - {"empty.py"}
-    )
+    sites = _declaration_sites(tmp_path)
+    assert {site.split(":", 1)[0] for site in sites} == set(samples) - {"empty.py"}
+    assert sites["conditional.py:<module>.make"] == {"hold", "concurrent"}
+    assert sites["spread.py:<module>.X"] == {"**"}
 
 
 def test_default_declares_nothing() -> None:
