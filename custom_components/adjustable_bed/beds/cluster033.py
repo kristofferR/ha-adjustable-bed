@@ -41,10 +41,6 @@ NUS_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 _CARD_RELEASE_DELAY_MS = 0
 # Q-Plus P1's A/B/Both selector: Both is the eight-byte E5 frame.
 _SIDE_BYTES = {"side_a": 1, "side_b": 2}
-# Apps whose rename caller applies Java String.trim (code points <= U+0020).
-_TRIMMED_RENAME = frozenset(
-    {"tempur_curve", "serta_mp_remote", "ergomotion_app", "row_control", "ergo_slim", "tempur_au"}
-)
 
 
 def name_frame(name: str, *, max_units: int = 15) -> bytes:
@@ -85,7 +81,7 @@ class AppController(BedController):
 
     @property
     def supports_device_rename(self) -> bool:
-        return self.profile.rename
+        return self.profile.rename_units > 0
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -496,18 +492,17 @@ class AppController(BedController):
         self._device_name_frame(name)
 
     def _device_name_frame(self, name: str) -> bytes:
-        if not self.profile.rename:
+        if not self.profile.rename_units:
             raise ValueError("This app has no reachable device-name writer")
         # Caller domains are package-owned, not inferred from a shared EF02
         # builder. Java trim removes only code points <= U+0020.
-        if self.profile.key in _TRIMMED_RENAME:
+        if self.profile.rename_trimmed:
             name = name.strip("".join(chr(value) for value in range(33)))
         elif name != name.strip():
             # Q-Plus has a14-unit editor, but its accepted report does not
             # establish the other apps' trimmed caller behavior.
             raise ValueError("Use a device name without outer spaces")
-        max_units = 15 if self.profile.key in ("row_control", "ergomotion_app") else 14
-        return name_frame(name, max_units=max_units)
+        return name_frame(name, max_units=self.profile.rename_units)
 
     async def rename_device(self, name: str) -> None:
         await self.write_command(self._device_name_frame(name))

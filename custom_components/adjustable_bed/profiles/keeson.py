@@ -524,7 +524,10 @@ class AppProfile:
     alarm: AlarmTableScheduleSpec | None
     p2_keys: frozenset[int] | None = None
     """Keys the layout's private P2 builder accepts; any other key is sent as zero."""
-    rename: bool = True
+    rename_units: int = 14
+    """UTF-16 units the rename caller accepts; 0 when the app has no name writer."""
+    rename_trimmed: bool = True
+    """The rename caller applies Java ``String.trim``; otherwise outer spaces are rejected."""
     clock: bool = True
     clock_init_delay_ms: int | None = None
     shutdown_count: int = 0
@@ -1029,7 +1032,12 @@ def app_profile(app: AppKey, layout: str | None = None) -> AppProfile:
         actions=_ACTIONS[app, layout],
         alarm=alarm,
         p2_keys=_MX_KEYS if (app, layout) == ("qplus_app", "MX") else None,
-        rename=app != "omazz_adjusto_iii",
+        rename_units=0
+        if app == "omazz_adjusto_iii"
+        else 15
+        if app in ("row_control", "ergomotion_app")
+        else 14,
+        rename_trimmed=app != "qplus_app",
         clock=app not in ("serta_mp_remote", "qplus_app"),
         clock_init_delay_ms=2000
         if app in ("tempur_curve", "row_control", "tempur_au")
