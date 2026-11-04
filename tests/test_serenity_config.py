@@ -229,7 +229,9 @@ async def test_changing_setup_profile_restores_choices_and_keeps_entered_values(
     else:
         assert (CONF_MOTOR_COUNT in markers) is (requested != BED_TYPE_SERENITY)
     assert (CONF_MOTOR_PULSE_DELAY_MS in markers) is (requested != BED_TYPE_SERENITY)
-    assert markers[CONF_BED_TYPE].description["suggested_value"] == requested
+    bed_type = markers[CONF_BED_TYPE]
+    shown = bed_type.description["suggested_value"]
+    assert form["data_schema"].schema[bed_type](shown) == requested
     assert markers[CONF_NAME].description["suggested_value"] == "Edited bed"
     if step == "manual_entry":
         assert markers[CONF_ADDRESS].description["suggested_value"] == "11:22:33:44:55:66"
