@@ -496,6 +496,14 @@ class BedController(ABC):
         """Run one ending member's own cleanup while ``remaining`` keep moving."""
         raise NotImplementedError("This controller does not compose concurrent motors")
 
+    def stream_member_started(self, member: StreamMember) -> bool:
+        """Whether a written frame has carried ``member`` yet.
+
+        A controller that composes every live member into each tick has always
+        started it; one that paces axes in phases may still be waiting.
+        """
+        return True
+
     async def release_stream(self) -> None:
         """Run the profile release after the last stream member ended."""
         raise NotImplementedError("This controller does not compose concurrent motors")

@@ -8,7 +8,7 @@ controller runs through the coordinator's scheduler and the services.
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -172,9 +172,88 @@ async def test_each_axis_feeds_the_estimate_with_its_own_duration(bed) -> None:
             legs_done = travel("legs")
             assert estimate.motors["back"].moves_since_reference == 0
             await asyncio.wait_for(head, 3)
-        assert 0.35 <= legs_done <= 0.6
+        # Feet starts with its first write, 100 ms after it joins, as the app
+        # sleeps before feet; a 400 ms move then drives it about 300 ms.
+        assert 0.25 <= legs_done <= 0.45
         assert 0.85 <= travel("back") <= 1.05
         assert estimate.motors["legs"].moves_since_reference == 1
         assert estimate.motors["back"].moves_since_reference == 1
     finally:
         await pe.async_unload_position_estimates(hass, entry_id)
+
+
+@profiles
+async def test_head_joining_during_the_feet_wait_is_written_at_once(bed) -> None:
+    """A head press is never left waiting for its turn while its budget runs."""
+    hass, coordinator, controller = bed
+    feet = asyncio.create_task(_move(hass, "legs", 600))
+    await asyncio.sleep(0.02)
+    assert not written(controller)  # feet waits 100 ms before its first write
+    await asyncio.wait_for(_move(hass, "back", 100), 2)
+    head_frame = P1_HEAD if controller.profile == "multi" else (OLD, OLD_CHAR, "101100000000")
+    assert head_frame in _frames(controller)
+    await asyncio.wait_for(feet, 3)
+
+
+@profiles
+async def test_axes_keep_the_app_pass_spacing_when_one_ends(bed) -> None:
+    """Membership changes never squeeze a refresh closer than the app's 100 ms."""
+    hass, coordinator, controller = bed
+    loop = asyncio.get_running_loop()
+    times: list[tuple[float, tuple[str, str, str]]] = []
+    write = controller.client.write_gatt_char.side_effect
+
+    async def timed(role, payload, **kwargs):
+        frame = (next(s.uuid for s in controller.client.services if role in s.characteristics),
+                 role.uuid, bytes(payload).hex())
+        if frame[2] not in ("0000", "100000000000"):
+            times.append((loop.time(), frame))
+        if write is not None:
+            await write(role, payload, **kwargs)
+
+    controller.client.write_gatt_char.side_effect = timed
+    feet = asyncio.create_task(_move(hass, "legs", 900))
+    await asyncio.sleep(0.15)
+    await asyncio.wait_for(_move(hass, "back", 300), 2)
+    await asyncio.wait_for(feet, 3)
+    def carries_head(frame: tuple[str, str, str]) -> bool:
+        if frame[0] == OLD:
+            return bool(bytes.fromhex(frame[2])[1] & 0x0F)
+        return frame[0] == HEAD
+
+    # The head press itself is written at once; every later refresh is paced.
+    first_head = next(i for i, (_, frame) in enumerate(times) if carries_head(frame))
+    gaps = [
+        (b - a, i + 1)
+        for i, ((a, _), (b, _)) in enumerate(zip(times, times[1:], strict=False))
+        if i + 1 != first_head
+    ]
+    assert gaps and min(gap for gap, _ in gaps) >= 0.09
+    feet_times = [t for t, frame in times if frame in (P1_FEET, (OLD, OLD_CHAR, "101000000000"))]
+    # Feet alone refreshes every 200 ms, after the head has gone too.
+    assert feet_times[-1] - feet_times[-2] >= 0.19
+
+
+@profiles
+async def test_release_during_preflight_restores_the_idle_disconnect(bed) -> None:
+    """A release that arrives while preflight holds the link admits no motion,
+    and the link still gets its normal idle disconnect."""
+    from custom_components.adjustable_bed.services import _get_controller_for_service
+
+    hass, coordinator, controller = bed
+
+    async def live(target):
+        result = await _get_controller_for_service(target)
+        controller.request_svane_axis_release("head")
+        return result
+
+    ensure = AsyncMock(return_value=True)
+    with (
+        patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
+        patch.object(coordinator, "async_ensure_connected", ensure),
+    ):
+        await asyncio.wait_for(_move(hass, "back", 300), 2)
+    assert not any(
+        frame[2] == "0100" or frame[2].startswith("1001") for frame in written(controller)
+    )
+    ensure.assert_awaited_with(reset_timer=True)

@@ -553,6 +553,7 @@ async def test_stream_members_end_at_their_own_cleanup(hass: HomeAssistant, cloc
     bed = manager.beds[LEFT]
     ctrl = controller(hass, LEFT)
     ctrl.stream_tick_s = 0.1
+    ctrl.stream_member_started = lambda _member: True
     ctrl.write_stream_tick = AsyncMock()
     ctrl.release_stream = AsyncMock(side_effect=lambda: setattr(clock, "now", clock.now + 0.5))
 
@@ -589,6 +590,7 @@ async def test_stream_newcomer_starts_with_the_reduced_frame_and_survives_stop(
     bed = manager.beds[LEFT]
     ctrl = controller(hass, LEFT)
     ctrl.stream_tick_s = 0.1
+    ctrl.stream_member_started = lambda _member: True
     ctrl.write_stream_tick = AsyncMock()
     ctrl.end_stream_member = AsyncMock()
     ctrl.release_stream = AsyncMock()
@@ -623,6 +625,7 @@ async def test_failed_reduced_frame_leaves_its_newcomer_unknown(
     bed = manager.beds[LEFT]
     ctrl = controller(hass, LEFT)
     ctrl.stream_tick_s = 0.1
+    ctrl.stream_member_started = lambda _member: True
     ctrl.write_stream_tick = AsyncMock()
     ctrl.end_stream_member = AsyncMock(side_effect=BleakError("reduced frame lost"))
     ctrl.release_stream = AsyncMock()

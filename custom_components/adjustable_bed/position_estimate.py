@@ -727,9 +727,9 @@ def track_held_control(
 class _TrackedStream:
     """Time each merged-stream member (#516) as a serialized move is timed.
 
-    A member's move starts with the first frame that carries it: a composed
-    tick, or the reduced frame another member's cleanup writes for the members
-    that remain. It ends when its own cleanup has been written: the next frame
+    A member's move starts with the first frame that carries it, as the
+    controller reports (``stream_member_started``): a composed tick, or the
+    reduced frame another member's cleanup writes for the members that remain. It ends when its own cleanup has been written: the next frame
     without it, or, for the last members out, the profile release. Members
     ending at different moments therefore get their own durations. As in
     ``_run_tracked``, a cancelled write still knows its stop time; only a
@@ -745,12 +745,19 @@ class _TrackedStream:
     def stream_tick_s(self) -> float:
         return self._driver.stream_tick_s
 
-    def _begin(self, members: tuple[StreamMember, ...]) -> list[StreamMember]:
-        """Start timing the members not yet moving; return those it started."""
-        started = _clock()
+    def _begin(
+        self, members: tuple[StreamMember, ...], started: float, *, unsure: bool = False
+    ) -> list[StreamMember]:
+        """Start timing the members a written frame carried; return those it started.
+
+        ``unsure`` also starts members whose write failed partway, so that the
+        failure can mark their motors unknown.
+        """
         begun: list[StreamMember] = []
         for member in members:
-            if member in self._moves:
+            if member in self._moves or not (
+                unsure or self._driver.stream_member_started(member)
+            ):
                 continue
             bed = _bed_for_controller(self._driver)
             if bed is None or not bed.motors:
@@ -772,34 +779,40 @@ class _TrackedStream:
             bed.end_move(token, member.action, None if failed else _clock() - started)
 
     async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
-        self._begin(members)
+        started = _clock()
         try:
             await self._driver.write_stream_tick(members)
         except asyncio.CancelledError:
             # STOP or shutdown: every member's cleanup still runs and ends it.
+            self._begin(members, started)
             raise
         except BaseException:
             # The stream ends; a failed write leaves every motor's stop unknown.
+            self._begin(members, started, unsure=True)
             for member in tuple(self._moves):
                 self._end(member, failed=True)
             raise
+        self._begin(members, started)
 
     async def end_stream_member(
         self, member: StreamMember, remaining: tuple[StreamMember, ...]
     ) -> None:
-        # The reduced frame carries the remaining members, including any that
+        # A reduced frame may carry remaining members, including any that
         # joined since the last tick.
-        begun = self._begin(remaining)
+        started = _clock()
         try:
             await self._driver.end_stream_member(member, remaining)
         except asyncio.CancelledError:
+            self._begin(remaining, started)
             self._finish(member, remaining)
             raise
         except BaseException:
             # Neither the departing member's stop nor a newcomer's start is known.
+            begun = self._begin(remaining, started, unsure=True)
             for failed in (member, *begun):
                 self._end(failed, failed=True)
             raise
+        self._begin(remaining, started)
         self._finish(member, remaining)
 
     def _finish(self, member: StreamMember, remaining: tuple[StreamMember, ...]) -> None:

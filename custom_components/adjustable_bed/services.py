@@ -2423,7 +2423,11 @@ async def _async_timed_move(
             if svane_admission is not None and svane_admission.released(
                 "head" if motor == "back" else "feet"
             ):
-                # svane_release_axis arrived during preflight: admit no motion.
+                # svane_release_axis arrived during preflight: admit no motion,
+                # and give the link preflight opened its normal idle disconnect.
+                if target.is_connected:
+                    with contextlib.suppress(Exception):
+                        await target.async_ensure_connected(reset_timer=True)
                 return
             await target.async_execute_stream_member(
                 motor=motor,

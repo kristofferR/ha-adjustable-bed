@@ -1,7 +1,6 @@
 """Actual public light intent and task-local timed movement boundaries."""
 
 import asyncio
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
