@@ -66,8 +66,13 @@ RENAME_SCHEMA = vol.Schema(
 )
 
 
-def _selection(call: ServiceCall) -> tuple[PositionEstimates, list[BedEstimate]]:
-    """Resolve one bed device, and its side for a pair, to its estimated beds."""
+def _selection(
+    call: ServiceCall, *, estimated: bool = True
+) -> tuple[PositionEstimates, list[BedEstimate]]:
+    """Resolve one bed device, and its side for a pair, to its beds.
+
+    ``estimated`` keeps only beds with estimated motors and requires one.
+    """
     targets, missing = _resolve_sided_targets(
         call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
     )
@@ -75,7 +80,7 @@ def _selection(call: ServiceCall) -> tuple[PositionEstimates, list[BedEstimate]]
         raise _missing_device_error(missing[0])
     coordinator, side = targets[0]
     manager = position_estimates(call.hass, coordinator.entry.entry_id)
-    if manager is None or not manager.active:
+    if manager is None or (estimated and not manager.active):
         raise ServiceValidationError(
             "Estimated positions are not enabled for this bed",
             translation_domain=DOMAIN,
@@ -85,6 +90,8 @@ def _selection(call: ServiceCall) -> tuple[PositionEstimates, list[BedEstimate]]
         beds = [bed for bed in manager.beds.values() if bed.side == side]
     else:
         beds = list(manager.beds.values())
+    if not estimated:
+        return manager, beds
     beds = [bed for bed in beds if bed.motors]
     if not beds:
         raise ServiceValidationError(
@@ -97,7 +104,7 @@ def _selection(call: ServiceCall) -> tuple[PositionEstimates, list[BedEstimate]]
 
 def _selected_position(call: ServiceCall) -> tuple[PositionEstimates, SavedPosition]:
     """A saved position must stay within the selected bed or side."""
-    manager, beds = _selection(call)
+    manager, beds = _selection(call, estimated=False)
     position = manager.position(call.data[ATTR_POSITION])
     if not set(position.targets) <= {bed.key for bed in beds}:
         raise ServiceValidationError(

@@ -102,8 +102,9 @@ For the whole bed:
 A saved position stores the current estimate of every calibrated motor. Saving
 requires every included motor to be tracking. Recalling one moves each motor,
 one after the other, for the calculated time. It needs every motor it covers to
-be tracking, and it reports an error when STOP or a failure left a motor short
-of its target.
+be tracking and the bed to be still, and it reports an error when STOP or a
+failure left a motor short of its target. On a paired bed, a failure on one
+side stops the other side too.
 
 Saved positions are not the bed's hardware memory, and saving one does not
 change anything on the bed.

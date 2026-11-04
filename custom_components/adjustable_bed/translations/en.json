@@ -8160,6 +8160,12 @@
     },
     "saved_position_other_side": {
       "message": "\"{position}\" also covers the other side. Select the whole bed to use it."
+    },
+    "position_estimate_moving": {
+      "message": "The bed is moving. Stop it, then try again."
+    },
+    "position_estimate_move_failed": {
+      "message": "A movement failed, so the estimated position is unknown. Set the reference again."
     }
   },
   "issues": {

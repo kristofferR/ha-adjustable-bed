@@ -507,6 +507,11 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                         bounded_movement,
                         start_delay_ms=hold.start_delay_ms,
                         release_delay_ms=hold.release_delay_ms,
+                        max_travel_ms=(
+                            SLEEPYS_ELITE_NATIVE_ACTION_MS
+                            if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+                            else 1000
+                        ),
                     ),
                     resource=self._motor_resource,
                 )

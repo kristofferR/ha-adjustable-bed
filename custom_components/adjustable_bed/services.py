@@ -2151,6 +2151,7 @@ async def _timed_move_plan(
                 timed_movement,
                 start_delay_ms=hold_spec.start_delay_ms if delayed and hold_spec else 0,
                 release_delay_ms=hold_spec.release_delay_ms if delayed and hold_spec else 0,
+                max_travel_ms=duration_ms,
             ),
             calculated_repeat_count,
             pulse_delay_ms,

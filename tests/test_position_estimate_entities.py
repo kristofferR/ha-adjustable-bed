@@ -298,8 +298,14 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
         await call_pair("delete_position", side="left", position="Reading")
     assert err.value.translation_key == "saved_position_other_side"
 
+    # With one side no longer estimated, the whole bed still manages its positions.
+    manager.beds[right].configure({})
+    await call_pair("rename_position", position="Reading", name="Read")
+    manager.beds[right].configure({"back": (20.0, 10.0)})
+    manager.beds[right].set_reference()
+
     await call_pair("mark_position_unknown", side="right")
     assert manager.beds[left].tracking(["back"])
     with pytest.raises(ServiceValidationError):
-        await call_pair("recall_position", position="Reading")
+        await call_pair("recall_position", position="Read")
     await pe.async_unload_position_estimates(hass, entry.entry_id)

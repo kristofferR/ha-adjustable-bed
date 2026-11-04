@@ -457,28 +457,95 @@ def test_octo_and_richmat_declare_their_estimated_motors() -> None:
     assert groups(BedController, ("back", "legs")) == {}
 
 
-async def test_recall_plans_from_the_settled_estimate(
+async def test_recall_refuses_while_a_tracked_move_runs(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A move still running when recall starts is stopped first, then counted."""
+    """A plan from an unsettled estimate would be wrong; nothing moves."""
     manager = await calibrated(hass)
     bed = manager.beds[LEFT]
     hass.data[DOMAIN]["entry"] = object()
-    running = bed.begin_move(("back",))
-    stops: list[str] = []
-
-    async def stop(_hass: object, _manager: object, stopped: pe.BedEstimate) -> None:
-        stops.append(stopped.address)
-        stopped.end_move(running, "up", 4.0)  # the interrupted move adds 20%
-
-    timed_move = AsyncMock(
-        side_effect=lambda _t, motor, direction, ms: bed.motors[motor].travel(direction, ms / 1000)
-    )
-    monkeypatch.setattr(pe, "async_stop_bed", stop)
+    bed.begin_move(("back",))
+    timed_move = AsyncMock()
     monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
-    await pe.async_move_bed(hass, manager, bed, {"back": 50.0})
-    assert stops == [LEFT]
-    assert [call.args[1:] for call in timed_move.await_args_list] == [("back", "up", 6000)]
+    with pytest.raises(ServiceValidationError) as err:
+        await pe.async_move_bed(hass, manager, bed, {"back": 50.0})
+    assert err.value.translation_key == "position_estimate_moving"
+    timed_move.assert_not_awaited()
+
+
+async def test_cancel_during_release_counts_no_more_than_the_window(
+    hass: HomeAssistant, clock: Clock
+) -> None:
+    manager = await calibrated(hass)
+    # 100 ms start, 1 s hold, cancelled 50 ms into the release delay.
+    command = pe.track_motor_command(
+        hass,
+        "back",
+        "up",
+        moving(clock, 1.15, asyncio.CancelledError()),
+        start_delay_ms=100,
+        release_delay_ms=100,
+        max_travel_ms=1000,
+    )
+    with pytest.raises(asyncio.CancelledError):
+        await command(controller(hass, LEFT))
+    assert manager.beds[LEFT].motors["back"].percent == pytest.approx(5.0)
+
+
+async def test_a_side_left_unknown_stops_the_other_side(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manager = await calibrated(hass, ((LEFT, "left"), (RIGHT, "right")))
+    position = manager.save_position("Reading", manager.beds.values(), button=False)
+    for bed in manager.beds.values():
+        bed.motors["back"].percent = 50.0
+    hass.data[DOMAIN]["entry"] = object()
+    stopped: list[str | None] = []
+
+    async def timed_move(targets, motor, _direction, _ms) -> None:
+        if targets[0][1] == "left":
+            # A swallowed release failure: no exception, but the estimate is unknown.
+            manager.beds[LEFT].invalidate(EstimateReason.FAILED_MOVE, [motor])
+            return
+        await asyncio.Event().wait()
+
+    async def stop(_hass: object, _manager: object, bed: pe.BedEstimate) -> None:
+        stopped.append(bed.side)
+
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+    monkeypatch.setattr(pe, "async_stop_bed", stop)
+    with pytest.raises(HomeAssistantError) as err:
+        await pe.async_recall_position(hass, manager, position)
+    assert err.value.translation_key == "position_estimate_move_failed"
+    assert stopped == ["right"]
+
+
+async def test_cancelling_a_recall_drains_every_side(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manager = await calibrated(hass, ((LEFT, "left"), (RIGHT, "right")))
+    position = manager.save_position("Reading", manager.beds.values(), button=False)
+    for bed in manager.beds.values():
+        bed.motors["back"].percent = 50.0
+    hass.data[DOMAIN]["entry"] = object()
+    cleaned: list[str] = []
+    started = asyncio.Event()
+
+    async def timed_move(targets, _motor, _direction, _ms) -> None:
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0)
+            cleaned.append(targets[0][1])
+
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+    recall = asyncio.create_task(pe.async_recall_position(hass, manager, position))
+    await started.wait()
+    recall.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await recall
+    assert sorted(cleaned) == ["left", "right"]
 
 
 async def test_a_failed_side_stops_the_other_side(
