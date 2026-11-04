@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     KAIDI_VARIANT_FLOYD,
+    KAIDI_VARIANT_SEAT_1_2,
 )
 from custom_components.adjustable_bed.execution import (
     LATCHED_MAX_HOLD_MS,
@@ -51,7 +52,6 @@ from tests.ff_frame_vectors import FROZEN_FRAMES
 from tests.test_bedsense import make_controller as make_bedsense
 from tests.test_controller_contract import _create_controller_for_bed_type
 from tests.test_hold_lease_service import STREAM, _install, _timed, runtime  # noqa: F401
-from tests.test_motion_bed_controller import rig_for
 
 LATCHED = ExecutionCapabilities(hold="latched")
 DECLARED_SOLACE = ("common", "home_k1", "home_k2", "motion_flex", "woosa")
@@ -67,7 +67,8 @@ def test_only_report_backed_routes_declare_a_latched_hold() -> None:
     assert {k for k, p in SOLACE_PROFILES.items() if p.execution.hold} == set(DECLARED_SOLACE)
     assert all(SOLACE_PROFILES[key].execution == LATCHED for key in DECLARED_SOLACE)
     assert BEDSENSE.execution == LATCHED
-    assert MOTION_BED.execution == LATCHED
+    # Motion Bed's covers are not timed_move motors and it has no held controls.
+    assert MOTION_BED.execution == NO_EXECUTION_CAPABILITIES
 
 
 @pytest.mark.parametrize(
@@ -79,9 +80,10 @@ async def test_standalone_latched_controllers_declare(bed_type: str) -> None:
     assert controller.execution == LATCHED
 
 
-async def test_kaidi_floyd_declares_nothing() -> None:
+@pytest.mark.parametrize("variant", [KAIDI_VARIANT_FLOYD, KAIDI_VARIANT_SEAT_1_2])
+async def test_kaidi_floyd_and_dual_seat_declare_nothing(variant: str) -> None:
     controller = await _create_controller_for_bed_type(BED_TYPE_KAIDI)
-    controller._variant = KAIDI_VARIANT_FLOYD  # type: ignore[attr-defined]
+    controller._variant = variant  # type: ignore[attr-defined]
     assert controller.execution == NO_EXECUTION_CAPABILITIES
 
 
@@ -198,17 +200,6 @@ async def test_bedsense_holds_one_start_until_its_lease_ends() -> None:
     await _hold_then_cancel(task, coordinator.cancel_command, 0.3)
     frames = [call.args[1] for call in coordinator.client.write_gatt_char.call_args_list]
     assert frames == [BEDSENSE_ACTIONS["back_up"].frame, BEDSENSE_ACTIONS["release"].frame]
-
-
-async def test_motion_bed_cover_holds_past_its_one_second_press() -> None:
-    rig = rig_for()
-    await rig.controller.async_discover_capabilities()
-    rig.client.write_gatt_char.reset_mock()
-    with _leased(rig.coordinator.cancel_command):
-        task = asyncio.create_task(rig.controller.move_back_up())
-    await _hold_then_cancel(task, rig.coordinator.cancel_command, 1.3)
-    assert len(rig.writes) == 2
-    assert rig.writes[-1] == ff_frame.STOP
 
 
 async def test_reverie_hold_ends_when_its_command_is_cancelled() -> None:

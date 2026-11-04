@@ -148,7 +148,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | **FFFF frame (S1)** | | | | | |
 | `solace` (both routes) | S latched | U | U | motionflex, homekobo, dianqi, woosa | one start frame, global STOP on release; hold declared on the five report-backed profiles; Legacy S4-Y and unidentified entries have no report |
 | `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release; hold declared |
-| `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP; hold declared |
+| `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP; not declared: its covers are not `timed_move` motors and it has no held controls, so no route a lease could renew |
 | **Distinct protocols** | | | | | |
 | `svane` (Svane Remote) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP; hold not declared yet: its held route runs under its own admission, which leases do not reach, and #516 reworks it |
 | `jensen`, `svane` (`svane_remote_jmc`) | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control; hold declared on `jensen` only (see the `svane` row) |
@@ -159,7 +159,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `reverie` | S latched | U | U | reverie, row041 | one frame on press, per-axis stop on release; routines serialize; hold declared |
 | `reverie_pairlink` | B | B | B | reverie, row041 | row041: Pairlink runtime acceptance pending |
 | `reverie_nightstand` | B | B | B | none | no accepted report |
-| `kaidi`, `isleep` | S latched | U | U | kaidi | one start per press, per-axis release; combined is its own opcode; hold declared, except the Floyd variant |
+| `kaidi`, `isleep` | S latched | U | U | kaidi | one start per press, per-axis release; combined is its own opcode; hold declared, except Floyd (B) and the dual-seat `seat_1_2` variant, which starts seat 2 only after seat 1's repeats |
 | `kaidi` (`floyd`) | B | B | B | floyd | report PARTIAL |
 | `remacro` (all models) | S latched | U | U | brick, jewmes, slumber, row050 | one write on press, paired STOP; rocking speed is massage and unreachable (R075); hold declared |
 | `malouf_app`, `malouf_new_okin` | S stream | U | U | lucid, malouf, row023 | apps do not establish synchronized motion |

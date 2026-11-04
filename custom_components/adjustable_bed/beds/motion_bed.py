@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..execution import LATCHED_MAX_HOLD_MS, leased_hold_ms
 from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from ..motion_bed_models import MotionBedSelection
 from ..motion_bed_protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
@@ -910,9 +909,7 @@ class MotionBedController(BedController):
         candidates = [action for action in self.actions if action.kind == "held" and action.key.endswith("_" + axis + "_" + direction) and action.owner != "SleepAdjustActivity"]
         if len(candidates) != 1:
             raise ValueError("Use the explicitly named Motion Bed movement control")
-        await self.async_execute_motion_bed_action(
-            candidates[0].key, duration=leased_hold_ms(1000, LATCHED_MAX_HOLD_MS) / 1000
-        )
+        await self.async_execute_motion_bed_action(candidates[0].key)
 
     async def move_head_up(self) -> None: await self._axis("head", "up")
     async def move_head_down(self) -> None: await self._axis("head", "down")

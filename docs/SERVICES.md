@@ -198,7 +198,7 @@ naming an ended generation, an older generation, or a different motion under
 the same generation are refused, so a late renewal can never restart motion.
 Nothing is replayed after a reconnect or restart. One hold never streams
 longer than 30 seconds in total, however often it is renewed. Latched beds
-(Solace, BedSense, Motion Bed, Reverie, Kaidi, iSleep and Remacro) keep moving
+(Solace, BedSense, Reverie, Kaidi, iSleep and Remacro) keep moving
 after one start frame until STOP arrives, so their holds stop after 10 seconds
 in total. A renewable
 hold targets one bed or paired bed per call; on a paired bed both sides must

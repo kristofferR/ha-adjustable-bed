@@ -59,7 +59,7 @@ not identify which app's layout a bed implements.
 | Audio, clock and alarm | ⚠️ MotionFlex | ⚠️ Alarm only | ❌ | ✅ |
 | Sleep, thermal and hub controls | ❌ | ❌ | ❌ | ✅ Sleep angles, calibration, timers, reports; TL-W thermal; TL-Q modules |
 | Wi-Fi provisioning and cloud | ❌ | ❌ | ❌ | ❌ Excluded (outside the product boundary) |
-| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ Legacy S4-Y and unidentified entries | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ Legacy S4-Y and unidentified entries | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ (no renewable route) |
 
 ## Choosing a profile
 

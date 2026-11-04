@@ -64,14 +64,14 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "vibradorm_app": {"hold": ('diamant', 'werkmeister', 'vmat')},
     "vmatbasic": {"hold": ('vmatbasic',)},
     # Latched (FFFF frame and distinct protocols): one start, STOP at release.
-    # Solace's S4-Y and unidentified routes and Kaidi's Floyd have no report.
+    # Solace's S4-Y and unidentified routes and Kaidi's Floyd have no report;
+    # Motion Bed has no renewable route; Kaidi's dual-seat variant stays finite.
     "SolaceProfile:common": {"hold": ("homekobo", "dianqi")},
     "SolaceProfile:home_k1": {"hold": ("homekobo",)},
     "SolaceProfile:home_k2": {"hold": ("homekobo",)},
     "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
     "SolaceProfile:woosa": {"hold": ("woosa",)},
     "BedSenseProfile:bedsense": {"hold": ("bedsense",)},
-    "MotionBedProfile:motion_bed": {"hold": ("blackdianqi",)},
     "reverie": {"hold": ("reverie", "row041")},
     "kaidi": {"hold": ("kaidi",)},
     "isleep": {"hold": ("kaidi",)},
@@ -116,7 +116,6 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         "SolaceProfile:woosa",
     ),
     "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
-    "profiles/ff_frame.py:<module>.MOTION_BED": ("MotionBedProfile:motion_bed",),
     "beds/reverie.py:<module>.ReverieController": ("reverie",),
     "beds/reverie.py:<module>.ReverieController.execution": ("reverie",),
     "beds/kaidi.py:<module>.KaidiController": ("kaidi",),

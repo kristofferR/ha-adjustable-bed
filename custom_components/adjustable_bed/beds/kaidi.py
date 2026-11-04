@@ -502,8 +502,10 @@ class KaidiController(BedController):
 
     @property
     def execution(self) -> ExecutionCapabilities:
-        """One start per press, then a per-axis release (#483). Floyd has no complete report."""
-        if self._variant == KAIDI_VARIANT_FLOYD:
+        """One start per press, then a per-axis release (#483)."""
+        # Floyd has no complete report. A dual-seat bed starts seat 2 only after
+        # seat 1's repeats, so an open-ended hold would never move seat 2.
+        if self._variant in (KAIDI_VARIANT_FLOYD, KAIDI_VARIANT_SEAT_1_2):
             return NO_EXECUTION_CAPABILITIES
         return ExecutionCapabilities(hold="latched")
 

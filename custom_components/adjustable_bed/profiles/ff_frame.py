@@ -571,10 +571,4 @@ class MotionBedProfile:
     stop: bytes
 
 
-# No movement repeat; the global STOP ends a hold (#483).
-MOTION_BED: Final = MotionBedProfile(
-    key="motion_bed",
-    execution=ExecutionCapabilities(hold="latched"),
-    commands=SOURCE_COMMANDS,
-    stop=codec.STOP,
-)
+MOTION_BED: Final = MotionBedProfile(key="motion_bed", commands=SOURCE_COMMANDS, stop=codec.STOP)

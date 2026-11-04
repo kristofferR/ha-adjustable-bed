@@ -46,7 +46,7 @@ values; the legacy Bed values in the shared library are not used by any of them.
 | Massage | ⚠️ (start/stop and 15/30/45-minute timers on Seat 1, Seat 2, Seat 1+2; requires **Has massage**) |
 | Lights | ⚠️ (on/off, product-gated) |
 | Single-address Left/Right | ✅ (`seat_1_2` only) |
-| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ Floyd Home |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ Floyd Home and dual-seat (`seat_1_2`) beds |
 
 ## Protocol Details
 
