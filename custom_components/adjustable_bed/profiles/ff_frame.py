@@ -18,6 +18,7 @@ from typing import Final, Literal
 from ..codec import ff_frame as codec
 from ..codec.ff_frame import control, query, summed
 from ..const import SOLACE_NAME_PATTERNS
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..motion_bed_protocol import SOURCE_COMMANDS
 
 Axis = Literal["back", "legs", "head", "hip", "lumbar", "bed_height", "tilt"]
@@ -103,6 +104,8 @@ class SolaceProfile:
     """One evidence-backed capability route of the ``solace`` bed type."""
 
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     axes: tuple[Axis, ...]
     """Motor covers in order. Every route has back and legs."""
     presets: bool
@@ -318,6 +321,8 @@ class MemoryRule:
 @dataclass(frozen=True, kw_only=True)
 class BedSenseProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     layouts: Mapping[int, tuple[str, ...]]
     actions: Mapping[str, BedSenseAction]
     memory_rules: tuple[MemoryRule, ...]
@@ -547,6 +552,8 @@ def bedsense_layout(name: str | None) -> int:
 @dataclass(frozen=True, kw_only=True)
 class MotionBedProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     commands: Mapping[str, bytes]
     """Every app callsite's frame; the controller gates each by model and state."""
     stop: bytes

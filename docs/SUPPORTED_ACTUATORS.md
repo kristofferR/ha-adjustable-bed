@@ -17,7 +17,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family) layouts and timers, [L&P legacy](beds/lp-legacy.md) model settings |
 | [Reverie](beds/reverie.md) | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okin-nframe.md#okimat) | 4 memory presets, massage, lights (requires pairing) |
-| [Okin 64-Bit](beds/okin-64bit.md) | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |
+| [Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |
 | [Glideaway Motion / Montion app](beds/keeson.md#glideaway-motion) | Manual 400/450/500/600 layouts, two memories, clock/alarm, model-gated massage/light; hardware unverified |
 | [Jiecang](beds/jiecang.md) | Motor control, memory, massage, split beds; [ERGOBALANCE / Dream Motion](beds/jiecang.md#dream-app-family) layouts, alarms, wake routines and renaming; [Comfort Motion app](beds/jiecang.md#comfort-motion-app) |
 | [Kaidi](beds/kaidi.md) | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
@@ -48,7 +48,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
 | [Customatic](beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C and Remedy apps: back and legs (Remedy adds lumbar), memory page, light toggle |
 | [Customatic Z-Series](beds/okin-nframe.md#customatic-z-series), [Jordan's Serenity](beds/okin-nframe.md#jordans-serenity), [Jordan's Tranquil](beds/okin-nframe.md#jordans-tranquil) | OKIN CST 14-byte apps: head/foot and selector controls, presets, saved positions, massage; Z-230/Z-280 pages |
-| [SIMMONS](beds/okin-nframe.md#simmons) / [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) apps | OKIN apps whose command table follows the Bluetooth name: regular or inclined SIMMONS beds; head, foot and lumbar |
+| [SIMMONS](beds/okin-nframe.md#simmons) / [Adjustable bed (Lumbar)](beds/okin-nframe.md#adjustable-bed-lumbar) apps | OKIN apps whose command table follows the Bluetooth name: regular or inclined SIMMONS beds; head, foot and lumbar |
 | [Okin CST](beds/okin-nframe.md#okin-cst) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift) | Single stair actuator for Elda BTH / MEGAMAT |
@@ -74,7 +74,7 @@ guide documents the format once, then has one section per profile. The
 |-------|-------|--------------|
 | Jiecang F1 | [Jiecang](beds/jiecang.md) | Jiecang legacy and Comfort Motion routes; ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps; LOGICDATA MOTIONrelax and Sleep Smart apps |
 | Keeson E5/E6 | [Keeson](beds/keeson.md) | Keeson variants and the Ergomotion, Serta and OKIN FFE bed types; Tempur Curve, Q-Plus, Serta MP Remote, Omazz, Ergomotion, ROW Control, Ergo Slim, TEMPUR AU and [Ergomotion 4.0](beds/ergomotion-4.md) apps; Glideaway Motion, AdjustaMattress, Malouf legacy OKIN, Sleepy's BOX15, Scott Living, SBI, Rondure, Cool Base, BF, Cherish and Comfort Enhancements |
-| Okin N-frame | [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, Okin CST, Okin DOT, RF ECO BT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, OKIN SleepEase, Sleepy's BOX25 legacy and AdjustableM5X4 |
+| Okin N-frame | [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, Okin CST, Okin DOT, RF ECO BT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, OKIN SleepEase, Sleepy's BOX25 legacy, AdjustableM5X4, Okin 64-Bit and Adjustable bed (Lumbar) |
 | Okin 5A | [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Okin CB35, DewertOkin ELEVATE and the Sleepy's BOX25 Star route |
 | Malouf | [Malouf](beds/malouf.md) | Malouf New OKIN and the Malouf Base / Lucid Base apps |
 | Richmat 6E | [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech, L&P MlRM, the five Richmat MH apps and HJBed |
@@ -102,7 +102,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | Bed Type | Codec | Command Format | Write Method | Pairing Required | Detection |
 |----------|-------|---------------|--------------|------------------|-----------|
 | [Okimat](beds/okin-nframe.md#okimat) | Okin N-frame | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
-| [Okin 64-bit](beds/okin-64bit.md) | Okin N-frame (migration pending) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | `NORA_CON` / `NORACON`, manual selection |
+| [Okin 64-bit](beds/okin-nframe.md#okin-64-bit) | Okin N-frame | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | `NORA_CON` / `NORACON`, manual selection |
 | [Leggett & Platt Okin](beds/leggett-platt.md) | Okin N-frame | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | `LP BED...` or Leggett name patterns |
 | [Nectar](beds/okin-5a.md#nectar) | Okin 5A | 7-byte (32-bit cmd) | UUID `62741525-...` without response | ❌ No | Name contains "nectar" or generic `OKIN-*` disambiguation |
 | [DewertOkin](beds/okin-nframe.md#dewertokin) | Okin N-frame | 6-byte (32-bit cmd) | UUID `62741525-...` | ❌ No | Name patterns |
