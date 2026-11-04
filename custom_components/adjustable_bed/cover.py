@@ -31,6 +31,7 @@ from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
+from .position_estimate import track_motor_command
 from .profiles.logicdata import ALL_AXES as LOGICDATA_AXES
 
 if TYPE_CHECKING:
@@ -499,17 +500,25 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                         await asyncio.sleep(hold.release_delay_ms / 1000)
 
                 await self._coordinator.async_execute_controller_command(
-                    bounded_movement,
-                    resource=self._motor_resource,
-                )
-            elif direction == "open":
-                await self._coordinator.async_execute_controller_command(
-                    self.entity_description.open_fn,
+                    track_motor_command(
+                        self.hass,
+                        self.entity_description.key,
+                        "up" if direction == "open" else "down",
+                        bounded_movement,
+                        overhead_ms=hold.start_delay_ms + hold.release_delay_ms,
+                    ),
                     resource=self._motor_resource,
                 )
             else:
                 await self._coordinator.async_execute_controller_command(
-                    self.entity_description.close_fn,
+                    track_motor_command(
+                        self.hass,
+                        self.entity_description.key,
+                        "up" if direction == "open" else "down",
+                        self.entity_description.open_fn
+                        if direction == "open"
+                        else self.entity_description.close_fn,
+                    ),
                     resource=self._motor_resource,
                 )
             _LOGGER.debug(

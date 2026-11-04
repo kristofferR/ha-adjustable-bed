@@ -256,6 +256,7 @@ from .pairing import (
     is_paired,
     octo_snapshot_from_descriptor,
 )
+from .position_estimate import notify_connection_lost as notify_position_estimate_connection_lost
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -4959,6 +4960,8 @@ class AdjustableBedCoordinator:
         controller = self._controller
         if controller is not None:
             controller.on_disconnect()
+        # A tracked movement cut off by the link loss has no known stop time.
+        notify_position_estimate_connection_lost(self)
 
         # If we're in the middle of connecting, this is likely bleak's internal retry
         # for le-connection-abort-by-local - don't log warnings or clear references

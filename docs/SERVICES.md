@@ -172,6 +172,11 @@ partially completed move.
 
 A direct command being accepted is not confirmation that the target was reached.
 
+Beds without position feedback can opt in to calibrated travel-time estimates
+and saved positions. Their actions (`save_position`, `recall_position`,
+`set_position_reference` and others) are described in
+[Estimated positions](ESTIMATED_POSITIONS.md#actions).
+
 ### Reverie composite actions
 
 `reverie_set_comfort` accepts a `comfort` object with optional `head_position`,
