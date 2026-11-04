@@ -23,8 +23,10 @@ from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.ergomotion4_profiles import PRODUCTS as ERGOMOTION_4_PRODUCTS
 from custom_components.adjustable_bed.execution import (
     NO_EXECUTION_CAPABILITIES,
     ExecutionCapabilities,
@@ -43,12 +45,67 @@ APP_ROUTES = {
 }
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
+# Keeson E5/E6 (K1) profiles with stream evidence, by profile key. The base,
+# OKIN, Sino, KSBT CR, OKIN FFE, Sleepy's Box15, Rondure and Scott Living routes
+# are blocked and declare nothing.
+KEESON_STREAM: dict[str, tuple[str, ...]] = {
+    "ergomotion": ("sfdergo",),
+    "serta": ("serta330",),
+    "restonic_a": ("restonic",),
+    "restonic_b": ("restonic",),
+    "innova": ("sfm",),
+    "bedsense_bases": ("sfmc2",),
+    "avanti_bases": ("avanti",),
+    "dynasty_bases": ("dynasty",),
+    "maxcoil_una": ("maxcoil",),
+    "americanstar": ("americanstar",),
+    "simon_li": ("simon",),
+    "heal_every_night": ("heal",),
+    "okin_seating": ("minghua",),
+    "adjustable_lite": ("adjlite",),
+    "adjustable_lite_ksbt03c": ("adjlite",),
+    "ksbt": ("hump",),
+    "ksbt03c": ("mancini",),
+    "sbi": ("costco",),
+    "coolbase": ("coolbase",),
+    "bf": ("bf",),
+    "cherish": ("cherish",),
+    "comfort_enhancements": ("enh",),
+    "glideaway_motion": ("glide",),
+    "adjustamattress": ("row067",),
+    "adjustamattress_p2": ("row067",),
+}
+# Keeson cluster033 app layouts, and Ergomotion 4.0 per catalog product style.
+KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
+    "tempur_curve": ("tempur",),
+    "qplus_app": ("costco",),
+    "serta_mp_remote": ("serta330",),
+    "omazz_adjusto_iii": ("omazz",),
+    "ergomotion_app": ("sfdergo",),
+    "row_control": ("row",),
+    "ergo_slim": ("slim",),
+    "tempur_au": ("tempur_au",),
+}
+ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUCTS.values())
+
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Keeson cluster033 apps and Ergomotion 4.0 (#483) stream a held key.
+    **{
+        f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
+        for app, layouts in keeson_profiles.APP_LAYOUTS.items()
+        for layout in layouts
+    },
+    **{
+        f"AppProfile:ergomotion_4@{style}": {"hold": ("hump", "issue558")}
+        for style in ERGOMOTION_4_STYLES
+    },
     # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
     "JiecangProfile:dreamask": {"hold": ("dreamask",)},
     "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
     "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    # Keeson E5/E6 (#483): the K1 profiles that stream a held key.
+    **{f"KeesonProfile:{key}": {"hold": keys} for key, keys in KEESON_STREAM.items()},
     "LogicdataProfile:phone": {"hold": ("ld-phone",)},
     "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
     "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
@@ -67,6 +124,18 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
     "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
+    "RichmatProfile:hjbed": {"hold": ("row121",)},
+    "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
+    "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
+    "RichmatProfile:richmat_mh_blvd_home": {"hold": ("blvd", "row055")},
+    "RichmatProfile:richmat_mh_harmony": {"hold": ("harmony", "row055")},
+    "RichmatProfile:richmat_mh_idealbed": {"hold": ("ideal", "row055")},
+    "RichmatProfile:richmat_mh_revive": {"hold": ("revive", "row055")},
+    "RichmatProfile:richmat_nordic": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_prefix55": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_prefixaa": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_wilinke": {"hold": ("rmc2",)},
     # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
     # cadence is the entry's pulse settings, not the app's.
     "LimossProfile:limoss_remote": {"hold": ("limoss",)},
@@ -88,9 +157,26 @@ _CUSTOMATIC = (
     "OkinNFrameProfile:remedy",
 )
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    # RMControl narrows its framing's declaration to sustain-press products.
+    "beds/rmcontrol.py:<module>.RmcontrolController": (
+        "RichmatProfile:richmat_nordic",
+        "RichmatProfile:richmat_wilinke",
+    ),
     "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
     "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
     "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
+    **{
+        f"profiles/keeson.py:<module>.{key.upper()}": (f"KeesonProfile:{key}",)
+        for key in KEESON_STREAM
+    },
+    "profiles/keeson.py:<module>.app_profile": tuple(
+        f"AppProfile:{app}@{layout}"
+        for app, layouts in keeson_profiles.APP_LAYOUTS.items()
+        for layout in layouts
+    ),
+    "profiles/keeson.py:<module>.ergomotion_4_profile": tuple(
+        f"AppProfile:ergomotion_4@{style}" for style in sorted(ERGOMOTION_4_STYLES)
+    ),
     "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
     "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
     "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
@@ -100,6 +186,16 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
+    "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
+    "profiles/richmat.py:<module>.RICHMAT": tuple(
+        f"RichmatProfile:richmat_{framing}"
+        for framing in ("nordic", "prefix55", "prefixaa", "wilinke")
+    ),
+    "profiles/richmat.py:<module>.RICHMAT_MH": tuple(
+        f"RichmatProfile:richmat_mh_{app}"
+        for app in ("best_mattress", "blvd_home", "harmony", "idealbed", "revive")
+    ),
     "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
     "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
 }
@@ -154,6 +250,7 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         for app, layouts in keeson_profiles.APP_LAYOUTS.items()
         for layout in layouts
     )
+    profiles.extend(keeson_profiles.ergomotion_4_profile(style) for style in ERGOMOTION_4_STYLES)
     for bed_type, (config_key, choices) in APP_ROUTES.items():
         for choice in choices:
             coordinator = _FactoryCoordinator()
@@ -231,6 +328,22 @@ async def test_every_controller_declaration_has_evidence(bed_type: str) -> None:
         identity = bed_type
     assert identity in EVIDENCE, f"{identity} declares {sorted(execution.declared)}"
     assert set(EVIDENCE[identity]) == execution.declared, identity
+
+
+STREAM_HOOKS = ("stream_tick_s", "write_stream_tick", "end_stream_member", "release_stream")
+
+
+@pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
+async def test_concurrent_declaration_implements_the_stream_hooks(bed_type: str) -> None:
+    """A controller that merges motors must compose its own frames (#516)."""
+    controller = await _create_controller_for_bed_type(bed_type)
+    if not controller.execution.concurrent:
+        return
+    for hook in STREAM_HOOKS:
+        assert getattr(type(controller), hook) is not getattr(BedController, hook), (
+            bed_type,
+            hook,
+        )
 
 
 async def test_evidence_rows_match_live_declarations() -> None:

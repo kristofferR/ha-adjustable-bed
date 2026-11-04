@@ -15,13 +15,14 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..codec import keeson as codec
+from ..command_scheduler import current_command_context
 from ..const import BED_MOTOR_PULSE_DEFAULTS, BED_TYPE_KEESON, KEESON_VARIANT_PURPLE
 from ..profiles import keeson as profiles
 from ..profiles.keeson import (
@@ -698,11 +699,58 @@ class KeesonController(BedController):
             return self.profile.three_motor_hold
         return self.profile.hold or configured
 
+    def _held_cadence(self) -> tuple[int, int]:
+        """Writes and interval of one held key.
+
+        A leased hold (#483) refreshes at the app's own interval until its lease
+        ends; otherwise the pulse settings apply.
+        """
+        count, interval = self.motor_pulse_settings()
+        if self.profile.refresh_ms is not None:
+            refresh_ms = self.profile.refresh_ms
+        elif self.profile.three_motor_hold and self._coordinator.motor_count == 3:
+            refresh_ms = self.profile.three_motor_hold[1]
+        elif self.profile.hold is not None:
+            refresh_ms = self.profile.hold[1]
+        else:
+            return count, interval
+        leased = self.leased_hold_refreshes(refresh_ms)
+        return (leased, refresh_ms) if leased is not None else (count, interval)
+
+    async def _refresh_within_ceiling(self, refresh: Awaitable[None], ceiling_ms: int) -> None:
+        """Run a held refresh; under a lease it stops at the ceiling (#483).
+
+        Write latency stretches a counted refresh, so a renewed hold is bounded
+        by elapsed time, as a leased ``timed_move`` is. Only the refresh is
+        bounded: the caller's release runs after it, outside the deadline.
+        """
+        context = current_command_context()
+        if context is None or context.lease is None:
+            await refresh
+            return
+        refresh_timed_out = False
+
+        async def guarded() -> None:
+            nonlocal refresh_timed_out
+            try:
+                await refresh
+            except TimeoutError:
+                refresh_timed_out = True
+                raise
+
+        ceiling = asyncio.timeout(ceiling_ms / 1000)
+        try:
+            async with ceiling:
+                await guarded()
+        except TimeoutError:
+            if refresh_timed_out or not ceiling.expired():
+                raise
+
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         """Move a motor and always run the profile's release."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
-        repeat_count, repeat_delay_ms = self.motor_pulse_settings()
+        repeat_count, repeat_delay_ms = self._held_cadence()
         completed = False
         try:
             if command:
@@ -1041,7 +1089,8 @@ class KeesonController(BedController):
         interval_ms = self.profile.hold[1] if self.profile.hold else 100
         writes = -(-duration_ms // interval_ms) if repeats else 1
         completed = False
-        try:
+
+        async def refresh() -> None:
             await self.write_command(
                 self._build_command(value),
                 repeat_count=writes,
@@ -1051,6 +1100,9 @@ class KeesonController(BedController):
             await _wait_unless_cancelled(
                 cancel_event, (duration_ms - (writes - 1) * interval_ms) / 1000
             )
+
+        try:
+            await self._refresh_within_ceiling(refresh(), duration_ms)
             completed = True
         finally:
             await self._release_motion(delay=completed)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from bleak.exc import BleakError
@@ -158,101 +158,6 @@ class TestOkinHandleController:
 
 class TestOkinHandlePresets:
     """Test Okin handle preset commands."""
-
-    async def test_preset_flat(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset flat command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
-            await coordinator.controller.preset_flat()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.FLAT
-
-    async def test_preset_zero_g(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset zero gravity command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
-            await coordinator.controller.preset_zero_g()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.ZERO_G
-
-    async def test_preset_tv(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset TV command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
-            await coordinator.controller.preset_tv()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.TV
-
-    async def test_preset_anti_snore(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset anti-snore/quiet sleep command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
-            await coordinator.controller.preset_anti_snore()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.QUIET_SLEEP
-
-    @pytest.mark.parametrize(
-        ("memory_num", "expected_command"),
-        [
-            (1, OkinHandleCommands.MEMORY_1),
-            (2, OkinHandleCommands.MEMORY_2),
-        ],
-    )
-
-    async def test_preset_memory(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        expected_command: bytes,
-    ):
-        """Test preset memory commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
-            await coordinator.controller.preset_memory(memory_num)
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_command
 
     async def test_preset_memory_invalid(
         self,

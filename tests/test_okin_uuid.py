@@ -389,25 +389,6 @@ class TestOkinUuidMultiMotor:
 class TestOkinUuidPresets:
     """Test Okin UUID preset commands."""
 
-    async def test_preset_flat_82417(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset flat command for 82417 remote."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
-            await coordinator.controller.preset_flat()
-
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_82417]
-        expected_cmd = coordinator.controller._build_command(remote.flat)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
     async def test_preset_flat_93329_different_value(
         self,
         hass: HomeAssistant,

@@ -281,7 +281,7 @@ class SertaMPRemoteController(AppController):
                 )
                 if (
                     context is not None
-                    and context.kind in (CommandKind.COMMAND, CommandKind.GROUP)
+                    and context.kind in (CommandKind.COMMAND, CommandKind.GROUP, CommandKind.HOLD)
                     and context.scheduler_token is scheduler.token
                     and context.cancel_reason is CommandOutcome.STOPPED
                     and context.cancel_event.is_set()

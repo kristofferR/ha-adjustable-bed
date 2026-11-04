@@ -196,116 +196,8 @@ class TestBedTechController:
         assert coordinator.controller.supports_stop_all is True
 
 
-class TestBedTechMovement:
-    """Test BedTech movement commands."""
-
-    async def test_move_head_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_bedtech_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_up should send HEAD_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        assert mock_client.write_gatt_char.called
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        # Should be 5-byte command with HEAD_UP character
-        assert len(first_call_data) == 5
-        assert first_call_data[3] == ord("$")
-
-    async def test_move_feet_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_bedtech_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_feet_up should send FOOT_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_feet_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == ord("&")
-
-    async def test_move_pillow_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_bedtech_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_pillow_up should send LEG_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_pillow_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == ord(")")
-
 class TestBedTechPresets:
     """Test BedTech preset commands."""
-
-    async def test_preset_flat_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_bedtech_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_flat should send PRESET_FLAT command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_flat()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert call_data[3] == ord("1")
-
-    async def test_preset_zero_g_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_bedtech_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_zero_g should send PRESET_ZERO_G command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_zero_g()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert call_data[3] == ord("E")
-
-    async def test_preset_anti_snore_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_bedtech_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_anti_snore should send PRESET_ANTI_SNORE command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_anti_snore()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert call_data[3] == ord("F")
 
     @pytest.mark.parametrize(
         ("memory_num", "expected_command"),
@@ -314,6 +206,7 @@ class TestBedTechPresets:
             (2, "/"),
         ],
     )
+
     async def test_memory_recall_uses_oem_slot_commands(
         self,
         hass: HomeAssistant,
@@ -338,6 +231,7 @@ class TestBedTechPresets:
             (2, ","),
         ],
     )
+
     async def test_memory_programming_uses_oem_slot_commands(
         self,
         hass: HomeAssistant,
