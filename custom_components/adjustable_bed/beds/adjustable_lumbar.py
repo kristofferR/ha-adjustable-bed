@@ -18,12 +18,20 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from bleak.exc import BleakError
 
+from ..codec import okin_5a, okin_nframe
 from ..const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     CONF_BLE_DEVICE_NAME,
 )
 from ..detection import is_mac_like_name
+from ..profiles.okin_nframe import (
+    ADJUSTABLE_LUMBAR_KEYS,
+    ADJUSTABLE_LUMBAR_PROFILES,
+    ADJUSTABLE_LUMBAR_REFRESH_MS,
+    ADJUSTABLE_LUMBAR_SAVE_HOLD_MS,
+    OkinNFrameProfile,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -52,70 +60,45 @@ DEVICE_INFO_SERVICE: Final = "0000180a-0000-1000-8000-00805f9b34fb"
 MANUFACTURER_CHAR: Final = "00002a29-0000-1000-8000-00805f9b34fb"
 STAR_MANUFACTURER: Final = b"STAR"  # Exact, case-sensitive; a trailing NUL fails.
 
-REFRESH_MS: Final = 100  # Held controls write immediately, then every 100 ms.
-RELEASE_STOP_OFFSETS_S: Final = (0.0, 0.3)  # Release: STOP now and at +300 ms.
+REFRESH_MS: Final = ADJUSTABLE_LUMBAR_REFRESH_MS
+_RELEASE: Final = ADJUSTABLE_LUMBAR_PROFILES["25_42_02"].hold
+RELEASE_STOP_OFFSETS_S: Final = tuple(  # Release: STOP now and at +300 ms.
+    (_RELEASE.release_after_ms + index * _RELEASE.release_ms) / 1000
+    for index in range(_RELEASE.releases)
+)
 EXTRA_WRITE_S: Final = 0.1  # One-repeat commands write at 0 and +100 ms.
-# The app reports "Setup" after a Flat+preset chord is held for 6 s (its help
-# text says 5 s). The save frame itself starts at once; storage is unverified.
-SAVE_HOLD_MS: Final = 6000
+# The save frame starts at once; storage is unverified.
+SAVE_HOLD_MS: Final = ADJUSTABLE_LUMBAR_SAVE_HOLD_MS
 # Integration guard, not a protocol value: bounds the manufacturer read.
 MANUFACTURER_READ_TIMEOUT_S: Final = 5.0
 
-# 25_42_02 and 36_33_04a frames: 08 02 + the table's eight payload bytes.
-_LONG_PAYLOADS: Final[dict[str, str]] = {
-    "head_up": "00 00 00 01 00 00 00 00",
-    "head_down": "00 00 00 02 00 00 00 00",
-    "feet_up": "00 00 00 04 00 00 00 00",
-    "feet_down": "00 00 00 08 00 00 00 00",
-    "lumbar_up": "00 00 00 10 00 00 00 00",
-    "lumbar_down": "00 00 00 20 00 00 00 00",
-    "stop": "00 00 00 00 00 00 00 00",
-    "flat": "08 00 00 00 00 00 00 00",
-    "anti_snore": "00 00 80 00 00 00 00 00",
-    "lounge": "00 00 20 00 00 00 00 00",  # App label LEISURE (memoryLounge).
-    "incline": "00 00 40 00 00 00 00 00",  # App label INCLINE (memoryTvpc).
-    "zero_g": "00 00 10 00 00 00 00 00",
-    "save_anti_snore": "08 00 80 00 00 00 00 00",
-    "save_lounge": "08 00 20 00 00 00 00 00",
-    "save_incline": "08 00 40 00 00 00 00 00",
-    "save_zero_g": "08 00 10 00 00 00 00 00",
-    "light": "00 02 00 00 00 00 00 00",
-    "wave_1": "00 00 00 00 00 08 00 00",
-    "wave_2": "00 00 00 00 00 10 00 00",
-    "wave_3": "00 00 00 00 00 20 00 00",
-    "massage_stop": "02 00 00 00 00 00 00 00",
-    "massage_up": "00 00 0c 00 00 00 00 00",
-    "massage_down": "01 80 00 00 00 00 00 00",
-    "massage_on": "00 00 01 00 00 00 00 00",  # Reachable only through voice.
-    "voice_stop": "00 00 00 00 00 00 00 00",  # Voice pre-STOP is the ordinary STOP.
-}
-# 35_22_01 frames: 5a 01 + four payload bytes + a5.
-_STAR_PAYLOADS: Final[dict[str, str]] = {
-    "head_up": "03 10 30 00",
-    "head_down": "03 10 30 01",
-    "feet_up": "03 10 30 02",
-    "feet_down": "03 10 30 03",
-    "lumbar_up": "03 10 30 06",
-    "lumbar_down": "03 10 30 07",
-    "stop": "03 10 30 0f",
-    "flat": "03 10 30 10",
-    "anti_snore": "03 10 30 16",
-    "lounge": "03 10 30 12",
-    "incline": "03 10 30 11",
-    "zero_g": "03 10 30 13",
-    "save_anti_snore": "03 10 30 93",
-    "save_lounge": "03 10 30 91",
-    "save_incline": "03 10 30 92",
-    "save_zero_g": "03 10 30 90",
-    "light": "03 10 30 71",
-    "wave_1": "03 10 30 52",
-    "wave_2": "03 10 30 53",
-    "wave_3": "03 10 30 54",
-    "massage_stop": "03 10 30 6f",
-    "massage_up": "03 10 40 60",
-    "massage_down": "03 10 40 61",
-    "massage_on": "03 10 30 52",  # The voice massage-on entry equals wave 1.
-    "voice_stop": "03 10 30 1f",  # stopVoice, the voice path's pre-STOP.
+# 35_22_01 frames are Okin 5A key frames: (page, key) for ``codec/okin_5a.py``.
+_STAR_KEYS: Final[dict[str, tuple[int, int]]] = {
+    "head_up": (0x30, 0x00),
+    "head_down": (0x30, 0x01),
+    "feet_up": (0x30, 0x02),
+    "feet_down": (0x30, 0x03),
+    "lumbar_up": (0x30, 0x06),
+    "lumbar_down": (0x30, 0x07),
+    "stop": (0x30, 0x0F),
+    "flat": (0x30, 0x10),
+    "anti_snore": (0x30, 0x16),
+    "lounge": (0x30, 0x12),
+    "incline": (0x30, 0x11),
+    "zero_g": (0x30, 0x13),
+    "save_anti_snore": (0x30, 0x93),
+    "save_lounge": (0x30, 0x91),
+    "save_incline": (0x30, 0x92),
+    "save_zero_g": (0x30, 0x90),
+    "light": (0x30, 0x71),
+    "wave_1": (0x30, 0x52),
+    "wave_2": (0x30, 0x53),
+    "wave_3": (0x30, 0x54),
+    "massage_stop": (0x30, 0x6F),
+    "massage_up": (0x40, 0x60),
+    "massage_down": (0x40, 0x61),
+    "massage_on": (0x30, 0x52),  # The voice massage-on entry equals wave 1.
+    "voice_stop": (0x30, 0x1F),  # stopVoice, the voice path's pre-STOP.
 }
 # The massage-page query is written raw, without the table prefix or suffix.
 _CHECK_MASSAGE: Final[dict[Table, bytes]] = {
@@ -160,8 +143,9 @@ _WAVE_LABELS: Final = {"wave_1": "Wave 1", "wave_2": "Wave 2", "wave_3": "Wave 3
 def control_frame(table: Table, action: str) -> bytes:
     """Return the exact frame the app writes for ``action`` on ``table``."""
     if table == "35_22_01":
-        return b"\x5a\x01" + bytes.fromhex(_STAR_PAYLOADS[action]) + b"\xa5"
-    return b"\x08\x02" + bytes.fromhex(_LONG_PAYLOADS[action])
+        page, key = _STAR_KEYS[action]
+        return okin_5a.command(key, page)
+    return okin_nframe.frame(ADJUSTABLE_LUMBAR_KEYS[action], 8)
 
 
 def check_massage_frame(table: Table) -> bytes:
@@ -237,6 +221,11 @@ class AdjustableLumbarController(BedController):
     @property
     def table(self) -> Table | None:
         return self._table
+
+    @property
+    def profile(self) -> OkinNFrameProfile | None:
+        """The N-frame table's profile; ``None`` on 35_22_01 or with no table."""
+        return ADJUSTABLE_LUMBAR_PROFILES.get(self._table) if self._table else None
 
     @property
     def control_characteristic_uuid(self) -> str:
