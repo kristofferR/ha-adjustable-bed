@@ -101,10 +101,10 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Prodigy LBR (LP Comfort Connect), Prodigy Comfort Elite / CE; [Prodigy 2L / 2 / 4 and U / Ultra Series](docs/beds/okin-nframe.md#leggett-okin-family), [L&P Adjustable Base](docs/beds/lp-legacy.md) |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie app (Protocol 108), Reverie Nightstand app (Protocol 110), R510L / Harmoniq Upgrade (Pairlink) |
 | ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers |
-| ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/customatic-z-series.md) |
+| ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) |
 | 🧪 [AdjustaMattress](docs/beds/adjustamattress.md) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
 | ⚠️ [Comfort Enhancements](docs/beds/comfort-enhancements.md) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
-| ✅ Jordan's | [Serenity](docs/beds/serenity.md), [Tranquil](docs/beds/tranquil.md) |
+| ✅ Jordan's | [Serenity](docs/beds/okin-nframe.md#jordans-serenity), [Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) |
 | ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
 | ✅ [Adjustable bed (Lumbar)](docs/beds/adjustable-lumbar.md) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
 | ✅ [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
@@ -153,7 +153,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Okin CB35](docs/beds/okin-5a.md#sealy-posturematic-cb35) | Sealy Posturematic |
 | ✅ [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
 | 🧪 [BF / Cherish](docs/beds/bf-cherish.md) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
-| ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
+| ✅ [Okin CST](docs/beds/okin-nframe.md#okin-cst) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
 | ✅ [Motion Bed](docs/beds/ff_frame.md#motion-bed) | QMS/SealyMF and TL beds, air and thermal controls |
 | ✅ [FurniMove / OKIN Smart Remote](docs/beds/furnimove.md) | App handset layouts, including RF ECO BT adjustable-bed receivers |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-nframe.md#rf-eco-bt-stair-lift) | Elda BTH / MEGAMAT staircase actuator |

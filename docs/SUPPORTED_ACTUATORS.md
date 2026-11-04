@@ -47,9 +47,9 @@ validation limits; the feature summaries below depend on the selected controller
 | [Logicdata](beds/logicdata.md) | SILVERmotion / SimplicityFrame memory, lights and massage; [MOTIONrelax](beds/jiecang.md#motionrelax-phone-and-tablet) layouts and alarms; [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) bed controls and separate [air mattress pump](beds/logicdata-sleep-smart.md) |
 | [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
 | [Customatic](beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C and Remedy apps: back and legs (Remedy adds lumbar), memory page, light toggle |
-| [Customatic Z-Series](beds/customatic-z-series.md), [Jordan's Serenity](beds/serenity.md), [Jordan's Tranquil](beds/tranquil.md) | OKIN CST 14-byte apps: head/foot and selector controls, presets, saved positions, massage; Z-230/Z-280 pages |
+| [Customatic Z-Series](beds/okin-nframe.md#customatic-z-series), [Jordan's Serenity](beds/okin-nframe.md#jordans-serenity), [Jordan's Tranquil](beds/okin-nframe.md#jordans-tranquil) | OKIN CST 14-byte apps: head/foot and selector controls, presets, saved positions, massage; Z-230/Z-280 pages |
 | [SIMMONS](beds/okin-nframe.md#simmons) / [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) apps | OKIN apps whose command table follows the Bluetooth name: regular or inclined SIMMONS beds; head, foot and lumbar |
-| [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile) |
+| [Okin CST](beds/okin-nframe.md#okin-cst) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift) | Single stair actuator for Elda BTH / MEGAMAT |
 | [Okin DOT](beds/okin-nframe.md#okin-dot) | Handset-specific motor, memory and light controls (RF34/RF6707; new RF1058 setups use FurniMove) |
@@ -83,7 +83,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Malouf](beds/malouf.md) | 8-byte New OKIN / 9-byte Legacy OKIN | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
 | [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) | 7-byte (1-byte cmd) | Nordic UART | ❌ No | Name starts with "Star35" |
-| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | Most profiles | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile; some `OKIN-*` bases |
+| [Okin CST](beds/okin-nframe.md#okin-cst) | 14-byte (dual 32-bit) | UUID `62741525-...` | Most profiles | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile; some `OKIN-*` bases |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift) | 6-byte (32-bit cmd) | UUID `62741525-...` | Unknown | Manual selection; diagnostics can match CSS GATT signature |
 
 **Key differences:**
@@ -150,7 +150,7 @@ These beds have their own dedicated integrations:
    - `Serta*` or `Motion Perfect*` → Serta
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
-   - `OKIN-*` with service `62741523-...` plus CSS service `90311623-...` → [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift); Nordic DFU alone does not distinguish them
+   - `OKIN-*` with service `62741523-...` plus CSS service `90311623-...` → [Okin CST](beds/okin-nframe.md#okin-cst) or [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift); Nordic DFU alone does not distinguish them
    - `Malouf*`, `Structures*` → Malouf
    - `Smart bed *` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit, Fuzion)
    - MAC-address-like name such as `64:DB:A0:07:DD:02` + service `ffffd1fd-...` → [Sleep Number](beds/sleep_number.md) (i8 / 360 FlexFit 2, BAM/MCR)
@@ -165,11 +165,11 @@ These beds have their own dedicated integrations:
    - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/okin-nframe.md#dewertokin); beds using the `com.okin.simmons` app → [SIMMONS app](beds/okin-nframe.md#simmons)
    - `Star35*` → [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) (Sealy Posturematic)
    - `SILVERmotion*` or Logicdata manufacturer ID → [Logicdata](beds/logicdata.md)
-   - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift)
+   - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [Okin CST](beds/okin-nframe.md#okin-cst) or [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift)
 
 4. **Use the support bundle to find service UUIDs**: If unsure, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
-   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` → [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift); Nordic DFU is only a hint; CST is never selected automatically (#555). Device Information model `MEGAMAT MBZ` identifies RF ECO BT, while an `OKIMAT` model identifies a full bed. Shared receiver/GATT identity alone cannot select a handset. FurniMove beds use its [explicit app profile](beds/furnimove.md), and unconfirmed legacy RF ECO BT entries receive a layout repair.
+   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` → [Okin CST](beds/okin-nframe.md#okin-cst) or [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift); Nordic DFU is only a hint; CST is never selected automatically (#555). Device Information model `MEGAMAT MBZ` identifies RF ECO BT, while an `OKIMAT` model identifies a full bed. Shared receiver/GATT identity alone cannot select a handset. FurniMove beds use its [explicit app profile](beds/furnimove.md), and unconfirmed legacy RF ECO BT entries receive a layout repair.
    - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant
    - Service `01000001-...` → Malouf/Lucid family (usually New OKIN; `OKIN-BLE` + `BTCB` uses Legacy OKIN)

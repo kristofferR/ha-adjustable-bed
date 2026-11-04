@@ -29,6 +29,8 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         profiles.DOUBLESLEEP,
         profiles.SLEEPYS_BOX25_LEGACY,
         *profiles.STARCODE_ABM5_4_PROFILES.values(),
+        *profiles.CST_PROFILES.values(),
+        *profiles.BEDDING_PROFILES.values(),
     )
 }
 # Routes without a report on disk: their census must equal the pre-v5 frames.
@@ -73,6 +75,8 @@ def _census(profile: profiles.OkinNFrameProfile) -> set[str]:
         words.add(0)
     if profile.width == 5:
         frames = {codec.frame40(word, s).hex() for word in words for s in profile.selectors}
+    elif profile.width == 12:
+        frames = {codec.frame(word, 12).hex() for word in words}
     else:
         frames = {codec.frame(word).hex() for word in words}
     frames |= {codec.frame(word, 8).hex() for word in profile.long_keys.values()}
@@ -148,6 +152,14 @@ def test_40_bit_frames_carry_the_key_then_the_selector():
     for key, selector in ((1 << 32, 0), (-1, 0), (True, 0), (1, 0x100)):
         with pytest.raises(ValueError):
             codec.frame40(key, selector)
+
+
+def test_96_bit_frames_carry_two_fields_then_zero_padding():
+    assert codec.frame96(0x1, 0x40).hex() == "0c02" + "00000001" + "00000040" + "00000000"
+    assert codec.frame96(0x1) == codec.frame(profiles.cst_word(0x1), 12)
+    for primary, secondary in ((1 << 32, 0), (0, -1), (True, 0)):
+        with pytest.raises(ValueError):
+            codec.frame96(primary, secondary)
 
 
 def test_frame_widths_and_word_ranges():

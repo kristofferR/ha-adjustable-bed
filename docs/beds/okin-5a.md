@@ -14,9 +14,9 @@ architecture.
 > [!NOTE]
 > Two newer apps that share these names use a different wire format. The
 > Nectar Motion app is the explicit **Nectar Move** profile of
-> [Okin CST](okin-cst.md), and beds using the official MFirm 900-O app
+> [Okin CST](okin-nframe.md#okin-cst), and beds using the official MFirm 900-O app
 > (`com.okin.bedding.rizemf900`) and advertising as `OKIN-XXXXXX` are
-> [Okin CST](okin-cst.md) too. Neither is selected by an `OKIN-*` name, a
+> [Okin CST](okin-nframe.md#okin-cst) too. Neither is selected by an `OKIN-*` name, a
 > shared OKIN UUID or a Device Information value.
 
 ## Known Models
@@ -31,7 +31,7 @@ architecture.
 - DewertOkin BOX25 Star beds (Sleepy's Elite) send the same key frame; see
   [BOX25 Star route](#box25-star-route)
 
-Some Nectar Motion bases use the [Okin CST](okin-cst.md) 14-byte protocol instead
+Some Nectar Motion bases use the [Okin CST](okin-nframe.md#okin-cst) 14-byte protocol instead
 of this one (see [Nectar](#nectar)).
 
 ## Apps
@@ -39,8 +39,8 @@ of this one (see [Nectar](#nectar)).
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
 | ⬜ | Nectar Adjustable | (no longer available) | [Nectar](#nectar) |
-| ✅ | Nectar Motion / Nectar Move | `com.okin.bedding.nectarmotion` | Not this codec: select [Nectar Move](okin-cst.md#nectar-move-profile) under Okin CST |
-| See [Okin CST](okin-cst.md) | Mattress Firm 900 - O / MFirm 900-O | `com.okin.bedding.rizemf900` | Not this codec: [Okin CST](okin-cst.md) |
+| ✅ | Nectar Motion / Nectar Move | `com.okin.bedding.nectarmotion` | Not this codec: select [Nectar Move](okin-nframe.md#nectar-move-profile) under Okin CST |
+| See [Okin CST](okin-nframe.md#okin-cst) | Mattress Firm 900 - O / MFirm 900-O | `com.okin.bedding.rizemf900` | Not this codec: [Okin CST](okin-nframe.md#okin-cst) |
 | ✅ | [Sealy Posturematic](https://play.google.com/store/apps/details?id=com.okin.sealy) v1.1.1 | `com.okin.sealy` | [Sealy Posturematic (CB35)](#sealy-posturematic-cb35) |
 | ✅ | [Adjustable Comfort M1X12](https://play.google.com/store/apps/details?id=com.starcode.adjustablem1x12) 1.1.3 | `com.starcode.adjustablem1x12` | [DewertOkin ELEVATE](#dewertokin-elevate) |
 | ✅ | [AdjustableM5X5](https://play.google.com/store/apps/details?id=com.starcode.abm5_5) 1.2.3 | `com.starcode.abm5_5` | [DewertOkin ELEVATE](#dewertokin-elevate) |
@@ -255,7 +255,7 @@ its [Evidence](#dewertokin-elevate)).
 **Status:** ❓ Needs testing (legacy seven-byte protocol)
 
 These details apply only to the legacy seven-byte profile. The
-[Nectar Move profile](okin-cst.md#nectar-move-profile) uses the separate Okin CST
+[Nectar Move profile](okin-nframe.md#nectar-move-profile) uses the separate Okin CST
 framing and actions. Do not interchange the command sets.
 
 #### Setup
@@ -343,7 +343,7 @@ No discovery ledger: the accepted MFirm 900 1.1.2 report
 (`com.okin.bedding.rizemf900`) reaches only the Okin CST frame. That app uses a
 14-byte CST format (`[0x0C, 0x02, motor_bytes(4), control_bytes(4), reserved(4)]`)
 and detects devices by the name prefix `okin` (case-insensitive); see
-[Okin CST](okin-cst.md). This profile sends only its frozen frames, the ones the
+[Okin CST](okin-nframe.md#okin-cst). This profile sends only its frozen frames, the ones the
 pre-v5 controller sent. The protocol was manually reverse-engineered by David
 Delahoz in 2020 from the M900 app, with discovery from Zrau5454 in
 [#50](https://github.com/kristofferR/ha-adjustable-bed/issues/50).

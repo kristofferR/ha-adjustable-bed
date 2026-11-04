@@ -19,10 +19,23 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..codec import okin_nframe as codec
 from ..const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_ZSERIES_ALARM_AVAILABLE,
     ZSERIES_PULSE_COUNT_RANGE,
+)
+from ..profiles.okin_nframe import (
+    BEDDING_HOLD,
+    BEDDING_PROFILES,
+    BEDDING_SAVE_HOLD_MS,
+    CST_REFRESH_MS,
+    SERENITY_ACTIONS,
+    SERENITY_SAVE_CODES,
+    TRANQUIL_ACTIONS,
+    ZSERIES_Z230_ACTIONS,
+    ZSERIES_Z280_ACTIONS,
+    OkinNFrameProfile,
 )
 from .base import (
     BedController,
@@ -32,8 +45,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
-from .okin_cst import CstFields, CstMemorySlot, CstProfile, OkinCstController
-from .okin_protocol import build_cst_command
+from .okin_cst import OkinCstController, _product
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -43,112 +55,11 @@ if TYPE_CHECKING:
 _SERVICE = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 _NOTIFY = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 _MANUFACTURER = "00002a29-0000-1000-8000-00805f9b34fb"
-_ACTIONS = {
-    "head_up": (1, 0),
-    "head_down": (2, 0),
-    "foot_up": (4, 0),
-    "foot_down": (8, 0),
-    "selector_4_up": (0x10, 0),
-    "selector_4_down": (0x20, 0),
-    "selector_5_up": (0x40, 0),
-    "selector_5_down": (0x80, 0),
-    "flat": (0x08000000, 0),
-    "zero_g": (0x1000, 0),
-    "memory_1": (0x10000, 0),
-    "tv": (0x4000, 0),
-    "memory_2": (0x40000, 0),
-    "save_zero_g": (0x08001000, 0),
-    "save_memory_1": (0x08010000, 0),
-    "save_tv": (0x08004000, 0),
-    "save_memory_2": (0x08040000, 0),
-    "massage_head_cycle": (0x800, 0),
-    "massage_foot_cycle": (0x400, 0),
-    "massage_mode_cycle": (0x10000000, 0),
-    "massage_timer_cycle": (0x200, 0),
-    "massage_toggle": (0x100, 0),
-    "light_toggle": (0x20000, 0),
-    "leisure": (0x2000, 0),
-    "anti_snore": (0x8000, 0),
-    "wave_1": (0, 0x80000),
-    "wave_2": (0, 0x100000),
-    "wave_3": (0, 0x200000),
-    "massage_off": (0x02000000, 0),
-    "light_on": (0, 0x40),
-    "light_off": (0, 0x80),
-}
-_SAVE_CODES = {"save_zero_g": 5, "save_memory_1": 4, "save_tv": 6, "save_memory_2": 8}
-_SAVE_HOLD_MS = 5000  # The app's save-help gesture, not a hardware threshold.
-
-# Jordan's Tranquil 1.0.2 live Z280 remote/massage pages plus its Activity
-# voice switch. Lounge is a touch button here (op9), and there is no TV.
-_TRANQUIL_ACTIONS = {
-    "head_up": (1, 0),
-    "head_down": (2, 0),
-    "foot_up": (4, 0),
-    "foot_down": (8, 0),
-    "selector_4_up": (0x10, 0),
-    "selector_4_down": (0x20, 0),
-    "selector_5_up": (0x40, 0),
-    "selector_5_down": (0x80, 0),
-    "flat": (0x08000000, 0),
-    "zero_g": (0x1000, 0),
-    "lounge": (0x2000, 0),
-    "memory_1": (0x10000, 0),
-    "memory_2": (0x40000, 0),
-    "save_zero_g": (0x08001000, 0),
-    "save_lounge": (0x08002000, 0),
-    "save_memory_1": (0x08010000, 0),
-    "save_memory_2": (0x08040000, 0),
-    "massage_head_cycle": (0x800, 0),
-    "massage_foot_cycle": (0x400, 0),
-    "massage_mode_cycle": (0x10000000, 0),
-    "massage_timer_cycle": (0x200, 0),
-    "massage_toggle": (0x100, 0),
-    "light_toggle": (0x20000, 0),
-    "anti_snore": (0x8000, 0),
-    "wave_1": (0, 0x80000),
-    "wave_2": (0, 0x100000),
-    "wave_3": (0, 0x200000),
-    "massage_off": (0x02000000, 0),
-    "light_on": (0, 0x40),
-    "light_off": (0, 0x80),
-}
-
-# Customatic Z-Series 1.0.4. Voice is unbound, so there are no waves, massage
-# off or discrete light frames. Builder op5 emits 0x10/0x20 in this app.
-_ZSERIES_COMMON_ACTIONS = {
-    "head_up": (1, 0),
-    "head_down": (2, 0),
-    "foot_up": (4, 0),
-    "foot_down": (8, 0),
-    "flat": (0x08000000, 0),
-    "anti_snore": (0x8000, 0),
-    "memory_1": (0x10000, 0),
-    "zero_g": (0x1000, 0),
-    "tv": (0x4000, 0),
-    "save_zero_g": (0x08001000, 0),
-    "save_memory_1": (0x08010000, 0),
-    "save_tv": (0x08004000, 0),
-    "light_toggle": (0x20000, 0),
-    "massage_toggle": (0x100, 0),
-    "massage_mode_cycle": (0x10000000, 0),
-    "massage_timer_cycle": (0x200, 0),
-}
-_ZSERIES_Z230_ACTIONS = {
-    **_ZSERIES_COMMON_ACTIONS,
-    "head_foot_up": (0x05, 0),
-    "head_foot_down": (0x0A, 0),
-    "massage_intensity_cycle": (0x0C00, 0),
-}
-_ZSERIES_Z280_ACTIONS = {
-    **_ZSERIES_COMMON_ACTIONS,
-    "selector_5_up": (0x10, 0),
-    "selector_5_down": (0x20, 0),
-    "memory_2": (0x40000, 0),
-    "save_memory_2": (0x08040000, 0),
-    "massage_head_cycle": (0x800, 0),
-    "massage_foot_cycle": (0x400, 0),
-}
+# Two STOPs, 100 and 200 ms after an action ends.
+_RELEASE_OFFSETS_S: Final = tuple(
+    (BEDDING_HOLD.release_after_ms + index * BEDDING_HOLD.release_ms) / 1000
+    for index in range(BEDDING_HOLD.releases)
+)
 
 # saveMemory(n) records these local codes; callMemory(n) clears them.
 _RECALLS: Final = frozenset({"flat", "anti_snore", "leisure", "lounge", "memory_1", "zero_g", "tv", "memory_2"})
@@ -208,29 +119,9 @@ class OkinBeddingApp:
     actions: Mapping[str, tuple[int, int]]
     save_codes: Mapping[str, int]
     buttons: tuple[tuple[str, str], ...]
-    profile: CstProfile
+    profile: OkinNFrameProfile
 
 
-def _two_axis_profile(
-    key: str,
-    memory_slots: tuple[CstMemorySlot, ...],
-    *,
-    lounge: bool,
-) -> CstProfile:
-    return CstProfile(
-        key=key,
-        motors=("head", "feet"),
-        lounge=lounge,
-        incline=False,
-        memory_slots=memory_slots,
-        lights=True,
-        massage_style="zoned",
-        massage_toggle=CstFields(primary=0x100),
-    )
-
-
-_M1 = CstMemorySlot("M1", 0x10000, 0x08010000)
-_M2 = CstMemorySlot("M2", 0x40000, 0x08040000)
 _ZSERIES_BUTTONS_TAIL = (
     ("save_zero_g", "Save Zero Gravity"),
     ("save_tv", "Save TV"),
@@ -242,8 +133,8 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
     "serenity": OkinBeddingApp(
         prefix="serenity",
         label="Serenity",
-        actions=_ACTIONS,
-        save_codes=_SAVE_CODES,
+        actions=SERENITY_ACTIONS,
+        save_codes=SERENITY_SAVE_CODES,
         buttons=(
             ("refresh_manufacturer", "Refresh Manufacturer"),
             ("selector_4_up", "Remote Selector 4 Up"),
@@ -260,12 +151,12 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
             ("wave_2", "Wave 2"),
             ("wave_3", "Wave 3"),
         ),
-        profile=_two_axis_profile("serenity", (_M1, _M2), lounge=True),
+        profile=BEDDING_PROFILES["serenity"],
     ),
     "tranquil": OkinBeddingApp(
         prefix="tranquil",
         label="Tranquil",
-        actions=_TRANQUIL_ACTIONS,
+        actions=TRANQUIL_ACTIONS,
         save_codes={"save_zero_g": 5, "save_lounge": 3, "save_memory_1": 4, "save_memory_2": 8},
         buttons=(
             ("refresh_manufacturer", "Refresh Manufacturer"),
@@ -283,12 +174,12 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
             ("wave_2", "Wave 2"),
             ("wave_3", "Wave 3"),
         ),
-        profile=_two_axis_profile("tranquil", (_M1, _M2), lounge=True),
+        profile=BEDDING_PROFILES["tranquil"],
     ),
     "zseries_z230": OkinBeddingApp(
         prefix="zseries",
         label="Z-230",
-        actions=_ZSERIES_Z230_ACTIONS,
+        actions=ZSERIES_Z230_ACTIONS,
         save_codes={"save_zero_g": 5, "save_memory_1": 4, "save_tv": 6},
         buttons=(
             ("refresh_manufacturer", "Refresh Manufacturer"),
@@ -297,12 +188,12 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
             *_ZSERIES_BUTTONS_TAIL,
             ("massage_intensity_cycle", "Massage Intensity"),
         ),
-        profile=_two_axis_profile("zseries_z230", (_M1,), lounge=False),
+        profile=BEDDING_PROFILES["zseries_z230"],
     ),
     "zseries_z280": OkinBeddingApp(
         prefix="zseries",
         label="Z-280",
-        actions=_ZSERIES_Z280_ACTIONS,
+        actions=ZSERIES_Z280_ACTIONS,
         save_codes={"save_zero_g": 5, "save_memory_1": 4, "save_tv": 6, "save_memory_2": 8},
         buttons=(
             ("refresh_manufacturer", "Refresh Manufacturer"),
@@ -312,7 +203,7 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
             ("massage_head_cycle", "Head Massage Cycle"),
             ("massage_foot_cycle", "Foot Massage Cycle"),
         ),
-        profile=_two_axis_profile("zseries_z280", (_M1, _M2), lounge=False),
+        profile=BEDDING_PROFILES["zseries_z280"],
     ),
 }
 
@@ -335,7 +226,8 @@ class OkinBeddingAppController(OkinCstController):
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
         super().__init__(coordinator)
         self._app = APPS[app]
-        self._profile = self._app.profile
+        self._nframe_profile = self._app.profile
+        self._profile = _product(self._nframe_profile)
         self._has_explicit_profile = True
         self._status_code = 0
         self._timer_code = 0
@@ -372,12 +264,12 @@ class OkinBeddingAppController(OkinCstController):
         return tuple(replace(spec, scheduler_resource="*") for spec in super().motor_control_specs)
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        return self._coordinator.motor_pulse_count, 100
+        return self._coordinator.motor_pulse_count, CST_REFRESH_MS
 
     def _hold_ms(self, action: str) -> int:
         """Default hold for a non-service action (voice deadlines and save help)."""
         if action in self._app.save_codes:
-            return _SAVE_HOLD_MS
+            return BEDDING_SAVE_HOLD_MS
         # The reachable voice path stops flat after 1500 ms and the rest after 500 ms.
         return 1500 if action == "flat" else 500
 
@@ -576,9 +468,11 @@ class OkinBeddingAppController(OkinCstController):
                 async with deadline:
                     try:
                         await self.write_command(
-                            build_cst_command(primary, secondary),
-                            repeat_count=self.timed_move_repeat_count(duration_ms, 100),
-                            repeat_delay_ms=100,
+                            codec.frame96(primary, secondary),
+                            repeat_count=self.timed_move_repeat_count(
+                                duration_ms, CST_REFRESH_MS
+                            ),
+                            repeat_delay_ms=CST_REFRESH_MS,
                         )
                     except TimeoutError:
                         controller_timeout = True
@@ -595,10 +489,10 @@ class OkinBeddingAppController(OkinCstController):
             failure: Exception | None = None
             loop = asyncio.get_running_loop()
             started = loop.time()
-            for offset in (0.1, 0.2):
+            for offset in _RELEASE_OFFSETS_S:
                 await asyncio.sleep(max(0, started + offset - loop.time()))
                 try:
-                    await self.write_command(build_cst_command(), cancel_event=event)
+                    await self.write_command(codec.frame96(0), cancel_event=event)
                 except Exception as error:
                     # The source schedules both releases independently.
                     failure = failure or error
@@ -701,12 +595,12 @@ class ZSeriesController(OkinBeddingAppController):
 
     def _hold_ms(self, action: str) -> int:
         if action in self._app.save_codes:
-            return _SAVE_HOLD_MS  # This app's save help also says five seconds.
+            return BEDDING_SAVE_HOLD_MS  # This app's save help also says five seconds.
         # Touch controls stream until release and voice is unbound, so the app
         # defines no deadline. HA bounds a press with the configured pulse count,
         # clamped so a stored out-of-range count still yields a valid hold.
         low, high = ZSERIES_PULSE_COUNT_RANGE
-        return min(max(int(self._coordinator.motor_pulse_count), low), high) * 100
+        return min(max(int(self._coordinator.motor_pulse_count), low), high) * CST_REFRESH_MS
 
     def _entry_data(self) -> Mapping[str, object] | None:
         entry = getattr(self._coordinator, "entry", None)
