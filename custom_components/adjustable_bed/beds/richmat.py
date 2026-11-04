@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import logging
+from collections.abc import Mapping
 from functools import partial
 from typing import TYPE_CHECKING, cast
 
@@ -36,6 +37,7 @@ from ..const import (
     get_richmat_features,
     richmat_remote_has_combined_head_feet,
 )
+from ..position_estimate import notify_release_failed
 from ..profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
 from .base import BedController, ControllerButtonSpec, MotorControlSpec, SideBoundController
 
@@ -154,6 +156,8 @@ class RichmatProfileController(BedController):
             await self._send_stop()
         except Exception:
             _LOGGER.debug("Failed to send STOP during cleanup")
+            # The motor may still be moving: a running estimate cannot be trusted.
+            notify_release_failed(self._coordinator)
 
     async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Pulse a movement code at the entry's pulse settings, then always STOP."""
@@ -587,6 +591,23 @@ class RichmatController(RichmatProfileController):
             )
 
         return tuple(specs)
+
+    @property
+    def estimated_position_motor_groups(self) -> Mapping[str, tuple[str, ...]]:
+        """Head and feet are directional pulse trains that always end with STOP.
+
+        Pillow and lumbar are separate actuators, so moving them leaves the
+        head and feet estimates intact.
+        """
+        groups: dict[str, tuple[str, ...]] = {
+            "head": ("head",),
+            "feet": ("feet",),
+            "head_feet": ("head", "feet"),
+            "pillow": (),
+            "lumbar": (),
+        }
+        keys = {spec.key for spec in self.motor_control_specs}
+        return {key: motors for key, motors in groups.items() if key in keys}
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:

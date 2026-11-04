@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import datetime
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -358,6 +358,11 @@ class RmcontrolController(RichmatController):
     @property
     def supports_motor_control(self) -> bool:
         return bool(self.motor_control_specs)
+
+    @property
+    def estimated_position_motor_groups(self) -> Mapping[str, tuple[str, ...]]:
+        """Catalog movement is not the Richmat remote route; it has no estimates."""
+        return {}
 
     @property
     def has_pillow_support(self) -> bool:

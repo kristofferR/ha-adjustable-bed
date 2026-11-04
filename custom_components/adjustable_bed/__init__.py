@@ -106,6 +106,11 @@ from .pairing import (
     pair_member_addresses,
     with_updated_child,
 )
+from .position_estimate import (
+    async_remove_position_estimates,
+    async_setup_position_estimates,
+    async_unload_position_estimates,
+)
 from .profile_id import migrate_v5_data, with_profile_ids
 from .profile_recommendations import async_watch_profile_recommendations
 from .profile_review import (
@@ -554,6 +559,7 @@ async def _async_finish_entry_setup(
 ) -> bool:
     """Store coordinator, forward platforms, and finish setup."""
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    await async_setup_position_estimates(hass, entry.entry_id, [(coordinator.address, None)])
 
     _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -1020,6 +1026,12 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         try:
             async_register_children(hass, coordinator)
             entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+            # Each side keeps its own calibration and estimate.
+            await async_setup_position_estimates(
+                hass,
+                entry.entry_id,
+                [(child.address, side) for side, child in coordinator.children.items()],
+            )
             await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
         except (Exception, asyncio.CancelledError):
             hass.data[DOMAIN].pop(entry.entry_id, None)
@@ -1796,6 +1808,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
+        # After shutdown settled any movement, so its travel is persisted.
+        await async_unload_position_estimates(hass, entry.entry_id)
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
     return unload_ok
@@ -1804,6 +1818,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up Repairs issues that would otherwise outlive the entry."""
     async_clear_furnimove_layout_issues(hass, entry.entry_id)
+    await async_remove_position_estimates(hass, entry.entry_id)
     async_clear_profile_review_issue(hass, entry.entry_id)
     address = entry.data.get(CONF_ADDRESS)
     if address:
