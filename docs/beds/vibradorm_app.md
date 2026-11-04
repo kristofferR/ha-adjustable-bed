@@ -118,7 +118,7 @@ do not advance it. Preserve caller and execution-stage differences:
 For fresh setup, choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
 V-MAT Basic**, then **Caresse Diamant** or **Werkmeister** and the matching
 remote/settings. Existing entries use the
-[guided reconfigure](../CONFIGURATION.md#vibradorm-guided-setup-and-migration),
+[guided reconfigure](vibradorm.md#guided-setup-and-migration),
 which keeps the current configuration saved until verification and confirmation.
 
 ### Explicit profiles and retained state
@@ -188,6 +188,30 @@ actuator layout.
 - Automatic operation of the first broad public candidate is excluded for
   target/product safety. Setup requires an explicit physical target and app
   profile.
+
+### Home Assistant setup
+
+Select **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+bed-type picker, then choose Caresse Diamant or Werkmeister. Existing generic
+entries keep their legacy setup until explicitly reconfigured. Bluetooth identifiers do not select an app
+or remote layout. Werkmeister offers its two proven remote
+layouts. Fresh Caresse uses its basic two-axis layout; enable retained settings
+only when you know the app's saved remote type and independent floor-light,
+mood-light, massage and light-extension settings. The `other` retained type has
+memory controls but no motor axes. No profile reports positions.
+
+Retained Caresse settings also accept a remembered floor brightness from 1 to 8.
+The light-extension slider stops at 6, but a previously remembered 7 or 8 remains
+valid. Floor brightness and pending timer choices are local command intent,
+not measured bed state. Reconnecting or reloading preserves that intent during
+the same Home Assistant process; restarting clears current brightness and the
+pending timer while retaining the remembered brightness.
+
+Setup hides generic motor-count and pulse settings. Controls use the selected
+profile's fixed refresh and release behavior. First onboarding shares one
+10-second connection, information and native pairing deadline. Local stored
+bonds require exact-adapter BlueZ evidence; a successful proxy pairing request
+remains unverified. App metadata is diagnostic information, not bond proof.
 
 ## Commands
 

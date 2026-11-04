@@ -2115,10 +2115,16 @@ class SleepNumberController(BedController):
                 for offset in range(0, len(frame), chunk_size):
                     if effective_cancel.is_set():
                         raise asyncio.CancelledError
-                    await client.write_gatt_char(
+                    chunk = frame[offset : offset + chunk_size]
+                    self._record_command_trace(
                         SLEEP_NUMBER_BAMKEY_CHAR_UUID,
-                        frame[offset : offset + chunk_size],
+                        chunk,
                         response=False,
+                        command_origin=bamkey,
+                        characteristic=characteristic,
+                    )
+                    await client.write_gatt_char(
+                        SLEEP_NUMBER_BAMKEY_CHAR_UUID, chunk, response=False
                     )
 
         async def read_response() -> str:

@@ -10,9 +10,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.okin_64bit import (
     OKIN_64BIT_VARIANT_CUSTOM,
     OKIN_64BIT_VARIANT_NORDIC,
-    Okin64BitCommands,
-    build_okin_64bit_command,
 )
+from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_64BIT,
     CONF_BED_TYPE,
@@ -25,6 +24,18 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.okin_nframe import OKIN_64BIT_KEYS
+
+
+def _cmd(name: str) -> bytes:
+    """The 8-byte word of one key."""
+    return OKIN_64BIT_KEYS[name].to_bytes(8, "big")
+
+
+def _frame(name: str) -> bytes:
+    """The 10-byte frame of one key."""
+    return codec.frame(OKIN_64BIT_KEYS[name], 8)
+
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -72,104 +83,69 @@ class TestOkin64BitCommands:
     def test_all_command_values_are_8_bytes(self):
         """All command values should be exactly 8 bytes."""
         commands = [
-            Okin64BitCommands.STOP,
-            Okin64BitCommands.HEAD_UP,
-            Okin64BitCommands.HEAD_DOWN,
-            Okin64BitCommands.FOOT_UP,
-            Okin64BitCommands.FOOT_DOWN,
-            Okin64BitCommands.LUMBAR_UP,
-            Okin64BitCommands.LUMBAR_DOWN,
-            Okin64BitCommands.FLAT,
-            Okin64BitCommands.ZERO_G,
-            Okin64BitCommands.LOUNGE,
-            Okin64BitCommands.TV_PC,
-            Okin64BitCommands.ANTI_SNORE,
-            Okin64BitCommands.MEMORY_1,
-            Okin64BitCommands.MEMORY_2,
-            Okin64BitCommands.LIGHT_TOGGLE,
-            Okin64BitCommands.LIGHT_ON,
-            Okin64BitCommands.LIGHT_OFF,
+            _cmd("stop"),
+            _cmd("head_up"),
+            _cmd("head_down"),
+            _cmd("foot_up"),
+            _cmd("foot_down"),
+            _cmd("lumbar_up"),
+            _cmd("lumbar_down"),
+            _cmd("flat"),
+            _cmd("zero_g"),
+            _cmd("lounge"),
+            _cmd("tv_pc"),
+            _cmd("anti_snore"),
+            _cmd("memory_1"),
+            _cmd("memory_2"),
+            _cmd("light_toggle"),
+            _cmd("light_on"),
+            _cmd("light_off"),
         ]
         for cmd in commands:
             assert len(cmd) == 8, f"Command {cmd.hex()} is not 8 bytes"
 
     def test_stop_command_is_all_zeros(self):
         """STOP command should be all zeros."""
-        assert bytes([0x00] * 8) == Okin64BitCommands.STOP
+        assert bytes([0x00] * 8) == _cmd("stop")
 
     def test_motor_commands_use_single_bits(self):
         """Motor commands should use single-bit flags."""
         # HEAD_UP: bit 0 in byte 3
-        assert bytes([0, 0, 0, 0x01, 0, 0, 0, 0]) == Okin64BitCommands.HEAD_UP
+        assert bytes([0, 0, 0, 0x01, 0, 0, 0, 0]) == _cmd("head_up")
         # HEAD_DOWN: bit 1 in byte 3
-        assert bytes([0, 0, 0, 0x02, 0, 0, 0, 0]) == Okin64BitCommands.HEAD_DOWN
+        assert bytes([0, 0, 0, 0x02, 0, 0, 0, 0]) == _cmd("head_down")
         # FOOT_UP: bit 2 in byte 3
-        assert bytes([0, 0, 0, 0x04, 0, 0, 0, 0]) == Okin64BitCommands.FOOT_UP
+        assert bytes([0, 0, 0, 0x04, 0, 0, 0, 0]) == _cmd("foot_up")
         # FOOT_DOWN: bit 3 in byte 3
-        assert bytes([0, 0, 0, 0x08, 0, 0, 0, 0]) == Okin64BitCommands.FOOT_DOWN
+        assert bytes([0, 0, 0, 0x08, 0, 0, 0, 0]) == _cmd("foot_down")
         # LUMBAR_UP: bit 4 in byte 3
-        assert bytes([0, 0, 0, 0x10, 0, 0, 0, 0]) == Okin64BitCommands.LUMBAR_UP
+        assert bytes([0, 0, 0, 0x10, 0, 0, 0, 0]) == _cmd("lumbar_up")
         # LUMBAR_DOWN: bit 5 in byte 3
-        assert bytes([0, 0, 0, 0x20, 0, 0, 0, 0]) == Okin64BitCommands.LUMBAR_DOWN
+        assert bytes([0, 0, 0, 0x20, 0, 0, 0, 0]) == _cmd("lumbar_down")
 
     def test_preset_commands(self):
         """Preset commands should have correct values."""
-        assert bytes([0x08, 0, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.FLAT
-        assert bytes([0, 0, 0x10, 0, 0, 0, 0, 0]) == Okin64BitCommands.ZERO_G
-        assert bytes([0, 0, 0x20, 0, 0, 0, 0, 0]) == Okin64BitCommands.LOUNGE
-        assert bytes([0, 0, 0x40, 0, 0, 0, 0, 0]) == Okin64BitCommands.TV_PC
-        assert bytes([0, 0, 0x80, 0, 0, 0, 0, 0]) == Okin64BitCommands.ANTI_SNORE
+        assert bytes([0x08, 0, 0, 0, 0, 0, 0, 0]) == _cmd("flat")
+        assert bytes([0, 0, 0x10, 0, 0, 0, 0, 0]) == _cmd("zero_g")
+        assert bytes([0, 0, 0x20, 0, 0, 0, 0, 0]) == _cmd("lounge")
+        assert bytes([0, 0, 0x40, 0, 0, 0, 0, 0]) == _cmd("tv_pc")
+        assert bytes([0, 0, 0x80, 0, 0, 0, 0, 0]) == _cmd("anti_snore")
 
     def test_memory_commands(self):
         """Memory commands should have correct values."""
-        assert bytes([0, 0x01, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.MEMORY_1
-        assert bytes([0, 0x04, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.MEMORY_2
+        assert bytes([0, 0x01, 0, 0, 0, 0, 0, 0]) == _cmd("memory_1")
+        assert bytes([0, 0x04, 0, 0, 0, 0, 0, 0]) == _cmd("memory_2")
 
     def test_light_commands(self):
         """Light commands should have correct values."""
-        assert bytes([0, 0x02, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.LIGHT_TOGGLE
-        assert bytes([0, 0, 0, 0, 0, 0, 0, 0x40]) == Okin64BitCommands.LIGHT_ON
-        assert bytes([0, 0, 0, 0, 0, 0, 0, 0x80]) == Okin64BitCommands.LIGHT_OFF
+        assert bytes([0, 0x02, 0, 0, 0, 0, 0, 0]) == _cmd("light_toggle")
+        assert bytes([0, 0, 0, 0, 0, 0, 0, 0x40]) == _cmd("light_on")
+        assert bytes([0, 0, 0, 0, 0, 0, 0, 0x80]) == _cmd("light_off")
 
 
 # -----------------------------------------------------------------------------
 # Command Building Tests
 # -----------------------------------------------------------------------------
-
-
-class TestBuildOkin64BitCommand:
-    """Test build_okin_64bit_command function."""
-
-    def test_output_is_10_bytes(self):
-        """Built commands should be exactly 10 bytes."""
-        command = build_okin_64bit_command(Okin64BitCommands.HEAD_UP)
-        assert len(command) == 10
-
-    def test_header_bytes(self):
-        """Commands should start with [0x08, 0x02]."""
-        command = build_okin_64bit_command(Okin64BitCommands.HEAD_UP)
-        assert command[0] == 0x08
-        assert command[1] == 0x02
-
-    def test_command_bytes_follow_header(self):
-        """8-byte command value should follow the header."""
-        cmd_value = Okin64BitCommands.HEAD_UP
-        command = build_okin_64bit_command(cmd_value)
-        assert command[2:10] == cmd_value
-
-    def test_stop_command_format(self):
-        """STOP command should be [0x08, 0x02, 0, 0, 0, 0, 0, 0, 0, 0]."""
-        command = build_okin_64bit_command(Okin64BitCommands.STOP)
-        expected = bytes([0x08, 0x02, 0, 0, 0, 0, 0, 0, 0, 0])
-        assert command == expected
-
-    def test_rejects_invalid_length(self):
-        """Should raise error for non-8-byte input."""
-        with pytest.raises(ValueError):
-            build_okin_64bit_command(bytes([0x01, 0x02, 0x03]))  # Too short
-
-        with pytest.raises(ValueError):
-            build_okin_64bit_command(bytes([0] * 9))  # Too long
 
 
 # -----------------------------------------------------------------------------
@@ -334,7 +310,7 @@ class TestOkin64BitMovement:
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
         assert len(first_call_data) == 10
-        expected = build_okin_64bit_command(Okin64BitCommands.HEAD_UP)
+        expected = _frame("head_up")
         assert first_call_data == expected
 
     async def test_stop_all_sends_stop_command(
@@ -352,7 +328,7 @@ class TestOkin64BitMovement:
 
         calls = mock_client.write_gatt_char.call_args_list
         call_data = calls[0][0][1]
-        expected = build_okin_64bit_command(Okin64BitCommands.STOP)
+        expected = _frame("stop")
         assert call_data == expected
 
 
