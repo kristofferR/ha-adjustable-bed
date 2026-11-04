@@ -44,15 +44,29 @@ Two payload shapes address the controller: `STANDARD` (`01`) and `BILATERAL`
 | `bootstrap` | Queries sent after notifications start |
 | `name_rule` | Device names the app accepts |
 
-| Profile | Bed type | Evidence | Hold | Recall release | Slots | Massage |
-| --- | --- | --- | --- | --- | --- | --- |
-| `LEGACY` | `jiecang`, `comfort_motion` | Pre-v5 controller tests | 25 × 50 ms, short release | None, 3 × 100 ms | 3 | 0-10 |
-| `COMFORT_MOTION` | `jiecang_app` | Comfort Motion 2.2.1 (row115) | Pulse count × 100 ms, short release at 100 ms | Short, 100 ms | 2 | 0-3 |
-| `DREAMASK` | `jiecang_app` | Dreamask 1.0.8 | Pulse count × 100 ms, long releases at 50 and 150 ms | Long, 800 ms | 2 | 0-3 |
-| `DREAMOTION` | `jiecang_app` | Dreamotion 1.0.5 | As Dreamask plus a final frame, short then long release | Long, 800 ms | 2 | 0-3 |
-| `DREAMHD` | `jiecang_app` | Dream Motion HD 1.0.4 | As Dreamotion, short release only | Short, 100 ms | 2 | 0-3 |
+| Profile | Evidence |
+| --- | --- |
+| `LEGACY` | Pre-v5 controller tests (bed types `jiecang` and `comfort_motion`) |
+| `COMFORT_MOTION` | Comfort Motion 2.2.1 (row115) |
+| `DREAMASK` | Dreamask (ERGOBALANCE) 1.0.8 |
+| `DREAMOTION` | Dreamotion 1.0.5 |
+| `DREAMHD` | Dream Motion HD 1.0.4 |
+
+Bed types, transports, layouts, hold and release timing, recall and save timing,
+memory slots and massage levels are generated from these definitions into the
+[Jiecang guide](../beds/jiecang.md#choosing-a-profile).
 
 Timing values come from each profile's own evidence and are never shared.
+
+## Documentation
+
+Docs follow the same split. A codec guide ([Jiecang](../beds/jiecang.md)) holds
+the transports, framing, command tables, responses and release behavior once, then
+one section per profile. Tables the profile data already knows sit between
+`<!-- generated:<name> -->` markers and are rewritten by
+`scripts/generate_codec_docs.py`; `tests/test_codec_docs.py` fails when one is
+stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
+Discovery ledgers stay separate documents linked from each profile section.
 
 ## Controller glue
 

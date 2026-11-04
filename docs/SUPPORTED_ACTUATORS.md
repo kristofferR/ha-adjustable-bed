@@ -19,7 +19,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Okimat/Okin](beds/okimat.md) | 4 memory presets, massage, lights (requires pairing) |
 | [Okin 64-Bit](beds/okin-64bit.md) | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |
 | [Glideaway Motion / Montion app](beds/glideaway-motion.md) | Manual 400/450/500/600 layouts, two memories, clock/alarm, model-gated massage/light; hardware unverified |
-| [Jiecang](beds/jiecang.md) | Motor control, memory, massage, split beds; [ERGOBALANCE / Dream Motion](beds/jiecang-app.md) layouts, alarms, wake routines and renaming |
+| [Jiecang](beds/jiecang.md) | Motor control, memory, massage, split beds; [ERGOBALANCE / Dream Motion](beds/jiecang.md#dream-app-family) layouts, alarms, wake routines and renaming; [Comfort Motion app](beds/jiecang.md#comfort-motion-app) |
 | [Kaidi](beds/kaidi.md) | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
 | [Jensen](beds/jensen.md) | Go-to-position, massage/light/fan levels (0-10), app-stored memories, dynamic feature detection |
 | [DewertOkin](beds/dewertokin.md) | 79 brands (many older Rize/Simmons models), multiple protocols |
@@ -117,7 +117,7 @@ Beds that won't be supported:
 - **Logicdata eLift / desk controllers** — Uses local UDP/HTTP, not Bluetooth
 - **ErgoWifi** — Uses Xlink cloud platform
 
-LOGICDATA MOTIONrelax BLE app layouts have an explicit [LOGICDATA app profile](beds/logicdata-app.md); the Sleep Smart Air Mattress app has its own [bed profile and pump type](beds/logicdata-sleep-smart.md). Existing legacy [Jiecang](beds/jiecang.md) entries retain their original protocol.
+LOGICDATA MOTIONrelax BLE app layouts have an explicit [LOGICDATA app profile](beds/logicdata-app.md); the Sleep Smart Air Mattress app has its own [bed profile and pump type](beds/logicdata-sleep-smart.md). Existing legacy [Jiecang](beds/jiecang.md#legacy-route) entries retain their original protocol.
 
 If you have one of these beds, consider running [smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt) as an add-on or make a separate integration for WiFi/Cloud adjustable beds.
 

@@ -1,17 +1,17 @@
 # Jiecang
 
-The accepted MOTIONrelax phone and tablet app protocols are available through
-the separate [LOGICDATA app profiles](logicdata-app.md). Existing working Jiecang
-configurations keep this legacy controller.
-
-This page describes the existing legacy Jiecang controller. For the accepted
-ERGOBALANCE 1.0.8 and Dream Motion 1.0.5 protocols, select the separate
-[Jiecang app profiles](jiecang-app.md). Their layouts, two memory slots,
-lighting, massage levels and release timing differ from this legacy path.
-
-**Status:** ❓ Needs testing
+**Status:** ❓ Needs testing (the app profiles are APK-verified with hardware unverified; the legacy route is unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
+
+One wire codec (`F1 F1 ... 7E` frames over three GATT transports) serves a legacy
+route and four audited app profiles. This guide covers the codec first, then one
+section per profile. See [Protocol codecs and app profiles](../design/protocol-codecs.md)
+for the architecture.
+
+The accepted MOTIONrelax phone and tablet app protocols are available through the
+separate [LOGICDATA app profiles](logicdata-app.md). Existing working Jiecang
+configurations keep the legacy route.
 
 ## Known Models
 
@@ -19,119 +19,759 @@ Brands using Jiecang actuators:
 
 - Comfort Motion
 - Dream Motion / Dreamotion Smart
-- ERGOBALANCE
+- Dream Motion HD tablet app beds
+- ERGOBALANCE beds (app package name: Dreamask)
 - Glide adjustable beds
 - LOGICDATA MOTIONrelax
 - Jiecang-branded controllers
 
+The Comfort Motion app has no model, Bluetooth name, manufacturer or RSSI filter.
+The ERGOBALANCE, Dream Motion and Dream Motion HD apps share Bluetooth services,
+so a service UUID cannot say which app's layout or release behavior applies
+(see [Choosing a profile](#choosing-a-profile)).
+
 ## Apps
 
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | [Jiecang Bed / Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed) | `com.jiecang.app.android.jiecangbed` |
-| ✅ | LOGICDATA MOTIONrelax | `com.logicdata.motionrelax` |
+| Analyzed | App | Package ID | Profile |
+|----------|-----|------------|---------|
+| ✅ | [Jiecang Bed / Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed) 2.2.1 (28) | `com.jiecang.app.android.jiecangbed` | [Comfort Motion](#comfort-motion-app); the legacy route covers the same beds |
+| ✅ | LOGICDATA MOTIONrelax | `com.logicdata.motionrelax` | [Legacy route](#legacy-route); app profiles in [LOGICDATA](logicdata-app.md) |
+| ✅ | [ERGOBALANCE](https://play.google.com/store/apps/details?id=com.jiecang.dreamask.app.android.bed) 1.0.8 (8) | `com.jiecang.dreamask.app.android.bed` | [ERGOBALANCE (Dreamask)](#ergobalance-dreamask) |
+| ✅ | [Dream Motion](https://play.google.com/store/apps/details?id=com.jiecang.dreamotion.app.android.bed) 1.0.5 (11) | `com.jiecang.dreamotion.app.android.bed` | [Dream Motion (Dreamotion)](#dream-motion-dreamotion) |
+| ✅ | [Dream Motion HD](https://play.google.com/store/apps/details?id=com.dreamhd.jiecang.android.pad.bed) 1.0.4 (4) | `com.dreamhd.jiecang.android.pad.bed` | [Dream Motion HD](#dream-motion-hd) |
 
 ## Features
 
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ |
-| Position Feedback | ❌ |
-| Memory Presets | ✅ (3 slots) |
-| Memory Programming | ✅ |
-| Zero-G | ✅ |
-| Anti-Snore | ✅ |
-| Flat | ✅ |
-| Massage | ✅ (back/leg, 0-10 levels) |
-| Lights | ✅ (toggle) |
+| Feature | Legacy route | Comfort Motion | ERGOBALANCE / Dream Motion | Dream Motion HD |
+|---------|--------------|----------------|----------------------------|-----------------|
+| Motor Control | ✅ (back and legs) | ✅ (movement and release; 2/3/4-motor layouts; the two-motor layout also exposes combined back/legs) | ✅ (determined by the selected layout) | ✅ (determined by the selected layout) |
+| Position Feedback | ❌ | ❌ (no motor angle, percentage or movement completion) | ❌ (actuator-status packets are not motor position feedback; no position sliders or angle sensors) | ❌ (same) |
+| Presets | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore; Yoga when the bed reports it | ✅ same |
+| Memory Presets | ✅ (3 slots, recall and program) | ✅ (two recalls, two saves) | ✅ (2 slots, separate recall and save) | ✅ (2 slots, different payload) |
+| Massage | ✅ (back/leg, 0-10 levels) | ✅ (independent back and foot levels 0-3, mode cycling, stop; no massage mode number) | ✅ (Off and levels 1-3 per layout zone, mode, stop) | ✅ (same) |
+| Lights | ✅ (toggle) | ✅ (toggle, with reported light state) | ✅ (toggle; RGB, brightness, timeout and automatic under-bed lighting when reported) | ✅ (same, with its own capability gates) |
+| Alarm | ❌ | ❌ (no BLE alarm programming) | ✅ (`adjustable_bed.jiecang_set_alarm`) | ✅ |
+| Wake Routine | ❌ | ✅ (`adjustable_bed.jiecang_wake`) | ✅ (`adjustable_bed.jiecang_wake`) | ✅ |
+| Clock | ❌ | ❌ (no clock-setting command) | ✅ (answered on the bed's clock request) | ✅ |
+| Bluetooth Rename | ❌ | ✅ (G1 only) | ✅ (G1 or G3) | ✅ (G1 or G3) |
 
-## Protocol Details
+Enable massage and light controls only when fitted.
 
-**Service/Characteristic variants:**
+## Choosing a profile
 
-- Lierda1 / Comfort Motion: Service `0000ff12-0000-1000-8000-00805f9b34fb`, write `0000ff01-0000-1000-8000-00805f9b34fb`
-- Lierda3 / LOGICDATA: Service `0000fe60-0000-1000-8000-00805f9b34fb`, write `0000fe61-0000-1000-8000-00805f9b34fb`
+Detection suggests the legacy route; the app profiles are explicit choices.
 
-**Format:** Variable-length packets; common single-byte commands occupy 7 bytes.
+1. Select **Jiecang (ERGOBALANCE / Dream Motion / Dream Motion HD / Comfort Motion apps)**.
+2. Choose the exact app profile, then the control layout and transport.
 
-**Command format:** `F1 F1` + data bytes + checksum + `7E`
-**Checksum:** Sum of data bytes (single byte)
+Existing legacy Jiecang and Comfort Motion entries keep their original behavior;
+select an app profile in options to use the audited app behavior. Settings belong
+to one physical bed and remain independent across a two-address pair.
 
-### Motor Control Commands
+The tables below come from the profile data.
+
+<!-- generated:jiecang-profiles -->
+<!-- Generated by scripts/generate_codec_docs.py from the profile data. Edit the profile, not this block. -->
+
+**Profile summary**
+
+| Profile | Bed type | Transports | Memory | Massage levels | Name rule | Startup |
+|---|---|---|---|---|---|---|
+| Legacy route | `jiecang`, `comfort_motion` | G3, G1 | 3 slots, payload `01` | 0-10 (wire equals level) | none | none |
+| Comfort Motion | `jiecang_app` | G1, G2 | 2 slots, payload `01` | 0-3 (wire 00 02 03 04) | `[._0-9A-Za-z]{1,18}` | 6 queries, last at +700 ms |
+| ERGOBALANCE (Dreamask) | `jiecang_app` | G3, G1, G2 | 2 slots, payload `00 00` | 0-3 (wire 00 02 03 04) | `[0-9A-Za-z]{1,20}` | 14 queries, last at +1900 ms |
+| Dream Motion | `jiecang_app` | G3, G1, G2 | 2 slots, payload `00 00` | 0-3 (wire 00 02 03 04) | `[0-9A-Za-z]{1,20}` | 14 queries, last at +1900 ms |
+| Dream Motion HD | `jiecang_app` | G3, G1, G2 | 2 slots, payload `01` | 0-3 (wire 00 02 03 04) | `[ -~]{1,20}` | 12 queries, last at +1900 ms |
+
+**Hold and release timing**
+
+| Profile | Hold refresh | Repeats | Final frame | Release after hold | Explicit stop |
+|---|---|---|---|---|---|
+| Legacy route | 50 ms (after each write) | 25 | no | +0 ms short release | +0 ms short release |
+| Comfort Motion | 100 ms (after each write) | motor pulse count | no | +100 ms short release | +0 ms short release |
+| ERGOBALANCE (Dreamask) | 100 ms (fixed rate) | motor pulse count | no | +50 ms long release, +150 ms long release | +0 ms long release, +100 ms long release |
+| Dream Motion | 100 ms (fixed rate) | motor pulse count | yes | +100 ms short release, +800 ms long release | +0 ms short release, +700 ms long release |
+| Dream Motion HD | 100 ms (fixed rate) | motor pulse count | yes | +100 ms short release | +0 ms short release |
+
+**One-shot timing**
+
+| Profile | Presets and memory recall | Memory save |
+|---|---|---|
+| Legacy route | 3 × 100 ms, no release | once, no release |
+| Comfort Motion | once, short release after 100 ms | once, no release |
+| ERGOBALANCE (Dreamask) | once, long release after 800 ms | 3 × 30 ms, no release |
+| Dream Motion | once, long release after 800 ms | 3 × 30 ms, no release |
+| Dream Motion HD | once, short release after 100 ms | 3 × 30 ms, no release |
+
+**Layouts and axes**
+
+| Layout | Axes | Massage zones | Profiles |
+|---|---|---|---|
+| `standard_2` (Back and legs (2 motors)) | back, both, legs | back, legs | Comfort Motion |
+| `standard_2` (Back and legs (2 motors)) | back, legs, both | back, legs | ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
+| `standard_3_neck` (Back, legs and neck) | head, back, legs | back, legs | Comfort Motion |
+| `standard_3_neck` (Back, legs and neck) | back, legs, head | back, legs | ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
+| `standard_3_lumbar` (Back, legs and lumbar) | back, legs, lumbar | back, legs | ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
+| `standard_3_hi_low` (Back, legs and height) | back, legs, bed_height | back, legs | ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
+| `standard_3_split_upper` (Split upper (3 motors)) | back, legs, right_back, both_backs | back, right, legs | ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
+| `standard_4_legacy` (Back, legs, neck and lumbar (legacy)) | head, back, lumbar, legs | back, legs | Comfort Motion, ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
+| `standard_4_bilateral` (Bilateral (4 motors)) | back, both_backs, right_back, legs, both_legs, right_legs | back, right | ERGOBALANCE (Dreamask), Dream Motion |
+| `split_series` (Split series) | back, legs, right_back, both_backs | back, right, legs | ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
+| `split_after_bilateral` (Split after bilateral) | back, legs, right_back, both_backs | back, right | ERGOBALANCE (Dreamask), Dream Motion |
+
+Legacy route has no selectable layouts: it uses the entry's motor count.
+<!-- /generated -->
+
+## Wire codec
+
+Implemented once in `custom_components/adjustable_bed/codec/jiecang.py`. Profiles
+(`profiles/jiecang.py`) decide which of the frames below an app sends and how it
+times them.
+
+### Transports
+
+| Selection | Service | Write | Notify | Name |
+|-----------|---------|-------|--------|------|
+| G1 (Lierda1 / Comfort Motion) | `0000ff12-0000-1000-8000-00805f9b34fb` | `0000ff01-0000-1000-8000-00805f9b34fb` | `0000ff02-0000-1000-8000-00805f9b34fb` | `0000ff06-0000-1000-8000-00805f9b34fb` |
+| G2 | `88121427-11e2-52a2-4615-ff00dec16800` | `88121427-11e2-52a2-4615-ff00dec16801` | same as write | none |
+| G3 (Lierda3 / LOGICDATA) | `0000fe60-0000-1000-8000-00805f9b34fb` | `0000fe61-0000-1000-8000-00805f9b34fb` | `0000fe62-0000-1000-8000-00805f9b34fb` | `0000fe63-0000-1000-8000-00805f9b34fb` |
+
+Each profile lists the transports it drives and how it chooses among them (see
+the profile sections). Writes use a response when the write characteristic
+advertises `write`, otherwise write-without-response, except where a profile
+states otherwise.
+
+### Framing and checksum
+
+**Request:** `F1 F1 | opcode | length | payload | checksum | 7E`. The checksum is
+the low byte of the sum of opcode, length and payload. Variable-length packets;
+common single-byte commands occupy 7 bytes.
+
+**Payload shapes:** controllers take either `01` (standard) or `00 00`
+(bilateral). Which shape a command uses is a layout and profile rule.
+
+**Response:** the same layout behind an `F2 F2` header (see [Responses](#responses)).
+
+### Command encoders
+
+Values below are what `codec/jiecang.py` builds.
+
+#### Motion
+
+Each down opcode is the up opcode plus one. Head and bed height share an opcode.
+Standard frames use payload `01`; bilateral frames use `00 00`.
+
+| Axis | Up | Down | Bilateral up / down |
+|------|----|------|---------------------|
+| Back | `F1 F1 01 01 01 03 7E` | `F1 F1 02 01 01 04 7E` | `F1 F1 01 02 00 00 03 7E` / `F1 F1 02 02 00 00 04 7E` |
+| Legs | `F1 F1 03 01 01 05 7E` | `F1 F1 04 01 01 06 7E` | `F1 F1 03 02 00 00 05 7E` / `F1 F1 04 02 00 00 06 7E` |
+| Both (back and legs) | `F1 F1 05 01 01 07 7E` | `F1 F1 06 01 01 08 7E` | n/a |
+| Head / neck, bed height | `F1 F1 19 01 01 1B 7E` | `F1 F1 1A 01 01 1C 7E` | n/a |
+| Lumbar | `F1 F1 1B 01 01 1D 7E` | `F1 F1 1C 01 01 1E 7E` | n/a |
+| Right back | `F1 F1 20 01 01 22 7E` | `F1 F1 21 01 01 23 7E` | `F1 F1 20 02 00 00 22 7E` / `F1 F1 21 02 00 00 23 7E` |
+| Both backs | `F1 F1 23 01 01 25 7E` | `F1 F1 24 01 01 26 7E` | `F1 F1 23 02 00 00 25 7E` / `F1 F1 24 02 00 00 26 7E` |
+| Right legs | n/a | n/a | `F1 F1 2A 02 00 00 2C 7E` / `F1 F1 2B 02 00 00 2D 7E` |
+| Both legs | n/a | n/a | `F1 F1 2C 02 00 00 2E 7E` / `F1 F1 2D 02 00 00 2F 7E` |
+
+| Release | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Short release | `F1 F1 4E 00 4E 7E` | Button release / stop all |
+| Long release | `F1 F1 4E 02 00 00 50 7E` | Bilateral release |
+
+#### Presets
+
+Preset frames use payload `01`, or `00 00` in bilateral layouts
+(`standard_4_bilateral`, `split_after_bilateral`) and for Yoga.
+
+| Command | Standard | Bilateral layouts |
+|---------|----------|-------------------|
+| Flat | `F1 F1 08 01 01 0A 7E` | `F1 F1 08 02 00 00 0A 7E` |
+| Zero-G | `F1 F1 07 01 01 09 7E` | `F1 F1 07 02 00 00 09 7E` |
+| Anti-Snore | `F1 F1 09 01 01 0B 7E` | `F1 F1 09 02 00 00 0B 7E` |
+| Yoga (only when the bed reports it) | `F1 F1 28 02 00 00 2A 7E` | `F1 F1 28 02 00 00 2A 7E` |
+
+#### Memory
+
+Each profile fixes the payload shape and slot count: `01` for the legacy route,
+Comfort Motion and Dream Motion HD; `00 00` for ERGOBALANCE and Dream Motion.
+
+| Command | Payload `01` | Payload `00 00` |
+|---------|--------------|-----------------|
+| Memory 1 Recall (A) | `F1 F1 0B 01 01 0D 7E` | `F1 F1 0B 02 00 00 0D 7E` |
+| Memory 2 Recall (B) | `F1 F1 0D 01 01 0F 7E` | `F1 F1 0D 02 00 00 0F 7E` |
+| Memory 3 Recall (C, legacy route only) | `F1 F1 18 01 01 1A 7E` | n/a |
+| Memory 1 Save | `F1 F1 0A 01 01 0C 7E` | `F1 F1 0A 02 00 00 0C 7E` |
+| Memory 2 Save | `F1 F1 0C 01 01 0E 7E` | `F1 F1 0C 02 00 00 0E 7E` |
+| Memory 3 Save (C, legacy route only) | `F1 F1 17 01 01 19 7E` | n/a |
+
+#### Massage
+
+Zone frames are `F1 F1 | zone | 02 | 08 | level | checksum | 7E`, with `00`
+instead of `08` in bilateral layouts. `level` is the wire byte, which each
+profile maps from its user-facing levels.
+
+| Zone | Zone byte | Off | Level 1 | Level 2 | Level 3 |
+|------|-----------|-----|---------|---------|---------|
+| Head (back) | `12` | `F1 F1 12 02 08 00 1C 7E` | `F1 F1 12 02 08 02 1E 7E` | `F1 F1 12 02 08 03 1F 7E` | `F1 F1 12 02 08 04 20 7E` |
+| Foot (legs) | `14` | `F1 F1 14 02 08 00 1E 7E` | `F1 F1 14 02 08 02 20 7E` | `F1 F1 14 02 08 03 21 7E` | `F1 F1 14 02 08 04 22 7E` |
+| Right | `22` | `F1 F1 22 02 08 00 2C 7E` | `F1 F1 22 02 08 02 2E 7E` | `F1 F1 22 02 08 03 2F 7E` | `F1 F1 22 02 08 04 30 7E` |
+
+Level columns show the 0-3 app levels (wire `00`/`02`/`03`/`04`). The legacy
+route sends wire levels 0-10 directly for the back and foot zones, for example
+`F1 F1 12 02 08 05 21 7E`.
+
+| Command | Standard | Bilateral layouts |
+|---------|----------|-------------------|
+| Massage Start | `F1 F1 10 01 08 19 7E` | n/a |
+| Massage Stop | `F1 F1 11 01 08 1A 7E` | `F1 F1 11 02 00 00 13 7E` |
+| Massage Mode | `F1 F1 16 01 0A 21 7E` | `F1 F1 16 02 00 00 18 7E` |
+
+Massage stop (`F1F11101081A7E`) differs from movement release.
+
+#### Lights
 
 | Command | Bytes (hex) | Description |
 |---------|-------------|-------------|
-| Head Up | `f1 f1 01 01 01 03 7e` | Move head/back up |
-| Head Down | `f1 f1 02 01 01 04 7e` | Move head/back down |
-| Leg Up | `f1 f1 03 01 01 05 7e` | Move legs up |
-| Leg Down | `f1 f1 04 01 01 06 7e` | Move legs down |
-| Both Up | `f1 f1 05 01 01 07 7e` | Move head and legs up |
-| Both Down | `f1 f1 06 01 01 08 7e` | Move head and legs down |
-| Stop | `f1 f1 4e 00 4e 7e` | Button release / stop all |
+| Light Toggle (legacy route, Comfort Motion, Dream Motion HD) | `F1 F1 0F 00 0F 7E` | The only light command of the first two; Dream Motion HD sends it after the RGB state write |
+| Light Toggle (ERGOBALANCE, Dream Motion) | `F1 F1 0F 02 00 00 11 7E` | Sent after the RGB state write |
+| Automatic Light Toggle | `F1 F1 29 02 00 00 2B 7E` | Sent only when the reported state differs |
+| RGB State | `F1 F1 52 07 BB GG RR brightness time_hi time_lo on checksum 7E` | Blue, green, red 0-255; brightness 0-100; big-endian timeout seconds; on `00`/`01` |
 
-#### 4-Motor Variants
+Timeouts: 0, 60, 120, 180, 240, 300, 600, 900, 1200, 1500 or 1800 seconds.
 
-| Command | Bytes (hex) | Description |
-|---------|-------------|-------------|
-| Head Up (Alt) | `f1 f1 19 01 01 1b 7e` | Head up (4-motor beds) |
-| Head Down (Alt) | `f1 f1 1a 01 01 1c 7e` | Head down (4-motor beds) |
-| Waist Up | `f1 f1 1b 01 01 1d 7e` | Waist up |
-| Waist Down | `f1 f1 1c 01 01 1e 7e` | Waist down |
+#### Queries
 
-### Preset Commands
+Status and configuration queries share opcode `00`; the payload selects one.
 
-| Command | Bytes (hex) | Description |
-|---------|-------------|-------------|
-| Flat | `f1 f1 08 01 01 0a 7e` | Go to flat position |
-| Zero-G | `f1 f1 07 01 01 09 7e` | Go to zero gravity |
-| Anti-Snore | `f1 f1 09 01 01 0b 7e` | Go to anti-snore position |
+| Query | Bytes (hex) |
+|-------|-------------|
+| Initial status (no payload; Dream Motion HD) | `F1 F1 00 00 00 7E` |
+| Software | `F1 F1 00 02 40 00 42 7E` |
+| Light | `F1 F1 00 02 01 00 03 7E` |
+| Actuator (Comfort Motion, Dream Motion HD) | `F1 F1 00 01 01 02 7E` |
+| Actuator (ERGOBALANCE, Dream Motion) | `F1 F1 00 01 50 51 7E` |
+| Hardware | `F1 F1 00 01 40 41 7E` |
+| Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+| Alarm | `F1 F1 00 01 10 11 7E` |
 
-### Memory Preset Commands
+#### Alarm and clock
 
-| Command | Bytes (hex) | Description |
-|---------|-------------|-------------|
-| Memory 1 (Go) | `f1 f1 0b 01 01 0d 7e` | Go to memory preset 1 (A) |
-| Memory 2 (Go) | `f1 f1 0d 01 01 0f 7e` | Go to memory preset 2 (B) |
-| Memory 3 (Go) | `f1 f1 18 01 01 1a 7e` | Go to memory preset 3 (C) |
-| Memory 1 (Set) | `f1 f1 0a 01 01 0c 7e` | Program memory preset 1 |
-| Memory 2 (Set) | `f1 f1 0c 01 01 0e 7e` | Program memory preset 2 |
-| Memory 3 (Set) | `f1 f1 17 01 01 19 7e` | Program memory preset 3 |
+| Command | Bytes (hex) |
+|---------|-------------|
+| Alarm | `F1 F1 51 08 enabled any_day mask hour minute wake back leg checksum 7E` |
+| Clock | `F1 F1 50 07 year-1970 month day weekday hour minute second checksum 7E` |
 
-### Split Bed Motor Commands
+- Alarm `mask` sets bit 1 for Monday through bit 7 for Sunday; `any_day` is `01`
+  when any weekday is selected. Massage levels are 0-3.
+- Alarm wake codes: flat `0`, anti-snore `1`, zero-g `2`, memory 1 `3`,
+  memory 2 `4`, yoga `6`. Yoga requires the bed's reported capability.
+- Clock weekday uses Sunday = 0. HA sends it when the bed requests the clock.
 
-| Command | Bytes (hex) | Description |
-|---------|-------------|-------------|
-| Back Right Up | `f1 f1 20 01 01 22 7e` | Right-side back up (split bed) |
-| Back Right Down | `f1 f1 21 01 01 23 7e` | Right-side back down (split bed) |
-| Back Top Split Up | `f1 f1 23 01 01 25 7e` | Top split back up (split bed) |
-| Back Top Split Down | `f1 f1 24 01 01 26 7e` | Top split back down (split bed) |
+#### Rename
 
-### Massage Commands
+| Transport | Payload on the name characteristic |
+|-----------|------------------------------------|
+| G1 | Bare ASCII name |
+| G3 | `01 FC 07`, name length, ASCII name |
 
-Massage commands use the format: `F1 F1` + zone + `02 08` + level + checksum + `7E`
+The Dream apps write the name twice, 500 ms apart. Each profile has its own name
+rule (see the profile summary).
 
-| Zone | Zone Byte | Level Range |
-|------|-----------|-------------|
-| Back | `0x12` | 0-10 |
-| Leg | `0x14` | 0-10 |
+#### Other frames
 
 | Command | Bytes (hex) | Description |
 |---------|-------------|-------------|
-| Massage Start | `f1 f1 10 01 08 19 7e` | Start massage |
-| Massage Stop | `f1 f1 11 01 08 1a 7e` | Stop massage |
-| Massage Mode Cycle | `f1 f1 16 01 0a 21 7e` | Cycle massage pattern |
-| Back Massage Off | `f1 f1 12 02 08 00 1c 7e` | Turn off back massage |
-| Leg Massage Off | `f1 f1 14 02 08 00 1e 7e` | Turn off leg massage |
+| Timer | `F1 F1 0E 00 0E 7E` | Timer function (a Comfort Motion literal with no reachable caller; the legacy controller no longer defines it) |
 
-### Other Commands
+The legacy route does not send the both-motors, neck/height, lumbar and split
+frames in the motion table above, though the bed may accept them: its former
+definitions called them "Head Up/Down (Alt)" (4-motor beds), "Waist" (lumbar) and
+"Back Right" / "Back Top Split" (split beds).
 
-| Command | Bytes (hex) | Description |
-|---------|-------------|-------------|
-| Light Toggle | `f1 f1 0f 00 0f 7e` | Toggle under-bed lights |
-| Timer | `f1 f1 0e 00 0e 7e` | Timer function |
+### Responses
 
-## Detection
+`parse_notification()` decodes `F2 F2` responses and returns raw values where apps
+disagree, such as the automatic-light byte. No response checksum is required:
+the apps accept bad trailers. Malformed fields are ignored instead of overwriting
+state, and notifications are consumed per callback without frame assembly.
 
-Detected by:
-1. Service UUID `0000ff12-...` (Comfort Motion / Lierda1) or `0000fe60-...` (Lierda3)
-2. Device name containing: `jiecang`, `jc-`, `dream motion`, `glide`, `comfort motion`, or `lierda`
+| Prefix | Minimum length | Meaning |
+|--------|----------------|---------|
+| `F2 F2 50` | 6 bytes | Clock request; HA replies with the clock frame |
+| `F2 F2 0E` | 7 bytes | Capabilities: Yoga from byte 4 bit 1; light configuration from the apps' binary-string test of byte 4 |
+| `F2 F2 0F` | 7 bytes | Layout. Dream apps: layout re-apply request. Comfort Motion: byte 4 is the app UI layout 1..6, otherwise 0 |
+| `F2 F2 51` | 7 bytes | Alarm page visible; with 14+ valid bytes: enabled (byte 4), weekday bits (byte 6), hour, minute, wake code, back and leg levels (bytes 7-11) |
+| `F2 F2 52 07` | 13 bytes | RGB: blue, green, red (bytes 4-6), brightness (byte 7, at most 100), timeout (bytes 8-9), on (byte 10) |
+| `F2 F2 53` | 7 bytes | Automatic light state from byte 4 (zero means on for most apps; Dream Motion HD treats non-zero as on) |
+| Byte 2 `05`/`06` | 9 bytes | Light on from byte 8 bit 6; `06` also reports back (byte 4) and legs (byte 6) massage, the right zone in bilateral layouts |
+
+Status replies `05`/`06` dispatch on byte 2 under any header; massage values
+outside the profile's levels are dropped. Actuator-status packets are not motor
+position feedback, and no motor positions are decoded. Which fields a profile
+consumes is listed in its section.
+
+### STOP and release behavior
+
+- Held movement writes the motion frame at the profile's refresh interval, then
+  runs the profile's release schedule (see the timing table; offsets count from the end of the hold). The schedule always
+  runs with a fresh event, so a cancelled action still releases the motors.
+- An explicit STOP sends the same release frames with the first at offset 0.
+- Presets and memory recall are sent once or repeated, then released as the
+  profile specifies. Memory save is never followed by a release.
+- Massage stop is a separate frame and is not a movement release.
+- The family write loop is cancellation-aware: a stop during a refresh releases
+  immediately instead of after the rest of the interval.
+- Physical emergency-stop semantics are unproven.
+
+### Vectors
+
+`tests/jiecang_vectors.py` lists each profile's frozen single-frame literals:
+the test vectors of the accepted Comfort Motion 2.2.1, ERGOBALANCE 1.0.8, Dream
+Motion 1.0.5 and Dream Motion HD 1.0.4 reports, and for the legacy route (which
+has no report) the 40 frames the pre-v5 controller sent.
+`tests/test_jiecang_vectors.py` checks that every literal round-trips through
+`codec.frame()` byte for byte and that each profile sends only its frozen frames.
+Profile behavior is covered by `tests/test_jiecang.py`,
+`tests/test_jiecang_app_controller.py`, `tests/test_jiecang_app_entities.py`,
+`tests/test_jiecang_app_config.py` and `tests/test_dreamhd.py`.
+
+## Profiles
+
+### Legacy route
+
+**Bed types:** `jiecang` and `comfort_motion`. Both select the legacy profile; they
+differ only in detection signal, label ("Comfort Motion / Lierda (legacy
+controls)") and profile-review suggestions.
+
+**Status:** ❓ Needs testing. No accepted APK report; the frames are those the
+original controller sent (smartbed-mqtt reverse engineering).
+
+**Setup**
+
+- Detected by service UUID `0000ff12-...` (G1) or `0000fe60-...` (G3), or by a
+  device name containing `jiecang`, `jc-`, `dream motion`, `glide`,
+  `comfort motion` or `lierda`.
+- Transport: G3, then G1, otherwise the generic write characteristic
+  `0000ff01-0000-1000-8000-00805f9b34fb`. Always written with response.
+- Motor count selects the motors. The head and feet controls drive the back and
+  legs motors.
+
+**Controls**
+
+| Control | Frames |
+|---------|--------|
+| Back / head and legs | Motion table, standard payload |
+| Flat, Zero-G, Anti-Snore | Preset table, standard payload |
+| Memory 1-3 recall and program | Memory table, payload `01`; others warn and do nothing |
+| Massage back and foot, 0-10 | Massage zones `12` and `14`; levels step 0-10, off writes level 0 to both |
+| Massage toggle | Start (`10`) when both levels are 0, otherwise stop (`11`) |
+| Massage mode cycle | `F1 F1 16 01 0A 21 7E` |
+| Light toggle | `F1 F1 0F 00 0F 7E` |
+
+**Timing**
+
+See the generated tables: 25 refreshes 50 ms apart, then the short release. Recall
+sends the frame three times, 100 ms apart, with no release; memory save sends once.
+
+**Evidence:** none beyond the controller's own tests. The legacy route keeps three
+memory slots, 0-10 massage and G3 support, which the Comfort Motion app profile
+does not; migrating legacy entries would drop entities and break G3 beds.
+
+### Comfort Motion app
+
+**Status:** ❓ Needs testing (APK-verified, hardware not yet verified by real users)
+
+**App:** [Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed)
+2.2.1 (28), `com.jiecang.app.android.jiecangbed`. Evidence: the independently
+accepted row115 report and audit seals in the
+[discovery ledger](../apk-analysis/dispositions/row115-comfort-motion.md), which
+accounts for every accepted command, unused literal, variant and state path.
+
+**Setup**
+
+1. Select the Jiecang bed type, then the **Comfort Motion** app profile.
+2. Choose the physical layout used in the app: back/legs, back/legs/neck, or
+   back/legs/neck/lumbar.
+3. Enable massage and light controls only when fitted.
+
+- Shared Bluetooth UUIDs do not identify the app.
+- The app scans only G1's service, with no name, manufacturer or RSSI
+  restrictions. Its barcode and saved-address routes also reach G2. HA uses its
+  own Bluetooth scanner and manual address selection; select this app explicitly,
+  including for G2. No new automatic app identification is inferred.
+- The login-named role has no authentication consumer. There is no PIN, bonding
+  or login exchange.
+- Transport **Auto** uses the last complete matching transport in GATT
+  enumeration order, retaining both notification subscriptions when both exist.
+  Select G1 or G2 to pin one. G3 is unsupported by this app.
+- Writable name roles are rediscovered per connection; G2 alone cannot reuse an
+  old G1 name handle.
+- Write response mode comes from the discovered characteristic properties, since
+  the APK never fixes the ATT mode.
+- Frames are fixed `F1 F1 ... 7E` literals. Only the 32 reachable literals and
+  the raw rename are implemented. The observed sum relation across literals does
+  not establish an arbitrary-frame checksum builder for this app, so no extra
+  command is synthesized.
+
+**Controls**
+
+| Control | Frames and layouts |
+|---------|--------------------|
+| Back, legs | Motion table, all layouts |
+| Back/legs together | Two-motor layout |
+| Neck (HA `head` axis) | Three- and four-motor layouts |
+| Lumbar | Four-motor layout |
+| Flat, Zero-G, Anti-Snore | Preset table, sent once |
+| Memory 1-2 recall and save | Memory table, payload `01` |
+| Massage back (HA `head` zone) and foot, 0-3 | Massage zones `12` and `14`; wire values 0/2/3/4 |
+| Massage mode | One fixed command, without a release or an invented mode number |
+| Massage stop | `F1 F1 11 01 08 1A 7E` |
+| Light | Toggle only |
+| Rename | `adjustable_bed.rename`: 1..18 ASCII letters, digits, dots and underscores, written bare to the discovered G1 name role. There is no name acknowledgment. This does not change HA's local device name |
+
+- Massage up/down uses the last tag-06 state; bounds do nothing. Unrecognized wire
+  levels leave the slider unknown and make stepping a no-op. Writes do not
+  optimistically change reported state.
+- Light on/off actions toggle only when the last reported state differs and refuse
+  unknown state. The native toggle remains available before feedback. Neither
+  writes nor disconnects fabricate feedback.
+
+**Connection setup queries**
+
+The app schedules these after service discovery. HA awaits subscription and
+serializes the six query attempts.
+
+| Offset | Action | Bytes (hex) |
+|--------|--------|-------------|
+| 100 ms | Subscribe to notifications | (no write) |
+| 200 ms, 300 ms | Actuator query | `F1 F1 00 01 01 02 7E` |
+| 400 ms, 500 ms | Hardware query | `F1 F1 00 01 40 41 7E` |
+| 600 ms, 700 ms | Massage query | `F1 F1 00 01 08 09 7E` |
+
+- Queries run without a layout or massage gate, including with massage disabled.
+- These are scheduled duplicate writes, not ACK retries.
+- HA cancels failed setup and cleans subscriptions instead of allowing old
+  Android timers to write after a reconnect. The next connection gets a fresh batch.
+
+**Notifications**
+
+Consumed per callback without frame validation or assembly:
+
+| Tag at byte 2 | Minimum length | Consumed fields |
+|---------------|----------------|-----------------|
+| `0F` | 7 bytes | byte 4: layout 1..6, otherwise 0 |
+| `05` | 9 bytes | byte 8, bit 6: light on |
+| `06` | 9 bytes | byte 4: unsigned back massage; byte 6: unsigned foot massage; byte 8, bit 6: light on |
+
+- Other, short or empty values are ignored safely.
+- Layout 1/2 describes two motors, 3/4 three, and 5/6 four; even values
+  initially show massage navigation. These are app UI layouts, not continuing
+  write gates.
+- The app retains motor selection, massage zone and intensity and active panels
+  through repeated, changed or invalid layouts and same-instance reconnect.
+- HA keeps explicitly selected axes stable, retains reported state across its
+  controller replacement on reconnect, and never clears massage or light state on
+  a layout reply.
+- The latest reported layout and raw intensity values remain in protocol
+  diagnostics.
+- A user can change physical layout or massage presence in options without
+  relying on the app's stale-selector behavior.
+
+**Timing**
+
+Movement refreshes every 100 ms for HA's configured pulse count, then releases
+100 ms after the last frame. An explicit STOP releases immediately. Presets and
+memory recall are sent once, release after 100 ms; memory save is sent once,
+without release. HA also releases on cancellation and exceptions.
+
+**Wake routine**
+
+Use `adjustable_bed.jiecang_wake` with `preset` set to `memory_1`, `memory_2`,
+`zero_g`, `flat` or `anti_snore`, and optional `head_level`/`foot_level` 0..3.
+
+| Offset | Action |
+|--------|--------|
+| 0 ms | Back massage at `head_level`, release 100 ms later (zero skips the zone) |
+| 200 ms | Foot massage at `foot_level`, release 100 ms later (zero skips the zone) |
+| 500 ms | Preset, without a subsequent release, as on the app's conditional alarm path |
+
+- Cancellation always releases; stop the massage with `adjustable_bed.jiecang_stop_wake`.
+- Massage must be enabled before using nonzero levels. Yoga is unsupported and
+  rejected before writes.
+- Schedule the service using HA automations. Android's alarm tab is unreachable
+  in this version, while its exported start/stop broadcasts and possibly old
+  WorkManager jobs can still execute the sequence.
+- There is no BLE alarm programming or clock-setting command.
+
+**Safety adaptations and exclusions**
+
+- The app misses releases on touch cancel, keyboard release and teardown, and can
+  emit a final movement after release. HA does not reproduce these lifecycle bugs.
+- Android notifications, weekday filtering, preferences, QR camera, Play updates
+  and GIF rendering are companion-app infrastructure. Wi-Fi provisioning,
+  cloud/accounts, networking and bed firmware updates are excluded product
+  domains, with no reachable bed implementation found in this delivery. These
+  exclusions are not feature debt.
+- The third memory, massage-start, timer/reset and extra intensity literals have
+  no reachable caller and are excluded.
+
+**Verification**
+
+Focused source-vector tests cover all 24 transport/layout/light variants, all 33
+actions, unsigned response values, query setup and cleanup, cancellation, state
+retention, actual HA entities, serialized service routes and rejected settings.
+Physical actuator effects, ATT properties, release effects, mode names and rename
+persistence remain validation for real users after beta or release; maintainers
+need not acquire a bed.
+
+### Dream app family
+
+ERGOBALANCE, Dream Motion and Dream Motion HD share the behavior below. Their own
+sections list what differs. All three are **static verified, hardware unverified**.
+
+**Setup**
+
+- Both phone apps use the same Bluetooth services, so a service UUID cannot
+  determine which app's release behavior or layout applies. No pairing, PIN or
+  device-name pattern is inferred from these apps. Layout, massage and light are
+  user choices, never inferred from the name or a shared service.
+- Automatic transport selection uses a coherent GATT service and its
+  corresponding write, notification and name channels, trying G3, then G1, then
+  G2. Explicit G1/G2/G3 overrides are available.
+- ERGOBALANCE requires G1 or G3 to be present when selecting G2; standalone G2 is
+  supported only by the manual connection route of Dream Motion and Dream Motion HD.
+- Layouts cover standard two motors; three motors with neck, lumbar, height or
+  split-upper controls; four motors with legacy or bilateral controls; and the
+  split series. The separate split-after-bilateral option preserves the app's
+  reachable combination of standard split movement and bilateral global
+  commands. It does not rely on accidentally retained Android settings. Axes and
+  massage zones per layout are in the generated layout table.
+
+**Startup queries**
+
+When the selected transport has a complete G1 or G3 profile (or G2 next to one),
+HA waits 1 s after subscribing, then sends each query twice, 100 ms apart. HA then
+waits up to 0.5 s for the capability reply. On G3, the name characteristic is
+subscribed 3 s after the queries start when it supports notifications.
+
+| Offset | Query | Bytes (hex) |
+|--------|-------|-------------|
+| 0 ms | Software | `F1 F1 00 02 40 00 42 7E` |
+| 800 ms | Light | `F1 F1 00 02 01 00 03 7E` |
+| 1000 ms | Actuator | `F1 F1 00 01 50 51 7E` |
+| 1200 ms | Hardware | `F1 F1 00 01 40 41 7E` |
+| 1400 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+| 1600 ms | Alarm | `F1 F1 00 01 10 11 7E` |
+| 1800 ms | Software | `F1 F1 00 02 40 00 42 7E` |
+
+Dream Motion HD uses its own query set (see its section).
+
+**Lights**
+
+- On, off, color, brightness and timer write the full RGB state. When no light
+  state has been received, HA first sends the light query twice (100 ms apart) and
+  waits up to 1 s (Dream Motion HD sends its initial status query instead);
+  without a reply it refuses the change, preserving unknown color and timer
+  settings.
+- For ERGOBALANCE and Dream Motion, color, brightness, timeout and automatic
+  lighting require the light option, a non-bilateral layout and the bed's reported
+  light-configuration capability. Dream Motion HD has its own visibility rules
+  (see its Lights section).
+
+**Other command timing**
+
+| Action | Sequence |
+|--------|----------|
+| Presets and memory recall | One frame, then the profile's release |
+| Memory save | Three frames, 30 ms apart, no release |
+| Massage level | One frame; in bilateral layouts followed by long release after 800 ms (not applicable to Dream Motion HD, which has no bilateral layouts) |
+| Massage mode | One frame, long release after 1000 ms (Dream Motion HD writes once, without a release) |
+| Light toggle | RGB state write, toggle after 150 ms, then short and long release 80 ms later (Dream Motion HD differs, see its section) |
+
+Cleanup also runs when Home Assistant cancels a command; a cancelled Dream Motion
+hold never sends the final movement packet. Presets, save operations, massage and
+lighting retain their own command sequences instead of sharing a universal
+repeat/stop schedule.
+
+**Automations and services**
+
+- `adjustable_bed.jiecang_set_alarm` writes the app's weekly alarm configuration.
+  It accepts a time, weekdays, wake preset and massage levels. Storing that
+  configuration is separate from executing the Android app's local wake routine.
+- `adjustable_bed.jiecang_wake` executes the proven wake packet sequence. Use a
+  Home Assistant time trigger when local scheduling is required. Yoga can be
+  encoded in the alarm configuration but is not an implemented wake choice in any
+  app's executor.
+- `adjustable_bed.jiecang_stop_wake` stops active wake massage without changing
+  the saved alarm schedule. It sends `F1 F1 11 01 08 1A 7E`, even on bilateral
+  layouts.
+- `adjustable_bed.rename` (or the older `jiecang_rename`) writes a Bluetooth name
+  of up to 20 ASCII letters or digits (Dream Motion HD: 1-20 printable ASCII characters, see its section). This changes the advertised device name,
+  separately from its friendly name in Home Assistant.
+
+The normal cover, button, light, number and select actions remain available for
+individual movement, presets, massage and lighting.
+
+**Wake sequence (ERGOBALANCE and Dream Motion)**
+
+Alarm massage always uses payload-`08` frames, including bilateral layouts.
+Dream Motion HD uses the split layouts and cleanup in its own section.
+
+| Offset | Frames |
+|--------|--------|
+| 0 ms | Back massage at +0/+30/+60 ms, short release at +90/+120/+150 ms |
+| 180 ms (split layouts) | Right massage at the back level, same pattern |
+| 300 ms (500 ms in split layouts) | Leg massage, same pattern |
+| 800-920 ms | Preset or memory recall, five times 30 ms apart |
+| 1600 ms | Long release (memory 2 on non-split layouts only) |
+| 1690, 1720 ms | Long release |
+
+A zone with level 0 is skipped. Split layouts are `split_series` and
+`split_after_bilateral`. A cancelled routine sends a long release.
+
+**Safety adaptations**
+
+The implementation serializes GATT operations, validates inputs and performs
+cancellation cleanup. It does not reproduce Android's duplicate startup bursts,
+unsafe parser exceptions or missing key/cancel cleanup.
+
+### ERGOBALANCE (Dreamask)
+
+**App:** [ERGOBALANCE](https://play.google.com/store/apps/details?id=com.jiecang.dreamask.app.android.bed)
+1.0.8 (8), `com.jiecang.dreamask.app.android.bed`.
+
+**Status:** ❓ Needs testing. Static verified, hardware unverified.
+
+- Setup, layouts, controls, lights, alarm and wake behave as in the
+  [Dream app family](#dream-app-family).
+- Release: long release at 50 and 150 ms after a hold, with no final movement
+  frame. Memory payload `00 00`; presets and memory recall are followed by a long
+  release 800 ms later.
+- Requires G1 or G3 present when G2 is selected.
+- Evidence: the [cluster disposition](jiecang-app-disposition.md).
+
+### Dream Motion (Dreamotion)
+
+**App:** [Dream Motion](https://play.google.com/store/apps/details?id=com.jiecang.dreamotion.app.android.bed)
+1.0.5 (11), `com.jiecang.dreamotion.app.android.bed`.
+
+**Status:** ❓ Needs testing. Static verified, hardware unverified.
+
+- Setup, layouts, controls, lights, alarm and wake behave as in the
+  [Dream app family](#dream-app-family).
+- Release: a final movement packet, then short and long releases at 100 and
+  800 ms. A cancelled hold never sends the final packet. Memory payload `00 00`;
+  presets and memory recall are followed by a long release 800 ms later.
+- Standalone G2 is supported through the manual connection route.
+- Evidence: the [cluster disposition](jiecang-app-disposition.md).
+
+The cluster disposition records both accepted report identities (ERGOBALANCE and
+Dream Motion), every command group, shared behavior, six material differences,
+implementation choices and exclusions. Packages: `com.jiecang.dreamask.app.android.bed`
+**1.0.8 (8)** and `com.jiecang.dreamotion.app.android.bed` **1.0.5 (11)**. No raw
+APK or frozen analysis is shipped with the integration.
+
+### Dream Motion HD
+
+**App:** [Dream Motion HD](https://play.google.com/store/apps/details?id=com.dreamhd.jiecang.android.pad.bed)
+1.0.4 (4), `com.dreamhd.jiecang.android.pad.bed`.
+
+**Status:** ❓ Needs testing. Static behavior is verified; physical effects
+remain unverified.
+
+This explicit tablet profile is based on independently accepted row105 evidence.
+It does not migrate existing phone-app or legacy entries. The
+[discovery ledger](dreamhd-disposition.md) holds the evidence seals, all 50
+command rows, 90 candidate dispositions, consumer behavior and safe HA
+adaptations.
+
+**Layouts**
+
+- Six standard layouts: two motors; neck, lumbar, height or split-upper; and four
+  motors with neck/lumbar. Each has independent massage and light choices, plus a
+  separate split-series layout, totaling 25 app configurations.
+- Bilateral and split-after-bilateral belong to other profiles and are rejected
+  for HD.
+- The existing setup massage option and **Enable light controls** apply.
+
+**Controls and feedback**
+
+- Motor refresh is fixed at 100 ms. HD uses one short release 100 ms after
+  movement or a preset, and sends a final movement frame when a hold ends.
+- Two memory slots, with payload `01` rather than the phone apps' `00 00`.
+- Massage is Off and levels 1-3 (wire 0/2/3/4); normal steps, mode changes and
+  stop write once. Intensity changes await notification feedback.
+- Right-back and leg feedback share byte 6 on split layouts, so both sliders
+  report that value rather than inventing a third feedback field.
+
+**Startup queries**
+
+HD uses its own status queries; each is sent twice, 100 ms apart, and there is no
+light-status query.
+
+| Offset | Query | Bytes (hex) |
+|--------|-------|-------------|
+| 0 ms | Initial status | `F1 F1 00 00 00 7E` |
+| 1000 ms | Actuator | `F1 F1 00 01 01 02 7E` |
+| 1200 ms | Hardware | `F1 F1 00 01 40 41 7E` |
+| 1400 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+| 1600 ms | Alarm | `F1 F1 00 01 10 11 7E` |
+| 1800 ms | Software | `F1 F1 00 02 40 00 42 7E` |
+
+G2 has no name channel and no startup-query burst when selected alone; it can be
+connected manually but standalone setup completion is not a hardware claim.
+
+**Lights**
+
+- RGB color, brightness and timeout use the app's BGR packet.
+- A toggle writes the RGB state at 0 ms, a short release at +100 ms, the
+  `F1 F1 0F 00 0F 7E` toggle at +200 ms and a final short release at +300 ms. A
+  cancelled toggle still ends with the short release.
+- The repaired feature predicate uses minimal binary, appends zeros, truncates
+  and reverses; it is not a conventional bit mask.
+- A negative reply hides the picker and persists suppression. A later positive
+  reply reveals it without clearing suppression. A light-status reply reveals only
+  the picker when suppression is clear, never the automatic-light switch.
+- Connection resets light visibility and cached color.
+- HA always honors **Enable light controls**, even where the Android UI would
+  reveal a picker despite that preference.
+- Automatic-light status treats zero as off and any nonzero value as on. Its
+  physical sensor meaning has not been established.
+
+**Alarms, wake and rename**
+
+- The normal controls, weekly-alarm services and wake services of the
+  [Dream app family](#dream-app-family) work for HD.
+- Its broadcast-derived wake routine starts leg massage at 500 ms, split right
+  massage at 180 ms, and repeats the preset at 800-920 ms. Split layouts are
+  `standard_3_split_upper` and `split_series`, and the routine has none of the
+  phone apps' long releases. HA adds the proven
+  short release on completion and independently attempts to stop wake massage on
+  cancellation or failure, including a failed release write. It never copies
+  Android's missing release/cancel cleanup.
+- `adjustable_bed.rename` accepts 1-20 printable ASCII characters, including
+  spaces, for HD. G1 writes the bare name; G3 prefixes a byte length. HA safely
+  corrects Android's malformed G3 lengths 10-15 and rejects its lossy non-ASCII
+  encoding. The older `jiecang_rename` alias keeps its narrower released schema.
+
+**Dynamic capabilities**
+
+- Late capability and RGB replies add the corresponding controls without
+  reloading HA.
+- Repeated negative and positive feature replies retire and recreate the RGB,
+  brightness, timer, automatic-light and Yoga controls as their gates change.
+- For paired HD beds, each side's Yoga button follows that side's reported
+  capability. The combined Yoga button appears only when both sides support it,
+  and follows later withdrawals and replies without reloading the pair.
+
+## Notes
+
+### Analysis provenance
+
+- The discovery ledgers hold the evidence and dispositions; this guide holds the
+  results in reference form:
+  [Comfort Motion (row115)](../apk-analysis/dispositions/row115-comfort-motion.md),
+  [ERGOBALANCE and Dream Motion](jiecang-app-disposition.md),
+  [Dream Motion HD](dreamhd-disposition.md).
+- Physical actuator mapping, GATT properties and behavior on real firmware remain
+  deferred validation for users after a beta or release.

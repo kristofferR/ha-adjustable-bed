@@ -24,7 +24,9 @@ Start with the [Supported Beds table](../README.md#supported-beds), where relate
 brands, models and apps are grouped together. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
 to identify your controller and compare features. The detailed guides in
 [`beds/`](beds/) cover model-specific setup and testing status, and follow the
-[bed guide format](BED_GUIDE_FORMAT.md).
+[bed guide format](BED_GUIDE_FORMAT.md). Wire formats shared by several apps have
+one codec guide with a section per profile, starting with [Jiecang](beds/jiecang.md);
+the [codec and profile architecture](design/protocol-codecs.md) explains the split.
 
 ## Protocol Research
 
@@ -82,7 +84,7 @@ APK artifacts and frozen reports stay local and ignored. Consult the repository'
 clean-room rules before protocol work. Documentation updates do not establish new
 hardware evidence.
 
-[Comfort Motion app setup and BLE behavior](beds/comfort-motion.md), including the
+[Comfort Motion app setup and BLE behavior](beds/jiecang.md#comfort-motion-app), including the
 [row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).
 
 [HJBed app controls and telemetry](beds/hjbed.md), including the complete [row121 disposition ledger](apk-analysis/dispositions/row121-hjbed.md).

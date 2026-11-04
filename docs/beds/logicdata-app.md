@@ -12,7 +12,7 @@ with app profile `sleep_smart`; see [Sleep Smart](logicdata-sleep-smart.md).
 
 - LOGICDATA MOTIONrelax beds, standard (P1) and middle-motor (P2) families
 - Vienna and Toronto: aliases for two-motor layouts with different massage settings
-- Existing [Jiecang](jiecang.md) and [SILVERmotion/SimplicityFrame](logicdata.md)
+- Existing [Jiecang](jiecang.md#legacy-route) and [SILVERmotion/SimplicityFrame](logicdata.md)
   configurations retain their previous behavior.
 
 ## Apps
