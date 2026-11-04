@@ -110,6 +110,7 @@ async def test_an_unchanged_preselected_app_entry_still_sets_its_route(hass):
     flow._selected_bed_type = const.BED_TYPE_KEESON
     flow._selected_protocol_variant = const.KEESON_VARIANT_RESTONIC_B
     form = await flow.async_step_manual_entry()
+    assert form["data_schema"] is not None
     defaults = form["data_schema"]({CONF_ADDRESS: ADDRESS})
     assert defaults[const.CONF_BED_TYPE] == "keeson:restonic_b"
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):

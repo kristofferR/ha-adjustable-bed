@@ -302,7 +302,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Jensen (JMC400, LinON Entry) | `jensen` | 4 | 300 ms |
 | Leggett & Platt WiLinke (MlRM) | `leggett_wilinke` | 10 | 110 ms |
 | Limoss / Stawett (TEA encrypted) | `limoss` | 12 | 80 ms |
-| Linak: Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
+| Linak (Bed Control and Performance Series apps): Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
 | Malouf (FFE5 protocol) | `malouf_legacy_okin` | 7 | 150 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |
@@ -340,10 +340,16 @@ profiles. Its cadence is not controlled by the generic motor pulse settings.
 
 ## Protocol Variants
 
-Some beds support multiple protocol variants. Auto-detection usually works, but you can override if needed.
+Some beds support multiple protocol variants, also called receiver routes.
+Auto-detection usually works, but you can override if needed.
 
-The selector lists the variants available for the current bed type. Additional
-controller-specific choices are documented here:
+Setup asks for a route only when the chosen bed type has more than one, and
+lists only that bed type's own labelled routes. An app chosen from the bed-type
+list sets its route itself. For a discovered or preselected bed the routes sit
+in a collapsed **Advanced: receiver route** section of the form; choosing
+another bed type with several routes adds a short route step. Configure lists
+the routes of the saved bed type. Additional controller-specific choices are
+documented here:
 
 | Bed type | Choices covered by its guide |
 |----------|-----------------------------|
@@ -466,9 +472,11 @@ listed together below, with links to their profile sections.
 
 1. Let automatic discovery identify the controller where possible.
 2. If adding manually, find your brand or app in [Supported Beds](../README.md#supported-beds).
-   The bed-type list names each app, so you can also search it for the app you
-   use, for example **INNOVA app (Keeson)** or **The Brick app (Remacro)**.
-   Choosing an app sets its protocol variant for you.
+   The bed-type list names each app, so you can type to search it for the app
+   you use, for example **INNOVA app (Keeson)**, **Power Bob** or **HomeKobo**.
+   Choosing an app sets its protocol variant for you. A saved compatibility ID,
+   such as `okimat`, keeps working; setup shows its friendly name and Configure
+   adds the saved ID in brackets.
 3. Match any requested model or remote to your physical bed. Shared Bluetooth
    names and services do not always identify the right layout.
 

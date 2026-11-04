@@ -922,9 +922,9 @@ class _SearchableSelect(SelectSelector):
         return self._labels.get(choice, choice) if isinstance(choice, str) else choice
 
     def __call__(self, data: Any) -> Any:
-        value = SelectSelector(
-            SelectSelectorConfig(options=[*self._choices, *self._labels])
-        )(super().__call__(data))
+        # Home Assistant's selector typing does not declare __call__.
+        listed: Any = SelectSelector(SelectSelectorConfig(options=[*self._choices, *self._labels]))
+        value = listed(cast(Any, super()).__call__(data))
         return self._choices.get(value, value)
 
 
