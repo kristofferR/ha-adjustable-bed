@@ -749,7 +749,12 @@ class SvaneController(BedController):
     def _stream_due(
         self, head_m: StreamMember | None, feet_m: StreamMember | None, now: float
     ) -> tuple[float, float]:
-        """When head and feet are next due; ``inf`` for an absent axis."""
+        """When head and feet are next due; ``inf`` for an absent axis.
+
+        Times are write completions: the app waits its interval after work.
+        Each axis also waits one interval after the other's last write, even
+        once that axis has left, so no refresh follows another too closely.
+        """
         last_head, last_feet = self._stream_last
         head_due = feet_due = math.inf
         if head_m is not None:
@@ -757,8 +762,7 @@ class SvaneController(BedController):
                 head_due = now
             else:
                 head_due = last_head + (2 if feet_m is not None else 1) * STREAM_TICK_S
-                if feet_m is not None and last_feet is not None:
-                    # Within a pass, head follows feet by one interval too.
+                if last_feet is not None:
                     head_due = max(head_due, last_feet + STREAM_TICK_S)
         if feet_m is not None:
             if feet_m not in self._stream_written or last_feet is None:
@@ -767,7 +771,7 @@ class SvaneController(BedController):
                 feet_due = seen + STREAM_TICK_S
             else:
                 feet_due = last_feet + 2 * STREAM_TICK_S
-            if head_m is not None and last_head is not None:
+            if last_head is not None:
                 feet_due = max(feet_due, last_head + STREAM_TICK_S)
         return head_due, feet_due
 
@@ -784,7 +788,8 @@ class SvaneController(BedController):
             if fresh or last is None or now >= last + STREAM_TICK_S - _STREAM_SLACK_S:
                 await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
                 self._stream_written.update(members)
-                self._stream_last = (now, now)
+                done = loop.time()
+                self._stream_last = (done, done)
             last = self._stream_last[0]
             assert last is not None
             self._stream_next_at = last + STREAM_TICK_S
@@ -793,16 +798,15 @@ class SvaneController(BedController):
         if head_m is not None and now >= head_due - _STREAM_SLACK_S:
             await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
             self._stream_written.add(head_m)
-            self._stream_last = (now, self._stream_last[1])
+            self._stream_last = (loop.time(), self._stream_last[1])
         _, feet_due = self._stream_due(head_m, feet_m, loop.time())
         if feet_m is not None and loop.time() >= feet_due - _STREAM_SLACK_S:
-            now = loop.time()
             if self.profile == "jmc":
                 await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(None, feet))
             else:
                 await self._start_role(FEET, UP if feet else DOWN, SvaneCommands.MOTOR_MOVE)
             self._stream_written.add(feet_m)
-            self._stream_last = (self._stream_last[0], now)
+            self._stream_last = (self._stream_last[0], loop.time())
         self._stream_next_at = min(self._stream_due(head_m, feet_m, loop.time()))
 
     async def end_stream_member(
@@ -814,9 +818,9 @@ class SvaneController(BedController):
             if remaining:
                 mask = SvaneCommands.motion(*self._stream_axes(remaining))
                 await self._start_role(OLD, OLD_CHAR, mask)
-                now = asyncio.get_running_loop().time()
+                done = asyncio.get_running_loop().time()
                 self._stream_written.update(remaining)
-                self._stream_last = (now, now)
+                self._stream_last = (done, done)
             return
         # P1 has no global STOP: release the member's own direction role.
         service = HEAD if member.motor == "back" else FEET

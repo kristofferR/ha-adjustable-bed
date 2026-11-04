@@ -196,42 +196,57 @@ async def test_head_joining_during_the_feet_wait_is_written_at_once(bed) -> None
 
 
 @profiles
-async def test_axes_keep_the_app_pass_spacing_when_one_ends(bed) -> None:
-    """Membership changes never squeeze a refresh closer than the app's 100 ms."""
+@pytest.mark.parametrize(("first", "second", "write_s"), [
+    ("legs", "back", 0.0),
+    ("back", "legs", 0.0),
+    ("back", "legs", 0.06),
+])
+async def test_axes_keep_the_app_pass_spacing(bed, first, second, write_s) -> None:
+    """No refresh starts sooner than the app's 100 ms after the previous write ends.
+
+    Joins, leaves and slow acknowledged writes must not squeeze the pass; only
+    a head press itself is written at once.
+    """
     hass, coordinator, controller = bed
     loop = asyncio.get_running_loop()
-    times: list[tuple[float, tuple[str, str, str]]] = []
-    write = controller.client.write_gatt_char.side_effect
+    writes: list[tuple[float, float, tuple[str, str, str]]] = []
 
     async def timed(role, payload, **kwargs):
-        frame = (next(s.uuid for s in controller.client.services if role in s.characteristics),
-                 role.uuid, bytes(payload).hex())
+        start = loop.time()
+        await asyncio.sleep(write_s)
+        frame = (
+            next(s.uuid for s in controller.client.services if role in s.characteristics),
+            role.uuid,
+            bytes(payload).hex(),
+        )
         if frame[2] not in ("0000", "100000000000"):
-            times.append((loop.time(), frame))
-        if write is not None:
-            await write(role, payload, **kwargs)
+            writes.append((start, loop.time(), frame))
 
-    controller.client.write_gatt_char.side_effect = timed
-    feet = asyncio.create_task(_move(hass, "legs", 900))
-    await asyncio.sleep(0.15)
-    await asyncio.wait_for(_move(hass, "back", 300), 2)
-    await asyncio.wait_for(feet, 3)
     def carries_head(frame: tuple[str, str, str]) -> bool:
         if frame[0] == OLD:
             return bool(bytes.fromhex(frame[2])[1] & 0x0F)
         return frame[0] == HEAD
 
-    # The head press itself is written at once; every later refresh is paced.
-    first_head = next(i for i, (_, frame) in enumerate(times) if carries_head(frame))
+    controller.client.write_gatt_char.side_effect = timed
+    long_move = asyncio.create_task(_move(hass, first, 1000))
+    await asyncio.sleep(0.15)
+    await asyncio.wait_for(_move(hass, second, 350), 2)
+    await asyncio.wait_for(long_move, 3)
+    # Written at once: a head press, and on P2 each changed mask (a joining axis,
+    # or the reduced mask that stops a leaving one).
+    exempt = {next(i for i, (*_, frame) in enumerate(writes) if carries_head(frame))}
+    if controller.profile == "jmc":
+        exempt |= {
+            index
+            for index in range(1, len(writes))
+            if writes[index][2] != writes[index - 1][2]
+        }
     gaps = [
-        (b - a, i + 1)
-        for i, ((a, _), (b, _)) in enumerate(zip(times, times[1:], strict=False))
-        if i + 1 != first_head
+        later[0] - earlier[1]
+        for index, (earlier, later) in enumerate(zip(writes, writes[1:], strict=False))
+        if index + 1 not in exempt
     ]
-    assert gaps and min(gap for gap, _ in gaps) >= 0.09
-    feet_times = [t for t, frame in times if frame in (P1_FEET, (OLD, OLD_CHAR, "101000000000"))]
-    # Feet alone refreshes every 200 ms, after the head has gone too.
-    assert feet_times[-1] - feet_times[-2] >= 0.19
+    assert gaps and min(gaps) >= 0.09
 
 
 @profiles
