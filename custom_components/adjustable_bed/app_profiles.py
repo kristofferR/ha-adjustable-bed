@@ -204,6 +204,11 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SLEEPYS_ELITE_APP: _APP_DEFINED,
     # The variant selects the Svane Remote app profile or Jensen LinOn.
     BED_TYPE_SVANE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    # The app's layout or model sets the axes and its own command cadence. The
+    # Logicdata pulse count still bounds each held movement.
+    BED_TYPE_JIECANG_APP: _FIXED_LAYOUT,
+    BED_TYPE_MALOUF_APP: _FIXED_LAYOUT,
+    BED_TYPE_LOGICDATA_APP: _FIXED_LAYOUT,
 }
 _HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     # Nectar Move fixes two axes, has massage, and uses its own refresh interval.

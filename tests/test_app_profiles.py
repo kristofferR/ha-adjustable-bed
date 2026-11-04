@@ -235,7 +235,7 @@ async def test_options_show_the_app_entry_and_let_the_variant_field_decide(
 
     form = await flow.async_step_settings()
     marker = next(m for m in form["data_schema"].schema if m.schema == CONF_BED_TYPE)
-    assert marker.default() == choice
+    assert form["data_schema"].schema[marker](marker.default()) == choice
     # The selector is unchanged, so the variant field decides.
     result = await flow.async_step_settings(
         {CONF_BED_TYPE: choice, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO}

@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
-    ALL_PROTOCOL_VARIANTS,
     BED_TYPE_OCTO,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
@@ -34,6 +33,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.pairing import (
     build_pair_entry_data,
     effective_child_data,
@@ -65,7 +65,10 @@ def test_woosa_is_an_explicit_solace_variant() -> None:
     variants = get_variants_for_bed_type(BED_TYPE_SOLACE)
     assert variants is not None
     assert SOLACE_VARIANT_WOOSA in variants
-    assert SOLACE_VARIANT_WOOSA in ALL_PROTOCOL_VARIANTS
+    assert any(
+        option["value"] == f"{BED_TYPE_SOLACE}:{SOLACE_VARIANT_WOOSA}"
+        for option in get_bed_type_options()
+    )
     assert is_valid_variant_for_bed_type(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA)
     assert not is_valid_variant_for_bed_type(BED_TYPE_OCTO, SOLACE_VARIANT_WOOSA)
     assert not supports_single_address_pairing(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA)
