@@ -5,7 +5,9 @@ bed type to its controller, helpers, routes, config keys and frozen APK report,
 then groups bed types by wire format **proven by encoding**. Findings feed #744
 (Jiecang pilot), #745 (remaining families), #746 (process) and #747 (docs).
 
-State described: `v5` at `bf0ccd65`, before the #744 pilot.
+State described: `v5` at `bf0ccd65`, before the #744 pilot. `ergomotion_4`
+arrived later from `main` (`bb15d70d`, #751). Its rows below were classified by
+the same predicates on its own snapshot scenarios; the counts do not include it.
 The pilot consolidates the Jiecang modules listed below into `codec/jiecang.py`
 and `profiles/jiecang.py`; this document describes the pre-pilot layout.
 
@@ -83,6 +85,7 @@ the wider command plan now reaches:
 | K1 | cluster033 apps (`ergo_slim`, `ergomotion_app`, `qplus_app`, `row_control`, `tempur_au`, `tempur_curve`, `omazz_adjusto_iii`, `serta_mp_remote`), `keeson` | `E7 80 ...` 10-byte clock sync, `E1 80 ...` 4-byte alarm dismiss, `EF 02 ...` 18-byte rename |
 | K1 | `adjustamattress`, `glideaway_motion`, `bf`, `comfort_enhancements` | `E2 80`/`E2 FE` alarm queries and clock, `E7 80` clock sync, `ED 80` 16-byte alarm commit |
 | K1 | `furnimove` | `00 B0` position request, ASCII rename |
+| K1 | `ergomotion_4` | P1 (`H`): the cluster033 `E1 80`, `E7 80` and `EF 02` frames. P2 products: `04 02` O1 frames for every key, `00 B0` queries, `07 D0` 9-byte frames (M22), `09 0A`/`0A 02` RGB frames (M19, 4194RGB) |
 | K1 | `simmons` (Okin route) | `05 02` 7-byte frames from the inclined buttons, `E1 80`/`E7 80` alarm and clock |
 | O1 | `okin_dot` | `61 66 66 69 72 6D` (ASCII name write) |
 | O1 | `sleepys_box25` | `04 E0 ...` 6-byte light and massage frames, `03 F0 ...` position targets, `00 D0` position request |
@@ -284,6 +287,7 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `ergo_slim` | `ErgoSlimController` (`ergo_slim`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
 | `ergomotion` | `KeesonController` (`keeson`, 2417) | `okin_protocol.py` | K1 Keeson E5/E6 |  | `test_keeson.py` |
 | `ergomotion_app` | `ErgomotionAppController` (`ergomotion_app`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
+| `ergomotion_4` | `Ergomotion4Controller` (`ergomotion4`, 3207) | `cluster033.py`, `cluster033_profiles.py`, `ergomotion4_profiles.py` | K1 Keeson E5/E6 (P1 products); P2 products send the O1 32-bit `04 02` frame | M10, M14, M19, M22, M30, 4194RGB, custom | `test_ergomotion4.py` |
 | `eshine` | `EshineController` (`eshine`, 714) | `eshine_protocol.py` | D distinct |  | `test_eshine.py` |
 | `fsm_relax` | `FsmRelaxController` (`fsm_relax`, 1571) | `limoss.py`, `fsm_relax_state.py` | L1 Limoss DD |  | `test_fsm_relax.py` |
 | `furnimove` | `FurniMoveController` (`furnimove`, 3028) | `furnimove_profiles.py` | K1 Keeson E5/E6 |  | `test_furnimove.py` |
@@ -413,6 +417,7 @@ No report content is copied here.
 | `doublesleep` | `device_id`, `ble_device_name`, `product_type` | com.okin.doublesleep 1.2.24 P |
 | `ergo_slim` | `product_type` | com.sfd.slim 1.3 C |
 | `ergomotion` |  | com.sfd.ergomotion 1.6.4 C |
+| `ergomotion_4` | `product_type`, `ergomotion4_product_name`, `ergomotion4_model_keys`, `ergomotion4_massage_keys`, `ergomotion4_rgb` | com.sfd.hump 3.7 C |
 | `ergomotion_app` | `product_type` | com.sfd.ergomotion 1.6.4 C |
 | `eshine` |  | com.richmat.eshinesleep 1.0.1 C |
 | `fsm_relax` | `fsm_relax_memory_names`, `product_type` | com.limoss.fsmrelax 1.9 C |

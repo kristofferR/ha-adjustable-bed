@@ -1164,6 +1164,8 @@ def default_scenario(bed_type: str) -> Scenario:
         data[const.CONF_PRODUCT_TYPE] = "bed"
     if bed_type == const.BED_TYPE_TIMOTION_AHF:
         replies = {"*": TIMOTION_STATUS}
+    if bed_type == "ergomotion_4":
+        data[const.CONF_PRODUCT_TYPE] = "H"  # the app's default P1 product
     if bed_type == const.BED_TYPE_SLEEP_NUMBER:
         # The Auth characteristic holds the 16-byte session UUID.
         replies = {f"read:{const.SLEEP_NUMBER_AUTH_CHAR_UUID}": "00112233445566778899aabbccddeeff"}
@@ -1309,7 +1311,42 @@ def route_scenarios() -> list[Scenario]:
                 },
             )
         )
+    # Ergomotion 4.0: the product selects P1 or P2 frames, setup and light gates.
+    if "ergomotion_4" in const.SUPPORTED_BED_TYPES:
+        for product, extra, replies in ERGOMOTION_4_ROUTES:
+            scenarios.append(
+                Scenario(
+                    id=f"ergomotion_4:{product}",
+                    bed_type="ergomotion_4",
+                    entry_data={const.CONF_PRODUCT_TYPE: product, **extra},
+                    replies=replies,
+                    layout_id="ergomotion_4",
+                )
+            )
     return scenarios
+
+
+# A 19-byte status that reports the light on with colour 10 20 30, so the RGB
+# products' light-gated controls run.
+ERGOMOTION_4_LIGHT_ON = "f0" + "00" * 11 + "01" + "00" * 2 + "102030" + "00"
+ERGOMOTION_4_ROUTES: tuple[tuple[str, dict[str, Any], dict[str, str]], ...] = (
+    ("M10", {}, {}),  # plain P2
+    ("M14", {"ble_device_name": "KSBT03CP123"}, {}),  # meditation, name-gated
+    ("M19", {}, {"0000ffe4-0000-1000-8000-00805f9b34fb": ERGOMOTION_4_LIGHT_ON}),
+    ("M22", {}, {}),  # 07 D0 frames
+    ("M30", {}, {}),  # P1 zero at setup, P2 keys
+    ("4194RGB", {}, {"0000ffe4-0000-1000-8000-00805f9b34fb": ERGOMOTION_4_LIGHT_ON}),
+    (
+        "custom",
+        {
+            "ergomotion4_product_name": "Custom",
+            "ergomotion4_model_keys": ["o1", "o2", "o3", "o4"],
+            "ergomotion4_massage_keys": ["m1", "m2", "m5", "m6"],
+            "has_light": True,
+        },
+        {},
+    ),
+)
 
 
 # Controllers that pick their write mode (or their write characteristic) from the

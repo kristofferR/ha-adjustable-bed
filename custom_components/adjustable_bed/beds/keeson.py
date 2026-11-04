@@ -469,13 +469,21 @@ class KeesonController(BedController):
         return "unknown"
 
     def _build_command(self, command_value: int) -> bytes:
-        """Encode one key word in the profile's carrier."""
+        """Encode one key word in the profile's carrier, or a Left/Right side frame."""
+        side = self.command_side
+        if side == "left" or side == "right":
+            return profiles.encode(self.profile, command_value, side=side)
         if self.profile.carrier == "json":
             return profiles.encode(self.profile, command_value, self._json_device_identifier())
         return profiles.encode(self.profile, command_value)
 
     def _step_frame(self, step: int | bytes) -> bytes:
         return step if isinstance(step, bytes) else self._build_command(step)
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        """Only profiles with an artifact-backed Left/Right selector."""
+        return self.profile.single_side
 
     async def write_command(
         self,

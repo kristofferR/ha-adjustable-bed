@@ -701,7 +701,17 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "ergomotion4_model_keys": "Other product: ordered model keys",
+          "ergomotion4_massage_keys": "Other product: massage keys",
+          "ergomotion4_rgb": "Other product: RGB lighting",
+          "ergomotion4_product_name": "Other product: exact app product name",
+          "has_light": "Other product: lighting"
+        },
+        "data_description": {
+          "ergomotion4_model_keys": "For Other catalog product only. Enter the model keys in their catalog order, for example o1, o2, o3.",
+          "ergomotion4_massage_keys": "For Other catalog product only. Use the feature keys belonging to that exact product.",
+          "ergomotion4_product_name": "Keep the exact app name. Names containing 4194 select the inverted RGB format."
         }
       },
       "sleepys_elite_app": {
@@ -941,7 +951,11 @@
           "sleepys_elite_selector": "Sleepy's Elite control box selector",
           "kaidi_sofa_acu_no": "Advertised actuator descriptor",
           "kaidi_room_id": "Room ID",
-          "gmmotor_side": "GM Control app bed side"
+          "gmmotor_side": "GM Control app bed side",
+          "ergomotion4_model_keys": "Other product: ordered model keys",
+          "ergomotion4_massage_keys": "Other product: massage keys",
+          "ergomotion4_rgb": "Other product: RGB lighting",
+          "ergomotion4_product_name": "Other product: exact app product name"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -5120,6 +5134,9 @@
       },
       "adjustamattress_busy": {
         "name": "Control box busy"
+      },
+      "ergomotion4_light": {
+        "name": "Reported light state"
       }
     },
     "number": {
