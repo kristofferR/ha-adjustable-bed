@@ -28,7 +28,7 @@ How it works, and where it stops:
 - Controllers are driven directly, not through the coordinator, so cover-level
   hold loops are not exercised. A command that repeats until STOP is stopped after
   ``HOLD_CAP_S`` of virtual time.
-- ``asyncio.sleep``, ``wait_for``, ``timeout`` and the loop clock run on the fake
+- ``asyncio.sleep``, ``wait_for``, ``timeout``, ``timeout_at`` and the loop clock run on the fake
   clock; wall-clock time is frozen, so clock-sync frames are repeatable.
 - The post-connect hooks (``async_discover_capabilities``, ``start_notify``) run
   first and their writes are recorded as the ``connect`` entry.
@@ -545,6 +545,7 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
     real_get_running_loop = asyncio.get_running_loop
     real_wait_for = REAL_WAIT_FOR
     real_timeout = asyncio.timeout
+    real_timeout_at = asyncio.timeout_at
 
     async def settle(quiet: int, stop: Callable[[], bool] = lambda: False) -> None:
         """Yield until ``quiet`` consecutive yields saw no new activity, or ``stop()``."""
@@ -577,10 +578,10 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         return result
 
     class FakeTimeout:
-        """``asyncio.timeout`` that fires at its virtual deadline once it is the earliest."""
+        """``asyncio.timeout_at`` that fires once its virtual deadline is the earliest."""
 
-        def __init__(self, delay: float | None) -> None:
-            self._delay = delay
+        def __init__(self, when: float | None) -> None:
+            self._when = when
             self._task: asyncio.Task[Any] | None = None
             self._guard: asyncio.Task[None] | None = None
             self._expired = False
@@ -603,9 +604,9 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
             self._task.cancel()
 
         async def __aenter__(self) -> FakeTimeout:
-            if self._delay is not None:
+            if self._when is not None:
                 self._task = asyncio.current_task()
-                self._guard = asyncio.ensure_future(self._expire(clock.now + self._delay))
+                self._guard = asyncio.ensure_future(self._expire(self._when))
             return self
 
         async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> bool | None:
@@ -615,6 +616,9 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
                 self._task.uncancel()  # type: ignore[union-attr]
                 raise TimeoutError from exc
             return None
+
+    def fake_timeout(delay: float | None) -> FakeTimeout:
+        return FakeTimeout(None if delay is None else clock.now + delay)
 
     async def fake_wait_for(awaitable: Any, timeout: float | None) -> Any:
         # The wait ends at its virtual deadline once no earlier sleeper is pending, and
@@ -653,7 +657,8 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
     loop.set_task_factory(counting_factory)
     asyncio.sleep = fake_sleep  # type: ignore[assignment]
     asyncio.wait_for = fake_wait_for  # type: ignore[assignment]
-    asyncio.timeout = FakeTimeout  # type: ignore[assignment]
+    asyncio.timeout = fake_timeout  # type: ignore[assignment]
+    asyncio.timeout_at = FakeTimeout  # type: ignore[assignment]
     asyncio.get_running_loop = lambda: _LoopProxy(real_get_running_loop(), clock)  # type: ignore[assignment]
     try:
         yield
@@ -662,6 +667,7 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         asyncio.sleep = real_sleep  # type: ignore[assignment]
         asyncio.wait_for = real_wait_for  # type: ignore[assignment]
         asyncio.timeout = real_timeout  # type: ignore[assignment]
+        asyncio.timeout_at = real_timeout_at  # type: ignore[assignment]
         asyncio.get_running_loop = real_get_running_loop  # type: ignore[assignment]
 
 

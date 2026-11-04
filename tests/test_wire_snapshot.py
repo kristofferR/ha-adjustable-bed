@@ -59,6 +59,7 @@ async def test_virtual_clock_orders_sleeps_and_timeouts() -> None:
     tool = _load_tool()
     clock = tool.FakeClock()
     woke: list[str] = []
+    real_timeout_at = asyncio.timeout_at
 
     async def sleeper(name: str, delay: float) -> None:
         await asyncio.sleep(delay)
@@ -81,6 +82,11 @@ async def test_virtual_clock_orders_sleeps_and_timeouts() -> None:
         assert await asyncio.wait_for(busy_then_return(), 1) == "done"
         async with asyncio.timeout(1):
             assert await busy_then_return() == "done"
+        async with asyncio.timeout_at(asyncio.get_running_loop().time() + 1) as budget:
+            assert await busy_then_return() == "done"
+        assert not budget.expired()
+        async with asyncio.timeout_at(None):
+            await asyncio.sleep(0.1)
 
         # A pending background sleep does not delay a timeout past its own deadline.
         background = asyncio.ensure_future(asyncio.sleep(5))
@@ -92,4 +98,11 @@ async def test_virtual_clock_orders_sleeps_and_timeouts() -> None:
             async with asyncio.timeout(1):
                 await asyncio.sleep(10)
         assert clock.now == start + 2
+        with pytest.raises(TimeoutError):
+            async with asyncio.timeout_at(asyncio.get_running_loop().time() + 1) as budget:
+                await asyncio.sleep(10)
+        assert budget.expired()
+        assert clock.now == start + 3
         background.cancel()
+
+    assert asyncio.timeout_at is real_timeout_at
