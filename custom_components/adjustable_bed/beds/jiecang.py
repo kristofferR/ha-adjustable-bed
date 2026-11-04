@@ -79,6 +79,13 @@ class JiecangProfileController(BedController):
         if not self._write_uuid:
             self._select_transport()
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
+        self._record_command_trace(
+            self._write_uuid,
+            command,
+            response=self._write_with_response,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+        )
         loop = asyncio.get_running_loop()
         started = loop.time()
         for index in range(repeat_count):
