@@ -71,6 +71,7 @@ FIXTURE = REPO_ROOT / "tests" / "fixtures" / "paired_topology_traces.json"
 RECORD = os.environ.get("PAIRED_TOPOLOGY_TRACE_RECORD") == "1"
 
 CONNECT_S = 0.25
+DISCONNECT_S = 0.05
 SCENARIO_BUDGET_S = 30.0
 ADDRESSES = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
 SINGLE_ADDRESS = "AA:BB:CC:DD:EE:03"
@@ -130,6 +131,7 @@ class TraceClient:
 
     async def disconnect(self) -> bool:
         self._trace.add(self._who, "link_down")
+        await asyncio.sleep(DISCONNECT_S)
         self.is_connected = False
         return True
 
@@ -515,6 +517,19 @@ async def scenario_right_drops_then_both(run: Run) -> None:
     run.command("after", SIDE_BOTH, legs_up, resource="motor:legs")
 
 
+async def scenario_queued_across_fallback(run: Run) -> None:
+    right = run.pair.child_for_side(SIDE_RIGHT)
+    assert right is not None
+    run.start("drop", right.async_disconnect())
+    await run.settle()
+    run.command("both", SIDE_BOTH, back_up, resource="motor:back")
+    # The failed reconnect and its STOP cleanup end 0.55 s in. Automatic
+    # fallback then holds the lanes while it releases the live link, so this
+    # command, queued in concurrent mode, is admitted in sequential mode.
+    await run.at(0.57)
+    run.command("queued", SIDE_BOTH, legs_up, resource="motor:legs")
+
+
 async def scenario_seek_both(run: Run) -> None:
     run.start(
         "seek",
@@ -564,6 +579,11 @@ SCENARIOS = (
     Scenario(
         "slot_exhausted_at_command",
         scenario_right_drops_then_both,
+        failing=frozenset({"slot-later:right", "slot-later:link"}),
+    ),
+    Scenario(
+        "slot_exhausted_with_queued_command",
+        scenario_queued_across_fallback,
         failing=frozenset({"slot-later:right", "slot-later:link"}),
     ),
 )
