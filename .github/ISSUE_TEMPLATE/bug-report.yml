@@ -33,6 +33,27 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: release
+    attributes:
+      label: Release
+      description: Which release line are you running?
+      options:
+        - Stable release (4.x)
+        - v5 beta
+        - Development build (main or a branch)
+    validations:
+      required: true
+
+  - type: input
+    id: v5_beta_number
+    attributes:
+      label: v5 Beta Number
+      description: "Only for the v5 beta: which beta you run."
+      placeholder: "e.g., b1 for v5.0.0b1"
+    validations:
+      required: false
+
   - type: input
     id: integration_version
     attributes:
