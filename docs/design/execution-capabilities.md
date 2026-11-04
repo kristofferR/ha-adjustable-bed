@@ -30,7 +30,8 @@ speed 0 supported, 76 unsupported, 35 blocked.
 
 - **#516 candidates:** the Prodigy CE and U Series profiles of `leggett_okin`
   and `leggett_platt`, `customatic_clarity`, `customatic_jeromes`, `customatic_remedy`, and `svane`
-  (Svane Remote route).
+  (both Svane Remote routes: P1 and the `JMC`-named P2 route, which this
+  matrix once listed with the Jensen app).
 - **#483:** almost every accepted app streams a held key at a fixed cadence until
   release. The capability is real and broad. The open questions are the
   surface and the dead-man bound, not the evidence.
@@ -150,8 +151,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release |
 | `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP |
 | **Distinct protocols** | | | | | |
-| `svane` (Svane Remote) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP |
-| `jensen`, `svane` (`svane_remote_jmc`) | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control |
+| `svane` (Svane Remote: `auto` P1 and `svane_remote_jmc` P2) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP. The app selects P2 when the device name contains `JMC` |
+| `jensen` | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control |
 | `svane` (`jensen_linon`) | S stream | U | U | jensen, jensen-disp | 800 ms refresh; STOP to head then foot; combined motion alternates as one control |
 | `linak` (all routes) | S stream | U | U | linak-iot, linak-lp, linak-mem, linak-guide | two-section moves are fixed opcodes; one bed-wide release; speed is reported, not commanded |
 | `octo` (standard) | S stream | U | U | octo | 100 ms delayed global STOP |
