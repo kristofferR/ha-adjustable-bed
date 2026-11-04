@@ -6321,9 +6321,22 @@ class AdjustableBedCoordinator:
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
+            context = current_command_context()
+            # A lease running out is a hold's normal end (#483). Only
+            # controllers whose loop leaves on the event may hold, so let the
+            # operation finish its release schedule instead of cutting it short.
+            lease_ended = (
+                cancel_wait_task in done
+                and context is not None
+                and context.cancel_event is cancel_event
+                and context.cancel_reason is CommandOutcome.EXPIRED
+            )
             for task in pending:
-                task.cancel()
+                if not (lease_ended and task is operation_task):
+                    task.cancel()
             for task in pending:
+                if task is operation_task and lease_ended:
+                    continue
                 try:
                     await task
                 except asyncio.CancelledError:
@@ -6332,7 +6345,7 @@ class AdjustableBedCoordinator:
 
             if cancel_wait_task in done:
                 _LOGGER.debug("Controller %s cancelled during execution", operation_name)
-                if not operation_task.done():
+                if not operation_task.done() and not lease_ended:
                     operation_task.cancel()
                 try:
                     await operation_task

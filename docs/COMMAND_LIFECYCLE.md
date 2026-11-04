@@ -94,7 +94,12 @@ keeps finite pulses. The device scheduler owns the lease:
   ends it, so the starting call is dropped.
 - At the deadline the scheduler sets the hold's own cancel event, the same
   signal a STOP or a replacement uses. The controller leaves its write loop and
-  runs its existing release cleanup with a fresh event.
+  runs its existing release cleanup with a fresh event. Unlike STOP, expiry is
+  the hold's normal end, so the coordinator does not cancel the operation task:
+  delayed release frames still go out.
+- While leased, a declaring controller refreshes its app's own held frame at the
+  app's own interval (`BedController.leased_hold_refreshes`), not at the entry's
+  motor pulse settings.
 - STOP, replacement, a dropped link, disconnect and unload end the generation.
   An ended, older or superseded generation is refused, including a renewal that
   arrives while cleanup is still running. Leases live only in memory and are

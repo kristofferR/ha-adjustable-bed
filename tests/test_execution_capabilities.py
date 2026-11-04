@@ -45,6 +45,13 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
+    "JiecangProfile:dreamask": {"hold": ("dreamask",)},
+    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
+    "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    "LogicdataProfile:phone": {"hold": ("ld-phone",)},
+    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
+    "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
     # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
     "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
@@ -78,6 +85,12 @@ _CUSTOMATIC = (
     "OkinNFrameProfile:remedy",
 )
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
+    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
+    "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
+    "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
+    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
+    "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
