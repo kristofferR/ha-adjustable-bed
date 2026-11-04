@@ -747,3 +747,32 @@ async def test_a_write_failing_after_a_stop_preemption_reports_the_failure() -> 
         await asyncio.wait_for(back, 1)
     scheduler.finish_stop(epoch)
     assert reported == [None]
+
+
+async def test_stop_during_another_members_cleanup_stops_the_survivors_clock() -> None:
+    scheduler = DeviceCommandScheduler("stop-during-cleanup")
+    driver = FakeDriver()
+    reported: dict[str, float | None] = {}
+    cleaning = asyncio.Event()
+    original_end = driver.end_stream_member
+
+    async def slow_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        if item.motor == "back":
+            cleaning.set()
+            await asyncio.sleep(0.15)  # a slow member cleanup
+        await original_end(item, remaining)
+
+    driver.end_stream_member = slow_end  # type: ignore[method-assign]
+    short = member("back", seconds=0.02)
+    survivor = member("legs")
+    for item in (short, survivor):
+        item.on_wire = lambda: None
+        item.on_left = lambda value, motor=item.motor: reported.__setitem__(motor, value)
+    back = join(scheduler, driver, short)
+    legs = join(scheduler, driver, survivor)
+    await asyncio.wait_for(cleaning.wait(), 1)
+    epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
+    await asyncio.wait_for(asyncio.gather(back, legs), 1)
+    scheduler.finish_stop(epoch)
+    # Stopped as the STOP arrived (~20 ms in), not after back's cleanup.
+    assert reported["legs"] is not None and reported["legs"] < 0.08

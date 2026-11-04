@@ -297,10 +297,24 @@ class _MergedStream:
             # waiting for the link) ends its members as cancelled.
             self.abandon(context.cancel_reason or CommandOutcome.STOPPED)
 
+    def _stamp_live(self) -> None:
+        """Stop the travel clock of every live member (idempotent)."""
+        stopped_at = asyncio.get_running_loop().time()
+        for member in self.members.values():
+            if member.left_at is None:
+                member.left_at = stopped_at
+
+    async def _clock_on_stop(self, cancel_event: asyncio.Event) -> None:
+        # STOP or replacement stops every member's travel at once, whatever
+        # the streamer is awaiting: a write unwinding or a member's cleanup.
+        await cancel_event.wait()
+        self._stamp_live()
+
     async def _stream(self, context: CommandContext, driver: StreamDriver) -> None:
         loop = asyncio.get_running_loop()
         next_tick = loop.time()
         failure: BaseException | None = None
+        clock = asyncio.ensure_future(self._clock_on_stop(context.cancel_event))
         try:
             while True:
                 # Cleanup awaits the wire, so recheck deadlines until none is
@@ -350,6 +364,9 @@ class _MergedStream:
             failure = err
             raise
         finally:
+            if context.cancel_event.is_set():
+                self._stamp_live()  # the watcher may not have run yet
+            clock.cancel()
             # STOP, replacement, shutdown or a failure: every member ends here,
             # each with its own cleanup, then the profile release. New members
             # start a fresh stream behind this one.
@@ -410,16 +427,9 @@ class _MergedStream:
             stopping = True  # STOP preempted the streamer task itself
             raise
         finally:
-
-            def stamp_stopped() -> None:
-                # Every live member stops at the STOP; the write's unwinding is
-                # not travel. Members that keep moving after another member
-                # left are never stamped here.
-                stopped_at = loop.time()
-                for member in self.members.values():
-                    if member.left_at is None:
-                        member.left_at = stopped_at
-
+            # The STOP watcher in _stream also stamps; stamping here as well
+            # covers a streamer cancelled without its cancel event.
+            stamp_stopped = self._stamp_live
             if not tick.done():
                 if stopping or context.cancel_event.is_set():
                     stamp_stopped()
