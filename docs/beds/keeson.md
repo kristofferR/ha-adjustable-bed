@@ -152,13 +152,19 @@ are generated from the profile data.
 | SIMMONS (OKIN names) | bed type `simmons`, `okin` names | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
 | AdjustaMattress P1 | bed type `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
 | AdjustaMattress P2 | bed type `adjustamattress`, model P2 | K1 `E5`, big-endian | app controller | app controller | app controller |
+| SBI | bed type `sbi` | K1 `E5`, little-endian | app controller | app controller | app controller |
+| Rondure | bed type `rondure` | K1 `E5`, little-endian | app controller | app controller | app controller |
+| Cool Base | bed type `coolbase` | K1 `E5`, little-endian | app controller | app controller | app controller |
+| BF | bed type `bf` | K1 `E5`, big-endian | app controller | app controller | app controller |
+| Cherish | bed type `cherish` | K1 `E5`, big-endian | app controller | app controller | app controller |
+| Comfort Enhancements | bed type `comfort_enhancements` | K1 `E5`, big-endian | app controller | app controller | app controller |
 
 ### Hold and release timing
 
 A hold writes its frame the given number of times while the stored cadence is the
 Keeson default; a customized cadence wins. Release waits count from the previous
-write. An explicit stop sends the release without its waits. The [E6 controller
-profiles](#e6-controller-profiles) keep their timing in their controllers.
+write. An explicit stop sends the release without its waits. The [controller
+profiles](#controller-profiles) keep their timing in their controllers.
 
 | Profile | Hold | Three motors | Release after a hold | Explicit stop | Released after one-shots | Wait before one-shots |
 |---|---|---|---|---|---|---|
@@ -195,10 +201,11 @@ profiles](#e6-controller-profiles) keep their timing in their controllers.
 ### Presets and memory
 
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
-AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, Glideaway Motion, Heal
-Every Night, INNOVA, Malouf legacy OKIN, MaxCoil Una, OKIN-Seating, Scott Living,
-SIMMONS (OKIN names), Simon Li, Sleepy's BOX15 keep their key tables with their
-app controllers; see their sections.
+AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
+Cool Base, Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, Malouf
+legacy OKIN, MaxCoil Una, OKIN-Seating, Rondure, SBI, Scott Living, SIMMONS (OKIN
+names), Simon Li, Sleepy's BOX15 keep their key tables with their app controllers;
+see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -294,9 +301,9 @@ family's codec exists.
 
 | Frame | Layout | Head up | Profiles |
 |---|---|---|---|
-| K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA |
+| K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
-| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2 |
+| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
@@ -1826,14 +1833,14 @@ Bed type `tempur_au`. Memory Level 1-3 on B2 are opaque keys.
 | Music | `music` | `0x10000` | `E5 FE 16 00 00 01 00 05` | `single` | E1 |
 <!-- /generated -->
 
-### E6 controller profiles
+### Controller profiles
 
 These bed types keep their own key tables, sessions and timing in their
-controllers; their profile holds only the frame. Each frame is built by the
-codec. Glideaway Motion and Scott Living are documented here; the other routes
+controllers; their profile holds only the frame, which the codec builds. Most are
+documented below; Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress and SIMMONS
 share a guide with frames of other families and keep it.
 
-<!-- generated:keeson-e6 -->
+<!-- generated:keeson-controllers -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
 | Profile | Bed type | Frame | Head up (`0x1`) | Zero word | Guide |
@@ -1845,6 +1852,12 @@ share a guide with frames of other families and keep it.
 | SIMMONS (OKIN names) | `simmons`, `okin` names | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [SIMMONS](simmons.md) |
 | AdjustaMattress P1 | `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [AdjustaMattress](adjustamattress.md) |
 | AdjustaMattress P2 | `adjustamattress`, model P2 | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [AdjustaMattress](adjustamattress.md) |
+| SBI | `sbi` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | [SBI / Q-Plus](#sbi--q-plus-costco) |
+| Rondure | `rondure` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | [Rondure](#rondure) |
+| Cool Base | `coolbase` | K1 `E5`, little-endian | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | [Cool Base](#cool-base) |
+| BF | `bf` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [BF and Cherish](#bf-and-cherish) |
+| Cherish | `cherish` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [BF and Cherish](#bf-and-cherish) |
+| Comfort Enhancements | `comfort_enhancements` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [Comfort Enhancements](#comfort-enhancements) |
 <!-- /generated -->
 
 ### Glideaway Motion
@@ -2051,6 +2064,1002 @@ this codec and keep the rest of their guides:
 - [SIMMONS](simmons.md) (`simmons`): names starting `okin` use E6 frames, the
   `E7 80 01` clock and the `E1 80 03 9B` alarm query; the bed type stays with the
   Okin N-frame family, whose `05 02` frames its other names use.
+
+### FurniMove
+
+FurniMove builds its gateway
+(`E5 FE 16`), plain (`04 02`) and dot (`05 02`) frames through this codec too and
+keeps its [own guide](furnimove.md), because its handset catalog is its profile.
+
+### SBI / Q-Plus (Costco)
+
+**Status:** ❓ Needs testing
+
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
+#### Known Models
+
+- Q-Plus adjustable bed bases (sold through Costco)
+- SBI (South Bay International) branded beds
+
+#### Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | Q-Plus | `com.sbi.costco` |
+
+#### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (4 motors: head, foot, tilt, lumbar) |
+| Position Feedback | ✅ (head 0–60°, foot 0–32° via pulse lookup) |
+| Memory Presets | ✅ (2 slots) |
+| Factory Presets | ✅ (Flat, Zero-G, TV) |
+| Massage | ✅ (3 modes, head/foot/lumbar zones) |
+| Light Control | ✅ (toggle) |
+| Dual Bed Control | ✅ (A/B/Both modes for split-king) |
+
+#### Protocol Details
+
+**Service UUID:** Uses discovery (typically FFE5)
+**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb`
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+**Alternate (Nordic UART):** `6e400001-b5a3-f393-e0a9-e50e24dcca9e`
+**Format:** 8 or 9-byte packets with inverted sum checksum
+
+#### Detection
+
+No auto-detection - must be manually selected during setup.
+
+Note: SBI shares service UUIDs with Keeson and other beds. Without a unique identifier, it cannot be automatically distinguished.
+
+#### Protocol Variants
+
+SBI supports split-king (dual bed) configurations with three modes:
+
+| Variant | Format | Header | Side Byte | Description |
+|---------|--------|--------|-----------|-------------|
+| Both | 8 bytes | 0xE5 | N/A | Controls both sides simultaneously |
+| Side A | 9 bytes | 0xE6 | 0x01 | Controls left/A side only |
+| Side B | 9 bytes | 0xE6 | 0x02 | Controls right/B side only |
+
+#### Packet Format
+
+##### 8-byte format (Both mode)
+
+```text
+[0xE5, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, checksum]
+```
+
+##### 9-byte format (A/B mode)
+
+```text
+[0xE6, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, side, checksum]
+```
+
+Where:
+- Bytes 0-2 = Header
+- Bytes 3-6 = Command bytes (32-bit little-endian value)
+- Byte 7 (9-byte only) = Side selector (1=A, 2=B)
+- Last byte = Checksum: `(~sum(bytes 0 to n-1)) & 0xFF`
+
+#### Commands
+
+##### Motor Control (cmd0 byte)
+
+| Action | Value | Notes |
+|--------|-------|-------|
+| Head Up | 0x01 | Hold to move |
+| Head Down | 0x02 | Hold to move |
+| Foot Up | 0x04 | Hold to move |
+| Foot Down | 0x08 | Hold to move |
+| Tilt Up | 0x10 | Hold to move |
+| Tilt Down | 0x20 | Hold to move |
+| Lumbar Up | 0x40 | Hold to move |
+| Lumbar Down | 0x80 | Hold to move |
+| Stop | 0x00 | All zeros |
+
+##### Preset Commands
+
+| Action | Full Value | cmd bytes |
+|--------|------------|-----------|
+| Flat | 0x08000000 | cmd3=0x08 |
+| Zero-G | 0x00001000 | cmd1=0x10 |
+| Reset | 0x08001000 | cmd1=0x10, cmd3=0x08 |
+| Memory 1 | 0x00002000 | cmd1=0x20 |
+| Memory 2 | 0x00004000 | cmd1=0x40 |
+| TV | 0x00008000 | cmd1=0x80 |
+
+##### Light Command
+
+| Action | Full Value | cmd bytes |
+|--------|------------|-----------|
+| Light Toggle | 0x00020000 | cmd2=0x02 |
+
+##### Massage Commands
+
+| Action | Full Value | cmd bytes |
+|--------|------------|-----------|
+| Massage Level | 0x00000100 | cmd1=0x01 |
+| Foot Massage | 0x00000400 | cmd1=0x04 |
+| Head Massage | 0x00000800 | cmd1=0x08 |
+| Mode 1 | 0x00100000 | cmd2=0x10 |
+| Mode 2 | 0x00200000 | cmd2=0x20 |
+| Mode 3 | 0x00080000 | cmd2=0x08 |
+| Lumbar Massage | 0x00400000 | cmd2=0x40 |
+
+#### Position Feedback
+
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+
+Notifications are 16+ byte packets. Position data is extracted from:
+- **Bytes 3-4:** Head pulse count (little-endian 16-bit)
+- **Bytes 5-6:** Foot pulse count (little-endian 16-bit)
+
+Pulse values are converted to angles via calibrated lookup tables from the APK.
+
+##### Head Angle (0-60 degrees)
+
+Pulse values map to angles using a 61-entry lookup table:
+
+```
+[0, 327, 577, 855, 1148, 1676, 2083, 2401, 2711, 3020, 3402, 3679, 4019, 4529,
+ 4864, 5262, 5633, 6024, 6453, 6826, 7239, 7611, 8015, 8423, 8862, 9240, 9632,
+ 10029, 10404, 10840, 11245, 11640, 11976, 12351, 12752, 13106, 13511, 13819,
+ 14169, 14518, 14901, 15217, 15556, 15856, 16177, 16530, 16788, 17118, 17389,
+ 17700, 18000, 18268, 18481, 18767, 19035, 19260, 19487, 19757, 19970, 20164, 20413]
+```
+
+##### Foot Angle (0-32 degrees)
+
+Pulse values map to angles using a 33-entry lookup table:
+
+```
+[0, 570, 784, 968, 1150, 1372, 1653, 1837, 2062, 2283, 2494, 2755, 3015, 3290,
+ 3578, 3819, 4039, 4261, 4544, 4895, 5170, 5461, 5723, 6020, 6334, 6631, 6922,
+ 7243, 7546, 7810, 8174, 8546, 8718]
+```
+
+##### Pulse Inversion
+
+Pulse values >= 32768 are inverted: `pulse = 65535 - pulse`
+
+#### Command Timing
+
+| Operation | Repeat Count | Delay | Notes |
+|-----------|-------------|-------|-------|
+| Motor movement | 10 | 100ms | Continuous while held |
+| Presets | 1 | - | Single command |
+| Massage toggle | 1 | - | Single command |
+| Light toggle | 1 | - | Single command |
+| Stop | 1 | - | Always sent after movement |
+
+#### Notes
+
+1. SBI beds are sold through Costco under the Q-Plus brand name.
+
+2. The app supports both BLE and Classic Bluetooth connections. This integration uses BLE only.
+
+3. Split-king beds use the A/B/Both variant modes. Configure the appropriate variant during setup.
+
+4. The position feedback feature requires enabling angle sensing in the integration options.
+
+5. The app includes additional features (weather, alarms, sleep tracking) that are not relevant to bed control.
+
+6. Multiple remote layouts are supported in the app (H, M, M2, M3, MX) with varying button counts.
+
+### Rondure
+
+**Status:** ❓ Needs testing
+
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
+#### Known Models
+
+- 1500 Tilt Base (internal name: Rondure Hump)
+
+#### Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | 1500 Tilt Base Remote | `com.sfd.rondure_hump` |
+
+#### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (4 motors: head, foot, tilt, lumbar) |
+| Split-King | ✅ (independent side control) |
+| Position Feedback | ❌ |
+| Memory Presets | ❌ |
+| Factory Presets | ✅ (Flat, Zero-G, TV/Anti-Snore) |
+| Massage | ✅ (head, foot, lumbar zones) |
+| Lights | ✅ |
+
+#### Protocol Details
+
+**Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
+**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb`
+**Read Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+**Alternative:** Nordic UART Service (6e400001-...)
+**Format:** 8-byte (both sides) or 9-byte (single side) packets with checksum
+
+#### Detection
+
+Manual bed type selection required. The service UUID `0000ffe0-...` is shared with many other bed types (Solace, Octo, etc.), so auto-detection is not possible.
+
+#### Packet Format
+
+##### Both Sides (8 bytes)
+
+```text
+[0xE5, 0xFE, 0x16, cmd[0], cmd[1], cmd[2], cmd[3], checksum]
+```
+
+##### Single Side (9 bytes)
+
+```text
+[0xE6, 0xFE, 0x16, cmd[0], cmd[1], cmd[2], cmd[3], side, checksum]
+```
+
+Where:
+- `0xE5` header = both sides, `0xE6` header = single side
+- `0xFE, 0x16` = fixed protocol bytes
+- `cmd[0-3]` = 32-bit command in little-endian order
+- `side` = `0x01` for Side A, `0x02` for Side B
+- `checksum` = bitwise NOT of sum of all preceding bytes
+
+##### Checksum Calculation
+
+```python
+checksum = (~sum(packet[:-1])) & 0xFF
+```
+
+#### Commands
+
+Commands are 32-bit values sent in little-endian byte order.
+
+##### Motor Control (Hold to move)
+
+| Action | Command | Notes |
+|--------|---------|-------|
+| Head Up | `0x00000001` | Continuous while held |
+| Head Down | `0x00000002` | Continuous while held |
+| Foot Up | `0x00000004` | Continuous while held |
+| Foot Down | `0x00000008` | Continuous while held |
+| Tilt Up | `0x00000010` | Continuous while held |
+| Tilt Down | `0x00000020` | Continuous while held |
+| Lumbar Up | `0x00000040` | Continuous while held |
+| Lumbar Down | `0x00000080` | Continuous while held |
+| Stop | `0x00000000` | Stop all motors |
+
+##### Presets (Single press)
+
+| Action | Command | Notes |
+|--------|---------|-------|
+| Flat | `0x08000000` | Go to flat position |
+| Zero-G | `0x00001000` | Zero gravity position |
+| TV/Anti-Snore | `0x00008000` | TV or anti-snore position |
+| Timer/Level | `0x00000100` | Timer toggle |
+| Read Preset | `0x00002000` | Reading position |
+| Music/Memory | `0x00004000` | Music or memory preset |
+
+##### Massage Control
+
+| Action | Command |
+|--------|---------|
+| Head Massage | `0x00000800` |
+| Foot Massage | `0x00000400` |
+| Lumbar Massage | `0x00400000` |
+| Massage Mode 1 | `0x00100000` |
+| Massage Mode 2 | `0x00200000` |
+| Massage Mode 3 | `0x00080000` |
+
+##### Light Control
+
+| Action | Command |
+|--------|---------|
+| Light Toggle | `0x00020000` |
+
+#### Configuration
+
+##### Side Selection (Split-King)
+
+For split-king beds, configure the protocol variant:
+
+| Variant | Value | Description |
+|---------|-------|-------------|
+| Both | `both` | Control both sides (default) |
+| Side A | `side_a` | Control left side only |
+| Side B | `side_b` | Control right side only |
+
+#### Command Timing
+
+| Operation | Repeat Count | Delay | Notes |
+|-----------|-------------|-------|-------|
+| Motor movement | 25 | 50ms | Continuous while held |
+| Presets | 1 | - | Single command |
+| Massage toggle | 1 | - | Single command |
+| Light toggle | 1 | - | Single command |
+| Stop | 1 | - | Always sent after movement |
+
+#### Notes
+
+1. The app supports both BLE and Classic Bluetooth. This implementation uses BLE only.
+
+2. For Classic Bluetooth, the protocol uses big-endian command encoding instead of little-endian.
+
+3. Timer status can be read from notifications (byte values 1=10min, 2=20min, 3=30min).
+
+### Cool Base
+
+**Status:** ❓ Needs testing
+
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
+#### Known Models
+
+- Cool Base adjustable bed bases (Keeson BaseI5 with cooling fan)
+- DewertOKIN `OKIN-BLE` / `BTCB` controllers that use the same 8-byte packet
+  format without fan controls
+
+#### Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | Cool Base 1.0.0 (3) | `com.keeson.coolbase` |
+
+The Cool Base profile follows the independently accepted clean-room audit of
+this app; see the [row047 dispositions](../apk-analysis/dispositions/row047-coolbase.md).
+Hardware behavior is unverified.
+
+#### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (2 motors: head, foot) |
+| Position Feedback | ❌ |
+| Memory Presets | Cool Base: ❌ (the app's star button has no proven memory meaning; exposed as **Star button**). DewertOKIN OKIN-BLE: 2 slots |
+| Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore; Lounge only on DewertOKIN OKIN-BLE) |
+| Massage | ✅ (Head massage, Foot massage, Massage mode buttons; mode sensor) |
+| Light Control | ✅ (on/off from reported state; toggle) |
+| Fan Control | ✅ (Left fan, Right fan, Fan sync buttons; level sensors 0-3) |
+
+#### Protocol Details
+
+**Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
+**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb`
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+**Format:** 8-byte packets with XOR checksum
+
+#### Detection
+
+Cool Base bed-type detection matches device names containing `base-i5`, the
+app's own scan filter. For configured
+Cool Base entries, the DewertOKIN profile is selected when the connected BLE name
+matches `okin-ble*` / `btcb*` or the BLE manufacturer value is `DewertOKIN`.
+`OKIN-BLE` / `DewertOKIN` devices may need manual Cool Base selection only when
+they advertise overlapping OKIN UUIDs.
+
+Note: Cool Base shares the same service UUID (FFE5) as Keeson and other beds, but is distinguished by the device name pattern.
+
+#### Packet Format
+
+All commands are 8 bytes:
+
+```text
+[0xE5, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, checksum]
+```
+
+Where:
+- Bytes 0-2 = Header `[0xE5, 0xFE, 0x16]`
+- Bytes 3-6 = Command bytes (32-bit value in little-endian)
+- Byte 7 = Trailer: `(sum(bytes 0-6) ^ 0xFF) & 0xFF`. The app writes literal
+  trailers; this formula reproduces every one it ships.
+
+#### Commands
+
+##### Motor Control
+
+| Action | Value | cmd0 | Notes |
+|--------|-------|------|-------|
+| Head Up | 0x01 | 0x01 | Hold to move |
+| Head Down | 0x02 | 0x02 | Hold to move |
+| Foot Up | 0x04 | 0x04 | Hold to move |
+| Foot Down | 0x08 | 0x08 | Hold to move |
+| Status query | 0x00 | 0x00 | All zeros; see below |
+
+The app sends no distinct STOP: releasing a button ends the 100 ms refresh. The
+integration then sends the all-zero frame, which is the app's own status query.
+
+##### Factory Presets
+
+| Action | Value | cmd bytes |
+|--------|-------|-----------|
+| Flat | 0x08000000 | cmd3=0x08 |
+| Zero-G | 0x00001000 | cmd1=0x10 |
+| TV | 0x00004000 | cmd1=0x40 |
+| Anti-Snore | 0x00008000 | cmd1=0x80 |
+| Star button / Memory 1 | 0x00010000 | cmd2=0x01; Memory 1 only on DewertOKIN OKIN-BLE |
+| Memory 2 | 0x00040000 | cmd2=0x04, DewertOKIN OKIN-BLE profile only |
+
+##### Light & Massage
+
+| Action | Value | cmd bytes |
+|--------|-------|-----------|
+| Light Toggle | 0x00020000 | cmd2=0x02 |
+| Massage Head | 0x00000800 | cmd1=0x08 |
+| Massage Foot | 0x00000400 | cmd1=0x04 |
+| Massage Level | 0x04000000 | cmd3=0x04 |
+
+##### Fan Control (Unique to Cool Base)
+
+| Action | Value | cmd bytes | Notes |
+|--------|-------|-----------|-------|
+| Left Fan | 0x00400000 | cmd2=0x40 | Device-side level change |
+| Right Fan | 0x40000000 | cmd3=0x40 | Device-side level change |
+| Fan Sync | 0x00040000 | cmd2=0x04 | Fan-labelled; not bed sync |
+
+#### Notification Format
+
+Only exact 28-byte replies to the status query are used. Any value outside the
+listed range leaves that field unchanged:
+- Byte 13: `(b & 0xF0) >> 6` is the light flag (0 off, 1 on)
+- Byte 19: Massage mode (0-3)
+- Byte 20: Left fan level (0-3)
+- Byte 21: Right fan level (0-3)
+
+The status query follows every tapped control three times, 200 ms apart, and
+repeats every 3 s while connected. Polling never extends the idle disconnect.
+Reported state clears when the connection ends. With the default
+disconnect-after-command setting the light is usually unknown, so an on/off
+request first sends a status query and waits up to 1 s for the reply.
+
+The head massage, foot massage and massage mode buttons appear without the
+massage option because the app always shows them.
+
+#### Command Timing
+
+| Operation | Repeat Count | Delay | Notes |
+|-----------|-------------|-------|-------|
+| Motor movement | 10 | 100ms | Continuous while held |
+| Presets, fans, massage, light | 1 | - | Then three status queries, 200 ms apart |
+| Status query | 1 | - | Sent after movement and every 3 s while connected |
+
+#### Notes
+
+1. Cool Base is a Keeson BaseI5 variant with additional fan/wind control features for cooling.
+
+2. Fan, massage and light buttons send fixed frames. The app never computes the next level; how the device cycles levels is unverified.
+
+3. Fan levels are reported in status replies and exposed as diagnostic sensors.
+
+4. Fan sync is the app's fan-labelled button; its exact synchronization policy is unverified.
+
+5. On DewertOKIN `OKIN-BLE` / `BTCB` devices, `0x00040000` is Memory 2 instead
+   of sync fan. The integration exposes Memory 2 and suppresses fan controls for
+   that profile to avoid showing both meanings for the same packet.
+
+### BF and Cherish
+
+**Status:** ❓ Needs testing (APK-verified, hardware unverified)
+
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
+#### Known Models
+
+- Beds controlled by the BF app (`com.BF`, three motors)
+- Beds controlled by the Cherish app (`com.okin.ore.cherish`)
+
+#### Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | [BF](https://play.google.com/store/apps/details?id=com.BF) 1.2.3 (11) | `com.BF` |
+| ✅ | [Cherish](https://play.google.com/store/apps/details?id=com.okin.ore.cherish) 1.0.4 (5) | `com.okin.ore.cherish` |
+
+- Support comes from accepted APK audits of both apps, reconciled together as
+  row063/cluster-001 (see [Analysis provenance](#bf-and-cherish-analysis-provenance)).
+- The apps share framing, not their command tables or alarm format.
+
+#### Features
+
+| Feature | BF | Cherish |
+| --- | --- | --- |
+| Motors | Back, legs, independent head | Back and legs, plus combined up/down buttons |
+| Presets | Flat, Zero Gravity, Quiet Sleep (anti-snore) | Flat, Zero Gravity, Quiet Sleep (anti-snore) |
+| Memory | A/B, recall and program | A/B, recall and program |
+| Light | Omitted: both app light branches send the Zero Gravity command | Separate on/off commands, assumed state |
+| Massage | None | On/off, intensity 1–3, wave 1–3, timer 10/20/30 minutes |
+| Bed alarm | Clock query, setting, notification state | Setting, persisted command intent, no response parser |
+| Position feedback | None | None |
+
+The extra combined-motion buttons, massage numbers and alarm query are
+available as entities in Home Assistant.
+
+#### Protocol Details
+
+**Service UUID:** none required (the parent service of the FFE9/FFE4 characteristics is used)
+**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb`
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+**Format:** Fixed-length frames ending in a complement checksum
+
+##### Packet Format
+
+| Packet | Bytes |
+| --- | --- |
+| Control key | `E5 FE 16` + key (4, big-endian) + checksum |
+| Clock/alarm query (BF) | `E2 FE 16` + second, minute, hour, weekday (Sunday = 0) + checksum |
+| BF alarm setting | `EB FE 16` + clock second, minute, hour + alarm minute, hour + weekday + day mask + `00 00` + selector + checksum |
+| Cherish alarm setting | `EA FE 16` + clock second, minute, hour + alarm minute, hour + `FF FF FF` + selector + checksum |
+
+- Checksum: the complement of the sum of all preceding bytes, low byte
+  (`~sum & 0xFF`).
+- Alarm frames carry the current Home Assistant clock (second, minute, hour).
+
+##### Write Mode
+
+- Writes require the ordinary WRITE property and use GATT responses, without
+  inferring an Android numeric write type.
+- HA validates a connected writable role before submitting.
+
+##### GATT Roles
+
+- Both profiles discover the parent service of FFE9 writes and FFE4
+  notifications; they do not require the unused fixed service UUID
+  declarations.
+- Each matching FFE4 attempts notification subscription; failed subscription
+  does not block controls.
+- The last matching role is used for payload consumption.
+- There is no selected app read, authentication packet, MTU request,
+  fragmentation, capability query or firmware update route.
+
+#### Detection / Setup
+
+- Choose **BF (com.BF app, three motors)** or **Cherish
+  (com.okin.ore.cherish app)** in manual setup.
+- Select the Bluetooth address used by that app.
+- Neither app provides an advertisement signature that can safely select its
+  profile. Shared FFE9/FFE4 characteristics do not identify either product.
+- Existing beds using other profiles are unchanged.
+
+#### Commands
+
+All frames below are exact `control_frame()` output from
+[`beds/bf_cherish.py`](../../custom_components/adjustable_bed/beds/bf_cherish.py).
+
+##### Motor Control
+
+| Command | Key | Frame | Profile |
+| --- | --- | --- | --- |
+| Back up | `0x00000001` | `E5FE160000000105` | BF, Cherish |
+| Back down | `0x00000002` | `E5FE160000000204` | BF, Cherish |
+| Legs up | `0x00000004` | `E5FE160000000402` | BF, Cherish |
+| Legs down | `0x00000008` | `E5FE1600000008FE` | BF, Cherish |
+| Head up | `0x00000010` | `E5FE1600000010F6` | BF only |
+| Head down | `0x00000020` | `E5FE1600000020E6` | BF only |
+| Back and legs up | `0x00000005` | `E5FE160000000501` | Cherish only |
+| Back and legs down | `0x0000000A` | `E5FE160000000AFC` | Cherish only |
+| Movement release | `0x00000000` | `E5FE160000000006` | BF, Cherish |
+
+##### Presets
+
+| Command | BF key / frame | Cherish key / frame |
+| --- | --- | --- |
+| Zero Gravity | `0x01000001` / `E5FE160100000104` | `0x21000001` / `E5FE1621000001E4` |
+| Flat | `0x01000002` / `E5FE160100000203` | `0x21000002` / `E5FE1621000002E3` |
+| Quiet Sleep (anti-snore) | `0x01000004` / `E5FE160100000401` | `0x21000003` / `E5FE1621000003E2` |
+| Preset STOP | `0x01000000` / `E5FE160100000005` | `0x21000000` / `E5FE1621000000E5` |
+
+##### Memory
+
+| Command | BF key / frame | Cherish key / frame |
+| --- | --- | --- |
+| Recall A (memory 1) | `0x01000008` / `E5FE1601000008FD` | `0x21000004` / `E5FE1621000004E1` |
+| Recall B (memory 2) | `0x01000009` / `E5FE1601000009FC` | `0x21000006` / `E5FE1621000006DF` |
+| Program A (memory 1) | `0x20000008` / `E5FE1620000008DE` | `0x21000014` / `E5FE1621000014D1` |
+| Program B (memory 2) | `0x20000009` / `E5FE1620000009DD` | `0x21000016` / `E5FE1621000016CF` |
+
+##### Lights (Cherish)
+
+| Command | Key | Frame |
+| --- | --- | --- |
+| Light on | `0x31000001` | `E5FE1631000001D4` |
+| Light off | `0x31000000` | `E5FE1631000000D5` |
+
+BF has no light entity: both of its app light branches send the Zero Gravity
+command.
+
+##### Massage (Cherish)
+
+| Command | Key | Frame |
+| --- | --- | --- |
+| Timer 10 / 20 / 30 min | `0x10000030` / `0x10000031` / `0x10000032` | `E5FE1610000030C6` / `E5FE1610000031C5` / `E5FE1610000032C4` |
+| Wave 1 / 2 / 3 | `0x10000021` / `0x10000022` / `0x10000023` | `E5FE1610000021D5` / `E5FE1610000022D4` / `E5FE1610000023D3` |
+| Wave 0 (off) | `0x10000020` | `E5FE1610000020D6` |
+| Intensity 1 / 2 / 3 | `0x10000011` / `0x10000012` / `0x10000013` | `E5FE1610000011E5` / `E5FE1610000012E4` / `E5FE1610000013E3` |
+| Intensity 0 (off) | `0x10000010` | `E5FE1610000010E6` |
+
+##### Preset and Memory Selection State
+
+- A second press of the same preset sends that profile's preset STOP.
+- Preset and memory taps share the app's selection state.
+- Programming a memory preserves the shared count: programming as the first
+  action suppresses a subsequent tap of that same memory until another preset
+  or movement changes the selection.
+- Programming after a running preset makes the next same-memory tap send STOP.
+- This state survives reconnects but is not a hardware acknowledgement.
+
+##### Massage Sequences (Cherish)
+
+- Start: timer, wave after 100 ms, then intensity after another 200 ms.
+- Off: intensity 0, then wave 0 after 100 ms, keeping the selected levels and
+  timer.
+- At the bounds, +/- does not write.
+- Selecting a timer sends only its timer command and disables level changes
+  until massage is started again; it does not prove that the receiver stopped
+  massage.
+- There is no massage feedback.
+- HA serializes these sequences and finishes cancellation cleanup, so an
+  Android delayed callback cannot restart massage after Off.
+
+#### Alarm action
+
+```yaml
+action: adjustable_bed.bf_cherish_set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  enabled: true
+  time: "08:30:00"
+  memory: memory_1
+```
+
+- `memory` is `none`, `memory_1` (A), or `memory_2` (B), never a bed side.
+- Use `enabled: false` to disable; the previous selected schedule remains in
+  local intent.
+- Enabling always supplies a complete, valid time and explicit memory.
+- The clock comes from Home Assistant's configured local timezone.
+
+##### Alarm Frames
+
+| Field | BF (EB) | Cherish (EA) |
+| --- | --- | --- |
+| Selector: none / A / B | `255` / `248` / `249` | `255` / `4` / `6` |
+| Schedule | Sunday-zero weekday and a day mask for the next occurrence; an equal hour/minute remains today | Three FF fields unchanged |
+| Disable | EB then EA | EA twice |
+
+- These bytes do not prove any further recurrence semantics.
+- The two disable packets sample the current clock independently.
+- Disabled fields (alarm minute/hour, day mask and selector; BF's two zero
+  bytes) are sent as `FF`.
+- There is no application alarm ACK.
+
+Example frames from `alarm_frame()` with an HA clock of Tuesday 07:15:30:
+
+| Request | Frame |
+| --- | --- |
+| BF, enable 08:30, `memory_1` | `EBFE161E0F071E0802040000F8A8` |
+| BF, disable (first frame) | `EBFE161E0F07FFFF02FFFFFFFFD0` |
+| Cherish, enable 08:30, `memory_1` | `EAFE161E0F071E08FFFFFF04A6` |
+| Cherish (and BF second frame), disable | `EAFE161E0F07FFFFFFFFFFFFD3` |
+| BF clock query | `E2FE161E0F0702D3` |
+
+##### Alarm State
+
+- The **Bed alarm** sensor exposes the last command or BF report, with time,
+  memory, raw BF selector and source attributes.
+- Cherish intent persists across HA restarts; expiry clears its local enabled
+  indication. It does not restore phone alarms or infer receiver state.
+- BF's **Query bed alarm** button sends the live E2 clock query.
+- Cherish has no reachable query or alarm notification consumer, so neither is
+  synthesized for it.
+
+##### Deliberate App Differences
+
+- HA requires explicit valid alarm fields instead of reproducing the apps'
+  unset FF time fields, BF's untouched 88 selector, delayed wheel races, or
+  Cherish's A-while-B branch that displays A while sending B.
+- Selection and persisted intent use the actual memory requested by the HA
+  caller.
+- No extra bed command is invented to correct these phone defects.
+
+#### Notifications / State
+
+BF alarm report on FFE4:
+
+| Field | Value |
+| --- | --- |
+| Prefix | E2FE16 |
+| Minute / hour / selector | Unsigned offsets 3/4/9 |
+| Disabled | minute > 59 **and** hour > 24 (the app's condition, preserved exactly) |
+| Selector | `248` A, `249` B, `255` none; unknown selectors preserve the prior memory |
+
+- HA safely ignores short packets rather than reproducing the app's
+  substring/index exceptions.
+- Reports may contain invalid times; they are diagnostic values, never
+  automatically programmed.
+- Cherish registers the notification but has no consuming alarm parser.
+
+#### Command Timing
+
+- Movement refreshes use the app's 200 ms interval with a bounded HA pulse
+  count.
+- Movement release uses `E5FE160000000006`; preset STOP is profile-specific.
+- HA attempts release on cancellation and errors, and explicit STOP attempts
+  both families. It cannot guarantee delivery on a failed Bluetooth link.
+- Presets and saves are single writes, without an automatic touch-release STOP.
+
+#### Notes
+
+##### BLE Transport and Failures
+
+- Cancelled operations can perform no write; write errors propagate and do not
+  advance local preset state.
+- Transport submission, GATT completion and reported bed state are distinct.
+- HA's coordinator owns adapter/proxy selection, connection recovery, bounded
+  retry, command serialization and STOP preemption.
+- It does not recreate Android's 100-pending FIFO, 10/100 ms queue scheduling,
+  numeric errors or reflection-based cache refresh.
+- The apps themselves can reject an incoming STOP at queue capacity; that
+  defect is not copied into HA.
+- No failure, disconnect or timeout alone establishes physical stopping.
+
+##### Scope
+
+Wi-Fi provisioning, SSID/passwords, bed network administration, cloud/account
+services and unrelated phone infrastructure are outside this BLE integration.
+
+##### Hardware Status
+
+**Hardware status: UNVERIFIED.**
+
+- Real-user captures after beta/release are deferred external validation, not
+  a prerequisite for implementing the proven app behavior.
+- Physical posture, stopping distance, alarm recurrence and successful on-air
+  delivery have not been established.
+
+##### BF and Cherish analysis provenance
+
+| Package | Version | Artifact SHA-256 |
+| --- | --- | --- |
+| `com.BF` | 1.2.3 (11) | `64982c7a35fed0c902061b7b0f732b15798a38688119c1d92d343052781a83d1` |
+| `com.okin.ore.cherish` | 1.0.4 (5) | `2f32624027a0f3a950f796f87c18feda2eafad1fa253927751a02426824b8520` |
+
+The exhaustive [disposition ledger](../apk-analysis/dispositions/row063-cluster001.md)
+records the evidence and implementation treatment, including report, audit and
+reconciliation seals.
+
+### Comfort Enhancements
+
+**Status:** ❓ Needs testing (artifact-vector and HA software validation only)
+
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+
+#### Known Models
+
+| Layout | Third movement control | Memory slots | Massage and light |
+| --- | --- | --- | --- |
+| MC2: AC-1/BC3, Massage Plus / Comfort Position | Both (app union) | A, B | Yes |
+| MC3: Comfort Position | Both (app union) | A, B | No |
+| MC4: Lumbar Support / Massage Plus | Lumbar | Memory | Yes |
+| MC5: Hi Lo Lift / Massage Plus | Bed height | Memory | Yes |
+
+#### Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | [Comfort Enhancements](https://play.google.com/store/apps/details?id=com.okin.enhancements) 1.0.3 (4) | `com.okin.enhancements` |
+
+#### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Back, Legs and the layout's third control |
+| Position Feedback | ❌ (no position feedback or travel angles) |
+| Presets | ✅ Flat, Zero G, Quiet sleep on all layouts; TV on MC2/MC3 |
+| Memory Presets | ✅ A/B on MC2/MC3, single Memory on MC4/MC5; separate recall and save buttons |
+| Massage | ✅ MC2/MC4/MC5 (head, foot, wave/mode, timer; local assumed state) |
+| Lights | ✅ MC2/MC4/MC5 On/Off (assumed state) |
+| Clock Sync | ✅ (`adjustable_bed.sync_clock`) |
+| Alarm | ✅ (`adjustable_bed.comfort_enhancements_set_alarm`) |
+| One-address Left/Right | ❌ |
+
+#### Protocol Details
+
+**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb` (`FFE9`)
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb` (`FFE4`)
+**Format:** 8-byte control frames `E5 FE 16` + four big-endian action bytes +
+complemented sum
+
+- The app discovers the last writable `FFE9` characteristic and last notifiable
+  `FFE4` across all services. Parent service constants do not constrain
+  selection.
+- The profile uses those exact characteristic objects and subscribes through
+  HA's BLE stack.
+- There is no app authentication, initialization packet, ACK gate or position
+  query.
+
+##### Packet Format
+
+- Control: `E5 FE 16` + four big-endian action bytes + complemented sum.
+- Clock: `E2 FE 16 ss mm hh day checksum`, with Sunday = 0.
+- Alarm: `EB FE 16 now_ss now_mm now_hh alarm_mm alarm_hh day mask massage0
+  massage1 memory checksum`.
+- Time is binary, not BCD. The final byte makes the unsigned sum equal FF
+  modulo 256.
+
+##### Write Mode
+
+Write response mode is selected from discovered metadata: write-without-response
+when the characteristic offers it, otherwise write with response.
+
+#### Detection / Setup
+
+1. Choose **Comfort Enhancements app (choose MC2/MC3/MC4/MC5)** manually.
+2. Select the screen used in the Android app.
+
+- Shared Bluetooth names and services do not identify this app or its layout.
+  No automatic layout is available.
+- The layout controls feature availability, independently of the generic motor
+  count.
+- A two-address pair keeps each physical bed's layout; unpair before changing
+  those choices. This profile has no one-address Left/Right control.
+
+#### Commands
+
+Every control frame carries a 32-bit action word. Movement uses `00000001/02` (Back), `00000004/08` (Legs), `00000010/20` (third
+control), with release `00000000`. Presets use `01000001/02/04` (Zero G, Flat,
+Quiet sleep), `01000003` (TV or single Memory), `01000008/09` (A/B), and STOP
+`01000000`. Save uses `20000003/08/09`. Light uses `31000001/00`. Massage bases
+are `10000010` (head), `11000010` (foot), `10000020` (wave), plus level 0..3;
+timers are `10000030/31/32`.
+
+##### Motor Control
+
+| Command | Action word | Bytes (hex) |
+|---------|-------------|-------------|
+| Back Up | `00000001` | `E5 FE 16 00 00 00 01 05` |
+| Back Down | `00000002` | `E5 FE 16 00 00 00 02 04` |
+| Legs Up | `00000004` | `E5 FE 16 00 00 00 04 02` |
+| Legs Down | `00000008` | `E5 FE 16 00 00 00 08 FE` |
+| Third control Up (Both / Lumbar / Bed height) | `00000010` | `E5 FE 16 00 00 00 10 F6` |
+| Third control Down | `00000020` | `E5 FE 16 00 00 00 20 E6` |
+| Movement STOP (release) | `00000000` | `E5 FE 16 00 00 00 00 06` |
+
+##### Presets
+
+| Command | Action word | Bytes (hex) |
+|---------|-------------|-------------|
+| Zero G | `01000001` | `E5 FE 16 01 00 00 01 04` |
+| Flat | `01000002` | `E5 FE 16 01 00 00 02 03` |
+| TV (MC2/MC3) | `01000003` | `E5 FE 16 01 00 00 03 02` |
+| Quiet sleep | `01000004` | `E5 FE 16 01 00 00 04 01` |
+| Preset STOP | `01000000` | `E5 FE 16 01 00 00 00 05` |
+
+A repeated tap of the same preset sends the preset STOP, as in the app.
+
+##### Memory
+
+| Command | Action word | Bytes (hex) |
+|---------|-------------|-------------|
+| Memory A recall (MC2/MC3) | `01000008` | `E5 FE 16 01 00 00 08 FD` |
+| Memory B recall (MC2/MC3) | `01000009` | `E5 FE 16 01 00 00 09 FC` |
+| Memory recall (MC4/MC5) | `01000003` | `E5 FE 16 01 00 00 03 02` |
+| Memory A save (MC2/MC3) | `20000008` | `E5 FE 16 20 00 00 08 DE` |
+| Memory B save (MC2/MC3) | `20000009` | `E5 FE 16 20 00 00 09 DD` |
+| Memory save (MC4/MC5) | `20000003` | `E5 FE 16 20 00 00 03 E3` |
+
+##### Massage
+
+| Zone | Level 0 | Level 1 | Level 2 | Level 3 |
+|------|---------|---------|---------|---------|
+| Head (`10000010` + level) | `E5 FE 16 10 00 00 10 E6` | `E5 FE 16 10 00 00 11 E5` | `E5 FE 16 10 00 00 12 E4` | `E5 FE 16 10 00 00 13 E3` |
+| Foot (`11000010` + level) | `E5 FE 16 11 00 00 10 E5` | `E5 FE 16 11 00 00 11 E4` | `E5 FE 16 11 00 00 12 E3` | `E5 FE 16 11 00 00 13 E2` |
+| Wave (`10000020` + level) | `E5 FE 16 10 00 00 20 D6` | `E5 FE 16 10 00 00 21 D5` | `E5 FE 16 10 00 00 22 D4` | `E5 FE 16 10 00 00 23 D3` |
+
+| Timer | Action word | Bytes (hex) |
+|-------|-------------|-------------|
+| 10 minutes | `10000030` | `E5 FE 16 10 00 00 30 C6` |
+| 20 minutes | `10000031` | `E5 FE 16 10 00 00 31 C5` |
+| 30 minutes | `10000032` | `E5 FE 16 10 00 00 32 C4` |
+
+The massage controls match the app:
+
+- Head/foot toggle starts at level 3 or stops that zone. Intensity clicks cycle
+  0 → 3 → 2 → 1 → 0. Starting a zone with no local timer sends 10 minutes first,
+  then the intensity after 200 ms.
+- Wave/mode with both zones off starts head and foot at level 3, at 200 and
+  300 ms. Otherwise it cycles wave 1, 2, 3, 0. Wave 0 then stops foot and head
+  after 200 and 300 ms.
+- Timer / stop cycles 10, 20, 30 minutes when both zones are off; with a zone
+  active it stops head immediately and foot after 200 ms. The timer selector
+  also provides explicit 10/20/30 choices and Off.
+
+##### Lights
+
+| Command | Action word | Bytes (hex) |
+|---------|-------------|-------------|
+| Light On | `31000001` | `E5 FE 16 31 00 00 01 D4` |
+| Light Off | `31000000` | `E5 FE 16 31 00 00 00 D5` |
+
+#### Clock and alarm
+
+`adjustable_bed.sync_clock` sends the local HA time and the app's alarm query
+(one `E2 FE 16` clock/query frame).
+`adjustable_bed.comfort_enhancements_set_alarm` programs or disables the BLE
+alarm. It accepts the usual `device_id` and optional paired `side`, plus:
+
+| Field | Meaning |
+| --- | --- |
+| `enabled` | Required boolean |
+| `time` | Required when enabling, `HH:MM:00` with minute precision |
+| `memory` | 0 = none (default); MC2/MC3: 1 = A, 2 = B; MC4/MC5: 1 = Memory |
+| `massage` | Include the app's alarm massage fields, default false |
+
+| Alarm field | Values |
+|-------------|--------|
+| `day` | Current weekday, Sunday = 0 |
+| `mask` | Current-day bit (`1 << day`) |
+| `massage0 massage1` | Enabled `11 33`, disabled `00 00` |
+| `memory` | `F8/F9/F3/FF`: A, B, single Memory, none |
+
+- The app's alarm includes a current-day mask, even if the chosen time has
+  already passed today. HA preserves that packet behavior; it does not invent
+  weekly or next-day scheduling.
+- MC3's alarm massage checkbox is independent of its hidden massage control
+  page. Hardware interpretation is unverified.
+- Disabling needs no time and sends the complete all-FF disable template: FF at
+  the alarm time, mask, massage and memory offsets.
+- HA requires an explicit settled time when enabling. The app instead retains
+  fields from 300 ms debounced wheel callbacks and 500 ms programmatic
+  positioning, which can send stale or FF time bytes. HA never reproduces those
+  races, the misleading initial enabled flag, phone ringtone playback or Android
+  scheduling.
+- Successful writes establish no device acknowledgement of the alarm setting.
+
+#### Notifications / State
+
+- The app's live notify callback compares lowercase hex against uppercase
+  `E2FE16`, rejecting all inputs. Its unreachable parser lacks a proven reply
+  length/checksum and always marks massage enabled.
+- HA retains raw notifications for diagnostics and does not invent working
+  feedback from that dead parser. No notification-derived alarm, motor, sensor
+  or massage state is exposed.
+- Massage state is local assumed state, reset on reconnect. External remote
+  changes and timer expiry cannot be observed. Light On/Off also has assumed
+  state. Stopping the final active zone clears the local timer.
+- New entries keep the connection between commands by default so preset
+  repeat-tap and massage cycles retain their local state.
+
+#### Command Timing
+
+| Action | Timing |
+|--------|--------|
+| Movement | Sends a frame immediately and refreshes every 200 ms for a bounded HA tap (five pulses by default) |
+| Normal release | Movement STOP 100 ms later |
+| Cancellation | Ends the refresh and sends cleanup with a fresh event |
+| Explicit Stop | Sends both the movement and preset STOP forms |
+| Massage zone start | 10-minute timer first when no local timer is set, intensity after 200 ms |
+
+Once a multi-zone shutdown starts, its zone-off writes finish before a
+replacement command, even if cancelled; delayed start writes remain cancellable.
+
+#### Notes
+
+- The labels describe the app controls; physical semantics and stopping
+  latency remain unverified on hardware.
+- **Hardware status:** artifact-vector and HA software validation only. Real
+  users can validate movement labels, release, massage and alarms after
+  beta/release; maintainer access to a bed is not a prerequisite for this
+  implementation.
+
+##### Comfort Enhancements analysis provenance
+
+- Evidence: accepted independent audit of `com.okin.enhancements` **1.0.3 (4)**.
+- Artifact set SHA-256:
+  `bc76b08e593f42a3772385551553cb93345394639cfeb4d8e2cc61a99c28eab7`.
+- See the [complete discovery dispositions](../apk-analysis/dispositions/row110-comfort-enhancements.md).
 
 ## Notes
 

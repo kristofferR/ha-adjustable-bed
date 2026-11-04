@@ -140,4 +140,4 @@ Queue admission, no-write, readiness, callback failure, descriptor failure, time
 
 WiFi, SSID/passwords, provisioning, bed-network administration, cloud/account services, dead helpers and unrelated Android infrastructure have explicit X-row exclusions. None is implementation debt. HA Bluetooth adapter/proxy and setup infrastructure remain supported.
 
-User-facing setup, packet formats, controls and limitations: [BF and Cherish](../../beds/bf-cherish.md).
+User-facing setup, packet formats, controls and limitations: [BF and Cherish](../../beds/keeson.md#bf-and-cherish).

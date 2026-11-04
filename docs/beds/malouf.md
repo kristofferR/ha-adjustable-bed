@@ -101,7 +101,7 @@ the CB24 7-byte protocol.
 
 ### LEGACY_OKIN (FFE5)
 
-The frame is the nine-byte E6 frame of the [Keeson codec](keeson.md#e6-controller-profiles).
+The frame is the nine-byte E6 frame of the [Keeson codec](keeson.md#controller-profiles).
 
 **Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
 **Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb`

@@ -33,7 +33,7 @@ Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
 | BOX24 | 7 bytes | No | ❌ | ❌ | ❌ | ❌ | ❌ | 62741523 (OKIN 64-bit) |
 | BOX25 (StarCode or legacy) | 2-20 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
 
-BOX15 sends the nine-byte E6 frame of the [Keeson codec](keeson.md#e6-controller-profiles).
+BOX15 sends the nine-byte E6 frame of the [Keeson codec](keeson.md#controller-profiles).
 
 **Protocol Selection:**
 

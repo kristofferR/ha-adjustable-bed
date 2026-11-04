@@ -103,7 +103,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers |
 | ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/customatic-z-series.md) |
 | 🧪 [AdjustaMattress](docs/beds/adjustamattress.md) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
-| ⚠️ [Comfort Enhancements](docs/beds/comfort-enhancements.md) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
+| ⚠️ [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
 | ✅ Jordan's | [Serenity](docs/beds/serenity.md), [Tranquil](docs/beds/tranquil.md) |
 | ✅ [SIMMONS](docs/beds/simmons.md) | SIMMONS app, regular and inclined beds |
 | ✅ [Adjustable bed (Lumbar)](docs/beds/adjustable-lumbar.md) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
@@ -135,11 +135,11 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | [Caresse / Werkmeister](docs/beds/vibradorm_app.md), [VMAT](docs/beds/vmat.md), [V-MAT Basic / CBI / XT-Box](docs/beds/vmatbasic.md) |
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
 | ✅ [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION |
-| ✅ [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |
+| ✅ [Rondure](docs/beds/keeson.md#rondure) | 1500 Tilt Base |
 | ✅ [Remacro](docs/beds/remacro.md) | Slumberland, The Brick, Jerome's |
-| ✅ [Cool Base](docs/beds/coolbase.md) | Cool Base (Keeson with fan) |
+| ✅ [Cool Base](docs/beds/keeson.md#cool-base) | Cool Base (Keeson with fan) |
 | ✅ [Scott Living](docs/beds/keeson.md#scott-living) | Scott Living |
-| ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
+| ✅ [SBI/Q-Plus](docs/beds/keeson.md#sbi--q-plus-costco) | Q-Plus (Costco) |
 | 🧪 [Tempur Curve app](docs/beds/keeson.md#tempur-curve) | Explicit com.ore.tempur app profile; static artifact proven, hardware unverified |
 | 🧪 [Q-Plus Adjustable Remote app](docs/beds/keeson.md#q-plus-adjustable-remote) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
 | 🧪 [Serta MP Remote app](docs/beds/keeson.md#serta-mp-remote) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
@@ -151,7 +151,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [LOGICDATA](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame; [MOTIONrelax](docs/beds/jiecang.md#motionrelax-phone-and-tablet), [Sleep Smart](docs/beds/jiecang.md#sleep-smart-air-mattress-bed) Vienna / Toronto / Middle Rail and [air mattress pump](docs/beds/logicdata-sleep-smart.md) |
 | ✅ [Okin CB35](docs/beds/okin-5a.md#sealy-posturematic-cb35) | Sealy Posturematic |
 | ✅ [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
-| 🧪 [BF / Cherish](docs/beds/bf-cherish.md) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
+| 🧪 [BF / Cherish](docs/beds/keeson.md#bf-and-cherish) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
 | ✅ [Motion Bed](docs/beds/ff_frame.md#motion-bed) | QMS/SealyMF and TL beds, air and thermal controls |
 | ✅ [FurniMove / OKIN Smart Remote](docs/beds/furnimove.md) | App handset layouts, including RF ECO BT adjustable-bed receivers |

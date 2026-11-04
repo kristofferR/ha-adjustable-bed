@@ -555,7 +555,7 @@ when enabling. Optional `memory` is 0 (none), 1 (A/single Memory), or 2 (B,
 MC2/MC3 only); `massage` defaults to false. Paired `side` routing is supported.
 Disable with `enabled: false`, without a time. `adjustable_bed.sync_clock`
 synchronizes the clock and sends the app query. There is no alarm feedback or
-phone scheduler. See [packet behavior and limits](beds/comfort-enhancements.md#clock-and-alarm).
+phone scheduler. See [packet behavior and limits](beds/keeson.md#clock-and-alarm).
 ### Floyd Home actions
 
 `adjustable_bed.floyd_action` exposes confirmed `save_zero_g`,
@@ -572,7 +572,7 @@ schedule these presets; the app's phone alarms are not on-bed alarm storage.
 `adjustable_bed.bf_cherish_set_alarm` accepts `device_id`, `enabled`, optional
 `side`, `time` (required when enabling, minute precision), and `memory` (`none`,
 `memory_1`, `memory_2`, default `none`). The clock uses HA local time. All
-targets must be BF or Cherish profiles. [Profile details and example](beds/bf-cherish.md#alarm-action)
+targets must be BF or Cherish profiles. [Profile details and example](beds/keeson.md#alarm-action)
 cover distinct packet formats, retained intent and report limitations.
 
 ### Casper Base

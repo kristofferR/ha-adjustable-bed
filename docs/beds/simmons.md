@@ -41,7 +41,7 @@
 
 **Format:** Two packet formats (OKIN and SmartBed) sharing one 32-bit control mask
 
-The OKIN-format frames are built by the [Keeson codec](keeson.md#e6-controller-profiles).
+The OKIN-format frames are built by the [Keeson codec](keeson.md#controller-profiles).
 
 - Services are matched in discovery order and the last match of each role wins,
   independent of the packet format.

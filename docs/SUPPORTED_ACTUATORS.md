@@ -39,10 +39,10 @@ validation limits; the feature summaries below depend on the selected controller
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
 | [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss.md#limoss-remote) and [FSM Relax](beds/limoss.md#fsm-relax) bed/chair layouts and local memories |
 | [Motion Bed app](beds/ff_frame.md#motion-bed) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
-| [Cool Base](beds/coolbase.md) | Keeson BaseI5 with fan control |
+| [Cool Base](beds/keeson.md#cool-base) | Keeson BaseI5 with fan control |
 | [Scott Living](beds/keeson.md#scott-living) | 9-byte protocol |
-| [SBI/Q-Plus](beds/sbi.md) | Position feedback via pulse lookup |
-| [Rondure](beds/rondure.md) | 4 motors, split-king, massage, lights |
+| [SBI/Q-Plus](beds/keeson.md#sbi--q-plus-costco) | Position feedback via pulse lookup |
+| [Rondure](beds/keeson.md#rondure) | 4 motors, split-king, massage, lights |
 | [Remacro](beds/remacro.md) | Slumberland, The Brick and Jerome's app screens: up to 3 motors, split sides, presets, memory, massage, light |
 | [Logicdata](beds/logicdata.md) | SILVERmotion / SimplicityFrame memory, lights and massage; [MOTIONrelax](beds/jiecang.md#motionrelax-phone-and-tablet) layouts and alarms; [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) bed controls and separate [air mattress pump](beds/logicdata-sleep-smart.md) |
 | [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
