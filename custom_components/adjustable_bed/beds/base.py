@@ -48,6 +48,7 @@ from ..const import (
     POSITION_TOLERANCE,
 )
 from ..diagnostic_payloads import format_payload
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
 
 _LOGGER = logging.getLogger(__name__)
@@ -463,6 +464,19 @@ class BedController(ABC):
     def supports_single_address_pairing(self) -> bool:
         """Whether this profile supports a one-address side selector."""
         return True
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """Return the held and concurrent execution this controller may use.
+
+        Family controllers carry their app's declaration on ``self.profile``;
+        standalone controllers override this property. Anything else keeps
+        the empty default: finite pulses, serialized motors.
+        """
+        execution = getattr(getattr(self, "profile", None), "execution", None)
+        if isinstance(execution, ExecutionCapabilities):
+            return execution
+        return NO_EXECUTION_CAPABILITIES
 
     @property
     def auto_stops_on_idle(self) -> bool:

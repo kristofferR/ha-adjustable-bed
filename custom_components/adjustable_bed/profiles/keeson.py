@@ -24,6 +24,7 @@ from typing import Final, Literal
 from ..alarm_table import AlarmTableScheduleSpec
 from ..codec import keeson as codec
 from ..codec.keeson import ByteOrder, Carrier, Side, TransportKey
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Preset = Literal["flat", "zero_g", "lounge", "tv", "anti_snore"]
 Massage = Literal["step", "absolute", "zone_steps", "none"]
@@ -110,6 +111,8 @@ _EMPTY: Final[Mapping[int, int]] = MappingProxyType({})
 @dataclass(frozen=True, kw_only=True)
 class KeesonProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     carrier: Carrier = "k1"
     header: int = 0xE5
     order: ByteOrder = "little"
@@ -552,6 +555,8 @@ class AppProfile:
 
     key: str
     """The app's bed type; it names the frozen vectors and the app's caller rules."""
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     app: str
     layout: str
     actions: tuple[AppAction, ...]

@@ -58,6 +58,7 @@ from ..const import (
     OKIN_CST_VARIANT_SANCTUARY,
     OKIN_CST_VARIANT_SUPPORT,
 )
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 WriteMode = Literal["response", "no_response", "characteristic"]
 Envelope = Literal["plain", "gateway_detected", "revision_selector", "keeson_e6"]
@@ -92,6 +93,8 @@ class Tap:
 @dataclass(frozen=True, kw_only=True)
 class OkinNFrameProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     name: str
     bed_types: tuple[str, ...]
     width: int = 4
