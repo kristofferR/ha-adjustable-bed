@@ -2,10 +2,11 @@
 
 ``scripts/wire_snapshot.py`` drives each bed type, protocol variant and app
 profile route through the real controller factory and records the characteristic,
-bytes, write mode, order and virtual timing of each write. The committed snapshot
-is the contract for the v5 protocol-split refactors (#742): a refactor that moves
-code between codecs and profiles must keep this test green without touching the
-snapshot. A deliberate wire change (a bug fix) regenerates it in the same PR:
+bytes, write mode, order and virtual timing of every GATT write, subscription,
+read and pairing. The committed snapshot and its replayed GATT layouts are the
+contract for the v5 protocol-split refactors (#742): a refactor that moves code
+between codecs and profiles must keep this test green without touching either
+file. A deliberate wire change (a bug fix) regenerates them in the same PR:
 
     uv run --no-sync python scripts/wire_snapshot.py
 """
@@ -13,9 +14,8 @@ snapshot. A deliberate wire change (a bug fix) regenerates it in the same PR:
 from __future__ import annotations
 
 import asyncio
-import difflib
 import importlib.util
-import logging
+import subprocess
 import sys
 from pathlib import Path
 
@@ -35,23 +35,20 @@ def _load_tool():
 
 
 def test_wire_bytes_match_committed_snapshot() -> None:
-    tool = _load_tool()
-    logging.disable(logging.CRITICAL)
-    try:
-        fresh = tool.render(asyncio.run(tool.capture_all()))
-    finally:
-        logging.disable(logging.NOTSET)
-    committed = tool.SNAPSHOT_PATH.read_text()
-    if fresh != committed:
-        diff = difflib.unified_diff(
-            committed.splitlines(), fresh.splitlines(), "committed", "fresh", n=0, lineterm=""
-        )
-        shown = [line[:240] for _, line in zip(range(20), diff, strict=False)]
-        raise AssertionError(
-            "Bytes on the wire changed. Review the diff, and if the change is deliberate "
-            "regenerate with `uv run --no-sync python scripts/wire_snapshot.py`:\n"
-            + "\n".join(shown)
-        )
+    # A separate process: the capture must not see this test session's state.
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--check"],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        "Bytes on the wire changed. Review the diff, and if the change is deliberate "
+        "regenerate with `uv run --no-sync python scripts/wire_snapshot.py`:\n"
+        + result.stdout[-6000:]
+        + result.stderr[-2000:]
+    )
 
 
 async def test_virtual_clock_orders_sleeps_and_timeouts() -> None:
@@ -103,6 +100,15 @@ async def test_virtual_clock_orders_sleeps_and_timeouts() -> None:
                 await asyncio.sleep(10)
         assert budget.expired()
         assert clock.now == start + 3
+
+        # ``asyncio.wait`` and ``call_later`` run on the same clock.
+        done, pending = await asyncio.wait({asyncio.ensure_future(asyncio.sleep(10))}, timeout=1)
+        assert not done and len(pending) == 1 and clock.now == start + 4
+        pending.pop().cancel()
+        fired: list[float] = []
+        asyncio.get_running_loop().call_later(2, lambda: fired.append(clock.now))
+        await asyncio.sleep(3)
+        assert fired == [start + 6]
         background.cancel()
 
     assert asyncio.timeout_at is real_timeout_at

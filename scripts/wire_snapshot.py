@@ -1,53 +1,51 @@
 #!/usr/bin/env python3
-"""Capture the bytes every bed controller puts on the wire for fixed logical commands.
+"""Capture the BLE traffic every bed controller produces for a fixed command plan.
 
 Purpose: refactors of a protocol family (v5 protocol split, #742) must keep the
-wire output unchanged. This tool builds each bed type through the real
-``create_controller`` factory, drives a fixed set of logical commands against a
-recording BLE client and writes the result as a deterministic JSON snapshot.
-``tests/test_wire_snapshot.py`` fails when a fresh capture differs from the
-committed snapshot.
+wire output unchanged. This tool builds each bed type and route through the real
+``create_controller`` factory, drives a command plan against a recording BLE
+client and writes the result as a deterministic JSON snapshot.
+``tests/test_wire_snapshot.py`` fails when a fresh capture differs from it.
 
-What is recorded per write: characteristic UUID, payload (hex), the
-``response`` flag, the order, and the virtual time of the write. Time is virtual:
-``asyncio.sleep`` is replaced by a fake clock so captures are instant and
-repeatable. Consecutive identical writes with a constant spacing collapse into
-one run: ``[t_ms, char, response, hex, count, interval_ms]``.
+Recorded per event: characteristic UUID, kind, payload (hex), order and virtual
+time. The kind is the ``response`` flag (``true``/``false``/``null``) for a GATT
+write, or ``notify``, ``unnotify``, ``read`` or ``pair``. Consecutive identical
+events with a constant spacing collapse into one run:
+``[t_ms, char, kind, hex, count, interval_ms]``.
 
 Usage::
 
-    uv run --no-sync python scripts/wire_snapshot.py            # rewrite snapshot
-    uv run --no-sync python scripts/wire_snapshot.py --check    # diff against it
-    uv run --no-sync python scripts/wire_snapshot.py --list     # list scenarios
+    uv run --no-sync python scripts/wire_snapshot.py             # rewrite snapshot
+    uv run --no-sync python scripts/wire_snapshot.py --check     # diff against it
+    uv run --no-sync python scripts/wire_snapshot.py --list      # list scenarios
+    uv run --no-sync python scripts/wire_snapshot.py --relayout ID ...  # re-derive GATT
 
 A deliberate wire change (a bug fix) regenerates the snapshot in the same PR so
-the byte diff is reviewed. A pure refactor must leave it untouched.
+the diff is reviewed. A pure refactor must leave both fixture files untouched.
 
 How it works, and where it stops:
 
-- Controllers are driven directly, not through the coordinator, so cover-level
-  hold loops are not exercised. A command that repeats until STOP is stopped after
-  ``HOLD_CAP_S`` of virtual time.
-- ``asyncio.sleep``, ``wait_for``, ``timeout``, ``timeout_at`` and the loop clock run on the fake
-  clock; wall-clock time is frozen, so clock-sync frames are repeatable.
-- The post-connect hooks (``async_discover_capabilities``, ``start_notify``) run
-  first and their writes are recorded as the ``connect`` entry.
-- Controllers resolve GATT roles from ``client.services``. The fake GATT layout is
-  derived from the UUID constants the controller's modules declare, trying the
-  full layout, each service alone, then a crossed pool. The layout that let the
-  connect hooks succeed is recorded as ``gatt``.
-- A scenario where no command succeeded is flagged ``coverage_gap`` (``gatt:
-  unresolved``). Every write it did record stays in the snapshot, whatever the
-  command status, so a wire change there still fails the guard. Add a
-  ``Scenario.layout`` or entry data to turn a gap into full coverage.
-- Every stubbed GATT write takes ``WRITE_DURATION_S`` of virtual time, so pacing that
-  absorbs write latency and pacing that adds to it land at different offsets. After
-  the last command the clock runs ``DRAIN_WINDOW_S`` more, so delayed work the final
-  command scheduled is captured (as ``background``) before cleanup cancels it.
-- ``async_execute_controller_query`` runs its callback against the constructed
-  controller, like the coordinator does, so startup queries write. ``random`` and
-  ``secrets`` are seeded per scenario so nonces repeat.
-- ``info.gatt`` of ``all``/``pool``/a service UUID tells which layout resolved.
+- The coordinator is a stub owned by this script. Pulse count and delay come from
+  ``get_motor_pulse_defaults(bed_type, variant)``, as the real coordinator does.
+  Controllers are driven directly, so cover-level hold loops are not exercised; a
+  command that repeats until STOP is stopped after ``HOLD_CAP_S`` of virtual time.
+- Time is virtual: ``asyncio.sleep``/``wait``/``wait_for``/``timeout``/
+  ``timeout_at``, the loop clock and ``call_later`` run on a fake clock that only
+  advances once runnable work has gone quiet. Wall-clock time is frozen to follow
+  it. A command still running after ``COMMAND_BUDGET_S`` of virtual time is
+  recorded as ``timeout``. Nothing depends on real time or CPU speed.
+- The command plan: every motor axis, the standard presets, every memory slot up
+  to ``memory_slot_count``, lights and massage, then one representative call of
+  every other implemented ``BedController`` action (each option of option-taking
+  ones) and every controller-declared button, select option and number bound.
+  See ``plan_commands``.
+- Each scenario's fake GATT layout is stored in ``wire_snapshot_layouts.json`` and
+  replayed, so renaming a UUID constant changes nothing. A layout is derived from
+  the controller's UUID constants only when a scenario has none stored (or on
+  ``--relayout``); see ``derive_layout``.
+- A command the controller declares (through its capability properties or motor
+  specs) that does not succeed is listed in the scenario's ``gaps``. Every event it
+  did record stays in the snapshot, whatever the command status.
 """
 
 from __future__ import annotations
@@ -59,6 +57,7 @@ import contextlib
 import contextvars
 import dataclasses
 import datetime
+import difflib
 import importlib
 import importlib.util
 import inspect
@@ -71,20 +70,42 @@ import time
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from types import SimpleNamespace
+from typing import Any, cast
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_PATH = REPO_ROOT / "tests" / "fixtures" / "wire_snapshot.json"
-SCHEMA_VERSION = 1
+LAYOUTS_PATH = REPO_ROOT / "tests" / "fixtures" / "wire_snapshot_layouts.json"
+SCHEMA_VERSION = 2
 
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-# Per logical command watchdog (real seconds). Fake sleeps never block, so
-# anything slower is waiting on an event the mock never sets.
-COMMAND_TIMEOUT_S = 0.3
-REAL_WAIT_FOR = asyncio.wait_for
+# Held in a tuple so freezegun, which patches module attributes, leaves it real.
+_REAL_CLOCK = (time.perf_counter,)
+
+# A held command (one that repeats until STOP) is stopped after this much virtual time.
+HOLD_CAP_S = 10.0
+# Virtual time a command or the connect hooks may take before counting as stuck.
+COMMAND_BUDGET_S = 60.0
+# Consecutive yields without activity (a task created, an event recorded, a sleeper
+# registered) before a sleeper may advance virtual time, and the same for a timeout.
+SETTLE_YIELDS = 20
+TIMEOUT_SETTLE_YIELDS = 200
+# Hard cap on yields per settle, so a body that never goes quiet cannot hang a capture.
+MAX_SETTLE_YIELDS = 20000
+# Every stubbed GATT write takes this long, so pacing that absorbs write latency and
+# pacing that adds to it land at different offsets.
+WRITE_DURATION_S = 0.007
+# Virtual time a scenario keeps running after its last command, so delayed work the
+# final command scheduled (a follow-up write, a retry) is captured before cleanup.
+DRAIN_WINDOW_S = 2.0
+# Tasks inherit the phase that created them, so an event caused later by a task from
+# an earlier phase (a delayed retry, a keepalive) is recorded as background.
+PHASE: contextvars.ContextVar[int] = contextvars.ContextVar("wire_snapshot_phase", default=0)
+
+FROZEN_NOW = "2026-01-02 03:04:05"
+FROZEN_BASE = datetime.datetime.fromisoformat(FROZEN_NOW)
 
 MOTORS: tuple[str, ...] = (
     "head",
@@ -99,64 +120,348 @@ MOTORS: tuple[str, ...] = (
     "bed_height",
 )
 
-# (logical name, controller method, positional args)
-LOGICAL_COMMANDS: tuple[tuple[str, str, tuple[Any, ...]], ...] = (
-    *(
-        (f"{motor}_{action}", f"move_{motor}_{action}", ())
-        for motor in MOTORS
-        for action in ("up", "down", "stop")
-    ),
-    ("stop_all", "stop_all", ()),
-    ("preset_flat", "preset_flat", ()),
-    ("preset_zero_g", "preset_zero_g", ()),
-    ("preset_anti_snore", "preset_anti_snore", ()),
-    ("preset_tv", "preset_tv", ()),
-    ("memory_recall_1", "preset_memory", (1,)),
-    ("memory_program_1", "program_memory", (1,)),
-    ("lights_toggle", "lights_toggle", ()),
-    ("lights_on", "lights_on", ()),
-    ("lights_off", "lights_off", ()),
-    ("massage_toggle", "massage_toggle", ()),
-    ("massage_off", "massage_off", ()),
+# ---------------------------------------------------------------------------
+# Command plan
+# ---------------------------------------------------------------------------
+
+# Capability flag declaring a no-argument action, where the integration has one.
+ACTION_FLAGS: dict[str, str] = {
+    "stop_all": "supports_stop_all",
+    "preset_flat": "supports_preset_flat",
+    "preset_zero_g": "supports_preset_zero_g",
+    "preset_anti_snore": "supports_preset_anti_snore",
+    "preset_tv": "supports_preset_tv",
+    "preset_reading": "supports_preset_reading",
+    "preset_yoga": "supports_preset_yoga",
+    "preset_both_up": "supports_preset_both_up",
+    "preset_relaxing_bedtime": "supports_relaxing_bedtime",
+    "lights_toggle": "supports_light_toggle_control",
+    "lights_on": "supports_discrete_light_control",
+    "lights_off": "supports_discrete_light_control",
+    "underbed_lights_on": "supports_under_bed_lights",
+    "underbed_lights_off": "supports_under_bed_lights",
+    "underbed_lights_toggle": "supports_under_bed_lights",
+    "massage_off": "supports_massage_off_control",
+    "massage_toggle": "supports_massage_toggle_control",
+    "massage_head_toggle": "supports_head_massage_toggle_control",
+    "massage_foot_toggle": "supports_foot_massage_toggle_control",
+    "massage_intensity_up": "supports_massage_intensity_up_control",
+    "massage_head_up": "supports_head_massage_intensity_step_control",
+    "massage_head_down": "supports_head_massage_intensity_step_control",
+    "massage_foot_up": "supports_foot_massage_intensity_step_control",
+    "massage_foot_down": "supports_foot_massage_intensity_step_control",
+    "massage_mode_step": "supports_massage_mode_step_control",
+    "massage_wave_next": "supports_massage_wave_direction_control",
+    "massage_wave_previous": "supports_massage_wave_direction_control",
+    "massage_wave_frequency_up": "supports_massage_wave_frequency_control",
+    "massage_wave_frequency_down": "supports_massage_wave_frequency_control",
+    "massage_circulation_full_body": "supports_circulation_massage",
+    "massage_circulation_head": "supports_circulation_massage",
+    "massage_circulation_hip": "supports_circulation_massage",
+    "massage_circulation_leg": "supports_circulation_massage",
+    "child_lock_toggle": "supports_child_lock",
+    "impulse_toggle": "supports_impulse_control",
+    "sync_clock": "supports_clock_sync",
+    "set_control_mode_press_and_hold": "supports_control_mode_configuration",
+    "set_control_mode_press_and_release": "supports_control_mode_configuration",
+    "cancel_sleep_timer": "supports_sleep_timer",
+    "cancel_alarm_timer": "supports_alarm_timer",
+    "wake": "supports_wake_control",
+    "stop_wake_routine": "supports_wake_routine",
+    "reset_defaults": "supports_reset_defaults",
+    "factory_reset": "supports_factory_reset",
+    "solace_music_toggle": "supports_solace_audio",
+    "solace_music_off": "supports_solace_audio",
+    "solace_query_audio_volume": "supports_solace_audio",
+    "rmcontrol_query_alarms": "supports_rmcontrol_alarm",
+    "rmcontrol_query_anti_snore": "supports_rmcontrol_anti_snore",
+}
+
+# No-argument base methods that are connection plumbing, not user actions.
+NOT_ACTIONS = frozenset(
+    {
+        "async_discover_capabilities",
+        "start_notify",
+        "stop_notify",
+        "read_bed_presence_cached",
+        "async_validate_linked_readiness",
+    }
 )
+
+Call = Callable[[Any], Awaitable[Any]]
 
 
 @dataclass(frozen=True)
-class Scenario:
-    """One way to reach a controller: bed type plus the route that changes bytes."""
+class Command:
+    name: str
+    call: Call
+    # Whether the controller declares the command (a capability property or a
+    # motor spec says the integration exposes it). A declared command that fails,
+    # or a declared movement that writes nothing, is a coverage gap.
+    declared: bool = False
+    movement: bool = False
 
-    id: str
-    bed_type: str
-    # None keeps the factory-contract default variant for the bed type.
-    protocol_variant: str | None = None
-    # Config-entry data merged over the factory-contract defaults.
-    entry_data: dict[str, Any] = field(default_factory=dict)
-    # Extra keyword arguments for ``create_controller``.
-    factory_kwargs: dict[str, Any] = field(default_factory=dict)
-    # Explicit GATT layout (service -> characteristics) when derivation cannot resolve roles.
-    layout: dict[str, list[str]] | None = None
-
-
-# A held command (one that repeats until STOP) is stopped after this much virtual time.
-HOLD_CAP_S = 10.0
+    def is_gap(self, status: str) -> bool:
+        if not self.declared:
+            return False
+        return status != "ok" if self.movement else status not in {"ok", "no_writes"}
 
 
-# Consecutive yields without activity (a task created, a write, a sleeper registered)
-# before a sleeper may advance virtual time, and the same for a timeout guard.
-SETTLE_YIELDS = 20
-TIMEOUT_SETTLE_YIELDS = 200
-# Every stubbed GATT write takes this long, so pacing that absorbs write latency and
-# pacing that adds to it land at different offsets.
-WRITE_DURATION_S = 0.007
-# Virtual time a scenario keeps running after its last command, so delayed work the
-# final command scheduled (a follow-up write, a retry) is captured before cleanup.
-DRAIN_WINDOW_S = 2.0
-# Hard cap on yields per settle, so a body that never goes quiet cannot hang a capture.
-MAX_SETTLE_YIELDS = 20000
-# Tasks inherit the phase that created them, so a write made later by a task from an
-# earlier phase (a delayed retry, a keepalive) is recorded as background, not as
-# part of the command that happens to be running.
-PHASE: contextvars.ContextVar[int] = contextvars.ContextVar("wire_snapshot_phase", default=0)
+def _overrides(controller: Any, method: str) -> bool:
+    from custom_components.adjustable_bed.beds.base import BedController
+
+    impl = getattr(type(controller), method, None)
+    return impl is not None and impl is not getattr(BedController, method, None)
+
+
+def _flag(controller: Any, name: str | None) -> bool:
+    if name is None:
+        return False
+    try:
+        return bool(getattr(controller, name))
+    except Exception:  # noqa: BLE001 - a property that cannot answer declares nothing
+        return False
+
+
+def _value(controller: Any, name: str, default: Any) -> Any:
+    try:
+        return getattr(controller, name)
+    except Exception:  # noqa: BLE001
+        return default
+
+
+def _method(name: str, *args: Any, **kwargs: Any) -> Call:
+    return lambda ctrl: getattr(ctrl, name)(*args, **kwargs)
+
+
+def _base_actions() -> list[str]:
+    """Public no-argument actions of ``BedController``, in name order."""
+    from custom_components.adjustable_bed.beds.base import BedController
+
+    names = []
+    for name, fn in inspect.getmembers(BedController, inspect.iscoroutinefunction):
+        params = list(inspect.signature(fn).parameters.values())[1:]
+        if name.startswith("_") or name in NOT_ACTIONS:
+            continue
+        if all(p.default is not inspect.Parameter.empty for p in params):
+            names.append(name)
+    return names
+
+
+def plan_commands(controller: Any) -> list[Command]:
+    """The command plan for one controller.
+
+    The first block keeps the order of the original plan so earlier captures stay
+    comparable; everything after it only adds coverage.
+    """
+    slots = max(int(_value(controller, "memory_slot_count", 0) or 0), 1)
+    specs: tuple[Any, ...] = ()
+    if _flag(controller, "supports_motor_control") and not _flag(
+        controller, "has_discrete_motor_control"
+    ):
+        specs = tuple(_value(controller, "motor_control_specs", ()))
+
+    plan: list[Command] = []
+    for motor in MOTORS:
+        for action in ("up", "down", "stop"):
+            plan.append(Command(f"{motor}_{action}", _method(f"move_{motor}_{action}")))
+    for name in ("stop_all", "preset_flat", "preset_zero_g", "preset_anti_snore", "preset_tv"):
+        plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS[name])))
+    plan.append(
+        Command(
+            "memory_recall_1",
+            _method("preset_memory", 1),
+            _flag(controller, "supports_memory_presets"),
+        )
+    )
+    plan.append(
+        Command(
+            "memory_program_1",
+            _method("program_memory", 1),
+            _flag(controller, "supports_memory_programming"),
+        )
+    )
+    for name in ("lights_toggle", "lights_on", "lights_off", "massage_toggle", "massage_off"):
+        plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
+
+    # Added coverage: further memory slots, other actions and controller specs.
+    for slot in range(2, slots + 1):
+        plan.append(
+            Command(
+                f"memory_program_{slot}",
+                _method("program_memory", slot),
+                _flag(controller, "supports_memory_programming"),
+            )
+        )
+        plan.append(
+            Command(
+                f"memory_recall_{slot}",
+                _method("preset_memory", slot),
+                _flag(controller, "supports_memory_presets"),
+            )
+        )
+    if _flag(controller, "supports_held_memory_recall"):
+        for slot in range(1, slots + 1):
+            plan.append(
+                Command(f"recall_memory_{slot}", _method("recall_memory", slot, hold_ms=1000), True)
+            )
+    # The cover entities the integration creates, through their own callables.
+    for spec in specs:
+        plan.append(Command(f"cover:{spec.key}_open", spec.open_fn, True, movement=True))
+        plan.append(Command(f"cover:{spec.key}_close", spec.close_fn, True, movement=True))
+        plan.append(Command(f"cover:{spec.key}_stop", spec.stop_fn, True))
+    done = {c.name for c in plan} | {
+        f"move_{m}_{a}" for m in MOTORS for a in ("up", "down", "stop")
+    }
+    done |= {"preset_memory", "program_memory"}
+    for name in _base_actions():
+        if name not in done and _overrides(controller, name):
+            plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
+    plan.extend(_argument_commands(controller))
+    for spec in _value(controller, "controller_button_specs", ()):
+        plan.append(Command(f"button:{spec.key}", spec.press_fn, True))
+    for spec in _value(controller, "controller_select_specs", ()):
+        for option in spec.options:
+            plan.append(
+                Command(
+                    f"select:{spec.key}={option}",
+                    lambda ctrl, fn=spec.select_fn, o=option: fn(ctrl, o),
+                    True,
+                )
+            )
+    for spec in _value(controller, "controller_number_specs", ()):
+        for bound in dict.fromkeys((spec.native_min_value, spec.native_max_value)):
+            plan.append(
+                Command(
+                    f"number:{spec.key}={bound:g}",
+                    lambda ctrl, fn=spec.set_fn, v=bound: fn(ctrl, v),
+                    True,
+                )
+            )
+    return plan
+
+
+def _argument_commands(controller: Any) -> list[Command]:
+    """One representative call of each implemented action that takes arguments."""
+    c = controller
+    out: list[Command] = []
+
+    def add(flag: str | None, method: str, name: str, *args: Any, **kwargs: Any) -> None:
+        if not _overrides(c, method):
+            return
+        declared = _flag(c, flag) if flag else False
+        out.append(Command(name, _method(method, *args, **kwargs), declared))
+
+    if _flag(c, "supports_light_level_control"):
+        low, high = _value(c, "light_level_min", 0), _value(c, "light_level_max", 10)
+        for level in dict.fromkeys((low, high)):
+            add("supports_light_level_control", "set_light_level", f"light_level_{level}", level)
+    add("supports_light_color_control", "set_light_color", "light_color", (255, 128, 0))
+    add(
+        "supports_light_color_control",
+        "set_light_color_rgbw",
+        "light_color_rgbw",
+        (255, 128, 0, 64),
+    )
+    for option in _value(c, "light_timer_options", []) if _flag(c, "supports_light_timer") else []:
+        add("supports_light_timer", "set_light_timer", f"light_timer_{option}", option)
+    if _flag(c, "supports_massage_intensity_control"):
+        top = int(_value(c, "massage_intensity_max", 10))
+        for zone in _value(c, "massage_intensity_zones", []):
+            for level in range(top + 1):
+                add(
+                    "supports_massage_intensity_control",
+                    "set_massage_intensity",
+                    f"massage_{zone}_{level}",
+                    zone,
+                    level,
+                )
+    if _flag(c, "supports_massage_intensity_preset_control"):
+        for level in (1, 2, 3):
+            add(
+                "supports_massage_intensity_preset_control",
+                "set_massage_intensity_preset",
+                f"massage_preset_{level}",
+                level,
+            )
+    for minutes in (
+        _value(c, "massage_timer_options", []) if _flag(c, "supports_massage_timer") else []
+    ):
+        add("supports_massage_timer", "set_massage_timer", f"massage_timer_{minutes}", minutes)
+    if _flag(c, "supports_fan_level_control"):
+        for level in range(int(_value(c, "fan_level_max", 0)) + 1):
+            add("supports_fan_level_control", "set_fan_level", f"fan_level_{level}", level)
+    if _flag(c, "supports_sleep_timer"):
+        durations = _value(c, "sleep_timer_duration_options", ()) or (30,)
+        memories = _value(c, "sleep_timer_memory_options", ()) or (1,)
+        add("supports_sleep_timer", "set_sleep_timer", "sleep_timer", durations[0], memories[0])
+    add("supports_alarm_timer", "set_alarm_timer", "alarm_timer_30", 30)
+    for spec in (
+        _value(c, "position_number_specs", ())
+        if _flag(c, "supports_direct_position_control")
+        else ()
+    ):
+        target = round(spec.native_max_value / 2)
+        add(
+            "supports_direct_position_control",
+            "set_motor_position",
+            f"position_{spec.position_key}_{target}",
+            spec.position_key,
+            target,
+        )
+    add(
+        "supports_simultaneous_movement",
+        "move_simultaneously",
+        "move_back_legs_up",
+        "back",
+        True,
+        "legs",
+        True,
+    )
+    for control in (
+        _value(c, "held_control_options", ()) if _flag(c, "supports_held_control") else ()
+    ):
+        add("supports_held_control", "hold_control", f"hold_{control}", control, 1000)
+    for preset in _value(c, "held_preset_options", ()) if _flag(c, "supports_preset_hold") else ():
+        add("supports_preset_hold", "hold_preset", f"hold_preset_{preset}", preset, 1000)
+    if _flag(c, "supports_wake_routine"):
+        presets = _value(c, "clock_alarm_preset_options", ()) or ("flat",)
+        add("supports_wake_routine", "execute_wake_routine", "wake_routine", preset=presets[0])
+    for flag, method in (
+        ("supports_sync", "set_synchro"),
+        ("supports_remote_control_lock", "set_remote_control_lock"),
+        ("supports_automatic_drive", "set_automatic_drive"),
+        ("supports_automatic_light", "set_automatic_light"),
+        ("supports_rmcontrol_anti_snore", "rmcontrol_anti_snore_switch"),
+    ):
+        add(flag, method, f"{method}_on", True)
+        add(flag, method, f"{method}_off", False)
+    add(
+        "supports_rmcontrol_anti_snore",
+        "rmcontrol_anti_snore_config",
+        "anti_snore_count",
+        "count",
+        3,
+    )
+    add("supports_rmcontrol_single_alarm", "rmcontrol_single_alarm", "rmcontrol_alarm_30", 30, None)
+    add("supports_rmcontrol_alarm", "rmcontrol_delete_alarm", "rmcontrol_delete_alarm_1", 1)
+    add(
+        "supports_rmcontrol_alarm_time_sync",
+        "rmcontrol_sync_alarm_time",
+        "rmcontrol_sync_alarm_time",
+        FROZEN_BASE,
+    )
+    add("supports_solace_audio", "solace_select_music", "solace_music_1", 1)
+    add("supports_solace_audio", "solace_set_audio_volume", "solace_volume_5", 5)
+    add("supports_confirmed_calibration", "calibrate", "calibrate", confirmed=True)
+    add("supports_device_rename", "rename_device", "rename_device", "Bed")
+    add(None, "set_furnimove_massage_program", "furnimove_massage_program_1", 1)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Virtual time
+# ---------------------------------------------------------------------------
 
 
 class FakeClock:
@@ -174,15 +479,13 @@ class FakeClock:
         self.phase = 0
         # Bumped by every observable step of runnable work; see ``virtual_time``.
         self.activity = 0
-        self.stop_event: asyncio.Event | None = None
         self._frozen = frozen
         if frozen is not None:
             frozen.move_to(FROZEN_BASE)
 
-    def begin_phase(self, stop_event: asyncio.Event | None = None) -> None:
-        """Start a capture phase: write offsets and the hold cap count from here."""
+    def begin_phase(self) -> None:
+        """Start a capture phase: event offsets count from here."""
         self.origin = self.now
-        self.stop_event = stop_event
         self.phase += 1
         PHASE.set(self.phase)
 
@@ -194,18 +497,30 @@ class FakeClock:
         self.now = max(self.now, deadline)
         if self._frozen is not None:
             self._frozen.move_to(FROZEN_BASE + datetime.timedelta(seconds=self.now))
-        if self.stop_event is not None and self.elapsed >= HOLD_CAP_S:
-            self.stop_event.set()
-
-    def advance(self, seconds: float) -> None:
-        self.advance_to(self.now + max(seconds, 0))
 
     def time(self) -> float:
         return self.now
 
 
+class _VirtualHandle:
+    """``TimerHandle`` stand-in for a virtual ``call_later``."""
+
+    def __init__(self, task: asyncio.Task[None], when: float) -> None:
+        self._task = task
+        self._when = when
+
+    def cancel(self) -> None:
+        self._task.cancel()
+
+    def cancelled(self) -> bool:
+        return self._task.cancelled()
+
+    def when(self) -> float:
+        return self._when
+
+
 class _LoopProxy:
-    """Real running loop with ``time()`` answered by the fake clock."""
+    """Real running loop with its clock and timers answered by the fake clock."""
 
     def __init__(self, loop: asyncio.AbstractEventLoop, clock: FakeClock) -> None:
         self._loop = loop
@@ -214,338 +529,28 @@ class _LoopProxy:
     def time(self) -> float:
         return self._clock.time()
 
+    def call_at(self, when: float, callback: Callable[..., Any], *args: Any, **_: Any) -> Any:
+        async def fire() -> None:
+            await asyncio.sleep(when - self._clock.now)
+            callback(*args)
+
+        return _VirtualHandle(asyncio.ensure_future(fire()), when)
+
+    def call_later(self, delay: float, callback: Callable[..., Any], *args: Any, **_: Any) -> Any:
+        return self.call_at(self._clock.now + delay, callback, *args)
+
     def __getattr__(self, name: str) -> Any:
         return getattr(self._loop, name)
 
 
-class WriteRecorder:
-    """Collects GATT writes with virtual timestamps."""
-
-    def __init__(self, clock: FakeClock) -> None:
-        self._clock = clock
-        self.writes: list[tuple[float, str, bool | None, bytes]] = []
-        self.background: list[tuple[float, str, bool | None, bytes]] = []
-
-    def add(self, char: Any, data: Any, response: bool | None) -> None:
-        uuid = str(getattr(char, "uuid", char)).lower()
-        self._clock.activity += 1
-        if PHASE.get() != self._clock.phase:
-            self.background.append((self._clock.now, uuid, response, bytes(data)))
-            return
-        self.writes.append((self._clock.elapsed, uuid, response, bytes(data)))
-
-
-UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-ALL_PROPERTIES = ["read", "write", "write-without-response", "notify", "indicate"]
-
-
-def _normalize(specifier: Any) -> Any:
-    return specifier.lower() if isinstance(specifier, str) else specifier
-
-
-class FakeChar:
-    def __init__(self, uuid: str, handle: int, service: FakeService) -> None:
-        self.uuid = uuid
-        self.handle = handle
-        self.properties = list(ALL_PROPERTIES)
-        self.descriptors: list[Any] = []
-        self.description = ""
-        self.service_uuid = service.uuid
-        self.service_handle = service.handle
-        self.max_write_without_response_size = 180
-
-    def __repr__(self) -> str:
-        return f"<FakeChar {self.uuid}>"
-
-
-class FakeService:
-    def __init__(self, uuid: str, handle: int) -> None:
-        self.uuid = uuid
-        self.handle = handle
-        self.characteristics: list[FakeChar] = []
-        self.description = ""
-
-    def get_characteristic(self, specifier: Any) -> FakeChar | None:
-        specifier = _normalize(specifier)
-        return next((c for c in self.characteristics if specifier in (c.uuid, c.handle)), None)
-
-
-class FakeServices:
-    """Minimal ``BleakGATTServiceCollection`` stand-in built from a service/char map."""
-
-    def __init__(self, layout: dict[str, list[str]]) -> None:
-        self._services: list[FakeService] = []
-        self.characteristics: dict[int, FakeChar] = {}
-        handle = 1
-        for service_uuid, chars in layout.items():
-            service = FakeService(service_uuid, handle)
-            handle += 1
-            for char_uuid in chars:
-                char = FakeChar(char_uuid, handle, service)
-                handle += 1
-                service.characteristics.append(char)
-                self.characteristics[char.handle] = char
-            self._services.append(service)
-        self.services = {s.handle: s for s in self._services}
-
-    def __iter__(self) -> Any:
-        return iter(self._services)
-
-    def __len__(self) -> int:
-        return len(self._services)
-
-    def get_service(self, specifier: Any) -> FakeService | None:
-        specifier = _normalize(specifier)
-        return next((s for s in self._services if specifier in (s.uuid, s.handle)), None)
-
-    def get_characteristic(self, specifier: Any) -> FakeChar | None:
-        specifier = _normalize(specifier)
-        for char in self.characteristics.values():
-            if specifier in (char.uuid, char.handle):
-                return char
-        return None
-
-
-def _uuid_values(value: Any, depth: int = 3) -> list[str]:
-    """UUID strings held by a constant, looking inside containers and dataclasses."""
-    if isinstance(value, str):
-        return [value.lower()] if UUID_RE.match(value.lower()) else []
-    if depth == 0:
-        return []
-    if isinstance(value, dict):
-        items: Any = [*value.keys(), *value.values()]
-    elif isinstance(value, list | tuple | frozenset | set):
-        items = value
-    elif dataclasses.is_dataclass(value) and not isinstance(value, type):
-        items = [getattr(value, f.name, None) for f in dataclasses.fields(value)]
-    else:
-        return []
-    return [u for item in items for u in _uuid_values(item, depth - 1)]
-
-
-SIBLING_SKIP = frozenset(
-    {
-        "adapter",
-        "address_lock",
-        "app_session",
-        "app_state_store",
-        "command_scheduler",
-        "coordinator",
-        "detection",
-        "position_seek",
-        "redaction",
-        "validators",
-        "entity",
-        "diagnostic_payloads",
-    }
-)
-
-
-def _sibling_modules(module: Any, depth: int = 2) -> list[Any]:
-    """The controller module plus the package modules it imports, a few levels deep."""
-    found: dict[str, Any] = {module.__name__: module}
-    frontier = [module]
-    for _ in range(depth):
-        nxt = []
-        for mod in frontier:
-            try:
-                tree = ast.parse(Path(mod.__file__).read_text())
-            except OSError, SyntaxError, TypeError:
-                continue
-            for node in ast.walk(tree):
-                if not (isinstance(node, ast.ImportFrom) and node.level):
-                    continue
-                # ``from .x import y`` names module x; ``from .. import x`` names x directly.
-                targets = [node.module] if node.module else [alias.name for alias in node.names]
-                for target in targets:
-                    name = importlib.util.resolve_name("." * node.level + target, mod.__package__)
-                    last = name.rsplit(".", 1)[-1]
-                    if name in found or last in {"base", "const"} or last in SIBLING_SKIP:
-                        continue
-                    try:
-                        found[name] = importlib.import_module(name)
-                    except ImportError:
-                        continue
-                    nxt.append(found[name])
-        frontier = nxt
-    return list(found.values())
-
-
-def _uuid_rows(value: Any) -> list[list[str]]:
-    """Tuples of several UUIDs read as ``(service, characteristic, ...)`` rows."""
-    if not isinstance(value, list | tuple | frozenset):
-        return []
-    rows = []
-    if value and all(isinstance(item, str) for item in value):
-        uuids = _uuid_values(value)
-        if len(uuids) >= 2 and len(uuids) == len(value) and isinstance(value, tuple):
-            rows.append(uuids)
-    for item in value:
-        if isinstance(item, list | tuple):
-            rows.extend(_uuid_rows(item))
-    return rows
-
-
-def derive_layout(module: Any | None) -> dict[str, list[str]]:
-    """Guess a GATT layout from the UUID constants a controller's modules declare.
-
-    Tuples of several UUIDs are ``(service, characteristic, ...)`` rows. Other
-    constants named ``*SERVICE*`` are services and the rest characteristics; a
-    characteristic joins the service whose name shares its leading name token,
-    and otherwise every service. Scenarios whose roles stay unresolved set
-    ``Scenario.layout``.
-    """
-    from custom_components.adjustable_bed import const
-
-    modules = [const] if module is None else [const, *_sibling_modules(module)]
-    own_names: set[str] = set()
-    for mod in modules[1:]:
-        own_names.update(vars(mod))
-    layout: dict[str, list[str]] = {}
-    named: dict[str, list[str]] = {}
-    for mod in modules:
-        for name, value in vars(mod).items():
-            if name.startswith("_") and mod is const:
-                continue
-            if module is not None and mod is const and name not in own_names:
-                continue
-            for row in _uuid_rows(value):
-                layout.setdefault(row[0], []).extend(row[1:])
-            uuids = _uuid_values(value)
-            if uuids and name not in {"VARIANT_AUTO"}:
-                named[name] = uuids
-    services = {n: u for n, u in named.items() if "SERVICE" in n or n.endswith("_SVC")}
-    chars = {n: u for n, u in named.items() if n not in services}
-    for sname, suuids in services.items():
-        prefix = sname.split("SERVICE")[0].rstrip("_")
-        matched = [
-            c
-            for cname, cu in chars.items()
-            if (prefix and cname.startswith(prefix)) or cname.split("_")[0] == sname.split("_")[0]
-            for c in cu
-        ]
-        for suuid in suuids:
-            layout.setdefault(suuid, []).extend(matched)
-    allchars = [c for cu in chars.values() for c in cu]
-    single_service = len(layout) == 1
-    for suuid in list(layout):
-        layout[suuid] = list(
-            dict.fromkeys(
-                (layout[suuid] + allchars) if single_service else (layout[suuid] or allchars)
-            )
-        )
-    if not layout and allchars:
-        layout["0000ffff-0000-1000-8000-00805f9b34fb"] = list(dict.fromkeys(allchars))
-    return layout
-
-
-def crossed_layout(layout: dict[str, list[str]]) -> dict[str, list[str]]:
-    """Every known UUID as a service holding every known UUID: a last-resort layout."""
-    pool = list(dict.fromkeys([*layout, *(c for chars in layout.values() for c in chars)]))
-    return dict.fromkeys(pool, pool)
-
-
-def _make_client(recorder: WriteRecorder, layout: dict[str, list[str]]) -> MagicMock:
-    client = MagicMock()
-    client.is_connected = True
-    client.address = "AA:BB:CC:DD:EE:FF"
-    client.mtu_size = 185
-    client.services = FakeServices(layout)
-
-    async def write_gatt_char(char: Any, data: Any, response: bool | None = None) -> None:
-        recorder.add(char, data, response)
-        await asyncio.sleep(WRITE_DURATION_S)
-
-    client.write_gatt_char = AsyncMock(side_effect=write_gatt_char)
-    client.read_gatt_char = AsyncMock(return_value=bytearray())
-    client.start_notify = AsyncMock()
-    client.stop_notify = AsyncMock()
-    client.pair = AsyncMock(return_value=True)
-    client.disconnect = AsyncMock()
-    return client
-
-
-def _collapse(writes: list[tuple[float, str, bool | None, bytes]]) -> list[list[Any]]:
-    """Collapse constant-interval repeats of one write into ``[t, char, rsp, hex, n, dt]``."""
-    runs: list[list[Any]] = []
-    for at, char, response, data in writes:
-        t_ms = round(at * 1000)
-        hex_data = data.hex()
-        if runs:
-            last = runs[-1]
-            same = last[1] == char and last[2] == response and last[3] == hex_data
-            if same and last[4] == 1:
-                last[4], last[5] = 2, t_ms - last[0]
-                continue
-            if same and t_ms - (last[0] + last[5] * (last[4] - 1)) == last[5]:
-                last[4] += 1
-                continue
-        runs.append([t_ms, char, response, hex_data, 1, 0])
-    return runs
-
-
-async def _run_command(
-    controller: Any, recorder: WriteRecorder, clock: FakeClock, method: str, args: tuple[Any, ...]
-) -> dict[str, Any]:
-    fn: Callable[..., Awaitable[Any]] | None = getattr(controller, method, None)
-    if fn is None:
-        return {"status": "unsupported"}
-    recorder.writes.clear()
-    controller._coordinator.cancel_command.clear()  # noqa: SLF001
-    clock.begin_phase(controller._coordinator.cancel_command)  # noqa: SLF001
-    try:
-        await REAL_WAIT_FOR(fn(*args), COMMAND_TIMEOUT_S)
-    except NotImplementedError:
-        if recorder.writes:
-            return {"status": "not_implemented", "writes": _collapse(recorder.writes)}
-        return {"status": "unsupported"}
-    except TimeoutError:
-        return {"status": "timeout", "writes": _collapse(recorder.writes)}
-    except Exception as err:  # noqa: BLE001 - recorded, not hidden
-        if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
-            print(f"  {method}: {type(err).__name__}: {str(err)[:200]}", file=sys.stderr)
-        return {
-            "status": "error",
-            "error": type(err).__name__,
-            "writes": _collapse(recorder.writes),
-        }
-    if not recorder.writes:
-        return {"status": "no_writes"}
-    return {"status": "ok", "writes": _collapse(recorder.writes)}
-
-
-@contextlib.contextmanager
-def deterministic_randomness() -> Iterator[None]:
-    """Seed ``random``, replace ``secrets`` and reset app-global counters per scenario.
-
-    Nonces, session ids and process-wide sequence numbers then repeat, whatever
-    ran earlier in the process.
-    """
-    import random
-    import secrets
-    from unittest.mock import patch
-
-    from custom_components.adjustable_bed.beds.limoss_remote_protocol import APP_SEQUENCE
-
-    rng = random.Random(0)
-    random.seed(0)
-    with (
-        patch.object(secrets, "randbits", rng.getrandbits),
-        patch.object(secrets, "token_bytes", lambda n=32: rng.randbytes(n)),
-        patch.object(secrets, "token_hex", lambda n=32: rng.randbytes(n).hex()),
-        patch.object(APP_SEQUENCE, "value", 0),
-    ):
-        yield
-
-
 @contextlib.contextmanager
 def virtual_time(clock: FakeClock) -> Iterator[None]:
-    """Replace ``asyncio.sleep`` and the loop clock with the fake clock."""
-    real_sleep = asyncio.sleep
-    real_get_running_loop = asyncio.get_running_loop
-    real_wait_for = REAL_WAIT_FOR
-    real_timeout = asyncio.timeout
-    real_timeout_at = asyncio.timeout_at
+    """Run ``asyncio`` timing on the fake clock for the duration of the block."""
+    real = {
+        name: getattr(asyncio, name)
+        for name in ("sleep", "wait", "wait_for", "timeout", "timeout_at", "get_running_loop")
+    }
+    real_sleep, real_wait = real["sleep"], real["wait"]
 
     async def settle(quiet: int, stop: Callable[[], bool] = lambda: False) -> None:
         """Yield until ``quiet`` consecutive yields saw no new activity, or ``stop()``."""
@@ -561,20 +566,22 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
             else:
                 seen, still = clock.activity, 0
 
-    async def fake_sleep(delay: float, result: Any = None) -> Any:
-        # Concurrent sleepers wake in deadline order: only the earliest pending
-        # deadline may advance the clock, once the runnable work has gone quiet.
-        deadline = clock.now + max(delay, 0)
+    async def wait_until(deadline: float, quiet: int, stop: Callable[[], bool]) -> bool:
+        """Wait until ``deadline`` is the earliest pending one; False if ``stop()`` first."""
         clock.sleepers.append(deadline)
         clock.activity += 1
         try:
-            while True:
-                await settle(SETTLE_YIELDS)
-                if deadline <= min(clock.sleepers):
-                    break
+            while not stop():
+                await settle(quiet, stop)
+                if not stop() and deadline <= min(clock.sleepers):
+                    clock.advance_to(deadline)
+                    return True
+            return False
         finally:
             clock.sleepers.remove(deadline)
-        clock.advance_to(deadline)
+
+    async def fake_sleep(delay: float, result: Any = None) -> Any:
+        await wait_until(clock.now + max(delay, 0), SETTLE_YIELDS, lambda: False)
         return result
 
     class FakeTimeout:
@@ -590,16 +597,8 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
             return self._expired
 
         async def _expire(self, deadline: float) -> None:
-            clock.sleepers.append(deadline)
-            try:
-                while True:
-                    await settle(TIMEOUT_SETTLE_YIELDS)
-                    if deadline <= min(clock.sleepers):
-                        break
-            finally:
-                clock.sleepers.remove(deadline)
+            await wait_until(deadline, TIMEOUT_SETTLE_YIELDS, lambda: False)
             self._expired = True
-            clock.advance_to(deadline)
             assert self._task is not None
             self._task.cancel()
 
@@ -626,26 +625,38 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         if timeout is None:
             return await awaitable
         task = asyncio.ensure_future(awaitable)
-        deadline = clock.now + timeout
-        clock.sleepers.append(deadline)
         try:
-            while not task.done():
-                await settle(TIMEOUT_SETTLE_YIELDS, task.done)
-                if not task.done() and deadline <= min(clock.sleepers):
-                    break
+            expired = await wait_until(clock.now + timeout, TIMEOUT_SETTLE_YIELDS, task.done)
         except asyncio.CancelledError:
             task.cancel()
             raise
-        finally:
-            clock.sleepers.remove(deadline)
-        if task.done():
+        if not expired:
             return task.result()
-        clock.advance_to(deadline)
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
         raise TimeoutError
 
-    loop = real_get_running_loop()
+    async def fake_wait(
+        fs: Any, *, timeout: float | None = None, return_when: str = asyncio.ALL_COMPLETED
+    ) -> tuple[set[Any], set[Any]]:
+        futures = set(fs)
+        if timeout is None:
+            return await real_wait(futures, return_when=return_when)
+
+        def finished() -> bool:
+            done = [f for f in futures if f.done()]
+            if return_when == asyncio.FIRST_COMPLETED:
+                return bool(done)
+            if return_when == asyncio.FIRST_EXCEPTION and any(
+                not f.cancelled() and f.exception() is not None for f in done
+            ):
+                return True
+            return len(done) == len(futures)
+
+        await wait_until(clock.now + timeout, TIMEOUT_SETTLE_YIELDS, finished)
+        return {f for f in futures if f.done()}, {f for f in futures if not f.done()}
+
+    loop = real["get_running_loop"]()
     previous_factory = loop.get_task_factory()
 
     def counting_factory(loop: asyncio.AbstractEventLoop, coro: Any, **kwargs: Any) -> Any:
@@ -654,187 +665,476 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
             return previous_factory(loop, coro, **kwargs)
         return asyncio.Task(coro, loop=loop, **kwargs)
 
+    proxy = _LoopProxy(loop, clock)
     loop.set_task_factory(counting_factory)
     asyncio.sleep = fake_sleep  # type: ignore[assignment]
+    asyncio.wait = fake_wait  # type: ignore[assignment]
     asyncio.wait_for = fake_wait_for  # type: ignore[assignment]
     asyncio.timeout = fake_timeout  # type: ignore[assignment]
     asyncio.timeout_at = FakeTimeout  # type: ignore[assignment]
-    asyncio.get_running_loop = lambda: _LoopProxy(real_get_running_loop(), clock)  # type: ignore[assignment]
+    asyncio.get_running_loop = lambda: proxy  # type: ignore[assignment]
     try:
         yield
     finally:
         loop.set_task_factory(previous_factory)
-        asyncio.sleep = real_sleep  # type: ignore[assignment]
-        asyncio.wait_for = real_wait_for  # type: ignore[assignment]
-        asyncio.timeout = real_timeout  # type: ignore[assignment]
-        asyncio.timeout_at = real_timeout_at  # type: ignore[assignment]
-        asyncio.get_running_loop = real_get_running_loop  # type: ignore[assignment]
+        for name, value in real.items():
+            setattr(asyncio, name, value)
 
 
-async def _build(scenario: Scenario, client: MagicMock) -> Any:
-    """Create the controller exactly as the factory contract test does, on ``client``."""
-    from tests import test_controller_contract as contract
+# ---------------------------------------------------------------------------
+# Recording client and GATT
+# ---------------------------------------------------------------------------
 
-    real_create = contract.create_controller
-    built: list[Any] = []
+Event = tuple[float, str, Any, bytes]
 
-    async def run_query(query_fn: Callable[[Any], Awaitable[Any]], **kwargs: Any) -> Any:
-        """Run a query callback against the constructed controller, as the coordinator does."""
+
+class Recorder:
+    """Collects GATT events with virtual timestamps."""
+
+    def __init__(self, clock: FakeClock) -> None:
+        self._clock = clock
+        self.events: list[Event] = []
+        self.background: list[Event] = []
+
+    def add(self, char: Any, kind: Any, data: Any = b"") -> None:
+        uuid = str(getattr(char, "uuid", char)).lower()
+        self._clock.activity += 1
+        if PHASE.get() != self._clock.phase:
+            self.background.append((self._clock.now, uuid, kind, bytes(data)))
+            return
+        self.events.append((self._clock.elapsed, uuid, kind, bytes(data)))
+
+
+ALL_PROPERTIES = ["read", "write", "write-without-response", "notify", "indicate"]
+
+
+def _normalize(specifier: Any) -> Any:
+    return specifier.lower() if isinstance(specifier, str) else specifier
+
+
+class FakeChar:
+    def __init__(self, uuid: str, handle: int, service: FakeService, properties: list[str]) -> None:
+        self.uuid = uuid
+        self.handle = handle
+        self.properties = list(properties)
+        self.descriptors: list[Any] = []
+        self.description = ""
+        self.service_uuid = service.uuid
+        self.service_handle = service.handle
+        self.max_write_without_response_size = 180
+
+    def __repr__(self) -> str:
+        return f"<FakeChar {self.uuid}>"
+
+
+class FakeService:
+    def __init__(self, uuid: str, handle: int) -> None:
+        self.uuid = uuid
+        self.handle = handle
+        self.characteristics: list[FakeChar] = []
+        self.description = ""
+
+    def get_characteristic(self, specifier: Any) -> FakeChar | None:
+        specifier = _normalize(specifier)
+        return next((c for c in self.characteristics if specifier in (c.uuid, c.handle)), None)
+
+
+class FakeServices:
+    """Minimal ``BleakGATTServiceCollection`` stand-in built from a stored layout."""
+
+    def __init__(self, layout: dict[str, Any]) -> None:
+        services: dict[str, list[str]] = layout["services"]
+        if layout["gatt"] == "pool":
+            # Every known UUID as a service holding every known UUID.
+            services = {uuid: list(services) for uuid in services}
+        properties = layout.get("properties", {})
+        self._services: list[FakeService] = []
+        self.characteristics: dict[int, FakeChar] = {}
+        handle = 1
+        for service_uuid, chars in services.items():
+            service = FakeService(service_uuid, handle)
+            handle += 1
+            for char_uuid in chars:
+                props = properties.get(char_uuid, ALL_PROPERTIES)
+                char = FakeChar(char_uuid, handle, service, props)
+                handle += 1
+                service.characteristics.append(char)
+                self.characteristics[char.handle] = char
+            self._services.append(service)
+        self.services = {s.handle: s for s in self._services}
+
+    def __iter__(self) -> Any:
+        return iter(self._services)
+
+    def __len__(self) -> int:
+        return len(self._services)
+
+    def get_service(self, specifier: Any) -> FakeService | None:
+        specifier = _normalize(specifier)
+        return next((s for s in self._services if specifier in (s.uuid, s.handle)), None)
+
+    def get_characteristic(self, specifier: Any) -> FakeChar | None:
+        specifier = _normalize(specifier)
+        for char in self.characteristics.values():
+            if specifier in (char.uuid, char.handle):
+                return char
+        return None
+
+
+class FakeClient:
+    """A connected client whose GATT operations are recorded as wire events.
+
+    ``replies`` maps a characteristic (or ``*``) to a notification delivered right
+    after a subscription to it, such as a status frame a session waits for, and
+    ``write:<hex prefix>`` to notifications (comma separated) answering a matching
+    write, and
+    ``read:<characteristic>`` to the value a read returns (empty otherwise).
+    Attributes it lacks raise ``AttributeError`` like a real client.
+    """
+
+    is_connected = True
+    address = "AA:BB:CC:DD:EE:FF"
+    mtu_size = 185
+
+    def __init__(self, recorder: Recorder, layout: dict[str, Any], replies: dict[str, str]) -> None:
+        self._recorder = recorder
+        self._replies = replies
+        self._subscribers: list[tuple[Any, Callable[..., Any]]] = []
+        self.services = FakeServices(layout)
+
+    async def write_gatt_char(self, char: Any, data: Any, response: bool | None = None) -> None:
+        self._recorder.add(char, response, data)
+        await asyncio.sleep(WRITE_DURATION_S)
+        for key, reply in self._replies.items():
+            if key.startswith("write:") and bytes(data).hex().startswith(key[6:]):
+                for frame in reply.split(","):
+                    for target, callback in self._subscribers:
+                        callback(target, bytearray.fromhex(frame))
+
+    async def start_notify(self, char: Any, callback: Callable[..., Any], **_: Any) -> None:
+        self._recorder.add(char, "notify")
+        uuid = str(getattr(char, "uuid", char)).lower()
+        target = self.services.get_characteristic(uuid) or char
+        self._subscribers.append((target, callback))
+        if (reply := self._replies.get(uuid, self._replies.get("*"))) is not None:
+            asyncio.get_running_loop().call_soon(callback, target, bytearray.fromhex(reply))
+
+    async def stop_notify(self, char: Any) -> None:
+        self._recorder.add(char, "unnotify")
+
+    async def read_gatt_char(self, char: Any, **_: Any) -> bytearray:
+        self._recorder.add(char, "read")
+        uuid = str(getattr(char, "uuid", char)).lower()
+        return bytearray.fromhex(self._replies.get(f"read:{uuid}", ""))
+
+    async def pair(self, *_: Any, **__: Any) -> bool:
+        self._recorder.add("-", "pair")
+        return True
+
+    async def disconnect(self) -> bool:
+        return True
+
+
+def _collapse(events: list[Event]) -> list[list[Any]]:
+    """Collapse constant-interval repeats of one event into ``[t, char, kind, hex, n, dt]``."""
+    runs: list[list[Any]] = []
+    for at, char, kind, data in events:
+        t_ms = round(at * 1000)
+        hex_data = data.hex()
+        if runs:
+            last = runs[-1]
+            same = last[1] == char and last[2] == kind and last[3] == hex_data
+            if same and last[4] == 1:
+                last[4], last[5] = 2, t_ms - last[0]
+                continue
+            if same and t_ms - (last[0] + last[5] * (last[4] - 1)) == last[5]:
+                last[4] += 1
+                continue
+        runs.append([t_ms, char, kind, hex_data, 1, 0])
+    return runs
+
+
+# ---------------------------------------------------------------------------
+# Coordinator stub
+# ---------------------------------------------------------------------------
+
+
+async def _run_inline(func: Callable[..., Any], *args: Any) -> Any:
+    return func(*args)
+
+
+def _spawn(coro: Any, *_: Any, **__: Any) -> asyncio.Task[Any]:
+    return asyncio.ensure_future(coro)
+
+
+class Coordinator:
+    """The coordinator surface controllers use, with the real pulse defaults.
+
+    Attributes a controller reads that this stub lacks raise ``AttributeError``,
+    which the capture records, rather than returning a silent mock.
+    """
+
+    def __init__(self, bed_type: str, variant: str | None, data: dict[str, Any]) -> None:
+        from custom_components.adjustable_bed.const import (
+            MALOUF_LAYOUT_AUTO,
+            MALOUF_MEMORY_SLOTS_AUTO,
+            VARIANT_AUTO,
+            get_motor_pulse_defaults,
+        )
+
+        self.bed_type = bed_type
+        self.entry = SimpleNamespace(
+            data=data,
+            options={},
+            entry_id="wire-snapshot",
+            title="Wire Snapshot Bed",
+            unique_id="AA:BB:CC:DD:EE:FF",
+            async_create_background_task=lambda _hass, coro, *_, **__: _spawn(coro),
+        )
+        self.hass = SimpleNamespace(
+            data={},
+            loop=asyncio.get_running_loop(),
+            async_add_import_executor_job=_run_inline,
+            async_add_executor_job=_run_inline,
+            async_create_task=_spawn,
+            async_create_background_task=_spawn,
+            states=SimpleNamespace(get=lambda _entity_id: None),
+            config=SimpleNamespace(
+                time_zone="UTC",
+                config_dir="/nonexistent/wire-snapshot",
+                path=lambda *parts: "/".join(("/nonexistent/wire-snapshot", *parts)),
+            ),
+            config_entries=SimpleNamespace(
+                async_get_entry=lambda entry_id: (
+                    self.entry if entry_id == "wire-snapshot" else None
+                ),
+                async_entries=lambda *_: [self.entry],
+                async_update_entry=self._update_entry,
+            ),
+        )
+        self.motor_pulse_count, self.motor_pulse_delay_ms = get_motor_pulse_defaults(
+            bed_type, variant or VARIANT_AUTO
+        )
+        self.cancel_command = asyncio.Event()
+        self._cancel_counter = 0
+        self._command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
+        self._command_lock = asyncio.Lock()
+        self.address = "AA:BB:CC:DD:EE:FF"
+        # Some protocols embed the device name; kept from the first capture.
+        self.name = "Contract Test Bed"
+        self.ble_device_name = "Contract Test Bed"
+        self.observed_ble_device_name = None
+        self.motor_count = 2
+        self.has_massage = True
+        self.disable_angle_sensing = True
+        self.malouf_layout = MALOUF_LAYOUT_AUTO
+        self.malouf_memory_slots = MALOUF_MEMORY_SLOTS_AUTO
+        self.head_max_angle = self.back_max_angle = 68.0
+        self.legs_max_angle = self.feet_max_angle = 45.0
+        self.position_data: dict[str, float] = {}
+        self.controller_state: dict[str, Any] = {}
+        self.capability_controller = None
+        self.starcode_app_retained_state = None
+        self.furnimove_widget_state = None
+        self.okin_cb = None
+        self.client: Any = None
+        self.controller: Any = None
+        self._offline_controller = None
+        self._pairlink_runtime = None
+        self._pending_capability_reload = False
+        self._pending_internal_bond_marker = None
+
+    def _update_entry(self, entry: Any, *, data: Any = None, options: Any = None, **_: Any) -> bool:
+        if data is not None:
+            entry.data = dict(data)
+        if options is not None:
+            entry.options = dict(options)
+        return True
+
+    def get_max_angle(self, position_key: str) -> float:
+        return 45.0 if position_key in {"legs", "feet"} else 68.0
+
+    async def async_execute_controller_command(self, command_fn: Any, *_: Any, **__: Any) -> None:
+        await command_fn(self.controller)
+
+    async def async_execute_controller_query(self, query_fn: Any, **kwargs: Any) -> Any:
         run_if = kwargs.get("run_if")
         if run_if is not None and not run_if():
             return None
-        return await query_fn(built[-1])
+        return await query_fn(self.controller)
 
-    async def create(coordinator: Any, bed_type: str, variant: Any, _client: Any, **kwargs: Any):
-        coordinator.entry.data = {**coordinator.entry.data, **scenario.entry_data}
-        coordinator.client = client
-        coordinator.record_command_trace = MagicMock()
-        coordinator.handle_controller_state_update = MagicMock()
-        if not hasattr(coordinator.entry, "entry_id"):
-            coordinator.entry.entry_id = "wire-snapshot"
-        coordinator.async_execute_controller_query = run_query
-        controller = await real_create(
-            coordinator,
-            bed_type,
-            scenario.protocol_variant if scenario.protocol_variant is not None else variant,
-            client,
-            **{**kwargs, **scenario.factory_kwargs},
-        )
-        coordinator.controller = controller
-        built.append(controller)
-        return controller
+    async def async_stop_command(self) -> None:
+        self.cancel_command.set()
 
-    contract.create_controller = create
-    try:
-        return await contract._create_controller_for_bed_type(scenario.bed_type)  # noqa: SLF001
-    finally:
-        contract.create_controller = real_create
+    async def async_disconnect(self, *_: Any, **__: Any) -> None:
+        return None
+
+    async def async_start_notify(self) -> None:
+        return None
+
+    async def async_write_app_state(self, *_: Any) -> None:
+        return None
+
+    @contextlib.contextmanager
+    def hold_command_connection(self) -> Iterator[None]:
+        yield
+
+    def _uses_persistent_connection(self) -> bool:
+        return False
+
+    def request_command_cancel(self, *_: Any, **__: Any) -> None:
+        self.cancel_command.set()
+
+    def _ignore(self, *_: Any, **__: Any) -> None:
+        return None
+
+    record_command_trace = handle_controller_state_update = handle_controller_state_updates = (
+        _ignore
+    )
+    save_app_state = clear_position_feedback = resume_disconnect_timer = _ignore
+    remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
+    remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
+    remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
+    remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
+    _async_persist_config = _schedule_pending_capability_reload = _ignore
 
 
-async def _connect_sequence(
-    controller: Any, recorder: WriteRecorder, clock: FakeClock
-) -> dict[str, Any]:
-    """Replay the coordinator's post-connect hooks and record any handshake writes."""
-    recorder.writes.clear()
-    clock.begin_phase()
-    try:
-        discovery = controller.async_discover_capabilities()
-        if inspect.isawaitable(discovery):
-            await REAL_WAIT_FOR(discovery, COMMAND_TIMEOUT_S)
-        await REAL_WAIT_FOR(controller.start_notify(lambda *_: None), COMMAND_TIMEOUT_S)
-    except Exception as err:  # noqa: BLE001 - recorded, not hidden
-        if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
-            print(f"  connect: {type(err).__name__}: {str(err)[:200]}", file=sys.stderr)
-        return {
-            "status": "error",
-            "error": type(err).__name__,
-            "writes": _collapse(recorder.writes),
+# ---------------------------------------------------------------------------
+# Scenarios
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Scenario:
+    """One way to reach a controller: bed type plus the route that changes bytes."""
+
+    id: str
+    bed_type: str
+    protocol_variant: str | None = None
+    # Config-entry data merged over ``BASE_ENTRY_DATA``.
+    entry_data: dict[str, Any] = field(default_factory=dict)
+    # Extra keyword arguments for ``create_controller``.
+    factory_kwargs: dict[str, Any] = field(default_factory=dict)
+    # Scripted notifications, see ``FakeClient``.
+    replies: dict[str, str] = field(default_factory=dict)
+
+
+def _base_entry_data() -> dict[str, Any]:
+    from custom_components.adjustable_bed import const
+
+    return {
+        const.CONF_FURNIMOVE_REMOTE: "00000",
+        const.CONF_LOGICDATA_APP_PROFILE: "phone",
+        const.CONF_LOGICDATA_APP_FAMILY: "p1",
+        const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",
+        const.CONF_LOGICDATA_APP_TRANSPORT: "t1",
+        const.CONF_JIECANG_APP_PROFILE: "dreamask",
+        const.CONF_JIECANG_APP_LAYOUT: "standard_2",
+        const.CONF_JIECANG_APP_TRANSPORT: "g1",
+        const.CONF_MALOUF_APP_PROFILE: "malouf",
+        const.CONF_MALOUF_APP_MODEL: "L600",
+        const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
+        const.CONF_STARCODE_M5X5_PROFILE: "cb25",
+        const.CONF_STARCODE_M1X12_PROFILE: "cb25",
+        const.CONF_BLE_DEVICE_NAME: "STAR252201123456",
+        const.CONF_PRODUCT_TYPE: "bed",
+        const.CONF_VIBRADORM_APP_PROFILE: "caresse",
+        const.CONF_VIBRADORM_CONTROL_TYPE: "2",
+        const.CONF_VMATBASIC_PROFILE: "basic",
+        const.CONF_REMACRO_MODEL: 50,
+        const.CONF_STARCODE_COMMAND_SELECTOR: "none",
+        const.CONF_STARCODE_UI_SELECTOR: "none",
+        const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",
+    }
+
+
+# A valid TiMOTION AHF status frame: no lock bits, lamp code 0, checksum 0.
+TIMOTION_STATUS = "9d" + "00" * 14
+
+
+# Room 0x12345678, vaddr 0x01020304; ``%s`` is the product ID byte.
+KAIDI_BROADCAST = "c0ff0278563412ffeeddccbbaa0000%s0100a004030201"
+# A node ping answer from AA:BB:CC:DD:EE:FF with vaddr 0x01020304.
+KAIDI_PING_REPLY = "0300000000ffffeeddccbbaa04030201"
+
+
+def default_scenario(bed_type: str) -> Scenario:
+    """The bed type in its default route, with the entry data it needs to build."""
+    from custom_components.adjustable_bed import const
+
+    data: dict[str, Any] = {}
+    variant: str | None = {
+        const.BED_TYPE_LEGGETT_PLATT: const.LEGGETT_VARIANT_OKIN,
+        const.BED_TYPE_SBI: const.SBI_VARIANT_BOTH,
+        const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
+        const.BED_TYPE_CASPER_BASE: "casperpro",
+        const.BED_TYPE_COMFORT_ENHANCEMENTS: "mc2",
+        const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
+        const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
+        const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
+        const.BED_TYPE_HJBED: "hj_bedbjrn",
+        const.BED_TYPE_DOUBLESLEEP: "p1",
+    }.get(bed_type)
+    kwargs: dict[str, Any] = {}
+    replies: dict[str, str] = {}
+    if bed_type in const.CLUSTER033_BED_TYPES:
+        from custom_components.adjustable_bed.cluster033_profiles import DEFAULT_LAYOUTS
+
+        data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_ISLEEP:
+        data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
+        replies = {
+            # Room 10000 joined (own vaddr 1); the node ping finds this address.
+            "write:0116011027": "021600,010a01000000",
+            "write:03fffffffffe": KAIDI_PING_REPLY,
         }
-    return (
-        {"status": "ok", "writes": _collapse(recorder.writes)}
-        if recorder.writes
-        else {"status": "no_writes"}
+    if bed_type == const.BED_TYPE_SLEEPTRACKER:
+        data[const.CONF_PRODUCT_TYPE] = "unknown"
+    if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
+        data[const.CONF_SLEEPYS_ELITE_SELECTOR] = "BOX24"
+    if bed_type == const.BED_TYPE_RICHMAT:
+        kwargs = {"device_name": "Casper QRRM Bed", "richmat_remote": "qrrm"}
+    if bed_type == const.BED_TYPE_LEGGETT_LP_LEGACY:
+        from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+
+        data.update(
+            {
+                const.CONF_LP_LEGACY_MODEL: LP_LEGACY_PROFILE_CODES[0],
+                const.CONF_LP_LEGACY_MODE: "legacy",
+                const.CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+            }
+        )
+    if bed_type == const.BED_TYPE_MOTION_BED:
+        # The app's identity is the exact advertised name.
+        data[const.CONF_BLE_DEVICE_NAME] = "QMS-IQ"
+    if bed_type == const.BED_TYPE_DOUBLESLEEP:
+        data[const.CONF_PRODUCT_TYPE] = "3"
+    if bed_type == const.BED_TYPE_TIMOTION_AHF:
+        replies = {"*": TIMOTION_STATUS}
+    if bed_type == const.BED_TYPE_SLEEP_NUMBER:
+        # The Auth characteristic holds the 16-byte session UUID.
+        replies = {f"read:{const.SLEEP_NUMBER_AUTH_CHAR_UUID}": "00112233445566778899aabbccddeeff"}
+    if bed_type == const.BED_TYPE_SVANE:
+        # Raw axis reads, so memory programming has a fresh position to save.
+        replies = {
+            "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
+            "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
+        }
+    if bed_type == const.BED_TYPE_KAIDI:
+        # A provisioned broadcast advertisement carrying the room ID (tests/test_kaidi.py).
+        kwargs = {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "81")}}
+        replies = {"write:01160178563412": "021600"}  # join accepted
+    return Scenario(
+        id=bed_type,
+        bed_type=bed_type,
+        protocol_variant=variant,
+        entry_data=data,
+        factory_kwargs=kwargs,
+        replies=replies,
     )
 
 
-async def _cancel_strays(baseline: set[asyncio.Task[Any]]) -> None:
-    """Cancel tasks a controller left running (keepalives, retries) since ``baseline``."""
-    strays = [
-        t for t in asyncio.all_tasks() if t not in baseline and t is not asyncio.current_task()
-    ]
-    for task in strays:
-        task.cancel()
-    await asyncio.gather(*strays, return_exceptions=True)
-
-
-async def capture_scenario(scenario: Scenario, frozen: Any = None) -> dict[str, Any]:
-    baseline = asyncio.all_tasks()
-    try:
-        return await _capture(scenario, frozen, baseline)
-    finally:
-        await _cancel_strays(baseline)
-
-
-async def _capture(
-    scenario: Scenario, frozen: Any, baseline: set[asyncio.Task[Any]]
-) -> dict[str, Any]:
-    """Build one controller through the factory and drive every logical command."""
-    clock = FakeClock(frozen)
-    recorder = WriteRecorder(clock)
-    with deterministic_randomness(), virtual_time(clock):
-        # Pass 1 learns which controller the route reaches; pass 2 rebuilds it on a
-        # GATT layout derived from that controller's own UUID constants.
-        controller = None
-        try:
-            controller = await _build(scenario, _make_client(recorder, derive_layout(None)))
-        except Exception:  # noqa: BLE001 - retried below with a module hint
-            pass
-        module = None
-        if controller is not None:
-            module = sys.modules[type(controller).__module__]
-        else:
-            with contextlib.suppress(ImportError):
-                module = importlib.import_module(
-                    f"custom_components.adjustable_bed.beds.{scenario.bed_type}"
-                )
-        derived = derive_layout(module)
-        candidates: list[tuple[str, dict[str, list[str]]]] = (
-            [("scenario", scenario.layout)]
-            if scenario.layout is not None
-            else [
-                ("all", derived),
-                *((uuid, {uuid: chars}) for uuid, chars in derived.items()),
-                ("pool", crossed_layout(derived)),
-            ]
-        )
-        for label, layout in candidates:  # noqa: B007 - label is read after the loop
-            await _cancel_strays(baseline)
-            recorder.background.clear()
-            controller = await _build(scenario, _make_client(recorder, layout))
-            connect = await _connect_sequence(controller, recorder, clock)
-            if connect["status"] != "error":
-                break
-        else:
-            # No layout let the connect hooks succeed; commands may still work.
-            label = "connect_failed"
-            await _cancel_strays(baseline)
-            recorder.background.clear()
-            controller = await _build(scenario, _make_client(recorder, derived))
-            connect = await _connect_sequence(controller, recorder, clock)
-        commands = {"connect": connect}
-        for name, method, args in LOGICAL_COMMANDS:
-            commands[name] = await _run_command(controller, recorder, clock, method, args)
-        # Let delayed work from the final command run before cleanup cancels it.
-        clock.begin_phase()
-        await asyncio.sleep(DRAIN_WINDOW_S)
-        if recorder.background:
-            # Writes from tasks of an earlier phase, at absolute virtual time.
-            commands["background"] = {
-                "status": "background",
-                "writes": _collapse(recorder.background),
-            }
-
-    info = {
-        "bed_type": scenario.bed_type,
-        "controller": type(controller).__name__,
-        "module": type(controller).__module__.rsplit(".", 1)[-1],
-    }
-    if not any(cmd["status"] == "ok" for cmd in commands.values()):
-        # No command succeeded: flag the coverage gap, but keep every write that was
-        # recorded so a wire change in a partly working route still fails the guard.
-        # Commands that wrote nothing would only pin error noise.
-        return {
-            **info,
-            "gatt": "unresolved",
-            "coverage_gap": True,
-            "connect_error": connect.get("error"),
-            "commands": {name: cmd for name, cmd in commands.items() if cmd.get("writes")},
-        }
-    return {**info, "gatt": label, "commands": commands}
-
-
 # Bed types whose protocol variants select a different controller or byte table.
-# Each entry is ``bed_type -> names of const mappings holding the variants``.
 VARIANT_ROUTES: dict[str, str] = {
     "keeson": "KEESON_VARIANTS",
     "richmat": "RICHMAT_VARIANTS",
@@ -861,9 +1161,17 @@ VARIANT_ROUTES: dict[str, str] = {
     "kaidi": "KAIDI_VARIANTS",
     "adjustamattress": "ADJUSTAMATTRESS_VARIANTS",
 }
-# Large variant sets are sampled: the first and last keys plus the named extras.
+ROUTE_KWARGS: dict[str, dict[str, Any]] = {
+    "richmat": {"richmat_remote": "auto", "device_name": "Richmat"},
+    # Floyd Home is advertised as product 139.
+    "kaidi:floyd": {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "8b")}},
+}
+ROUTE_REPLIES: dict[str, dict[str, str]] = {
+    # Floyd also pings for its node: this address answers with vaddr 0x01020304.
+    "kaidi:floyd": {"write:03fffffffffe": KAIDI_PING_REPLY},
+}
+# Large variant sets are sampled: the first keys plus the last.
 SAMPLED_ROUTES: dict[str, int] = {"adjustamattress": 3}
-RICHMAT_KWARGS: dict[str, Any] = {"richmat_remote": "auto", "device_name": "Richmat"}
 
 
 def route_scenarios() -> list[Scenario]:
@@ -874,16 +1182,19 @@ def route_scenarios() -> list[Scenario]:
     for bed_type, table in VARIANT_ROUTES.items():
         if bed_type not in const.SUPPORTED_BED_TYPES:
             continue
+        base = default_scenario(bed_type)
         variants = [v for v in getattr(const, table) if v != const.VARIANT_AUTO]
         if (sample := SAMPLED_ROUTES.get(bed_type)) is not None:
             variants = [*variants[:sample], variants[-1]]
         for variant in variants:
             scenarios.append(
-                Scenario(
+                dataclasses.replace(
+                    base,
                     id=f"{bed_type}:{variant}",
-                    bed_type=bed_type,
                     protocol_variant=variant,
-                    factory_kwargs=RICHMAT_KWARGS if bed_type == "richmat" else {},
+                    factory_kwargs=ROUTE_KWARGS.get(f"{bed_type}:{variant}")
+                    or ROUTE_KWARGS.get(bed_type, base.factory_kwargs),
+                    replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
     # Richmat app family: the picker model selects the byte table within one controller.
@@ -952,47 +1263,437 @@ def build_scenarios() -> list[Scenario]:
     """Every bed type once, plus the routes that change the controller or its bytes."""
     from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES
 
-    scenarios = [Scenario(id=bed_type, bed_type=bed_type) for bed_type in SUPPORTED_BED_TYPES]
+    scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES]
     scenarios.extend(route_scenarios())
     ids = [scenario.id for scenario in scenarios]
     assert len(ids) == len(set(ids)), "duplicate scenario ids"
     return scenarios
 
 
-FROZEN_NOW = "2026-01-02 03:04:05"
-FROZEN_BASE = datetime.datetime.fromisoformat(FROZEN_NOW)
+# ---------------------------------------------------------------------------
+# GATT layout derivation (only for scenarios without a stored layout)
+# ---------------------------------------------------------------------------
+
+UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+SIBLING_SKIP = frozenset(
+    {
+        "adapter",
+        "address_lock",
+        "app_session",
+        "app_state_store",
+        "base",
+        "command_scheduler",
+        "const",
+        "coordinator",
+        "detection",
+        "diagnostic_payloads",
+        "entity",
+        "position_seek",
+        "redaction",
+        "validators",
+    }
+)
 
 
-async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
-    """Capture every scenario with wall-clock time frozen (clock-sync frames carry it)."""
+def _uuid_values(value: Any, depth: int = 3) -> list[str]:
+    """UUID strings held by a constant, looking inside containers and dataclasses."""
+    if isinstance(value, str):
+        return [value.lower()] if UUID_RE.match(value.lower()) else []
+    if depth == 0:
+        return []
+    if isinstance(value, dict):
+        items: Any = [*value.keys(), *value.values()]
+    elif isinstance(value, list | tuple | frozenset | set):
+        items = value
+    elif dataclasses.is_dataclass(value) and not isinstance(value, type):
+        items = [getattr(value, f.name, None) for f in dataclasses.fields(value)]
+    else:
+        return []
+    return [u for item in items for u in _uuid_values(item, depth - 1)]
+
+
+def _sibling_modules(module: Any, depth: int = 2) -> list[Any]:
+    """The controller module plus the package modules it imports, a few levels deep."""
+    found: dict[str, Any] = {module.__name__: module}
+    frontier = [module]
+    for _ in range(depth):
+        nxt = []
+        for mod in frontier:
+            try:
+                tree = ast.parse(Path(mod.__file__).read_text())
+            except OSError, SyntaxError, TypeError:
+                continue
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.ImportFrom) and node.level):
+                    continue
+                # ``from .x import y`` names module x; ``from .. import x`` names x directly.
+                targets = [node.module] if node.module else [alias.name for alias in node.names]
+                for target in targets:
+                    name = importlib.util.resolve_name("." * node.level + target, mod.__package__)
+                    if name in found or name.rsplit(".", 1)[-1] in SIBLING_SKIP:
+                        continue
+                    try:
+                        found[name] = importlib.import_module(name)
+                    except ImportError:
+                        continue
+                    nxt.append(found[name])
+        frontier = nxt
+    return list(found.values())
+
+
+def _uuid_rows(value: Any) -> list[list[str]]:
+    """Tuples of several UUIDs read as ``(service, characteristic, ...)`` rows."""
+    if not isinstance(value, list | tuple | frozenset):
+        return []
+    rows = []
+    if value and all(isinstance(item, str) for item in value):
+        uuids = _uuid_values(value)
+        if len(uuids) >= 2 and len(uuids) == len(value) and isinstance(value, tuple):
+            rows.append(uuids)
+    for item in value:
+        if isinstance(item, list | tuple):
+            rows.extend(_uuid_rows(item))
+    return rows
+
+
+def derive_layout(module: Any | None) -> dict[str, list[str]]:
+    """Guess a GATT layout from the UUID constants a controller's modules declare.
+
+    Tuples of several UUIDs are ``(service, characteristic, ...)`` rows. Other
+    constants named ``*SERVICE*`` are services and the rest characteristics; a
+    characteristic joins the service whose name shares its leading name token,
+    and otherwise every service. Only used to create a stored layout.
+    """
+    from custom_components.adjustable_bed import const
+
+    modules = [const] if module is None else [const, *_sibling_modules(module)]
+    own_names: set[str] = set()
+    for mod in modules[1:]:
+        own_names.update(vars(mod))
+    layout: dict[str, list[str]] = {}
+    named: dict[str, list[str]] = {}
+    for mod in modules:
+        for name, value in vars(mod).items():
+            if name.startswith("_") and mod is const:
+                continue
+            if module is not None and mod is const and name not in own_names:
+                continue
+            for row in _uuid_rows(value):
+                layout.setdefault(row[0], []).extend(row[1:])
+            if (uuids := _uuid_values(value)) and name != "VARIANT_AUTO":
+                named[name] = uuids
+    services = {n: u for n, u in named.items() if "SERVICE" in n or n.endswith("_SVC")}
+    chars = {n: u for n, u in named.items() if n not in services}
+    for sname, suuids in services.items():
+        prefix = sname.split("SERVICE")[0].rstrip("_")
+        matched = [
+            c
+            for cname, cu in chars.items()
+            if (prefix and cname.startswith(prefix)) or cname.split("_")[0] == sname.split("_")[0]
+            for c in cu
+        ]
+        for suuid in suuids:
+            layout.setdefault(suuid, []).extend(matched)
+    allchars = [c for cu in chars.values() for c in cu]
+    single_service = len(layout) == 1
+    for suuid in list(layout):
+        layout[suuid] = list(
+            dict.fromkeys(
+                (layout[suuid] + allchars) if single_service else (layout[suuid] or allchars)
+            )
+        )
+    if not layout and allchars:
+        layout["0000ffff-0000-1000-8000-00805f9b34fb"] = list(dict.fromkeys(allchars))
+    return layout
+
+
+def candidate_layouts(module: Any | None) -> list[dict[str, Any]]:
+    """Layouts to try, in order: the full derived one, each service alone, then a pool."""
+    derived = derive_layout(module)
+    pool = list(dict.fromkeys([*derived, *(c for chars in derived.values() for c in chars)]))
+    return [
+        {"gatt": "all", "services": derived},
+        *({"gatt": uuid, "services": {uuid: chars}} for uuid, chars in derived.items()),
+        {"gatt": "pool", "services": pool},
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Capture
+# ---------------------------------------------------------------------------
+
+
+@contextlib.contextmanager
+def deterministic_process_state() -> Iterator[None]:
+    """Seed randomness, reset app-global counters and empty HA's Bluetooth history.
+
+    Nonces, session ids and process-wide sequence numbers then repeat, whatever
+    ran earlier in the process.
+    """
+    import random
+    import secrets
+    from unittest.mock import patch
+
+    from custom_components.adjustable_bed.beds.limoss_remote_protocol import APP_SEQUENCE
+
+    rng = random.Random(0)
+    random.seed(0)
+    with contextlib.ExitStack() as stack:
+        stack.enter_context(patch.object(secrets, "randbits", rng.getrandbits))
+        stack.enter_context(patch.object(secrets, "token_bytes", lambda n=32: rng.randbytes(n)))
+        stack.enter_context(patch.object(secrets, "token_hex", lambda n=32: rng.randbytes(n).hex()))
+        stack.enter_context(patch.object(APP_SEQUENCE, "value", 0))
+        # No advertisement history or scanners: lookups answer like an empty HA.
+        from homeassistant.components import bluetooth
+
+        stack.enter_context(
+            patch.object(bluetooth, "async_last_service_info", lambda *_, **__: None)
+        )
+        stack.enter_context(patch.object(bluetooth, "async_current_scanners", lambda *_: []))
+        yield
+
+
+async def _build(scenario: Scenario, client: Any) -> Any:
+    from custom_components.adjustable_bed.controller_factory import create_controller
+
+    coordinator = Coordinator(
+        scenario.bed_type,
+        scenario.protocol_variant,
+        {**_base_entry_data(), **scenario.entry_data},
+    )
+    coordinator.client = client
+    controller = await create_controller(
+        cast(Any, coordinator),
+        scenario.bed_type,
+        scenario.protocol_variant,
+        client,
+        **scenario.factory_kwargs,
+    )
+    coordinator.controller = controller
+    return controller
+
+
+async def _timed(awaitable: Awaitable[Any], recorder: Recorder, clock: FakeClock) -> dict[str, Any]:
+    """Run one phase on the virtual budget and summarise what it put on the wire."""
+    try:
+        await asyncio.wait_for(awaitable, COMMAND_BUDGET_S)
+    except NotImplementedError:
+        if recorder.events:
+            return {"status": "not_implemented", "writes": _collapse(recorder.events)}
+        return {"status": "unsupported"}
+    except TimeoutError:
+        return {"status": "timeout", "writes": _collapse(recorder.events)}
+    except Exception as err:  # noqa: BLE001 - recorded, not hidden
+        if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
+            print(f"  {type(err).__name__}: {str(err)[:200]}", file=sys.stderr)
+        return {
+            "status": "error",
+            "error": type(err).__name__,
+            "writes": _collapse(recorder.events),
+        }
+    if not recorder.events:
+        return {"status": "no_writes"}
+    return {"status": "ok", "writes": _collapse(recorder.events)}
+
+
+async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dict[str, Any]:
+    """Replay the coordinator's post-connect hooks and record any handshake traffic."""
+
+    async def hooks() -> None:
+        # The coordinator's startup order, with notifications always started.
+        discovery = controller.async_discover_capabilities()
+        if inspect.isawaitable(discovery):
+            await discovery
+        await controller.start_notify(lambda *_: None)
+        for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001
+            if hasattr(controller, hook):
+                await getattr(controller, hook)()
+
+    recorder.events.clear()
+    clock.begin_phase()
+    return await _timed(hooks(), recorder, clock)
+
+
+# Bed-specific startup the coordinator runs after notifications, in its order.
+STARTUP_HOOKS: dict[str, tuple[str, ...]] = {
+    "octo": ("discover_features", "send_pin", "start_keepalive"),
+    "jensen": ("query_config",),
+    "sleep_number": ("query_config",),
+    "sleep_number_mcr": ("query_config",),
+}
+
+
+async def _run_command(
+    controller: Any, recorder: Recorder, clock: FakeClock, command: Command
+) -> dict[str, Any]:
+    recorder.events.clear()
+    cancel = controller._coordinator.cancel_command  # noqa: SLF001
+    cancel.clear()
+    clock.begin_phase()
+
+    async def release() -> None:
+        # The user lets go of a held command after HOLD_CAP_S, like a STOP request.
+        await asyncio.sleep(HOLD_CAP_S)
+        cancel.set()
+
+    hold_cap = asyncio.ensure_future(release())
+    try:
+        try:
+            awaitable = command.call(controller)
+        except NotImplementedError:
+            return {"status": "unsupported"}
+        except Exception as err:  # noqa: BLE001
+            return {"status": "error", "error": type(err).__name__}
+        return await _timed(awaitable, recorder, clock)
+    finally:
+        hold_cap.cancel()
+
+
+async def _cancel_strays(baseline: set[asyncio.Task[Any]]) -> None:
+    """Cancel tasks a controller left running (keepalives, retries) since ``baseline``."""
+    strays = [
+        t for t in asyncio.all_tasks() if t not in baseline and t is not asyncio.current_task()
+    ]
+    for task in strays:
+        task.cancel()
+    await asyncio.gather(*strays, return_exceptions=True)
+
+
+async def capture_scenario(
+    scenario: Scenario, layout: dict[str, Any] | None, frozen: Any = None
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Capture one scenario on ``layout``, deriving a layout first when it is None."""
+    baseline = asyncio.all_tasks()
+    try:
+        return await _capture(scenario, layout, frozen, baseline)
+    finally:
+        await _cancel_strays(baseline)
+
+
+async def _capture(
+    scenario: Scenario, layout: dict[str, Any] | None, frozen: Any, baseline: set[asyncio.Task[Any]]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if layout is None:
+        clock = FakeClock(frozen)
+        with deterministic_process_state(), virtual_time(clock):
+            layout = await _find_layout(scenario, Recorder(clock), clock, baseline)
+    clock = FakeClock(frozen)
+    recorder = Recorder(clock)
+    with deterministic_process_state(), virtual_time(clock):
+        controller = await _build(scenario, FakeClient(recorder, layout, scenario.replies))
+        commands = {"connect": await _connect(controller, recorder, clock)}
+        plan = plan_commands(controller)
+        for command in plan:
+            result = await _run_command(controller, recorder, clock, command)
+            # A cover that emits exactly what the matching move call did points to it.
+            twin = (
+                command.name.removeprefix("cover:")
+                .replace("_open", "_up")
+                .replace("_close", "_down")
+            )
+            if command.name.startswith("cover:") and commands.get(twin) == result:
+                result = {"status": "same", "as": twin, "ok": result["status"]}
+            commands[command.name] = result
+        # Let delayed work from the final command run before cleanup cancels it.
+        clock.begin_phase()
+        await asyncio.sleep(DRAIN_WINDOW_S)
+        if recorder.background:
+            # Events from tasks of an earlier phase, at absolute virtual time.
+            commands["background"] = {
+                "status": "background",
+                "writes": _collapse(recorder.background),
+            }
+
+    gaps = [
+        c.name for c in plan if c.is_gap(commands[c.name].get("ok", commands[c.name]["status"]))
+    ]
+    info: dict[str, Any] = {
+        "bed_type": scenario.bed_type,
+        "controller": type(controller).__name__,
+        "module": type(controller).__module__.rsplit(".", 1)[-1],
+        "gatt": layout["gatt"],
+        "pulse": [
+            controller._coordinator.motor_pulse_count,
+            controller._coordinator.motor_pulse_delay_ms,
+        ],  # noqa: SLF001
+    }
+    if commands["connect"]["status"] in {"error", "timeout"}:
+        info["connect_error"] = commands["connect"].get("error", "timeout")
+    if gaps:
+        info["gaps"] = gaps
+    return {**info, "commands": commands}, layout
+
+
+async def _find_layout(
+    scenario: Scenario, recorder: Recorder, clock: FakeClock, baseline: set[asyncio.Task[Any]]
+) -> dict[str, Any]:
+    """Derive the first candidate layout on which the connect hooks succeed."""
+    module = None
+    first = {"gatt": "all", "services": derive_layout(None)}
+    try:
+        controller = await _build(scenario, FakeClient(recorder, first, scenario.replies))
+        module = sys.modules[type(controller).__module__]
+    except Exception:  # noqa: BLE001 - fall back to the bed type's own module
+        with contextlib.suppress(ImportError):
+            module = importlib.import_module(
+                f"custom_components.adjustable_bed.beds.{scenario.bed_type}"
+            )
+    candidates = candidate_layouts(module)
+    for candidate in candidates:
+        await _cancel_strays(baseline)
+        try:
+            controller = await _build(scenario, FakeClient(recorder, candidate, scenario.replies))
+        except Exception:  # noqa: BLE001
+            continue
+        if (await _connect(controller, recorder, clock))["status"] not in {"error", "timeout"}:
+            await _cancel_strays(baseline)
+            return candidate
+    await _cancel_strays(baseline)
+    return {**candidates[0], "gatt": "connect_failed"}
+
+
+def load_layouts() -> dict[str, Any]:
+    return json.loads(LAYOUTS_PATH.read_text()) if LAYOUTS_PATH.exists() else {}
+
+
+async def capture_all(
+    only: list[str] | None = None, relayout: frozenset[str] = frozenset()
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Capture every scenario with wall-clock time frozen (clock-sync frames carry it).
+
+    Returns the snapshot and the layouts used. Stored layouts are replayed; a
+    scenario without one (or listed in ``relayout``) gets a derived layout.
+    """
     from freezegun import freeze_time
 
+    stored = load_layouts()
     scenarios = [s for s in build_scenarios() if not only or s.id in only]
     result: dict[str, Any] = {}
+    layouts: dict[str, Any] = {}
     with freeze_time(FROZEN_NOW, real_asyncio=True) as frozen:
-        await _capture_each(scenarios, result, frozen)
-    return {"schema": SCHEMA_VERSION, "scenarios": result}
-
-
-async def _capture_each(scenarios: list[Scenario], result: dict[str, Any], frozen: Any) -> None:
-    for scenario in scenarios:
-        started = time.monotonic()
-        try:
-            result[scenario.id] = await capture_scenario(scenario, frozen)
-        except Exception as err:  # noqa: BLE001 - a scenario that cannot build is data too
-            result[scenario.id] = {
-                "bed_type": scenario.bed_type,
-                "build_error": f"{type(err).__name__}: {err}",
-            }
-        if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
-            print(f"{scenario.id} {time.monotonic() - started:.1f}s", file=sys.stderr, flush=True)
+        for scenario in scenarios:
+            started = _REAL_CLOCK[0]()
+            layout = None if scenario.id in relayout else stored.get(scenario.id)
+            try:
+                result[scenario.id], layouts[scenario.id] = await capture_scenario(
+                    scenario, layout, frozen
+                )
+            except Exception as err:  # noqa: BLE001 - a scenario that cannot build is data too
+                result[scenario.id] = {
+                    "bed_type": scenario.bed_type,
+                    "build_error": f"{type(err).__name__}: {err}",
+                }
+            if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
+                elapsed = _REAL_CLOCK[0]() - started
+                print(f"{scenario.id} {elapsed:.1f}s", file=sys.stderr, flush=True)
+    return {"schema": SCHEMA_VERSION, "scenarios": result}, layouts
 
 
 def render(snapshot: dict[str, Any]) -> str:
     """Stable text form: one line per command so diffs stay reviewable.
 
-    Characteristic UUIDs are replaced by their first eight hex digits (or the
-    full UUID when those collide) and listed once under ``chars``. Commands a
+    Characteristic UUIDs are replaced by their first eight hex digits (the full
+    UUID where two share them) and listed once under ``chars``. Commands a
     controller does not support are omitted.
     """
     uuids = sorted(
@@ -1003,9 +1704,8 @@ def render(snapshot: dict[str, Any]) -> str:
             for write in cmd.get("writes", [])
         }
     )
-    short = {u: u[:8] for u in uuids}
-    if len(set(short.values())) != len(short):
-        short = {u: u for u in uuids}
+    prefixes = [u[:8] for u in uuids]
+    short = {u: u[:8] if prefixes.count(u[:8]) == 1 else u for u in uuids}
     lines = ["{", f'"schema": {snapshot["schema"]},']
     lines.append('"chars": ' + json.dumps({short[u]: u for u in uuids}, sort_keys=True) + ",")
     lines.append('"scenarios": {')
@@ -1017,14 +1717,8 @@ def render(snapshot: dict[str, Any]) -> str:
         for name, cmd in entry.get("commands", {}).items():
             if cmd["status"] == "unsupported":
                 continue
-            cmd = {
-                **cmd,
-                **(
-                    {"writes": [[w[0], short[w[1]], *w[2:]] for w in cmd["writes"]]}
-                    if "writes" in cmd
-                    else {}
-                ),
-            }
+            if "writes" in cmd:
+                cmd = {**cmd, "writes": [[w[0], short[w[1]], *w[2:]] for w in cmd["writes"]]}
             rows.append(
                 f"{json.dumps(name)}: {json.dumps(cmd, sort_keys=True, separators=(',', ':'))}"
             )
@@ -1035,12 +1729,31 @@ def render(snapshot: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_layouts(layouts: dict[str, Any]) -> str:
+    """One line per scenario. Service order is kept: controllers scan services in order."""
+    return (
+        "{\n"
+        + ",\n".join(
+            f"{json.dumps(sid)}: {json.dumps(layout)}" for sid, layout in sorted(layouts.items())
+        )
+        + "\n}\n"
+    )
+
+
 def main() -> int:
+    # Set iteration order must not vary between runs: one controller (Svane) orders
+    # its release frames by iterating a set. A fresh process also keeps the capture
+    # free of whatever state a test session left behind.
+    if os.environ.get("PYTHONHASHSEED") != "0":
+        os.execve(
+            sys.executable, [sys.executable, *sys.argv], {**os.environ, "PYTHONHASHSEED": "0"}
+        )
     logging.disable(logging.CRITICAL)
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--check", action="store_true", help="fail if the snapshot is stale")
     parser.add_argument("--list", action="store_true", help="list scenario ids")
     parser.add_argument("--only", nargs="*", help="limit to these scenario ids (no write)")
+    parser.add_argument("--relayout", nargs="*", default=[], help="re-derive these layouts")
     args = parser.parse_args()
 
     if args.list:
@@ -1048,18 +1761,31 @@ def main() -> int:
             print(scenario.id)
         return 0
 
-    snapshot = asyncio.run(capture_all(args.only))
+    snapshot, layouts = asyncio.run(capture_all(args.only, frozenset(args.relayout)))
     text = render(snapshot)
     if args.only:
         print(text)
         return 0
     if args.check:
-        if SNAPSHOT_PATH.read_text() != text:
-            print("wire snapshot is stale; rerun without --check and review the diff")
-            return 1
-        return 0
-    SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        stale = [
+            (path, fresh)
+            for path, fresh in ((SNAPSHOT_PATH, text), (LAYOUTS_PATH, render_layouts(layouts)))
+            if path.read_text() != fresh
+        ]
+        for path, fresh in stale:
+            diff = difflib.unified_diff(
+                path.read_text().splitlines(),
+                fresh.splitlines(),
+                "committed",
+                "fresh",
+                n=0,
+                lineterm="",
+            )
+            print(f"{path.relative_to(REPO_ROOT)} is stale:")
+            print("\n".join(line[:240] for _, line in zip(range(20), diff, strict=False)))
+        return 1 if stale else 0
     SNAPSHOT_PATH.write_text(text)
+    LAYOUTS_PATH.write_text(render_layouts(layouts))
     print(f"wrote {SNAPSHOT_PATH.relative_to(REPO_ROOT)} ({len(snapshot['scenarios'])} scenarios)")
     return 0
 
