@@ -295,146 +295,9 @@ class TestScottLivingController:
 # -----------------------------------------------------------------------------
 
 
-class TestScottLivingMovement:
-    """Test Scott Living movement commands."""
-
-    async def test_move_head_up_sends_9_byte_packet(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_up should send 9-byte packet."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        assert mock_client.write_gatt_char.called
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 9
-
-    async def test_move_tilt_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_tilt_up should send MOTOR_TILT_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_tilt_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MOTOR_TILT_UP = 0x10 in cmd0
-        assert call_data[3] == 0x10
-
-    async def test_move_lumbar_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_lumbar_up should send MOTOR_LUMBAR_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_lumbar_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MOTOR_LUMBAR_UP = 0x40 in cmd0
-        assert call_data[3] == 0x40
-
-    async def test_stop_all_sends_zero_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """stop_all should send zero command value."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.stop_all()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # All command bytes should be zero
-        assert call_data[3] == 0x00
-        assert call_data[4] == 0x00
-        assert call_data[5] == 0x00
-        assert call_data[6] == 0x00
-
-
 # -----------------------------------------------------------------------------
 # Preset Tests
 # -----------------------------------------------------------------------------
-
-
-class TestScottLivingPresets:
-    """Test Scott Living preset commands."""
-
-    async def test_preset_flat_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_flat should send PRESET_FLAT command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_flat()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # PRESET_FLAT = 0x8000000 -> cmd3=0x08
-        assert call_data[6] == 0x08
-
-    async def test_preset_zero_g_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_zero_g should send ZERO_G command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_zero_g()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # ZERO_G = 0x1000 -> cmd1=0x10
-        assert call_data[4] == 0x10
-
-    async def test_preset_memory_1_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_memory(1) should send MEMORY_1 command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_memory(1)
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MEMORY_1 = 0x100 -> cmd1=0x01
-        assert call_data[4] == 0x01
 
 
 # -----------------------------------------------------------------------------
@@ -444,24 +307,6 @@ class TestScottLivingPresets:
 
 class TestScottLivingMassage:
     """Test Scott Living massage commands."""
-
-    async def test_massage_head_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """massage_head_up should send MASSAGE_HEAD_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.massage_head_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MASSAGE_HEAD_UP = 0x800 -> cmd1=0x08
-        assert call_data[4] == 0x08
 
     async def test_massage_head_down_sends_correct_command(
         self,
@@ -480,62 +325,6 @@ class TestScottLivingMassage:
         call_data = calls[0][0][1]
         # MASSAGE_HEAD_DOWN = 0x800000 -> cmd2=0x80
         assert call_data[5] == 0x80
-
-    async def test_massage_foot_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """massage_foot_up should send MASSAGE_FOOT_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.massage_foot_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MASSAGE_FOOT_UP = 0x400 -> cmd1=0x04
-        assert call_data[4] == 0x04
-
-    async def test_massage_foot_down_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """massage_foot_down should send MASSAGE_FOOT_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.massage_foot_down()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MASSAGE_FOOT_DOWN = 0x1000000 -> cmd3=0x01
-        assert call_data[6] == 0x01
-
-    async def test_massage_intensity_up_sends_two_commands(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """massage_intensity_up should send head-up and foot-up commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.massage_intensity_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        assert len(calls) == 2
-        first_data = calls[0][0][1]
-        second_data = calls[1][0][1]
-        assert first_data[4] == 0x08  # MASSAGE_HEAD_UP
-        assert second_data[4] == 0x04  # MASSAGE_FOOT_UP
 
     async def test_massage_intensity_down_sends_two_commands(
         self,

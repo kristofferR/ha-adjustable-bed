@@ -45,11 +45,22 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
-    # Malouf / Lucid (#483, row023), including the Keeson-framed legacy OKIN route.
+    # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
+    "JiecangProfile:dreamask": {"hold": ("dreamask",)},
+    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
+    "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    # Malouf legacy OKIN (#483, row023): a Keeson-framed Malouf route.
     "KeesonProfile:malouf_legacy_okin": {"hold": ("malouf", "row023")},
+    "LogicdataProfile:phone": {"hold": ("ld-phone",)},
+    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
+    "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
+    # Malouf / Lucid (#483, row023).
     "MaloufAppProfile:lucid": {"hold": ("lucid", "row023")},
     "MaloufAppProfile:malouf": {"hold": ("malouf", "row023")},
     "MaloufRouteProfile:malouf_new_okin": {"hold": ("lucid", "malouf", "row023")},
+    # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
+    # the 5A keys those profiles send, so only ELEVATE declares.
+    "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
     "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
@@ -62,6 +73,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
     "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
+    # cadence is the entry's pulse settings, not the app's.
+    "LimossProfile:limoss_remote": {"hold": ("limoss",)},
+    "LimossProfile:fsm_relax": {"hold": ("fsm",)},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
@@ -79,15 +94,24 @@ _CUSTOMATIC = (
     "OkinNFrameProfile:remedy",
 )
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
+    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
+    "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
     "profiles/keeson.py:<module>.MALOUF_LEGACY_OKIN": ("KeesonProfile:malouf_legacy_okin",),
+    "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
+    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
+    "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
     "profiles/malouf.py:<module>.LUCID": ("MaloufAppProfile:lucid",),
     "profiles/malouf.py:<module>.MALOUF": ("MaloufAppProfile:malouf",),
     "profiles/malouf.py:<module>.NEW_OKIN": ("MaloufRouteProfile:malouf_new_okin",),
+    "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
+    "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

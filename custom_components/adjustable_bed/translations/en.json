@@ -53,7 +53,6 @@
           "has_massage": "Has massage feature",
           "disable_angle_sensing": "Disable angle sensing",
           "preferred_adapter": "Bluetooth adapter",
-          "protocol_variant": "Protocol variant",
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl 21.3.7 product (optional)",
           "rmcontrol_side": "RMControl side",
@@ -86,7 +85,6 @@
           "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "protocol_variant": "Some beds have multiple protocol variants. Auto-detect usually works, but you can override if needed. For beds used with the Woosa Sleep app, select Solace and the woosa variant. Shared QMS-MQ and QMS2 Bluetooth names do not identify the app.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
@@ -109,6 +107,17 @@
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted})."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
         }
       },
       "disconnect_after_command": {
@@ -133,7 +142,6 @@
         "description": "Configure the bed at {address}.{setup_note}\n\n{transport}",
         "data": {
           "bed_type": "Bed type",
-          "protocol_variant": "Protocol variant",
           "name": "Name",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid actuator layout",
@@ -148,7 +156,6 @@
         },
         "data_description": {
           "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
-          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected. For beds used with the Woosa Sleep app, select Solace and the woosa variant. Shared QMS-MQ and QMS2 Bluetooth names do not identify the app.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
           "malouf_memory_slots": "Number of memory buttons on the physical remote.",
@@ -158,6 +165,17 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
         }
       },
       "manual_entry": {
@@ -166,7 +184,6 @@
         "data": {
           "address": "Bluetooth address",
           "bed_type": "Bed type",
-          "protocol_variant": "Protocol variant",
           "name": "Name",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid actuator layout",
@@ -182,7 +199,6 @@
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
           "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
-          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected. For beds used with the Woosa Sleep app, select Solace and the woosa variant. Shared QMS-MQ and QMS2 Bluetooth names do not identify the app.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
           "malouf_memory_slots": "Number of memory buttons on the physical remote.",
@@ -192,6 +208,17 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
         }
       },
       "manual_octo": {
@@ -642,20 +669,6 @@
           "app": "App or current setup"
         }
       },
-      "vibradorm_confirm": {
-        "title": "Apply the verified Vibradorm setup?",
-        "description": "**{selection}** passed the Bluetooth setup check. Your controls will follow this app, and previous angle estimates may disappear. Your existing bed and unchanged entities keep their IDs. The current setup remains saved until you confirm.",
-        "data": {
-          "confirm": "Apply the selected setup"
-        }
-      },
-      "vibradorm_unpair": {
-        "title": "Configure each receiver separately",
-        "description": "A combined bed cannot change its app here. Split into separate beds first, or restore standalone controls for a one-address pair. This preserves the existing receiver settings and device identities. Then open Reconfigure on the receiver you want to change, choose its own app and remote, and combine compatible beds again afterwards. Nothing changes until you select the checkbox below.",
-        "data": {
-          "confirm": "Split the pair or restore standalone controls"
-        }
-      },
       "sleeptracker": {
         "title": "Tempur Sleeptracker-AI processor",
         "description": "Choose this profile for TEMPUR-Ergo ProSmart Air / ActiveBreeze beds using Tempur Sleeptracker-AI. Select the Sleeptracker processor Bluetooth address, then your app layout and recorded processor unit number. Existing UART control-box addresses require a separate processor entry. Authentication is the default; restricted mode is an explicit app route.",
@@ -748,6 +761,45 @@
           "product_type": "Exact GM Control product / configuration",
           "gmmotor_side": "App bed side"
         }
+      },
+      "migration_confirm": {
+        "title": "Review the change for {name}",
+        "description": "**{current}** → **{selection}**\n\n{summary}\n\nThe device, its Bluetooth address and every kept control keep their IDs. Your current setup stays saved and running until you apply this change.\n\nA passed connection check does not prove your bed's physical layout or presets. Test the controls after applying the change.",
+        "data": {
+          "confirm": "Apply this change",
+          "summary_known": "Control changes",
+          "summary_unknown": "Control changes",
+          "summary_references": "Affected automations and scripts",
+          "summary_none": "No controls"
+        },
+        "data_description": {
+          "summary_known": "**Added:**\n{added}\n\n**Removed:**\n{removed}\n\n**Unchanged:** {unchanged} controls keep their entity IDs.",
+          "summary_unknown": "The new controls are known only after the bed connects. Controls the new setup does not support are removed.",
+          "summary_references": "**Automations and scripts that use removed controls:**\n{references}",
+          "summary_none": "None"
+        }
+      },
+      "migration_split": {
+        "title": "Split {name} first",
+        "description": "An app belongs to one physical bed. Split the pair, or restore standalone controls for a one-address pair, then open Reconfigure on the bed you want to change.\n\n**Kept** (your current choice on each bed): Bluetooth adapter or proxy, idle disconnect, and disconnect after each command.\n\n**Restored** (from before the beds were combined): bed type, app profile and side settings.\n\nThe combined Left, Right and Both controls are removed. Device and side entity IDs are preserved. Nothing changes until you select the checkbox below.",
+        "data": {
+          "confirm": "I understand that the combined Left, Right and Both controls are removed"
+        }
+      },
+      "route": {
+        "title": "Receiver route",
+        "description": "**{bed}** supports more than one receiver route. Only routes this bed type supports are listed. Auto-detect, where offered, is right for most beds: change it only if setup with it fails or you know the route.",
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
+        }
       }
     },
     "progress": {
@@ -771,11 +823,12 @@
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
       "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
       "reconfigure_not_supported": "This setup has no guided reconfigure flow. Use Configure to change its settings.",
-      "reconfigure_successful": "The verified Vibradorm setup was saved.",
-      "vibradorm_configuration_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
-      "vibradorm_legacy_kept": "Your current setup was kept.",
-      "vibradorm_pair_split_started": "Restoring standalone beds. When it completes, open Reconfigure on the receiver you want to change.",
-      "vibradorm_verification_required": "The selected setup was not verified. Your current configuration was kept."
+      "reconfigure_successful": "The change was saved and the bed reloaded with its new controls. To switch back, open Reconfigure again.",
+      "migration_entry_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
+      "migration_kept": "Your current setup was kept. You won't be asked again for this setup unless a new app becomes available for it.",
+      "migration_unchanged": "Your answer matches the current setup, so nothing was changed.",
+      "migration_pair_split_started": "Restoring standalone beds. When it completes, open Reconfigure on the bed you want to change.",
+      "migration_verification_required": "The selected setup was not verified. Your current configuration was kept."
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
@@ -837,7 +890,6 @@
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
-      "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup.",
       "sleeptracker_profile": "Select a supported Sleeptracker layout and numeric processor selectors.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
       "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
@@ -847,7 +899,8 @@
       "cluster033_layout": "Choose a layout belonging to the selected app.",
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
-      "gmmotor_side": "This product does not expose the selected app side."
+      "gmmotor_side": "This product does not expose the selected app side.",
+      "migration_verification_required": "The selected setup could not be verified or its connection could not be released. Retry, or keep your current setup."
     }
   },
   "options": {
@@ -863,7 +916,7 @@
           "remove_bond": "Remove the Bluetooth bond",
           "left_settings": "Change left receiver settings",
           "right_settings": "Change right receiver settings",
-          "vibradorm_setup": "Choose Vibradorm app and remote",
+          "change_app": "Change app or layout",
           "estimated_positions": "Estimated positions",
           "left_estimated_positions": "Estimated positions, left side",
           "right_estimated_positions": "Estimated positions, right side"
@@ -1056,7 +1109,7 @@
       },
       "unpair": {
         "title": "Split paired bed",
-        "description": "Restore the Left and Right sides as separate Adjustable Bed entries. Side entities keep their entity IDs, history, names, and areas. Combined controls are removed.",
+        "description": "Restore the Left and Right sides as separate Adjustable Bed entries. Side entities keep their entity IDs, history, names, and areas. Combined controls are removed.\n\n**Kept** (your current choice on each bed): Bluetooth adapter or proxy, idle disconnect, and disconnect after each command.\n\n**Restored** (from before the beds were combined): bed type, app profile and side settings.",
         "data": {
           "confirm": "Split this paired bed",
           "starcode_abm5_4_command_selector": "Saved command/parser selector",
@@ -1074,7 +1127,7 @@
       },
       "revert_sides": {
         "title": "Restore standalone controls",
-        "description": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
+        "description": "Remove the Left, Right, and Both surface and restore this config entry as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.\n\n**Kept** (your current choice on this bed): Bluetooth adapter or proxy, idle disconnect, and disconnect after each command.\n\n**Restored** (from before the beds were combined): bed type, app profile and side settings.",
         "data": {
           "confirm": "Restore standalone controls",
           "starcode_abm5_4_command_selector": "Saved command/parser selector",
@@ -1129,9 +1182,9 @@
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
         }
       },
-      "vibradorm_setup": {
-        "title": "Guided Vibradorm setup",
-        "description": "Close this window. Under Settings > Devices & services > Adjustable Bed, open the three-dot menu for this entry and select Reconfigure. Choose your app and remote there. The wizard verifies the selection before offering to save it. Your current setup remains saved until you confirm."
+      "change_app": {
+        "title": "Change app or layout",
+        "description": "Currently: **{current}**.\n\nClose this window. Under Settings > Devices & services > Adjustable Bed, open the three-dot menu for this entry and select **Reconfigure**. Choose your app and layout there. Your current setup stays saved and working until you review and confirm the change."
       },
       "estimated_positions": {
         "title": "Estimated positions",
@@ -1303,7 +1356,7 @@
       "remove_bond_ambiguous": "Home Assistant cannot tell which Bluetooth bond you mean for **{name}** ({address}). Either more than one adapter on this host is bonded to it, or the adapter it was paired through no longer holds a bond. Set the bed's preferred adapter to the one you want to clear, then try again.",
       "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there.",
       "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings.",
-      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
+      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
       "estimate_cancelled": "Calibration cancelled. The motor was stopped and your previous times were kept. Set the reference again for any motor you started measuring.",
       "estimated_positions_unavailable": "Estimated positions are not available for this bed."
     }
@@ -3190,6 +3243,36 @@
       },
       "estimate_remote_used": {
         "name": "I used the remote"
+      },
+      "goodvibe_action": {
+        "name": "{action}"
+      },
+      "goodvibe_release": {
+        "name": "Release held control"
+      },
+      "eshine_okin_flat_zero_g": {
+        "name": "Flat + Zero Gravity"
+      },
+      "eshine_okin_query_state": {
+        "name": "Refresh bed state"
+      },
+      "eshine_okin_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "eshine_okin_sync_clock": {
+        "name": "Synchronize bed clock"
+      },
+      "eshine_okin_massage_on": {
+        "name": "Massage on"
+      },
+      "eshine_okin_massage_head_strength": {
+        "name": "Head massage strength"
+      },
+      "eshine_okin_massage_foot_strength": {
+        "name": "Foot massage strength"
+      },
+      "eshine_okin_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "cover": {
@@ -4931,6 +5014,45 @@
       },
       "saved_positions": {
         "name": "Saved positions"
+      },
+      "goodvibe_l_movement": {
+        "name": "Left body movement"
+      },
+      "goodvibe_l_respiration": {
+        "name": "Left respiration"
+      },
+      "goodvibe_r_respiration": {
+        "name": "Right respiration"
+      },
+      "goodvibe_r_heart": {
+        "name": "Right heart rate"
+      },
+      "goodvibe_r_snore": {
+        "name": "Right snoring"
+      },
+      "goodvibe_status": {
+        "name": "Good Vibe Sleep status"
+      },
+      "goodvibe_r_occupancy": {
+        "name": "Right occupancy"
+      },
+      "goodvibe_l_snore": {
+        "name": "Left snoring"
+      },
+      "goodvibe_l_heart": {
+        "name": "Left heart rate"
+      },
+      "goodvibe_r_movement": {
+        "name": "Right body movement"
+      },
+      "goodvibe_l_occupancy": {
+        "name": "Left occupancy"
+      },
+      "eshine_okin_massage": {
+        "name": "Massage state"
+      },
+      "eshine_okin_alarm": {
+        "name": "Alarm state"
       }
     },
     "light": {
@@ -5533,6 +5655,12 @@
       },
       "feet_position_estimated": {
         "name": "Feet position (estimated)"
+      },
+      "goodvibe_snore_count": {
+        "name": "Snore intervention count"
+      },
+      "goodvibe_snore_time": {
+        "name": "Snore intervention time"
       }
     },
     "select": {
@@ -6041,6 +6169,26 @@
       },
       "hjbed_layout_right": {
         "name": "Right HJBed layout"
+      },
+      "goodvibe_side": {
+        "name": "App side",
+        "state": {
+          "0": "Left",
+          "1": "Right",
+          "2": "Both"
+        }
+      },
+      "goodvibe_light_duration": {
+        "name": "Light duration (seconds)"
+      },
+      "goodvibe_massage_timer": {
+        "name": "Massage countdown",
+        "state": {
+          "0": "Off",
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
+        }
       }
     },
     "climate": {
@@ -8178,6 +8326,80 @@
           "description": "Estimated motors to include. Leave unset for every estimated motor."
         }
       }
+    },
+    "goodvibe": {
+      "name": "Good Vibe Sleep configuration",
+      "description": "Configure the exact selected product or its independent RM-/HJ- sleep sensor. Normal-product alarms accept an action ID from that product's alarm list in the protocol guide.",
+      "fields": {
+        "device_id": {
+          "name": "Bed or sleep sensor"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Exact alarm action ID"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot"
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means no repeat days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero uses the app's always-on value."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "value": {
+          "name": "Snore count or time value"
+        },
+        "part": {
+          "name": "Sleep part",
+          "description": "Set type 1 to 1 or 2; type 2 to 11, 12 or 13. Report queries use 1 or 2."
+        },
+        "date": {
+          "name": "Report date"
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "Day is 1, month is 2."
+        }
+      }
+    },
+    "eshine_set_alarm": {
+      "name": "Set eShine alarm",
+      "description": "Set or disable the next-occurrence local alarm for the E2000/E3000/E3100/E5000 eShine app profile. E2000 supports Zero Gravity and Flat.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "wake_mode": {
+          "name": "Wake action"
+        }
+      }
     }
   },
   "exceptions": {
@@ -8492,22 +8714,25 @@
         "step": {
           "init": {
             "title": "Choose the app for {name}",
-            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nA newly available app profile is not necessarily a better match and may expose fewer controls. Choose one only if you use that app and want its controls; otherwise keep the current configuration. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nA newly available app profile is not necessarily a better match and may expose fewer controls. Choose one only if you use that app and want its controls; otherwise keep the current configuration. If you keep it, you are asked again only when a new app becomes available for this setup. Your existing device and matching entity IDs are preserved.",
             "data": {
               "choice": "App profile"
             }
           },
           "configure": {
             "title": "Finish in Configure",
-            "description": "{app} was not applied here because it needs settings or checks that only the settings form provides. Open **Settings > Devices & services > Adjustable Bed**, select **Configure** on **{name}** and choose **{app}** as the bed type. The form asks for anything else it needs and explains anything it cannot accept. Submit to close this repair."
+            "description": "{app} needs settings that only the settings form provides. Submit to open **Configure** on **{name}** with **{app}** selected. This repair stays open until you save that form or choose **Keep current configuration**."
           },
           "unpair": {
             "title": "Split the pair to change the app",
-            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current configuration.",
+            "data": {
+              "choice": "Setup choice"
+            }
           },
-          "vibradorm": {
-            "title": "Review Vibradorm setup",
-            "description": "Choose your app and remote in the guided setup, or keep the current controls. The current configuration is kept until verification succeeds and you confirm. A paired bed must first be split explicitly. Closing the wizard leaves this review available.",
+          "managed": {
+            "title": "Choose the app for {name}",
+            "description": "**{name}** uses {current}. If you control it with one of these apps, its controls can follow that app:\n{apps}\n\nThe guided change checks the bed and lists the control changes before anything is saved. A paired bed must first be split explicitly. This repair stays open until you apply a change or keep the current setup.",
             "data": {
               "choice": "Setup choice"
             }
@@ -8515,8 +8740,10 @@
         },
         "abort": {
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
-          "vibradorm_setup_started": "Continue with the guided Vibradorm setup.",
-          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry’s three-dot menu."
+          "migration_setup_started": "Continue in the guided change.",
+          "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu.",
+          "profile_review_handoff": "Continue in Configure. This repair stays open until you save a change or keep the current configuration.",
+          "profile_review_open": "This repair stays open until you save a change or keep the current configuration."
         }
       }
     },
@@ -8526,22 +8753,25 @@
         "step": {
           "init": {
             "title": "Switch {name} to {app}",
-            "description": "**{name}** is set up as {current}, but its Bluetooth advertisement now identifies it as {app}. If the bed already works as expected, keep the current configuration. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "description": "**{name}** is set up as {current}, but its Bluetooth advertisement now identifies it as {app}. If the bed already works as expected, keep the current configuration. If you keep it, you are asked again only when a new app becomes available for this setup. Your existing device and matching entity IDs are preserved.",
             "data": {
               "choice": "Configuration"
             }
           },
           "configure": {
             "title": "Finish in Configure",
-            "description": "{app} was not applied here because it needs settings or checks that only the settings form provides. Open **Settings > Devices & services > Adjustable Bed**, select **Configure** on **{name}** and choose **{app}** as the bed type. The form asks for anything else it needs and explains anything it cannot accept. Submit to close this repair."
+            "description": "{app} needs settings that only the settings form provides. Submit to open **Configure** on **{name}** with **{app}** selected. This repair stays open until you save that form or choose **Keep current configuration**."
           },
           "unpair": {
             "title": "Split the pair to change the app",
-            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current configuration.",
+            "data": {
+              "choice": "Setup choice"
+            }
           },
-          "vibradorm": {
-            "title": "Review Vibradorm setup",
-            "description": "Choose your app and remote in the guided setup, or keep the current controls. The current configuration is kept until verification succeeds and you confirm. A paired bed must first be split explicitly. Closing the wizard leaves this review available.",
+          "managed": {
+            "title": "Choose the app for {name}",
+            "description": "**{name}** uses {current}. If you control it with one of these apps, its controls can follow that app:\n{apps}\n\nThe guided change checks the bed and lists the control changes before anything is saved. A paired bed must first be split explicitly. This repair stays open until you apply a change or keep the current setup.",
             "data": {
               "choice": "Setup choice"
             }
@@ -8549,8 +8779,10 @@
         },
         "abort": {
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
-          "vibradorm_setup_started": "Continue with the guided Vibradorm setup.",
-          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry’s three-dot menu."
+          "migration_setup_started": "Continue in the guided change.",
+          "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu.",
+          "profile_review_handoff": "Continue in Configure. This repair stays open until you save a change or keep the current configuration.",
+          "profile_review_open": "This repair stays open until you save a change or keep the current configuration."
         }
       }
     },
@@ -8727,6 +8959,18 @@
       "options": {
         "review": "Show processor setup",
         "keep": "Keep current profile"
+      }
+    },
+    "profile_review_managed": {
+      "options": {
+        "configure": "Choose my app",
+        "keep": "Keep current setup"
+      }
+    },
+    "profile_review_unpair": {
+      "options": {
+        "split": "I'll split the pair in Configure",
+        "keep": "Keep current configuration"
       }
     }
   }

@@ -41,7 +41,9 @@ from .const import (
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_FSM_RELAX_MEMORY_NAMES,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LIMOSS_REMOTE_STATE,
     CONF_LIMOSS_REMOTE_THEME,
@@ -51,9 +53,11 @@ from .const import (
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
     CONF_PAIR_SCHEMA_VERSION,
+    CONF_PREFERRED_ADAPTER,
     CONF_PRODUCT_TYPE,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
+    CONF_PROFILE_REVIEW_KEPT,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
@@ -249,6 +253,7 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         CONF_FSM_RELAX_MEMORY_NAMES, CONF_LIMOSS_REMOTE_THEME,
         # The upgrade review belongs to the entry, not to either side.
         CONF_PROFILE_REVIEW_PENDING,
+        CONF_PROFILE_REVIEW_KEPT,
         # Each side stores its own profile id; the parent's must never stand in.
         CONF_PROFILE_ID,
         CONF_PROFILE_MIGRATION,
@@ -499,6 +504,50 @@ def single_options_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
     """Return the original standalone options when provenance is available."""
     origin_options = descriptor.get(KEY_ORIGIN_OPTIONS)
     return dict(origin_options) if isinstance(origin_options, Mapping) else {}
+
+
+# Connection preferences describe how Home Assistant reaches a receiver, not
+# what the receiver is. Splitting a pair keeps the values the user chose while
+# combined; bed type, app profile and side settings revert to the originals.
+SPLIT_RETAINED_KEYS: Final = (
+    CONF_PREFERRED_ADAPTER,
+    CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_DISCONNECT_AFTER_COMMAND,
+)
+
+
+def standalone_config_after_split(
+    entry_data: Mapping[str, Any],
+    entry_options: Mapping[str, Any],
+    side: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return the standalone data and options one side gets when a pair splits.
+
+    The original pre-combination configuration is restored, except for
+    ``SPLIT_RETAINED_KEYS``: those take the value the side used while paired,
+    including edits made through the receiver or parent settings. A retained
+    value is written to data and removed from options, so a restored original
+    option cannot shadow it.
+    """
+    descriptor = get_child(entry_data, side)
+    if descriptor is None:
+        raise ValueError(f"Paired entry has no child for side {side!r}")
+    data = single_data_from_child(descriptor)
+    options = single_options_from_child(descriptor)
+    if entry_data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        current: Mapping[str, Any] = {**entry_data, **entry_options}
+    else:
+        current = effective_child_data(entry_data, side, entry_options)
+    for key in SPLIT_RETAINED_KEYS:
+        options.pop(key, None)
+        if key in current:
+            data[key] = current[key]
+        else:
+            data.pop(key, None)
+    from .profile_id import with_profile_ids
+
+    # The restored route decides the id; a stale or side-level copy never does.
+    return with_profile_ids(data, options), options
 
 
 def _descriptor_from_single(

@@ -451,14 +451,19 @@ class LogicdataAppController(BedController):
         loop = asyncio.get_running_loop()
         started = loop.time()
         cadence = self.profile.movement_repeat_ms
+        # A leased hold refreshes at the app's cadence until its lease ends.
+        leased = self.leased_hold_refreshes(cadence)
         release_started: float | None = None
         try:
-            for tick in range(self._coordinator.motor_pulse_count):
+            for tick in range(leased or self._coordinator.motor_pulse_count):
                 await self.write_command(packet)
                 if not await self._pause(
                     max(0, started + (tick + 1) * cadence / 1000 - loop.time())
                 ):
                     return
+            if leased is not None:
+                # A leased hold that reached its ceiling never restarts movement.
+                return
             # Touch-up dispatches one terminal repeat before its delayed release.
             release_started = loop.time()
             await self.write_command(packet)

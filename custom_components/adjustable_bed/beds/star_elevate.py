@@ -199,6 +199,13 @@ class StarElevateController(BedController):
 
         await interrupt_conflicting_group(self._coordinator)
 
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """A renewable hold (#483) refreshes at the app's interval until its lease ends."""
+        refresh = self.profile.hold_refresh_ms
+        if refresh and (count := self.leased_hold_refreshes(refresh)) is not None:
+            return count, refresh
+        return super().motor_pulse_settings()
+
     async def _move_with_stop(self, command: bytes) -> None:
         await self._interrupt_group()
         try:

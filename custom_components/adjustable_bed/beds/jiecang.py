@@ -178,12 +178,17 @@ class JiecangProfileController(BedController):
             raise NotImplementedError(f"{axis} motor not supported on this bed")
         hold = self.profile.hold
         cancel = self._coordinator.cancel_command
+        # A leased hold refreshes at the app's interval until its lease ends.
+        leased = self.leased_hold_refreshes(hold.repeat_ms)
         try:
             await self.write_command(
-                command, hold.repeats or self._coordinator.motor_pulse_count, hold.repeat_ms
+                command,
+                leased or hold.repeats or self._coordinator.motor_pulse_count,
+                hold.repeat_ms,
             )
-            # A cancelled action never restarts movement to imitate the app.
-            if hold.final_frame and not cancel.is_set():
+            # A cancelled action never restarts movement to imitate the app,
+            # and neither does a leased hold that reached its ceiling.
+            if hold.final_frame and not cancel.is_set() and leased is None:
                 await self.write_command(command)
         finally:
             await self._schedule(hold.releases, cleanup=True)

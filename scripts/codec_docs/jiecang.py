@@ -172,6 +172,7 @@ def render_jiecang_profiles() -> str:
             "Profile",
             "Hold refresh",
             "Repeats",
+            "Hold until release",
             "Final frame",
             "Release after hold",
             "Explicit stop",
@@ -181,6 +182,7 @@ def render_jiecang_profiles() -> str:
                 _name(key),
                 f"{profile.hold.repeat_ms} ms ({'fixed rate' if profile.fixed_rate else 'after each write'})",
                 str(profile.hold.repeats or "motor pulse count"),
+                "renewable lease" if profile.execution.hold == "stream" else "no",
                 "yes" if profile.hold.final_frame else "no",
                 _schedule(profile.hold.releases),
                 _schedule(

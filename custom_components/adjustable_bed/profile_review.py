@@ -15,12 +15,17 @@ listing only the relevant apps:
 
 Switching submits the chosen app to the options flow, so the change is
 validated and stored exactly as Configure stores it, keeping device and entity
-IDs. Vibradorm hands off to its managed, verified reconfigure wizard; closing
-that wizard leaves the review pending. Other apps with their own settings are
-left to Configure. Keeping the current
-configuration, finishing the flow in any other way, or any later change of bed
-type or variant removes the mark; entries created later never get it. FurniMove is not offered: its own repairs cover the
-routes its handsets used.
+IDs. A family with a managed wizard (``profile_migration``) hands off to its
+verified reconfigure flow, and an app with its own settings hands off to
+Configure with the app preselected. A handoff never answers the review: it
+stays pending until a saved change of bed type or variant, or an explicit
+"Keep current setup". Splitting a reviewed pair carries the review to each
+standalone bed. Entries created later never get the mark. FurniMove is not
+offered: its own repairs cover the routes its handsets used.
+
+Keep is permanent for the reviewed route (``CONF_PROFILE_REVIEW_KEPT``). The
+review returns only when a later release offers that route an app the user was
+not shown.
 """
 
 from __future__ import annotations
@@ -33,7 +38,7 @@ import voluptuous as vol
 from homeassistant.components import bluetooth
 from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult
 from homeassistant.components.repairs.const import FlowType
-from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigEntry
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
@@ -78,6 +83,7 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
+    CONF_PROFILE_REVIEW_KEPT,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -106,12 +112,13 @@ from .const import (
 )
 from .detection import (
     APP_VARIANT_CHOICES,
-    BED_TYPE_DISPLAY_NAMES,
     bed_type_choice,
+    bed_type_label,
     detect_bed_type_detailed,
     resolve_bed_type_choice,
 )
 from .pairing import effective_child_data, get_child, is_paired
+from .profile_migration import managed_family, reconfigure_context
 from .validators import get_variants_for_bed_type
 
 ISSUE_PREFIX: Final = "app_profile_review_"
@@ -420,19 +427,46 @@ def _pending(entry_data: Mapping[str, Any]) -> bool:
     return bool(mark) and mark == _route_signature(entry_data)
 
 
+def _kept_apps(entry_data: Mapping[str, Any]) -> frozenset[str] | None:
+    """Return the apps shown when Keep was chosen for the current route."""
+    kept = entry_data.get(CONF_PROFILE_REVIEW_KEPT)
+    if not isinstance(kept, Mapping) or kept.get("route") != _route_signature(entry_data):
+        return None
+    apps = kept.get("apps")
+    return frozenset(app for app in apps if isinstance(app, str)) if isinstance(apps, list) else None
+
+
+def carry_profile_review(source: Mapping[str, Any], target: dict[str, Any]) -> None:
+    """Keep a pair's review state on a standalone bed split out of it.
+
+    An open review stays open for each bed whose own route still has apps to
+    offer. A Keep answered on the pair covers each bed for the apps it was
+    shown, including a review the bed still had from before it was combined.
+    """
+    if (apps := _kept_apps(source)) is not None:
+        target.pop(CONF_PROFILE_REVIEW_PENDING, None)
+        target[CONF_PROFILE_REVIEW_KEPT] = {
+            "route": _route_signature(target),
+            "apps": sorted(apps),
+        }
+    elif _pending(source) and (mark := profile_review_mark(target)) is not None:
+        target[CONF_PROFILE_REVIEW_PENDING] = mark
+
+
 def choice_label(choice: str) -> str:
     """Return the bed-type selector label of a choice."""
     bed_type, variant = resolve_bed_type_choice(choice)
     if variant is not None:
         return APP_VARIANT_CHOICES[bed_type, variant]
-    return BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+    return bed_type_label(bed_type)
 
 
-def _route_label(data: Mapping[str, Any]) -> str:
+def route_label(data: Mapping[str, Any]) -> str:
+    """Return the friendly label of a saved route, never a raw ID."""
     bed_type = data.get(CONF_BED_TYPE)
     if not isinstance(bed_type, str):
         return "an unknown bed type"
-    label = BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+    label = bed_type_label(bed_type)
     variant = data.get(CONF_PROTOCOL_VARIANT)
     variants = get_variants_for_bed_type(bed_type) or {}
     if isinstance(variant, str) and variant != VARIANT_AUTO and variant in variants:
@@ -449,7 +483,7 @@ def _placeholders(entry: ConfigEntry, choices: tuple[str, ...], app: str) -> dic
         "name": entry.title,
         "apps": "\n".join(f"- {choice_label(choice)}" for choice in choices),
         "app": choice_label(app),
-        "current": _route_label(_targets(entry.data)[0]),
+        "current": route_label(_targets(entry.data)[0]),
     }
 
 
@@ -467,8 +501,16 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
         async_delete_issue(hass, DOMAIN, issue_id)
         return
     if CONF_PROFILE_REVIEW_PENDING not in entry.data:
-        async_delete_issue(hass, DOMAIN, issue_id)
-        return
+        kept = _kept_apps(entry.data)
+        review = _review(hass, entry.data) if kept is not None else None
+        if kept is None or review is None or not review.complete or set(review.choices) <= kept:
+            async_delete_issue(hass, DOMAIN, issue_id)
+            return
+        # A newer release offers this kept route an app the user has not seen.
+        hass.config_entries.async_update_entry(
+            entry,
+            data={**entry.data, CONF_PROFILE_REVIEW_PENDING: _route_signature(entry.data)},
+        )
     if not _pending(entry.data):
         # The bed type or variant changed since the upgrade, through this
         # review or Configure: the user has chosen.
@@ -508,8 +550,15 @@ def _clear_mark(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 @callback
 def async_keep_current_profile(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Record an explicit decision to keep the current setup."""
-    _clear_mark(hass, entry)
+    """Record an explicit decision to keep the current setup, for this route."""
+    review = _review(hass, entry.data)
+    kept = _kept_apps(entry.data) or frozenset()
+    data = {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING}
+    data[CONF_PROFILE_REVIEW_KEPT] = {
+        "route": _route_signature(entry.data),
+        "apps": sorted(kept | set(review.choices)),
+    }
+    hass.config_entries.async_update_entry(entry, data=data)
     async_clear_profile_review_issue(hass, entry.entry_id)
 
 
@@ -545,6 +594,40 @@ async def _async_switch_via_options(hass: HomeAssistant, entry: ConfigEntry, cho
     return result.get("type") is FlowResultType.CREATE_ENTRY
 
 
+async def _async_open_options_with(
+    hass: HomeAssistant, entry: ConfigEntry, choice: str
+) -> tuple[FlowResultType | None, str]:
+    """Open Configure's settings form with the chosen app selected.
+
+    Returns the result type and options flow id. A form is left open for the
+    handoff; an app without settings of its own may already have saved.
+    """
+    manager = hass.config_entries.options
+    result = await manager.async_init(entry.entry_id)
+    flow_id = result["flow_id"]
+    try:
+        result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
+        if result.get("type") is FlowResultType.FORM:
+            # A bed-type change only re-renders the form with the app's fields.
+            result = await manager.async_configure(flow_id, {CONF_BED_TYPE: choice})
+    except BaseException:
+        try:
+            manager.async_abort(flow_id)
+        except UnknownFlow:
+            pass
+        raise
+    kind = result.get("type")
+    if kind is FlowResultType.FORM and not result.get("errors"):
+        return kind, flow_id
+    if kind is not FlowResultType.CREATE_ENTRY:
+        try:
+            manager.async_abort(flow_id)
+        except UnknownFlow:
+            pass
+        kind = None
+    return kind, flow_id
+
+
 def _needs_app_settings(choice: str) -> bool:
     """Return True for apps whose own settings this shared repair cannot collect."""
     from .config_flow import APP_SETTINGS_BED_TYPES
@@ -572,22 +655,33 @@ class ProfileReviewRepairFlow(RepairsFlow):
         choices = _review(self.hass, entry.data).choices
         if not choices:
             return self._finish(entry)
-        if any(target.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM for target in _targets(entry.data)):
+        if managed_family(entry.data) is not None:
             if (user_input or {}).get("choice") == _KEEP:
                 return self._finish(entry)
             if (user_input or {}).get("choice") == "configure":
                 result = await self.hass.config_entries.flow.async_init(
-                    DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+                    DOMAIN, context=reconfigure_context(entry)
                 )
                 if result.get("type") is not FlowResultType.FORM:
-                    return self.async_abort(reason="vibradorm_setup_unavailable")
+                    return self.async_abort(reason="migration_setup_unavailable")
                 return self.async_abort(
-                    reason="vibradorm_setup_started",
+                    reason="migration_setup_started",
                     next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
                 )
             return self.async_show_form(
-                step_id="vibradorm",
-                data_schema=vol.Schema({vol.Required("choice"): selector.SelectSelector(selector.SelectSelectorConfig(options=[selector.SelectOptionDict(value="configure", label="Choose my app and remote"), selector.SelectOptionDict(value=_KEEP, label="Keep current setup")], mode=selector.SelectSelectorMode.DROPDOWN))}),
+                step_id="managed",
+                description_placeholders=_placeholders(entry, choices, choices[0]),
+                data_schema=vol.Schema(
+                    {
+                        vol.Required("choice"): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=["configure", _KEEP],
+                                translation_key="profile_review_managed",
+                                mode=selector.SelectSelectorMode.LIST,
+                            )
+                        )
+                    }
+                ),
             )
         if is_paired(entry.data):
             # App profiles are per physical bed and none supports paired
@@ -632,12 +726,22 @@ class ProfileReviewRepairFlow(RepairsFlow):
         )
 
     async def async_step_configure(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
-        """Point to Configure for an app this flow cannot apply by itself."""
+        """Hand an app with its own settings to Configure, leaving the review open."""
         entry = self._entry()
         if entry is None or self._choice is None:
             return self.async_abort(reason="entry_missing")
         if user_input is not None:
-            return self._finish(entry)
+            kind, flow_id = await _async_open_options_with(self.hass, entry, self._choice)
+            if kind is FlowResultType.FORM:
+                return self.async_abort(
+                    reason="profile_review_handoff",
+                    next_flow=(FlowType.OPTIONS_FLOW, flow_id),
+                )
+            if kind is FlowResultType.CREATE_ENTRY:
+                # Saved: the reload retires the review for the changed route.
+                async_delete_issue(self.hass, DOMAIN, _issue_id(entry.entry_id))
+                return self.async_create_entry(title="", data={})
+            return self.async_abort(reason="profile_review_open")
         return self.async_show_form(
             step_id="configure",
             description_placeholders=_placeholders(entry, (self._choice,), self._choice),
@@ -649,11 +753,28 @@ class ProfileReviewRepairFlow(RepairsFlow):
         if entry is None:
             return self.async_abort(reason="entry_missing")
         choices = _review(self.hass, entry.data).choices
-        if user_input is not None or not choices:
+        if not choices:
             return self._finish(entry)
+        choice = (user_input or {}).get("choice")
+        if choice == _KEEP:
+            return self._finish(entry)
+        if choice == "split":
+            # Splitting carries the open review to each standalone bed.
+            return self.async_abort(reason="profile_review_open")
         return self.async_show_form(
             step_id="unpair",
             description_placeholders=_placeholders(entry, choices, choices[0]),
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["split", _KEEP],
+                            translation_key="profile_review_unpair",
+                            mode=selector.SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
         )
 
     def _finish(self, entry: ConfigEntry) -> RepairsFlowResult:
