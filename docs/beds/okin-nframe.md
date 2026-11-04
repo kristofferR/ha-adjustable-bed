@@ -445,13 +445,13 @@ other static frames and the XiaoBao (P2) and P3 packets are listed in its sectio
 | Foot down | `0x00000008` | `05 02 00 00 00 08 00` |
 | Lumbar up | `0x00000010` | `05 02 00 00 00 10 00` |
 | Lumbar down | `0x00000020` | `05 02 00 00 00 20 00` |
-| Neck up | `0x00000040` | `05 02 00 00 00 40 00` |
-| Neck down | `0x00000080` | `05 02 00 00 00 80 00` |
+| Neck tilt up | `0x00000040` | `05 02 00 00 00 40 00` |
+| Neck tilt down | `0x00000080` | `05 02 00 00 00 80 00` |
 | STOP / release | `0x00000000` | `05 02 00 00 00 00 00` |
 | Flat | `0x08000000` | `05 02 08 00 00 00 00` |
 | TV | `0x00004000` | `05 02 00 00 40 00 00` |
 | Zero-G | `0x00001000` | `05 02 00 00 10 00 00` |
-| Anti-snore / Snore | `0x00008000` | `05 02 00 00 80 00 00` |
+| Anti-snore | `0x00008000` | `05 02 00 00 80 00 00` |
 | Lounge | `0x00002000` | `05 02 00 00 20 00 00` |
 | Memory 1 | `0x00010000` | `05 02 00 01 00 00 00` |
 | Memory 2 | `0x00040000` | `05 02 00 04 00 00 00` |
@@ -483,7 +483,7 @@ other static frames and the XiaoBao (P2) and P3 packets are listed in its sectio
 | STOP / release | `0x00000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 00 00` |
 | `flatPosition` | `0x08000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 08 00 00 00 00` |
 | TV | `0x00004000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 40 00 00` |
-| Lounge | `0x00002000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 20 00 00` |
+| `lounge` | `0x00002000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 20 00 00` |
 | `zeroGravity` | `0x00001000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 10 00 00` |
 | `anti` | `0x00008000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 80 00 00` |
 | `m1` | `0x00010000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 01 00 00 00` |
