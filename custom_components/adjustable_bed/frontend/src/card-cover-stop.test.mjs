@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "bun:test";
+import { afterAll, test } from "bun:test";
 import { plugin } from "bun";
 
 plugin({
@@ -19,6 +19,17 @@ plugin({
         : "export const property = () => () => {}; export const state = () => () => {};",
     }));
   },
+});
+
+// This file's globals must not leak into other test files sharing the process.
+const previousGlobals = Object.fromEntries(
+  ["window", "KeyboardEvent"].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
+);
+afterAll(() => {
+  for (const [name, descriptor] of Object.entries(previousGlobals)) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+    else Reflect.deleteProperty(globalThis, name);
+  }
 });
 
 const customElements = new Map();
