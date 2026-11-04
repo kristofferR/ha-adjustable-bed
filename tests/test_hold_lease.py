@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 import pytest
 
@@ -23,9 +24,23 @@ from custom_components.adjustable_bed.command_scheduler import (
     StaleHoldLease,
     command_resources,
 )
+from tests.hold_lease_wire import virtual_clock
 
 BACK = command_resources("motor:back")
 TICK = 0.005
+
+
+@pytest.fixture(autouse=True)
+async def clock() -> AsyncIterator[Any]:
+    """Virtual time: lease deadlines, renewals and ticks are exact, never real timers."""
+    baseline = asyncio.all_tasks()
+    with virtual_clock() as fake:
+        yield fake
+    # Virtual timers a finished hold left armed would otherwise linger.
+    strays = [t for t in asyncio.all_tasks() - baseline if t is not asyncio.current_task()]
+    for stray in strays:
+        stray.cancel()
+    await asyncio.gather(*strays, return_exceptions=True)
 
 
 class FakeHold:
@@ -257,13 +272,11 @@ async def test_superseded_running_hold_still_ends_on_disconnect() -> None:
     assert scheduler.recent_records[-1].outcome is CommandOutcome.DISCONNECTED
 
 
-async def test_overdue_lease_is_not_renewed_before_its_timer_runs() -> None:
-    import time
-
+async def test_overdue_lease_is_not_renewed_before_its_timer_runs(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("overdue")
     fake = FakeHold()
     task = await start_hold(scheduler, fake, lease(duration_s=0.02))
-    time.sleep(0.04)  # block the loop past the deadline; the timer has not run
+    clock.advance_to(clock.now + 0.04)  # past the deadline; the timer has not run
     assert scheduler.claim_hold(lease(duration_s=30), BACK) is HoldClaim.STALE
     await asyncio.wait_for(task, 1)
     assert scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
