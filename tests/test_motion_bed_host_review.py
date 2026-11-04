@@ -94,7 +94,7 @@ async def test_manual_auto_detect_keeps_confirmed_solace_names(hass, name):
     flow._discovery_info = _make_service_info(name=name)
     result = await flow.async_step_manual_config()
     marker = next(k for k in result["data_schema"].schema if k.schema == CONF_BED_TYPE)
-    assert marker.default() == BED_TYPE_SOLACE
+    assert result["data_schema"].schema[marker](marker.default()) == BED_TYPE_SOLACE
     result = await flow.async_step_manual_config({CONF_BED_TYPE: BED_TYPE_AUTO_DETECT})
     assert not result.get("errors")
 

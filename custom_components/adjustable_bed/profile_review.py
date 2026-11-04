@@ -112,8 +112,8 @@ from .const import (
 )
 from .detection import (
     APP_VARIANT_CHOICES,
-    BED_TYPE_DISPLAY_NAMES,
     bed_type_choice,
+    bed_type_label,
     detect_bed_type_detailed,
     resolve_bed_type_choice,
 )
@@ -458,7 +458,7 @@ def choice_label(choice: str) -> str:
     bed_type, variant = resolve_bed_type_choice(choice)
     if variant is not None:
         return APP_VARIANT_CHOICES[bed_type, variant]
-    return BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+    return bed_type_label(bed_type)
 
 
 def route_label(data: Mapping[str, Any]) -> str:
@@ -466,7 +466,7 @@ def route_label(data: Mapping[str, Any]) -> str:
     bed_type = data.get(CONF_BED_TYPE)
     if not isinstance(bed_type, str):
         return "an unknown bed type"
-    label = BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+    label = bed_type_label(bed_type)
     variant = data.get(CONF_PROTOCOL_VARIANT)
     variants = get_variants_for_bed_type(bed_type) or {}
     if isinstance(variant, str) and variant != VARIANT_AUTO and variant in variants:

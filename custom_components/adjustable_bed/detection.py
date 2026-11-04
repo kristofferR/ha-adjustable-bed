@@ -627,9 +627,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_CST: "Okin CST (Rize product profiles, 14-byte dual-field)",
     BED_TYPE_OKIN_RF_ECO_BT: "OKIN Smart Remote / RF ECO BT single actuator",
     # Protocol-based types (Leggett & Platt family)
-    BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",
+    BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2 (LP Control app, LP Comfort Connect)",
     BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base (legacy app)",
-    BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (requires pairing)",
+    BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (LP Control app, requires pairing)",
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
     # Brand-specific types
     BED_TYPE_BEDTECH: "BedTech",
@@ -639,13 +639,16 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_JIECANG: "Jiecang (legacy Glide / Comfort Motion)",
     BED_TYPE_JIECANG_APP: "Jiecang (ERGOBALANCE / Dream Motion / Dream Motion HD / Comfort Motion apps)",
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
-    BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, some Ergomotion Sync beds)",
+    BED_TYPE_KEESON: (
+        "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
+        "some Ergomotion Sync beds)"
+    ),
     BED_TYPE_ISLEEP: "ISleep (com.kaidi_test4)",
     BED_TYPE_KAIDI: "Kaidi (Rize, Floyd; legacy ISleep)",
-    BED_TYPE_LINAK: "Linak",
+    BED_TYPE_LINAK: "Linak (Bed Control and Performance Series apps)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
-    BED_TYPE_MOTOSLEEP: "MotoSleep",
+    BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie (Protocol 108)",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
@@ -671,7 +674,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
     BED_TYPE_SLEEPYS_ELITE_APP: "Sleepy's Elite app (explicit selector)",
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
-    BED_TYPE_SOLACE: "Solace",
+    BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
     BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
@@ -751,6 +754,30 @@ def resolve_bed_type_choice(choice: str) -> tuple[str, str | None]:
     if separator and (bed_type, variant) in APP_VARIANT_CHOICES:
         return bed_type, variant
     return choice, None
+
+
+def bed_type_label(bed_type: str | None) -> str:
+    """Return the friendly label of a bed type, including saved compatibility IDs.
+
+    A compatibility ID shows the label of the route it runs; the saved ID itself
+    is never rewritten.
+    """
+    if bed_type is None:
+        return ""
+    if (label := BED_TYPE_DISPLAY_NAMES.get(bed_type)) is not None:
+        return label
+    return _COMPATIBILITY_LABELS.get(bed_type, bed_type)
+
+
+# Each compatibility ID gets its own label, naming the route it runs, so a label
+# always maps back to exactly one saved ID.
+_COMPATIBILITY_LABELS: Final[dict[str, str]] = {
+    "okimat": "Okimat (Okin UUID route, requires pairing)",
+    "dewertokin": "DewertOkin (Okin Handle route)",
+    "nectar": "Nectar (Okin 7-Byte route)",
+    "mattressfirm": "Mattress Firm 900 (Okin Nordic route)",
+    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt (route chosen by its saved variant)",
+}
 
 
 def get_bed_type_options() -> list[SelectOptionDict]:
