@@ -73,7 +73,7 @@ guide documents the format once, then has one section per profile. The
 | Codec | Guide | Profiles for |
 |-------|-------|--------------|
 | Jiecang F1 | [Jiecang](beds/jiecang.md) | Jiecang legacy and Comfort Motion routes; ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps; LOGICDATA MOTIONrelax and Sleep Smart apps |
-| Keeson E5/E6 | [Keeson](beds/keeson.md) | Keeson variants and the Ergomotion, Serta and OKIN FFE bed types; Tempur Curve, Q-Plus, Serta MP Remote, Omazz, Ergomotion, ROW Control, Ergo Slim, TEMPUR AU and [Ergomotion 4.0](beds/ergomotion-4.md) apps; Glideaway Motion, AdjustaMattress, Malouf legacy OKIN, Sleepy's BOX15, Scott Living, SBI, Rondure, Cool Base, BF, Cherish and Comfort Enhancements |
+| Keeson E5/E6 | [Keeson](beds/keeson.md) | Keeson variants and the Ergomotion, Serta and OKIN FFE bed types; Tempur Curve, Q-Plus, Serta MP Remote, Omazz, Ergomotion, ROW Control, Ergo Slim, TEMPUR AU and [Ergomotion 4.0](beds/keeson.md#ergomotion-40) apps; Glideaway Motion, AdjustaMattress, Malouf legacy OKIN, Sleepy's BOX15, Scott Living, SBI, Rondure, Cool Base, BF, Cherish and Comfort Enhancements |
 | Okin N-frame | [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, Okin CST, Okin DOT, RF ECO BT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, OKIN SleepEase, Sleepy's BOX25 legacy, AdjustableM5X4, Okin 64-Bit and Adjustable bed (Lumbar) |
 | Okin 5A | [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Okin CB35, DewertOkin ELEVATE and the Sleepy's BOX25 Star route |
 | Malouf | [Malouf](beds/malouf.md) | Malouf New OKIN and the Malouf Base / Lucid Base apps |

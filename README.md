@@ -102,7 +102,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie app (Protocol 108), Reverie Nightstand app (Protocol 110), R510L / Harmoniq Upgrade (Pairlink) |
 | ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers; [OKIN SmartBed CB24 / Amada](docs/beds/okin-nframe.md#okin-smartbed-cb24) |
 | ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) |
-| 🧪 [AdjustaMattress](docs/beds/adjustamattress.md) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
+| 🧪 [AdjustaMattress](docs/beds/keeson.md#adjustamattress) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
 | ⚠️ [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
 | ✅ Jordan's | [Serenity](docs/beds/okin-nframe.md#jordans-serenity), [Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) |
 | ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
@@ -144,7 +144,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [Q-Plus Adjustable Remote app](docs/beds/keeson.md#q-plus-adjustable-remote) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
 | 🧪 [Serta MP Remote app](docs/beds/keeson.md#serta-mp-remote) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
 | 🧪 [Omazz Adjusto III app](docs/beds/keeson.md#omazz-adjusto-iii) | Reachable RemoteB controls and alarm tables; hardware unverified |
-| 🧪 [Ergomotion 4.0](docs/beds/ergomotion-4.md) | Explicit H/M1–M22/M30 layouts and 21 catalog products; P1 Left/Right/Both, RGB, massage and alarms; hardware unverified |
+| 🧪 [Ergomotion 4.0](docs/beds/keeson.md#ergomotion-40) | Explicit H/M1–M22/M30 layouts and 21 catalog products; P1 Left/Right/Both, RGB, massage and alarms; hardware unverified |
 | 🧪 [Ergomotion app](docs/beds/keeson.md#ergomotion-app) | Explicit B1/B2/C1/D1 app layouts; hardware unverified |
 | 🧪 [ROW Control app](docs/beds/keeson.md#row-control) | Elevate, Lifestyle, Curve, Lifestyle Plus and Zero-G Box; hardware unverified |
 | 🧪 [Ergo Slim app](docs/beds/keeson.md#ergo-slim) | Explicit A/B/C app layouts; hardware unverified |
