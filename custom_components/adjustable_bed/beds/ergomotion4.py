@@ -96,7 +96,7 @@ LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS = 2.0
 
 def p2_frame(key: int) -> bytes:
     """Finite shipped switch, including its zero-key fallback."""
-    return b"\x04\x02" + (key if key in P2_KEYS else 0).to_bytes(4, "big")
+    return codec.p2(key if key in P2_KEYS else codec.RELEASE)
 
 
 def custom_frame(key: int) -> bytes:
@@ -350,10 +350,9 @@ class Ergomotion4Controller(AppController):
             if self.command_side in ("left", "right"):
                 raise ValueError("Ergomotion 4.0 P2 has no side selector")
             return p2_frame(mask)
-        side = {"left": 2, "right": 1}.get(self.command_side or "")
-        if side is None:
-            return codec.frame(mask & 0xFFFFFFFF)
-        return codec.frame(mask & 0xFFFFFFFF, header=0xE6, side=side)
+        if self.command_side in ("left", "right"):
+            return codec.side_frame(mask & 0xFFFFFFFF, cast(codec.Side, self.command_side))
+        return codec.frame(mask & 0xFFFFFFFF)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if (
@@ -458,7 +457,7 @@ class Ergomotion4Controller(AppController):
                 return
             if session is not self._session_cancel or session.is_set():
                 return
-            await self.write_command(b"\x00\xb0", cancel_event=asyncio.Event() if cleanup else None)
+            await self.write_command(codec.STATUS_QUERY, cancel_event=asyncio.Event() if cleanup else None)
             previous = offset
 
     def _device_name_frame(self, name: str) -> bytes:
