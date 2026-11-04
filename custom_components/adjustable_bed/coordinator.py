@@ -6604,6 +6604,8 @@ class AdjustableBedCoordinator:
         ceiling_s: float | None = None,
         lease: HoldLease | None = None,
         expected_stop_epoch: int | None = None,
+        on_wire: Callable[[], None] | None = None,
+        on_left: Callable[[float | None], None] | None = None,
     ) -> CommandOutcome | None:
         """Run a held or timed motion as a member of the merged stream (#516).
 
@@ -6630,6 +6632,8 @@ class AdjustableBedCoordinator:
             duration_s=None if lease is not None else duration_s,
             lease=lease,
             ceiling=None if ceiling_s is None else loop.time() + ceiling_s,
+            on_wire=on_wire,
+            on_left=on_left,
         )
 
         async def runner(body: Callable[[StreamDriver], Awaitable[None]]) -> None:

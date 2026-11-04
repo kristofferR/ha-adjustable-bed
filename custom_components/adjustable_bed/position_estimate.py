@@ -687,6 +687,49 @@ def track_motor_command(
     return tracked
 
 
+@dataclass(slots=True)
+class StreamMoveTracker:
+    """Times one merged-stream member like a serial move (#516).
+
+    ``started`` runs as the member's first write starts and ``finished`` when
+    it settles, with its seconds on the wire or None when it failed. A member
+    that never reached the wire is not a move.
+    """
+
+    bed: BedEstimate
+    motors: tuple[str, ...]
+    direction: str
+    token: int | None = None
+
+    def started(self) -> None:
+        self.token = self.bed.begin_move(self.motors)
+
+    def finished(self, seconds: float | None) -> None:
+        if self.token is not None:
+            self.bed.end_move(self.token, self.direction, seconds)
+            self.token = None
+
+
+def track_stream_member(
+    hass: HomeAssistant | None,
+    controller: BedController | None,
+    motor_key: str,
+    direction: str,
+) -> StreamMoveTracker | None:
+    """Return the tracker for a streamed move, keyed like ``track_motor_command``."""
+    if controller is None or not _estimates_active(hass):
+        return None
+    bed = _bed_for_controller(controller)
+    if bed is None or not bed.motors:
+        return None
+    motors = _estimated_motors(controller, motor_key)
+    if motors is None:
+        bed.invalidate(EstimateReason.UNTRACKED_MOVE)
+        return None
+    selected = tuple(motor for motor in motors if motor in bed.motors)
+    return StreamMoveTracker(bed, selected, direction) if selected else None
+
+
 def track_held_control(
     hass: HomeAssistant | None, control: str, command: MotorCommand
 ) -> MotorCommand:

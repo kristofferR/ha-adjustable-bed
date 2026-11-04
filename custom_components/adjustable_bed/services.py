@@ -100,7 +100,12 @@ from .paired_coordinator import (
 )
 from .paired_devices import side_identifier
 from .pairing import is_paired, iter_children, pair_member_addresses
-from .position_estimate import invalidate_on_command, track_held_control, track_motor_command
+from .position_estimate import (
+    invalidate_on_command,
+    track_held_control,
+    track_motor_command,
+    track_stream_member,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerMotorHoldSpec, SideBoundController
@@ -2419,6 +2424,11 @@ async def _async_timed_move(
         command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
         if streamed:
             assert not isinstance(target, SingleAddressSideCoordinator)
+            # Timed from the member's first write to its retirement, like the
+            # serial move's own span; a renewal never starts a new move.
+            tracker = track_stream_member(
+                getattr(target, "hass", None), target.capability_controller, motor, direction
+            )
             await target.async_execute_stream_member(
                 motor=motor,
                 resource=resource,
@@ -2427,6 +2437,8 @@ async def _async_timed_move(
                 ceiling_s=duration_ms / 1000 if lease is not None else None,
                 lease=lease,
                 expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+                on_wire=tracker.started if tracker is not None else None,
+                on_left=tracker.finished if tracker is not None else None,
             )
             return
         if lease is not None:

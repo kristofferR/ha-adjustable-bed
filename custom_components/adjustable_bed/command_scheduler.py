@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import time
 from collections import OrderedDict, deque
 from collections.abc import Awaitable, Callable, Collection, Coroutine
@@ -35,6 +36,8 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, Final, Protocol
 from uuid import uuid4
+
+_LOGGER = logging.getLogger(__name__)
 
 ALL_COMMAND_RESOURCES: Final = frozenset({"*"})
 MAX_RECENT_COMMAND_RECORDS: Final = 20
@@ -154,6 +157,27 @@ class StreamMember:
     outcome: CommandOutcome | None = None
     error: BaseException | None = None
     done: asyncio.Event = field(default_factory=asyncio.Event)
+    on_wire: Callable[[], None] | None = None
+    """Called once, as the first write carrying this member starts."""
+    on_left: Callable[[float | None], None] | None = None
+    """Called once when the member settles, if it reached the wire: the
+    seconds from its first write to its retirement, or None when it failed."""
+    wire_started: float | None = None
+    left_at: float | None = None
+
+    def settle(self) -> None:
+        """Resolve the caller and report how long the motion ran."""
+        if self.done.is_set():
+            return
+        self.done.set()
+        if self.on_left is None or self.wire_started is None:
+            return
+        failed = self.error is not None or self.outcome is CommandOutcome.FAILED
+        left_at = self.left_at if self.left_at is not None else asyncio.get_running_loop().time()
+        try:
+            self.on_left(None if failed else max(0.0, left_at - self.wire_started))
+        except Exception:
+            _LOGGER.exception("Stream member timing observer failed")
 
 
 class StreamDriver(Protocol):
@@ -229,6 +253,7 @@ class _MergedStream:
             return
         del self.members[member.resource]
         member.outcome = outcome
+        member.left_at = asyncio.get_running_loop().time()
         self.ending.append(member)
         self.scheduler._end_member_lease(member)
         self.membership_changed = True
@@ -246,7 +271,7 @@ class _MergedStream:
             if error is not None and member.error is None:
                 member.error = error
             self.scheduler._end_member_lease(member)
-            member.done.set()
+            member.settle()
         self.members.clear()
         self.ending.clear()
         self.scheduler._forget_stream(self)
@@ -299,6 +324,13 @@ class _MergedStream:
                         if member.duration_s is not None:
                             member.deadline = started + member.duration_s
                             member.duration_s = None
+                        if member.wire_started is None:
+                            member.wire_started = started
+                            if member.on_wire is not None:
+                                try:
+                                    member.on_wire()
+                                except Exception:
+                                    _LOGGER.exception("Stream member timing observer failed")
                     await self._write_tick(driver, members, context)
                     next_tick = started + driver.stream_tick_s
                 if self.membership_changed:
@@ -387,7 +419,7 @@ class _MergedStream:
                 # The last members out return after the release, as a
                 # serial move returns after its STOP.
                 for member in self.awaiting_release:
-                    member.done.set()
+                    member.settle()
 
     async def _clean_up(self, driver: StreamDriver) -> None:
         """Run every ending member's cleanup, then raise the first failure."""
@@ -420,7 +452,7 @@ class _MergedStream:
             finally:
                 self.cleaning = None
                 if self.members:
-                    member.done.set()
+                    member.settle()
                 else:
                     # The last members out settle after the release runs.
                     self.closing = True
@@ -932,7 +964,7 @@ class DeviceCommandScheduler:
                 continue
             # Nothing reached the wire yet, so there is nothing to clean up.
             while stream.ending:
-                stream.ending.popleft().done.set()
+                stream.ending.popleft().settle()
             if stream.members:
                 handle.context.admitted_stop_epoch = stop_epoch
             elif handle in self._queue:
