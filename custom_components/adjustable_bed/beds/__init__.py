@@ -31,12 +31,14 @@ if TYPE_CHECKING:
     from .ergomotion4 import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine import EshineController as EshineController
+    from .eshine_okin import EshineOkinController as EshineOkinController
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
     from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
     from .gmmotor import GmmotorController as GmmotorController
     from .gmmotor_desk import GmmotorDeskController as GmmotorDeskController
     from .gmmotor_sleep import GmmotorSleepController as GmmotorSleepController
+    from .goodvibe import GoodVibeController as GoodVibeController
     from .hjbed import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
     from .isleep import IsleepController as IsleepController
@@ -108,6 +110,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "GoodVibeController": "goodvibe",
     "HJBedController": "hjbed",
     "DoubleSleepController": "doublesleep",
     "GmmotorController": "gmmotor",
@@ -126,6 +129,7 @@ _EXPORT_MODULES = {
     "CasperSleepController": "casper_sleep",
     "ComfortEnhancementsController": "comfort_enhancements",
     "EshineController": "eshine",
+    "EshineOkinController": "eshine_okin",
     "GlideawayMotionController": "glideaway_motion",
     "BedSenseController": "bedsense",
     "InnovaController": "innova",

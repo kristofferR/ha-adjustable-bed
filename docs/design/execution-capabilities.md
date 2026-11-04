@@ -86,7 +86,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
 | `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination |
 | `starcode_m5x5` | S stream | U | U | abm5_5 | head and foot is a fixed combination |
-| `star_elevate` (both routes) | S stream | U | U | abm5_5, m1x12 | one held action |
+| `star_elevate` (both routes) | S stream | U | U | abm5_5, m1x12 | one held action; hold declared on the Okin 5A ELEVATE profile, refreshed at the apps' 100 ms |
 | `sleepys_box25` (both routes) | S stream | U | U | sleepy | one held action; Sleepy's cluster accepted in #447 |
 | `doublesleep` | B | B | B | dsleep | report PARTIAL |
 | `okin_handle` | B | B | B | none | no accepted report |
@@ -97,8 +97,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `okin_dot` | B | B | B | none | no accepted report |
 | `okin_64bit` | B | B | B | none | no accepted report |
 | **Okin 5A (O2)** | | | | | |
-| `nectar` | S stream | U | U | nectar, row042 | combined motor masks do not produce OR'd commands |
-| `mattressfirm` | S stream | U | U | mf900 | a remaining chord button replaces the stream |
+| `nectar` | S stream | U | U | nectar, row042 | combined motor masks do not produce OR'd commands; not declared, because the report reaches the Okin CST frame and not the 5A keys this bed type sends |
+| `mattressfirm` | S stream | U | U | mf900 | a remaining chord button replaces the stream; not declared, for the same reason |
 | `okin_cb35` | B | B | B | sealy | report PARTIAL |
 | `okin_7byte` | B | B | B | none | no accepted report |
 | `okin_nordic` | B | B | B | none | no accepted report |
@@ -144,8 +144,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `jiecang_app` (Comfort Motion), `jiecang`, `comfort_motion` | B | B | B | jcbed | report PARTIAL; legacy route has no report |
 | `logicdata_app` (all profiles) | S stream | U | U | ld-phone, ld-pad, ld-mattress | combined is a fixed key |
 | **Limoss DD (L1)** | | | | | |
-| `limoss`, `limoss_remote` | S stream | U | U | limoss | more than one pressed flag returns before any write or STOP |
-| `fsm_relax` | S stream | U | U | fsm | more than one pressed entry suppresses all writes |
+| `limoss`, `limoss_remote` | S stream | U | U | limoss | more than one pressed flag returns before any write or STOP; hold declared on the Limoss Remote profile only, since the legacy `limoss` route repeats at the entry's pulse settings with one STOP, not the app's schedule |
+| `fsm_relax` | S stream | U | U | fsm | more than one pressed entry suppresses all writes; hold declared |
 | **FFFF frame (S1)** | | | | | |
 | `solace` (both routes) | S latched | U | U | motionflex, homekobo, dianqi, woosa | one start frame, global STOP on release |
 | `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release |
@@ -372,8 +372,27 @@ behavior; an unsupported value is rejected before admission.
   cleanup failure, and a non-opted controller staying serialized.
 - **Paired.** Intersection, combined renewal, and one side's STOP leaving the
   other side's lease intact.
-- Hardware stays deferred to beta users. Taudris offered to validate Leggett
-  Okin.
+- Hardware stays deferred to beta users; see
+  [Physical validation](#physical-validation).
+
+## Physical validation
+
+Deferred for the v5 beta ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)).
+
+- **Proven offline.** The accepted app reports prove which frames each
+  candidate app composes, releases and stops with. The merged stream's
+  scheduler tests (membership, partial release, STOP and the serialized
+  fallback) arrive with it. The only hardware evidence is the Leggett Okin
+  CU170 watchdog measurement.
+- **Needs real-bed reports.** For each candidate as its declaration lands: that
+  two held motors move together without stutter, that releasing one leaves the
+  other moving, that STOP halts both at once, and what the bed does when the
+  link drops mid-chord. The last one matters most for Customatic and Svane (see
+  [#516 above](#516-independent-axes-per-axis-release-and-stop)). Taudris offered
+  to validate Leggett Okin.
+
+The merged stream (#795) is not in the current beta; until it lands, every bed
+keeps serialized motors.
 
 ## Decisions for the maintainer
 

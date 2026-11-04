@@ -2,7 +2,8 @@
 
 Leggett Okin and Customatic stream a held key until release in their apps. The
 real controllers run through the coordinator's scheduler and the services, so
-these tests see exactly the frames a held lease writes.
+these tests see exactly the frames a held lease writes, on the hold-lease
+harness's virtual clock.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from collections.abc import AsyncIterator
 from contextlib import ExitStack
 from dataclasses import dataclass
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -36,6 +38,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
 from custom_components.adjustable_bed.services import async_register_services
+from tests.hold_lease_wire import virtual_clock
 from tests.okin_nframe_vectors import FROZEN_FRAMES
 
 ADDRESS = "AA:BB:CC:DD:EE:83"
@@ -138,6 +141,13 @@ async def runtime(
     await coordinator.async_shutdown()
 
 
+@pytest.fixture
+async def clock(runtime) -> AsyncIterator[Any]:
+    """Virtual time for the test body, after Home Assistant and the bed are set up."""
+    with virtual_clock() as clock:
+        yield clock
+
+
 async def _hold(
     hass: HomeAssistant, case: Case, generation: int, duration_ms: int = 300
 ) -> None:
@@ -209,7 +219,7 @@ def test_only_cu170_declares_a_sustain_window() -> None:
     assert {key: e.sustain_ms for key, e in declared.items() if e.sustain_ms} == {"prodigy4": 217}
 
 
-async def test_renewal_keeps_streaming_without_a_release(runtime) -> None:
+async def test_renewal_keeps_streaming_without_a_release(runtime, clock) -> None:
     hass, coordinator, case, frames = runtime
     start = asyncio.create_task(_hold(hass, case, 1))
     await _started(frames, case.held)
@@ -229,7 +239,7 @@ async def test_renewal_keeps_streaming_without_a_release(runtime) -> None:
     await _assert_lease_expired(coordinator)
 
 
-async def test_expiry_runs_the_profile_release(runtime) -> None:
+async def test_expiry_runs_the_profile_release(runtime, clock) -> None:
     hass, coordinator, case, frames = runtime
     loop = asyncio.get_running_loop()
     began = loop.time()
@@ -240,7 +250,7 @@ async def test_expiry_runs_the_profile_release(runtime) -> None:
     await _assert_lease_expired(coordinator)
 
 
-async def test_stop_preempts_the_hold_and_refuses_renewal(runtime) -> None:
+async def test_stop_preempts_the_hold_and_refuses_renewal(runtime, clock) -> None:
     hass, coordinator, case, frames = runtime
     start = asyncio.create_task(_hold(hass, case, 3, duration_ms=5000))
     await _started(frames, case.held)
@@ -254,7 +264,7 @@ async def test_stop_preempts_the_hold_and_refuses_renewal(runtime) -> None:
     assert frames[count:] == []
 
 
-async def test_hold_control_lease_streams_the_held_control(runtime) -> None:
+async def test_hold_control_lease_streams_the_held_control(runtime, clock) -> None:
     hass, coordinator, case, frames = runtime
     if case.bed_type == BED_TYPE_LEGGETT_OKIN:
         control, word = "flat", profiles_for(case)["flat"]
@@ -292,9 +302,13 @@ async def test_hold_control_lease_streams_the_held_control(runtime) -> None:
     assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
 
 
-async def test_held_move_feeds_the_estimate_like_a_timed_move(runtime) -> None:
-    """A lease-held move is timed by the same wrapper as a finite timed move (#601)."""
+async def test_held_move_feeds_the_estimate_like_a_timed_move(
+    runtime, clock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A lease-held move feeds the estimate like a finite timed move (#601)."""
     from custom_components.adjustable_bed import position_estimate as pe
+
+    monkeypatch.setattr(pe, "_clock", clock.time)
 
     hass, coordinator, case, frames = runtime
     entry_id = coordinator.entry.entry_id

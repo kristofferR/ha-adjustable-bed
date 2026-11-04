@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import time
 from collections import OrderedDict, deque
 from collections.abc import Awaitable, Callable, Collection, Coroutine
@@ -35,6 +36,8 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, Final, Protocol
 from uuid import uuid4
+
+_LOGGER = logging.getLogger(__name__)
 
 ALL_COMMAND_RESOURCES: Final = frozenset({"*"})
 MAX_RECENT_COMMAND_RECORDS: Final = 20
@@ -154,6 +157,27 @@ class StreamMember:
     outcome: CommandOutcome | None = None
     error: BaseException | None = None
     done: asyncio.Event = field(default_factory=asyncio.Event)
+    on_wire: Callable[[], None] | None = None
+    """Called once, as the first write carrying this member starts."""
+    on_left: Callable[[float | None], None] | None = None
+    """Called once when the member settles, if it reached the wire: the
+    seconds from its first write to its retirement, or None when it failed."""
+    wire_started: float | None = None
+    left_at: float | None = None
+
+    def settle(self) -> None:
+        """Resolve the caller and report how long the motion ran."""
+        if self.done.is_set():
+            return
+        self.done.set()
+        if self.on_left is None or self.wire_started is None:
+            return
+        failed = self.error is not None or self.outcome is CommandOutcome.FAILED
+        left_at = self.left_at if self.left_at is not None else asyncio.get_running_loop().time()
+        try:
+            self.on_left(None if failed else max(0.0, left_at - self.wire_started))
+        except Exception:
+            _LOGGER.exception("Stream member timing observer failed")
 
 
 class StreamDriver(Protocol):
@@ -196,6 +220,7 @@ class _MergedStream:
         self.wake = asyncio.Event()
         self.closing = False
         self.awaiting_release: list[StreamMember] = []
+        self.cleaning: StreamMember | None = None
 
     @property
     def accepting(self) -> bool:
@@ -210,32 +235,49 @@ class _MergedStream:
     def join(self, member: StreamMember) -> None:
         previous = self.members.get(member.resource)
         if previous is not None:
-            self.retire(previous, CommandOutcome.REPLACED)
+            # Same-motor replacement is atomic: the stream never looks empty.
+            self.retire(previous, CommandOutcome.REPLACED, close_if_empty=False)
         self.members[member.resource] = member
         self.membership_changed = True
         self.wake.set()
 
-    def retire(self, member: StreamMember, outcome: CommandOutcome) -> None:
-        """Remove a live member; its cleanup runs on the streamer's next pass."""
+    def retire(
+        self, member: StreamMember, outcome: CommandOutcome, *, close_if_empty: bool = True
+    ) -> None:
+        """Remove a live member; its cleanup runs on the streamer's next pass.
+
+        Removing the last member closes admission at once, whoever removed it,
+        so a newcomer starts a fresh stream behind this one's release.
+        """
         if self.members.get(member.resource) is not member:
             return
         del self.members[member.resource]
         member.outcome = outcome
+        now = asyncio.get_running_loop().time()
+        if member.left_at is None:
+            # An expired member stopped moving at its deadline, however late
+            # the streamer noticed; an interrupted write stamped it already.
+            member.left_at = (
+                min(now, member.deadline) if outcome is CommandOutcome.EXPIRED else now
+            )
         self.ending.append(member)
         self.scheduler._end_member_lease(member)
         self.membership_changed = True
+        if close_if_empty and not self.members:
+            self.closing = True
         self.wake.set()
 
     def abandon(self, outcome: CommandOutcome, error: BaseException | None = None) -> None:
         """Resolve every member still waiting, with the stream's failure if any."""
-        for member in (*self.members.values(), *self.ending, *self.awaiting_release):
+        cleaning = (self.cleaning,) if self.cleaning is not None else ()
+        for member in (*self.members.values(), *self.ending, *cleaning, *self.awaiting_release):
             if member.done.is_set():
                 continue
             member.outcome = member.outcome or outcome
             if error is not None and member.error is None:
                 member.error = error
             self.scheduler._end_member_lease(member)
-            member.done.set()
+            member.settle()
         self.members.clear()
         self.ending.clear()
         self.scheduler._forget_stream(self)
@@ -255,10 +297,26 @@ class _MergedStream:
             # waiting for the link) ends its members as cancelled.
             self.abandon(context.cancel_reason or CommandOutcome.STOPPED)
 
+    def _stamp_live(self) -> None:
+        """Stop the travel clock of every live member (idempotent)."""
+        stopped_at = asyncio.get_running_loop().time()
+        for member in self.members.values():
+            if member.left_at is None:
+                # A member whose deadline passed while the streamer was busy
+                # stopped moving at that deadline.
+                member.left_at = min(stopped_at, member.deadline)
+
+    async def _clock_on_stop(self, cancel_event: asyncio.Event) -> None:
+        # STOP or replacement stops every member's travel at once, whatever
+        # the streamer is awaiting: a write unwinding or a member's cleanup.
+        await cancel_event.wait()
+        self._stamp_live()
+
     async def _stream(self, context: CommandContext, driver: StreamDriver) -> None:
         loop = asyncio.get_running_loop()
         next_tick = loop.time()
         failure: BaseException | None = None
+        clock = asyncio.ensure_future(self._clock_on_stop(context.cancel_event))
         try:
             while True:
                 # Cleanup awaits the wire, so recheck deadlines until none is
@@ -281,13 +339,25 @@ class _MergedStream:
                 if self.membership_changed or loop.time() >= next_tick:
                     self.membership_changed = False
                     members = tuple(self.members.values())
-                    await driver.write_stream_tick(members)
-                    now = loop.time()
-                    next_tick = now + driver.stream_tick_s
+                    # A timed move's budget starts as its first write starts,
+                    # like the serial path's timeout around its write loop.
+                    started = loop.time()
                     for member in members:
                         if member.duration_s is not None:
-                            member.deadline = now + member.duration_s
+                            member.deadline = started + member.duration_s
                             member.duration_s = None
+                        if member.wire_started is None:
+                            member.wire_started = started
+                            if member.on_wire is not None:
+                                try:
+                                    member.on_wire()
+                                except Exception:
+                                    _LOGGER.exception("Stream member timing observer failed")
+                    await self._write_tick(driver, members, context)
+                    # Fixed rate from each write's start, so a slow link does not
+                    # stretch the refresh period past a watchdog. A write that
+                    # overruns its slot is followed at once, never by a burst.
+                    next_tick = started + driver.stream_tick_s
                 if self.membership_changed:
                     continue
                 earliest = min(member.deadline for member in self.members.values())
@@ -299,6 +369,9 @@ class _MergedStream:
             failure = err
             raise
         finally:
+            if context.cancel_event.is_set():
+                self._stamp_live()  # the watcher may not have run yet
+            clock.cancel()
             # STOP, replacement, shutdown or a failure: every member ends here,
             # each with its own cleanup, then the profile release. New members
             # start a fresh stream behind this one.
@@ -310,11 +383,88 @@ class _MergedStream:
             )
             for member in tuple(self.members.values()):
                 self.retire(member, outcome)
-                if outcome is CommandOutcome.FAILED and failure is not None:
-                    member.error = failure
+            if outcome is CommandOutcome.FAILED and failure is not None:
+                # Members retired just before the failure have not settled yet;
+                # the failure is theirs too.
+                for member in (*self.ending, *self.awaiting_release):
+                    if not member.done.is_set():
+                        member.outcome = CommandOutcome.FAILED
+                        member.error = member.error or failure
             # A STOP arriving now cancels this task; the cleanup and release
             # still finish before the wire lane is handed on.
             await _settled(self._close(driver))
+
+    async def _write_tick(
+        self,
+        driver: StreamDriver,
+        members: tuple[StreamMember, ...],
+        context: CommandContext,
+    ) -> None:
+        """Write one composed tick, abandoning it once a member in it ends.
+
+        Deadlines and lease expiry keep running while the write is in flight;
+        a write that outlives a member's deadline, or a member stopped
+        meanwhile, is cancelled as the serial path's timeout cancels its write.
+        """
+        loop = asyncio.get_running_loop()
+        tick = asyncio.ensure_future(driver.write_stream_tick(members))
+        ours = False
+        stopping = False
+        try:
+            while not tick.done():
+                live = [m for m in members if self.members.get(m.resource) is m]
+                overdue = [m for m in live if m.deadline <= loop.time()]
+                # Retire at the interruption, before the write unwinds, so the
+                # unwinding never counts as travel.
+                for member in overdue:
+                    self.retire(member, CommandOutcome.EXPIRED)
+                if context.cancel_event.is_set():
+                    stopping = True
+                    break
+                if overdue or len(live) < len(members):
+                    break
+                self.wake.clear()
+                timeout = max(0.0, min(m.deadline for m in live) - loop.time())
+                with contextlib.suppress(TimeoutError):
+                    async with asyncio.timeout(timeout):
+                        await _first_set_or_done(tick, self.wake, context.cancel_event)
+        except asyncio.CancelledError:
+            stopping = True  # STOP preempted the streamer task itself
+            raise
+        finally:
+            # The STOP watcher in _stream also stamps; stamping here as well
+            # covers a streamer cancelled without its cancel event.
+            stamp_stopped = self._stamp_live
+            if not tick.done():
+                if stopping or context.cancel_event.is_set():
+                    stamp_stopped()
+                ours = True
+                tick.cancel()
+            # Never hand the wire on while this write is still running, even
+            # when a STOP cancels the streamer meanwhile. A STOP arriving
+            # during the unwinding still stops the clock at once.
+            interrupted = False
+            while not tick.done():
+                try:
+                    if context.cancel_event.is_set():
+                        stamp_stopped()
+                        await asyncio.wait({tick})
+                    else:
+                        await _first_set_or_done(tick, context.cancel_event)
+                except asyncio.CancelledError:
+                    interrupted = True
+                    stamp_stopped()
+            # A failed write outranks the STOP that cancelled the streamer:
+            # its members must report the failure, not a clean stop.
+            error = None if tick.cancelled() else tick.exception()
+            if error is not None:
+                raise error
+            if interrupted:
+                raise asyncio.CancelledError
+        if tick.cancelled() and not ours:
+            # Something under the write cancelled it: the frame's fate is
+            # unknown, so the stream fails and every member is cleaned up.
+            raise RuntimeError("A stream write was cancelled")
 
     async def _close(self, driver: StreamDriver) -> None:
         try:
@@ -331,7 +481,7 @@ class _MergedStream:
                 # The last members out return after the release, as a
                 # serial move returns after its STOP.
                 for member in self.awaiting_release:
-                    member.done.set()
+                    member.settle()
 
     async def _clean_up(self, driver: StreamDriver) -> None:
         """Run every ending member's cleanup, then raise the first failure."""
@@ -342,17 +492,35 @@ class _MergedStream:
                 # of joining while it is under way.
                 self.closing = True
             member = self.ending.popleft()
+            # Held until finalized, so no exit path can lose its caller.
+            self.cleaning = member
+            cancelled = False
             try:
                 await driver.end_stream_member(member, tuple(self.members.values()))
+            except asyncio.CancelledError as err:
+                # An awaited write was cancelled under the cleanup: the cleanup
+                # did not complete, which is a failure for this member.
+                task = asyncio.current_task()
+                cancelled = task is not None and task.cancelling() > 0
+                failure = RuntimeError(f"{member.motor} cleanup was cancelled")
+                failure.__cause__ = err
+                member.error = failure
+                member.outcome = CommandOutcome.FAILED
+                first_error = first_error or failure
             except Exception as err:
                 member.error = err
                 member.outcome = CommandOutcome.FAILED
                 first_error = first_error or err
-            if self.members:
-                member.done.set()
-            else:
-                self.closing = True
-                self.awaiting_release.append(member)
+            finally:
+                self.cleaning = None
+                if self.members:
+                    member.settle()
+                else:
+                    # The last members out settle after the release runs.
+                    self.closing = True
+                    self.awaiting_release.append(member)
+            if cancelled:
+                raise asyncio.CancelledError
         if first_error is not None:
             raise first_error
 
@@ -369,6 +537,16 @@ async def _settled(cleanup: Coroutine[Any, Any, None]) -> None:
         if not task.cancelled():
             task.exception()  # members already carry a cleanup failure
         raise
+
+
+async def _first_set_or_done(task: asyncio.Future[None], *events: asyncio.Event) -> None:
+    waiters = [asyncio.ensure_future(event.wait()) for event in events]
+    try:
+        await asyncio.wait({task, *waiters}, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for waiter in waiters:
+            waiter.cancel()
+        await asyncio.gather(*waiters, return_exceptions=True)
 
 
 async def _first_set(*events: asyncio.Event) -> None:
@@ -405,6 +583,13 @@ class CommandContext:
     lease: HoldLease | None = None
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
+    cancel_generation: int = 0
+
+    def request_cancel(self, outcome: CommandOutcome) -> None:
+        """Distinguish repeated cancellations of this exact resource admission."""
+        self.cancel_generation += 1
+        self.cancel_reason = outcome
+        self.cancel_event.set()
 
 
 CommandOperation = Callable[[CommandContext], Awaitable[None]]
@@ -848,7 +1033,7 @@ class DeviceCommandScheduler:
                 continue
             # Nothing reached the wire yet, so there is nothing to clean up.
             while stream.ending:
-                stream.ending.popleft().done.set()
+                stream.ending.popleft().settle()
             if stream.members:
                 handle.context.admitted_stop_epoch = stop_epoch
             elif handle in self._queue:
@@ -992,8 +1177,7 @@ class DeviceCommandScheduler:
         self, handle: CommandHandle, outcome: CommandOutcome = CommandOutcome.GROUP_ABORTED
     ) -> None:
         """Invalidate one handle and wait for active cleanup when necessary."""
-        handle.context.cancel_reason = outcome
-        handle.context.cancel_event.set()
+        handle.context.request_cancel(outcome)
         async with self._lock:
             if handle in self._queue:
                 self._queue.remove(handle)
@@ -1121,8 +1305,7 @@ class DeviceCommandScheduler:
         for stream in tuple(self._streams.values()):
             handle = stream.handle
             if handle is not None and not handle.future.done():
-                handle.context.cancel_reason = outcome
-                handle.context.cancel_event.set()
+                handle.context.request_cancel(outcome)
                 if handle in self._queue:
                     self._queue.remove(handle)
                     self._finish_locked(handle, outcome)
@@ -1210,8 +1393,7 @@ class DeviceCommandScheduler:
             return
         if handle is None or handle.future.done():
             return
-        handle.context.cancel_reason = outcome
-        handle.context.cancel_event.set()
+        handle.context.request_cancel(outcome)
         if handle in self._queue:
             self._queue.remove(handle)
             self._finish_locked(handle, outcome)
@@ -1295,15 +1477,13 @@ class DeviceCommandScheduler:
             replaces_active = True
             # A streamer already ending at a STOP keeps that reason for its members.
             if active.stream is None or not active.context.cancel_event.is_set():
-                active.context.cancel_reason = CommandOutcome.REPLACED
-            active.context.cancel_event.set()
+                active.context.request_cancel(CommandOutcome.REPLACED)
 
         for queued in tuple(self._queue):
             if not self._handles_conflict(queued, incoming):
                 continue
             self._queue.remove(queued)
-            queued.context.cancel_reason = CommandOutcome.REPLACED
-            queued.context.cancel_event.set()
+            queued.context.request_cancel(CommandOutcome.REPLACED)
             self._finish_locked(queued, CommandOutcome.REPLACED)
         return replaces_active
 
@@ -1331,8 +1511,7 @@ class DeviceCommandScheduler:
             and _resources_overlap(active.intent.resources, resources)
             and not (spare_streams and active.stream is not None)
         ):
-            active.context.cancel_reason = outcome
-            active.context.cancel_event.set()
+            active.context.request_cancel(outcome)
             active.invalidated_stop_epoch = invalidated_stop_epoch
         for queued in tuple(self._queue):
             if not _resources_overlap(queued.intent.resources, resources) or (
@@ -1340,8 +1519,7 @@ class DeviceCommandScheduler:
             ):
                 continue
             self._queue.remove(queued)
-            queued.context.cancel_reason = outcome
-            queued.context.cancel_event.set()
+            queued.context.request_cancel(outcome)
             self._finish_locked(
                 queued,
                 outcome,
@@ -1413,12 +1591,11 @@ class DeviceCommandScheduler:
                         worker_task is not None and worker_task.cancelling()
                     )
                     if not handle.context.cancel_event.is_set():
-                        handle.context.cancel_reason = (
+                        handle.context.request_cancel(
                             CommandOutcome.SHUTDOWN
                             if worker_cancelled
                             else CommandOutcome.CALLER_CANCELLED
                         )
-                        handle.context.cancel_event.set()
                     self._finish(
                         handle,
                         handle.context.cancel_reason or CommandOutcome.CALLER_CANCELLED,

@@ -30,6 +30,7 @@ from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.switch import _switch_entities_for
+from tests.hold_lease_wire import virtual_clock
 from tests.test_svane import make_controller, written
 
 
@@ -90,6 +91,11 @@ async def test_registered_timed_move_streams_at_the_native_cadence(
     hass, runtime, duration, motor
 ):
     """A timed move streams one axis (#516) at the app's own pass cadence."""
+    with virtual_clock():
+        await _streams_at_the_native_cadence(hass, runtime, duration, motor)
+
+
+async def _streams_at_the_native_cadence(hass, runtime, duration, motor) -> None:
     coordinator, controller = runtime
     loop = asyncio.get_running_loop()
     movement_times = []
@@ -122,6 +128,11 @@ async def test_registered_timed_move_streams_at_the_native_cadence(
 
 @pytest.mark.parametrize("runtime", ["multi", "jmc"], indirect=True)
 async def test_registered_timed_move_public_stop_cancels_long_plan_and_releases(runtime, hass):
+    with virtual_clock():
+        await _public_stop_cancels_long_plan_and_releases(runtime, hass)
+
+
+async def _public_stop_cancels_long_plan_and_releases(runtime, hass) -> None:
     coordinator, controller = runtime
     moving = asyncio.Event()
 

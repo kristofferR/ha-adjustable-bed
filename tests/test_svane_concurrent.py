@@ -2,7 +2,8 @@
 
 P1 refreshes each axis's own direction role and releases one role; P2 sends one
 mask, drops a released axis from it and ends with its global STOP. The real
-controller runs through the coordinator's scheduler and the services.
+controller runs through the coordinator's scheduler and the services, on the
+hold-lease harness's virtual clock.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from custom_components.adjustable_bed import position_estimate as pe
 from custom_components.adjustable_bed.beds.svane import FEET, HEAD, OLD, SvaneController
 from custom_components.adjustable_bed.command_scheduler import CommandKind
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
+from tests.hold_lease_wire import virtual_clock
 from tests.test_svane import written
 from tests.test_svane_artifact_vectors import ROWS
 from tests.test_svane_light_timed_host import runtime  # noqa: F401
@@ -44,13 +46,16 @@ async def _move(hass, motor: str, duration_ms: int) -> None:
 
 
 @pytest.fixture
-def bed(hass, runtime):  # noqa: F811
+async def bed(hass, runtime):  # noqa: F811
     coordinator, controller = runtime
     # One patch for the whole test: concurrent calls entering and leaving their
     # own patches could restore each other's and leak it into the next test.
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ),
+        virtual_clock(),
     ):
         yield hass, coordinator, controller
 

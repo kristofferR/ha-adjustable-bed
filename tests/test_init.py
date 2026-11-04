@@ -62,6 +62,8 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -868,7 +870,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v1_non_vibradorm_keeps_existing_setting(
@@ -894,7 +896,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     async def test_migrate_v2_vibradorm_enables_angle_sensing(
@@ -919,7 +921,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v1_vibradorm_keeps_existing_enabled_angle_setting(
@@ -945,7 +947,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v2_non_vibradorm_keeps_existing_setting(
@@ -971,7 +973,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     @pytest.mark.parametrize(
@@ -1013,11 +1015,14 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         # Byte-identical apart from the later minor-version review mark, which
-        # only routes that gained app profiles receive.
+        # only routes that gained app profiles receive, and the schema 5 profile
+        # id and migration record.
         migrated = dict(entry.data)
         migrated.pop(CONF_PROFILE_REVIEW_PENDING, None)
+        assert migrated.pop(CONF_PROFILE_ID) == bed_type
+        assert migrated.pop(CONF_PROFILE_MIGRATION)["from_version"] == 3
         assert migrated == before
         assert is_paired(entry.data) is False
 
@@ -1026,14 +1031,14 @@ class TestMigration:
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """An entry from a newer (v5) schema must be refused, not silently mangled."""
+        """An entry from a newer (v6) schema must be refused, not silently mangled."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Future version",
             data={**mock_config_entry_data},
             unique_id="AA:BB:CC:DD:E5:01",
-            entry_id="migration_future_v5",
-            version=5,
+            entry_id="migration_future_v6",
+            version=6,
         )
         entry.add_to_hass(hass)
 

@@ -101,7 +101,46 @@ The bed-type picker has one **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
 V-MAT Basic** entry. Choose **Legacy setup** inside it for this controller, or
 choose the app and matching remote/product. Existing entries keep their saved
 controller until you explicitly reconfigure them. See the
-[guided setup and migration](../CONFIGURATION.md#vibradorm-guided-setup-and-migration).
+[guided setup and migration](#guided-setup-and-migration).
+
+#### Guided setup and migration
+
+The bed-type list has one **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
+V-MAT Basic** choice. Choose the app you use on your phone, then its remote or
+product. **Legacy setup** remains available inside this choice for fresh setup.
+The family choice shares setup navigation, while each selected app keeps its
+existing controller, features and Bluetooth pairing requirements.
+
+For an existing bed, open **Settings → Devices & services → Adjustable Bed**,
+then the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+The app review in Repairs opens the same wizard. Choose **Keep current setup**
+to keep your working controls and answer the review, or choose your app and
+remote/product.
+Keeping the same app seeds the form with your saved settings.
+
+The wizard temporarily releases Home Assistant's connection to check the chosen
+setup. It checks the exact app's required Bluetooth roles and existing pairing
+requirements, without moving the bed. A missing scanner, failed check or link
+that cannot be closed cannot save the new selection. Retry or keep the current
+setup. Closing the wizard leaves the saved configuration and pending review
+unchanged. A failed connection remains owned until it is observed closed, so
+another setup attempt cannot overlap it.
+
+After a successful check, a final review shows the chosen app and
+remote/product, and the controls it adds and removes. Saving keeps the entry,
+address, device and unchanged entity IDs. Controls follow the selected profile;
+obsolete controls and angle estimates may disappear. This check does not prove physical movement, lighting or massage
+behavior. If settings changed in another window, the wizard refuses to overwrite
+them. Routine brightness, timer and connection changes remain in **Configure**.
+
+A paired bed must first be split explicitly, or have its standalone controls
+restored for a one-address pair. The wizard offers the existing reversible split
+action and preserves identities. Each receiver keeps its current connection
+preferences and gets back its original bed settings. Afterwards,
+reconfigure the intended receiver separately and combine compatible beds again
+if needed. It never assigns one app/remote to both receivers or guesses from
+Bluetooth identifiers or motor count.
 
 ## Commands
 

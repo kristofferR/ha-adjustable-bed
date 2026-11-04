@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
     from ..gmmotor_requests import Request as GmmotorRequest
+    from ..goodvibe_services import Request as GoodVibeRequest
     from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
@@ -42,6 +43,7 @@ from ..alarm_table import (
 from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
+from ..command_scheduler import current_command_context
 from ..const import (
     POSITION_CHECK_INTERVAL,
     POSITION_STALL_COUNT,
@@ -49,10 +51,12 @@ from ..const import (
     POSITION_TOLERANCE,
 )
 from ..diagnostic_payloads import format_payload
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
 
 _LOGGER = logging.getLogger(__name__)
+
+CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
 
 MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
 
@@ -117,6 +121,8 @@ class ControllerButtonSpec:
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
     hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
+    # Cancel held admission; only the held task owns its protocol release frame.
+    release_only: bool = field(default=False, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
 
@@ -496,17 +502,27 @@ class BedController(ABC):
         """Run one ending member's own cleanup while ``remaining`` keep moving."""
         raise NotImplementedError("This controller does not compose concurrent motors")
 
-    def stream_member_started(self, member: StreamMember) -> bool:
-        """Whether a written frame has carried ``member`` yet.
-
-        A controller that composes every live member into each tick has always
-        started it; one that paces axes in phases may still be waiting.
-        """
-        return True
-
     async def release_stream(self) -> None:
         """Run the profile release after the last stream member ended."""
         raise NotImplementedError("This controller does not compose concurrent motors")
+
+    def leased_hold_refreshes(self, repeat_ms: int) -> int | None:
+        """Refreshes of an open-ended leased hold at the app's own interval (#483).
+
+        ``None`` unless the running command carries a hold lease and this
+        controller declares a streamed hold; callers then keep their finite
+        pulses. Within a lease the count spans the hold ceiling at
+        ``repeat_ms``. The lease ends the loop first, through its cancel event.
+        """
+        context = current_command_context()
+        if (
+            context is None
+            or context.lease is None
+            or context.cancel_event is not self._coordinator.cancel_command
+            or self.execution.hold != "stream"
+        ):
+            return None
+        return HOLD_CEILING_MS // repeat_ms + 1
 
     @property
     def auto_stops_on_idle(self) -> bool:
@@ -1603,6 +1619,27 @@ class BedController(ABC):
     async def set_massage_speed(self, value: float) -> None:
         """Set the controller-declared massage speed scale."""
         raise NotImplementedError("Massage speed control is not supported")
+
+    @property
+    def supports_goodvibe(self) -> bool:
+        return False
+
+    def validate_goodvibe_request(self, request: GoodVibeRequest) -> None:
+        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
+
+    async def async_execute_goodvibe_request(self, request: GoodVibeRequest) -> None:
+        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
+
+    @property
+    def requests_connection_recovery(self) -> bool:
+        """Whether a user-started background session needs recovery after link loss."""
+        return False
+
+    def on_connection_release(self, reason: str) -> None:  # noqa: B027
+        """End explicit user/session intent before releasing connection resources."""
+
+    def on_gesture_release(self) -> None:  # noqa: B027
+        """Mark the current admitted gesture as released before STOP invalidates it."""
 
     @property
     def supports_hjbed(self) -> bool:

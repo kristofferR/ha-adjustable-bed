@@ -99,3 +99,14 @@ and device moves, entry enabling, and source removal. It also checks placeholder
 identity recovery, pre-mutation validation, retryable rollback, and single-address
 config restoration, including cancellation. Existing paired setup tests cover real HA registry adoption,
 conversion, unpair, offline sides, and user customization preservation.
+
+### Physical validation
+
+Deferred for the v5 beta ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)).
+Proven offline: `test_paired_topology_trace.py` reproduces, write for write, the
+trace recorded before the strategies were extracted, for every strategy and for
+automatic mode. Needs real-bed reports: two-address pairs in concurrent,
+sequential and automatic mode, including automatic mode's switch to sequential
+after a real adapter runs out of connection slots; a STOP that must reach both
+sides; and single-address beds running a native Both. Reports through ESPHome
+proxies with few free slots are the most useful.

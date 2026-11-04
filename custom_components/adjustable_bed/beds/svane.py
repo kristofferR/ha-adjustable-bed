@@ -724,14 +724,11 @@ class SvaneController(BedController):
     # whenever the stream calls: P1 head (or P2's combined mask) starts each
     # pass and feet follows 100 ms later; a pass with feet lasts 200 ms, and
     # feet alone waits 100 ms before each write. A newly added head is written
-    # at once, as a press is. ``stream_tick_s`` is the wait until the next due
-    # write, measured when the stream reads it after a tick.
+    # at once, as a press is. ``stream_tick_s`` is the time from this tick's
+    # start to the next due write: the stream schedules ticks from their start.
     @property
     def stream_tick_s(self) -> float:
-        return max(0.0, self._stream_next_at - asyncio.get_running_loop().time())
-
-    def stream_member_started(self, member: StreamMember) -> bool:
-        return member in self._stream_written
+        return max(0.0, self._stream_next_at - self._stream_tick_at)
 
     @staticmethod
     def _stream_axes(members: tuple[StreamMember, ...]) -> tuple[bool | None, bool | None]:
@@ -780,7 +777,7 @@ class SvaneController(BedController):
         head, feet = self._stream_axes(members)
         head_m = next((m for m in members if m.motor == "back"), None)
         feet_m = next((m for m in members if m.motor == "legs"), None)
-        now = loop.time()
+        now = self._stream_tick_at = loop.time()
         if self.profile == "jmc" and head_m is not None:
             # P2 combined: one mask per 100 ms pass, no feet sleep.
             fresh = any(m not in self._stream_written for m in members)
@@ -835,6 +832,7 @@ class SvaneController(BedController):
         self._stream_seen: dict[StreamMember, float] = {}
         self._stream_last: tuple[float | None, float | None] = (None, None)
         self._stream_next_at = 0.0
+        self._stream_tick_at = 0.0
 
     async def _release(self, roles: tuple[tuple[str, str], ...]) -> None:
         if self.profile == "jmc":

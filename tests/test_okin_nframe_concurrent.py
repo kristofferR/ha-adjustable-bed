@@ -1,7 +1,8 @@
 """Concurrent motors (#516) on Leggett Okin through the merged stream.
 
 The real controller runs through the coordinator's scheduler and services, so
-these tests see every frame the composed stream writes.
+these tests see every frame the composed stream writes. Timing runs on the
+hold-lease harness's virtual clock: no real timer is awaited.
 """
 
 from __future__ import annotations
@@ -9,6 +10,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Callable
 from contextlib import ExitStack
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -30,6 +32,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
 from custom_components.adjustable_bed.services import async_register_services
+from tests.hold_lease_wire import virtual_clock
 from tests.okin_nframe_vectors import COMPOSED_FRAMES, FROZEN_FRAMES
 from tests.test_okin_nframe_hold import _client
 
@@ -89,6 +92,13 @@ async def make_runtime(hass: HomeAssistant) -> AsyncIterator[Callable[[str], Run
             await coordinator.async_shutdown()
 
 
+@pytest.fixture
+async def clock(make_runtime) -> AsyncIterator[Any]:
+    """Virtual time for the test body, after Home Assistant and the beds are set up."""
+    with virtual_clock() as clock:
+        yield clock
+
+
 async def _move(
     hass: HomeAssistant,
     motor: str,
@@ -127,7 +137,7 @@ def test_composed_frames_are_frozen() -> None:
     assert {HEAD, FEET, ZERO} <= FROZEN_FRAMES["prodigy4"]
 
 
-async def test_both_motors_progress_in_one_window(make_runtime) -> None:
+async def test_both_motors_progress_in_one_window(make_runtime, clock) -> None:
     hass, coordinator, frames = make_runtime("prodigy4")
     head = asyncio.create_task(_move(hass, "head", 700))
     await _until(frames, HEAD)
@@ -150,7 +160,7 @@ async def test_both_motors_progress_in_one_window(make_runtime) -> None:
     assert scheduler.recent_records[-1].kind is CommandKind.STREAM
 
 
-async def test_replacing_one_member_leaves_the_other(make_runtime) -> None:
+async def test_replacing_one_member_leaves_the_other(make_runtime, clock) -> None:
     hass, coordinator, frames = make_runtime("prodigy4")
     head = asyncio.create_task(_move(hass, "head", 900))
     await _until(frames, HEAD)
@@ -167,7 +177,7 @@ async def test_replacing_one_member_leaves_the_other(make_runtime) -> None:
     assert HEAD not in motion[first_chord : len(motion) - motion[::-1].index(CHORD)]
 
 
-async def test_motor_stop_ends_only_its_member(make_runtime) -> None:
+async def test_motor_stop_ends_only_its_member(make_runtime, clock) -> None:
     hass, coordinator, frames = make_runtime("prodigy4")
     head = asyncio.create_task(_move(hass, "head", 600))
     await _until(frames, HEAD)
@@ -183,7 +193,7 @@ async def test_motor_stop_ends_only_its_member(make_runtime) -> None:
     assert set(_released(frames)) == {HEAD, CHORD}
 
 
-async def test_stop_during_interleaving_ends_every_member(make_runtime) -> None:
+async def test_stop_during_interleaving_ends_every_member(make_runtime, clock) -> None:
     hass, coordinator, frames = make_runtime("prodigy4")
     head = asyncio.create_task(_move(hass, "head", 5000, generation=1))
     await _until(frames, HEAD)
@@ -197,7 +207,7 @@ async def test_stop_during_interleaving_ends_every_member(make_runtime) -> None:
     assert frames[count:] == []
 
 
-async def test_controller_without_concurrency_stays_serialized(make_runtime) -> None:
+async def test_controller_without_concurrency_stays_serialized(make_runtime, clock) -> None:
     hass, coordinator, frames = make_runtime("prodigy2")
     keys = profiles.LEGGETT_PROFILES["prodigy2"].keys
     head = asyncio.create_task(_move(hass, "head", 300))
@@ -213,8 +223,12 @@ async def test_controller_without_concurrency_stays_serialized(make_runtime) -> 
     )
 
 
-async def test_each_member_feeds_the_estimate_with_its_own_duration(make_runtime) -> None:
+async def test_each_member_feeds_the_estimate_with_its_own_duration(
+    make_runtime, clock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Members ending at different moments each record their own travel (#601)."""
+    # Serial moves are timed on the estimator's clock: make it the virtual one.
+    monkeypatch.setattr(pe, "_clock", clock.time)
     hass, coordinator, frames = make_runtime("prodigy4")
     entry_id = coordinator.entry.entry_id
     manager = await pe.async_setup_position_estimates(hass, entry_id, ((ADDRESS, None),))
@@ -251,17 +265,20 @@ async def test_each_member_feeds_the_estimate_with_its_own_duration(make_runtime
 
             assert bed.motors["head"].moves_since_reference == 1
             assert bed.motors["feet"].moves_since_reference == 1
-            assert 0.3 <= feet_done <= 0.45
-            assert abs(travel("head") - serial_head) < 0.15
-            # A reduced frame stops feet at once; serial feet also waits out its
-            # four release frames, which the stream sends only after head.
-            assert feet_done < serial_feet
+            assert (serial_head, serial_feet) == pytest.approx((0.8, 0.3))
+            # Each member's travel equals a serialized move of the same length,
+            # although feet ended while head was still moving.
+            assert feet_done == pytest.approx(serial_feet)
+            assert travel("head") == pytest.approx(serial_head)
     finally:
         await pe.async_unload_position_estimates(hass, entry_id)
 
 
-async def test_slow_writes_keep_the_start_to_start_cadence(make_runtime) -> None:
-    """A proxy's write time is absorbed, as wall-clock pacing does for serial moves."""
+async def test_slow_writes_keep_the_start_to_start_cadence(make_runtime, clock) -> None:
+    """A proxy's write time is absorbed, as wall-clock pacing does for serial moves.
+
+    The stream's fixed-rate ticks (#795) keep CU170 inside its watchdog.
+    """
     hass, coordinator, frames = make_runtime("prodigy4")
     loop = asyncio.get_running_loop()
     starts: list[float] = []
@@ -277,5 +294,5 @@ async def test_slow_writes_keep_the_start_to_start_cadence(make_runtime) -> None
     held = [start for start, frame in zip(starts, frames, strict=True) if frame == HEAD]
     gaps = [b - a for a, b in zip(held, held[1:], strict=False)]
     assert len(gaps) >= 4
-    # 100 ms apart, not 100 ms after each 60 ms write.
-    assert max(gaps) < 0.13
+    # Fixed-rate ticks: 100 ms apart, not 100 ms after each 60 ms write.
+    assert all(gap == pytest.approx(0.1, abs=1e-6) for gap in gaps)

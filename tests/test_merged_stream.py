@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 from collections.abc import Awaitable, Callable
 
 import pytest
@@ -449,3 +450,148 @@ async def test_newcomer_ready_as_the_last_member_expires_waits_for_release() -> 
     assert await asyncio.wait_for(newcomer[0], 1) is CommandOutcome.EXPIRED
     assert ("end", "back:up") in driver.events
     assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
+
+
+async def test_stopping_the_last_member_during_cleanup_closes_admission() -> None:
+    scheduler = DeviceCommandScheduler("stop-last")
+    driver = FakeDriver()
+    entered = asyncio.Event()
+    finish = asyncio.Event()
+    original_end = driver.end_stream_member
+
+    async def gated_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        if item.motor == "back":
+            entered.set()
+            await finish.wait()
+        await original_end(item, remaining)
+
+    driver.end_stream_member = gated_end  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back"))
+    legs = join(scheduler, driver, member("legs"))
+    await settle(driver)
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:back")))
+    await asyncio.wait_for(entered.wait(), 1)
+    # legs, the last live member, stops while back's cleanup is gated.
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:legs")))
+    head = join(scheduler, driver, member("head", seconds=0.02))
+    await asyncio.sleep(0)
+    finish.set()
+    await asyncio.wait_for(asyncio.gather(back, legs, head), 1)
+    assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
+
+
+async def test_a_cancelled_cleanup_write_still_settles_its_caller() -> None:
+    scheduler = DeviceCommandScheduler("cancelled-cleanup")
+    driver = FakeDriver()
+    entered = asyncio.Event()
+    write = asyncio.get_running_loop().create_future()
+    original_end = driver.end_stream_member
+
+    async def end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        await original_end(item, remaining)
+        if item.motor == "back":
+            entered.set()
+            await write  # cancelled under the cleanup
+
+    driver.end_stream_member = end  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back"))
+    legs = join(scheduler, driver, member("legs"))
+    await settle(driver)
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:back")))
+    await asyncio.wait_for(entered.wait(), 1)
+    write.cancel()
+    with pytest.raises(RuntimeError, match="cleanup was cancelled"):
+        await asyncio.wait_for(back, 1)
+    with pytest.raises(RuntimeError, match="cleanup was cancelled"):
+        await asyncio.wait_for(legs, 1)
+    assert driver.events[-1] == ("release",)
+    assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
+
+
+async def test_an_unexpected_write_cancellation_fails_the_stream() -> None:
+    scheduler = DeviceCommandScheduler("unexpected-cancel")
+    driver = FakeDriver()
+    pending: list[asyncio.Future[None]] = []
+
+    async def tick(members: tuple[StreamMember, ...]) -> None:
+        driver.events.append(("tick", *sorted(f"{m.motor}:{m.action}" for m in members)))
+        driver.ticked.set()
+        if len(pending) < 2:
+            pending.append(asyncio.get_running_loop().create_future())
+            await pending[-1]
+
+    driver.write_stream_tick = tick  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back"))
+    await asyncio.wait_for(driver.ticked.wait(), 1)
+    pending[0].cancel()  # cancelled under the write, not by the scheduler
+    with pytest.raises(RuntimeError, match="stream write was cancelled"):
+        await asyncio.wait_for(back, 1)
+    assert driver.events[-2:] == [("end", "back:up"), ("release",)]
+
+
+async def test_a_failed_write_reaches_a_member_retired_just_before() -> None:
+    scheduler = DeviceCommandScheduler("failed-retired")
+    driver = FakeDriver()
+    reported: list[float | None] = []
+
+    async def tick(members: tuple[StreamMember, ...]) -> None:
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            raise ConnectionError("link lost") from None
+
+    driver.write_stream_tick = tick  # type: ignore[method-assign]
+    timed = StreamMember(
+        motor="back",
+        resource="motor:back",
+        action="up",
+        deadline=math.inf,
+        duration_s=0.02,
+        on_left=reported.append,
+    )
+    timed.on_wire = lambda: None
+    with pytest.raises(ConnectionError, match="link lost"):
+        await asyncio.wait_for(
+            scheduler.execute_stream_member(timed, CONCURRENT, runner_for(driver)), 1
+        )
+    assert timed.outcome is CommandOutcome.FAILED
+    assert reported == [None]
+
+
+async def test_a_write_failing_after_a_stop_preemption_reports_the_failure() -> None:
+    scheduler = DeviceCommandScheduler("fail-after-preempt")
+    driver = FakeDriver()
+    reported: list[float | None] = []
+    writing = asyncio.Event()
+
+    async def tick(members: tuple[StreamMember, ...]) -> None:
+        writing.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            raise ConnectionError("link lost") from None
+
+    driver.write_stream_tick = tick  # type: ignore[method-assign]
+
+    async def preemptible(body: Callable[[StreamDriver], Awaitable[None]]) -> None:
+        # The coordinator cancels the operation task when STOP sets its event.
+        task = asyncio.ensure_future(body(driver))
+        stop = asyncio.ensure_future(scheduler._active.context.cancel_event.wait())  # type: ignore[union-attr]
+        await asyncio.wait({task, stop}, return_when=asyncio.FIRST_COMPLETED)
+        if not task.done():
+            task.cancel()
+        stop.cancel()
+        await asyncio.gather(task, stop, return_exceptions=True)
+        if not task.cancelled() and task.exception() is not None:
+            raise task.exception()  # type: ignore[misc]
+
+    held = member("back")
+    held.on_wire = lambda: None
+    held.on_left = reported.append
+    back = asyncio.create_task(scheduler.execute_stream_member(held, CONCURRENT, preemptible))
+    await asyncio.wait_for(writing.wait(), 1)
+    epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
+    with pytest.raises(ConnectionError, match="link lost"):
+        await asyncio.wait_for(back, 1)
+    scheduler.finish_stop(epoch)
+    assert reported == [None]

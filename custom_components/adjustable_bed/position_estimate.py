@@ -41,7 +41,6 @@ from .const import DOMAIN, SIDE_BOTH
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .command_scheduler import StreamDriver, StreamMember
 
 type MotorCommand = Callable[[BedController], Coroutine[Any, Any, None]]
 
@@ -203,6 +202,7 @@ class MotorEstimate:
 class _Move:
     motors: tuple[str, ...]
     generations: dict[str, int]
+    started: float
     failed: bool = False
 
 
@@ -216,6 +216,11 @@ class BedEstimate:
         self.motors: dict[str, MotorEstimate] = {}
         self._moves: dict[int, _Move] = {}
         self._next_move = 0
+        # Bumped per motor by every tracked move, invalidation and reference,
+        # calibrated or not, so a caller can tell whether anything touched it.
+        self._revision: dict[str, int] = {}
+        # Tracked moves that failed, by token.
+        self._failed_moves: set[int] = set()
 
     @property
     def key(self) -> str:
@@ -252,6 +257,7 @@ class BedEstimate:
     def set_reference(self, motors: Iterable[str] | None = None) -> None:
         """Record that the selected motors are flat now."""
         now = dt_util.utcnow()
+        self._bump(self._selected(motors))
         for motor in self._selected(motors):
             if self.motors[motor].calibrated:
                 self.motors[motor].set_reference(now)
@@ -268,6 +274,7 @@ class BedEstimate:
     def invalidate(self, reason: EstimateReason, motors: Iterable[str] | None = None) -> None:
         """Mark the selected motors unknown."""
         selected = self._selected(motors)
+        self._bump(selected)
         for motor in selected:
             if self.motors[motor].calibrated:
                 self.motors[motor].invalidate(reason)
@@ -278,9 +285,37 @@ class BedEstimate:
     def begin_move(self, motors: tuple[str, ...]) -> int:
         self._next_move += 1
         self._moves[self._next_move] = _Move(
-            motors, {motor: self.motors[motor].generation for motor in motors}
+            motors, {motor: self.motors[motor].generation for motor in motors}, _clock()
         )
+        self._bump(motors)
         return self._next_move
+
+    def _bump(self, motors: Iterable[str]) -> None:
+        for motor in motors:
+            self._revision[motor] = self._revision.get(motor, 0) + 1
+
+    @property
+    def move_counter(self) -> int:
+        """Token of the latest tracked move; later moves have larger tokens."""
+        return self._next_move
+
+    def revision(self, motor: str) -> int:
+        return self._revision.get(motor, 0)
+
+    def running_move(self, motor: str, *, after: int) -> tuple[int, float] | None:
+        """Token and elapsed seconds of a running, unfailed move newer than ``after``."""
+        running = [
+            (token, move.started)
+            for token, move in self._moves.items()
+            if token > after and motor in move.motors and not move.failed
+        ]
+        if not running:
+            return None
+        token, started = max(running)
+        return token, _clock() - started
+
+    def move_failed(self, token: int) -> bool:
+        return token in self._failed_moves
 
     def end_move(self, token: int, direction: str, seconds: float | None) -> None:
         """Apply a finished move, or mark its motors unknown when it failed."""
@@ -288,6 +323,7 @@ class BedEstimate:
         if move is None or move.failed:
             return
         if seconds is None:
+            self._failed_moves.add(token)
             self.invalidate(EstimateReason.FAILED_MOVE, move.motors)
             return
         for motor in move.motors:
@@ -303,8 +339,9 @@ class BedEstimate:
     def abandon_moves(self, reason: EstimateReason) -> None:
         """A running tracked move ended in a way that cannot prove where it stopped."""
         motors: set[str] = set()
-        for move in self._moves.values():
+        for token, move in self._moves.items():
             move.failed = True
+            self._failed_moves.add(token)
             motors.update(move.motors)
         if motors:
             self.invalidate(reason, motors)
@@ -688,6 +725,49 @@ def track_motor_command(
     return tracked
 
 
+@dataclass(slots=True)
+class StreamMoveTracker:
+    """Times one merged-stream member like a serial move (#516).
+
+    ``started`` runs as the member's first write starts and ``finished`` when
+    it settles, with its seconds on the wire or None when it failed. A member
+    that never reached the wire is not a move.
+    """
+
+    bed: BedEstimate
+    motors: tuple[str, ...]
+    direction: str
+    token: int | None = None
+
+    def started(self) -> None:
+        self.token = self.bed.begin_move(self.motors)
+
+    def finished(self, seconds: float | None) -> None:
+        if self.token is not None:
+            self.bed.end_move(self.token, self.direction, seconds)
+            self.token = None
+
+
+def track_stream_member(
+    hass: HomeAssistant | None,
+    controller: BedController | None,
+    motor_key: str,
+    direction: str,
+) -> StreamMoveTracker | None:
+    """Return the tracker for a streamed move, keyed like ``track_motor_command``."""
+    if controller is None or not _estimates_active(hass):
+        return None
+    bed = _bed_for_controller(controller)
+    if bed is None or not bed.motors:
+        return None
+    motors = _estimated_motors(controller, motor_key)
+    if motors is None:
+        bed.invalidate(EstimateReason.UNTRACKED_MOVE)
+        return None
+    selected = tuple(motor for motor in motors if motor in bed.motors)
+    return StreamMoveTracker(bed, selected, direction) if selected else None
+
+
 def track_held_control(
     hass: HomeAssistant | None, control: str, command: MotorCommand
 ) -> MotorCommand:
@@ -722,126 +802,6 @@ def track_held_control(
         await command(controller)
 
     return tracked
-
-
-class _TrackedStream:
-    """Time each merged-stream member (#516) as a serialized move is timed.
-
-    A member's move starts with the first frame that carries it, as the
-    controller reports (``stream_member_started``): a composed tick, or the
-    reduced frame another member's cleanup writes for the members that remain. It ends when its own cleanup has been written: the next frame
-    without it, or, for the last members out, the profile release. Members
-    ending at different moments therefore get their own durations. As in
-    ``_run_tracked``, a cancelled write still knows its stop time; only a
-    failed write or cleanup leaves a motor's position unknown.
-    """
-
-    def __init__(self, driver: BedController) -> None:
-        self._driver = driver
-        self._moves: dict[StreamMember, tuple[BedEstimate, int, float]] = {}
-        self._awaiting_release: list[StreamMember] = []
-
-    @property
-    def stream_tick_s(self) -> float:
-        return self._driver.stream_tick_s
-
-    def _begin(
-        self, members: tuple[StreamMember, ...], started: float, *, unsure: bool = False
-    ) -> list[StreamMember]:
-        """Start timing the members a written frame carried; return those it started.
-
-        ``unsure`` also starts members whose write failed partway, so that the
-        failure can mark their motors unknown.
-        """
-        begun: list[StreamMember] = []
-        for member in members:
-            if member in self._moves or not (
-                unsure or self._driver.stream_member_started(member)
-            ):
-                continue
-            bed = _bed_for_controller(self._driver)
-            if bed is None or not bed.motors:
-                return begun
-            motors = _estimated_motors(self._driver, member.motor)
-            if motors is None:
-                bed.invalidate(EstimateReason.UNTRACKED_MOVE)
-                continue
-            selected = tuple(motor for motor in motors if motor in bed.motors)
-            if selected:
-                self._moves[member] = (bed, bed.begin_move(selected), started)
-                begun.append(member)
-        return begun
-
-    def _end(self, member: StreamMember, *, failed: bool = False) -> None:
-        move = self._moves.pop(member, None)
-        if move is not None:
-            bed, token, started = move
-            bed.end_move(token, member.action, None if failed else _clock() - started)
-
-    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
-        started = _clock()
-        try:
-            await self._driver.write_stream_tick(members)
-        except asyncio.CancelledError:
-            # STOP or shutdown: every member's cleanup still runs and ends it.
-            self._begin(members, started)
-            raise
-        except BaseException:
-            # The stream ends; a failed write leaves every motor's stop unknown.
-            self._begin(members, started, unsure=True)
-            for member in tuple(self._moves):
-                self._end(member, failed=True)
-            raise
-        self._begin(members, started)
-
-    async def end_stream_member(
-        self, member: StreamMember, remaining: tuple[StreamMember, ...]
-    ) -> None:
-        # A reduced frame may carry remaining members, including any that
-        # joined since the last tick.
-        started = _clock()
-        try:
-            await self._driver.end_stream_member(member, remaining)
-        except asyncio.CancelledError:
-            self._begin(remaining, started)
-            self._finish(member, remaining)
-            raise
-        except BaseException:
-            # Neither the departing member's stop nor a newcomer's start is known.
-            begun = self._begin(remaining, started, unsure=True)
-            for failed in (member, *begun):
-                self._end(failed, failed=True)
-            raise
-        self._begin(remaining, started)
-        self._finish(member, remaining)
-
-    def _finish(self, member: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
-        if remaining:
-            self._end(member)
-        elif member in self._moves:
-            self._awaiting_release.append(member)
-
-    async def release_stream(self) -> None:
-        ending, self._awaiting_release = self._awaiting_release, []
-        try:
-            await self._driver.release_stream()
-        except asyncio.CancelledError:
-            for member in ending:
-                self._end(member)
-            raise
-        except BaseException:
-            for member in ending:
-                self._end(member, failed=True)
-            raise
-        for member in ending:
-            self._end(member)
-
-
-def track_stream(hass: HomeAssistant | None, driver: BedController) -> StreamDriver:
-    """Feed merged-stream members to the estimates, like ``track_motor_command``."""
-    if not _estimates_active(hass):
-        return driver
-    return _TrackedStream(driver)
 
 
 def invalidate_on_command(
@@ -1037,6 +997,13 @@ def lower_to_flat_seconds(estimate: MotorEstimate) -> float:
     if estimate.down_s is None:
         return 0.0
     return min(MAX_TRAVEL_S, estimate.down_s * LOWER_TO_FLAT_FACTOR + LOWER_TO_FLAT_EXTRA_S)
+
+
+async def async_measure_move(
+    hass: HomeAssistant, manager: PositionEstimates, bed: BedEstimate, motor: str, direction: str
+) -> None:
+    """Move one motor until STOP, bounded by the longest calibratable travel."""
+    await _async_timed_move(_parent(hass, manager), bed, motor, direction, MAX_TRAVEL_S)
 
 
 async def async_lower_to_flat(

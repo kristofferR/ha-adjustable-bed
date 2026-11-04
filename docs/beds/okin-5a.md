@@ -56,6 +56,7 @@ of this one (see [Nectar](#nectar)).
 | Massage | ✅ Global on, wave and off; no intensity commands | ✅ On, toggle, wave, off, intensity up/down | ✅ Toggle, head/foot strength, mode step, stop | ❌ |
 | Under-bed Lights | ✅ Separate on/off | ✅ On/off, light-cycle button | ✅ On/off, light-cycle button | ❌ |
 | Group control with M5X5 / M1X12 mains | ❌ | ❌ | ❌ | ✅ (see [AdjustableM5X5 lifts](#adjustablem5x5-lifts)) |
+| Hold until release | ❌ (finite pulses) | ❌ (finite pulses) | ❌ (finite pulses) | ✅ (renewable `timed_move`, both routes) |
 | BLE Pairing / Authentication | ❌ Not required | ❌ Not required | ❌ Not required | ❌ Not required |
 | Hardware-confirmed | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
 
@@ -93,6 +94,25 @@ STOP. Massage and light commands are single writes unless listed here.
 | Sealy Posturematic (CB35) | 2 × 300 ms | 3 × 300 ms | 3 × 100 ms |
 | DewertOkin ELEVATE | once | once | n/a |
 <!-- /generated -->
+
+### Aliases
+
+Bed types that build the same controller over the same profile with the same
+default timing, so they send identical bytes. They stay separate bed types so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type | Same as | Profile |
+|----------|---------|---------|
+| `nectar` | `okin_7byte` | [Nectar](#nectar) |
+| `mattressfirm` | `okin_nordic` | [Mattress Firm 900 / iFlex](#mattress-firm-900--iflex) |
+
+`nectar` and `mattressfirm` are kept for existing entries and are not offered in
+the bed-type list.
+
+Each also keeps its own [profile id](../design/profile-id.md#aliases): besides
+the bed-type list, the device manufacturer differs ("Nectar" and "MattressFirm"
+against "Okin").
 
 ## Wire codec
 
@@ -494,6 +514,12 @@ there is no manufacturer-selected dialect.
 
 The apps refresh a held command every 100 ms. Release cancels held repeats and
 sends the shared STOP frame once.
+
+A renewable hold (`timed_move` with `hold_owner` and `hold_generation`, see
+[Renewable holds](../SERVICES.md#renewable-holds)) refreshes at the apps' 100 ms
+on both routes, whatever the entry's motor pulse settings, until its lease runs
+out. Then STOP follows. A finite move on the default route keeps the entry's
+pulse settings; the M1X12 variant always holds at the 100 ms sender interval.
 
 #### Notifications
 
