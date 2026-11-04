@@ -523,7 +523,10 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             discovery_keys=MappingProxyType({}),
             domain=DOMAIN,
             entry_id=origin_entry_id,
-            minor_version=1,
+            # The pair's migrations already rewrote each side's nested original,
+            # so the standalone entry starts at the same schema and is not
+            # marked for the upgrade review a second time.
+            minor_version=entry.minor_version,
             options=single_options,
             source=source,
             subentries_data=(),

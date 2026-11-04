@@ -440,15 +440,17 @@ def carry_profile_review(source: Mapping[str, Any], target: dict[str, Any]) -> N
     """Keep a pair's review state on a standalone bed split out of it.
 
     An open review stays open for each bed whose own route still has apps to
-    offer, and an earlier Keep keeps covering the apps it was shown.
+    offer. A Keep answered on the pair covers each bed for the apps it was
+    shown, including a review the bed still had from before it was combined.
     """
-    if _pending(source) and (mark := profile_review_mark(target)) is not None:
-        target[CONF_PROFILE_REVIEW_PENDING] = mark
     if (apps := _kept_apps(source)) is not None:
+        target.pop(CONF_PROFILE_REVIEW_PENDING, None)
         target[CONF_PROFILE_REVIEW_KEPT] = {
             "route": _route_signature(target),
             "apps": sorted(apps),
         }
+    elif _pending(source) and (mark := profile_review_mark(target)) is not None:
+        target[CONF_PROFILE_REVIEW_PENDING] = mark
 
 
 def choice_label(choice: str) -> str:

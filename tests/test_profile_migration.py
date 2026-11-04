@@ -214,3 +214,33 @@ async def test_configure_offers_one_generic_change_item(hass):
     flow = AdjustableBedOptionsFlow(other)
     flow.handler, flow.hass = other.entry_id, hass
     assert "change_app" not in (await flow.async_step_init())["menu_options"]
+
+
+async def test_preview_never_touches_the_live_app_session(hass, enable_custom_integrations):
+    from custom_components.adjustable_bed.vibradorm_app_state import (
+        get_vibradorm_app_session_intent,
+    )
+
+    werkmeister = _vibradorm_app_data(
+        {
+            CONF_ADDRESS: ADDRESS,
+            const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+            const.CONF_VIBRADORM_APP_PROFILE: "werkmeister",
+        },
+        {},
+    )
+    entry = _entry(hass, werkmeister)
+    control = int(werkmeister[const.CONF_VIBRADORM_CONTROL_TYPE])
+    intent = get_vibradorm_app_session_intent(
+        hass, ADDRESS, app_profile="werkmeister", control_type=control, remembered_floor_default=6
+    )
+    intent.floor.level = 4
+
+    changes = await async_control_changes(hass, entry, _caresse())
+
+    assert changes.known
+    same = get_vibradorm_app_session_intent(
+        hass, ADDRESS, app_profile="werkmeister", control_type=control, remembered_floor_default=6
+    )
+    assert same is intent
+    assert same.floor.level == 4

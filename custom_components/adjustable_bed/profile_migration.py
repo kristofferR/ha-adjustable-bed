@@ -21,6 +21,7 @@ Families reuse this transaction, never another family's protocol checks.
 from __future__ import annotations
 
 import copy
+import hashlib
 import logging
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -217,11 +218,24 @@ async def _async_entity_labels(
 async def _async_preview_labels(
     hass: HomeAssistant, entry: ConfigEntry, data: Mapping[str, Any]
 ) -> dict[str, tuple[str, str]] | None:
-    """Mint the staged configuration offline and list its controls, if possible."""
+    """Mint the staged configuration offline and list its controls, if possible.
+
+    The preview runs under its own address. App sessions, selection intent and
+    stored app state are kept per address, and minting a controller for another
+    profile would otherwise replace the live bed's session. Unique IDs are
+    mapped back to the real address afterwards.
+    """
+    from .app_session import drop_app_sessions
+    from .app_state_store import discard_app_state_store
     from .coordinator import AdjustableBedCoordinator
 
+    address = str(data.get(CONF_ADDRESS, "")).upper()
+    # Controllers validate a Bluetooth address shape. A locally administered
+    # address derived from the entry keeps the preview's sessions separate.
+    digest = hashlib.sha256(f"preview:{entry.entry_id}".encode()).digest()
+    preview_address = ":".join(f"{byte:02X}" for byte in (0x02, *digest[:5]))
     preview = ConfigEntry(
-        data=dict(data),
+        data={**data, CONF_ADDRESS: preview_address},
         disabled_by=ConfigEntryDisabler.USER,
         discovery_keys=MappingProxyType({}),
         domain=DOMAIN,
@@ -239,10 +253,19 @@ async def _async_preview_labels(
         await runtime.async_prime_offline_controller(preview=True)
         if runtime.capability_controller is None:
             return None
-        return await _async_entity_labels(hass, runtime)
+        labels = await _async_entity_labels(hass, runtime)
     except Exception:  # noqa: BLE001 - a preview never blocks the change
         _LOGGER.debug("Could not list the staged controls for %s", entry.title, exc_info=True)
         return None
+    finally:
+        drop_app_sessions(hass, preview_address)
+        discard_app_state_store(hass, preview_address)
+    return {
+        address + unique_id[len(preview_address) :]
+        if unique_id.startswith(preview_address)
+        else unique_id: label
+        for unique_id, label in labels.items()
+    }
 
 
 async def _async_current_labels(
