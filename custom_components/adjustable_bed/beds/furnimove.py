@@ -564,7 +564,8 @@ class FurniMoveController(BedController):
         count = (
             max(1, math.ceil(duration_ms / 100))
             if duration_ms
-            else self._coordinator.motor_pulse_count
+            # A renewable hold (#483) refreshes until its lease ends.
+            else self.leased_hold_refreshes(100) or self._coordinator.motor_pulse_count
         )
         try:
             for index in range(count):

@@ -34,7 +34,7 @@ from ..const import (
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
 )
-from ..execution import ExecutionCapabilities, leased_pulses
+from ..execution import ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy, SeekSample
 from .base import (
     POSITION_AXIS_COMMANDS,
@@ -534,13 +534,13 @@ class LinakController(BedController):
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Use the legacy app's 300 ms cadence without changing hold duration."""
-        leased = leased_pulses(
+        refresh = (
             LINAK_PERFORMANCE_HOLD_INTERVAL_MS
             if self._profile is LinakProfile.PERFORMANCE
             else LINAK_BED_CONTROL_HOLD_INTERVAL_MS
         )
-        if leased is not None:
-            return leased
+        if (count := self.leased_hold_refreshes(refresh)) is not None:
+            return count, refresh
         pulse_count, pulse_delay = super().motor_pulse_settings()
         if self._profile is LinakProfile.BED_CONTROL:
             return pulse_count, pulse_delay
