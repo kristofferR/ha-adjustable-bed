@@ -10,7 +10,7 @@ Some status packets serve both Wi-Fi and bed functions. The HomeActivity sleep-c
 
 The additive-checksum helper was already equivalent and verified against the artifact vectors. Shared transport or superficially similar Solace packets are not credited as equivalent whole-app behavior. Fault Settings/FaultDebug reply handling is implemented; only the hidden fault requests below are excluded.
 
-See [protocol and action documentation](../../beds/motion_bed.md) for model routing, public surfaces, transport policy, raw-state units and deferred physical validation.
+See [protocol and action documentation](../../beds/ff_frame.md#motion-bed) for model routing, public surfaces, transport policy, raw-state units and deferred physical validation.
 
 ## Every exclusion
 

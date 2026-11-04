@@ -379,8 +379,8 @@ enable additional commands.
 | Sleepy's Elite app | Selector-backed controls are exposed as Home Assistant entities; there is no separate alarm action | [Sleepy's Elite app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) |
 | Linak Bed Control | `linak_move_simultaneously`, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Jensen JMC400 | `linak_move_simultaneously` (back and legs only; the action keeps its original name) | [Jensen](beds/jensen.md) |
-| Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |
-| Solace Woosa Sleep | `solace_set_alarm` (sound `none` or `alarm`, no music) | [Woosa](beds/woosa.md) |
+| Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/ff_frame.md#solace-name-routes) |
+| Solace Woosa Sleep | `solace_set_alarm` (sound `none` or `alarm`, no music) | [Woosa](beds/ff_frame.md#woosa-sleep) |
 | Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer` | [Prodigy / U Series](beds/leggett-okin.md) |
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
@@ -458,7 +458,7 @@ local state, sends no timer packet and does not stop the receiver on expiry.
 
 ## Motion Bed app actions
 
-The [Motion Bed action index](beds/motion_bed.md#actions) covers all 12 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules and audio. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
+The [Motion Bed action index](beds/ff_frame.md#services-2) covers all 12 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules and audio. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
 ### Svane Remote held controls
 
 [`hold_control`](#hold_control) holds a selected Svane head/feet axis or combination for `duration` seconds (0.1–60). Feet-only actions and P1 combinations require more than 0.1 seconds to allow the source's 100 ms feet delay; shorter requests are rejected before any target moves. If awaited delivery consumes the remaining budget before feet start, the action fails explicitly and releases any started axis. The `light_adjust` control runs the app's triangular lamp preference loop after the source's 200 ms threshold. All physical targets are checked before movement.

@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.beds.bedsense import (
     BedSenseController,
     bedsense_layout,
 )
-from custom_components.adjustable_bed.beds.bedsense_commands import ACTIONS
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDSENSE,
     CONF_BLE_DEVICE_NAME,
@@ -26,6 +25,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from custom_components.adjustable_bed.profiles.ff_frame import BEDSENSE_ACTIONS as ACTIONS
 from custom_components.adjustable_bed.validators import VARIANTS_BY_BED_TYPE
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/bedsense_vectors.json").read_text())

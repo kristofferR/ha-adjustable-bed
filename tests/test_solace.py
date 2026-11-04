@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.number import _number_entities_for
+from custom_components.adjustable_bed.profiles.ff_frame import SOLACE_PROFILES
 
 
 @pytest.fixture
@@ -122,21 +123,21 @@ class TestSolaceProfiles:
     @pytest.mark.parametrize(
         ("name", "expected"),
         [
-            ("QMS-IQ-123", SolaceProfile.HOME_K1),
-            ("QMS-NQ", SolaceProfile.HOME_K1),
-            ("QMS-JQ-D", SolaceProfile.HOME_K2),
-            ("QMS4", SolaceProfile.HOME_K2),
-            ("QMS4-QMS3", SolaceProfile.HOME_K2),
-            ("QMS-IQ-QMS4", SolaceProfile.HOME_K1),
-            ("QMS2", SolaceProfile.COMMON),
-            ("QMS-MQ-123", SolaceProfile.COMMON),
-            ("SealyMF Base", SolaceProfile.MOTION_FLEX),
-            ("My QMS2", SolaceProfile.COMMON),
-            ("S4-Y-192-461000AD", SolaceProfile.LEGACY_S4_Y),
-            ("S3-Y-192-461000AD", SolaceProfile.UNVERIFIED),
-            ("Other-QMS2", SolaceProfile.UNVERIFIED),
-            ("Other-SealyMF", SolaceProfile.UNVERIFIED),
-            ("Solace Smart Bed", SolaceProfile.UNVERIFIED),
+            ("QMS-IQ-123", SOLACE_PROFILES["home_k1"]),
+            ("QMS-NQ", SOLACE_PROFILES["home_k1"]),
+            ("QMS-JQ-D", SOLACE_PROFILES["home_k2"]),
+            ("QMS4", SOLACE_PROFILES["home_k2"]),
+            ("QMS4-QMS3", SOLACE_PROFILES["home_k2"]),
+            ("QMS-IQ-QMS4", SOLACE_PROFILES["home_k1"]),
+            ("QMS2", SOLACE_PROFILES["common"]),
+            ("QMS-MQ-123", SOLACE_PROFILES["common"]),
+            ("SealyMF Base", SOLACE_PROFILES["motion_flex"]),
+            ("My QMS2", SOLACE_PROFILES["common"]),
+            ("S4-Y-192-461000AD", SOLACE_PROFILES["legacy_s4_y"]),
+            ("S3-Y-192-461000AD", SOLACE_PROFILES["unverified"]),
+            ("Other-QMS2", SOLACE_PROFILES["unverified"]),
+            ("Other-SealyMF", SOLACE_PROFILES["unverified"]),
+            ("Solace Smart Bed", SOLACE_PROFILES["unverified"]),
         ],
     )
     def test_profile_resolution(self, name: str, expected: SolaceProfile) -> None:
@@ -221,7 +222,7 @@ class TestSolaceProfiles:
         await coordinator.async_prime_offline_controller()
 
         assert isinstance(coordinator.capability_controller, SolaceController)
-        assert coordinator.capability_controller.profile is SolaceProfile.MOTION_FLEX
+        assert coordinator.capability_controller.profile is SOLACE_PROFILES["motion_flex"]
 
     async def test_observed_name_is_persisted_for_offline_routing(
         self,

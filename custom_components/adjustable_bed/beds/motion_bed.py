@@ -24,6 +24,7 @@ from ..motion_bed_state import (
     MotionBedState,
     parse_motion_bed_notification,
 )
+from ..profiles.ff_frame import MOTION_BED, MotionBedProfile
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -40,8 +41,9 @@ if TYPE_CHECKING:
 
     from ..coordinator import AdjustableBedCoordinator
 
+STOP = MOTION_BED.stop
+
 CHARACTERISTIC = "0000ffe1-0000-1000-8000-00805f9b34fb"
-STOP = bytes.fromhex("FFFFFFFF0500000000D700")
 
 # Hub module that owns each modular screen's controls.
 _MODULE_OWNERS: Mapping[str, str] = {
@@ -123,6 +125,8 @@ class _HeldSession:
 
 class MotionBedController(BedController):
     """Expose app controls without inferring motors or thermostat temperatures."""
+
+    profile: MotionBedProfile = MOTION_BED
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, selection: MotionBedSelection) -> None:
         super().__init__(coordinator)

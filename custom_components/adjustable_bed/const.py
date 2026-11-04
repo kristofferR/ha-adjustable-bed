@@ -1430,7 +1430,7 @@ OCTO_NAME_PATTERNS: Final = (
 )
 
 # Exact case-folded prefixes accepted for automatic discovery. Other S-series names
-# belong to the separately audited Motion Bed app profile (docs/beds/motion_bed.md);
+# belong to the separately audited Motion Bed app profile (docs/beds/ff_frame.md#motion-bed);
 # only exact S4-Y has legacy Solace hardware evidence and is handled by the narrow
 # regex in detection.py.
 SOLACE_NAME_PATTERNS: Final = (
