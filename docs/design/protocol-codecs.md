@@ -29,6 +29,7 @@ docstring names its routes and their evidence.
 | R1 Richmat 6E | `codec/richmat.py` | `profiles/richmat.py` | [Richmat](../beds/richmat.md) | `tests/richmat_vectors.py` |
 | S1 FFFF frame | `codec/ff_frame.py` | `profiles/ff_frame.py` | [FFFF frame](../beds/ff_frame.md) | `tests/ff_frame_vectors.py` |
 | L1 Limoss DD | `codec/limoss.py` | `profiles/limoss.py` | [Limoss](../beds/limoss.md) | `tests/limoss_vectors.py` |
+| Malouf (O2 Okin-like Malouf frames) | `codec/malouf.py` | `profiles/malouf.py` | [Malouf](../beds/malouf.md) | `tests/malouf_vectors.py` |
 
 Which bed types each family backs, and which are still pending, is in its
 registration module (see [Registering a family](#registering-a-family)).
