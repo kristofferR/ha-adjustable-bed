@@ -52,6 +52,10 @@ To adjust settings after setup:
 
 ![Configuration options location](https://github.com/user-attachments/assets/8d6dc2b9-7df2-48dc-9ea5-61aaadce6c63)
 
+Beds that support [estimated positions](ESTIMATED_POSITIONS.md) also show
+**Estimated positions** in this menu, or one entry per side on a paired bed. It
+enables and calibrates travel-time estimates for beds without position feedback.
+
 ---
 
 ## Profile recommendations
