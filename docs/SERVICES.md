@@ -200,6 +200,15 @@ longer than 30 seconds in total, however often it is renewed. A renewable
 hold targets one bed or paired bed per call; on a paired bed both sides must
 declare the same hold mode, and one renewal renews both sides.
 
+The dashboard card uses this for every press on a bed that supports it: one
+call starts the hold, the card renews it every 250 ms with a 750 ms lease, and
+releasing the control stops renewing and sends STOP. Hiding the page or
+removing the card ends the hold the same way; if that STOP is lost, the bed
+still stops when the lease runs out. Entities that can be held this way carry
+a `hold_lease_mode` attribute (`stream` or `latched`), and `hold_lease_motor`
+names the `timed_move` motor where there is one. A combined control on a paired
+bed carries them only when both sides declare the same mode.
+
 ```yaml
 # Repeat every 250 ms while a button is held; send stop_all on release.
 action: adjustable_bed.timed_move

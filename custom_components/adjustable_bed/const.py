@@ -344,6 +344,30 @@ PAIR_MODES: Final = (PAIR_MODE_SINGLE_ADDRESS, PAIR_MODE_SEPARATE_ADDRESS)
 SIDE_LEFT: Final = "left"
 SIDE_RIGHT: Final = "right"
 SIDE_BOTH: Final = "both"
+
+# Motors the timed_move action can name, and so the card can hold through it.
+TIMED_MOVE_MOTOR_OPTIONS: Final = (
+    "tv_lift",
+    "back",
+    "right_back",
+    "legs",
+    "head",
+    "feet",
+    "tilt",
+    "pillow",
+    "lumbar",
+    "bed_height",
+    "stair",
+    "m1x12_part_1",
+    "m1x12_part_2",
+    "m1x12_part_4",
+    "m1x12_part_8",
+    "m1x12_part_16",
+    "elevate_actuator_1",
+    "elevate_actuator_2",
+    "elevate_both",
+)
+
 # The two physical sides, in stable order (left first, right second).
 PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 
