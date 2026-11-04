@@ -102,7 +102,7 @@ or speaker/audio commands.
 
 ## Malouf Base / Lucid Base Clock and Alarm
 
-The explicit [app profile](beds/malouf-app.md) exposes clock actions only for
+The explicit [app profile](beds/malouf.md#malouf-base--lucid-base-family) exposes clock actions only for
 supported OKIN model/transport combinations. These actions accept `device_id`
 and the ordinary optional `side`. Every target is validated before any write.
 
@@ -358,7 +358,7 @@ still work, with their original name checks.
 ### `sync_clock`
 
 Set each targeted controller's clock to Home Assistant's local time. Supported
-by the [Malouf Base / Lucid Base](beds/malouf-app.md) app profile on its OKIN
+by the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
 transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/okin-nframe.md#alarms-and-clock), and
 [Customatic Z-Series](beds/customatic-z-series.md) controllers whose
 manufacturer string enables the alarm page (see

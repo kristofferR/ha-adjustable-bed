@@ -247,6 +247,11 @@ def automatic_light_on(profile: JiecangProfile, value: int) -> bool:
     return (value != 0) == (profile is DREAMHD)
 
 
+def light_toggle_command(profile: JiecangProfile) -> bytes:
+    """ERGOBALANCE and Dream Motion toggle with the bilateral payload; other routes with none."""
+    return codec.light_toggle(BILATERAL if profile in (DREAMASK, DREAMOTION) else b"")
+
+
 def is_bilateral(layout: Layout) -> bool:
     """Global controls keep bilateral payloads in the explicit mixed layout."""
     return layout in BILATERAL_LAYOUTS

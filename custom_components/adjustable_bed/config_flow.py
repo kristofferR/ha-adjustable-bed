@@ -1992,12 +1992,13 @@ def _malouf_app_model_choices(
     data: dict[str, Any], persisted_data: Mapping[str, Any] | None = None
 ) -> dict[str, str]:
     """Offer the app's picker plus only its already stored model."""
-    from .malouf_app_protocol import APP_MODEL_OPTIONS
+    from .profiles.malouf import APP_PROFILES
 
     profile = data.get(CONF_MALOUF_APP_PROFILE)
     if not isinstance(profile, str):
         return {}
-    choices = {model: MALOUF_APP_MODELS[model] for model in APP_MODEL_OPTIONS.get(profile, ())}
+    app = APP_PROFILES.get(profile)
+    choices = {model: MALOUF_APP_MODELS[model] for model in (app.models if app else ())}
     if persisted_data and persisted_data.get(CONF_MALOUF_APP_PROFILE) == profile:
         stored_model = persisted_data.get(CONF_MALOUF_APP_MODEL)
         if stored_model in MALOUF_APP_MODELS:

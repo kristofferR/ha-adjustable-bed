@@ -34,9 +34,12 @@ def _census(profile: profiles.JiecangProfile) -> set[str]:
             codec.massage_mode().hex(),
         }
         return frames
+    frames.add(profiles.light_toggle_command(profile).hex())
     presets = ("flat", "zero_g", "anti_snore")
     if profile is not profiles.COMFORT_MOTION:
         presets += ("yoga",)
+        # The Dream apps' automatic (human-sensing) light toggle.
+        frames.add(codec.AUTOMATIC_LIGHT_TOGGLE.hex())
     for layout, axes in profile.layouts.items():
         bilateral = profiles.is_bilateral(layout)
         for axis in axes:
