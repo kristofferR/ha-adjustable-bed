@@ -410,34 +410,46 @@ class _MergedStream:
             stopping = True  # STOP preempted the streamer task itself
             raise
         finally:
+
+            def stamp_stopped() -> None:
+                # Every live member stops at the STOP; the write's unwinding is
+                # not travel. Members that keep moving after another member
+                # left are never stamped here.
+                stopped_at = loop.time()
+                for member in self.members.values():
+                    if member.left_at is None:
+                        member.left_at = stopped_at
+
             if not tick.done():
                 if stopping or context.cancel_event.is_set():
-                    # Every live member stops here; the write's unwinding below
-                    # is not travel. Members that keep moving after another
-                    # member left are not stamped.
-                    stopped_at = loop.time()
-                    for member in self.members.values():
-                        if member.left_at is None:
-                            member.left_at = stopped_at
+                    stamp_stopped()
                 ours = True
                 tick.cancel()
             # Never hand the wire on while this write is still running, even
-            # when a STOP cancels the streamer meanwhile.
+            # when a STOP cancels the streamer meanwhile. A STOP arriving
+            # during the unwinding still stops the clock at once.
             interrupted = False
             while not tick.done():
                 try:
-                    await asyncio.wait({tick})
+                    if context.cancel_event.is_set():
+                        stamp_stopped()
+                        await asyncio.wait({tick})
+                    else:
+                        await _first_set_or_done(tick, context.cancel_event)
                 except asyncio.CancelledError:
                     interrupted = True
+                    stamp_stopped()
+            # A failed write outranks the STOP that cancelled the streamer:
+            # its members must report the failure, not a clean stop.
+            error = None if tick.cancelled() else tick.exception()
+            if error is not None:
+                raise error
             if interrupted:
                 raise asyncio.CancelledError
         if tick.cancelled() and not ours:
             # Something under the write cancelled it: the frame's fate is
             # unknown, so the stream fails and every member is cleaned up.
             raise RuntimeError("A stream write was cancelled")
-        error = None if tick.cancelled() else tick.exception()
-        if error is not None:
-            raise error
 
     async def _close(self, driver: StreamDriver) -> None:
         try:
