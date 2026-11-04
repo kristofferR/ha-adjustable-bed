@@ -86,41 +86,39 @@ async def test_actual_action_number_and_switch_publish_commanded_lamp_intent(has
 
 
 @pytest.mark.parametrize("runtime", ["multi", "jmc"], indirect=True)
-@pytest.mark.parametrize("duration,motor", [(2000, "back"), (600, "legs")])
-async def test_registered_timed_move_uses_active_plan_without_changing_wire_cadence(
-    hass, runtime, monkeypatch, duration, motor
+@pytest.mark.parametrize("duration,motor", [(600, "back"), (600, "legs")])
+async def test_registered_timed_move_streams_at_the_native_cadence(
+    hass, runtime, duration, motor
 ):
+    """A timed move streams one axis (#516) at the app's own pass cadence."""
     coordinator, controller = runtime
-    clock = [0.0]
-    local_asyncio = SimpleNamespace(**vars(asyncio))
-    local_asyncio.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio)
+    loop = asyncio.get_running_loop()
     movement_times = []
     stop = bytes.fromhex("100000000000" if controller.profile == "jmc" else "0000")
 
     async def write(role, payload, **kwargs):
         if bytes(payload) != stop:
-            movement_times.append(clock[0])
-
-    async def advance(seconds):
-        clock[0] += seconds
-        await asyncio.sleep(0)
+            movement_times.append(loop.time())
 
     controller.client.write_gatt_char.side_effect = write
-    controller._motor_wait = advance
+    began = loop.time()
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, "timed_move", {
             "device_id": "bed", "motor": motor, "direction": "up", "duration_ms": duration,
         }, blocking=True)
-    assert clock[0] == pytest.approx(duration / 1000)
-    assert movement_times[-1] > duration / 1000 - .201
-    assert movement_times[0] == pytest.approx(0 if motor == "back" else .1)
+    # Head refreshes every 100 ms; feet waits 100 ms, then every 200 ms.
     expected_gap = .1 if motor == "back" else .2
-    assert all(b - a == pytest.approx(expected_gap) for a, b in zip(movement_times, movement_times[1:], strict=False))
+    assert movement_times[0] - began == pytest.approx(0 if motor == "back" else .1, abs=.05)
+    gaps = [b - a for a, b in zip(movement_times, movement_times[1:], strict=False)]
+    assert gaps and all(gap == pytest.approx(expected_gap, abs=.04) for gap in gaps)
+    assert movement_times[-1] - movement_times[0] > duration / 1000 - .25
     assert written(controller)[-1][2] == stop.hex()
+    # The member returns after the release; the streamer then hands back the lane.
+    async with asyncio.timeout(1):
+        while coordinator._command_lock.locked():
+            await asyncio.sleep(0.001)
     assert not controller._started and not controller.ble_lock.locked()
-    assert not coordinator._command_lock.locked()
 
 
 @pytest.mark.parametrize("runtime", ["multi", "jmc"], indirect=True)
@@ -128,11 +126,10 @@ async def test_registered_timed_move_public_stop_cancels_long_plan_and_releases(
     coordinator, controller = runtime
     moving = asyncio.Event()
 
-    async def wait(seconds):
+    async def write(role, payload, **kwargs):
         moving.set()
-        await coordinator.cancel_command.wait()
 
-    controller._motor_wait = wait
+    controller.client.write_gatt_char.side_effect = write
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         task = asyncio.create_task(hass.services.async_call(DOMAIN, "timed_move", {

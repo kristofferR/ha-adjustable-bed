@@ -64,6 +64,9 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
     "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Svane Remote, both routes: P1 per-role refresh and release, P2 one mask
+    # that omits a released axis, then the global P2 STOP.
+    "svane": {"hold": ("svane", "svane-guide"), "concurrent": ("svane", "svane-guide")},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
@@ -87,6 +90,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "beds/svane.py:<module>.SVANE_EXECUTION": ("svane",),
+    "beds/svane.py:<module>.SvaneController": ("svane",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

@@ -2419,6 +2419,12 @@ async def _async_timed_move(
         command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
         if streamed:
             assert not isinstance(target, SingleAddressSideCoordinator)
+            svane_admission = svane_admissions.get(_plan_key(target))
+            if svane_admission is not None and svane_admission.released(
+                "head" if motor == "back" else "feet"
+            ):
+                # svane_release_axis arrived during preflight: admit no motion.
+                return
             await target.async_execute_stream_member(
                 motor=motor,
                 resource=resource,
@@ -3574,6 +3580,14 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
             controllers.append(controller)
     for controller in controllers:
         controller.request_svane_axis_release(call.data[ATTR_MOTOR])
+    # A streamed timed move (#516) on that axis ends alone; the other keeps going.
+    from .coordinator import AdjustableBedCoordinator
+
+    resource = "motor:back" if call.data[ATTR_MOTOR] == "head" else "motor:legs"
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            if isinstance(target, AdjustableBedCoordinator):
+                target.stop_stream_member(resource)
 
 
 async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:

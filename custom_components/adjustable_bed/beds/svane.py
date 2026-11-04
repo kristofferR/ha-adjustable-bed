@@ -9,12 +9,13 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..command_scheduler import current_command_context
+from ..execution import ExecutionCapabilities
 from ..svane_state import SvaneProfile, SvaneSession, integer
 from .base import (
     BedController,
@@ -26,6 +27,7 @@ from .base import (
 )
 
 if TYPE_CHECKING:
+    from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +51,18 @@ MOTIONS: dict[str, tuple[bool | None, bool | None]] = {
     "head_down_feet_up": (False, True),
     "head_down_feet_down": (False, False),
 }
+
+
+SVANE_EXECUTION: Final = ExecutionCapabilities(
+    hold="stream", concurrent=frozenset({"motor:back", "motor:legs"})
+)
+"""Svane Remote streams a held axis until release and holds head and feet together.
+
+P1 refreshes each axis's own direction role and releases one role; P2 composes
+one mask, omits a released axis and ends with its global STOP (svane, #516).
+"""
+STREAM_TICK_S: Final = 0.1
+"""The app's 100 ms pass, and the 100 ms between head and feet within one."""
 
 
 class SvaneCommands:
@@ -99,6 +113,12 @@ class SvaneHoldAdmission:
     session: SvaneSession
     release_epochs: tuple[int, int]
 
+    def released(self, axis: str) -> bool:
+        """Whether ``axis`` was released after this boundary was captured."""
+        index = ("head", "feet").index(axis)
+        current = (self.session.head_release_epoch, self.session.feet_release_epoch)[index]
+        return current > self.release_epochs[index]
+
     @contextmanager
     def activate(self, controller: BedController) -> Iterator[None]:
         if not isinstance(controller, SvaneController) or controller.session is not self.session:
@@ -139,6 +159,7 @@ class SvaneController(BedController):
         self._active_feet: bool | None = None
         self._pending_release: set[str] = set()
         self._wake = asyncio.Event()
+        self._feet_turn = False
         self._device_info_task: asyncio.Task[None] | None = None
         self._publish_intent()
         self.forward_controller_state_updates(dict(self.session.observations))
@@ -691,6 +712,64 @@ class SvaneController(BedController):
         finally:
             self._active_head = self._active_feet = None
             await self._release(tuple(self._started))
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        return SVANE_EXECUTION
+
+    # Merged stream (#516). Each tick is one step of the app's pass: head (or
+    # P2's combined mask) at its start, feet 100 ms into it. Feet alone waits
+    # one tick before each write, as the app sleeps before feet.
+    @property
+    def stream_tick_s(self) -> float:
+        return STREAM_TICK_S
+
+    @staticmethod
+    def _stream_axes(members: tuple[StreamMember, ...]) -> tuple[bool | None, bool | None]:
+        axes: dict[str, bool] = {}
+        for member in members:
+            if member.motor not in ("back", "legs") or member.action not in ("up", "down"):
+                raise ValueError(f"Unknown Svane motion {member.motor} {member.action}")
+            axes[member.motor] = member.action == "up"
+        return axes.get("back"), axes.get("legs")
+
+    async def _start_role(self, service: str, char: str, data: bytes) -> None:
+        self._started.add((service, char))
+        await self._write(service, char, data)
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        head, feet = self._stream_axes(members)
+        if self.profile == "jmc" and head is not None:
+            self._feet_turn = False
+            await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
+        elif self._feet_turn and feet is not None:
+            self._feet_turn = False
+            if self.profile == "jmc":
+                await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(None, feet))
+            else:
+                await self._start_role(FEET, UP if feet else DOWN, SvaneCommands.MOTOR_MOVE)
+        else:
+            self._feet_turn = feet is not None
+            if head is not None:
+                await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        if self.profile == "jmc":
+            # The mask drops the released axis; the last one out gets the
+            # global STOP in ``release_stream``.
+            if remaining:
+                mask = SvaneCommands.motion(*self._stream_axes(remaining))
+                await self._start_role(OLD, OLD_CHAR, mask)
+            return
+        # P1 has no global STOP: release the member's own direction role.
+        service = HEAD if member.motor == "back" else FEET
+        await self._release(tuple(role for role in self._started if role[0] == service))
+
+    async def release_stream(self) -> None:
+        self._feet_turn = False
+        await self._release(tuple(self._started))
 
     async def _release(self, roles: tuple[tuple[str, str], ...]) -> None:
         if self.profile == "jmc":
