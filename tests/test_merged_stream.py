@@ -374,3 +374,25 @@ async def test_stop_during_the_final_release_lets_it_finish() -> None:
     await asyncio.wait_for(back, 1)
     scheduler.finish_stop(epoch)
     assert driver.events[-1] == ("release",)
+
+
+async def test_last_member_returns_before_a_newcomer_streams() -> None:
+    scheduler = DeviceCommandScheduler("closing")
+    driver = FakeDriver()
+    original_end = driver.end_stream_member
+    cleanup_started = asyncio.Event()
+
+    async def slow_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        cleanup_started.set()
+        await asyncio.sleep(0.02)
+        await original_end(item, remaining)
+
+    driver.end_stream_member = slow_end  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back", seconds=0.02))
+    await asyncio.wait_for(cleanup_started.wait(), 1)
+    legs = join(scheduler, driver, member("legs", seconds=0.05))
+    assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
+    assert not legs.done()
+    assert await asyncio.wait_for(legs, 1) is CommandOutcome.EXPIRED
+    # The newcomer started its own stream after the first one's release.
+    assert driver.events.index(("release",)) < driver.events.index(("tick", "legs:up"))

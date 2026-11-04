@@ -270,6 +270,10 @@ class _MergedStream:
                             self.retire(member, CommandOutcome.EXPIRED)
                     if not self.ending:
                         break
+                    if not self.members:
+                        # Last one out: newcomers queue behind this release
+                        # instead of joining while it is under way.
+                        self.closing = True
                     await _settled(self._clean_up(driver))
                 if not self.members or context.cancel_event.is_set():
                     break
@@ -813,13 +817,15 @@ class DeviceCommandScheduler:
         if self._streams.get(stream.resources) is stream:
             del self._streams[stream.resources]
 
-    def has_stream_member(self, resources: Collection[str]) -> bool:
-        """Return whether a live stream member holds any of ``resources``."""
+    def stream_owns(self, resources: Collection[str]) -> bool:
+        """Return whether an accepting stream owns any of ``resources``.
+
+        True even when that motor's member already ended, so a repeated motor
+        STOP stays member-scoped instead of replacing the whole stream.
+        """
         return any(
-            _resources_overlap((member.resource,), resources)
+            stream.accepting and _resources_overlap(stream.resources, resources)
             for stream in self._streams.values()
-            if stream.accepting
-            for member in stream.members.values()
         )
 
     def _stop_stream_members(self, resources: Collection[str], stop_epoch: int) -> None:
