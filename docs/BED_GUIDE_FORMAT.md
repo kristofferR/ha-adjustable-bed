@@ -91,19 +91,20 @@ Features) so the reference check applies, then splits into codec and profile par
 ## Apps            <!-- one row per app, with a Profile column linking its section -->
 ## Features        <!-- one column per profile -->
 ## Choosing a profile
-<!-- generated:<family>-profiles -->
+<!-- generated:<family>-profiles -->   <!-- summary, timing, layouts, startup -->
 <!-- /generated -->
 
 ## Wire codec
-### Transports
+### Transports         <!-- generated from the codec's transport table -->
 ### Framing and checksum
-### Command encoders   <!-- one #### table per command group -->
-### Responses
+### Command encoders   <!-- one #### per command group, each table generated -->
+### Responses          <!-- which parser each profile uses -->
 ### STOP and release behavior
 ### Vectors            <!-- where the frozen vectors and their tests live -->
 
 ## Profiles
-### <Profile name>     <!-- one per profile -->
+### <Family name> family   <!-- only when several profiles share behavior -->
+### <Profile name>         <!-- one per profile, see Profile sections -->
 
 ## Notes
 ### Analysis provenance
@@ -111,20 +112,52 @@ Features) so the reference check applies, then splits into codec and profile par
 
 - **Codec part** holds everything every profile shares: transports, framing,
   checksum, the command tables built by the codec module, response parsing and
-  release behavior.
-- **A profile section** covers the app or product, its setup questions, available
-  controls, timing beyond the generated tables, and verification status. It links
-  its discovery ledger rather than folding it in. Behavior shared by several
-  profiles gets a family section before them; each profile then lists only what
-  differs.
+  release behavior. When profiles parse responses differently, say which parser
+  each one uses.
 - **Generated tables** sit between `<!-- generated:<name> -->` and
   `<!-- /generated -->` and are rewritten by `scripts/generate_codec_docs.py` from
-  the profile module. Do not edit them by hand; edit the profile and rerun the
-  script. `tests/test_codec_docs.py` fails when a block is stale. To generate a block
-  for a new family, add a renderer and a `BLOCKS` entry to the script.
-- Keep hand-written prose for what profile data cannot express: setup flow,
-  state machines, notification handling, services, safety adaptations.
-- Tables of frames come from the codec module and controllers, as with any guide.
+  the codec and profile modules. Do not edit them by hand; edit the code and rerun
+  the script. `tests/test_codec_docs.py` fails when a block is stale. To generate
+  a block for a new family, add a renderer and a `BLOCKS` entry to the script.
+- **Generate every value the code knows**: transports, command tables (built by
+  calling the codec's encoders, never as literals), bed types, layouts and
+  payloads, timing and startup queries. Prose points to a generated table instead
+  of repeating its numbers, so a changed profile cannot leave a stale copy.
+- Every frame spelled out by hand must be one of the family's frozen vectors;
+  the family's docs test checks this.
+- Keep hand-written prose for what code cannot express as data: setup flow,
+  state machines, notification handling, services and safety behavior.
+
+### Profile sections
+
+Every profile section, and a family section shared by several profiles, uses
+these headings in this order. Omit a heading that does not apply.
+
+```markdown
+### <Profile name>
+
+**App:** [<App name>](<store link>) <version>, `<package>`   <!-- omit for a non-app route -->
+
+**Status:** <✅ | ❓ | ⚠️> <short qualifier>
+
+Behaves as the [<family>](#<family>-family), except as below.   <!-- family members only -->
+
+#### Setup          <!-- setup questions, detection rules, transport choice, pairing -->
+#### Controls       <!-- each control and the command table row it sends -->
+#### Timing         <!-- link the generated tables; prose only for sequences the data lacks -->
+#### Notifications  <!-- which responses the profile consumes and how -->
+#### Services       <!-- actions beyond the standard entities -->
+#### Evidence       <!-- link to the discovery ledger -->
+```
+
+- **Detection rules** go under the profile's Setup: the service UUIDs or name
+  patterns that select it and the bed type each yields, or "Detection: none" for
+  an explicit choice. "Choosing a profile" only says which route detection
+  suggests.
+- A family member lists only what differs from its family section.
+- **Evidence** links the ledger and states the result in reference form, for
+  example "Comfort Motion sends only its frozen frames". Dispositions, exclusions,
+  counts and reachability arguments stay in the ledger.
 
 ## Rules
 

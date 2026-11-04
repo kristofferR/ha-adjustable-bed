@@ -1,4 +1,4 @@
-"""Codec guides keep their generated tables in step with the profile data."""
+"""Codec guides keep their generated tables in step with the codec and profile data."""
 
 from __future__ import annotations
 
@@ -33,14 +33,43 @@ def test_every_block_has_one_marked_region() -> None:
         assert text.count(f"<!-- generated:{name} -->") == 1, f"{guide} needs one {name} block"
 
 
-def test_jiecang_guide_frames_match_the_codec() -> None:
-    """Every fully spelled frame in the guide is what the codec builds for its fields."""
-    from custom_components.adjustable_bed.codec.jiecang import frame
+def test_jiecang_guide_frames_are_frozen_vectors() -> None:
+    """Every fully spelled frame in the guide is one a profile was frozen sending.
 
+    The generated tables build their frames through the codec, so a swapped row
+    makes the block stale; this catches frames spelled by hand outside them.
+    """
+    from tests.jiecang_vectors import FROZEN_FRAMES
+
+    frozen = frozenset().union(*FROZEN_FRAMES.values())
     text = (ROOT / "docs" / "beds" / "jiecang.md").read_text(encoding="utf-8")
     # Frames appear both spaced (`F1 F1 01 ...`) and compact (`F1F101...`).
     frames = re.findall(r"`(F1 ?F1(?: ?[0-9A-F]{2})+ ?7E)`", text, re.IGNORECASE)
     assert frames
-    for spelled in frames:
-        data = bytes.fromhex(spelled.replace(" ", ""))
-        assert data == frame(data[2], data[4:-2]), spelled
+    unknown = sorted(
+        {spelled for spelled in frames if spelled.replace(" ", "").lower() not in frozen}
+    )
+    assert not unknown, f"Frames no profile was frozen sending: {unknown}"
+
+
+async def test_jiecang_bed_types_match_the_factory() -> None:
+    """The profile summary's bed types are the ones the factory builds each profile for."""
+    from custom_components.adjustable_bed.beds.jiecang import JiecangProfileController
+    from custom_components.adjustable_bed.const import CONF_JIECANG_APP_PROFILE
+    from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.profiles.jiecang import APP_PROFILES, LEGACY
+    from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
+
+    profiles = {"legacy": LEGACY, **APP_PROFILES}
+    bed_types = _load_generator().jiecang_bed_types()
+    assert bed_types.keys() == profiles.keys()
+    for key, types in bed_types.items():
+        assert types, f"{key} has no bed type"
+        for bed_type in types:
+            coordinator = _FactoryCoordinator()
+            coordinator.entry.data[CONF_JIECANG_APP_PROFILE] = key
+            controller = await create_controller(
+                coordinator, bed_type, None, _make_connected_client()
+            )
+            assert isinstance(controller, JiecangProfileController), bed_type
+            assert controller.profile is profiles[key], (key, bed_type)

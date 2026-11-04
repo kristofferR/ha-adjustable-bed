@@ -249,10 +249,14 @@ A new app is normally a profile plus its vectors, not a new controller.
    sensors stuck at "unknown". Note that `position_number_specs` requires a live
    controller, so these entities only appear once the bed has connected.
 
-11. **Create documentation** in `docs/beds/newbed.md` using the
-    [bed guide format](docs/BED_GUIDE_FORMAT.md): Status, Credit, Known Models,
-    Apps and Features tables, Protocol Details and command tables. Evidence and
-    dispositions go in the discovery ledger, not the guide.
+11. **Create documentation** using the [bed guide format](docs/BED_GUIDE_FORMAT.md).
+    A profile over an existing codec adds a profile section, with the format's
+    fixed headings, to that codec's guide. A new codec gets a new codec guide in
+    the [codec guide format](docs/BED_GUIDE_FORMAT.md#codec-guides), with a
+    renderer in `scripts/generate_codec_docs.py` for every table its code knows.
+    A protocol outside the codec split gets `docs/beds/newbed.md` in the
+    single-protocol format. Evidence and dispositions go in the discovery ledger,
+    not the guide.
 
 12. **For an app profile, make the app findable and declare what it owns.**
     Users search the bed-type list by app name. An app that is its own bed type
