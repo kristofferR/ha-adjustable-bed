@@ -18,7 +18,7 @@ import sys
 import textwrap
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import get_args
+from typing import Any, cast, get_args
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -27,12 +27,14 @@ from custom_components.adjustable_bed import const as _const  # noqa: E402
 from custom_components.adjustable_bed import controller_factory, hjbed_catalog  # noqa: E402
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames  # noqa: E402
 from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames  # noqa: E402
+from custom_components.adjustable_bed.beds import cluster033 as cluster033_module  # noqa: E402
 from custom_components.adjustable_bed.beds import hjbed as hjbed_bed  # noqa: E402
 from custom_components.adjustable_bed.beds import innova as innova_module  # noqa: E402
 from custom_components.adjustable_bed.beds import keeson_okin_apps as okin_apps_module  # noqa: E402
 from custom_components.adjustable_bed.beds import ore_comfort_bed as ore_module  # noqa: E402
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames  # noqa: E402
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed  # noqa: E402
+from custom_components.adjustable_bed.beds import serta_mp_remote as serta_mp_module  # noqa: E402
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label  # noqa: E402
 from custom_components.adjustable_bed.beds.jiecang_app import LIGHT_TIMEOUTS  # noqa: E402
 from custom_components.adjustable_bed.beds.okin_uuid import (  # noqa: E402
@@ -1555,6 +1557,211 @@ def render_keeson_ore() -> str:
     )
 
 
+# Keeson cluster033 apps
+
+_C033_ROLES = {
+    cluster033_module.FFE9: "FFE9",
+    cluster033_module.FFE4: "FFE4",
+    cluster033_module.NUS_TX: "NUS TX",
+    cluster033_module.NUS_RX: "NUS RX",
+}
+
+
+def _c033_controller(
+    profile: keeson_profiles.AppProfile, side: str = "both"
+) -> cluster033_module.AppController:
+    return cluster033_module.AppController(cast(Any, None), profile, side=side)
+
+
+_C033_HEADINGS = {"ergomotion_app": "Ergomotion app"}
+
+
+def _c033_heading(app: keeson_profiles.AppKey) -> str:
+    return _C033_HEADINGS.get(app, keeson_profiles.APP_NAMES[app])
+
+
+def _c033_layouts(app: keeson_profiles.AppKey) -> str:
+    default = keeson_profiles.DEFAULT_LAYOUTS[app]
+    return ", ".join(
+        f"**{layout}**" if layout == default else layout
+        for layout in keeson_profiles.APP_LAYOUTS[app]
+    )
+
+
+def _c033_frame(app: keeson_profiles.AppKey) -> str:
+    if app == "qplus_app":
+        return "K1 `E5` (Both) or `E6` + side byte (A/B); MX: P2 6-byte"
+    return "K1 `E5`, little-endian"
+
+
+def _c033_clock(profile: keeson_profiles.AppProfile) -> str:
+    if not profile.clock:
+        return "none"
+    delay = profile.clock_init_delay_ms
+    if delay is None:
+        return "on demand"
+    when = "at connect" if delay == 0 else f"{delay / 1000:g} s after connect"
+    return f"{when}, and on demand"
+
+
+def _c033_rename(profile: keeson_profiles.AppProfile) -> str:
+    if not profile.rename_units:
+        return "none"
+    trim = "trimmed" if profile.rename_trimmed else "outer spaces rejected"
+    return f"{profile.rename_units} UTF-16 units, {trim}"
+
+
+def _c033_alarm(profile: keeson_profiles.AppProfile) -> str:
+    spec = profile.alarm
+    if spec is None:
+        return "none"
+    marker = f"marker `{spec.weekday_marker:#04x}`" if spec.weekday_marker else "no marker"
+    return f"wake byte `{spec.wake_byte:#04x}`, {marker}, {spec.capacity} per table"
+
+
+def render_keeson_apps() -> str:
+    rows = []
+    for app in keeson_profiles.APP_LAYOUTS:
+        profile = keeson_profiles.app_profile(app)
+        roles = ("FFE9", "FFE4") + (("NUS TX", "NUS RX") if app == "qplus_app" else ())
+        dismiss = (
+            f"{profile.shutdown_count} × {_hex(keeson_codec.ALARM_DISMISS)}, "
+            f"{profile.shutdown_delay_ms} ms apart"
+            if profile.shutdown_count
+            else "none"
+        )
+        rows.append(
+            (
+                f"[{_c033_heading(app)}](#{_anchor(_c033_heading(app))})",
+                f"`{app}`",
+                _c033_layouts(app),
+                _c033_frame(app),
+                " / ".join(roles),
+                _c033_rename(profile),
+                _c033_clock(profile),
+                dismiss,
+                _c033_alarm(profile),
+            )
+        )
+    return _block(
+        _table(
+            (
+                "Profile",
+                "Bed type",
+                "Layouts (default bold)",
+                "Frame",
+                "Write / notify",
+                "Rename",
+                "Clock",
+                "Wake dismissal",
+                "Alarm tables",
+            ),
+            rows,
+        )
+    )
+
+
+def _anchor(title: str) -> str:
+    return re.sub(r"[^a-z0-9 -]", "", title.lower()).replace(" ", "-")
+
+
+def render_keeson_app_controls(app: keeson_profiles.AppKey) -> str:
+    """One row per distinct app key, with the layouts that show it."""
+    layouts = keeson_profiles.APP_LAYOUTS[app]
+    rows: dict[tuple[str, ...], list[str]] = {}
+    for layout in layouts:
+        profile = keeson_profiles.app_profile(app, layout)
+        controller = _c033_controller(profile)
+        for action in profile.actions:
+            cover = {"head_up": "Back", "head_down": "Back", "foot_up": "Legs", "foot_down": "Legs"}
+            label = action.name + (f" ({cover[action.key]} cover)" if action.key in cover else "")
+            row = (
+                label,
+                f"`{action.key}`",
+                f"`{action.mask:#x}`",
+                _hex(controller._frame(action.mask)),
+                f"`{action.mode}`",
+            )
+            rows.setdefault(row, []).append(layout)
+    header = ("App label", "Key", "Mask", "Frame", "Behavior")
+    if len(layouts) == 1:
+        return _block(_table(header, rows))
+    return _block(
+        _table((*header, "Layouts"), ((*row, ", ".join(found)) for row, found in rows.items()))
+    )
+
+
+def render_keeson_qplus_sides() -> str:
+    profile = keeson_profiles.app_profile("qplus_app", "M2")
+    rows = []
+    for side, name in (("both", "Both"), ("side_a", "Side A"), ("side_b", "Side B")):
+        controller = _c033_controller(profile, side)
+        rows.append(
+            (
+                f"{name} (`{side}`)",
+                _hex(controller._frame(keeson_codec.HEAD_UP)),
+                _hex(controller._frame(keeson_codec.RELEASE)),
+            )
+        )
+    mx = keeson_profiles.app_profile("qplus_app", "MX")
+    assert mx.p2_keys is not None
+    keys = ", ".join(f"`{key:#x}`" for key in sorted(mx.p2_keys))
+    return _block(
+        _table(("Selector", "Head up", "Release"), rows),
+        f"MX keys the sparse builder accepts (any other key is sent as zero): {keys}.",
+    )
+
+
+def render_keeson_serta_mp() -> str:
+    head, foot = serta_mp_module.HEAD_TABLE, serta_mp_module.FOOT_TABLE
+
+    def calibration(name: str, table: tuple[int, ...]) -> list[str]:
+        return _table(
+            (name, *(f"+{step}" for step in range(10))),
+            (
+                (
+                    f"{start}°",
+                    *(str(v) for v in table[start : start + 10]),
+                    *[""] * (10 - len(table[start : start + 10])),
+                )
+                for start in range(0, len(table), 10)
+            ),
+        )
+
+    other = 0x8000
+    targets = _table(
+        ("Target", "Head field", "Foot field", "Example"),
+        (
+            (
+                "Back slider or `set_position`",
+                "head table value",
+                f"`{other:#x}`",
+                f"Back 30°: {_hex(keeson_codec.position_target(head[30], other))}",
+            ),
+            (
+                "Legs slider or `set_position`",
+                f"`{other:#x}`",
+                "foot table value",
+                f"Legs 15°: {_hex(keeson_codec.position_target(other, foot[15]))}",
+            ),
+            (
+                "Local memory recall",
+                "head table value",
+                "foot table value",
+                f"Slot 1 default (15°/35°): {_hex(keeson_codec.position_target(head[15], foot[35]))}",
+            ),
+        ),
+    )
+    return _block(
+        "#### Position targets",
+        targets,
+        "#### Calibration tables",
+        "Pulse value per degree, used for targets and for feedback conversion.",
+        calibration("Head", head),
+        calibration("Foot", foot),
+    )
+
+
 # FFFF frame
 
 FF_GUIDE = "docs/beds/ff_frame.md"
@@ -2318,7 +2525,11 @@ LIMOSS_BED_TYPES: dict[str, str] = {
     "limoss_remote": BED_TYPE_LIMOSS_REMOTE,
     "fsm_relax": BED_TYPE_FSM_RELAX,
 }
-_LIMOSS_NAMES = {"legacy": "Legacy route", "limoss_remote": "Limoss Remote", "fsm_relax": "FSM Relax"}
+_LIMOSS_NAMES = {
+    "legacy": "Legacy route",
+    "limoss_remote": "Limoss Remote",
+    "fsm_relax": "FSM Relax",
+}
 _LIMOSS_COUNTERS = {
     "controller": "per controller; repeats resend one frame",
     "session": "per bed, kept across reconnects; one value per frame",
@@ -2376,10 +2587,7 @@ def render_limoss_profiles() -> str:
         if profile.tick_ms is not None:
             return f"every {profile.tick_ms} ms, first after {profile.tick_ms} ms"
         count, delay = get_motor_pulse_defaults(LIMOSS_BED_TYPES[key])
-        return (
-            "motor pulse count × delay, first immediately "
-            f"(default {count} × {delay} ms)"
-        )
+        return f"motor pulse count × delay, first immediately (default {count} × {delay} ms)"
 
     def calibration(profile: limoss_profiles.LimossProfile, tick: str) -> str:
         if profile.calibration is None:
@@ -2553,9 +2761,21 @@ def render_limoss_commands() -> str:
     queries = _table(
         ("Query", "Body", "Reply"),
         (
-            ("Hardware version", _hex(limoss_codec.query(limoss_codec.QUERY_HARDWARE)), "`00` + four signed bytes"),
-            ("Software version", _hex(limoss_codec.query(limoss_codec.QUERY_SOFTWARE)), "`01` + four signed bytes"),
-            ("Capabilities", _hex(limoss_codec.query(limoss_codec.QUERY_CAPABILITIES)), "`02` + four capability bytes"),
+            (
+                "Hardware version",
+                _hex(limoss_codec.query(limoss_codec.QUERY_HARDWARE)),
+                "`00` + four signed bytes",
+            ),
+            (
+                "Software version",
+                _hex(limoss_codec.query(limoss_codec.QUERY_SOFTWARE)),
+                "`01` + four signed bytes",
+            ),
+            (
+                "Capabilities",
+                _hex(limoss_codec.query(limoss_codec.QUERY_CAPABILITIES)),
+                "`02` + four capability bytes",
+            ),
             *(
                 (
                     f"Motor {index} position",
@@ -3193,6 +3413,15 @@ BLOCKS: dict[tuple[str, str], Callable[[], str]] = {
     ("docs/beds/keeson.md", "keeson-innova"): render_keeson_innova,
     ("docs/beds/keeson.md", "keeson-okin-apps"): render_keeson_okin_apps,
     ("docs/beds/keeson.md", "keeson-ore"): render_keeson_ore,
+    ("docs/beds/keeson.md", "keeson-apps"): render_keeson_apps,
+    **{
+        ("docs/beds/keeson.md", f"keeson-app-{app.replace('_', '-')}"): (
+            lambda app=app: render_keeson_app_controls(app)
+        )
+        for app in keeson_profiles.APP_LAYOUTS
+    },
+    ("docs/beds/keeson.md", "keeson-qplus-sides"): render_keeson_qplus_sides,
+    ("docs/beds/keeson.md", "keeson-serta-mp"): render_keeson_serta_mp,
     (FF_GUIDE, "ff-frame-profiles"): render_ff_frame_profiles,
     (FF_GUIDE, "ff-frame-transports"): render_ff_frame_transports,
     (FF_GUIDE, "ff-frame-motion"): render_ff_frame_motion,

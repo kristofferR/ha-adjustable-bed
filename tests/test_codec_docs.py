@@ -145,6 +145,17 @@ def test_keeson_guide_frames_are_frozen_vectors() -> None:
     assert not unknown, f"Frames no profile was frozen sending: {unknown}"
 
 
+def test_keeson_guide_has_a_section_per_cluster033_app() -> None:
+    """Each cluster033 app has a section with its generated key table."""
+    from custom_components.adjustable_bed.profiles import keeson as profiles
+
+    generator = _load_generator()
+    text = (ROOT / "docs" / "beds" / "keeson.md").read_text(encoding="utf-8")
+    for app in profiles.APP_LAYOUTS:
+        assert f"\n### {generator._c033_heading(app)}\n" in text, app
+        assert f"<!-- generated:keeson-app-{app.replace('_', '-')} -->" in text, app
+
+
 def test_keeson_routes_match_the_profiles() -> None:
     """The guide's sub-routes resolve as described, and its aliases are the factory's."""
     from custom_components.adjustable_bed.profiles import keeson as profiles

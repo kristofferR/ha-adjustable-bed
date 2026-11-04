@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.profiles.ff_frame import (
     SolaceProfile,
 )
 from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
+from custom_components.adjustable_bed.profiles.keeson import AppProfile as KeesonAppProfile
 from custom_components.adjustable_bed.profiles.keeson import KeesonProfile
 from custom_components.adjustable_bed.profiles.limoss import LimossProfile
 from custom_components.adjustable_bed.profiles.logicdata import LogicdataProfile
@@ -49,6 +50,8 @@ CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
     LogicdataProfile: LOGICDATA_VECTORS,
     Okin5AProfile: OKIN_5A_VECTORS,
     KeesonProfile: KEESON_VECTORS,
+    # The cluster033 apps: one AppProfile per layout, vectors per app.
+    KeesonAppProfile: KEESON_VECTORS,
     # S1 FFFF frame: the Solace routes (Woosa is a protocol variant), BedSense, Motion Bed.
     SolaceProfile: FF_FRAME_VECTORS,
     BedSenseProfile: FF_FRAME_VECTORS,
@@ -81,8 +84,6 @@ UNMIGRATED: dict[str, str] = {
     "coolbase": "#745 K1 Keeson E5/E6",
     "customatic_zseries": "#745 O1 Okin N-frame",
     "doublesleep": "#745 O1 Okin N-frame",
-    "ergo_slim": "#745 K1 Keeson E5/E6",
-    "ergomotion_app": "#745 K1 Keeson E5/E6",
     "eshine": "standalone: own wire format",
     "furnimove": "#745 K1 Keeson E5/E6",
     "glideaway_motion": "#745 K1 Keeson E5/E6",
@@ -107,18 +108,14 @@ UNMIGRATED: dict[str, str] = {
     "okin_cst": "#745 O1 Okin N-frame",
     "okin_dot": "#745 O1 Okin N-frame",
     "okin_ore": "standalone: own wire format",
-    "omazz_adjusto_iii": "#745 K1 Keeson E5/E6",
-    "qplus_app": "#745 K1 Keeson E5/E6",
     "remacro": "standalone: own wire format",
     "reverie": "standalone: own wire format",
     "reverie_nightstand": "standalone: own wire format",
     "reverie_pairlink": "standalone: own wire format behind a Pairlink session",
     "rondure": "#745 K1 Keeson E5/E6",
-    "row_control": "#745 K1 Keeson E5/E6",
     "sbi": "#745 K1 Keeson E5/E6",
     "scott_living": "#745 K1 Keeson E5/E6",
     "serenity": "#745 O1 Okin N-frame",
-    "serta_mp_remote": "#745 K1 Keeson E5/E6",
     "simmons": "#745 O1 Okin N-frame",
     "sleep_number": "standalone: own wire format",
     "sleep_number_mcr": "standalone: own wire format",
@@ -133,8 +130,6 @@ UNMIGRATED: dict[str, str] = {
     "starcode_m5x5": "standalone: own wire format",
     "suta": "standalone: own wire format",
     "svane": "standalone: own wire format",
-    "tempur_au": "#745 K1 Keeson E5/E6",
-    "tempur_curve": "#745 K1 Keeson E5/E6",
     "timotion_ahf": "standalone: own wire format",
     "tranquil": "#745 O1 Okin N-frame",
     "vibradorm": "standalone: own wire format",
