@@ -226,16 +226,15 @@ data:
   hold_generation: 42
 ```
 
-**Physical validation.** Proven offline: scheduler and service tests on a
-virtual clock show that a renewal writes nothing and only moves the deadline,
+**Physical validation.** Proven offline: scheduler and service tests show that a renewal writes nothing and only moves the deadline,
 that expiry runs the bed's own release or STOP once, that STOP, a replacement,
 a dropped link or an unload ends the generation, and that a late or stale
 renewal never starts motion. Card tests cover the 250 ms renewals and the STOP
 on release, hide and removal. Needs real-bed reports, family by family as each
 opts in: whether a held motor moves smoothly while renewals arrive through real
 adapters and ESPHome proxies, and how long it keeps moving after renewals stop.
-No bed declares a renewable hold in the current beta, so none of this runs on a
-real bed yet.
+The first opt-ins are the Leggett Okin and Customatic profiles of the
+[Okin N-frame codec](beds/okin-nframe.md#hold-and-release-timing).
 
 ### Reverie composite actions
 

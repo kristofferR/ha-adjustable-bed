@@ -70,7 +70,7 @@ off, clear every motor.
 
 Hardware status: unverified. Proven offline: tests cover the timing arithmetic
 in both directions, STOP and cancellation, failed writes and lost links,
-invalidation by presets and the remote, restoring after a restart or reload,
+invalidation by presets and **I used the remote**, restoring after a restart or reload,
 saved positions, recall, lowering to flat, independent paired sides and every
 calibration step, including a real OCTO Standard entry. Needs real-bed reports
 on OCTO Standard and Richmat beds: how close a recall lands to the saved

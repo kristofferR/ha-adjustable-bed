@@ -104,8 +104,8 @@ pair, and the one-time app profile review is not raised for it again.
 
 Deferred for the v5 beta ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)).
 Proven offline: `tests/test_profile_id.py` migrates every former route (each
-bed type, listed variant and app key choice), standalone and in both pair modes.
-It checks that saved fields stay, that entry, device and entity identities
+bed type, listed variant and app key choice) as a standalone entry, and
+examples of both pair modes. It checks that saved fields stay, that entry, device and entity identities
 stay, and that every wire snapshot scenario builds the same controller from its
 profile id. Needs real reports: upgrades of real 4.x installations, especially
 entries from early releases, entries with options saved over several versions

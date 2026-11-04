@@ -90,13 +90,13 @@ These are additions. Existing entities keep their names, states and attributes.
 
 | Addition | Where | When it appears |
 |----------|-------|-----------------|
-| `hold_lease_mode` attribute (`stream` or `latched`) | Covers, held buttons and combined paired controls | Only on beds that declare a renewable hold. No bed declares one in the current beta; the per-family opt-ins are still landing |
+| `hold_lease_mode` attribute (`stream` or `latched`) | Covers, held buttons and combined paired controls | Only on beds that declare a renewable hold: so far the Leggett Okin Prodigy 2L, Prodigy 2, Prodigy CE and U Series app profiles and Customatic Clarity, Jerome's and Remedy, all `stream`. Other families follow |
 | `hold_lease_motor` attribute | Same entities, with the `timed_move` motor they hold | Together with `hold_lease_mode`, where the control maps to a `timed_move` motor |
 | `hold_owner` and `hold_generation` fields | `timed_move` and `hold_control` | Always listed. Beds that declare no renewable hold reject them before anything moves; calls without them behave as before. See [Renewable holds](SERVICES.md#renewable-holds) |
 | **Estimated positions** menu | **Configure**, one entry per side on a paired bed | Only on beds whose protocol supports [estimated positions](ESTIMATED_POSITIONS.md) |
 | Estimated position, set-reference, "I used the remote", saved-position and "Saved positions" entities | `number`, `button` and `sensor` | Only after you enable estimated positions for a motor |
-| Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed. They fail with "not enabled" until a motor is calibrated. See [Actions](ESTIMATED_POSITIONS.md#actions) |
-| `profile` section | Diagnostics and support bundles | Always. The support bundle's `report_version` is now 2.6 |
+| Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
+| Profile id and migration record | Diagnostics and support bundles | Diagnostics: `profile` for a standalone entry, `profile_migration` and each side's `profile_id` for a paired entry. Support bundles of a configured bed: `profile` (empty for a raw-address capture). The support bundle's `report_version` is now 2.6 |
 
 ## Behavior Changes
 
@@ -104,8 +104,9 @@ These are additions. Existing entities keep their names, states and attributes.
 `timed_move` and `hold_control` can carry a lease that keeps a held motor
 moving while calls renew it, and that ends with the bed's usual release or STOP
 when renewals stop. Without `hold_owner` and `hold_generation` both actions run
-exactly as before. The scheduler support has landed, but no controller declares
-a renewable hold yet, so in this beta no bed changes behavior. See
+exactly as before. So far only the Leggett Okin Prodigy 2L, Prodigy 2, Prodigy CE and U Series app profiles and Customatic Clarity, Jerome's and Remedy declare a renewable hold
+([okin-nframe](beds/okin-nframe.md#hold-and-release-timing)); on every other bed
+nothing changes. See
 [Renewable holds](SERVICES.md#renewable-holds) and the
 [command lifecycle](COMMAND_LIFECYCLE.md#renewable-hold-leases).
 
@@ -117,8 +118,9 @@ or removing the card stops renewing and sends STOP.
 **Calibrated position estimates ([#601](https://github.com/kristofferR/ha-adjustable-bed/issues/601)).**
 Opt-in, per motor, for OCTO Standard and the Richmat remote-code profiles. Beds
 where you do not enable it are unaffected. With it enabled, the integration
-times the moves it sends and never sends a frame of its own; presets, memory
-recalls and the physical remote make the estimate unknown. See
+times the moves it sends and never sends a frame of its own. Presets and memory
+recalls make the estimate unknown. The integration cannot see the physical
+remote, so press **I used the remote** after using it. See
 [Estimated positions](ESTIMATED_POSITIONS.md).
 
 **Paired-bed routing ([#524](https://github.com/kristofferR/ha-adjustable-bed/issues/524)).**
@@ -136,9 +138,9 @@ is identical.
 
 **Support bundle command trace ([#794](https://github.com/kristofferR/ha-adjustable-bed/pull/794)).**
 Controllers with their own write loops now record those writes in the
-bundle's `command_trace`: FSM Relax, Jensen LinOn, the Okin 7-byte, DOT and
-N-frame controllers, Reverie, Reverie Nightstand, Reverie Pairlink, Rondure,
-Sleep Number and Svane. Bundles from these beds are larger and show the
+bundle's `command_trace`: the Jiecang family, L&P MlRM, FSM Relax, Jensen
+LinOn, the Okin 7-byte, DOT and N-frame controllers, Reverie, Reverie
+Nightstand, Reverie Pairlink, Rondure, Sleep Number and Svane. Bundles from these beds are larger and show the
 commands they sent.
 
 **Bluetooth discovery ([#780](https://github.com/kristofferR/ha-adjustable-bed/issues/780)).**
@@ -220,7 +222,7 @@ they land.
 - Merged motor streams for protocols proven to run two motors at once
   ([#795](https://github.com/kristofferR/ha-adjustable-bed/pull/795), for
   [#516](https://github.com/kristofferR/ha-adjustable-bed/issues/516)).
-- Per-family renewable hold opt-ins
+- Renewable hold opt-ins for the families beyond Leggett Okin and Customatic
   ([#483](https://github.com/kristofferR/ha-adjustable-bed/issues/483)).
 - The remaining estimated position work: saved positions in the dashboard card
   ([#601](https://github.com/kristofferR/ha-adjustable-bed/issues/601)).
@@ -241,6 +243,6 @@ they land.
 > and how to restore.
 
 Report beta problems in the pinned v5 beta feedback issue, or open a bug report
-and choose **v5 beta** as the version. Include diagnostics or a
+and choose **v5 beta** as the release. Include diagnostics or a
 [support bundle](GETTING_HELP.md#generating-a-support-bundle) and the beta
 number.
