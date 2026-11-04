@@ -25,6 +25,8 @@ from .const import (
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
     BED_TYPE_BF,
+    BED_TYPE_CASPER_SLEEP_MM,
+    BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
@@ -41,6 +43,8 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_GMMOTOR,
+    BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
@@ -135,7 +139,6 @@ from .const import (
     ERGOMOTION_NAME_PATTERNS,
     GLIDEAWAY_MOTION_MODELS,
     HJBED_PROFILES,
-    HJBED_SCAN_KEYWORDS,
     JENSEN_LINON_NAME_PATTERNS,
     JENSEN_NAME_FRAGMENT,
     JENSEN_NAME_PATTERNS,
@@ -246,14 +249,17 @@ from .const import (
     # Detection result type
     DetectionResult,
 )
+from .discovery_hints import (
+    EXCLUDED_DEVICE_PATTERNS,
+    GENERIC_SHARED_SERVICE_UUIDS,
+    FirstPass,
+    first_pass,
+)
 from .fsm_relax_discovery import matches_fsm_relax_candidate
 from .kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
 from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
-
-# Advertised gateway service FurniMove accepts as an RF receiver (scan predicate 4).
-_FURNIMOVE_GATEWAY_SERVICE_UUID = "00001420-0000-1000-8000-00805f9b34fb"
 
 
 def _is_motosleep_local_name(device_name: str) -> bool:
@@ -467,91 +473,6 @@ def _is_malouf_new_okin_smartbed_signature(
 
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
 SOLACE_NAME_PATTERN = re.compile(r"^s4-y-\d+-[a-z0-9]+$", re.IGNORECASE)
-
-# Generic/shared BLE service UUIDs used by multiple bed types AND non-bed devices.
-# Name-based exclusions are only applied when a device advertises these UUIDs,
-# preserving UUID-based detection for beds with unique service UUIDs.
-# See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
-GENERIC_SHARED_SERVICE_UUIDS: frozenset[str] = frozenset(
-    uuid.lower()
-    for uuid in (
-        SOLACE_SERVICE_UUID,  # FFE0 - Solace, Octo, MotoSleep, scales, scooters
-        KEESON_BASE_SERVICE_UUID,  # FFE5 - Keeson, Malouf, Serta, fitness trackers
-        RICHMAT_NORDIC_SERVICE_UUID,  # Nordic UART - Richmat, many IoT devices
-        OKIMAT_SERVICE_UUID,  # 62741523 - Okimat, Leggett Okin, Nectar
-        *RICHMAT_WILINKE_SERVICE_UUIDS,  # FEE9 variants - Richmat WiLinke, BedTech
-    )
-)
-
-# Device name patterns that should NOT be detected as beds
-# These use generic BLE UUIDs that beds also use, but are clearly not beds
-# Only applied when device has generic UUIDs (see GENERIC_SHARED_SERVICE_UUIDS)
-# See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
-EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
-    # Flexsteel seating controllers recovered from com.okin.flex_demo. These
-    # advertise Nordic UART but are chairs, not adjustable-bed control boxes.
-    "flx_audio",
-    "flx_rush",
-    # TiMOTION Smart Move+ height-adjustable desks (com.timotion.smartmove).
-    # The app accepts only names starting "stand UP-" on Nordic UART.
-    "stand up-",
-    # Mobility devices
-    "scooter",
-    "ninebot",
-    "segway",
-    "ebike",
-    "e-bike",
-    "escooter",
-    "e-scooter",
-    "skateboard",
-    "hoverboard",
-    # Scales and health monitors
-    "scale",
-    "weight",
-    "wyze",
-    "withings",
-    "renpho",
-    "eufy",
-    "fitindex",
-    "greater goods",
-    "etekcity",
-    "arboleaf",
-    # Wearables and fitness trackers
-    "watch",
-    "band",
-    "tracker",
-    "fitbit",
-    "garmin",
-    "amazfit",
-    "xiaomi",
-    "mi band",
-    "miband",
-    "huawei",
-    "polar",
-    "suunto",
-    "coros",
-    "whoop",
-    # Health monitors
-    "thermometer",
-    "blood pressure",
-    "pulse ox",
-    "heart rate",
-    "glucose",
-    "oximeter",
-    # Other common BLE devices
-    "headphone",
-    "earbud",
-    "airpod",
-    "speaker",
-    "keyboard",
-    "mouse",
-    "controller",
-    "gamepad",
-    "tile",
-    "airtag",
-    "smarttag",
-    "beacon",
-)
 
 
 def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
@@ -1221,11 +1142,12 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
 
 def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
-    from .beds.starcode_abm5_4_profiles import TRANSPORTS, scan_matches
-    from .gmmotor_discovery import scan_name_matches
+    from .beds.starcode_abm5_4_profiles import TRANSPORTS
 
-    result = _detect_bed_type_detailed(service_info)
-    if scan_name_matches(service_info.name or "") and not any(
+    # The first pass matches the declared discovery hints, as the manifest does.
+    first = first_pass(service_info)
+    result = _detect_bed_type_detailed(service_info, first=first)
+    if first.name(BED_TYPE_GMMOTOR) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
         if result.bed_type is None and not any(
@@ -1240,17 +1162,16 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 *([] if "gmmotor" in (result.ambiguous_types or ()) else ["gmmotor"]),
             ]
         result.signals.append("name:gmmotor_app_candidate")
-    if any(key in (service_info.name or "") for key in ("RM-", "HJ-")):
+    if first.name(BED_TYPE_GMMOTOR_SLEEP_MM):
         # GM's input-name classifier owns the session mode. The shared scan
         # keywords identify candidates; they cannot identify this companion app.
         hints = ["gmmotor_sleep_mm", "gmmotor_sleep_sxb"]
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), *hints]))
         result.signals.append("name:gmmotor_sleep_app_candidate")
-    advertised = {str(uuid).lower() for uuid in (service_info.service_uuids or [])}
     # FurniMove accepts this gateway service last, after its manufacturer and
     # 1523 service predicates, and without a payload mask. It names an app
     # candidate, never a handset or layout, so any other match keeps priority.
-    if _FURNIMOVE_GATEWAY_SERVICE_UUID in advertised:
+    if first.service(BED_TYPE_FURNIMOVE):
         if result.bed_type is None:
             if not any(signal.startswith("excluded:") for signal in result.signals):
                 return DetectionResult(
@@ -1263,7 +1184,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             if BED_TYPE_FURNIMOVE not in (result.ambiguous_types or ()):
                 result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_FURNIMOVE]
             result.signals.append("uuid:furnimove_gateway")
-    if result.bed_type is not None and scan_matches(service_info.name):
+    if result.bed_type is not None and first.name(BED_TYPE_STARCODE_ABM5_4):
         candidates = list(result.ambiguous_types or ())
         if BED_TYPE_STARCODE_ABM5_4 not in candidates:
             candidates.append(BED_TYPE_STARCODE_ABM5_4)
@@ -1274,7 +1195,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         if any(role.service.lower() in advertised_services for role in TRANSPORTS.values()):
             result.confidence = min(result.confidence, 0.65)
         result.signals.append("name:starcode_abm5_4_app_candidate")
-    if any(keyword in (service_info.name or "") for keyword in HJBED_SCAN_KEYWORDS):
+    if first.name(BED_TYPE_HJBED):
         if result.bed_type is None:
             if not any(signal.startswith("excluded:") for signal in result.signals):
                 return DetectionResult(
@@ -1289,7 +1210,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
 
 def _detect_bed_type_detailed(
-    service_info: BluetoothServiceInfoBleak, *, _vmatbasic_checked: bool = False
+    service_info: BluetoothServiceInfoBleak,
+    *,
+    first: FirstPass | None = None,
+    _vmatbasic_checked: bool = False,
 ) -> DetectionResult:
     """Detect bed type from service info with detailed confidence scoring.
 
@@ -1303,10 +1227,12 @@ def _detect_bed_type_detailed(
     service_uuids = [str(uuid).lower() for uuid in raw_uuids] if raw_uuids else []
     # The Casper Base sensor classifier uses case-sensitive startsWith; its bed
     # product codes and the shared service UUID cannot select an app layout.
-    raw_name = service_info.name or ""
-    if raw_name.startswith(("RM-", "HJ-")):
+    if first is None:
+        first = first_pass(service_info)
+    casper_mm = first.name(BED_TYPE_CASPER_SLEEP_MM)
+    if casper_mm or first.name(BED_TYPE_CASPER_SLEEP_SXB):
         return DetectionResult(
-            bed_type="casper_sleep_mm" if raw_name.startswith("RM-") else "casper_sleep_sxb",
+            bed_type=BED_TYPE_CASPER_SLEEP_MM if casper_mm else BED_TYPE_CASPER_SLEEP_SXB,
             confidence=0.9,
             signals=["name:casper_base_sleep_sensor"],
         )
@@ -1383,7 +1309,9 @@ def _detect_bed_type_detailed(
             # The payload outranks a bare company-family hint, but not a bed
             # identified by its own service UUID or name: the same BABE record
             # is also VMAT revision-3 hardware, which stays on its controller.
-            other = _detect_bed_type_detailed(service_info, _vmatbasic_checked=True)
+            other = _detect_bed_type_detailed(
+                service_info, first=first, _vmatbasic_checked=True
+            )
             if other.bed_type is not None:
                 other.ambiguous_types = [*(other.ambiguous_types or ()), BED_TYPE_VMATBASIC]
                 other.signals.append("manufacturer:vmatbasic_conditional_record")

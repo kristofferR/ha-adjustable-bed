@@ -52,7 +52,7 @@ using independently identified Keeson protocols remains supported. See the
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
-| ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [KSBT](#ksbt-family) |
+| ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
 | ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` | [KSBT](#ksbt-family) |
 | ✅ | [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) | `com.sbi.costco` | [Q-Plus Adjustable Remote](#q-plus-adjustable-remote); also [KSBT](#ksbt-family) |
 | ✅ | [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) | `com.sfd.ergomotion` | [Ergomotion app](#ergomotion-app); also [Ergomotion](#ergomotion) |
@@ -261,6 +261,23 @@ the names the Restonic BT Remote app accepts. Any name starting with `base-i4`,
 with or without the dot, is detected as Keeson (Auto keeps Base); any `base-i5`
 name is still offered as Cool Base. See
 [Restonic BT profiles](#restonic-bt-profiles) for switching to the profile.
+
+### Aliases
+
+Bed types and routes that build the same controller over the same profile with
+the same default timing, so they send identical bytes. They stay separate so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type or route | Same as | Notes |
+|-------------------|---------|-------|
+| `ergomotion` | `keeson` variant `ergomotion` | See [Ergomotion](#ergomotion) |
+| `serta` | `keeson` variant `serta` | See [Serta](#serta) |
+| `keeson` variants `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | `keeson` variant `americanstar` | Identical profiles under each app's own key; see [ORE comfort-bed profiles](#ore-comfort-bed-profiles) |
+
+`okin_ffe` and the `keeson` variant `okin` share the [OKIN FFE](#okin-ffe)
+profile but not its timing: `okin_ffe` defaults to 7 pulses 150 ms apart and
+the variant to 10 pulses 100 ms apart, so they are not aliases.
 
 ## Wire codec
 
@@ -1317,6 +1334,42 @@ equivalence between apps.
   requests are rejected. No one-address pairing or left/right mapping is
   inferred.
 
+##### Home Assistant setup
+
+Choose the exact app in the bed-type picker: [Tempur Curve](#tempur-curve),
+[Q-Plus Adjustable Remote](#q-plus-adjustable-remote),
+[Serta MP Remote](#serta-mp-remote), [Omazz Adjusto III](#omazz-adjusto-iii),
+[Ergomotion](#ergomotion-app), [ROW Control](#row-control),
+[Ergo Slim](#ergo-slim), or [TEMPUR AU](#tempur-au).
+Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
+Select the bed address manually when automatic discovery cannot disambiguate it.
+
+**App controls** asks for the layout shown by the app. Q-Plus defaults to M2;
+Ergomotion and TEMPUR AU default to B2; Omazz uses its reachable RemoteB layout.
+The layout fixes the available actions and source timing. It does not prove
+physical motor count. The pulse count bounds a normal held-action button press;
+it does not change the source 100 ms refresh interval. Serta's local angle-edit
+controls instead change one degree every 200 ms and send only on release.
+
+Q-Plus's **Both/Side A/Side B** setting controls its P1 packet selector. It is
+independent of a Home Assistant paired Left/Right target. MX Memory1 is an
+opaque app-labelled action, with no invented physical save/recall meaning.
+Serta MP's four configurable local head/foot memory targets are likewise
+separate from the remote M4 key and from physical memory programming.
+
+Each physical side owns its app layout and Serta local memory targets. Configure
+a two-address pair's sides independently. Saving ordinary or shared settings retains
+each declared app layout, Q-Plus A/B/Both wire selector and Serta local targets
+through reload; unrelated settings from a previous protocol are removed.
+Shared options do not overwrite side-owned settings. Native child-device
+targeting and side conflicts follow the existing
+paired rules. No unproven single-address physical side mapping is added.
+
+All eight profiles require both current-session write and notification roles.
+The seven profiles without position feedback keep angle sensing disabled and
+still subscribe for their proven timer state. Serta MP exposes calibrated angle
+feedback and direct pulse targets. Hardware behavior remains unverified.
+
 #### Controls
 
 - Head and foot keys drive the **Back** and **Legs** covers. Every other key is
@@ -1864,6 +1917,21 @@ Bed type `tempur_au`. Memory Level 1-3 on B2 are opaque keys.
 | Anti Snooze | `anti_snooze` | `0x8000` | `E5 FE 16 00 80 00 00 86` | `single` | E1 |
 | Music | `music` | `0x10000` | `E5 FE 16 00 00 01 00 05` | `single` | E1 |
 <!-- /generated -->
+
+### Ergomotion 4.0
+
+**App:** [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) 3.7 (65), `com.sfd.hump`
+
+**Status:** ❓ Needs testing (3.7 app behavior verified; hardware unverified)
+
+The `ergomotion_4` bed type is an app profile over this codec, like the
+[cluster033 apps](#cluster033-app-family). This codec builds every frame it
+sends: the K1 and side frames for P1 products, the `04 02` frames and status
+query for P2 products, and its custom massage and RGB frames. Its product
+catalog, not the profile, picks the keys each product sends. Products, controls,
+timing, notifications and alarms are in the
+[Ergomotion 4.0 guide](ergomotion-4.md), and its frozen vectors are the
+`ergomotion_4` entry of `tests/keeson_vectors.py`.
 
 ### Controller profiles
 
@@ -2654,6 +2722,13 @@ available as entities in Home Assistant.
 - Neither app provides an advertisement signature that can safely select its
   profile. Shared FFE9/FFE4 characteristics do not identify either product.
 - Existing beds using other profiles are unchanged.
+
+##### Home Assistant setup
+
+Select the exact BF or Cherish app in manual setup.
+The app fixes its motor layout, capabilities and 200 ms movement refresh.
+Only the bounded pulse count is configurable. A shared FFE9 service does not
+select either app automatically. Each physical address keeps its own profile.
 
 #### Commands
 

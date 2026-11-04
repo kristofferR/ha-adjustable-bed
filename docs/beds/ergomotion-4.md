@@ -14,6 +14,10 @@ This is the **Ergomotion 4.0** app (`com.sfd.hump`), distinct from the older
 [Ergomotion app](keeson.md#ergomotion-app) B1/B2/C1/D1 profiles. Existing
 [Keeson and Ergomotion profiles](keeson.md) keep their controls and entities.
 
+It is the `ergomotion_4` app profile over the [Keeson codec](keeson.md#ergomotion-40),
+which builds all of its frames; this guide covers the product catalog and the
+app behavior the profile drives.
+
 ## Apps
 
 | Analyzed | App | Package ID |
@@ -52,6 +56,10 @@ subscribed. The `38534c454550` notification suffix is captured for diagnostics
 but ignored by the app-state parser, as in the app.
 
 ### Packet Format
+
+[`codec/keeson.py`](../../custom_components/adjustable_bed/codec/keeson.py)
+builds every frame below as the `ergomotion_4` Keeson app profile; the product
+catalog picks which keys each product sends.
 
 | Route | Format |
 |-------|--------|
@@ -172,6 +180,32 @@ in the app's current popup. EZI MAID is an alias of M30. A trailing space in
 | `Rosen 4165` | Rosen 4165 | P2 |
 | `SIMONS SA 3410S` | SIMONS SA 3410S | P2 |
 | `SMART TEC-4193` | SMART TEC-4193 | P2 |
+
+### Home Assistant setup
+
+Choose **Ergomotion 4.0 app (explicit product)** and the exact product shown in
+the app. This is separate from the older Ergomotion app's B1/B2/C1/D1 layouts.
+The [product guide](#products) lists all built-in choices and
+the 21 frozen catalog products. Other catalog product accepts that product's
+exact name and ordered feature keys, without connecting to a vendor account.
+Motor pulse count bounds each held action at the app's fixed 100 ms cadence.
+
+For a P1 receiver with one address, **Configure → Enable side controls** adds
+Left/Right child devices and native Both controls. Existing Keeson entries can
+use this after explicitly selecting BaseI4/BaseI5 or Ergomotion; the Ergomotion
+bed type also supports it. Auto and P2/JSON/OEM profiles are ineligible. Revert
+side controls before changing to a profile without a side field. Existing
+standalone profiles and entities retain their behavior.
+
+Legacy Keeson/Ergomotion position feedback cannot identify a side. Side-control
+mode disables position sliders, sensors and position seeking for these profiles;
+movement controls remain available. Restoring standalone controls restores the
+stored position-feedback preference.
+
+HA uses the app builder's Left=`02` and Right=`01` branches. The Android app's
+A/B radio labels do not establish physical orientation and contain a selector
+mismatch. Confirm the halves with the real bed after beta/release. For two
+separately advertising receivers, use the ordinary two-address combined bed.
 
 ## Commands
 

@@ -55,7 +55,8 @@ that bed type:
 - A paired bed cannot switch app in its shared settings, because app profiles
   belong to one physical bed and none supports paired controls. In
   **Configure**, choose **Split into two beds** (or **Restore standalone
-  controls**). Each bed then gets its own repair.
+  controls**). Each bed then gets its own repair. A working pair can keep its
+  current configuration instead.
 
 Handing off to **Configure** or the guided change does not answer the repair.
 It stays open until you save a change or choose to keep the current setup.

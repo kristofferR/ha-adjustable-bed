@@ -755,12 +755,26 @@ class ProfileReviewRepairFlow(RepairsFlow):
         choices = _review(self.hass, entry.data).choices
         if not choices:
             return self._finish(entry)
-        if user_input is not None:
+        choice = (user_input or {}).get("choice")
+        if choice == _KEEP:
+            return self._finish(entry)
+        if choice == "split":
             # Splitting carries the open review to each standalone bed.
             return self.async_abort(reason="profile_review_open")
         return self.async_show_form(
             step_id="unpair",
             description_placeholders=_placeholders(entry, choices, choices[0]),
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["split", _KEEP],
+                            translation_key="profile_review_unpair",
+                            mode=selector.SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
         )
 
     def _finish(self, entry: ConfigEntry) -> RepairsFlowResult:
