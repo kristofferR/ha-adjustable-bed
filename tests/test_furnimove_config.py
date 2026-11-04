@@ -51,7 +51,9 @@ async def test_bluetooth_confirm_uses_the_selected_app_fields(hass, chosen):
             CONF_PROTOCOL_VARIANT, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_DELAY_MS,
         })
     else:
-        assert CONF_PROTOCOL_VARIANT in fields
+        # The receiver has one route, so setup asks for none.
+        assert CONF_PROTOCOL_VARIANT not in fields and "advanced" not in fields
+        assert CONF_MOTOR_PULSE_DELAY_MS in fields
 
 
 @pytest.mark.parametrize("scanner_available", [False, True])
@@ -113,8 +115,9 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
         FURNIMOVE_DOT_HANDSETS,
         FURNIMOVE_STANDARD_HANDSETS,
     )
+    from custom_components.adjustable_bed.config_flow import _setup_routes
     from custom_components.adjustable_bed.const import (
-        ALL_PROTOCOL_VARIANTS,
+        BED_TYPE_OKIN_DOT,
         OKIMAT_VARIANTS,
         OKIN_DOT_FURNIMOVE_VARIANTS,
     )
@@ -139,7 +142,8 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
     assert FURNIMOVE_STANDARD_HANDSETS.issubset(offered)
     assert FURNIMOVE_STANDARD_HANDSETS.issubset(OKIMAT_VARIANTS)
     assert OKIN_DOT_FURNIMOVE_VARIANTS == FURNIMOVE_DOT_HANDSETS
-    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(ALL_PROTOCOL_VARIANTS)
+    # A fresh DOT setup never offers the handsets that belong to FurniMove.
+    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(_setup_routes(BED_TYPE_OKIN_DOT))
 
 
 async def test_furnimove_options_can_correct_90167_to_the_app_82417(hass):

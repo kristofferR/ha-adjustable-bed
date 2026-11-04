@@ -324,7 +324,7 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
                 result["flow_id"],
                 user_input={
                     const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
-                    const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2,
+                    "advanced": {const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2},
                     const.CONF_DISCONNECT_AFTER_COMMAND: False,
                 },
             )
