@@ -44,13 +44,28 @@ APP_ROUTES = {
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
 # Declaration -> declared field -> evidence keys from the design document.
-EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {}
+EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
+    "JiecangProfile:dreamask": {"hold": ("dreamask",)},
+    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
+    "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    "LogicdataProfile:phone": {"hold": ("ld-phone",)},
+    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
+    "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
+}
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
-DECLARATION_SITES: dict[str, tuple[str, ...]] = {}
+DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
+    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
+    "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
+    "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
+    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
+    "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
+}
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent"})
