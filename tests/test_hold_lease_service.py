@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from collections.abc import AsyncIterator
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
@@ -307,3 +308,33 @@ async def test_native_both_claims_once_on_the_executing_side_view() -> None:
     # One peek and one reservation, both on the view the command executes on.
     assert both.claim_hold_lease.call_count == 2
     both.release_hold_claim.assert_called_once()
+
+
+async def test_expiry_lets_a_delayed_release_finish(runtime) -> None:
+    """A lease ending is a normal end: the controller's delayed release still runs."""
+    from custom_components.adjustable_bed.command_scheduler import HoldLease
+
+    _hass, coordinator = runtime
+    controller = _install(coordinator, STREAM)
+
+    async def hold_then_release_later(ctrl) -> None:
+        cancel = coordinator.cancel_command
+        try:
+            while not cancel.is_set():
+                ctrl.frames.append("up")
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(cancel.wait(), 0.02)
+        finally:
+            # The app's release follows the last frame after a delay.
+            await asyncio.sleep(0.05)
+            ctrl.frames.append("release")
+
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=0.06)
+    await asyncio.wait_for(
+        coordinator.async_execute_controller_command(
+            hold_then_release_later, resource="motor:back", lease=held
+        ),
+        2,
+    )
+    assert controller.frames[-1] == "release"
+    assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
