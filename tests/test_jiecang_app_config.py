@@ -61,7 +61,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     options = result["data_schema"].schema["choice"].config["options"]
     assert "keep" not in options and "dreamask" in options
     result = await flow.async_step_jiecang_family({"choice": "dreamask"})
-    assert result["step_id"] == "jiecang_app"
+    assert result["step_id"] == "profile_questions"
     schema = result["data_schema"]
     assert schema is not None
     with pytest.raises(vol.Invalid, match="required key"):
@@ -72,7 +72,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
         "_finish_with_verify",
         new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
     ) as finish:
-        await flow.async_step_jiecang_app(values)
+        await flow.async_step_profile_questions(values)
     saved = finish.call_args.args[0]
     assert saved[CONF_JIECANG_APP_PROFILE] == "dreamask"
     assert saved[CONF_JIECANG_APP_LAYOUT] == "split_after_bilateral"
@@ -87,11 +87,11 @@ async def test_dreamask_can_select_g2_for_connection_time_validation(hass):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
-    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP}
+    # The family step chose the app; this step asks its own questions.
+    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP, CONF_JIECANG_APP_PROFILE: "dreamask"}
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jiecang_app(
+        await flow.async_step_profile_questions(
             {
-                CONF_JIECANG_APP_PROFILE: "dreamask",
                 CONF_JIECANG_APP_LAYOUT: "standard_2",
                 CONF_JIECANG_APP_TRANSPORT: "g2",
             }
@@ -118,7 +118,9 @@ async def test_options_keep_app_layout_and_transport(hass):
     flow.hass = hass
     result = await flow.async_step_settings()
     defaults = {marker.schema: marker.default() for marker in result["data_schema"].schema}
-    assert defaults[CONF_JIECANG_APP_LAYOUT] == "standard_4_bilateral"
+    # Configure asks the app's own questions except its route, which the guided change owns.
+    assert CONF_JIECANG_APP_LAYOUT not in defaults
+    assert CONF_JIECANG_APP_TRANSPORT not in defaults
     assert defaults[CONF_HAS_LIGHT] is False
     # Layout and transport change through the guided change, never Configure.
     result = await flow.async_step_settings(
@@ -250,9 +252,10 @@ async def test_dreamhd_setup_rejects_other_apps_layouts(hass, layout):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
-    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP}
-    result = await flow.async_step_jiecang_app(
-        {CONF_JIECANG_APP_PROFILE: "dreamhd", CONF_JIECANG_APP_LAYOUT: layout}
+    # The family step chose the app; this step asks its own questions.
+    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP, CONF_JIECANG_APP_PROFILE: "dreamhd"}
+    result = await flow.async_step_profile_questions(
+        { CONF_JIECANG_APP_LAYOUT: layout}
     )
     assert result["errors"] == {CONF_JIECANG_APP_LAYOUT: "jiecang_app_required"}
 
@@ -273,11 +276,11 @@ async def test_dreamhd_setup_and_factory_keep_explicit_profile(hass, layout):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
-    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP}
+    # The family step chose the app; this step asks its own questions.
+    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP, CONF_JIECANG_APP_PROFILE: "dreamhd"}
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jiecang_app(
+        await flow.async_step_profile_questions(
             {
-                CONF_JIECANG_APP_PROFILE: "dreamhd",
                 CONF_JIECANG_APP_LAYOUT: layout,
                 CONF_JIECANG_APP_TRANSPORT: "g3",
                 CONF_HAS_LIGHT: False,
