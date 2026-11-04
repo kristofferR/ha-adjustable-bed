@@ -36,9 +36,17 @@ How it works, and where it stops:
   derived from the UUID constants the controller's modules declare, trying the
   full layout, each service alone, then a crossed pool. The layout that let the
   connect hooks succeed is recorded as ``gatt``.
-- A scenario with no command that produced writes is recorded as a coverage gap
-  (``gatt: unresolved``, no commands) instead of pinning errors. Add a
-  ``Scenario.layout`` or entry data to cover it.
+- A scenario where no command succeeded is flagged ``coverage_gap`` (``gatt:
+  unresolved``). Every write it did record stays in the snapshot, whatever the
+  command status, so a wire change there still fails the guard. Add a
+  ``Scenario.layout`` or entry data to turn a gap into full coverage.
+- Every stubbed GATT write takes ``WRITE_DURATION_S`` of virtual time, so pacing that
+  absorbs write latency and pacing that adds to it land at different offsets. After
+  the last command the clock runs ``DRAIN_WINDOW_S`` more, so delayed work the final
+  command scheduled is captured (as ``background``) before cleanup cancels it.
+- ``async_execute_controller_query`` runs its callback against the constructed
+  controller, like the coordinator does, so startup queries write. ``random`` and
+  ``secrets`` are seeded per scenario so nonces repeat.
 - ``info.gatt`` of ``all``/``pool``/a service UUID tells which layout resolved.
 """
 
@@ -137,6 +145,12 @@ HOLD_CAP_S = 10.0
 # before a sleeper may advance virtual time, and the same for a timeout guard.
 SETTLE_YIELDS = 20
 TIMEOUT_SETTLE_YIELDS = 200
+# Every stubbed GATT write takes this long, so pacing that absorbs write latency and
+# pacing that adds to it land at different offsets.
+WRITE_DURATION_S = 0.007
+# Virtual time a scenario keeps running after its last command, so delayed work the
+# final command scheduled (a follow-up write, a retry) is captured before cleanup.
+DRAIN_WINDOW_S = 2.0
 # Hard cap on yields per settle, so a body that never goes quiet cannot hang a capture.
 MAX_SETTLE_YIELDS = 20000
 # Tasks inherit the phase that created them, so a write made later by a task from an
@@ -440,6 +454,7 @@ def _make_client(recorder: WriteRecorder, layout: dict[str, list[str]]) -> Magic
 
     async def write_gatt_char(char: Any, data: Any, response: bool | None = None) -> None:
         recorder.add(char, data, response)
+        await asyncio.sleep(WRITE_DURATION_S)
 
     client.write_gatt_char = AsyncMock(side_effect=write_gatt_char)
     client.read_gatt_char = AsyncMock(return_value=bytearray())
@@ -481,6 +496,8 @@ async def _run_command(
     try:
         await REAL_WAIT_FOR(fn(*args), COMMAND_TIMEOUT_S)
     except NotImplementedError:
+        if recorder.writes:
+            return {"status": "not_implemented", "writes": _collapse(recorder.writes)}
         return {"status": "unsupported"}
     except TimeoutError:
         return {"status": "timeout", "writes": _collapse(recorder.writes)}
@@ -495,6 +512,23 @@ async def _run_command(
     if not recorder.writes:
         return {"status": "no_writes"}
     return {"status": "ok", "writes": _collapse(recorder.writes)}
+
+
+@contextlib.contextmanager
+def deterministic_randomness() -> Iterator[None]:
+    """Seed ``random`` and replace ``secrets`` so nonces and session ids repeat."""
+    import random
+    import secrets
+    from unittest.mock import patch
+
+    rng = random.Random(0)
+    random.seed(0)
+    with (
+        patch.object(secrets, "randbits", rng.getrandbits),
+        patch.object(secrets, "token_bytes", lambda n=32: rng.randbytes(n)),
+        patch.object(secrets, "token_hex", lambda n=32: rng.randbytes(n).hex()),
+    ):
+        yield
 
 
 @contextlib.contextmanager
@@ -629,6 +663,14 @@ async def _build(scenario: Scenario, client: MagicMock) -> Any:
     from tests import test_controller_contract as contract
 
     real_create = contract.create_controller
+    built: list[Any] = []
+
+    async def run_query(query_fn: Callable[[Any], Awaitable[Any]], **kwargs: Any) -> Any:
+        """Run a query callback against the constructed controller, as the coordinator does."""
+        run_if = kwargs.get("run_if")
+        if run_if is not None and not run_if():
+            return None
+        return await query_fn(built[-1])
 
     async def create(coordinator: Any, bed_type: str, variant: Any, _client: Any, **kwargs: Any):
         coordinator.entry.data = {**coordinator.entry.data, **scenario.entry_data}
@@ -637,14 +679,17 @@ async def _build(scenario: Scenario, client: MagicMock) -> Any:
         coordinator.handle_controller_state_update = MagicMock()
         if not hasattr(coordinator.entry, "entry_id"):
             coordinator.entry.entry_id = "wire-snapshot"
-        coordinator.async_execute_controller_query = AsyncMock()
-        return await real_create(
+        coordinator.async_execute_controller_query = run_query
+        controller = await real_create(
             coordinator,
             bed_type,
             scenario.protocol_variant if scenario.protocol_variant is not None else variant,
             client,
             **{**kwargs, **scenario.factory_kwargs},
         )
+        coordinator.controller = controller
+        built.append(controller)
+        return controller
 
     contract.create_controller = create
     try:
@@ -703,7 +748,7 @@ async def _capture(
     """Build one controller through the factory and drive every logical command."""
     clock = FakeClock(frozen)
     recorder = WriteRecorder(clock)
-    with virtual_time(clock):
+    with deterministic_randomness(), virtual_time(clock):
         # Pass 1 learns which controller the route reaches; pass 2 rebuilds it on a
         # GATT layout derived from that controller's own UUID constants.
         controller = None
@@ -746,6 +791,9 @@ async def _capture(
         commands = {"connect": connect}
         for name, method, args in LOGICAL_COMMANDS:
             commands[name] = await _run_command(controller, recorder, clock, method, args)
+        # Let delayed work from the final command run before cleanup cancels it.
+        clock.begin_phase()
+        await asyncio.sleep(DRAIN_WINDOW_S)
         if recorder.background:
             # Writes from tasks of an earlier phase, at absolute virtual time.
             commands["background"] = {
@@ -759,8 +807,16 @@ async def _capture(
         "module": type(controller).__module__.rsplit(".", 1)[-1],
     }
     if not any(cmd["status"] == "ok" for cmd in commands.values()):
-        # Pinning errors would only be noise: list the scenario as a coverage gap.
-        return {**info, "gatt": "unresolved", "connect_error": connect.get("error"), "commands": {}}
+        # No command succeeded: flag the coverage gap, but keep every write that was
+        # recorded so a wire change in a partly working route still fails the guard.
+        # Commands that wrote nothing would only pin error noise.
+        return {
+            **info,
+            "gatt": "unresolved",
+            "coverage_gap": True,
+            "connect_error": connect.get("error"),
+            "commands": {name: cmd for name, cmd in commands.items() if cmd.get("writes")},
+        }
     return {**info, "gatt": label, "commands": commands}
 
 
@@ -968,7 +1024,7 @@ def render(snapshot: dict[str, Any]) -> str:
 
 def main() -> int:
     logging.disable(logging.CRITICAL)
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--check", action="store_true", help="fail if the snapshot is stale")
     parser.add_argument("--list", action="store_true", help="list scenario ids")
     parser.add_argument("--only", nargs="*", help="limit to these scenario ids (no write)")
