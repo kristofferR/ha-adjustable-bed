@@ -196,6 +196,7 @@ class _MergedStream:
         self.wake = asyncio.Event()
         self.closing = False
         self.awaiting_release: list[StreamMember] = []
+        self.cleaning: StreamMember | None = None
 
     @property
     def accepting(self) -> bool:
@@ -210,13 +211,20 @@ class _MergedStream:
     def join(self, member: StreamMember) -> None:
         previous = self.members.get(member.resource)
         if previous is not None:
-            self.retire(previous, CommandOutcome.REPLACED)
+            # Same-motor replacement is atomic: the stream never looks empty.
+            self.retire(previous, CommandOutcome.REPLACED, close_if_empty=False)
         self.members[member.resource] = member
         self.membership_changed = True
         self.wake.set()
 
-    def retire(self, member: StreamMember, outcome: CommandOutcome) -> None:
-        """Remove a live member; its cleanup runs on the streamer's next pass."""
+    def retire(
+        self, member: StreamMember, outcome: CommandOutcome, *, close_if_empty: bool = True
+    ) -> None:
+        """Remove a live member; its cleanup runs on the streamer's next pass.
+
+        Removing the last member closes admission at once, whoever removed it,
+        so a newcomer starts a fresh stream behind this one's release.
+        """
         if self.members.get(member.resource) is not member:
             return
         del self.members[member.resource]
@@ -224,11 +232,14 @@ class _MergedStream:
         self.ending.append(member)
         self.scheduler._end_member_lease(member)
         self.membership_changed = True
+        if close_if_empty and not self.members:
+            self.closing = True
         self.wake.set()
 
     def abandon(self, outcome: CommandOutcome, error: BaseException | None = None) -> None:
         """Resolve every member still waiting, with the stream's failure if any."""
-        for member in (*self.members.values(), *self.ending, *self.awaiting_release):
+        cleaning = (self.cleaning,) if self.cleaning is not None else ()
+        for member in (*self.members.values(), *self.ending, *cleaning, *self.awaiting_release):
             if member.done.is_set():
                 continue
             member.outcome = member.outcome or outcome
@@ -281,13 +292,15 @@ class _MergedStream:
                 if self.membership_changed or loop.time() >= next_tick:
                     self.membership_changed = False
                     members = tuple(self.members.values())
-                    await driver.write_stream_tick(members)
-                    now = loop.time()
-                    next_tick = now + driver.stream_tick_s
+                    # A timed move's budget starts as its first write starts,
+                    # like the serial path's timeout around its write loop.
+                    started = loop.time()
                     for member in members:
                         if member.duration_s is not None:
-                            member.deadline = now + member.duration_s
+                            member.deadline = started + member.duration_s
                             member.duration_s = None
+                    await self._write_tick(driver, members, context)
+                    next_tick = started + driver.stream_tick_s
                 if self.membership_changed:
                     continue
                 earliest = min(member.deadline for member in self.members.values())
@@ -316,6 +329,49 @@ class _MergedStream:
             # still finish before the wire lane is handed on.
             await _settled(self._close(driver))
 
+    async def _write_tick(
+        self,
+        driver: StreamDriver,
+        members: tuple[StreamMember, ...],
+        context: CommandContext,
+    ) -> None:
+        """Write one composed tick, abandoning it once a member in it ends.
+
+        Deadlines and lease expiry keep running while the write is in flight;
+        a write that outlives a member's deadline, or a member stopped
+        meanwhile, is cancelled as the serial path's timeout cancels its write.
+        """
+        loop = asyncio.get_running_loop()
+        tick = asyncio.ensure_future(driver.write_stream_tick(members))
+        try:
+            while not tick.done():
+                live = [m for m in members if self.members.get(m.resource) is m]
+                if len(live) < len(members) or any(m.deadline <= loop.time() for m in live):
+                    break
+                if context.cancel_event.is_set():
+                    break
+                self.wake.clear()
+                timeout = max(0.0, min(m.deadline for m in live) - loop.time())
+                with contextlib.suppress(TimeoutError):
+                    async with asyncio.timeout(timeout):
+                        await _first_set_or_done(tick, self.wake, context.cancel_event)
+        finally:
+            if not tick.done():
+                tick.cancel()
+            # Never hand the wire on while this write is still running, even
+            # when a STOP cancels the streamer meanwhile.
+            interrupted = False
+            while not tick.done():
+                try:
+                    await asyncio.wait({tick})
+                except asyncio.CancelledError:
+                    interrupted = True
+            if interrupted:
+                raise asyncio.CancelledError
+        error = None if tick.cancelled() else tick.exception()
+        if error is not None:
+            raise error
+
     async def _close(self, driver: StreamDriver) -> None:
         try:
             await self._clean_up(driver)
@@ -342,17 +398,35 @@ class _MergedStream:
                 # of joining while it is under way.
                 self.closing = True
             member = self.ending.popleft()
+            # Held until finalized, so no exit path can lose its caller.
+            self.cleaning = member
+            cancelled = False
             try:
                 await driver.end_stream_member(member, tuple(self.members.values()))
+            except asyncio.CancelledError as err:
+                # An awaited write was cancelled under the cleanup: the cleanup
+                # did not complete, which is a failure for this member.
+                task = asyncio.current_task()
+                cancelled = task is not None and task.cancelling() > 0
+                failure = RuntimeError(f"{member.motor} cleanup was cancelled")
+                failure.__cause__ = err
+                member.error = failure
+                member.outcome = CommandOutcome.FAILED
+                first_error = first_error or failure
             except Exception as err:
                 member.error = err
                 member.outcome = CommandOutcome.FAILED
                 first_error = first_error or err
-            if self.members:
-                member.done.set()
-            else:
-                self.closing = True
-                self.awaiting_release.append(member)
+            finally:
+                self.cleaning = None
+                if self.members:
+                    member.done.set()
+                else:
+                    # The last members out settle after the release runs.
+                    self.closing = True
+                    self.awaiting_release.append(member)
+            if cancelled:
+                raise asyncio.CancelledError
         if first_error is not None:
             raise first_error
 
@@ -369,6 +443,16 @@ async def _settled(cleanup: Coroutine[Any, Any, None]) -> None:
         if not task.cancelled():
             task.exception()  # members already carry a cleanup failure
         raise
+
+
+async def _first_set_or_done(task: asyncio.Future[None], *events: asyncio.Event) -> None:
+    waiters = [asyncio.ensure_future(event.wait()) for event in events]
+    try:
+        await asyncio.wait({task, *waiters}, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for waiter in waiters:
+            waiter.cancel()
+        await asyncio.gather(*waiters, return_exceptions=True)
 
 
 async def _first_set(*events: asyncio.Event) -> None:

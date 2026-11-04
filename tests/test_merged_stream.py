@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 from collections.abc import Awaitable, Callable
 
 import pytest
@@ -449,3 +450,111 @@ async def test_newcomer_ready_as_the_last_member_expires_waits_for_release() -> 
     assert await asyncio.wait_for(newcomer[0], 1) is CommandOutcome.EXPIRED
     assert ("end", "back:up") in driver.events
     assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
+
+
+async def test_a_slow_write_cannot_stretch_a_timed_move() -> None:
+    scheduler = DeviceCommandScheduler("slow-write")
+    driver = FakeDriver()
+    loop = asyncio.get_running_loop()
+    writes: list[float] = []
+    original_tick = driver.write_stream_tick
+
+    async def slow_tick(members: tuple[StreamMember, ...]) -> None:
+        writes.append(loop.time())
+        await original_tick(members)
+        await asyncio.sleep(0.08)  # a slow write acknowledgement
+
+    driver.write_stream_tick = slow_tick  # type: ignore[method-assign]
+    # The timed budget starts as the first write starts and ends mid-write.
+    timed = StreamMember(
+        motor="legs", resource="motor:legs", action="up", deadline=math.inf, duration_s=0.02
+    )
+    started = loop.time()
+    task = asyncio.create_task(
+        scheduler.execute_stream_member(timed, CONCURRENT, runner_for(driver))
+    )
+    assert await asyncio.wait_for(task, 1) is CommandOutcome.EXPIRED
+    assert loop.time() - started < 0.07
+    assert len(writes) == 1
+    assert driver.events[-1] == ("release",)
+
+
+async def test_a_blocked_write_still_expires_a_lease_and_honors_renewal() -> None:
+    scheduler = DeviceCommandScheduler("blocked-write")
+    driver = FakeDriver()
+    loop = asyncio.get_running_loop()
+    never = asyncio.Event()
+
+    async def blocked_tick(members: tuple[StreamMember, ...]) -> None:
+        driver.events.append(("tick", *sorted(f"{m.motor}:{m.action}" for m in members)))
+        driver.ticked.set()
+        await never.wait()  # the write never completes
+
+    driver.write_stream_tick = blocked_tick  # type: ignore[method-assign]
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=0.03)
+    started = loop.time()
+    back = join(scheduler, driver, member("back", seconds=0.03, lease=held))
+    await asyncio.wait_for(driver.ticked.wait(), 1)
+    for _ in range(3):
+        await asyncio.sleep(0.02)
+        assert scheduler.claim_hold(held, ("motor:back",)) is HoldClaim.RENEW
+    assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
+    # Renewals held it past one lease; expiry then ended the blocked write.
+    assert 0.08 <= loop.time() - started < 0.2
+    assert driver.events[-2:] == [("end", "back:up"), ("release",)]
+
+
+async def test_stopping_the_last_member_during_cleanup_closes_admission() -> None:
+    scheduler = DeviceCommandScheduler("stop-last")
+    driver = FakeDriver()
+    entered = asyncio.Event()
+    finish = asyncio.Event()
+    original_end = driver.end_stream_member
+
+    async def gated_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        if item.motor == "back":
+            entered.set()
+            await finish.wait()
+        await original_end(item, remaining)
+
+    driver.end_stream_member = gated_end  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back"))
+    legs = join(scheduler, driver, member("legs"))
+    await settle(driver)
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:back")))
+    await asyncio.wait_for(entered.wait(), 1)
+    # legs, the last live member, stops while back's cleanup is gated.
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:legs")))
+    head = join(scheduler, driver, member("head", seconds=0.02))
+    await asyncio.sleep(0)
+    finish.set()
+    await asyncio.wait_for(asyncio.gather(back, legs, head), 1)
+    assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
+
+
+async def test_a_cancelled_cleanup_write_still_settles_its_caller() -> None:
+    scheduler = DeviceCommandScheduler("cancelled-cleanup")
+    driver = FakeDriver()
+    entered = asyncio.Event()
+    write = asyncio.get_running_loop().create_future()
+    original_end = driver.end_stream_member
+
+    async def end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        await original_end(item, remaining)
+        if item.motor == "back":
+            entered.set()
+            await write  # cancelled under the cleanup
+
+    driver.end_stream_member = end  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back"))
+    legs = join(scheduler, driver, member("legs"))
+    await settle(driver)
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:back")))
+    await asyncio.wait_for(entered.wait(), 1)
+    write.cancel()
+    with pytest.raises(RuntimeError, match="cleanup was cancelled"):
+        await asyncio.wait_for(back, 1)
+    with pytest.raises(RuntimeError, match="cleanup was cancelled"):
+        await asyncio.wait_for(legs, 1)
+    assert driver.events[-1] == ("release",)
+    assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
