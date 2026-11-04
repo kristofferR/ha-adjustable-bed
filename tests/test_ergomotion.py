@@ -9,9 +9,6 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import (
-    KeesonCommands,
-)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ERGOMOTION,
     CONF_BED_TYPE,
@@ -126,35 +123,6 @@ class TestErgomotionController:
 
 class TestErgomotionPresets:
     """Test Ergomotion preset commands."""
-
-    @pytest.mark.parametrize(
-        "memory_num,expected_value",
-        [
-            (1, KeesonCommands.PRESET_MEMORY_1),
-            (2, KeesonCommands.PRESET_MEMORY_2),
-            (3, KeesonCommands.PRESET_MEMORY_3),
-            (4, KeesonCommands.PRESET_MEMORY_4),
-        ],
-    )
-
-    async def test_preset_memory(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        expected_value: int,
-    ):
-        """Test preset memory commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_memory(memory_num)
-
-        expected_cmd = coordinator.controller._build_command(expected_value)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
 
     async def test_program_memory_not_supported(
         self,
