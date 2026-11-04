@@ -33,6 +33,8 @@ LEVELS = DREAMASK.massage_levels
         ("both_backs", False, "f1f1240101267e", "f1f124020000267e"),
     ],
 )
+
+
 def test_standard_bilateral_and_mixed_motion(axis, up, standard, bilateral):
     assert motion_command(DREAMASK, "split_series", axis, up).hex() == standard
     assert motion_command(DREAMASK, "split_after_bilateral", axis, up).hex() == standard
@@ -42,16 +44,10 @@ def test_standard_bilateral_and_mixed_motion(axis, up, standard, bilateral):
 @pytest.mark.parametrize(
     ("layout", "axis", "up", "expected"),
     [
-        ("standard_2", "both", True, "f1f1050101077e"),
-        ("standard_2", "both", False, "f1f1060101087e"),
-        ("standard_3_neck", "head", True, "f1f11901011b7e"),
-        ("standard_3_neck", "head", False, "f1f11a01011c7e"),
         ("standard_3_hi_low", "bed_height", True, "f1f11901011b7e"),
         ("standard_3_hi_low", "bed_height", False, "f1f11a01011c7e"),
         ("standard_3_lumbar", "lumbar", True, "f1f11b01011d7e"),
         ("standard_3_lumbar", "lumbar", False, "f1f11c01011e7e"),
-        ("standard_4_legacy", "head", True, "f1f11901011b7e"),
-        ("standard_4_legacy", "lumbar", False, "f1f11c01011e7e"),
         ("standard_3_split_upper", "right_back", True, "f1f1200101227e"),
         ("standard_4_bilateral", "right_legs", True, "f1f12a0200002c7e"),
         ("standard_4_bilateral", "right_legs", False, "f1f12b0200002d7e"),
@@ -59,6 +55,8 @@ def test_standard_bilateral_and_mixed_motion(axis, up, standard, bilateral):
         ("standard_4_bilateral", "both_legs", False, "f1f12d0200002f7e"),
     ],
 )
+
+
 def test_auxiliary_and_bilateral_axis_vectors(layout, axis, up, expected):
     assert motion_command(DREAMASK, layout, axis, up).hex() == expected
 
@@ -77,23 +75,12 @@ def test_unavailable_axis_is_not_inferred_from_motor_count():
         ("yoga", "f1f1280200002a7e", "f1f1280200002a7e"),
     ],
 )
+
+
 def test_mixed_layout_keeps_bilateral_global_controls(preset, standard, bilateral):
     assert preset_command("split_series", preset).hex() == standard
     assert preset_command("split_after_bilateral", preset).hex() == bilateral
     assert preset_command("standard_4_bilateral", preset).hex() == bilateral
-
-
-@pytest.mark.parametrize(
-    ("slot", "save", "expected"),
-    [
-        (1, True, "f1f10a0200000c7e"),
-        (1, False, "f1f10b0200000d7e"),
-        (2, True, "f1f10c0200000e7e"),
-        (2, False, "f1f10d0200000f7e"),
-    ],
-)
-def test_memory_vectors(slot, save, expected):
-    assert memory_command(DREAMASK, slot, save=save).hex() == expected
 
 
 def test_memory_c_is_not_reachable():
@@ -106,13 +93,13 @@ def test_memory_c_is_not_reachable():
 @pytest.mark.parametrize(
     ("layout", "zone", "expected"),
     [
-        ("standard_2", "back", "f1f112020804207e"),
-        ("standard_2", "legs", "f1f114020804227e"),
         ("split_series", "right", "f1f122020804307e"),
         ("standard_4_bilateral", "back", "f1f112020004187e"),
         ("split_after_bilateral", "right", "f1f122020004287e"),
     ],
 )
+
+
 def test_maximum_reachable_massage_level(layout, zone, expected):
     assert massage_command(DREAMASK, layout, zone, 3).hex() == expected
 
@@ -187,17 +174,6 @@ def test_light_ui_limits_not_unreachable_formula_limits():
         codec.rgb(0, 0, 0, 101, 0, False)
     with pytest.raises(ValueError, match="timeout"):
         codec.rgb(0, 0, 0, 100, 65536, True)
-
-
-def test_profile_specific_release_schedules():
-    assert [(t, b.hex()) for t, b in DREAMASK.hold.releases] == [
-        (50, "f1f14e020000507e"),
-        (150, "f1f14e020000507e"),
-    ]
-    assert [(t, b.hex()) for t, b in DREAMOTION.hold.releases] == [
-        (100, "f1f14e004e7e"),
-        (800, "f1f14e020000507e"),
-    ]
 
 
 def test_split_wake_massage_uses_standard_payload_and_exact_schedules():

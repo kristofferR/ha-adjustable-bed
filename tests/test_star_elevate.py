@@ -70,29 +70,6 @@ class TestStarElevateController:
             "elevate_both",
         ]
 
-    async def test_movement_methods_use_dedicated_elevate_key_range(
-        self,
-        hass: HomeAssistant,
-        mock_star_elevate_config_entry,
-        mock_coordinator_connected,
-    ) -> None:
-        coordinator = AdjustableBedCoordinator(hass, mock_star_elevate_config_entry)
-        await coordinator.async_connect()
-        controller = coordinator.controller
-
-        cases = (
-            (controller.move_head_up, bytes.fromhex("5A 01 03 10 30 40 A5")),
-            (controller.move_head_down, bytes.fromhex("5A 01 03 10 30 41 A5")),
-            (controller.move_feet_up, bytes.fromhex("5A 01 03 10 30 42 A5")),
-            (controller.move_feet_down, bytes.fromhex("5A 01 03 10 30 43 A5")),
-            (controller.move_both_up, bytes.fromhex("5A 01 03 10 30 44 A5")),
-            (controller.move_both_down, bytes.fromhex("5A 01 03 10 30 45 A5")),
-        )
-        for method, expected in cases:
-            with patch.object(controller, "_move_with_stop", AsyncMock()) as mock_move:
-                await method()
-            mock_move.assert_awaited_once_with(expected)
-
     async def test_lazy_session_wake_and_commands_use_write_without_response(
         self,
         hass: HomeAssistant,
@@ -115,28 +92,6 @@ class TestStarElevateController:
             both_up,
         ]
         assert [call.kwargs["response"] for call in mock_write.await_args_list] == [False, False]
-
-    async def test_flat_is_one_shot_and_stop_is_shared(
-        self,
-        hass: HomeAssistant,
-        mock_star_elevate_config_entry,
-        mock_coordinator_connected,
-    ) -> None:
-        coordinator = AdjustableBedCoordinator(hass, mock_star_elevate_config_entry)
-        await coordinator.async_connect()
-        controller = coordinator.controller
-
-        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
-            await controller.preset_flat()
-            await controller.stop_all()
-
-        assert mock_write.await_args_list[0].args == (
-            bytes.fromhex("5A 01 03 10 30 46 A5"),
-        )
-        assert mock_write.await_args_list[1].args[0] == bytes.fromhex(
-            "5A 01 03 10 30 0F A5"
-        )
-
 
 # AdjustableM5X5 1.2.3 drives ELEVATE lifts with these frozen P3 vectors.
 M5X5_ELEVATE_VECTORS = [

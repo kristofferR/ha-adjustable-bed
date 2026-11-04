@@ -45,22 +45,49 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
-    # Malouf / Lucid (row023), including the Keeson-framed legacy OKIN route.
-    "MaloufAppProfile:malouf": {"hold": ("malouf", "row023")},
-    "MaloufAppProfile:lucid": {"hold": ("lucid", "row023")},
-    "MaloufRouteProfile:malouf_new_okin": {"hold": ("lucid", "malouf", "row023")},
+    # Malouf / Lucid (#483, row023), including the Keeson-framed legacy OKIN route.
     "KeesonProfile:malouf_legacy_okin": {"hold": ("malouf", "row023")},
+    "MaloufAppProfile:lucid": {"hold": ("lucid", "row023")},
+    "MaloufAppProfile:malouf": {"hold": ("malouf", "row023")},
+    "MaloufRouteProfile:malouf_new_okin": {"hold": ("lucid", "malouf", "row023")},
+    # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
+    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
+    "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
+    "OkinNFrameProfile:prodigy4": {
+        "hold": ("p4", "leggett-disp", "#483c"),
+        # CU170 watchdog onset measured on hardware: 217-218 ms.
+        "sustain_ms": ("#368", "#483c", "#516c"),
+    },
+    "OkinNFrameProfile:useries": {"hold": ("useries", "leggett-disp")},
+    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
+    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
+    "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
+_LEGGETT_STREAM = (
+    "OkinNFrameProfile:prodigy2l",
+    "OkinNFrameProfile:prodigy2",
+    "OkinNFrameProfile:useries",
+)
+_CUSTOMATIC = (
+    "OkinNFrameProfile:clarity",
+    "OkinNFrameProfile:jeromes",
+    "OkinNFrameProfile:remedy",
+)
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
-    "profiles/malouf.py:<module>.MALOUF": ("MaloufAppProfile:malouf",),
-    "profiles/malouf.py:<module>.LUCID": ("MaloufAppProfile:lucid",),
-    "profiles/malouf.py:<module>.NEW_OKIN": ("MaloufRouteProfile:malouf_new_okin",),
     "profiles/keeson.py:<module>.MALOUF_LEGACY_OKIN": ("KeesonProfile:malouf_legacy_okin",),
+    "profiles/malouf.py:<module>.LUCID": ("MaloufAppProfile:lucid",),
+    "profiles/malouf.py:<module>.MALOUF": ("MaloufAppProfile:malouf",),
+    "profiles/malouf.py:<module>.NEW_OKIN": ("MaloufRouteProfile:malouf_new_okin",),
+    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
+    "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
+    "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
+    "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
