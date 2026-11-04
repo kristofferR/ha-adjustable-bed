@@ -18,7 +18,9 @@ from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
+from custom_components.adjustable_bed.profiles.logicdata import LogicdataProfile
 from tests.jiecang_vectors import FROZEN_FRAMES as JIECANG_VECTORS
+from tests.logicdata_vectors import FROZEN_FRAMES as LOGICDATA_VECTORS
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
     _FactoryCoordinator,
@@ -26,11 +28,18 @@ from tests.test_controller_contract import (
 )
 
 # Codec families: profile class -> frozen vectors by profile key.
-CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {JiecangProfile: JIECANG_VECTORS}
+CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
+    JiecangProfile: JIECANG_VECTORS,
+    LogicdataProfile: LOGICDATA_VECTORS,
+}
 
 # App choices of codec-backed bed types: bed type -> (config key, choices).
 APP_ROUTES: dict[str, tuple[str, tuple[str, ...]]] = {
     const.BED_TYPE_JIECANG_APP: (const.CONF_JIECANG_APP_PROFILE, tuple(const.JIECANG_APP_PROFILES)),
+    const.BED_TYPE_LOGICDATA_APP: (
+        const.CONF_LOGICDATA_APP_PROFILE,
+        tuple(const.LOGICDATA_APP_PROFILES),
+    ),
 }
 
 UNMIGRATED: dict[str, str] = {
@@ -77,7 +86,6 @@ UNMIGRATED: dict[str, str] = {
     "linak": "standalone: own wire format",
     "logicdata": "standalone: own wire format",
     "logicdata_air_pump": "standalone: own wire format",
-    "logicdata_app": "#745 J1 LOGICDATA",
     "malouf_app": "#745 O2 Okin 5A, Okin-like Malouf frames",
     "malouf_legacy_okin": "#745 K1 Keeson E5/E6",
     "malouf_new_okin": "#745 O2 Okin 5A, Okin-like Malouf frames",

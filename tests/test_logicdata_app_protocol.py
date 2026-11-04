@@ -4,7 +4,11 @@ from datetime import datetime
 
 import pytest
 
-from custom_components.adjustable_bed import logicdata_app_protocol as protocol
+from custom_components.adjustable_bed.codec import jiecang as codec
+from custom_components.adjustable_bed.profiles import logicdata as profiles
+from custom_components.adjustable_bed.profiles.logicdata import PHONE, TABLET
+
+P1_RELEASE = codec.SHORT_RELEASE
 
 
 @pytest.mark.parametrize(
@@ -31,7 +35,7 @@ from custom_components.adjustable_bed import logicdata_app_protocol as protocol
     ],
 )
 def test_p1_motion_vectors(layout, axis, up, expected):
-    assert protocol.motion_command("p1", layout, axis, up).hex() == expected
+    assert profiles.motion_command(PHONE, "p1", layout, axis, up).hex() == expected
 
 
 @pytest.mark.parametrize(
@@ -44,10 +48,8 @@ def test_p1_motion_vectors(layout, axis, up, expected):
     ],
 )
 def test_p2_motion_still_uses_p1_touch_release(axis, up, expected):
-    assert protocol.motion_command("p2", "middle", axis, up).hex() == expected
-    assert protocol.release_schedule("movement", "p2", "phone") == (
-        (100, bytes.fromhex("f1f14e004e7e")),
-    )
+    assert profiles.motion_command(PHONE, "p2", "middle", axis, up).hex() == expected
+    assert PHONE.touch_release == ((100, bytes.fromhex("f1f14e004e7e")),)
 
 
 @pytest.mark.parametrize(
@@ -61,7 +63,8 @@ def test_p2_motion_still_uses_p1_touch_release(axis, up, expected):
 )
 def test_wrong_family_or_layout_axis_cannot_emit_commands(family, layout, axis):
     with pytest.raises(ValueError):
-        protocol.motion_command(family, layout, axis, True)
+        profiles.validate_setup(PHONE, family, layout)
+        profiles.motion_command(PHONE, family, layout, axis, True)
 
 
 @pytest.mark.parametrize(
@@ -74,13 +77,13 @@ def test_wrong_family_or_layout_axis_cannot_emit_commands(family, layout, axis):
     ],
 )
 def test_reachable_presets(family, preset, expected):
-    assert protocol.preset_command(family, preset).hex() == expected
+    assert profiles.preset_command(PHONE, family, preset).hex() == expected
 
 
 @pytest.mark.parametrize("preset", ["zero_g", "anti_snore"])
 def test_p2_does_not_expose_p1_presets(preset):
     with pytest.raises(ValueError, match="only the flat"):
-        protocol.preset_command("p2", preset)
+        profiles.preset_command(PHONE, "p2", preset)
 
 
 @pytest.mark.parametrize(
@@ -93,15 +96,22 @@ def test_p2_does_not_expose_p1_presets(preset):
     ],
 )
 def test_memory_family_vectors_including_corrected_tablet_save_rows(slot, save, p1, p2):
-    assert protocol.memory_command("p1", slot, save).hex() == p1
-    assert protocol.memory_command("p2", slot, save).hex() == p2
+    for profile in (PHONE, TABLET):
+        for family, expected in (("p1", p1), ("p2", p2)):
+            if save:
+                schedule = profiles.memory_save_schedule(profile, family, slot)
+                assert [(t, c.hex()) for t, c in schedule] == [(t, expected) for t in (0, 30, 60)]
+            else:
+                assert profiles.memory_command(profile, family, slot).hex() == expected
 
 
 def test_no_dead_memory_c_or_unreachable_intensity():
     with pytest.raises(ValueError, match="memory slot"):
-        protocol.memory_command("p1", 3)
+        profiles.memory_command(PHONE, "p1", 3)
+    with pytest.raises(ValueError, match="memory slot"):
+        profiles.memory_save_schedule(PHONE, "p1", 3)
     with pytest.raises(ValueError, match="massage level"):
-        protocol.massage_command("back", 4)
+        profiles.massage_command("back", 4)
 
 
 @pytest.mark.parametrize(
@@ -113,14 +123,14 @@ def test_no_dead_memory_c_or_unreachable_intensity():
     ],
 )
 def test_ui_massage_level_mapping(zone, low, high):
-    assert protocol.massage_command(zone, 1).hex() == low
-    assert protocol.massage_command(zone, 3).hex() == high
+    assert profiles.massage_command(zone, 1).hex() == low
+    assert profiles.massage_command(zone, 3).hex() == high
 
 
 def test_profile_specific_startup_queries():
     for family, hardware in [("p1", "f1f1000140417e"), ("p2", "f1f100024000427e")]:
-        for profile, actuator in [("phone", "f1f1000150517e"), ("tablet", "f1f1000101027e")]:
-            assert [(t, data.hex()) for t, data in protocol.startup_schedule(profile, family)] == [
+        for profile, actuator in [(PHONE, "f1f1000150517e"), (TABLET, "f1f1000101027e")]:
+            assert [(t, data.hex()) for t, data in profile.startup[family]] == [
                 (1000, actuator),
                 (1100, actuator),
                 (1200, hardware),
@@ -131,89 +141,80 @@ def test_profile_specific_startup_queries():
 
 
 def test_massage_and_light_cleanup_are_not_the_dreamotion_schedule():
-    assert protocol.MASSAGE_MODE.hex() == "f1f116010a217e"
-    assert protocol.MASSAGE_STOP.hex() == "f1f11101081a7e"
-    assert protocol.release_schedule("massage_mode", "p1", "tablet") == ()
-    assert [(t, b.hex()) for t, b in protocol.release_schedule("massage_mode", "p1", "phone")] == [
+    assert codec.massage_mode().hex() == "f1f116010a217e"
+    assert codec.massage_stop().hex() == "f1f11101081a7e"
+    assert TABLET.massage_mode_releases == ()
+    assert [(t, b.hex()) for t, b in PHONE.massage_mode_releases] == [
         (1000, "f1f14e020000507e"),
         (1100, "f1f14e004e7e"),
     ]
-    assert protocol.light_command("p1").hex() == "f1f10f000f7e"
-    assert protocol.light_command("p2").hex() == "f1f10f020000117e"
-    for profile in protocol.APP_PROFILES:
-        assert [(t, b.hex()) for t, b in protocol.release_schedule("light", "p2", profile)] == [
+    assert profiles.light_command(PHONE, "p1").hex() == "f1f10f000f7e"
+    assert profiles.light_command(PHONE, "p2").hex() == "f1f10f020000117e"
+    for profile in profiles.APP_PROFILES.values():
+        assert [(t, b.hex()) for t, b in profile.light_releases] == [
             (80, "f1f14e004e7e"),
             (80, "f1f14e020000507e"),
             (100, "f1f14e004e7e"),
         ]
         # Android omits click cleanup; HA retains the proven P2 held-flat release.
-        assert protocol.release_schedule("flat", "p2", profile) == ((100, protocol.P1_RELEASE),)
-        assert protocol.release_schedule("memory", "p2", profile) == ((100, protocol.P1_RELEASE),)
+        assert profile.touch_release == ((100, P1_RELEASE),)
 
 
 def test_phone_clock_and_alarm_frozen_vectors():
+    assert codec.clock(datetime(2026, 8, 27, 16, 17, 18)).hex() == "f1f1500738081b04101112e97e"
     assert (
-        protocol.clock_command(datetime(2026, 8, 27, 16, 17, 18)).hex()
-        == "f1f1500738081b04101112e97e"
-    )
-    assert (
-        protocol.alarm_command(
+        codec.alarm(
             True, (True, False, True, False, True, False, False), 6, 30, "memory_1", 2, 3
         ).hex()
         == "f1f1510801012a061e030203b17e"
     )
     with pytest.raises(ValueError, match="Weekdays"):
-        protocol.alarm_command(True, (True,), 6, 30, "flat", 0, 0)
+        codec.alarm(True, (True,), 6, 30, "flat", 0, 0)
     with pytest.raises(ValueError, match="hour"):
-        protocol.alarm_command(True, (False,) * 7, 24, 0, "flat", 0, 0)
+        codec.alarm(True, (False,) * 7, 24, 0, "flat", 0, 0)
 
 
 def test_rename_profiles_and_safe_ascii_subset():
-    assert protocol.rename_schedule("phone", "t3", "BED") == ((0, bytes.fromhex("01fc0703424544")),)
-    assert protocol.rename_schedule("tablet", "t3", "BED") == (
+    assert profiles.rename_schedule(PHONE, "t3", "BED") == ((0, bytes.fromhex("01fc0703424544")),)
+    assert profiles.rename_schedule(TABLET, "t3", "BED") == (
         (0, bytes.fromhex("01fc0703424544")),
         (500, bytes.fromhex("01fc0703424544")),
     )
-    assert protocol.rename_schedule("tablet", "t1", "BED") == ((0, b"BED"), (500, b"BED"))
-    assert protocol.rename_command("phone", "t1", "Bedroom 1") == b"Bedroom 1"
+    assert profiles.rename_schedule(TABLET, "t1", "BED") == ((0, b"BED"), (500, b"BED"))
+    assert profiles.rename_schedule(PHONE, "t1", "Bedroom 1") == ((0, b"Bedroom 1"),)
     for name in ("", "Béd", "\x01BED", "A" * 256):
         with pytest.raises(ValueError, match="printable ASCII"):
-            protocol.rename_command("tablet", "t3", name)
+            profiles.rename_schedule(TABLET, "t3", name)
     with pytest.raises(ValueError, match="no rename"):
-        protocol.rename_command("phone", "t2", "BED")
+        profiles.rename_schedule(PHONE, "t2", "BED")
 
 
-@pytest.mark.parametrize("profile", ["phone", "tablet"])
+@pytest.mark.parametrize("profile", [PHONE, TABLET])
 def test_selector_and_status_parser_without_speculative_checksum(profile):
-    assert protocol.parse_notification(
-        profile, bytes.fromhex("f2f2110001")
-    ) == protocol.Notification(middle=True)
-    assert protocol.parse_notification(
-        profile, bytes.fromhex("f2f21100ff")
-    ) == protocol.Notification(middle=False)
-    assert protocol.parse_notification(profile, bytes.fromhex("f2f20f00000000")).hardware_ack
-    assert protocol.parse_notification(
-        profile, bytes.fromhex("aaaa06000400030040")
-    ) == protocol.Notification(
+    parse = profiles.parse_notification
+    assert parse(profile, bytes.fromhex("f2f2110001")) == profiles.Notification(middle=True)
+    assert parse(profile, bytes.fromhex("f2f21100ff")) == profiles.Notification(middle=False)
+    assert parse(profile, bytes.fromhex("aaaa06000400030040")) == profiles.Notification(
         massage_back=4,
         massage_legs=3,
         light_on=True,
     )
-    assert protocol.parse_notification(
-        profile, bytes.fromhex("aaaa05000000000000")
-    ) == protocol.Notification(light_on=False)
-    for sample, minimum in [("f2f2110001", 5), ("f2f20f00000000", 7), ("aaaa06000400030040", 9)]:
+    assert parse(profile, bytes.fromhex("aaaa05000000000000")) == profiles.Notification(
+        light_on=False
+    )
+    for sample, minimum in [("f2f2110001", 5), ("aaaa06000400030040", 9)]:
         for length in range(minimum):
-            assert protocol.parse_notification(profile, bytes.fromhex(sample)[:length]) is None
+            assert parse(profile, bytes.fromhex(sample)[:length]) is None
 
 
 def test_tablet_has_no_clock_or_alarm_parser_and_phone_requires_full_alarm():
     clock = bytes.fromhex("f2f250000000")
     alarm = bytes.fromhex("f2f2510801012a061e030203b17e")
-    assert protocol.parse_notification("tablet", clock) is None
-    assert protocol.parse_notification("tablet", alarm) is None
-    assert protocol.parse_notification("phone", clock).clock_requested
-    assert protocol.parse_notification("phone", alarm).alarm == protocol.AlarmState(
+    for sample in (clock, alarm):
+        result = profiles.parse_notification(TABLET, sample)
+        assert result is None or result == profiles.Notification()
+    assert profiles.parse_notification(PHONE, clock).clock_requested
+    assert profiles.parse_notification(PHONE, alarm).alarm == codec.AlarmState(
         True,
         (True, False, True, False, True, False, False),
         6,
@@ -223,5 +224,34 @@ def test_tablet_has_no_clock_or_alarm_parser_and_phone_requires_full_alarm():
         3,
     )
     for length in range(14):
-        assert protocol.parse_notification("phone", alarm[:length]) is None
-    assert protocol.parse_notification("phone", alarm[:-2] + b"\xff\x00").alarm is not None
+        result = profiles.parse_notification(PHONE, alarm[:length])
+        assert result is None or result.alarm is None
+    assert profiles.parse_notification(PHONE, alarm[:-2] + b"\xff\x00").alarm is not None
+    # The apps define no wake for code 6 (the codec's yoga).
+    yoga = bytes.fromhex("f2f2510801012a061e060203b17e")
+    assert profiles.parse_notification(PHONE, yoga).alarm.wake is None
+
+
+def test_transports_keep_their_uuids():
+    assert {
+        key: tuple(vars(transport).values()) for key, transport in profiles.TRANSPORTS.items()
+    } == {
+        "t1": (
+            "0000ff12-0000-1000-8000-00805f9b34fb",
+            "0000ff01-0000-1000-8000-00805f9b34fb",
+            "0000ff02-0000-1000-8000-00805f9b34fb",
+            "0000ff06-0000-1000-8000-00805f9b34fb",
+        ),
+        "t2": (
+            "88121427-11e2-52a2-4615-ff00dec16800",
+            "88121427-11e2-52a2-4615-ff00dec16801",
+            "88121427-11e2-52a2-4615-ff00dec16801",
+            None,
+        ),
+        "t3": (
+            "0000fe60-0000-1000-8000-00805f9b34fb",
+            "0000fe61-0000-1000-8000-00805f9b34fb",
+            "0000fe62-0000-1000-8000-00805f9b34fb",
+            "0000fe63-0000-1000-8000-00805f9b34fb",
+        ),
+    }

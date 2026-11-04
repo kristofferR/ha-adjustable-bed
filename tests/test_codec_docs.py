@@ -40,8 +40,9 @@ def test_jiecang_guide_frames_are_frozen_vectors() -> None:
     makes the block stale; this catches frames spelled by hand outside them.
     """
     from tests.jiecang_vectors import FROZEN_FRAMES
+    from tests.logicdata_vectors import FROZEN_FRAMES as LOGICDATA_FRAMES
 
-    frozen = frozenset().union(*FROZEN_FRAMES.values())
+    frozen = frozenset().union(*FROZEN_FRAMES.values(), *LOGICDATA_FRAMES.values())
     text = (ROOT / "docs" / "beds" / "jiecang.md").read_text(encoding="utf-8")
     # Frames appear both spaced (`F1 F1 01 ...`) and compact (`F1F101...`).
     frames = re.findall(r"`(F1 ?F1(?: ?[0-9A-F]{2})+ ?7E)`", text, re.IGNORECASE)

@@ -4295,7 +4295,7 @@ class TestOfflineSafeBedTypes:
         from unittest.mock import MagicMock
 
         from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
-        from custom_components.adjustable_bed.logicdata_app_protocol import TRANSPORTS
+        from custom_components.adjustable_bed.profiles.logicdata import TRANSPORTS
         from custom_components.adjustable_bed.services import _validation_controller
 
         data = _paired_entry_data()
@@ -4319,7 +4319,7 @@ class TestOfflineSafeBedTypes:
         transport = TRANSPORTS["t1"]
         chars = [
             SimpleNamespace(uuid=uuid)
-            for uuid in (transport.write_uuid, transport.notify_uuid, transport.rename_uuid)
+            for uuid in (transport.write_uuid, transport.notify_uuid, transport.name_uuid)
         ]
         service = SimpleNamespace(characteristics=chars)
         client = MagicMock(is_connected=True)

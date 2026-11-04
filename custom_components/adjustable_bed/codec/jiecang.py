@@ -98,6 +98,7 @@ def frame(opcode: int, payload: bytes = b"") -> bytes:
 SHORT_RELEASE: Final = frame(0x4E)
 LONG_RELEASE: Final = frame(0x4E, BILATERAL)
 AUTOMATIC_LIGHT_TOGGLE: Final = frame(0x29, BILATERAL)
+FACTORY_RESET: Final = frame(0x1D, BILATERAL)
 
 # Up opcodes; each down opcode is the next value. Head and height share 0x19.
 AXIS_OPCODES: Final[dict[Axis, int]] = {

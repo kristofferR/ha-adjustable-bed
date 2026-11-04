@@ -59,11 +59,12 @@ class NameRule:
 
     pattern: str
     error: str
+    encoding: str = "ascii"
 
     def encode(self, name: str) -> bytes:
         if re.fullmatch(self.pattern, name, re.ASCII) is None:
             raise ValueError(self.error)
-        return name.encode("ascii")
+        return name.encode(self.encoding)
 
 
 @dataclass(frozen=True, kw_only=True)

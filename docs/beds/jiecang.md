@@ -5,12 +5,13 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 One wire codec (`F1 F1 ... 7E` frames over three GATT transports) serves a legacy
-route and four audited app profiles. This guide covers the codec first, then one
-section per profile. See [Protocol codecs and app profiles](../design/protocol-codecs.md)
-for the architecture.
+route, four audited Jiecang app profiles and three audited LOGICDATA app profiles.
+This guide covers the codec first, then one section per profile. See
+[Protocol codecs and app profiles](../design/protocol-codecs.md) for the architecture.
 
-The accepted MOTIONrelax phone and tablet app protocols are available through the
-separate [LOGICDATA app profiles](logicdata-app.md). Existing working Jiecang
+The accepted MOTIONrelax phone and tablet apps and the bed side of the Sleep Smart
+Air Mattress app use the `logicdata_app` bed type
+([LOGICDATA app family](#logicdata-app-family)). Existing working Jiecang
 configurations keep the legacy route.
 
 ## Known Models
@@ -22,7 +23,9 @@ Brands using Jiecang actuators:
 - Dream Motion HD tablet app beds
 - ERGOBALANCE beds (app package name: Dreamask)
 - Glide adjustable beds
-- LOGICDATA MOTIONrelax
+- LOGICDATA MOTIONrelax beds, standard (P1) and middle-motor (P2) families
+- LOGICDATA Vienna and Toronto (two-motor beds, P1) and Middle Rail (P2), also with
+  the Sleep Smart Air Mattress app
 - Jiecang-branded controllers
 
 The Comfort Motion app has no model, Bluetooth name, manufacturer or RSSI filter.
@@ -35,7 +38,10 @@ so a service UUID cannot say which app's layout or release behavior applies
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
 | ✅ | [Jiecang Bed / Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed) 2.2.1 (28) | `com.jiecang.app.android.jiecangbed` | [Comfort Motion](#comfort-motion-app); the legacy route covers the same beds |
-| ✅ | LOGICDATA MOTIONrelax | `com.logicdata.motionrelax` | [Legacy route](#legacy-route); app profiles in [LOGICDATA](logicdata-app.md) |
+| ✅ | LOGICDATA MOTIONrelax | `com.logicdata.motionrelax` | [Legacy route](#legacy-route); app profiles in the [LOGICDATA app family](#logicdata-app-family) |
+| ✅ | [MOTIONrelax phone](https://play.google.com/store/apps/details?id=com.logicdata.app.android.bed) 1.0.6 (7) | `com.logicdata.app.android.bed` | [MOTIONrelax phone and tablet](#motionrelax-phone-and-tablet) |
+| ✅ | [MOTIONrelax tablet](https://play.google.com/store/apps/details?id=com.logicdata.app.android.pad.bed) 1.0.4 (5) | `com.logicdata.app.android.pad.bed` | [MOTIONrelax phone and tablet](#motionrelax-phone-and-tablet) |
+| ✅ | [Sleep Smart Air Mattress](https://play.google.com/store/apps/details?id=com.logicdata.app.mattress.bed) 1.0.0 (1) | `com.logicdata.app.mattress.bed` | [Sleep Smart Air Mattress (bed)](#sleep-smart-air-mattress-bed); the pump is a [separate bed type](logicdata-sleep-smart.md) |
 | ✅ | [ERGOBALANCE](https://play.google.com/store/apps/details?id=com.jiecang.dreamask.app.android.bed) 1.0.8 (8) | `com.jiecang.dreamask.app.android.bed` | [ERGOBALANCE (Dreamask)](#ergobalance-dreamask) |
 | ✅ | [Dream Motion](https://play.google.com/store/apps/details?id=com.jiecang.dreamotion.app.android.bed) 1.0.5 (11) | `com.jiecang.dreamotion.app.android.bed` | [Dream Motion (Dreamotion)](#dream-motion-dreamotion) |
 | ✅ | [Dream Motion HD](https://play.google.com/store/apps/details?id=com.dreamhd.jiecang.android.pad.bed) 1.0.4 (4) | `com.dreamhd.jiecang.android.pad.bed` | [Dream Motion HD](#dream-motion-hd) |
@@ -55,6 +61,22 @@ so a service UUID cannot say which app's layout or release behavior applies
 | Clock | ❌ | ❌ (no clock-setting command) | ✅ (answered on the bed's clock request) | ✅ |
 | Bluetooth Rename | ❌ | ✅ (G1 only) | ✅ (G1 or G3) | ✅ (G1 or G3) |
 
+The LOGICDATA app profiles:
+
+| Feature | MOTIONrelax phone / tablet | Sleep Smart (bed) |
+|---------|----------------------------|-------------------|
+| Motor Control | ✅ (per layout) | ✅ Back, legs, both |
+| Position Feedback | ❌ (neither app reports motor positions) | ❌ |
+| Presets | ✅ P1: Flat, Zero-G, Anti-Snore. P2: Flat | ✅ Flat, Zero Gravity, Anti-Snore (hold-only) |
+| Memory Presets | ✅ (2 slots, recall and save, both families) | ✅ (1 slot) |
+| Held Presets | ✅ P2: `adjustable_bed.logicdata_hold_preset` | ✅ Every preset and memory 1 |
+| Massage | ✅ P1 only: Off and levels 1–3 per zone, mode, stop | ✅ (Off and levels 1–3 per zone, stop, mode, **Massage mode** sensor) |
+| Lights | ✅ (toggle with notification readback; no brightness or RGB) | ✅ (under-bed toggle) |
+| Clock | ✅ Phone app (both families); ❌ tablet | ✅ (answers clock requests) |
+| Alarm | ✅ Phone app with P1; ❌ tablet | ❌ |
+| Factory Reset | ❌ | ⚠️ (disabled by default) |
+| Bluetooth Rename | ✅ (T1 or T3) | ✅ (T1 or T3 name role) |
+
 Enable massage and light controls only when fitted.
 
 ## Choosing a profile
@@ -68,6 +90,10 @@ profiles are explicit choices.
 Existing legacy Jiecang and Comfort Motion entries keep their original behavior;
 select an app profile in options to use the audited app behavior. Settings belong
 to one physical bed and remain independent across a two-address pair.
+
+LOGICDATA beds use their own bed type, `logicdata_app`; detection never selects it
+(see the [LOGICDATA app family](#logicdata-app-family), which has its own
+generated tables).
 
 The tables below come from the profile data.
 
@@ -179,7 +205,8 @@ times them. Every frame table in this section is generated from the codec.
 | G3 (Lierda3 / LOGICDATA) | `0000fe60-0000-1000-8000-00805f9b34fb` | `0000fe61-0000-1000-8000-00805f9b34fb` | `0000fe62-0000-1000-8000-00805f9b34fb` | `0000fe63-0000-1000-8000-00805f9b34fb` | Legacy route, ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD |
 <!-- /generated -->
 
-Each profile chooses among its transports as described in its Setup. Writes use
+The LOGICDATA profiles drive all three, which their apps call T1, T2 and T3. Each
+profile chooses among its transports as described in its Setup. Writes use
 a response when the write characteristic advertises `write`, otherwise
 write-without-response, except where a profile states otherwise.
 
@@ -246,7 +273,9 @@ Preset frames use payload `01`, or `00 00` in bilateral layouts
 #### Memory
 
 Each profile fixes the payload shape and slot count (see the
-[profile summary](#profile-summary)).
+[profile summary](#profile-summary)). The LOGICDATA apps use `01` for P1 and, in
+MOTIONrelax, `00 00` for P2; Sleep Smart saves its one slot with the payload-less
+`F1 F1 0A 00 0A 7E`.
 
 <!-- generated:jiecang-memory -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -336,6 +365,7 @@ Each profile's startup order is in [Startup queries](#startup-queries).
 - Alarm wake codes: flat `0`, anti-snore `1`, zero-g `2`, memory 1 `3`,
   memory 2 `4`, yoga `6`. Yoga requires the bed's reported capability.
 - Clock weekday uses Sunday = 0. HA sends it when the bed requests the clock.
+  The MOTIONrelax phone always builds this P1 clock, including for the P2 family.
 
 #### Rename
 
@@ -345,11 +375,18 @@ Each profile's startup order is in [Startup queries](#startup-queries).
 | G3 | `01 FC 07`, name length, ASCII name |
 
 The Dream apps write the name twice, 500 ms apart. Each profile has its own name
-rule (see the [profile summary](#profile-summary)).
+rule (see the [profile summary](#profile-summary)). Sleep Smart wraps its UTF-8
+name on G1 too.
 
 #### Other frames
 
 No profile sends the timer frame (`F1 F1 0E 00 0E 7E`, timer function).
+
+| Command | Bytes (hex) | Profiles |
+|---------|-------------|----------|
+| Factory reset | `F1 F1 1D 02 00 00 1F 7E` | Sleep Smart only; deletes stored memories |
+| Massage parameters query | `F1 F1 00 02 08 00 0A 7E` | Sleep Smart's massage tab |
+| LOGICDATA light toggle | P1 `F1 F1 0F 00 0F 7E`, MOTIONrelax P2 `F1 F1 0F 02 00 00 11 7E` | Sleep Smart sends the P1 toggle for every family |
 
 The legacy route does not send the both-motors, neck/height, lumbar and split
 frames in the motion table above, though the bed may accept them: its former
@@ -366,6 +403,14 @@ them its own way:
 - **Comfort Motion** uses its own handler (see its
   [Notifications](#comfort-motion-app)).
 - **The legacy route** does not subscribe to notifications.
+- **The LOGICDATA profiles** use `parse_notification()` in `profiles/logicdata.py`:
+  the codec parser below for clock, alarm and status replies, gated per app, plus
+  two app replies. Their profile sections list what each reads.
+
+| Prefix | Minimum length | Meaning |
+|--------|----------------|---------|
+| `F2 F2 11` | 5 bytes | MOTIONrelax packet family: byte 4 = `01` is the middle (P2) family |
+| `F2 F2 0D` | 5 bytes | Sleep Smart massage mode from byte 4, read as two hex digits parsed as decimal: `01` long interval, `02` short interval, `03` wave, `04` continuous; non-decimal text is ignored |
 
 #### Dream app parser
 
@@ -411,11 +456,17 @@ Motion 1.0.5 and Dream Motion HD 1.0.4 reports, and for the legacy route (which
 has no report) the frames the pre-v5 controller sent.
 `tests/test_jiecang_vectors.py` checks that every literal round-trips through
 `codec.frame()` byte for byte and that each profile sends only its frozen frames.
+`tests/logicdata_vectors.py` and `tests/test_logicdata_vectors.py` do the same for
+the LOGICDATA profiles, from the accepted MOTIONrelax phone 1.0.6, tablet 1.0.4
+and Sleep Smart 1.0.0 reports. The phone report states its massage-level rows as
+a template, which the vector file expands.
 `tests/test_codec_docs.py` checks that every frame spelled in this guide is one
 of those vectors and that the generated tables are current.
 Profile behavior is covered by `tests/test_jiecang.py`,
 `tests/test_jiecang_app_controller.py`, `tests/test_jiecang_app_entities.py`,
-`tests/test_jiecang_app_config.py` and `tests/test_dreamhd.py`.
+`tests/test_jiecang_app_config.py` and `tests/test_dreamhd.py`; LOGICDATA behavior
+by the `tests/test_logicdata_app_*.py` and `tests/test_logicdata_sleep_smart*.py`
+tests.
 
 ## Profiles
 
@@ -817,6 +868,338 @@ queries, without a light-status query.
 
 The [row105 discovery ledger](dreamhd-disposition.md).
 
+### LOGICDATA app family
+
+**Status:** ❓ Needs testing. Static verified, hardware unverified for all three.
+
+The `logicdata_app` bed type selects one of three app profiles in
+`profiles/logicdata.py`: `phone`, `tablet` or `sleep_smart`. Each drives two packet
+families, chosen independently of the GATT transport: P1 sends the standard `01`
+payload and P2 the `00 00` payload. Their own sections list what differs. Existing
+[Jiecang legacy](#legacy-route) and [SILVERmotion/SimplicityFrame](logicdata.md)
+configurations retain their previous behavior.
+
+#### Setup
+
+1. Select **Logicdata → MotionRelax / Sleep Smart bed apps**.
+2. Choose the phone, tablet or Sleep Smart app, the packet family, the physical
+   layout and the transport.
+
+- Detection: none. The Bluetooth service alone cannot identify those choices; the
+  `ff12` and `fe60` services are shared with other Jiecang/Lierda-based apps, and
+  existing entries keep their bed type.
+- Automatic transport selection keeps each service's write, notification and
+  name characteristics together. It needs exactly one complete transport; when
+  GATT is ambiguous, select one explicitly. Explicit T1, T2 and T3 choices are
+  available.
+- Writes use a response when the characteristic advertises `write`, otherwise
+  write-without-response. No PIN or pairing flow is inferred from these artifacts.
+- For two separately addressed beds, configure each side before combining them.
+  Shared paired-bed options preserve each side's app, packet family, layout and
+  transport. Unpair temporarily to change those per-side settings.
+
+#### Controls
+
+- Every axis uses the global short release, so all motor controls on one bed
+  share one scheduler resource. An explicit stop sends the short release
+  immediately.
+- Massage levels are Off and levels 1–3, wire values `00`/`02`/`03`/`04`. HA's
+  head zone is the back (left back in `split_series`), the foot zone the legs,
+  and the right zone the right back in `split_series`. Massage level and massage
+  stop are single frames.
+- When lighting is enabled, the Under Bed Lights binary sensor exposes the
+  latest notification state. The light button remains toggle-only; pressing it
+  does not optimistically replace the reported state.
+- Neither app reports motor positions, brightness or RGB color, so the
+  integration does not create those controls.
+
+#### Timing
+
+The tables below come from the profile data.
+
+<!-- generated:logicdata-profiles -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+**LOGICDATA profile summary**
+
+| Profile | P2 payload `00 00` on | Presets (P1 / P2) | Memory | Massage | Clock request | Alarm | Name rule | Name writes |
+|---|---|---|---|---|---|---|---|---|
+| Phone app | back and legs movement, presets, memory, light | flat, zero_g, anti_snore / flat | 2 slots | P1 | 6+ bytes | P1 | `[ -~]{1,255}` (ascii) | +0 ms; T1 bare |
+| Tablet app | back and legs movement, presets, memory, light | flat, zero_g, anti_snore / flat | 2 slots | P1 | none | none | `[ -~]{1,255}` (ascii) | +0 ms, +500 ms; T1 bare |
+| Sleep Smart Air Mattress app (bed) | back and legs movement | flat, zero_g, anti_snore / flat, zero_g, anti_snore | 1 slot | P1, P2 | 3+ bytes | none | `[0-9a-zA-ZäöüÄÖÜß]{1,20}` (utf-8) | +0 ms; always wrapped |
+
+**LOGICDATA timing**
+
+| Profile | Movement refresh | Touch release | Held presets (P1 / P2) | Hold refresh | Memory save | Light | Massage mode | Massage query |
+|---|---|---|---|---|---|---|---|---|
+| Phone app | 100 ms, final frame | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | none |
+| Tablet app | 100 ms, final frame | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | none | none |
+| Sleep Smart Air Mattress app (bed) | 100 ms, final frame | +100 ms short release | flat, zero_g, anti_snore, memory_1 / flat, zero_g, anti_snore, memory_1 (buttons hold) | flat 200 ms, zero_g 200 ms, anti_snore 200 ms, memory_1 200 ms | +0 ms, no payload | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | +100 ms, +250 ms, +450 ms |
+
+**LOGICDATA startup**
+
+| Profile | Wait, then subscribe | T3 name subscription | Clock |
+|---|---|---|---|
+| Phone app | 1000 ms | at +3000 ms | at +3000 ms, +3100 ms |
+| Tablet app | 1000 ms | at +3000 ms | none |
+| Sleep Smart Air Mattress app (bed) | 300 ms | 100 ms after T3 data; queries only once both succeed | on request |
+
+**Phone app P1**
+
+| Offsets | Query | Bytes (hex) |
+|---|---|---|
+| 1000 ms, 1100 ms | Actuator | `F1 F1 00 01 50 51 7E` |
+| 1200 ms, 1300 ms | Hardware | `F1 F1 00 01 40 41 7E` |
+| 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+
+**Phone app P2**
+
+| Offsets | Query | Bytes (hex) |
+|---|---|---|
+| 1000 ms, 1100 ms | Actuator | `F1 F1 00 01 50 51 7E` |
+| 1200 ms, 1300 ms | Software | `F1 F1 00 02 40 00 42 7E` |
+| 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+
+**Tablet app P1**
+
+| Offsets | Query | Bytes (hex) |
+|---|---|---|
+| 1000 ms, 1100 ms | Actuator | `F1 F1 00 01 01 02 7E` |
+| 1200 ms, 1300 ms | Hardware | `F1 F1 00 01 40 41 7E` |
+| 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+
+**Tablet app P2**
+
+| Offsets | Query | Bytes (hex) |
+|---|---|---|
+| 1000 ms, 1100 ms | Actuator | `F1 F1 00 01 01 02 7E` |
+| 1200 ms, 1300 ms | Software | `F1 F1 00 02 40 00 42 7E` |
+| 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+
+**Sleep Smart Air Mattress app (bed) P1**
+
+| Offsets | Query | Bytes (hex) |
+|---|---|---|
+| 300 ms | Software | `F1 F1 00 02 40 00 42 7E` |
+| 600 ms, 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+| 900 ms, 1200 ms, 1300 ms | Hardware | `F1 F1 00 01 40 41 7E` |
+| 1000 ms, 1100 ms, 1200 ms, 1500 ms | Actuator | `F1 F1 00 01 50 51 7E` |
+| 1800 ms, 2100 ms | Light | `F1 F1 00 02 01 00 03 7E` |
+| 2400 ms, 2700 ms | Device status | `F1 F1 00 00 00 7E` |
+
+**Sleep Smart Air Mattress app (bed) P2**
+
+| Offsets | Query | Bytes (hex) |
+|---|---|---|
+| 300 ms, 1200 ms, 1300 ms | Software | `F1 F1 00 02 40 00 42 7E` |
+| 600 ms, 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
+| 900 ms | Hardware | `F1 F1 00 01 40 41 7E` |
+| 1000 ms, 1100 ms, 1200 ms, 1500 ms | Actuator | `F1 F1 00 01 50 51 7E` |
+| 1800 ms, 2100 ms | Light | `F1 F1 00 02 01 00 03 7E` |
+| 2400 ms, 2700 ms | Device status | `F1 F1 00 00 00 7E` |
+
+**LOGICDATA layouts and axes**
+
+| Layout | Axes | Massage zones | Profiles |
+|---|---|---|---|
+| `standard_2` (Back and legs (2 motors)) | back, legs, both | back, legs | Phone app, Tablet app, Sleep Smart Air Mattress app (bed) |
+| `standard_3_neck` (Back, legs and neck) | back, legs, head | back, legs | Phone app, Tablet app |
+| `standard_3_lumbar` (Back, legs and lumbar) | back, legs, lumbar | back, legs | Phone app, Tablet app |
+| `standard_3_hi_low` (Back, legs and height) | back, legs, bed_height | back, legs | Phone app, Tablet app |
+| `standard_3_split_upper` (Split upper (3 motors)) | back, right_back, both_backs, legs | back, legs | Phone app, Tablet app |
+| `standard_4` (Back, legs, neck and lumbar) | head, back, lumbar, legs | back, legs | Phone app, Tablet app |
+| `split_series` (Split series) | back, right_back, legs | back, right | Phone app, Tablet app |
+| `split_series` (Split series) | back, legs, both | back, right | Sleep Smart Air Mattress app (bed) |
+| `middle` (Middle layout) | back, legs | none | Phone app, Tablet app |
+<!-- /generated -->
+
+- Movement repeats at the refresh interval for the motor pulse count; on normal
+  completion the app's final movement write, then the touch release. A cancelled
+  movement sends the release without another movement write.
+- Timed moves include the terminal write and release delay in the requested
+  duration, rounded up to the next refresh interval, so the release lands at the
+  requested duration.
+- Startup offsets count from the start of the query sequence: after the data
+  subscription for MOTIONrelax, after readiness for Sleep Smart.
+
+#### Notifications
+
+The apps do not validate checksum/trailer or declared payload lengths; HA
+preserves that and only guards field bounds. Status replies `05`/`06` (any header,
+9+ bytes) report the light and massage levels, the right zone in `split_series`.
+
+#### Evidence
+
+Every LOGICDATA profile sends only its frozen frames
+(`tests/test_logicdata_vectors.py`).
+
+### MOTIONrelax phone and tablet
+
+**App:** [MOTIONrelax phone](https://play.google.com/store/apps/details?id=com.logicdata.app.android.bed)
+1.0.6 (7), `com.logicdata.app.android.bed`, and
+[MOTIONrelax tablet](https://play.google.com/store/apps/details?id=com.logicdata.app.android.pad.bed)
+1.0.4 (5), `com.logicdata.app.android.pad.bed`.
+
+**Status:** ❓ Needs testing. Static verified, hardware unverified.
+
+Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
+
+#### Setup
+
+- Choose the dedicated middle layout with P2; the remaining layouts use P1.
+- The standard family supports two motors; three motors with neck, lumbar, height
+  or split-upper controls; four motors; and split-series controls. Standard
+  layouts have independent massage and under-bed light settings. The middle-motor
+  family provides back, legs, flat, two memory slots and lighting.
+- Vienna and Toronto are aliases for two-motor layouts with different massage
+  settings.
+- If the bed's family reply contradicts the configured family, controls other
+  than release are refused until the bed is reconfigured. The disabled-by-default
+  `logicdata_app_family_match` sensor shows the result.
+- When a T1 or T3 transport is present, HA sends the startup queries after
+  subscribing. T2 can be used through a known address, but its standalone route
+  has no startup query burst in either app. On T3 the name characteristic is
+  subscribed too. The phone writes the clock during startup; the tablet has no
+  clock writer.
+
+#### Controls
+
+| Action | Sequence |
+|--------|----------|
+| Presets and memory recall | One frame, then the touch release |
+| Memory save | The save frame at the memory-save offsets |
+| Light toggle | Toggle, then the light releases |
+| Massage mode | Phone: two releases. Tablet: none |
+| Held flat or memory (P2) | `adjustable_bed.logicdata_hold_preset`: refresh, then the touch release |
+
+- P1 exposes Flat, Zero-G and Anti-Snore; P2 only Flat. Both families have two
+  memory slots. Massage is P1 only.
+- For the middle family, `adjustable_bed.logicdata_hold_preset` holds flat,
+  memory 1 or memory 2 for a chosen duration and releases on completion or
+  cancellation. Ordinary one-shot preset buttons remain available.
+
+> [!NOTE]
+> A P2 flat tap is followed by the short release, as a held flat is, so movement
+> always ends with cleanup.
+
+#### Timing
+
+See the [LOGICDATA tables](#logicdata-app-family) for every interval and offset.
+
+#### Notifications
+
+| Prefix | Minimum length | Meaning |
+|--------|----------------|---------|
+| `F2 F2 11` | 5 bytes | Packet family (see [Responses](#responses)) |
+| `F2 F2 0F` | 7 bytes | Hardware acknowledgment; no state |
+| `F2 F2 50` (phone) | 6 bytes | Clock request; HA answers with the clock frame |
+| `F2 F2 51` (phone) | 14 bytes | Alarm: enabled (byte 4), weekday bits (byte 6), hour, minute, wake code, back and leg levels (bytes 7–11) |
+| Byte 2 `05`/`06`, any header | 9 bytes | Light and massage status |
+
+MOTIONrelax drops a clock request that arrives while an earlier request is still
+being answered. The tablet decodes neither clock nor alarm replies.
+
+#### Services
+
+- The phone profile synchronizes the clock and supports weekly native alarm
+  configuration through `adjustable_bed.logicdata_set_alarm` when the standard
+  family is selected: weekdays, time, a supported preset (wake codes flat `0`,
+  anti-snore `1`, zero-g `2`, memory 1 `3`, memory 2 `4`) and back/leg massage
+  levels. The alarm state is exposed as the `logicdata_app_alarm` sensor. The
+  tablet profile has no clock or alarm BLE implementation.
+- `adjustable_bed.rename` changes the Bluetooth device name when the chosen
+  transport provides a name characteristic (T1 bare, T3 wrapped). This is
+  separate from the Home Assistant friendly name; the older `logicdata_rename`
+  name still works. The controller accepts 1–255 printable ASCII characters, a
+  deliberate input policy that avoids the tablet app's malformed Unicode name
+  encoding.
+
+#### Evidence
+
+Both profiles send only their frozen frames. Dispositions, phone/tablet
+differences, report hashes and exclusions are in the
+[cluster-006 ledger](logicdata-app-disposition.md).
+
+### Sleep Smart Air Mattress (bed)
+
+**App:** [Sleep Smart Air Mattress](https://play.google.com/store/apps/details?id=com.logicdata.app.mattress.bed)
+1.0.0 (1), `com.logicdata.app.mattress.bed`, app profile `sleep_smart`. The app
+also drives a separate air mattress pump, configured as its own
+[`logicdata_air_pump` entry](logicdata-sleep-smart.md).
+
+**Status:** ❓ Needs testing. Static verified, hardware unverified.
+
+Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
+
+#### Setup
+
+| Setting | Choices |
+|---|---|
+| Command family | `p1` for the Vienna and Toronto beds; `p2` for the Middle Rail bed |
+| Layout | `standard_2` (standard series) or `split_series` (split series) |
+| Massage | Enable when the bed has massage. The app's massage tab is reachable for every bed profile |
+| Light | Enable for under-bed lighting |
+| Transport | `auto`, `t1`, `t2` or `t3`, as for MOTIONrelax |
+
+- The bed always uses a two-motor movement layout: back, legs and both together.
+- The series only chooses the massage zones: standard has back and foot, split
+  has left back and right back.
+- The Middle Rail family changes only back and legs movement to the two-byte
+  zero payload. Combined movement (`F1 F1 05 01 01 07 7E` / `F1 F1 06 01 01 08 7E`),
+  presets, memory, light and massage keep their P1 frames.
+- Only a T3 connection becomes ready in the app: both T3 subscriptions (data and
+  name) must succeed. Every other data notify role the app finds is subscribed
+  too. A T3 service next to a selected T1 or T2 transport also makes the bed
+  ready, and startup queries then use the selected write role. T1 or T2 alone
+  stays silent until a control is used. A failed name subscription leaves
+  controls available without queries.
+
+#### Controls
+
+| Control | Behavior |
+|---|---|
+| Flat, Zero Gravity, Anti-Snore, Memory 1 recall | Hold-only in the app: a tap sends nothing. A button holds the preset for the motor pulse count × the hold refresh, then releases |
+| `logicdata_hold_preset` | The same hold for an explicit 0.2–60 s duration |
+| Memory 1 save | One `F1 F1 0A 00 0A 7E`, without a release. The app has one memory slot |
+| Under-bed light | Toggle, then the light releases |
+| Massage stop / mode | Massage stop only stops massage. Mode sends its fixed frame, then the two releases |
+| Refresh massage state | The massage tab's parameter query (`F1 F1 00 02 08 00 0A 7E`), at the massage-query offsets |
+| Factory reset | Disabled by default. One reset frame; the app warns that it deletes stored memories and that a later held DOWN performs a reference drive |
+| `rename` | `01 FC 07`, byte length and UTF-8 name on the name characteristic, once |
+
+Cancellation and failures always finish with the release frame.
+
+#### Timing
+
+See the [LOGICDATA tables](#logicdata-app-family). When ready, the integration
+merges the app's two startup schedules: software, vibration, hardware, actuator,
+light and device-status queries, with the actuator, hardware (Middle Rail:
+software) and vibration pairs between them.
+
+#### Notifications
+
+| Notification | Meaning |
+|--------------|---------|
+| `F2 F2 50`, any length | Clock request; every request is answered with the current local time |
+| `F2 F2 0D`, 5+ bytes | Massage mode (see [Responses](#responses)), shown by the **Massage mode** sensor; unknown for other values |
+| Byte 2 `05`/`06`, 9+ bytes | Light and massage status |
+
+No positions, firmware, model or calibration are reported.
+
+#### Services
+
+- Names are 1–20 characters from `0-9`, `a-z`, `A-Z`, `ä`, `ö`, `ü`, `Ä`, `Ö`,
+  `Ü` and `ß`, the app's edit-field alphabet, and at most 100 UTF-8 bytes.
+- T1 writes to `ff06` and T3 to `fe63`. T2 has no name characteristic of its
+  own; when T3 or T1 is also present, the app keeps that name role, and so does
+  the integration (T3 first).
+
+#### Evidence
+
+Sleep Smart sends only its frozen frames. Dispositions, exclusions and deferred
+hardware checks are in the
+[row053 ledger](../apk-analysis/dispositions/row053-logicdata-sleep-smart.md).
+
 ## Notes
 
 ### Analysis provenance
@@ -825,11 +1208,16 @@ The [row105 discovery ledger](dreamhd-disposition.md).
   results in reference form:
   [Comfort Motion (row115)](../apk-analysis/dispositions/row115-comfort-motion.md),
   [ERGOBALANCE and Dream Motion (cluster-004)](jiecang-app-disposition.md),
-  [Dream Motion HD (row105)](dreamhd-disposition.md).
+  [Dream Motion HD (row105)](dreamhd-disposition.md),
+  [MOTIONrelax phone and tablet (cluster-006)](logicdata-app-disposition.md),
+  [Sleep Smart (row053)](../apk-analysis/dispositions/row053-logicdata-sleep-smart.md).
 - Packages: `com.jiecang.app.android.jiecangbed` 2.2.1 (28),
   `com.jiecang.dreamask.app.android.bed` 1.0.8 (8),
   `com.jiecang.dreamotion.app.android.bed` 1.0.5 (11) and
-  `com.dreamhd.jiecang.android.pad.bed` 1.0.4 (4). No raw APK or frozen analysis
-  is shipped with the integration.
+  `com.dreamhd.jiecang.android.pad.bed` 1.0.4 (4); LOGICDATA
+  `com.logicdata.app.android.bed` 1.0.6 (7), `com.logicdata.app.android.pad.bed`
+  1.0.4 (5) and `com.logicdata.app.mattress.bed` 1.0.0 (1). No raw APK or frozen
+  analysis is shipped with the integration; accepted frozen reports remain
+  unchanged.
 - Physical actuator mapping, GATT properties and behavior on real firmware remain
   deferred validation for users after a beta or release.

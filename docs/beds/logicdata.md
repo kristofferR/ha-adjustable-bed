@@ -6,7 +6,7 @@
 
 > [!NOTE]
 > For the MOTIONrelax phone and tablet Android apps, use the separate
-> [LOGICDATA app profiles](logicdata-app.md).
+> [LOGICDATA app profiles](jiecang.md#logicdata-app-family).
 
 ## Known Models
 
