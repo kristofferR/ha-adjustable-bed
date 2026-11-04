@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import ExitStack
 from dataclasses import replace
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -33,6 +34,7 @@ from custom_components.adjustable_bed.execution import (
 )
 from custom_components.adjustable_bed.position_estimate import EstimateState
 from custom_components.adjustable_bed.services import async_register_services
+from tests.hold_lease_wire import virtual_clock
 from tests.test_controller_contract import _ContractController
 
 ADDRESS = "AA:BB:CC:DD:EE:42"
@@ -128,6 +130,17 @@ async def runtime(
     await coordinator.async_shutdown()
 
 
+@pytest.fixture
+async def clock(runtime) -> AsyncIterator[Any]:
+    """Virtual time for the test body: lease, pulse and release timers are exact.
+
+    Entered after ``runtime`` is set up, so Home Assistant itself starts on the
+    real loop. Estimates read the same clock.
+    """
+    with virtual_clock() as fake, patch.object(pe, "_clock", fake.time):
+        yield fake
+
+
 def _install(coordinator: AdjustableBedCoordinator, execution: ExecutionCapabilities):
     controller = StreamController(coordinator, execution)
     coordinator._controller = controller
@@ -150,12 +163,11 @@ async def _timed(hass: HomeAssistant, generation: int, duration_ms: int = 100) -
     )
 
 
-async def test_renewals_keep_one_stream_alive_then_it_releases(runtime) -> None:
+async def test_renewals_keep_one_stream_alive_then_it_releases(runtime, clock) -> None:
     hass, coordinator = runtime
     controller = _install(coordinator, STREAM)
+    began = clock.time()
     start = asyncio.create_task(_timed(hass, 1))
-    loop = asyncio.get_running_loop()
-    began = loop.time()
     for _ in range(5):
         await asyncio.sleep(0.05)
         frames = len(controller.frames)
@@ -164,17 +176,17 @@ async def test_renewals_keep_one_stream_alive_then_it_releases(runtime) -> None:
         assert not start.done()
     await asyncio.wait_for(start, 2)
 
-    # Five 50 ms renewals of a 100 ms lease outlived three 20 ms pulses.
-    assert loop.time() - began >= 0.3
-    assert controller.frames.count("up") > 3
-    assert controller.frames[-1] == "stop"
-    assert "up" not in controller.frames[controller.frames.index("stop") :]
+    # Five 50 ms renewals of a 100 ms lease outlived three 20 ms pulses: the
+    # lease ends 100 ms after the last renewal (250 ms), and the next 20 ms
+    # pulse sees it at 360 ms.
+    assert clock.time() - began == pytest.approx(0.36)
+    assert controller.frames == ["up"] * 18 + ["stop"]
     record = coordinator._command_scheduler.recent_records[-1]
     assert record.kind is CommandKind.HOLD
     assert record.outcome is CommandOutcome.EXPIRED
 
 
-async def test_late_renewal_after_stop_is_refused_without_motion(runtime) -> None:
+async def test_late_renewal_after_stop_is_refused_without_motion(runtime, clock) -> None:
     hass, coordinator = runtime
     controller = _install(coordinator, STREAM)
     start = asyncio.create_task(_timed(hass, 7, duration_ms=5000))
@@ -189,7 +201,7 @@ async def test_late_renewal_after_stop_is_refused_without_motion(runtime) -> Non
     assert controller.frames[frames:] == []
 
 
-async def test_controller_without_hold_rejects_a_lease(runtime) -> None:
+async def test_controller_without_hold_rejects_a_lease(runtime, clock) -> None:
     hass, coordinator = runtime
     controller = _install(coordinator, NO_EXECUTION_CAPABILITIES)
     with pytest.raises(ServiceValidationError, match="renewable holds"):
@@ -203,7 +215,7 @@ async def test_controller_without_hold_rejects_a_lease(runtime) -> None:
     assert controller.frames[0] == "up"
 
 
-async def test_finite_timed_move_is_unchanged_without_an_owner(runtime) -> None:
+async def test_finite_timed_move_is_unchanged_without_an_owner(runtime, clock) -> None:
     hass, coordinator = runtime
     controller = _install(coordinator, STREAM)
     await hass.services.async_call(
@@ -213,13 +225,13 @@ async def test_finite_timed_move_is_unchanged_without_an_owner(runtime) -> None:
         blocking=True,
     )
     # The elapsed duration bounds the planned pulses; there is no lease and no HOLD.
-    assert 3 < controller.frames.count("up") <= 11
+    assert controller.frames == ["up"] * 11 + ["stop"]
     record = coordinator._command_scheduler.recent_records[-1]
     assert record.kind is CommandKind.COMMAND
     assert record.outcome is CommandOutcome.COMPLETED
 
 
-async def test_hold_control_lease_renews_and_rejects_long_leases(runtime) -> None:
+async def test_hold_control_lease_renews_and_rejects_long_leases(runtime, clock) -> None:
     hass, coordinator = runtime
     controller = _install(coordinator, STREAM)
 
@@ -239,16 +251,18 @@ async def test_hold_control_lease_renews_and_rejects_long_leases(runtime) -> Non
 
     with pytest.raises(ServiceValidationError, match="30000 ms"):
         await hold(45)
+    began = clock.time()
     start = asyncio.create_task(hold(0.1))
-    while "up" not in controller.frames:
-        await asyncio.sleep(0.005)
+    await asyncio.sleep(0.05)
     await asyncio.wait_for(hold(0.1), 0.05)
     await asyncio.wait_for(start, 2)
-    assert controller.frames[-1] == "stop"
+    # Renewed at 50 ms, the lease ends at 150 ms; the 20 ms refresh sees it at 160 ms.
+    assert clock.time() - began == pytest.approx(0.16)
+    assert controller.frames == ["up"] * 8 + ["stop"]
     assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
 
 
-async def test_disconnect_ends_the_hold_and_refuses_renewal(runtime) -> None:
+async def test_disconnect_ends_the_hold_and_refuses_renewal(runtime, clock) -> None:
     hass, coordinator = runtime
     controller = _install(coordinator, STREAM)
     start = asyncio.create_task(_timed(hass, 2, duration_ms=5000))
@@ -261,7 +275,7 @@ async def test_disconnect_ends_the_hold_and_refuses_renewal(runtime) -> None:
         await _timed(hass, 2)
 
 
-async def test_lease_inside_a_prepared_reservation_runs_and_expires(runtime) -> None:
+async def test_lease_inside_a_prepared_reservation_runs_and_expires(runtime, clock) -> None:
     """A paired group's side runs its held start inside the reservation."""
     from custom_components.adjustable_bed.command_scheduler import HoldLease
 
@@ -285,7 +299,9 @@ async def test_lease_inside_a_prepared_reservation_runs_and_expires(runtime) -> 
     coordinator.commit_prepared_command(handle)
     await asyncio.wait_for(coordinator.async_wait_prepared_command_result(handle), 2)
     assert handle.outcome is CommandOutcome.EXPIRED
-    assert 1 < controller.frames.count("up") < 20
+    # Pulses at 0, 20 and 40 ms; the 60 ms lease ends before the fourth.
+    assert controller.frames == ["up"] * 3 + ["stop"]
+    assert clock.time() == pytest.approx(0.06)
     assert controller.frames[-1] == "stop"
 
 
@@ -333,7 +349,7 @@ class EstimatedStreamController(StreamController):
 
 @pytest.mark.parametrize("ending", ["expiry", "stop"])
 @pytest.mark.parametrize("action", ["timed_move", "hold_control"])
-async def test_a_renewed_hold_is_one_estimated_movement(runtime, action, ending) -> None:
+async def test_a_renewed_hold_is_one_estimated_movement(runtime, clock, action, ending) -> None:
     """Renewals write nothing, so the estimate sees one move until release or expiry."""
     hass, coordinator = runtime
     controller = EstimatedStreamController(coordinator, STREAM)
@@ -374,25 +390,23 @@ async def test_a_renewed_hold_is_one_estimated_movement(runtime, action, ending)
                 blocking=True,
             )
 
+        began = clock.time()
         start = asyncio.create_task(call())
-        loop = asyncio.get_running_loop()
-        began = loop.time()
         for _ in range(5):
             await asyncio.sleep(0.05)
             await asyncio.wait_for(call(), 0.05)
-        released = loop.time() - began
+        assert clock.time() - began == pytest.approx(0.25)
         if ending == "stop":
             # The card's release: STOP ends the hold before its lease does.
             await coordinator.async_stop_command()
         await asyncio.wait_for(start, 2)
 
+        # One movement: renewals write nothing. A STOP ends it at the release
+        # (250 ms); expiry 100 ms after the last renewal, seen by the next 20 ms
+        # pulse at 360 ms.
         assert begun == [("back",)]
-        assert len(ended) == 1
+        assert ended == [pytest.approx(0.25 if ending == "stop" else 0.36)]
         assert ended[0] is not None
-        # Expiry adds the last 100 ms lease; a STOP ends the move at release.
-        assert 0.25 <= ended[0] <= loop.time() - began
-        if ending == "stop":
-            assert ended[0] < released + 0.1
         back = bed.motors["back"]
         assert back.state is EstimateState.TRACKING
         assert back.percent == pytest.approx(ended[0] / 20.0 * 100.0)
@@ -400,7 +414,7 @@ async def test_a_renewed_hold_is_one_estimated_movement(runtime, action, ending)
         await pe.async_unload_position_estimates(hass, coordinator.entry.entry_id)
 
 
-async def test_expiry_lets_a_delayed_release_finish(runtime) -> None:
+async def test_expiry_lets_a_delayed_release_finish(runtime, clock) -> None:
     """A lease ending is a normal end: the controller's delayed release still runs.
 
     The coordinator used to cancel the operation task on expiry, which cut off

@@ -317,6 +317,8 @@ class BfCherishController(BedController):
             "both_down": 5,
         }[control]
         count, _ = self.motor_pulse_settings()
+        # A leased hold (#483) refreshes until its lease ends.
+        count = self.leased_hold_refreshes(200) or count
         try:
             await self.write_command(
                 control_frame(MOVE_KEYS[control], self.profile), repeat_count=count, repeat_delay_ms=200

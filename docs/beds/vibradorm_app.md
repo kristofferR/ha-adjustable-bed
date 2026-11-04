@@ -45,6 +45,7 @@ APK hashes and seals are under [Analysis provenance](#analysis-provenance).
 | Sync | ✅ (Werkmeister type 7 only) |
 | Device information | ✅ (DIS strings; article requests on types 5/6/7) |
 | Native bond | ✅ (information-before-bond onboarding) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) |
 
 ## Protocol Details
 

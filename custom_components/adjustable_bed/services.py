@@ -2022,6 +2022,7 @@ async def _timed_move_plan(
         controller = await _validation_controller(parent, coordinator, preflighted)
         if hold_lease:
             _require_hold_execution(coordinator, controller)
+            duration_ms = _hold_ceiling(controller, duration_ms)
 
         motor_specs = {
             spec.key: spec
@@ -2216,6 +2217,11 @@ def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease |
         action=action,
         duration_s=duration_ms / 1000,
     )
+
+
+def _hold_ceiling(controller: BedController | SideBoundController, duration_ms: int) -> int:
+    """Bound a renewable hold by its mode's ceiling: latched beds move until STOP."""
+    return min(duration_ms, controller.execution.hold_ceiling_ms or duration_ms)
 
 
 def _require_hold_execution(
@@ -3208,7 +3214,9 @@ async def _hold_targets(
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController | SideBoundController) -> None:
-        await controller.hold_control(control, duration_ms)
+        await controller.hold_control(
+            control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
+        )
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):

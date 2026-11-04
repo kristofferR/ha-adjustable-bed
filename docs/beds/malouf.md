@@ -44,6 +44,7 @@ The app profiles ship 16 model constructors; see [Models](#models).
 | Feature | NEW_OKIN | Malouf Base / Lucid Base apps |
 |---------|----------|-------------------------------|
 | Motor Control | ✅ Back, legs; tilt, lumbar and Hi-Lo by layout | ✅ Back/legs, supported combined movement, tilt/lumbar, Altitude head/full tilt, per model |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
 | Position Feedback | ❌ | ❌ (the apps provide no motor-position feedback) |
 | Presets | ✅ Flat, Zero-G, Anti-Snore, TV, Lounge | ✅ Flat, plus the model's Zero-G, TV, Anti-Snore and Lounge |
 | Memory Presets | ✅ Save and recall, 1 or 2 slots by layout | ⚠️ Zero to two slots, per model |
@@ -67,11 +68,11 @@ The tables below come from the profile data.
 
 ### Profile summary
 
-| Profile | Bed type | Transports | Held movement | Release |
-|---|---|---|---|---|
-| NEW_OKIN | `malouf_new_okin` | OKIN new | motor pulse settings (default 10 × 100 ms) | STOP at once |
-| Malouf Base | `malouf_app` | Richmat single, Richmat framed, OKIN legacy, OKIN custom, OKIN new | pulse count × 150 ms | STOP 150 ms after release |
-| Lucid Base | `malouf_app` | Richmat single, Richmat framed, OKIN legacy, OKIN custom, OKIN new | pulse count × 150 ms | STOP 150 ms after release |
+| Profile | Bed type | Transports | Held movement | Release | Hold until release |
+|---|---|---|---|---|---|
+| NEW_OKIN | `malouf_new_okin` | OKIN new | motor pulse settings (default 10 × 100 ms) | STOP at once | renewable lease |
+| Malouf Base | `malouf_app` | Richmat single, Richmat framed, OKIN legacy, OKIN custom, OKIN new | pulse count × 150 ms | STOP 150 ms after release | renewable lease |
+| Lucid Base | `malouf_app` | Richmat single, Richmat framed, OKIN legacy, OKIN custom, OKIN new | pulse count × 150 ms | STOP 150 ms after release | renewable lease |
 
 ### Timing per transport
 
@@ -234,6 +235,12 @@ STOP sent under a fresh cancel event, so a cancelled command still releases the
 motors. Memory saves end without STOP: the apps call a `stopCommand` name their
 dispatcher does not recognize, so no frame is written. Preset STOP follows each
 profile's [timing table](#timing-per-transport).
+
+A [renewable hold](../SERVICES.md#renewable-holds) keeps refreshing the movement
+frame at the same interval (the app's hold cadence for Malouf Base and Lucid
+Base, the entry's pulse delay for `malouf_new_okin`) until the lease ends or a
+STOP arrives, up to 30 s, then sends the same STOP. The Keeson-framed
+`malouf_legacy_okin` route does the same with its zero frame.
 
 ### Vectors
 

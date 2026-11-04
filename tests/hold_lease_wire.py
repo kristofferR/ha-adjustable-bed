@@ -133,7 +133,13 @@ async def leased_hold(
                     # The scheduler's expiry: the cancel event alone.
                     context.cancel_reason = CommandOutcome.EXPIRED
                     cancel.set()
-                    await asyncio.wait_for(task, 10)
+                    try:
+                        await asyncio.wait_for(task, 10)
+                    except asyncio.CancelledError:
+                        # A controller may raise on its cancel event, as the
+                        # scheduler accepts; only a real cancellation propagates.
+                        if not task.cancelled():
+                            raise
                 else:
                     context.cancel_reason = CommandOutcome.STOPPED
                     cancel.set()
@@ -143,7 +149,7 @@ async def leased_hold(
                 # Let delayed release frames go out.
                 await asyncio.sleep(tool.DRAIN_WINDOW_S)
                 pulse_count = coordinator.motor_pulse_count
-                profile_key = getattr(controller.profile, "key", "")
+                profile_key = getattr(getattr(controller, "profile", None), "key", "")
                 events = [
                     (index, Write(round(at * 1000), data))
                     for index, (at, _uuid, kind, data) in enumerate(recorder.events)

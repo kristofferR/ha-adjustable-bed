@@ -49,6 +49,7 @@ All three have frozen COMPLETE reports; hashes are under
 | Reset defaults (`4E 00`) | ✅ | ✅ |
 | Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ |
 | Wake command | ✅ | ❌ |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 100 ms refresh, then the release) | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, then the release) |
 
 ## Protocol Details
 
