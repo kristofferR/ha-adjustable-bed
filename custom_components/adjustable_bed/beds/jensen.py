@@ -24,6 +24,7 @@ from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
 from ..const import DOMAIN, JENSEN_CHAR_UUID, JENSEN_SERVICE_UUID
+from ..execution import ExecutionCapabilities
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -222,6 +223,11 @@ class JensenController(BedController):
         if self._reported_config is not None:
             self._features, self._box_type = self._reported_config
         _LOGGER.debug("JensenController initialized with PIN: %s", "*" * len(self._pin))
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 300 ms, then sends STOP once (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return the bed-reported features and box type, once known."""
@@ -756,6 +762,12 @@ class JensenController(BedController):
 
     async def _send_stop(self) -> None:
         await self.write_command(JensenCommands.MOTOR_STOP, cancel_event=asyncio.Event())
+
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """A renewable hold refreshes at the app's 300 ms; finite pulses keep the entry's."""
+        if (count := self.leased_hold_refreshes(300)) is not None:
+            return count, 300
+        return super().motor_pulse_settings()
 
     async def _move_with_stop(self, command: bytes, duration_ms: int | None = None) -> None:
         """Repeat a held-motion frame, then always send STOP."""

@@ -652,6 +652,8 @@ async def test_octo_memory_action_specs_publish_card_metadata_for_standalone_and
         "held_control": "memory_9",
         "hold_start_delay_ms": 100,
         "hold_release_delay_ms": 200,
+        # The standard controller declares a renewable stream hold (#483).
+        "hold_lease_mode": "stream",
     }
 
     hass.config_entries.async_update_entry(

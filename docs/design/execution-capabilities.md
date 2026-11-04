@@ -83,8 +83,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
 | `simmons` (all routes) | S stream | U | U | simmons | one held action |
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
-| `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination |
-| `starcode_m5x5` | S stream | U | U | abm5_5 | head and foot is a fixed combination |
+| `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination; hold declared |
+| `starcode_m5x5` | S stream | U | U | abm5_5 | head and foot is a fixed combination; hold declared |
 | `star_elevate` (both routes) | S stream | U | U | abm5_5, m1x12 | one held action; hold declared on the Okin 5A ELEVATE profile, refreshed at the apps' 100 ms |
 | `sleepys_box25` (both routes) | S stream | U | U | sleepy | one held action; Sleepy's cluster accepted in #447 |
 | `doublesleep` | B | B | B | dsleep | report PARTIAL |
@@ -125,7 +125,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `comfort_enhancements` | S stream | U | U | enh | STOP 100 ms after release |
 | `glideaway_motion` | S stream | U | U | glide | zero frames at +300 and +600 ms |
 | `adjustamattress` | S stream | U | U | row067 | union movement is a fixed action |
-| `furnimove` | S stream | U | U | fm157 | composites OR fixed frames (D015); no partial release |
+| `furnimove` | S stream | U | U | fm157 | composites OR fixed frames (D015); no partial release; hold declared |
 | `malouf_legacy_okin` | S stream | U | U | malouf, row023 | STOP after release |
 | `sleepys_box15` | B | B | B | none | no accepted report |
 | `rondure` | B | B | B | none | no accepted report |
@@ -150,11 +150,11 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release |
 | `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP |
 | **Distinct protocols** | | | | | |
-| `svane` (Svane Remote) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP |
-| `jensen`, `svane` (`svane_remote_jmc`) | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control |
-| `svane` (`jensen_linon`) | S stream | U | U | jensen, jensen-disp | 800 ms refresh; STOP to head then foot; combined motion alternates as one control |
-| `linak` (all routes) | S stream | U | U | linak-iot, linak-lp, linak-mem, linak-guide | two-section moves are fixed opcodes; one bed-wide release; speed is reported, not commanded |
-| `octo` (standard) | S stream | U | U | octo | 100 ms delayed global STOP |
+| `svane` (Svane Remote) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP; hold not declared yet: its held route runs under its own admission, which leases do not reach, and #516 reworks it |
+| `jensen`, `svane` (`svane_remote_jmc`) | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control; hold declared on `jensen` only (see the `svane` row) |
+| `svane` (`jensen_linon`) | S stream | U | U | jensen, jensen-disp | 800 ms refresh; STOP to head then foot; combined motion alternates as one control; not declared with the rest of `svane` |
+| `linak` (all routes) | S stream | U | U | linak-iot, linak-lp, linak-mem, linak-guide | two-section moves are fixed opcodes; one bed-wide release; speed is reported, not commanded; hold declared |
+| `octo` (standard) | S stream | U | U | octo | 100 ms delayed global STOP; hold declared on the standard controller only |
 | `octo` (`star2`) | B | B | B | none | no accepted artifact; `auto_stops_on_idle` rests on community reverse engineering |
 | `reverie` | S latched | U | U | reverie, row041 | one frame on press, per-axis stop on release; routines serialize |
 | `reverie_pairlink` | B | B | B | reverie, row041 | row041: Pairlink runtime acceptance pending |
@@ -163,14 +163,14 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `kaidi` (`floyd`) | B | B | B | floyd | report PARTIAL |
 | `remacro` (all models) | S latched | U | U | brick, jewmes, slumber, row050 | one write on press, paired STOP; rocking speed is massage and unreachable (R075) |
 | `malouf_app`, `malouf_new_okin` | S stream | U | U | lucid, malouf, row023 | apps do not establish synchronized motion |
-| `leggett_gen2`, `leggett_platt` (`gen2`) | S stream | U | U | universal | per-axis and global STOP exist; no path holds two axes |
-| `leggett_lp_legacy` | S stream | U | U | lp | explicit release once; SPEED rows are massage |
-| `timotion_ahf` | S stream | U | U | ahf | three neutral frames at release |
-| `vibradorm` | S stream | U | U | vmat | STOP on release; speed is mood light |
-| `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light |
-| `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light |
-| `eshine` | S stream | U | U | eshine | STOP once after a sustained press |
-| `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release |
+| `leggett_gen2`, `leggett_platt` (`gen2`) | S stream | U | U | universal | per-axis and global STOP exist; no path holds two axes; hold declared |
+| `leggett_lp_legacy` | S stream | U | U | lp | explicit release once; SPEED rows are massage; not declared: it exposes button gestures only, with no `timed_move` or `hold_control` route a lease could renew |
+| `timotion_ahf` | S stream | U | U | ahf | three neutral frames at release; hold declared |
+| `vibradorm` | S stream | U | U | vmat | STOP on release; speed is mood light; not declared: the VMAT app runs as a `vibradorm_app` profile, and the generic route repeats at the entry's pulse settings |
+| `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
+| `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
+| `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
+| `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | B | B | B | moto | report BLOCKED |
 | `sleep_number` | B | B | B | sleepiq | report PARTIAL |
 | `sleep_number_mcr` | B | B | B | none | no accepted report |

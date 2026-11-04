@@ -71,6 +71,10 @@ Other Sleepy's profiles keep their existing generic `2A29`/`2A24` behavior.
 | `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the proven safe common app surface; the conditional navigation-race position slider is excluded |
 | `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | App light, massage, timer-code, and voice actions |
 
+Held movement and held app actions accept a
+[renewable hold](../SERVICES.md#renewable-holds): the app's 100 ms refresh
+continues until the lease runs out, then the selector STOP follows.
+
 The profile exposes proven head, feet, lumbar, and selector-supported neck
 movement, the app's preset and memory actions, position refresh, and eligible
 light/massage actions. Position target values and unlabelled state fields keep

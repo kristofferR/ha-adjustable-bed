@@ -524,6 +524,23 @@ class BedController(ABC):
             return None
         return HOLD_CEILING_MS // repeat_ms + 1
 
+    def leased_hold_ms(self, press_ms: int) -> int:
+        """How long one press holds: ``press_ms``, or the hold ceiling under a lease (#483).
+
+        A controller whose press is a fixed-length held control uses this so a
+        renewable hold runs until its lease ends, through its cancel event.
+        Outside a lease, or without a declared hold, the press keeps its length.
+        """
+        context = current_command_context()
+        if (
+            context is None
+            or context.lease is None
+            or context.cancel_event is not self._coordinator.cancel_command
+            or self.execution.hold is None
+        ):
+            return press_ms
+        return HOLD_CEILING_MS
+
     @property
     def auto_stops_on_idle(self) -> bool:
         """Return True if motors auto-stop when commands stop arriving.

@@ -53,6 +53,7 @@ The bed answers the PIN frame; a rejection is logged as a warning.
 | Massage | ✅ head, foot and wave, levels 0-10 (from the config report) |
 | Light | ✅ levels 0-10 (from the config report) |
 | Fan | ✅ levels 0-10 (from the config report) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 300 ms refresh, then STOP once) |
 
 Massage, light and fan appear only when the bed's config report lists them. The
 bed does not report their state, so Home Assistant shows what it last sent.
