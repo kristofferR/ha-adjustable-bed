@@ -2929,13 +2929,20 @@ async def handle_hold_control(call: ServiceCall) -> None:
     )
     lease = _hold_lease(call, control, duration_ms)
     if lease is not None:
-        if route is not None or control == "floor_hold":
+        if route == "svane" or control == "floor_hold":
             raise ServiceValidationError("This control does not support renewable holds")
+        held = lease
         await _async_with_hold_lease(
             targets,
-            lease,
+            held,
             lambda _target: None,
-            lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=lease),
+            (
+                lambda: _hold_limoss_remote(
+                    call, control, MAX_HOLD_LEASE_MS, targets=targets, lease=held
+                )
+            )
+            if route == "limoss_remote"
+            else lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=held),
         )
         return
     if route == "svane":
@@ -3553,16 +3560,35 @@ def _limoss_boolean(value: object) -> bool:
     return value
 
 
-async def _hold_limoss_remote(call: ServiceCall, control: str, duration_ms: int) -> None:
-    """Hold a rendered literal app action using its five-frame release."""
+async def _hold_limoss_remote(
+    call: ServiceCall,
+    control: str,
+    duration_ms: int,
+    *,
+    targets: list[tuple[BedTarget, str]] | None = None,
+    lease: HoldLease | None = None,
+) -> None:
+    """Hold a rendered literal app action using its five-frame release.
+
+    With a ``lease`` the hold streams until the lease ends (#483).
+    """
 
     def validate(controller: LimossRemoteController | SideBoundController) -> None:
         if control not in controller.held_control_options:
             raise ValueError(f"The selected profile does not support combination '{control}'")
+        if lease is not None and controller.execution.hold is None:
+            raise ValueError("This profile does not support renewable holds")
 
-    await _execute_limoss_remote(
-        call, validate, lambda ctrl: ctrl.hold_control(control, duration_ms)
-    )
+    async def hold(controller: BedController | SideBoundController) -> None:
+        await controller.hold_control(control, duration_ms)
+
+    # One tracked movement per hold: renewals extend the running command.
+    tracked = track_held_control(call.hass, control, hold)
+
+    async def execute(controller: LimossRemoteController | SideBoundController) -> None:
+        await tracked(cast("BedController", controller))
+
+    await _execute_limoss_remote(call, validate, execute, targets=targets, lease=lease)
 
 
 def _limoss_remote_controller(
@@ -3662,6 +3688,7 @@ async def _execute_limoss_remote(
     execute: Callable[[LimossRemoteController | SideBoundController], Coroutine[Any, Any, None]],
     *,
     targets: list[tuple[BedTarget, str]] | None = None,
+    lease: HoldLease | None = None,
 ) -> None:
     targets = _limoss_remote_targets(call) if targets is None else targets
 
@@ -3695,8 +3722,11 @@ async def _execute_limoss_remote(
         try:
             for coordinator, side in targets:
                 before = completed
-                await _execute_sided(coordinator, side, run, cancel_running=True)
-                if completed - before != len(_command_targets(coordinator, side)):
+                await _execute_sided(coordinator, side, run, cancel_running=True, lease=lease)
+                # A renewable hold normally ends by expiry, release or STOP.
+                if lease is None and completed - before != len(
+                    _command_targets(coordinator, side)
+                ):
                     raise ServiceValidationError(
                         "Limoss Remote action was interrupted before completion"
                     )
