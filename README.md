@@ -107,9 +107,11 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ Jordan's | [Serenity](docs/beds/okin-nframe.md#jordans-serenity), [Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) |
 | ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
 | ✅ [Adjustable bed (Lumbar)](docs/beds/okin-nframe.md#adjustable-bed-lumbar) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
+| ❓ [eShine E2000 / E3000 / E3100 / E5000](docs/beds/eshine-okin.md) | eShine app (`com.okin.eshine`), explicit products, held presets, massage/light feedback and local alarm (needs testing) |
 | ✅ [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-nframe.md#okin-64-bit) | NORA_CON / NORACON Mattress Firm controllers |
+| ❓ [Good Vibe Sleep](docs/beds/goodvibe.md) | Exact app catalog, remote aliases and independent RM-/HJ- sleep sensors; hardware unverified |
 | 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
 | ✅ [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified; separate from the legacy Okin ORE (A5 5A) bed type |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |

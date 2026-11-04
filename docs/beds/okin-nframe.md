@@ -77,6 +77,7 @@ Customatic app profiles.
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
 | ✅ | Adjustable bed | `com.okin.bedding.adjustbed` | [Okin 64-Bit](#okin-64-bit) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
+| ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | Own guide, [eShine E2000 / E3000 / E3100 / E5000](eshine-okin.md): its 40-bit command words match this codec, but its `07 04` clock and `07 05` alarm frames do not |
 
 Beds controlled with FurniMove handset IDs normally use the explicit
 [FurniMove / OKIN Smart Remote](furnimove.md) app profile.

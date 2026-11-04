@@ -92,12 +92,16 @@ sensor/report consumers and explicit safety/product exclusions.
 
 [HJBed app controls and telemetry](beds/richmat.md#hjbed), including the complete [row121 disposition ledger](apk-analysis/dispositions/row121-hjbed.md).
 
+[Good Vibe Sleep profiles and independent sleep sensors](beds/goodvibe.md), with the complete [row116 disposition ledger](apk-analysis/dispositions/row116-goodvibe.md).
+
 [Solace, Woosa Sleep, BedSense and Motion Bed](beds/ff_frame.md) share the FFFF frame codec
 guide, with the [MotionFlex ledger](beds/solace-disposition.md).
 
 [Ergomotion 4.0 setup and protocol](beds/keeson.md#ergomotion-40), including the
 [issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
 and opt-in P1 split-side controls.
+
+[eShine E2000/E3000/E3100/E5000 protocol and setup](beds/eshine-okin.md), with the complete [row122 disposition ledger](apk-analysis/dispositions/row122-eshine.md).
 
 ## Development and Validation
 

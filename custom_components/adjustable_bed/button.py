@@ -15,7 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import ProductButtonSpec, SideBoundController
+from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec, SideBoundController
 from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LIMOSS_REMOTE,
@@ -951,7 +951,7 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_"):
+        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_", "eshine_okin_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1494,6 +1494,16 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
+        if self._spec.release_only:
+            controller = self._coordinator.capability_controller
+            if controller is not None:
+                controller.on_gesture_release()
+            token = CONTROLLER_GESTURE_RELEASE.set(True)
+            try:
+                await self._coordinator.async_stop_command()
+            finally:
+                CONTROLLER_GESTURE_RELEASE.reset(token)
+            return
         if self._spec.key == "hjbed_release":
             from .hjbed_state import GESTURE_RELEASE
 
