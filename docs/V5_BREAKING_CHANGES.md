@@ -31,9 +31,20 @@ what each beta ships.
    you have decided to stay on v5.
 2. Note the integration version you run now, so you can report it if you go
    back.
-3. In HACS, open **Adjustable Bed**, choose **Redownload** and select the
-   `v5.0.0bN` version. Turn on beta versions for the repository if the beta is
-   not listed. Restart Home Assistant and reload the dashboard page.
+3. Install the `v5.0.0bN` version, by the route your Home Assistant version
+   uses:
+   - **Home Assistant 2026.11 or later** replaces HACS with the built-in
+     [Marketplace](https://www.home-assistant.io/integrations/marketplace/).
+     Under **Settings > Devices & services > Marketplace**, open the Adjustable
+     Bed device, enable its **Pre-release** entity and turn the switch on. The
+     beta then appears under **Settings > Updates**. You can also open
+     **Settings > Marketplace**, choose **Adjustable Bed** and select
+     **Install another version** from the three-dots menu.
+   - **Home Assistant 2026.10 or earlier** still uses HACS. Open **Adjustable
+     Bed**, choose **Redownload** and select the `v5.0.0bN` version. Turn on
+     beta versions for the repository if the beta is not listed.
+
+   Restart Home Assistant and reload the dashboard page.
 
 The minimum Home Assistant version is unchanged: **2026.9.0**.
 
@@ -149,7 +160,9 @@ Remote head and feet on both its routes
 ([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)). Every
 `timed_move` on these motors joins the stream, even a single move. A motor's own
 Stop ends only that motor. Paired beds, `hold_control` and every other bed stay
-serialized, including Leggett Okin Prodigy 2 and 2L and Customatic. See the
+serialized, including Leggett Okin Prodigy 2 and 2L
+([#835](https://github.com/kristofferR/ha-adjustable-bed/pull/835)) and
+Customatic. See the
 [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
 
 **Calibrated position estimates ([#601](https://github.com/kristofferR/ha-adjustable-bed/issues/601)).**
