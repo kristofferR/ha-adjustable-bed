@@ -92,7 +92,7 @@ Mattress Firm Nordic packets with this protocol.
 
 ## Related Protocols
 
-- [Okimat/Okin](okimat.md) uses the same custom OKIN service UUID on some models,
+- [Okimat/Okin](okin-nframe.md#okimat) uses the same custom OKIN service UUID on some models,
   but sends 6-byte `0x04 0x02` frames.
 - [Mattress Firm 900](mattressfirm.md) also uses Nordic UART, but sends 7-byte
   `5A 01 ... A5` frames.

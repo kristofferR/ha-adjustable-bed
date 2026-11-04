@@ -523,7 +523,7 @@ frame reports light state (`0x20000`), alarm (`0x400000`), and sleep timer
 (`0x800000`). The Prodigy CE implementation recognizes that layout and publishes
 a feedback-driven light. Old-state receipts and spontaneous new-state updates
 are both consumed; other profiles keep the app parser. See
-[the protocol documentation](leggett-okin.md#notifications) for validation,
+[the protocol documentation](okin-nframe.md#notifications-1) for validation,
 unknown-state behavior, and remaining physical validation.
 
 The app calls C:23 a mode change, but hardware identifies its SET+FLAT bits as a

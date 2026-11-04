@@ -25,7 +25,8 @@ brands, models and apps are grouped together. Use [Supported Actuators](SUPPORTE
 to identify your controller and compare features. The detailed guides in
 [`beds/`](beds/) cover model-specific setup and testing status, and follow the
 [bed guide format](BED_GUIDE_FORMAT.md). Wire formats shared by several apps have
-one codec guide with a section per profile, starting with [Jiecang](beds/jiecang.md);
+one codec guide with a section per profile: [Jiecang](beds/jiecang.md) and
+[Okin N-frame](beds/okin-nframe.md);
 the [codec and profile architecture](design/protocol-codecs.md) explains the split.
 
 ## Protocol Research

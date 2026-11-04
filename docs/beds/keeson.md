@@ -38,7 +38,7 @@ for all 128 exclusions and exact accepted evidence.
 **DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
 - Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [explicit profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
 - ORE: Dynasty, LevaSleep, American Star, Avanti, Comfort Furniture, Hestia Motion, Maxcoil, Power's Bedding, SFM, Ultramatic, Better Living, Koizumi
-- See [DewertOkin](dewertokin.md) for full list
+- See [DewertOkin](okin-nframe.md#dewertokin) for full list
 
 ## Apps
 

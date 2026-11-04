@@ -12,7 +12,7 @@
 - Reuses the [Serenity](serenity.md) controller core: transport, 14-byte frame,
   refresh/release lifecycle and notification parser. Action tables, save codes,
   buttons, timing and the alarm page are this app's own.
-- Separate from the six-byte [Customatic Clarity/Jerome's/Remedy](customatic.md) apps
+- Separate from the six-byte [Customatic Clarity/Jerome's/Remedy](okin-nframe.md#customatic-family) apps
 
 ## Apps
 
