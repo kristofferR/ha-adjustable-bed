@@ -6,15 +6,19 @@ clock. Here the hold runs inside a leased ``CommandContext``, as the scheduler
 binds it, and ends the way the coordinator ends one: lease expiry sets the
 cancel event and lets the operation finish; STOP also cancels the operation
 task and then sends ``stop_all``. Timing is exact, and no real timer is awaited.
+
+``virtual_clock`` puts the same fake clock under any test body, for example the
+real coordinator and services, so lease, refresh and release timers are exact.
 """
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import importlib.util
 import json
 import sys
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -40,6 +44,20 @@ def _tool() -> Any:
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
     return module
+
+
+@contextlib.contextmanager
+def virtual_clock() -> Iterator[Any]:
+    """Run asyncio timing in the block on the wire tool's fake clock.
+
+    Loop time, sleeps, timeouts and loop timers advance only once every task
+    waits, straight to the earliest deadline. Yields the clock; ``clock.time()``
+    is the virtual loop time in seconds.
+    """
+    tool = _tool()
+    clock = tool.FakeClock()
+    with tool.virtual_time(clock):
+        yield clock
 
 
 @dataclass(frozen=True)
