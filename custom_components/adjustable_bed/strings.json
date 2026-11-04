@@ -6269,6 +6269,14 @@
         "side": {
           "name": "Side",
           "description": "Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
+        },
+        "hold_owner": {
+          "name": "Hold owner",
+          "description": "Makes the move a renewable hold on beds that support it. Repeat the call with the same owner, generation and motion within the duration to keep moving; each call replaces the deadline. Leave unset for a single move."
+        },
+        "hold_generation": {
+          "name": "Hold generation",
+          "description": "Number of this hold. Use a new, higher number for every new press. A call naming a generation that has ended is refused."
         }
       }
     },
@@ -6290,6 +6298,14 @@
         "side": {
           "name": "Side",
           "description": "Which side of a paired bed to target. Leave unset to target the whole bed, or the side whose device you selected."
+        },
+        "hold_owner": {
+          "name": "Hold owner",
+          "description": "Makes the move a renewable hold on beds that support it. Repeat the call with the same owner, generation and motion within the duration to keep moving; each call replaces the deadline. Leave unset for a single move."
+        },
+        "hold_generation": {
+          "name": "Hold generation",
+          "description": "Number of this hold. Use a new, higher number for every new press. A call naming a generation that has ended is refused."
         }
       }
     },

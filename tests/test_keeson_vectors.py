@@ -97,6 +97,12 @@ def _decode(data: bytes) -> bytes:
         return codec.clock_fields(data[3:9])
     if data[:1] == b"{":
         return data  # JSON text: covered by the census, which builds it through the codec.
+    if data[:2] == b"\x07\xd0":
+        return codec.custom_massage(999 if data[6] == 0x10 else data[8])
+    if data[:2] == b"\x09\x0a":
+        return codec.rgb((data[7], data[8], data[9]))
+    if data[:2] == b"\x0a\x02":
+        return codec.rgb((255 - data[9], 255 - data[10], 255 - data[11]), inverted=True)
     if len(data) == 6:
         carrier = "p2"
     elif data[0] == 0x05:
@@ -302,7 +308,24 @@ def _cluster033_census(app: str) -> set[bytes]:
 
 
 def test_every_profile_has_vectors() -> None:
-    assert set(FROZEN_FRAMES) == set(profiles.PROFILES) | set(profiles.APP_LAYOUTS)
+    assert set(FROZEN_FRAMES) == {
+        *profiles.PROFILES,
+        *profiles.APP_LAYOUTS,
+        profiles.ERGOMOTION_4,
+    }
+
+
+def test_ergomotion_4_vectors_are_its_report_fixture() -> None:
+    """Every frame the report's command traces spell; tests/test_ergomotion4.py replays them."""
+    fixtures = Path(__file__).parent / "fixtures" / "ergomotion4"
+    traced = {
+        step[1]
+        for case in json.loads((fixtures / "commands.json").read_text())
+        for phase in ("press", "release")
+        for step in case[phase]
+        if step[0] == "write"
+    }
+    assert traced <= FROZEN_FRAMES[profiles.ERGOMOTION_4]
 
 
 @pytest.mark.parametrize(

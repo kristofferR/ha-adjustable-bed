@@ -23,6 +23,7 @@ from ..codec.okin_5a import (
     TransportKey,
     command,
 )
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Action = Literal[
     "stop",
@@ -77,6 +78,8 @@ class Tap:
 @dataclass(frozen=True, kw_only=True)
 class Okin5AProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     transport: TransportKey
     write_with_response: bool
     wake: tuple[bytes, ...] = ()

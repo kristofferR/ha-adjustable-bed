@@ -13,7 +13,14 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Collection,
+    Coroutine,
+    Mapping,
+)
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, Protocol, cast
@@ -35,7 +42,10 @@ from .beds.reverie_comfort import ReverieComfortRequest
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     CommandHandle,
+    HoldClaim,
+    HoldLease,
     PreparedCommandInvalidated,
+    StaleHoldLease,
     command_resources,
     current_command_context,
 )
@@ -212,6 +222,8 @@ ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
 ATTR_DIRECTION = "direction"
 ATTR_DURATION_MS = "duration_ms"
+ATTR_HOLD_OWNER = "hold_owner"
+ATTR_HOLD_GENERATION = "hold_generation"
 ATTR_DURATION = "duration"
 ATTR_SIDE = "side"
 ATTR_FIRST_MOTOR = "first_motor"
@@ -340,6 +352,19 @@ MAX_CAPTURE_DURATION = 300
 # Timed move duration limits (milliseconds)
 MIN_TIMED_MOVE_DURATION_MS = 100
 MAX_TIMED_MOVE_DURATION_MS = 30000  # 30 seconds max
+# A renewable hold (#483) lasts each call's lease within these bounds. The
+# ceiling also bounds one hold in total: it never streams past it, however
+# often it is renewed.
+MIN_HOLD_LEASE_MS = MIN_TIMED_MOVE_DURATION_MS
+MAX_HOLD_LEASE_MS = MAX_TIMED_MOVE_DURATION_MS
+HOLD_LEASE_FIELDS = {
+    vol.Inclusive(ATTR_HOLD_OWNER, "hold_lease"): vol.All(
+        cv.string, vol.Length(min=1, max=64)
+    ),
+    vol.Inclusive(ATTR_HOLD_GENERATION, "hold_lease"): vol.All(
+        vol.Coerce(int), vol.Range(min=0, max=2**53)
+    ),
+}
 
 
 class _ReverieComfortController(Protocol):
@@ -684,17 +709,31 @@ async def _execute_sided(
     expected_stop_epoch: int | None = None,
     expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
     expected_stop_epochs: Mapping[str, int] | None = None,
+    lease: HoldLease | None = None,
 ) -> None:
     """Run a command on the targeted side(s).
 
     A paired bed fans out (with the both-failure stop-the-other contract); a
-    single bed runs exactly as before.
+    single bed runs exactly as before. A ``lease`` makes it a renewable hold.
     """
     if admission is not None:
         expected_pair_generations = admission.expected_pair_generations
         expected_stop_epochs = admission.expected_stop_epochs
         expected_stop_epoch = admission.expected_stop_epochs.get(SIDE_BOTH)
     if isinstance(coordinator, PairedBedCoordinator):
+        if lease is not None:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                side=side,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                expected_pair_generations=expected_pair_generations,
+                expected_stop_epochs=expected_stop_epochs,
+                lease=lease,
+            )
+            return
         await coordinator.async_execute_controller_command(
             command_fn,
             side=side,
@@ -704,6 +743,16 @@ async def _execute_sided(
             resources=resources,
             expected_pair_generations=expected_pair_generations,
             expected_stop_epochs=expected_stop_epochs,
+        )
+    elif lease is not None:
+        await coordinator.async_execute_controller_command(
+            command_fn,
+            cancel_running=cancel_running,
+            skip_disconnect=skip_disconnect,
+            resource=resource,
+            resources=resources,
+            expected_stop_epoch=expected_stop_epoch,
+            lease=lease,
         )
     else:
         if expected_stop_epoch is None:
@@ -1977,10 +2026,14 @@ async def _timed_move_plan(
     direction: str,
     duration_ms: int,
     svane_admission: SvaneHoldAdmission | None = None,
+    *,
+    hold_lease: bool = False,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
     async with _release_idle_on_validation_failure(coordinator):
         controller = await _validation_controller(parent, coordinator, preflighted)
+        if hold_lease:
+            _require_hold_execution(coordinator, controller)
 
         motor_specs = {
             spec.key: spec
@@ -2160,6 +2213,88 @@ async def _timed_move_plan(
         )
 
 
+def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease | None:
+    """Return the call's renewable hold lease, or None for a finite move."""
+    owner = call.data.get(ATTR_HOLD_OWNER)
+    if owner is None:
+        return None
+    if not MIN_HOLD_LEASE_MS <= duration_ms <= MAX_HOLD_LEASE_MS:
+        raise ServiceValidationError(
+            f"A renewable hold lasts {MIN_HOLD_LEASE_MS} to {MAX_HOLD_LEASE_MS} ms per call"
+        )
+    return HoldLease(
+        owner=owner,
+        generation=call.data[ATTR_HOLD_GENERATION],
+        action=action,
+        duration_s=duration_ms / 1000,
+    )
+
+
+def _require_hold_execution(
+    target: BedChild, controller: BedController | SideBoundController
+) -> None:
+    """Allow a lease only on a controller that declares an open-ended hold."""
+    if controller.execution.hold is None:
+        raise ServiceValidationError(
+            f"Device '{target.name}' does not support renewable holds"
+        )
+
+
+async def _async_with_hold_lease(
+    targets: list[tuple[BedTarget, str]],
+    lease: HoldLease,
+    resource_for: Callable[[BedChild], str | None],
+    start: Callable[[], Awaitable[None]],
+) -> None:
+    """Renew a live hold of this generation, or start one (#483).
+
+    A renewal writes no frame and never starts motion on a side whose hold has
+    ended. A generation that has ended everywhere is refused. A new hold
+    reserves its generation before preflight, so renewals that arrive meanwhile
+    extend the reservation and a STOP before admission ends it.
+    """
+    if len(targets) != 1:
+        raise ServiceValidationError("A renewable hold targets one bed at a time")
+    coordinator, side = targets[0]
+    # Key every claim by the target that executes the command: a native
+    # single-address Both runs once on its combined side view.
+    executing = (
+        list({id(child): child for _, child in coordinator._targets_for(side)}.values())
+        if isinstance(coordinator, PairedBedCoordinator)
+        else _command_targets(coordinator, side)
+    )
+    physical = [(target, resource_for(target)) for target in executing]
+    claims = [
+        target.claim_hold_lease(lease, resource=resource, reserve=False)
+        for target, resource in physical
+    ]
+    if HoldClaim.RENEW in claims:
+        for (target, resource), claim in zip(physical, claims, strict=True):
+            if claim is HoldClaim.RENEW:
+                target.claim_hold_lease(lease, resource=resource)
+        return
+    if HoldClaim.STALE in claims:
+        raise ServiceValidationError(
+            f"Hold generation {lease.generation} has ended; start a new generation"
+        )
+    modes = {
+        controller.execution.hold
+        for target, _resource in physical
+        if (controller := target.capability_controller) is not None
+    }
+    if len(modes) > 1:
+        raise ServiceValidationError("Both sides must declare the same hold mode")
+    for target, resource in physical:
+        target.claim_hold_lease(lease, resource=resource)
+    try:
+        await start()
+    except StaleHoldLease as err:
+        raise ServiceValidationError(str(err)) from err
+    finally:
+        for target, resource in physical:
+            target.release_hold_claim(lease, resource=resource)
+
+
 async def handle_timed_move(call: ServiceCall) -> None:
     """Handle timed_move service call with sided all-target preflight."""
     hass = call.hass
@@ -2180,7 +2315,17 @@ async def handle_timed_move(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    await _async_timed_move(targets, motor, direction, duration_ms)
+    lease = _hold_lease(call, direction, duration_ms)
+    if lease is None:
+        await _async_timed_move(targets, motor, direction, duration_ms)
+        return
+    await _async_with_hold_lease(
+        targets,
+        lease,
+        lambda target: _timed_move_resource(target, motor),
+        # The lease ends the hold; the ceiling only bounds it in total.
+        lambda: _async_timed_move(targets, motor, direction, MAX_HOLD_LEASE_MS, lease=lease),
+    )
 
 
 async def _async_timed_move(
@@ -2188,6 +2333,8 @@ async def _async_timed_move(
     motor: str,
     direction: str,
     duration_ms: int,
+    *,
+    lease: HoldLease | None = None,
 ) -> None:
     """Share the bounded service path with declared-hold entity fallbacks."""
     # Resolve each selected motor resource from any offline capability
@@ -2238,6 +2385,7 @@ async def _async_timed_move(
                 plans[_plan_key(target)] = await _timed_move_plan(
                     coordinator, target, preflighted, motor, direction, duration_ms,
                     svane_admissions.get(target_key),
+                    hold_lease=lease is not None,
                 )
             admission = command_admissions[(id(coordinator), side)]
             actual_resources = {
@@ -2254,6 +2402,16 @@ async def _async_timed_move(
 
     async def move(target: BedChild) -> None:
         command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
+        if lease is not None:
+            await target.async_execute_controller_command(
+                command,
+                resource=resource,
+                pulse_count=pulse_count,
+                pulse_delay_ms=pulse_delay_ms,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+                lease=lease,
+            )
+            return
         await target.async_execute_controller_command(
             command,
             resource=resource,
@@ -2789,6 +2947,17 @@ async def handle_hold_control(call: ServiceCall) -> None:
         {BED_TYPE_SVANE: "svane", BED_TYPE_LIMOSS_REMOTE: "limoss_remote"},
         SERVICE_HOLD_CONTROL,
     )
+    lease = _hold_lease(call, control, duration_ms)
+    if lease is not None:
+        if route is not None or control == "floor_hold":
+            raise ServiceValidationError("This control does not support renewable holds")
+        await _async_with_hold_lease(
+            targets,
+            lease,
+            lambda _target: None,
+            lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=lease),
+        )
+        return
     if route == "svane":
         await _hold_svane(call, control, duration_ms)
     elif route == "limoss_remote":
@@ -2975,7 +3144,11 @@ def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
 
 
 async def _hold_targets(
-    targets: list[tuple[BedTarget, str]], control: str, duration_ms: int
+    targets: list[tuple[BedTarget, str]],
+    control: str,
+    duration_ms: int,
+    *,
+    lease: HoldLease | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
 
@@ -2988,6 +3161,8 @@ async def _hold_targets(
 
     def check(target: BedChild, controller: BedController | SideBoundController) -> None:
         _require_held_control(target, controller, control)
+        if lease is not None:
+            _require_hold_execution(target, controller)
         controller.validate_hold_control(control, duration_ms)
 
     admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
@@ -3006,6 +3181,7 @@ async def _hold_targets(
                 expected_stop_epoch=admission.stop_epoch,
                 expected_pair_generations=admission.pair_generations,
                 expected_stop_epochs=admission.stop_epochs,
+                lease=lease,
             )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
@@ -4767,6 +4943,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                     vol.Range(min=MIN_TIMED_MOVE_DURATION_MS, max=MAX_TIMED_MOVE_DURATION_MS),
                 ),
                 **SIDE_FIELD,
+                **HOLD_LEASE_FIELDS,
             }
         ),
     )
@@ -4961,6 +5138,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 **hold_fields,
+                **HOLD_LEASE_FIELDS,
                 vol.Required(ATTR_CONTROL): cv.string,
             }
         ),
