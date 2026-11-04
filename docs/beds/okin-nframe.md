@@ -187,6 +187,10 @@ Sleepy's Elite and AdjustableM5X4 are explicit app choices.
 | Jordan's Tranquil | `tranquil` | `tranquil` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
 | Customatic Z-280 | `zseries_z280` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
+| OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
+| Adjustable bed (Lumbar) 36_33_04a | `adjustable_lumbar_okin` | `adjustable_lumbar` | 64-bit | plain frame | with response | head, feet, lumbar | 0 |
+| Adjustable bed (Lumbar) 25_42_02 | `adjustable_lumbar_star` | `adjustable_lumbar` | 64-bit | plain frame | without response | head, feet, lumbar | 0 |
 
 ### Hold and release timing
 
@@ -227,6 +231,10 @@ Sleepy's Elite and AdjustableM5X4 are explicit app choices.
 | Jordan's Tranquil | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-230 | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-280 | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
+| OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
+| OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
+| Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count | 2 STOP at 300 ms |
+| Adjustable bed (Lumbar) 25_42_02 | 100 ms | entry pulse count | 2 STOP at 300 ms |
 
 Entry pulse settings are the configured motor pulse count and delay.
 
@@ -269,6 +277,10 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | n/a | n/a |
+| OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | n/a | n/a |
+| Adjustable bed (Lumbar) 36_33_04a | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| Adjustable bed (Lumbar) 25_42_02 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 
 Leggett Okin profiles also stream Flat for 30000 ms and program a favorite by
 holding the store key 5000 ms, then the slot 2000 ms. Customatic named memory
@@ -691,6 +703,65 @@ controls it supports; held motors send the OR of their primary words.
 | STOP / release | `00000000 00000000` | all | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
 
 Each app's literal action table, by the app's action names.
+
+#### Okin 64-Bit keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| STOP / release | `0x0000000000000000` | all | `08 02 00 00 00 00 00 00 00 00` |
+| Head up | `0x0000000100000000` | all | `08 02 00 00 00 01 00 00 00 00` |
+| Head down | `0x0000000200000000` | all | `08 02 00 00 00 02 00 00 00 00` |
+| Foot up | `0x0000000400000000` | all | `08 02 00 00 00 04 00 00 00 00` |
+| Foot down | `0x0000000800000000` | all | `08 02 00 00 00 08 00 00 00 00` |
+| Lumbar up | `0x0000001000000000` | all | `08 02 00 00 00 10 00 00 00 00` |
+| Lumbar down | `0x0000002000000000` | all | `08 02 00 00 00 20 00 00 00 00` |
+| Flat | `0x0800000000000000` | all | `08 02 08 00 00 00 00 00 00 00` |
+| Zero-G | `0x0000100000000000` | all | `08 02 00 00 10 00 00 00 00 00` |
+| Lounge / Reading | `0x0000200000000000` | all | `08 02 00 00 20 00 00 00 00 00` |
+| `tv_pc` | `0x0000400000000000` | all | `08 02 00 00 40 00 00 00 00 00` |
+| Anti-snore / Snore | `0x0000800000000000` | all | `08 02 00 00 80 00 00 00 00 00` |
+| Memory 1 | `0x0001000000000000` | all | `08 02 00 01 00 00 00 00 00 00` |
+| Memory 2 | `0x0004000000000000` | all | `08 02 00 04 00 00 00 00 00 00` |
+| `massage_switch` | `0x0000010000000000` | all | `08 02 00 00 01 00 00 00 00 00` |
+| `strength_up` | `0x00000C0000000000` | all | `08 02 00 00 0C 00 00 00 00 00` |
+| `strength_down` | `0x0180000000000000` | all | `08 02 01 80 00 00 00 00 00 00` |
+| `wave_mode` | `0x1000000000000000` | all | `08 02 10 00 00 00 00 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | all | `08 02 00 02 00 00 00 00 00 00` |
+| Light on | `0x0000000000000040` | all | `08 02 00 00 00 00 00 00 00 40` |
+| Light off | `0x0000000000000080` | all | `08 02 00 00 00 00 00 00 00 80` |
+
+#### Adjustable bed (Lumbar) keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `0x0000000100000000` | all | `08 02 00 00 00 01 00 00 00 00` |
+| Head down | `0x0000000200000000` | all | `08 02 00 00 00 02 00 00 00 00` |
+| Feet up | `0x0000000400000000` | all | `08 02 00 00 00 04 00 00 00 00` |
+| Feet down | `0x0000000800000000` | all | `08 02 00 00 00 08 00 00 00 00` |
+| Lumbar up | `0x0000001000000000` | all | `08 02 00 00 00 10 00 00 00 00` |
+| Lumbar down | `0x0000002000000000` | all | `08 02 00 00 00 20 00 00 00 00` |
+| STOP / release | `0x0000000000000000` | all | `08 02 00 00 00 00 00 00 00 00` |
+| Flat | `0x0800000000000000` | all | `08 02 08 00 00 00 00 00 00 00` |
+| Anti-snore / Snore | `0x0000800000000000` | all | `08 02 00 00 80 00 00 00 00 00` |
+| Lounge / Reading | `0x0000200000000000` | all | `08 02 00 00 20 00 00 00 00 00` |
+| Incline | `0x0000400000000000` | all | `08 02 00 00 40 00 00 00 00 00` |
+| Zero-G | `0x0000100000000000` | all | `08 02 00 00 10 00 00 00 00 00` |
+| `save_anti_snore` | `0x0800800000000000` | all | `08 02 08 00 80 00 00 00 00 00` |
+| `save_lounge` | `0x0800200000000000` | all | `08 02 08 00 20 00 00 00 00 00` |
+| `save_incline` | `0x0800400000000000` | all | `08 02 08 00 40 00 00 00 00 00` |
+| `save_zero_g` | `0x0800100000000000` | all | `08 02 08 00 10 00 00 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | all | `08 02 00 02 00 00 00 00 00 00` |
+| Massage wave 1 | `0x0000000000080000` | all | `08 02 00 00 00 00 00 08 00 00` |
+| Massage wave 2 | `0x0000000000100000` | all | `08 02 00 00 00 00 00 10 00 00` |
+| Massage wave 3 | `0x0000000000200000` | all | `08 02 00 00 00 00 00 20 00 00` |
+| `massage_stop` | `0x0200000000000000` | all | `08 02 02 00 00 00 00 00 00 00` |
+| `massage_up` | `0x00000C0000000000` | all | `08 02 00 00 0C 00 00 00 00 00` |
+| `massage_down` | `0x0180000000000000` | all | `08 02 01 80 00 00 00 00 00 00` |
+| `massage_on` | `0x0000010000000000` | all | `08 02 00 00 01 00 00 00 00 00` |
+| `voice_stop` | `0x0000000000000000` | all | `08 02 00 00 00 00 00 00 00 00` |
+
+The 25_42_02 and 36_33_04a tables share these words; 35_22_01 sends StarCode `5A`
+frames, listed in its profile.
 <!-- /generated -->
 
 ### Responses
