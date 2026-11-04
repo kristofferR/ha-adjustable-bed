@@ -62,3 +62,8 @@ class ExecutionCapabilities:
 
 
 NO_EXECUTION_CAPABILITIES: Final = ExecutionCapabilities()
+STREAM_HOLD: Final = ExecutionCapabilities(hold="stream")
+"""The app refreshes a held frame until release, then sends its release frames."""
+
+HOLD_CEILING_MS: Final = 30_000
+"""The longest one renewable hold streams, however often its lease is renewed."""
