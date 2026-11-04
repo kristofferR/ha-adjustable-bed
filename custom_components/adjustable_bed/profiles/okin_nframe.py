@@ -222,6 +222,8 @@ Memory holds end without a release frame (``releases`` applies to motors only).
 """
 CUSTOMATIC_APP_HOLD_MS: Final = 2700
 """The app's Saved/Reset confirmation threshold, not a hardware acknowledgement."""
+CUSTOMATIC_EXECUTION: Final = ExecutionCapabilities(hold="stream")
+"""Each app streams a held motor mask until release (clarity, jeromes, remedy, row028)."""
 
 
 def _customatic(
@@ -242,6 +244,7 @@ def _customatic(
         axes=axes,
         keys=MappingProxyType({**keys, "flat": flat}),
         hold=CUSTOMATIC_HOLD,
+        execution=CUSTOMATIC_EXECUTION,
         recall=Tap(repeats=flat_repeats),
     )
 
@@ -317,6 +320,10 @@ LEGGETT_STORE_HOLD_MS: Final = (5_000, 2_000)
 """Arm with the store key, then hold the slot key, both at 100 ms."""
 LEGGETT_CONTROL_MODE: Final = Tap(repeats=55, repeat_ms=100, releases=1)
 """The settings dialog's 55 attempts, then one explicit zero frame."""
+LEGGETT_EXECUTION: Final = ExecutionCapabilities(hold="stream")
+"""Every Leggett app streams a held key until release (p2, p2l, p4, useries)."""
+CU170_EXECUTION: Final = ExecutionCapabilities(hold="stream", sustain_ms=217)
+"""Prodigy CE's CU170 box stops motion 217-218 ms after the last frame (#368, #483)."""
 USERIES_SLEEP_MINUTES: Final = (15, 30, 45, 60, 75, 90)
 _USERIES_SLEEP_ACTIONS: Final = {0: 0x00100000, 1: 0, 2: 0x00010000, 3: 0x00020000}
 
@@ -352,6 +359,7 @@ def _leggett(
         axes=axes,
         keys=MappingProxyType(keys),
         hold=LEGGETT_HOLD,
+        execution=CU170_EXECUTION if key == "prodigy4" else LEGGETT_EXECUTION,
         # A recall is a fixed burst with no terminator: the box completes the
         # move itself, and a release could cancel it.
         recall=Tap(repeats=10, repeat_ms=100),
