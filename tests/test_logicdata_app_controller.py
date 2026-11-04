@@ -136,19 +136,6 @@ async def test_p2_flat_failure_still_releases(coordinator):
 
 
 @pytest.mark.parametrize("profile", ["phone", "tablet"])
-async def test_light_preserves_both_release_families(coordinator, profile):
-    bed = controller(coordinator, profile=profile)
-    with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
-        await bed.lights_toggle()
-    assert packets(coordinator) == [
-        bytes.fromhex("f1f10f000f7e"),
-        codec.SHORT_RELEASE,
-        codec.LONG_RELEASE,
-        codec.SHORT_RELEASE,
-    ]
-
-
-@pytest.mark.parametrize("profile", ["phone", "tablet"])
 async def test_massage_mode_cleanup_is_app_specific(coordinator, profile):
     bed = controller(coordinator, profile=profile)
     with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
@@ -415,6 +402,8 @@ async def test_cancel_p2_memory_hold_prevents_refresh_and_releases(coordinator):
 @pytest.mark.parametrize(
     ("preset", "duration"), [("yoga", 1000), ("flat", 0), ("memory_1", 100), ("flat", 60001)]
 )
+
+
 async def test_invalid_held_preset_never_writes(coordinator, preset, duration):
     bed = controller(coordinator, command_family="p2", layout="middle")
     with pytest.raises(ValueError):

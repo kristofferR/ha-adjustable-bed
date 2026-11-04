@@ -33,3 +33,17 @@ test("bed graphic availability requires degree feedback for both panels", () => 
   hass.states["number.bed_legs"].attributes.unit_of_measurement = "°";
   expect(bedHasGraphicFeedback(bed, hass)).toBe(true);
 });
+
+test("a paired estimate is drawn dashed per side", async () => {
+  const { renderDualBedGraphic } = await import("./bed-graphic");
+  const side = (estimated: boolean) => ({
+    upper: { angle: 20 }, lower: { angle: 10 }, moving: false, estimated,
+  });
+  const strings = (template: { strings: readonly string[]; values: readonly unknown[] }): string => [
+    ...template.strings,
+    ...template.values.flatMap((v) =>
+      v && typeof v === "object" && "strings" in v ? [strings(v as never)] : [String(v)]),
+  ].join("");
+  const svg = strings(renderDualBedGraphic({ left: side(true), right: side(false) }) as never);
+  expect(svg.match(/is-estimated/g)?.length).toBe(1);
+});
