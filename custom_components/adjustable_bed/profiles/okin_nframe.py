@@ -24,6 +24,7 @@ from types import MappingProxyType
 from typing import Final, Literal, TypedDict
 
 from ..const import (
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -32,6 +33,7 @@ from ..const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -1212,5 +1214,126 @@ BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
             tap=Tap(releases=2),
         )
         for key, name, bed_type, actions, memories, lounge in _BEDDING
+    }
+)
+
+
+# 64-bit routes: ``08 02 <64-bit word>``.
+
+OKIN_64BIT_KEYS: Final = MappingProxyType(
+    {
+        "stop": 0x0000000000000000,
+        "head_up": 0x0000000100000000,
+        "head_down": 0x0000000200000000,
+        "foot_up": 0x0000000400000000,
+        "foot_down": 0x0000000800000000,
+        "lumbar_up": 0x0000001000000000,
+        "lumbar_down": 0x0000002000000000,
+        "flat": 0x0800000000000000,
+        "zero_g": 0x0000100000000000,
+        "lounge": 0x0000200000000000,
+        "tv_pc": 0x0000400000000000,
+        "anti_snore": 0x0000800000000000,
+        "memory_1": 0x0001000000000000,
+        "memory_2": 0x0004000000000000,
+        "massage_switch": 0x0000010000000000,
+        "strength_up": 0x00000C0000000000,
+        "strength_down": 0x0180000000000000,
+        "wave_mode": 0x1000000000000000,
+        "light_toggle": 0x0002000000000000,
+        "light_on": 0x0000000000000040,
+        "light_off": 0x0000000000000080,
+    }
+)
+
+
+def _okin_64bit(key: str, name: str, *, response: bool) -> OkinNFrameProfile:
+    return OkinNFrameProfile(
+        key=key,
+        name=name,
+        bed_types=(BED_TYPE_OKIN_64BIT,),
+        width=8,
+        write="response" if response else "no_response",
+        envelope="plain",
+        axes=("head", "feet", "lumbar"),
+        keys=OKIN_64BIT_KEYS,
+        # Motors refresh at the entry's pulses, then one STOP; presets, memory,
+        # lights and massage are one write without a STOP.
+        hold=Hold(repeat_ms=None, releases=1),
+        recall=Tap(),
+        memory_slots=2,
+    )
+
+
+OKIN_64BIT_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+    {
+        # Protocol 25_42_02 and 36_33_04a of com.okin.bedding.adjustbed.
+        "nordic": _okin_64bit("okin_64bit_nordic", "OKIN 64-bit Nordic UART", response=False),
+        "custom": _okin_64bit("okin_64bit_custom", "OKIN 64-bit OKIN service", response=True),
+    }
+)
+
+ADJUSTABLE_LUMBAR_REFRESH_MS: Final = 100
+"""Held controls write at once, then every 100 ms."""
+ADJUSTABLE_LUMBAR_SAVE_HOLD_MS: Final = 6000
+"""The app reports "Setup" after a Flat+preset chord is held 6 s (its help says 5 s)."""
+ADJUSTABLE_LUMBAR_KEYS: Final = MappingProxyType(
+    {
+        "head_up": 0x0000000100000000,
+        "head_down": 0x0000000200000000,
+        "feet_up": 0x0000000400000000,
+        "feet_down": 0x0000000800000000,
+        "lumbar_up": 0x0000001000000000,
+        "lumbar_down": 0x0000002000000000,
+        "stop": 0x0000000000000000,
+        "flat": 0x0800000000000000,
+        "anti_snore": 0x0000800000000000,
+        "lounge": 0x0000200000000000,
+        "incline": 0x0000400000000000,
+        "zero_g": 0x0000100000000000,
+        "save_anti_snore": 0x0800800000000000,
+        "save_lounge": 0x0800200000000000,
+        "save_incline": 0x0800400000000000,
+        "save_zero_g": 0x0800100000000000,
+        "light": 0x0002000000000000,
+        "wave_1": 0x0000000000080000,
+        "wave_2": 0x0000000000100000,
+        "wave_3": 0x0000000000200000,
+        "massage_stop": 0x0200000000000000,
+        "massage_up": 0x00000C0000000000,
+        "massage_down": 0x0180000000000000,
+        "massage_on": 0x0000010000000000,
+        "voice_stop": 0x0000000000000000,
+    }
+)
+"""The 25_42_02 and 36_33_04a tables: one set of 64-bit words."""
+
+
+def _lumbar(key: str, name: str, *, response: bool) -> OkinNFrameProfile:
+    return OkinNFrameProfile(
+        key=key,
+        name=name,
+        bed_types=(BED_TYPE_ADJUSTABLE_LUMBAR,),
+        width=8,
+        write="response" if response else "no_response",
+        envelope="plain",
+        axes=("head", "feet", "lumbar"),
+        keys=ADJUSTABLE_LUMBAR_KEYS,
+        # Every release is a STOP at once and another 300 ms later.
+        hold=Hold(repeat_ms=ADJUSTABLE_LUMBAR_REFRESH_MS, releases=2, release_ms=300),
+        recall=Tap(releases=2),
+        tap=Tap(releases=2),
+    )
+
+
+ADJUSTABLE_LUMBAR_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+    {
+        # 35_22_01 sends StarCode ``5A`` frames instead (codec/okin_5a.py).
+        "36_33_04a": _lumbar(
+            "adjustable_lumbar_okin", "Adjustable bed (Lumbar) 36_33_04a", response=True
+        ),
+        "25_42_02": _lumbar(
+            "adjustable_lumbar_star", "Adjustable bed (Lumbar) 25_42_02", response=False
+        ),
     }
 )
