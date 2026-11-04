@@ -52,6 +52,30 @@ def test_jiecang_guide_frames_are_frozen_vectors() -> None:
     assert not unknown, f"Frames no profile was frozen sending: {unknown}"
 
 
+def test_ff_frame_guide_frames_are_frozen_vectors() -> None:
+    """Every complete FFFF frame spelled in the guide is one a profile was frozen sending.
+
+    A spelled byte string counts as a frame when its trailer is the codec's CRC or
+    sum, or it is a listed anomaly; shorter prefixes such as reply patterns do not.
+    """
+    from custom_components.adjustable_bed.codec.ff_frame import with_crc, with_sum
+    from tests.ff_frame_vectors import ANOMALIES, FROZEN_FRAMES
+
+    frozen = frozenset().union(*FROZEN_FRAMES.values())
+    anomalies = frozenset().union(*ANOMALIES.values())
+    text = (ROOT / "docs" / "beds" / "ff_frame.md").read_text(encoding="utf-8")
+    spelled = re.findall(r"`(FF ?FF ?FF ?FF(?: ?[0-9A-F]{2})+)`", text, re.IGNORECASE)
+    frames = set()
+    for value in spelled:
+        data = bytes.fromhex(value.replace(" ", ""))
+        body = data[:-2]
+        if data.hex() in anomalies or data in (with_crc(body), with_sum(body)):
+            frames.add(data.hex())
+    assert len(frames) > 100
+    unknown = sorted(frames - frozen)
+    assert not unknown, f"Frames no profile was frozen sending: {unknown}"
+
+
 async def test_jiecang_bed_types_match_the_factory() -> None:
     """The profile summary's bed types are the ones the factory builds each profile for."""
     from custom_components.adjustable_bed.beds.jiecang import JiecangProfileController

@@ -13,7 +13,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Richmat](beds/richmat.md) | Model-dependent motors, memory, massage, lighting, alarms and reported state; [RMControl](beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md) |
 | [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [OCTO Smart Control](beds/octo.md) | Standard OCTO capability-advertised motor, memory, light and setting controls; separate Star2 variant. Hardware validation is deferred |
-| [Solace](beds/solace.md) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/woosa.md) profile with one Favourite memory |
+| [Solace](beds/ff_frame.md#solace-name-routes) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/ff_frame.md#woosa-sleep) profile with one Favourite memory |
 | [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/leggett-okin.md) layouts and timers, [L&P legacy](beds/lp-legacy.md) model settings |
 | [Reverie](beds/reverie.md) | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | 4 memory presets, massage, lights (requires pairing) |
@@ -38,7 +38,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
 | [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss-remote.md) and [FSM Relax](beds/fsm_relax.md) bed/chair layouts and local memories |
-| [Motion Bed app](beds/motion_bed.md) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
+| [Motion Bed app](beds/ff_frame.md#motion-bed) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
 | [Cool Base](beds/coolbase.md) | Keeson BaseI5 with fan control |
 | [Scott Living](beds/scott-living.md) | 9-byte protocol |
 | [SBI/Q-Plus](beds/sbi.md) | Position feedback via pulse lookup |

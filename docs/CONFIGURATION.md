@@ -453,7 +453,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
 | Richmat | [RMControl](beds/rmcontrol.md): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md): app and model. |
 | Leggett & Platt | [Prodigy / U Series](beds/leggett-okin.md): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
-| Solace / Woosa | [Woosa Sleep](beds/woosa.md): protocol variant `woosa`; `auto` retains name-based Solace routing. |
+| Solace / Woosa | [Woosa Sleep](beds/ff_frame.md#woosa-sleep): protocol variant `woosa`; `auto` retains name-based Solace routing. |
 | Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout, transport and local light/massage presence. Comfort Motion supports three layouts and G1/G2 only. Layouts, transports and default timing per profile are in the [generated profile tables](beds/jiecang.md#choosing-a-profile). |
 | LOGICDATA | [MOTIONrelax](beds/logicdata-app.md): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/logicdata-sleep-smart.md): bed layout and series, or separate air pump. |
@@ -467,7 +467,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/comfort-enhancements.md). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/adjustable-lumbar.md). |
 | AdjustableM5X4 / M5X5 | [M5X4](beds/starcode-abm5-4.md): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
-| Motion Bed | [Layout and retained settings](beds/motion_bed.md); preserve the original Bluetooth name. |
+| Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
 | Limoss | [Limoss Remote](beds/limoss-remote.md): bed/chair layout, light/massage and reversal settings. |
 | FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/fsm_relax.md). |
 | GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |
@@ -607,7 +607,7 @@ Configure each physical side separately before combining a two-address pair.
 
 ### Motion Bed app
 
-Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes. See [Motion Bed setup and controls](beds/motion_bed.md).
+Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes. See [Motion Bed setup and controls](beds/ff_frame.md#motion-bed).
 
 ### Limoss Remote app
 
@@ -947,7 +947,7 @@ Select **BedSense app (com.fenmenbielei.bedsense)** and a layout, or select its
 case-sensitive Bluetooth-name layout rule. Layout owns the motion controls;
 generic motor count, massage and angle-sensing choices are hidden. The original
 Bluetooth name and layout belong to each side of a two-address pair. There is no
-single-address left/right command. See [BedSense](beds/bedsense.md) for all nine
+single-address left/right command. See [BedSense](beds/ff_frame.md#bedsense) for all nine
 layouts, memory indicators and app-labelled massage/light actions.
 ### Floyd Home profile
 

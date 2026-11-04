@@ -97,7 +97,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
-| ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/woosa.md) |
+| ✅ [Solace](docs/beds/ff_frame.md#solace-name-routes) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/ff_frame.md#woosa-sleep) |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Prodigy LBR (LP Comfort Connect), Prodigy Comfort Elite / CE; [Prodigy 2L / 2 / 4 and U / Ultra Series](docs/beds/leggett-okin.md), [L&P Adjustable Base](docs/beds/lp-legacy.md) |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie app (Protocol 108), Reverie Nightstand app (Protocol 110), R510L / Harmoniq Upgrade (Pairlink) |
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed, RF ECO BT bed receivers |
@@ -125,7 +125,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf-app.md) |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
-| 🧪 [BedSense app](docs/beds/bedsense.md) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
+| 🧪 [BedSense app](docs/beds/ff_frame.md#bedsense) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
 | 🧪 [OKIN SleepEase](docs/beds/doublesleep.md) | DoubleSleep / XiaoBao and sensor-only XiaoBao Only; artifact-proven, hardware unverified |
 | 🧪 [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, hardware unverified |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's BOX15 / BOX24 / BOX25 and the explicit Sleepy's Elite app profile |
@@ -153,7 +153,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
 | 🧪 [BF / Cherish](docs/beds/bf-cherish.md) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
-| ✅ [Motion Bed](docs/beds/motion_bed.md) | QMS/SealyMF and TL beds, air and thermal controls |
+| ✅ [Motion Bed](docs/beds/ff_frame.md#motion-bed) | QMS/SealyMF and TL beds, air and thermal controls |
 | ✅ [FurniMove / OKIN Smart Remote](docs/beds/furnimove.md) | App handset layouts, including RF ECO BT adjustable-bed receivers |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 | ✅ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF34/RF6707 handset beds (new RF1058 setups use FurniMove) |
