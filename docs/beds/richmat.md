@@ -24,7 +24,7 @@ Brands using Richmat actuators:
 - FLEXX MOTION
 - Likimio
 - Lunio Smart+
-- Good Vibe Sleep
+- [Good Vibe Sleep](goodvibe.md) (dedicated app profiles and independent sleep sensors)
 - Best Mattress Power Base
 - Easy Rest
 - Coaster Sleep

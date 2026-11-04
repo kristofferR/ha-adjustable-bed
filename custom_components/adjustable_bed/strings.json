@@ -3066,6 +3066,12 @@
       },
       "hjbed_release_right": {
         "name": "Right Release held action"
+      },
+      "goodvibe_action": {
+        "name": "{action}"
+      },
+      "goodvibe_release": {
+        "name": "Release held control"
       }
     },
     "cover": {
@@ -4804,6 +4810,39 @@
       },
       "gmmotor_sleep_state": {
         "name": "GM Control sleep module state"
+      },
+      "goodvibe_l_movement": {
+        "name": "Left body movement"
+      },
+      "goodvibe_l_respiration": {
+        "name": "Left respiration"
+      },
+      "goodvibe_r_respiration": {
+        "name": "Right respiration"
+      },
+      "goodvibe_r_heart": {
+        "name": "Right heart rate"
+      },
+      "goodvibe_r_snore": {
+        "name": "Right snoring"
+      },
+      "goodvibe_status": {
+        "name": "Good Vibe Sleep status"
+      },
+      "goodvibe_r_occupancy": {
+        "name": "Right occupancy"
+      },
+      "goodvibe_l_snore": {
+        "name": "Left snoring"
+      },
+      "goodvibe_l_heart": {
+        "name": "Left heart rate"
+      },
+      "goodvibe_r_movement": {
+        "name": "Right body movement"
+      },
+      "goodvibe_l_occupancy": {
+        "name": "Left occupancy"
       }
     },
     "light": {
@@ -5394,6 +5433,12 @@
       },
       "bf_cherish_wave": {
         "name": "Massage wave"
+      },
+      "goodvibe_snore_count": {
+        "name": "Snore intervention count"
+      },
+      "goodvibe_snore_time": {
+        "name": "Snore intervention time"
       }
     },
     "select": {
@@ -5902,6 +5947,26 @@
       },
       "hjbed_layout_right": {
         "name": "Right HJBed layout"
+      },
+      "goodvibe_side": {
+        "name": "App side",
+        "state": {
+          "0": "Left",
+          "1": "Right",
+          "2": "Both"
+        }
+      },
+      "goodvibe_light_duration": {
+        "name": "Light duration (seconds)"
+      },
+      "goodvibe_massage_timer": {
+        "name": "Massage countdown",
+        "state": {
+          "0": "Off",
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
+        }
       }
     },
     "climate": {
@@ -7855,6 +7920,59 @@
         },
         "side": {
           "name": "Bed side"
+        }
+      }
+    },
+    "goodvibe": {
+      "name": "Good Vibe Sleep configuration",
+      "description": "Configure the exact selected product or its independent RM-/HJ- sleep sensor. Normal-product alarms accept an action ID from that product's alarm list in the protocol guide.",
+      "fields": {
+        "device_id": {
+          "name": "Bed or sleep sensor"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Exact alarm action ID"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot"
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means no repeat days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero uses the app's always-on value."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "value": {
+          "name": "Snore count or time value"
+        },
+        "part": {
+          "name": "Sleep part",
+          "description": "Set type 1 to 1 or 2; type 2 to 11, 12 or 13. Report queries use 1 or 2."
+        },
+        "date": {
+          "name": "Report date"
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "Day is 1, month is 2."
         }
       }
     }

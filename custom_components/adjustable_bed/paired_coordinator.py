@@ -27,7 +27,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController, SideBoundController
 from .command_scheduler import (
     CommandHandle,
     CommandKind,
@@ -38,6 +38,7 @@ from .command_scheduler import (
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_GMMOTOR,
+    BED_TYPE_GOODVIBE,
     BED_TYPE_KEESON,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
@@ -45,6 +46,7 @@ from .const import (
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PRODUCT_TYPE,
+    CONF_PROTOCOL_VARIANT,
     DEFAULT_PAIR_CONNECTION_MODE,
     DOMAIN,
     PAIR_CONNECTION_MODE_AUTO,
@@ -2109,11 +2111,17 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
     async def async_stop_command(
         self, *, cancel_running: bool = True, **_kwargs: Any
     ) -> None:
+        gesture_release = CONTROLLER_GESTURE_RELEASE.get()
         if cancel_running:
             self.request_command_cancel()
 
         async def stop(controller: Any) -> None:
-            await controller.bind_side(self._single_side).stop_all()
+            # This STOP can run in a scheduler worker created by an older call.
+            token = CONTROLLER_GESTURE_RELEASE.set(gesture_release)
+            try:
+                await controller.bind_side(self._single_side).stop_all()
+            finally:
+                CONTROLLER_GESTURE_RELEASE.reset(token)
 
         await self._single_inner.async_execute_controller_command(
             stop,
@@ -2140,6 +2148,11 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
             # Some exact products admit left/right but no native Both choice.
             # The parent then runs the two admitted side frames on one link.
             self._single_native_both = 2 in load_profile(entry.data.get(CONF_PRODUCT_TYPE, "")).sides
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_GOODVIBE:
+            from .goodvibe_catalog import PRODUCTS
+
+            product = PRODUCTS.get(entry.data.get(CONF_PROTOCOL_VARIANT, ""))
+            self._single_native_both = product is not None and 2 in product.sides
         self._single_position_hydration_task: asyncio.Task[None] | None = None
         self._single_position_hydration_pause_count = 0
         children = {

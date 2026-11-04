@@ -83,6 +83,13 @@ class CommandContext:
     cleanup_stop_sent: bool = False
     active: bool = True
     defer_disconnect: bool = False
+    cancel_generation: int = 0
+
+    def request_cancel(self, outcome: CommandOutcome) -> None:
+        """Distinguish repeated cancellations of this exact resource admission."""
+        self.cancel_generation += 1
+        self.cancel_reason = outcome
+        self.cancel_event.set()
 
 
 CommandOperation = Callable[[CommandContext], Awaitable[None]]
@@ -482,8 +489,7 @@ class DeviceCommandScheduler:
         self, handle: CommandHandle, outcome: CommandOutcome = CommandOutcome.GROUP_ABORTED
     ) -> None:
         """Invalidate one handle and wait for active cleanup when necessary."""
-        handle.context.cancel_reason = outcome
-        handle.context.cancel_event.set()
+        handle.context.request_cancel(outcome)
         async with self._lock:
             if handle in self._queue:
                 self._queue.remove(handle)
@@ -559,15 +565,13 @@ class DeviceCommandScheduler:
         replaces_active = False
         if active is not None and self._handles_conflict(active, incoming):
             replaces_active = True
-            active.context.cancel_reason = CommandOutcome.REPLACED
-            active.context.cancel_event.set()
+            active.context.request_cancel(CommandOutcome.REPLACED)
 
         for queued in tuple(self._queue):
             if not self._handles_conflict(queued, incoming):
                 continue
             self._queue.remove(queued)
-            queued.context.cancel_reason = CommandOutcome.REPLACED
-            queued.context.cancel_event.set()
+            queued.context.request_cancel(CommandOutcome.REPLACED)
             self._finish_locked(queued, CommandOutcome.REPLACED)
         return replaces_active
 
@@ -590,15 +594,13 @@ class DeviceCommandScheduler:
     ) -> None:
         active = self._active
         if active is not None and _resources_overlap(active.intent.resources, resources):
-            active.context.cancel_reason = outcome
-            active.context.cancel_event.set()
+            active.context.request_cancel(outcome)
             active.invalidated_stop_epoch = invalidated_stop_epoch
         for queued in tuple(self._queue):
             if not _resources_overlap(queued.intent.resources, resources):
                 continue
             self._queue.remove(queued)
-            queued.context.cancel_reason = outcome
-            queued.context.cancel_event.set()
+            queued.context.request_cancel(outcome)
             self._finish_locked(
                 queued,
                 outcome,
@@ -670,12 +672,11 @@ class DeviceCommandScheduler:
                         worker_task is not None and worker_task.cancelling()
                     )
                     if not handle.context.cancel_event.is_set():
-                        handle.context.cancel_reason = (
+                        handle.context.request_cancel(
                             CommandOutcome.SHUTDOWN
                             if worker_cancelled
                             else CommandOutcome.CALLER_CANCELLED
                         )
-                        handle.context.cancel_event.set()
                     self._finish(
                         handle,
                         handle.context.cancel_reason or CommandOutcome.CALLER_CANCELLED,
