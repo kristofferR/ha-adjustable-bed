@@ -2245,10 +2245,10 @@
 "massage_head_down": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1120208001c7e",1,0]]},
 "massage_head_up": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1120208011d7e",1,0]]},
 "massage_mode_step": {"status":"ok","writes":[[0,"0000fe61",true,"f1f116010a217e",1,0]]},
-"stop:back_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1010101037e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]},
-"stop:back_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1020101047e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]},
-"stop:legs_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1030101057e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1040101067e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]}
+"stop:back_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1010101037e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]},
+"stop:back_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1020101047e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]},
+"stop:legs_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1030101057e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]},
+"stop:legs_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1040101067e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]}
 }},
 "coolbase": {
 "info": {"bed_type": "coolbase", "controller": "CoolBaseController", "module": "coolbase", "pulse": [10, 100]},
@@ -4860,10 +4860,10 @@
 "massage_head_down": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1120208001c7e",1,0]]},
 "massage_head_up": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1120208011d7e",1,0]]},
 "massage_mode_step": {"status":"ok","writes":[[0,"0000fe61",true,"f1f116010a217e",1,0]]},
-"stop:back_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1010101037e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]},
-"stop:back_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1020101047e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]},
-"stop:legs_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1030101057e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1040101067e",6,57],[342,"0000fe61",true,"f1f14e004e7e",2,7]]}
+"stop:back_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1010101037e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]},
+"stop:back_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1020101047e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]},
+"stop:legs_open": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1030101057e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]},
+"stop:legs_close": {"status":"ok","writes":[[0,"0000fe61",true,"f1f1040101067e",6,57],[300,"0000fe61",true,"f1f14e004e7e",2,7]]}
 }},
 "jiecang_app": {
 "info": {"bed_type": "jiecang_app", "controller": "JiecangAppController", "gaps": ["lights_toggle"], "module": "jiecang_app", "pulse": [10, 100]},
