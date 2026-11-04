@@ -286,7 +286,7 @@ class InnovaController(KeesonController):
     async def _hold(self, key: int, repeat_count: int | None = None) -> None:
         """Stream a held key every 100 ms, then release with the zero key."""
         if repeat_count is None:
-            repeat_count, _delay = self.motor_pulse_settings()
+            repeat_count, _delay = self._held_cadence()
         completed = False
         try:
             await self.write_command(

@@ -28,6 +28,7 @@
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ (head and foot; per layout also head + foot together, neck tilt, lumbar, lift) |
+| Hold Until Release | ✅ Models P1 and P2 ([renewable hold](../SERVICES.md#renewable-holds)); ❌ P3 and P4 keep finite holds |
 | Presets | ✅ (flat and zero gravity; TV, lounge and anti-snore on L0 to L5) |
 | Memory Presets | ⚠️ (M1 recall on L0 only; no memory programming or additional slots) |
 | Massage | ✅ (P2 L0/L1/L2/L3/L5: dedicated selectors and timers; others: four held steps) |

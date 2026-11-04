@@ -347,7 +347,7 @@ class OkinAppKeesonController(KeesonController):
 
     async def hold_app_control(self, control: str) -> None:
         """Hold a control for the configured burst, as one app press."""
-        repeat_count, repeat_delay_ms = self.motor_pulse_settings()
+        repeat_count, repeat_delay_ms = self._held_cadence()
         await self._stream(self._held_key(control), repeat_count, repeat_delay_ms)
 
     async def hold_control(self, control: str, duration_ms: int) -> None:

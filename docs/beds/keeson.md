@@ -89,6 +89,7 @@ layouts; the "also" routes are the generic Keeson variants that drive the same b
 |---------|-----------|------------|------|------------|------|-------|------|------------------|-----------------------|
 | Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hold Until Release | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Memory Presets | ⚠️ 4 exposed (slot 3 app-confirmed) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 exposed (verification needed) | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
 | TV Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Anti-Snore Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
@@ -99,6 +100,12 @@ layouts; the "also" routes are the generic Keeson variants that drive the same b
 
 The Sino column's anti-snore is the BetterLiving table. The app profiles list
 their controls in their sections.
+
+Hold until release ([renewable holds](../SERVICES.md#renewable-holds)) is on
+every profile whose accepted app report streams a held key until release; the
+tables below mark each one. The Base, OKIN, Sino, JSON, KSBT CR, KSBT04C, Sleep
+Harmony, Purple, OKIN FFE, Rondure, Scott Living and Sleepy's BOX15 routes have no
+accepted report for it and keep finite pulses.
 
 ## Choosing a profile
 
@@ -114,56 +121,59 @@ are generated from the profile data.
 
 ### Profile summary
 
-| Profile | Route | Frame | Transport | Lights | Massage |
-|---|---|---|---|---|---|
-| Base (BaseI4/I5) | `keeson` `base` (Auto default) | K1 `E5`, little-endian | BASE | toggle | step |
-| Ergomotion | `keeson` `ergomotion`; bed type `ergomotion` | K1 `E5`, little-endian | BASE | toggle | step |
-| Serta | `keeson` `serta`; bed type `serta` | K1 `E5`, little-endian | BASE | toggle | step |
-| OKIN FFE | `keeson` `okin`; bed type `okin_ffe` | K1 `E6`, little-endian | BASE | toggle | step |
-| BetterLiving CB1322 | `keeson` `okin`: Auto: as BetterLiving, with a `BLE-4.0 Module` or `DewertOKIN` manufacturer | K1 `E6`, little-endian | BASE | toggle | step |
-| Sino | `keeson` `sino` | K1 `E5`, big-endian | BASE | discrete | absolute |
-| BetterLiving | `keeson` `sino`: Auto: both fallback services, or an `OKIN-BLE` name with one | K1 `E5`, big-endian | BASE | discrete | absolute |
-| JSON/A00A | `keeson` `json` | JSON | JSON | toggle | step |
-| KSBT | `keeson` `ksbt` | P2 6-byte | KSBT | toggle | step |
-| KSBT03C | `keeson` `ksbt`: name starts with `KSBT03C`, not `KSBT03CR` | P2 6-byte | KSBT | toggle | step |
-| KSBT03CR | `keeson` `ksbt_cr` | P2 7-byte (`05`) | KSBT | toggle | step |
-| KSBT04C | `keeson` `ksbt04c` | P2 7-byte, checksum end | KSBT | none | step |
-| Sleep Harmony (KSBT04C) | `keeson` `sleep_harmony` | P2 7-byte, checksum end | KSBT | none | step |
-| Sleep Harmony (base-i5) | `keeson` `sleep_harmony`: name starts with `base-i5.` | K1 `E6`, little-endian, side `00` | BASE | none | step |
-| Purple Premium | `keeson` `purple` | K1 `E5`, little-endian | BASE | toggle | step |
-| Purple Premium Plus | `keeson` `purple`: name starts with `KSBT04C`, or the Nordic UART service exists | P2 7-byte, `00` end | KSBT | toggle | step |
-| Adjustable Lite (KSBT01C) | `keeson` `adjustable_lite` | P2 6-byte | KSBT (fixed) | toggle | none |
-| Adjustable Lite (KSBT03C) | `keeson` `adjustable_lite`: name contains `KSBT03C` (case-sensitive) | P2 6-byte | KSBT (fixed) | toggle | zone_steps |
-| Restonic BT remote A | `keeson` `restonic_a` | K1 `E5`, little-endian | BASE (fixed) | none | none |
-| Restonic BT remote B | `keeson` `restonic_b` | K1 `E5`, little-endian | BASE (fixed) | toggle | none |
-| INNOVA | `keeson` `innova` | K1 `E5`, little-endian | BASE (fixed) | app controller | app controller |
-| Simon Li | `keeson` `simon_li` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| OKIN-Seating | `keeson` `okin_seating` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| Heal Every Night | `keeson` `heal_every_night` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| AMERICANSTAR | `keeson` `americanstar` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| Avanti Bases | `keeson` `avanti_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| Dynasty Bases | `keeson` `dynasty_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| MaxCoil Una | `keeson` `maxcoil_una` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
-| Glideaway Motion | bed type `glideaway_motion` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
-| Malouf legacy OKIN | bed type `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
-| Sleepy's BOX15 | bed type `sleepys_box15` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
-| Scott Living | bed type `scott_living` | K1 `E6`, little-endian, side `01` | app controller | app controller | app controller |
-| AdjustaMattress P1 | bed type `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
-| AdjustaMattress P2 | bed type `adjustamattress`, model P2 | K1 `E5`, big-endian | app controller | app controller | app controller |
-| SBI | bed type `sbi` | K1 `E5`, little-endian | app controller | app controller | app controller |
-| Rondure | bed type `rondure` | K1 `E5`, little-endian | app controller | app controller | app controller |
-| Cool Base | bed type `coolbase` | K1 `E5`, little-endian | app controller | app controller | app controller |
-| BF | bed type `bf` | K1 `E5`, big-endian | app controller | app controller | app controller |
-| Cherish | bed type `cherish` | K1 `E5`, big-endian | app controller | app controller | app controller |
-| Comfort Enhancements | bed type `comfort_enhancements` | K1 `E5`, big-endian | app controller | app controller | app controller |
+| Profile | Route | Frame | Transport | Lights | Massage | Hold until release |
+|---|---|---|---|---|---|---|
+| Base (BaseI4/I5) | `keeson` `base` (Auto default) | K1 `E5`, little-endian | BASE | toggle | step | no |
+| Ergomotion | `keeson` `ergomotion`; bed type `ergomotion` | K1 `E5`, little-endian | BASE | toggle | step | renewable lease |
+| Serta | `keeson` `serta`; bed type `serta` | K1 `E5`, little-endian | BASE | toggle | step | renewable lease |
+| OKIN FFE | `keeson` `okin`; bed type `okin_ffe` | K1 `E6`, little-endian | BASE | toggle | step | no |
+| BetterLiving CB1322 | `keeson` `okin`: Auto: as BetterLiving, with a `BLE-4.0 Module` or `DewertOKIN` manufacturer | K1 `E6`, little-endian | BASE | toggle | step | no |
+| Sino | `keeson` `sino` | K1 `E5`, big-endian | BASE | discrete | absolute | no |
+| BetterLiving | `keeson` `sino`: Auto: both fallback services, or an `OKIN-BLE` name with one | K1 `E5`, big-endian | BASE | discrete | absolute | no |
+| JSON/A00A | `keeson` `json` | JSON | JSON | toggle | step | no |
+| KSBT | `keeson` `ksbt` | P2 6-byte | KSBT | toggle | step | renewable lease |
+| KSBT03C | `keeson` `ksbt`: name starts with `KSBT03C`, not `KSBT03CR` | P2 6-byte | KSBT | toggle | step | renewable lease |
+| KSBT03CR | `keeson` `ksbt_cr` | P2 7-byte (`05`) | KSBT | toggle | step | no |
+| KSBT04C | `keeson` `ksbt04c` | P2 7-byte, checksum end | KSBT | none | step | no |
+| Sleep Harmony (KSBT04C) | `keeson` `sleep_harmony` | P2 7-byte, checksum end | KSBT | none | step | no |
+| Sleep Harmony (base-i5) | `keeson` `sleep_harmony`: name starts with `base-i5.` | K1 `E6`, little-endian, side `00` | BASE | none | step | no |
+| Purple Premium | `keeson` `purple` | K1 `E5`, little-endian | BASE | toggle | step | no |
+| Purple Premium Plus | `keeson` `purple`: name starts with `KSBT04C`, or the Nordic UART service exists | P2 7-byte, `00` end | KSBT | toggle | step | no |
+| Adjustable Lite (KSBT01C) | `keeson` `adjustable_lite` | P2 6-byte | KSBT (fixed) | toggle | none | renewable lease |
+| Adjustable Lite (KSBT03C) | `keeson` `adjustable_lite`: name contains `KSBT03C` (case-sensitive) | P2 6-byte | KSBT (fixed) | toggle | zone_steps | renewable lease |
+| Restonic BT remote A | `keeson` `restonic_a` | K1 `E5`, little-endian | BASE (fixed) | none | none | renewable lease |
+| Restonic BT remote B | `keeson` `restonic_b` | K1 `E5`, little-endian | BASE (fixed) | toggle | none | renewable lease |
+| INNOVA | `keeson` `innova` | K1 `E5`, little-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| Simon Li | `keeson` `simon_li` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| OKIN-Seating | `keeson` `okin_seating` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| Heal Every Night | `keeson` `heal_every_night` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| AMERICANSTAR | `keeson` `americanstar` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| Avanti Bases | `keeson` `avanti_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| Dynasty Bases | `keeson` `dynasty_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| MaxCoil Una | `keeson` `maxcoil_una` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| Glideaway Motion | bed type `glideaway_motion` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
+| Malouf legacy OKIN | bed type `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | no |
+| Sleepy's BOX15 | bed type `sleepys_box15` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | no |
+| Scott Living | bed type `scott_living` | K1 `E6`, little-endian, side `01` | app controller | app controller | app controller | no |
+| AdjustaMattress P1 | bed type `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
+| AdjustaMattress P2 | bed type `adjustamattress`, model P2 | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| SBI | bed type `sbi` | K1 `E5`, little-endian | app controller | app controller | app controller | renewable lease |
+| Rondure | bed type `rondure` | K1 `E5`, little-endian | app controller | app controller | app controller | no |
+| Cool Base | bed type `coolbase` | K1 `E5`, little-endian | app controller | app controller | app controller | renewable lease |
+| BF | bed type `bf` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| Cherish | bed type `cherish` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| Comfort Enhancements | bed type `comfort_enhancements` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 
 ### Hold and release timing
 
 A hold writes its frame the given number of times while the stored cadence is the
 Keeson default; a customized cadence wins. Release waits count from the previous
 write. An explicit stop sends the release without its waits. The [controller
-profiles](#controller-profiles) keep their timing in their controllers.
+profiles](#controller-profiles) keep their timing in their controllers. Under a
+[renewable hold](../SERVICES.md#renewable-holds), a profile with hold until
+release refreshes at its app interval until the lease ends or STOP arrives, up to
+30 s, then sends its release.
 
 | Profile | Hold | Three motors | Release after a hold | Explicit stop | Released after one-shots | Wait before one-shots |
 |---|---|---|---|---|---|---|
@@ -440,6 +450,13 @@ fresh cancel event, so a STOP cannot suppress it; a touch-up release ("STOP ends
 the wait") runs in a shielded task. Profiles with no release stop by ending the
 cancellable refresh: their apps have no release frame, and inventing one would be
 unsafe.
+
+A renewable hold refreshes the app's held key at the app's interval until the
+lease ends or a STOP arrives, up to 30 s, then runs the same release. SBI and Cool
+Base keep refreshing at the entry's pulse delay, as their finite holds do.
+Adjustable Lite, Ergomotion Sync (KSBT03C) and the direct KSBT remotes end a hold
+only by ending the refresh, as their apps do; whether the hardware stops on its
+own is unverified.
 
 ### Vectors
 
@@ -1294,16 +1311,16 @@ equivalence between apps.
 <!-- generated:keeson-apps -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
-| Profile | Bed type | Layouts (default bold) | Frame | Write / notify | Rename | Clock | Wake dismissal | Alarm tables |
-|---|---|---|---|---|---|---|---|---|
-| [Tempur Curve](#tempur-curve) | `tempur_curve` | **standard** | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | 2 s after connect, and on demand | 2 × `E1 80 04 9A`, 400 ms apart | wake byte `0x03`, marker `0x80`, 3 per table |
-| [Q-Plus Adjustable Remote](#q-plus-adjustable-remote) | `qplus_app` | H, M1, **M2**, M3, MX | K1 `E5` (Both) or `E6` + side byte (A/B); MX: P2 6-byte | FFE9 / FFE4 / NUS TX / NUS RX | 14 UTF-16 units, outer spaces rejected | none | 4 × `E1 80 04 9A`, 200 ms apart | wake byte `0x10`, marker `0x80`, 3 per table |
-| [Serta MP Remote](#serta-mp-remote) | `serta_mp_remote` | **standard** | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | none | none | none |
-| [Omazz Adjusto III](#omazz-adjusto-iii) | `omazz_adjusto_iii` | **RemoteB** | K1 `E5`, little-endian | FFE9 / FFE4 | none | on demand | none | wake byte `0x03`, no marker, 3 per table |
-| [Ergomotion app](#ergomotion-app) | `ergomotion_app` | B1, **B2**, C1, D1 | K1 `E5`, little-endian | FFE9 / FFE4 | 15 UTF-16 units, trimmed | on demand | none | wake byte `0x03`, no marker, 3 per table |
-| [ROW Control](#row-control) | `row_control` | **Elevate**, Lifestyle, Curve, Lifestyle Plus, Zero-G Box | K1 `E5`, little-endian | FFE9 / FFE4 | 15 UTF-16 units, trimmed | 2 s after connect, and on demand | 2 × `E1 80 04 9A`, 400 ms apart | wake byte `0x03`, marker `0x80`, 3 per table |
-| [Ergo Slim](#ergo-slim) | `ergo_slim` | **A**, B, C | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | at connect, and on demand | 4 × `E1 80 04 9A`, 200 ms apart | wake byte `0x03`, marker `0x80`, 3 per table |
-| [TEMPUR AU](#tempur-au) | `tempur_au` | B1, **B2**, C1, D1, E1 | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | 2 s after connect, and on demand | 2 × `E1 80 04 9A`, 400 ms apart | wake byte `0x03`, marker `0x80`, 3 per table |
+| Profile | Bed type | Layouts (default bold) | Frame | Write / notify | Rename | Clock | Wake dismissal | Alarm tables | Hold until release |
+|---|---|---|---|---|---|---|---|---|---|
+| [Tempur Curve](#tempur-curve) | `tempur_curve` | **standard** | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | 2 s after connect, and on demand | 2 × `E1 80 04 9A`, 400 ms apart | wake byte `0x03`, marker `0x80`, 3 per table | renewable lease |
+| [Q-Plus Adjustable Remote](#q-plus-adjustable-remote) | `qplus_app` | H, M1, **M2**, M3, MX | K1 `E5` (Both) or `E6` + side byte (A/B); MX: P2 6-byte | FFE9 / FFE4 / NUS TX / NUS RX | 14 UTF-16 units, outer spaces rejected | none | 4 × `E1 80 04 9A`, 200 ms apart | wake byte `0x10`, marker `0x80`, 3 per table | renewable lease |
+| [Serta MP Remote](#serta-mp-remote) | `serta_mp_remote` | **standard** | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | none | none | none | renewable lease |
+| [Omazz Adjusto III](#omazz-adjusto-iii) | `omazz_adjusto_iii` | **RemoteB** | K1 `E5`, little-endian | FFE9 / FFE4 | none | on demand | none | wake byte `0x03`, no marker, 3 per table | renewable lease |
+| [Ergomotion app](#ergomotion-app) | `ergomotion_app` | B1, **B2**, C1, D1 | K1 `E5`, little-endian | FFE9 / FFE4 | 15 UTF-16 units, trimmed | on demand | none | wake byte `0x03`, no marker, 3 per table | renewable lease |
+| [ROW Control](#row-control) | `row_control` | **Elevate**, Lifestyle, Curve, Lifestyle Plus, Zero-G Box | K1 `E5`, little-endian | FFE9 / FFE4 | 15 UTF-16 units, trimmed | 2 s after connect, and on demand | 2 × `E1 80 04 9A`, 400 ms apart | wake byte `0x03`, marker `0x80`, 3 per table | renewable lease |
+| [Ergo Slim](#ergo-slim) | `ergo_slim` | **A**, B, C | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | at connect, and on demand | 4 × `E1 80 04 9A`, 200 ms apart | wake byte `0x03`, marker `0x80`, 3 per table | renewable lease |
+| [TEMPUR AU](#tempur-au) | `tempur_au` | B1, **B2**, C1, D1, E1 | K1 `E5`, little-endian | FFE9 / FFE4 | 14 UTF-16 units, trimmed | 2 s after connect, and on demand | 2 × `E1 80 04 9A`, 400 ms apart | wake byte `0x03`, marker `0x80`, 3 per table | renewable lease |
 <!-- /generated -->
 
 #### Setup
@@ -1875,20 +1892,20 @@ guide with frames of other families and keep it.
 <!-- generated:keeson-controllers -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
-| Profile | Bed type | Frame | Word `0x1` | Zero word | Guide |
-|---|---|---|---|---|---|
-| Glideaway Motion | `glideaway_motion` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Glideaway Motion](#glideaway-motion) |
-| Malouf legacy OKIN | `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Malouf](malouf.md) |
-| Sleepy's BOX15 | `sleepys_box15` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Sleepy's](sleepys.md) |
-| Scott Living | `scott_living` | K1 `E6`, little-endian, side `01` | `E6 FE 16 01 00 00 00 01 03` | `E6 FE 16 00 00 00 00 01 04` | [Scott Living](#scott-living) |
-| AdjustaMattress P1 | `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [AdjustaMattress](adjustamattress.md) |
-| AdjustaMattress P2 | `adjustamattress`, model P2 | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [AdjustaMattress](adjustamattress.md) |
-| SBI | `sbi` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | [SBI / Q-Plus](#sbi--q-plus-costco) |
-| Rondure | `rondure` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | [Rondure](#rondure) |
-| Cool Base | `coolbase` | K1 `E5`, little-endian | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | [Cool Base](#cool-base) |
-| BF | `bf` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [BF and Cherish](#bf-and-cherish) |
-| Cherish | `cherish` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [BF and Cherish](#bf-and-cherish) |
-| Comfort Enhancements | `comfort_enhancements` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [Comfort Enhancements](#comfort-enhancements) |
+| Profile | Bed type | Frame | Word `0x1` | Zero word | Hold until release | Guide |
+|---|---|---|---|---|---|---|
+| Glideaway Motion | `glideaway_motion` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [Glideaway Motion](#glideaway-motion) |
+| Malouf legacy OKIN | `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | no | [Malouf](malouf.md) |
+| Sleepy's BOX15 | `sleepys_box15` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | no | [Sleepy's](sleepys.md) |
+| Scott Living | `scott_living` | K1 `E6`, little-endian, side `01` | `E6 FE 16 01 00 00 00 01 03` | `E6 FE 16 00 00 00 00 01 04` | no | [Scott Living](#scott-living) |
+| AdjustaMattress P1 | `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [AdjustaMattress](adjustamattress.md) |
+| AdjustaMattress P2 | `adjustamattress`, model P2 | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [AdjustaMattress](adjustamattress.md) |
+| SBI | `sbi` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [SBI / Q-Plus](#sbi--q-plus-costco) |
+| Rondure | `rondure` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | no | [Rondure](#rondure) |
+| Cool Base | `coolbase` | K1 `E5`, little-endian | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [Cool Base](#cool-base) |
+| BF | `bf` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BF and Cherish](#bf-and-cherish) |
+| Cherish | `cherish` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BF and Cherish](#bf-and-cherish) |
+| Comfort Enhancements | `comfort_enhancements` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [Comfort Enhancements](#comfort-enhancements) |
 <!-- /generated -->
 
 ### Glideaway Motion

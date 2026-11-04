@@ -25,6 +25,7 @@ import pytest
 
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.ergomotion4_profiles import PRODUCTS as ERGOMOTION_4_PRODUCTS
 from custom_components.adjustable_bed.execution import (
     NO_EXECUTION_CAPABILITIES,
     ExecutionCapabilities,
@@ -43,14 +44,81 @@ APP_ROUTES = {
 }
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
+# Keeson E5/E6 (K1) profiles with stream evidence, by profile key. The base,
+# OKIN, Sino, KSBT CR, OKIN FFE, Sleepy's Box15, Rondure and Scott Living routes
+# are blocked and declare nothing.
+KEESON_STREAM: dict[str, tuple[str, ...]] = {
+    "ergomotion": ("sfdergo",),
+    "serta": ("serta330",),
+    "restonic_a": ("restonic",),
+    "restonic_b": ("restonic",),
+    "innova": ("sfm",),
+    "bedsense_bases": ("sfmc2",),
+    "avanti_bases": ("avanti",),
+    "dynasty_bases": ("dynasty",),
+    "maxcoil_una": ("maxcoil",),
+    "americanstar": ("americanstar",),
+    "simon_li": ("simon",),
+    "heal_every_night": ("heal",),
+    "okin_seating": ("minghua",),
+    "adjustable_lite": ("adjlite",),
+    "adjustable_lite_ksbt03c": ("adjlite",),
+    "ksbt": ("hump",),
+    "ksbt03c": ("mancini",),
+    "sbi": ("costco",),
+    "coolbase": ("coolbase",),
+    "bf": ("bf",),
+    "cherish": ("cherish",),
+    "comfort_enhancements": ("enh",),
+    "glideaway_motion": ("glide",),
+    "adjustamattress": ("row067",),
+    "adjustamattress_p2": ("row067",),
+}
+# Keeson cluster033 app layouts, and Ergomotion 4.0 per catalog product style.
+KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
+    "tempur_curve": ("tempur",),
+    "qplus_app": ("costco",),
+    "serta_mp_remote": ("serta330",),
+    "omazz_adjusto_iii": ("omazz",),
+    "ergomotion_app": ("sfdergo",),
+    "row_control": ("row",),
+    "ergo_slim": ("slim",),
+    "tempur_au": ("tempur_au",),
+}
+ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUCTS.values())
+
 # Declaration -> declared field -> evidence keys from the design document.
-EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {}
+EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"KeesonProfile:{key}": {"hold": keys} for key, keys in KEESON_STREAM.items()},
+    **{
+        f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
+        for app, layouts in keeson_profiles.APP_LAYOUTS.items()
+        for layout in layouts
+    },
+    **{
+        f"AppProfile:ergomotion_4@{style}": {"hold": ("hump", "issue558")}
+        for style in ERGOMOTION_4_STYLES
+    },
+}
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
-DECLARATION_SITES: dict[str, tuple[str, ...]] = {}
+DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    **{
+        f"profiles/keeson.py:<module>.{key.upper()}": (f"KeesonProfile:{key}",)
+        for key in KEESON_STREAM
+    },
+    "profiles/keeson.py:<module>.app_profile": tuple(
+        f"AppProfile:{app}@{layout}"
+        for app, layouts in keeson_profiles.APP_LAYOUTS.items()
+        for layout in layouts
+    ),
+    "profiles/keeson.py:<module>.ergomotion_4_profile": tuple(
+        f"AppProfile:ergomotion_4@{style}" for style in sorted(ERGOMOTION_4_STYLES)
+    ),
+}
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent"})
@@ -102,6 +170,7 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         for app, layouts in keeson_profiles.APP_LAYOUTS.items()
         for layout in layouts
     )
+    profiles.extend(keeson_profiles.ergomotion_4_profile(style) for style in ERGOMOTION_4_STYLES)
     for bed_type, (config_key, choices) in APP_ROUTES.items():
         for choice in choices:
             coordinator = _FactoryCoordinator()

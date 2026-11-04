@@ -180,6 +180,10 @@ def _steps(profile: keeson_profiles.KeesonProfile, *, waits: bool) -> str:
     )
 
 
+def _lease(profile: keeson_profiles.KeesonProfile | keeson_profiles.AppProfile) -> str:
+    return "renewable lease" if profile.execution.hold == "stream" else "no"
+
+
 def _hold(profile: keeson_profiles.KeesonProfile) -> str:
     if profile.refresh_ms:
         return f"pulse count × {profile.refresh_ms} ms"
@@ -228,7 +232,7 @@ def _memory_cell(words: Mapping[int, int]) -> str:
 def render_keeson_profiles() -> str:
     profiles = keeson_profiles.PROFILES
     summary = _table(
-        ("Profile", "Route", "Frame", "Transport", "Lights", "Massage"),
+        ("Profile", "Route", "Frame", "Transport", "Lights", "Massage", "Hold until release"),
         (
             (
                 _kname(key),
@@ -239,6 +243,7 @@ def render_keeson_profiles() -> str:
                 else profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
                 "app controller" if key in _KEESON_APP_TABLES else profile.lights or "none",
                 "app controller" if key in _KEESON_APP_TABLES else profile.massage,
+                _lease(profile),
             )
             for key, profile in profiles.items()
         ),
@@ -289,7 +294,9 @@ def render_keeson_profiles() -> str:
         "the Keeson default; a customized cadence wins. Release waits count from the "
         "previous write. An explicit stop sends the release without its waits. The "
         "[controller profiles](#controller-profiles) keep their timing in their "
-        "controllers.",
+        "controllers. Under a [renewable hold](../SERVICES.md#renewable-holds), a "
+        "profile with hold until release refreshes at its app interval until the "
+        "lease ends or STOP arrives, up to 30 s, then sends its release.",
         timing,
         "### Presets and memory",
         f"Words, encoded in the profile's frame. {_knames(sorted(_KEESON_APP_TABLES))} "
@@ -678,11 +685,23 @@ def render_keeson_controllers() -> str:
                 ),
                 _kframe(profile, _K.MOTOR_HEAD_UP),
                 _kframe(profile, keeson_codec.RELEASE),
+                _lease(profile),
                 guide,
             )
         )
     return _block(
-        _table(("Profile", "Bed type", "Frame", "Word `0x1`", "Zero word", "Guide"), rows)
+        _table(
+            (
+                "Profile",
+                "Bed type",
+                "Frame",
+                "Word `0x1`",
+                "Zero word",
+                "Hold until release",
+                "Guide",
+            ),
+            rows,
+        )
     )
 
 
@@ -810,6 +829,7 @@ def render_keeson_apps() -> str:
                 _c033_clock(profile),
                 dismiss,
                 _c033_alarm(profile),
+                _lease(profile),
             )
         )
     return _block(
@@ -824,6 +844,7 @@ def render_keeson_apps() -> str:
                 "Clock",
                 "Wake dismissal",
                 "Alarm tables",
+                "Hold until release",
             ),
             rows,
         )

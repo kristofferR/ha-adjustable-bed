@@ -25,6 +25,7 @@ This is the **Ergomotion 4.0** app (`com.sfd.hump`), distinct from the older
 | Feature | Supported |
 |---------|-----------|
 | Motor control | ✅ Exact product-labelled held buttons, including dual-head and tilt/waist layouts |
+| Hold until release | ✅ Every held button, as a [renewable hold](../SERVICES.md#renewable-holds) through `hold_control` |
 | Split sides | ✅ Opt-in Left / Right / Both for P1 products, one Bluetooth address |
 | P2 split sides | ❌ No side field in this six-byte protocol |
 | Presets and memory | ✅ Product-labelled buttons; no invented memory slots or programming |

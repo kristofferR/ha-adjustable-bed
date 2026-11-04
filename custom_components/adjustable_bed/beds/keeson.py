@@ -698,11 +698,29 @@ class KeesonController(BedController):
             return self.profile.three_motor_hold
         return self.profile.hold or configured
 
+    def _held_cadence(self) -> tuple[int, int]:
+        """Writes and interval of one held key.
+
+        A leased hold (#483) refreshes at the app's own interval until its lease
+        ends; otherwise the pulse settings apply.
+        """
+        count, interval = self.motor_pulse_settings()
+        if self.profile.refresh_ms is not None:
+            refresh_ms = self.profile.refresh_ms
+        elif self.profile.three_motor_hold and self._coordinator.motor_count == 3:
+            refresh_ms = self.profile.three_motor_hold[1]
+        elif self.profile.hold is not None:
+            refresh_ms = self.profile.hold[1]
+        else:
+            return count, interval
+        leased = self.leased_hold_refreshes(refresh_ms)
+        return (leased, refresh_ms) if leased is not None else (count, interval)
+
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         """Move a motor and always run the profile's release."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
-        repeat_count, repeat_delay_ms = self.motor_pulse_settings()
+        repeat_count, repeat_delay_ms = self._held_cadence()
         completed = False
         try:
             if command:
