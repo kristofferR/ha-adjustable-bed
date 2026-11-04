@@ -546,7 +546,7 @@ class TestKeesonPresets:
 
         await coordinator.controller.program_memory(1)
 
-        assert "don't support programming memory presets" in caplog.text
+        assert "Programming memory 1 is not supported" in caplog.text
 
 
 class TestKeesonLights:
@@ -1644,7 +1644,7 @@ class TestKsbt03cMotorLayout:
 
         assert isinstance(controller, KeesonController)
         assert controller._variant == KEESON_VARIANT_KSBT04C
-        assert not controller._is_sleep_harmony
+        assert controller.profile.key == "ksbt04c"
         assert "ambiguous name" in caplog.text
 
     async def test_factory_selects_sleep_harmony_only_when_explicit(
@@ -1669,7 +1669,7 @@ class TestKsbt03cMotorLayout:
 
         assert isinstance(controller, KeesonController)
         assert controller._variant == KEESON_VARIANT_SLEEP_HARMONY
-        assert controller._is_sleep_harmony
+        assert controller.profile.key == "sleep_harmony"
 
     async def test_present_device_name_overrides_configured_name(
         self,
@@ -1786,7 +1786,7 @@ class TestKsbt03cMotorLayout:
         """Test BetterLiving cadence follows the explicit preset flag."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         coordinator._motor_count = motor_count
-        controller = KeesonController(coordinator, variant="base", betterliving_presets=True)
+        controller = KeesonController(coordinator, variant="sino", betterliving_presets=True)
 
         assert controller.motor_pulse_settings() == expected
 
@@ -1973,28 +1973,6 @@ class TestKsbt03cMotorLayout:
         controller.write_command.assert_not_awaited()
         sleep.assert_not_awaited()
 
-    @pytest.mark.parametrize(
-        ("variant", "expected"),
-        [
-            ("ksbt", 1),
-            ("ksbt_cr", 1),
-            ("ksbt04c", 1),
-            ("sleep_harmony", 1),
-        ],
-    )
-    def test_ksbt_single_shot_count_matches_oem_app(
-        self,
-        hass: HomeAssistant,
-        mock_keeson_config_entry,
-        variant: str,
-        expected: int,
-    ):
-        """Test OEM app one-shots are sent once before any release sequence."""
-        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
-        controller = KeesonController(coordinator, variant=variant)
-
-        assert controller._single_shot_count == expected
-
     async def test_stale_motor_entity_keys(
         self,
         hass: HomeAssistant,
@@ -2132,5 +2110,5 @@ class TestKsbtMemoryPresets:
 
         await controller.preset_memory(4)
 
-        assert "KSBT memory 4 not supported" in caplog.text
+        assert "Memory 4 not supported" in caplog.text
         mock_bleak_client.write_gatt_char.assert_not_called()

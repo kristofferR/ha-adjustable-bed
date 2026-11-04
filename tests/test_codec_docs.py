@@ -105,3 +105,40 @@ async def test_okin_5a_bed_types_match_the_factory() -> None:
                 _FactoryCoordinator(), bed_type, None, _make_connected_client()
             )
             assert getattr(controller, "profile", None) is PROFILES[key], (key, bed_type)
+
+
+def test_keeson_guide_frames_are_frozen_vectors() -> None:
+    """Every fully spelled K1 or P2 frame in the Keeson guide is a frozen vector."""
+    from tests.keeson_vectors import FROZEN_FRAMES
+
+    frozen = frozenset().union(*FROZEN_FRAMES.values())
+    text = (ROOT / "docs" / "beds" / "keeson.md").read_text(encoding="utf-8")
+    frames = re.findall(r"`((?:E[56] ?FE ?16|0[45] ?02)(?: ?[0-9A-F]{2}){4,})`", text, re.I)
+    assert frames
+    unknown = sorted(
+        {spelled for spelled in frames if spelled.replace(" ", "").lower() not in frozen}
+    )
+    assert not unknown, f"Frames no profile was frozen sending: {unknown}"
+
+
+def test_keeson_routes_match_the_profiles() -> None:
+    """The guide's sub-routes resolve as described, and its aliases are the factory's."""
+    from custom_components.adjustable_bed.profiles import keeson as profiles
+
+    generator = _load_generator()
+    samples = {
+        "ksbt03c": {"device_name": "KSBT03C1234"},
+        "sleep_harmony_base_i5": {"device_name": "base-i5.1234"},
+        "purple_plus": {"device_name": "KSBT04C1234"},
+        "adjustable_lite_ksbt03c": {"device_name": "Bed KSBT03C"},
+        "betterliving": {"device_name": None, "betterliving": True},
+        "cb1322": {"device_name": None, "cb1322": True},
+    }
+    assert samples.keys() == generator.KEESON_SUB_ROUTES.keys()
+    for key, (variant, _rule) in generator.KEESON_SUB_ROUTES.items():
+        assert profiles.resolve(variant, **samples[key]).key == key
+    assert generator.keeson_aliases() == {
+        "ergomotion": ("ergomotion",),
+        "serta": ("serta",),
+        "okin": ("okin_ffe",),
+    }

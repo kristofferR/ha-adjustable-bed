@@ -28,7 +28,6 @@ from custom_components.adjustable_bed.beds.innova import (
     STATE_LIGHT,
     STATE_MASSAGE_TIMER,
     InnovaController,
-    innova_frame,
     innova_rename_frame,
     parse_innova_status,
 )
@@ -56,6 +55,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.keeson import INNOVA, encode
 
 Action = Callable[[Any], Awaitable[None]]
 ZERO = "e5fe160000000006"
@@ -231,9 +231,9 @@ def _written(client: MagicMock) -> list[str]:
 
 def test_innova_builder_is_little_endian():
     """The asymmetric key proves INNOVA's byte order; Bedsense's is big-endian."""
-    assert innova_frame(0x12345678).hex() == "e5fe1678563412f2"
-    assert innova_frame(1).hex() == "e5fe160100000005"
-    assert sum(innova_frame(0x80)) % 256 == 0xFF
+    assert encode(INNOVA, 0x12345678).hex() == "e5fe1678563412f2"
+    assert encode(INNOVA, 1).hex() == "e5fe160100000005"
+    assert sum(encode(INNOVA, 0x80)) % 256 == 0xFF
 
 
 @pytest.mark.parametrize(("action", "motors", "row", "frame", "held"), INNOVA_VECTORS)

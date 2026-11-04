@@ -51,7 +51,7 @@ Both packages receive the same disposition on every row. The reconciliation's DI
 
 ## Deferred hardware validation
 
-Real users should confirm after a beta or release: the physical axis per screen (2M combined key, 4M waist), hold/release, preset save and recall, massage levels and timer durations, and the write type. See [the profile documentation](../../beds/ore-comfort-bed.md).
+Real users should confirm after a beta or release: the physical axis per screen (2M combined key, 4M waist), hold/release, preset save and recall, massage levels and timer durations, and the write type. See [the profile documentation](../../beds/keeson.md#ore-comfort-bed-profiles).
 
 ## Ledger
 

@@ -295,7 +295,7 @@ class TestErgomotionPresets:
 
         await coordinator.controller.program_memory(1)
 
-        assert "don't support programming memory presets" in caplog.text
+        assert "Programming memory 1 is not supported" in caplog.text
 
 
 class TestErgomotionLights:

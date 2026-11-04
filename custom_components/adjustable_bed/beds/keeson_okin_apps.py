@@ -16,7 +16,8 @@ selections only.
 Simon Li and OKIN-Seating stream held keys at 0 ms and then every 100 ms;
 release sleeps 10 ms and writes the zero key. Heal Every Night streams movement
 the same way but writes the zero key 100 ms after release; its presets, light
-and massage are single writes with app-local state.
+and massage are single writes with app-local state. Frames and timing are the
+profiles of the same names in ``profiles/keeson.py``.
 """
 
 from __future__ import annotations
@@ -53,12 +54,6 @@ from .keeson import KeesonController
 _LOGGER = logging.getLogger(__name__)
 
 
-ZERO_KEY: Final = 0x00000000
-HOLD_INTERVAL_MS: Final = 100
-# Simon Li / OKIN-Seating sendSingleMessage sleeps 10 ms before the zero key.
-SEAT_RELEASE_DELAY_S: Final = 0.01
-# Heal Every Night stopTimer posts the zero key 100 ms after release.
-HEAL_RELEASE_DELAY_S: Final = 0.1
 # Simon Li shows "Memory saved" after holding a memory key for 2100 ms; the
 # bytes are the same memory stream, so saving is holding it that long.
 SIMON_MEMORY_SAVE_HOLD_MS: Final = 2100
@@ -152,12 +147,6 @@ async def _run_to_completion(cleanup: Coroutine[Any, Any, None]) -> None:
     task.result()
 
 
-def okin_app_frame(key: int) -> bytes:
-    """Build ``E5 FE 16 || low32(key) big-endian || ~sum``."""
-    body = bytes((0xE5, 0xFE, 0x16)) + (key & 0xFFFFFFFF).to_bytes(4, "big")
-    return body + bytes(((~sum(body)) & 0xFF,))
-
-
 def heal_movement_key(
     control: str, *, installation: bool, actuator_1: bool, actuator_2: bool
 ) -> int:
@@ -243,6 +232,11 @@ class OkinAppKeesonController(KeesonController):
             self.forward_controller_state_updates(self._published_state())
 
     # ------------------------------------------------------------- profile
+    @property
+    def _refresh_ms(self) -> int:
+        assert self.profile.refresh_ms is not None
+        return self.profile.refresh_ms
+
     @property
     def _product(self) -> int:
         """Heal Every Night's Healing 6/7/8 picker, chosen with the motor count."""
@@ -349,7 +343,7 @@ class OkinAppKeesonController(KeesonController):
     def motor_pulse_settings(self) -> tuple[int, int]:
         """The configured repeat count at the apps' fixed 100 ms refresh."""
         count, _delay_ms = super().motor_pulse_settings()
-        return count, HOLD_INTERVAL_MS
+        return count, self._refresh_ms
 
     async def hold_app_control(self, control: str) -> None:
         """Hold a control for the configured burst, as one app press."""
@@ -364,9 +358,9 @@ class OkinAppKeesonController(KeesonController):
         await self._hold_for(key, duration_ms)
 
     async def _hold_for(self, key: int, duration_ms: int) -> None:
-        writes = -(-duration_ms // HOLD_INTERVAL_MS)
-        tail = (duration_ms - (writes - 1) * HOLD_INTERVAL_MS) / 1000
-        await self._stream(key, writes, HOLD_INTERVAL_MS, tail_s=tail)
+        writes = -(-duration_ms // self._refresh_ms)
+        tail = (duration_ms - (writes - 1) * self._refresh_ms) / 1000
+        await self._stream(key, writes, self._refresh_ms, tail_s=tail)
 
     async def _stream(
         self,
@@ -388,7 +382,7 @@ class OkinAppKeesonController(KeesonController):
         try:
             async with deadline:
                 await self.write_command(
-                    okin_app_frame(key),
+                    self._build_command(key),
                     repeat_count=repeat_count,
                     repeat_delay_ms=repeat_delay_ms,
                     cancel_event=cancel_event,
@@ -404,7 +398,9 @@ class OkinAppKeesonController(KeesonController):
 
     async def _release_motion(self, *, delay: bool = True) -> None:
         """Write the zero key after the app's release delay, even when cancelled."""
-        seconds = (HEAL_RELEASE_DELAY_S if self._is_heal else SEAT_RELEASE_DELAY_S) if delay else 0
+        # Simon Li / OKIN-Seating sleep 10 ms; Heal Every Night posts it 100 ms later.
+        ((wait_ms, step),) = self.profile.release.steps
+        seconds = wait_ms / 1000 if delay else 0
         delaying = False
 
         async def release() -> None:
@@ -418,7 +414,7 @@ class OkinAppKeesonController(KeesonController):
                     pass  # Skip the remaining delay, then still write the zero key.
                 finally:
                     delaying = False
-            await self.write_command(okin_app_frame(ZERO_KEY), cancel_event=asyncio.Event())
+            await self.write_command(self._step_frame(step), cancel_event=asyncio.Event())
 
         task = asyncio.create_task(release())
         cancelled = False
@@ -531,9 +527,6 @@ class OkinAppKeesonController(KeesonController):
         await self.release_now()
 
     # ------------------------------------------------------------ transport
-    def _build_command(self, command_value: int) -> bytes:
-        return okin_app_frame(command_value)
-
     def _write_target(self) -> BleakGATTCharacteristic | None:
         """Return the app's write characteristic, or None before enumeration.
 
@@ -600,7 +593,7 @@ class OkinAppKeesonController(KeesonController):
             nonlocal written
             written = True
 
-        await self.write_command(okin_app_frame(key), cancel_event=cancel_event, on_write=confirm)
+        await self.write_command(self._build_command(key), cancel_event=cancel_event, on_write=confirm)
         return written
 
     async def _write_single_shot(self, command: bytes) -> None:
