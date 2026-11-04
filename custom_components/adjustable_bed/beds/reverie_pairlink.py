@@ -205,6 +205,7 @@ class ReveriePairlinkController(BedController):
         self._routine_index = 0
         self._routine_timer: asyncio.TimerHandle | None = None
         self._routine_generation = 0
+        self._routine_owner: tuple[int, PairlinkPeerIdentity] | None = None
         self._routine_connection_release: Callable[[], None] | None = None
         self._diagnostic_timer: asyncio.TimerHandle | None = None
         self._diagnostic_generation = 0
@@ -1560,6 +1561,8 @@ class ReveriePairlinkController(BedController):
 
     def _sync_active_control_session(self) -> None:
         """Drive A8/A9 only while the selected physical route is actually ready."""
+        if not self._routine_owner_is_current():
+            self._cancel_routine()
         try:
             self._capture_current_send_snapshot()
         except (PairlinkRuntimeNotReadyError, ConnectionError, ValueError, PermissionError):
@@ -2668,6 +2671,14 @@ class ReveriePairlinkController(BedController):
         if release is not None:
             release()
 
+    def _routine_owner_is_current(self) -> bool:
+        if self._routine_owner is None:
+            return True
+        epoch, peer = self._routine_owner
+        return self._runtime.primary_mac == peer.address and self._runtime.effect_is_current(
+            epoch=epoch, source_mac=peer.address, peer=peer
+        )
+
     async def _run_routine_step(self, generation: int) -> None:
         if generation != self._routine_generation:
             return
@@ -2679,6 +2690,16 @@ class ReveriePairlinkController(BedController):
         request = self._routine_settings[index]
         self._routine_index += 1
         try:
+            if self._runtime.role is PairlinkRole.PERIPHERAL and self._routine_owner is None:
+                snapshot = self._capture_current_send_snapshot()
+                if snapshot.peer is None:
+                    raise PairlinkRuntimeNotReadyError(
+                        "Pairlink routine peer identity is unavailable"
+                    )
+                self._routine_owner = (snapshot.epoch, snapshot.peer)
+            if not self._routine_owner_is_current():
+                self._cancel_routine()
+                return
             await self.async_set_comfort(request)
         except BaseException:
             self._cancel_routine()
@@ -2695,6 +2716,8 @@ class ReveriePairlinkController(BedController):
         )
 
     def _enqueue_routine_step(self, generation: int) -> None:
+        if generation != self._routine_generation:
+            return
         self._routine_timer = None
 
         async def execute(controller: BedController) -> None:
@@ -2719,6 +2742,7 @@ class ReveriePairlinkController(BedController):
         self._clear_routine()
 
     def _clear_routine(self) -> None:
+        self._routine_owner = None
         self._routine_settings.clear()
         self._routine_times.clear()
         self._routine_index = 0

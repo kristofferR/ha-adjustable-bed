@@ -538,6 +538,10 @@ valid step schedules its exact minute duration before sending comfort, and the
 final step still schedules the empty-queue poll. Durations are not clamped to a
 minimum.
 
+Pairlink local routines stay with their original peer session. Disconnecting or
+replacing that peer cancels pending steps; a replacement receiver needs a new
+routine request. Feedback and unrelated backup disconnects preserve the routine.
+
 ## Command Timing
 
 | Route | Timing / cleanup |
