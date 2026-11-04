@@ -13,6 +13,7 @@ These guides describe `main`. The integration requires **Home Assistant
 | [Connection guide](CONNECTION_GUIDE.md) | Discovery, adapters, proxies and Bluetooth bonds |
 | [Configuration](CONFIGURATION.md) | Options, choosing your remote, combined beds and restoring standalone controls |
 | [Actions and automations](SERVICES.md) | Memory, movement, side targeting and specialized actions |
+| [Estimated positions](ESTIMATED_POSITIONS.md) | Calibrated travel-time estimates and saved positions for beds without position feedback |
 | [Wake-up automation](WAKE_UP.md) | Importable scheduled raise or memory recall, with optional lighting |
 | [Apple Home and Siri](HOMEKIT.md) | Importable control blueprint, HomeKit scenes and Siri Shortcuts |
 | [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and upgrade problems |
@@ -22,12 +23,35 @@ These guides describe `main`. The integration requires **Home Assistant
 
 Start with the [Supported Beds table](../README.md#supported-beds), where related
 brands, models and apps are grouped together. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
-to identify your controller and compare features. The detailed guides in
-[`beds/`](beds/) cover model-specific setup and testing status, and follow the
-[bed guide format](BED_GUIDE_FORMAT.md). Wire formats shared by several apps have
-one codec guide with a section per profile: [Jiecang](beds/jiecang.md) and
-[Okin N-frame](beds/okin-nframe.md);
-the [codec and profile architecture](design/protocol-codecs.md) explains the split.
+to identify your controller and compare features.
+
+Bed support is split into wire codecs and app profiles: a wire format shared by
+several apps is encoded once, and each app or legacy route is a profile over it.
+Each codec has one guide, with a section per profile:
+
+| Codec guide | Profiles for |
+|-------------|--------------|
+| [Jiecang](beds/jiecang.md) | Jiecang, Comfort Motion, the Dream apps and the LOGICDATA apps |
+| [Keeson](beds/keeson.md) | Keeson, Ergomotion, Serta, the Keeson-based apps and Ergomotion 4.0 |
+| [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24/CST/DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, AdjustableM5X4, Okin 64-Bit and Adjustable bed (Lumbar) |
+| [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900, Okin CB35 and DewertOkin ELEVATE |
+| [Malouf](beds/malouf.md) | Malouf and the Malouf Base / Lucid Base apps |
+| [Richmat](beds/richmat.md) | Richmat, RMControl, BedTech, L&P MlRM, the Richmat MH apps and HJBed |
+| [Limoss](beds/limoss.md) | Limoss, Limoss Remote and FSM Relax |
+| [FFFF frame](beds/ff_frame.md) | Solace, Woosa Sleep, BedSense and Motion Bed |
+
+Beds with their own wire format have their own guide in [`beds/`](beds/). Every
+guide follows the [bed guide format](BED_GUIDE_FORMAT.md) and records its
+testing status.
+
+| Design note | Contents |
+|-------------|----------|
+| [Protocol codecs and app profiles](design/protocol-codecs.md) | The codec, profile and controller layers, family registration and the vector harness |
+| [Bluetooth discovery hints](design/discovery-hints.md) | Per-family hints, the generated manifest matchers and detection's first pass |
+| [Protocol inventory](design/protocol-inventory.md) | Every bed type's wire format, proven by encoding, and its byte-identical aliases |
+| [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence and design |
+| [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
+| [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer and rollback |
 
 ## Protocol Research
 
@@ -58,33 +82,9 @@ The [row068 Glideaway Motion ledger](apk-analysis/dispositions/row068-glideaway-
 accounts for the accepted 1.0.3 revision01 commands, models, parsers, timing and
 explicit safety/product exclusions.
 
-## Development and Validation
-
 The [row107 SleepEase disposition ledger](apk-analysis/dispositions/row107-doublesleep.md)
 maps the accepted DoubleSleep 1.2.24 artifact to all three drivers, controls,
 sensor/report consumers and explicit safety/product exclusions.
-
-Work from `main`. Development uses Python **3.14.2+** with `uv`, and Bun for
-the Lit/TypeScript card. Follow the environment and test commands in the
-[repository instructions](../AGENTS.md#running-tests), including the Bluetooth
-dependencies from Home Assistant's own manifests.
-
-| Reference | Contents |
-|-----------|----------|
-| [Repository instructions](../AGENTS.md) | Architecture, controller contracts, contribution and release rules |
-| [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
-| [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer/rollback |
-| [Protocol codecs and app profiles](design/protocol-codecs.md) | Codec, profile and controller layers; vector harness |
-| [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence matrix and design |
-| [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
-| [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
-| [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |
-| [Analyst prompt](apk-analysis/phase4-analyst-prompt.md) and [schema](apk-analysis/analysis.schema.json) | Pinned clean-room inputs |
-| [Audit tooling](../tools/phase4_v2/README.md) and [preflight](../tools/phase4_v2/preflight/README.md) | Artifact identity, routing and historical inventory |
-
-APK artifacts and frozen reports stay local and ignored. Consult the repository's
-clean-room rules before protocol work. Documentation updates do not establish new
-hardware evidence.
 
 [Comfort Motion app setup and BLE behavior](beds/jiecang.md#comfort-motion-app), including the
 [row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).
@@ -97,3 +97,24 @@ guide, with the [MotionFlex ledger](beds/solace-disposition.md).
 [Ergomotion 4.0 setup and protocol](beds/ergomotion-4.md), including the
 [issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
 and opt-in P1 split-side controls.
+
+## Development and Validation
+
+Work from `main`. Development uses Python **3.14.2+** with `uv`, and Bun for
+the Lit/TypeScript card. Follow the environment and test commands in the
+[repository instructions](../AGENTS.md#running-tests), including the Bluetooth
+dependencies from Home Assistant's own manifests.
+
+| Reference | Contents |
+|-----------|----------|
+| [Repository instructions](../AGENTS.md) | Architecture, controller contracts, contribution and release rules |
+| [Design notes](#controller-and-protocol-reference) | Codecs and profiles, protocol inventory, execution capabilities, command lifecycle and paired runtimes |
+| [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
+| [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
+| [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |
+| [Analyst prompt](apk-analysis/phase4-analyst-prompt.md) and [schema](apk-analysis/analysis.schema.json) | Pinned clean-room inputs |
+| [Audit tooling](../tools/phase4_v2/README.md) and [preflight](../tools/phase4_v2/preflight/README.md) | Artifact identity, routing and historical inventory |
+
+APK artifacts and frozen reports stay local and ignored. Consult the repository's
+clean-room rules before protocol work. Documentation updates do not establish new
+hardware evidence.

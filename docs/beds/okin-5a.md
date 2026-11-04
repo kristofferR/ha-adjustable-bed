@@ -95,6 +95,21 @@ STOP. Massage and light commands are single writes unless listed here.
 | DewertOkin ELEVATE | once | once | n/a |
 <!-- /generated -->
 
+### Aliases
+
+Bed types that build the same controller over the same profile with the same
+default timing, so they send identical bytes. They stay separate bed types so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type | Same as | Profile |
+|----------|---------|---------|
+| `nectar` | `okin_7byte` | [Nectar](#nectar) |
+| `mattressfirm` | `okin_nordic` | [Mattress Firm 900 / iFlex](#mattress-firm-900--iflex) |
+
+`nectar` and `mattressfirm` are kept for existing entries and are not offered in
+the bed-type list.
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/okin_5a.py`. Profiles

@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts import codec_docs  # noqa: E402
+from scripts.codec_docs import _configuration  # noqa: E402
 from scripts.codec_docs._common import Block  # noqa: E402
 
 
@@ -38,7 +39,11 @@ def family_modules() -> dict[str, ModuleType]:
     }
 
 
-BLOCKS: list[Block] = [block for module in family_modules().values() for block in module.BLOCKS]
+# Family blocks, then the cross-family blocks of the configuration guide.
+BLOCKS: list[Block] = [
+    *(block for module in family_modules().values() for block in module.BLOCKS),
+    *_configuration.BLOCKS,
+]
 
 
 def _pattern(name: str) -> re.Pattern[str]:

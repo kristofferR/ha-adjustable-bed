@@ -172,6 +172,11 @@ partially completed move.
 
 A direct command being accepted is not confirmation that the target was reached.
 
+Beds without position feedback can opt in to calibrated travel-time estimates
+and saved positions. Their actions (`save_position`, `recall_position`,
+`set_position_reference` and others) are described in
+[Estimated positions](ESTIMATED_POSITIONS.md#actions).
+
 ### Renewable holds
 
 `timed_move` and `hold_control` accept two optional fields, `hold_owner` and
@@ -199,6 +204,15 @@ Nothing is replayed after a reconnect or restart. One hold never streams
 longer than 30 seconds in total, however often it is renewed. A renewable
 hold targets one bed or paired bed per call; on a paired bed both sides must
 declare the same hold mode, and one renewal renews both sides.
+
+The dashboard card uses this for every press on a bed that supports it: one
+call starts the hold, the card renews it every 250 ms with a 750 ms lease, and
+releasing the control stops renewing and sends STOP. Hiding the page or
+removing the card ends the hold the same way; if that STOP is lost, the bed
+still stops when the lease runs out. Entities that can be held this way carry
+a `hold_lease_mode` attribute (`stream` or `latched`), and `hold_lease_motor`
+names the `timed_move` motor where there is one. A combined control on a paired
+bed carries them only when both sides declare the same mode.
 
 ```yaml
 # Repeat every 250 ms while a button is held; send stop_all on release.
@@ -584,7 +598,7 @@ transport failure may leave one table sent and the other unsent. There is no
 wire rollback. Phone alarm schedulers, local audio, permissions and snooze UI
 storage are outside this BLE action. Normalize any automation's hour/minute
 arithmetic first, reject cross-date results, and preserve its intended weekly
-or one-time dispatch. See each [app guide](CONFIGURATION.md#curve-q-plus-serta-mp-and-sfd-app-profiles)
+or one-time dispatch. See each [app guide](beds/keeson.md#cluster033-app-family)
 for exact weekday-marker, wake-byte, notification and release differences.
 
 ## Comfort Enhancements alarm
