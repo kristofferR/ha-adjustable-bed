@@ -23,284 +23,39 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import okin_nframe as codec
 from ..const import (
     OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_WRITE_CHAR_UUID,
-    OKIN_CST_VARIANT_AVIADA,
-    OKIN_CST_VARIANT_BOB,
-    OKIN_CST_VARIANT_CAREFREE,
-    OKIN_CST_VARIANT_CLARITY,
-    OKIN_CST_VARIANT_CONTEMPO,
     OKIN_CST_VARIANT_MF900,
     OKIN_CST_VARIANT_NECTAR_MOVE,
-    OKIN_CST_VARIANT_RESIDENT,
-    OKIN_CST_VARIANT_SANCTUARY,
-    OKIN_CST_VARIANT_SUPPORT,
     VARIANT_AUTO,
 )
+from ..profiles.okin_nframe import (
+    CST_PROFILES,
+    CstFields,
+    CstMotorCommands,
+    CstProduct,
+    CstRemoteCommands,
+    OkinNFrameProfile,
+    Tap,
+)
 from .base import BedController, ControllerStateBinarySensorSpec, MotorControlSpec
-from .okin_protocol import build_cst_command
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-_PRESET_REPEAT_COUNT = 6
-_PRESET_REPEAT_DELAY_MS = 100
-_BUTTON_PRESS_REPEAT_COUNT = 6
-_BUTTON_PRESS_REPEAT_DELAY_MS = 100
-_STOP_REPEAT_COUNT = 2
-_STOP_REPEAT_DELAY_MS = 100
-_NECTAR_HOLD_REFRESH_DELAY_MS = 100
 
-
-class CstMotorCommands:
-    """Motor field command values (bytes 2-5)."""
-
-    STOP = 0x00000000
-    HEAD_UP = 0x00000001
-    HEAD_DOWN = 0x00000002
-    FOOT_UP = 0x00000004
-    FOOT_DOWN = 0x00000008
-    LUMBAR_UP = 0x00000010
-    LUMBAR_DOWN = 0x00000020
-
-
-class CstRemoteCommands:
-    """Remote action command values.
-
-    The CST app chooses the first or second 32-bit field per action. Call sites
-    pass these values to build_cst_command() using the matching field.
-    """
-
-    STOP = 0x00000000
-    FLAT = 0x08000000
-    ZERO_G = 0x00001000
-    LOUNGE = 0x00002000
-    READING = LOUNGE
-    INCLINE = 0x00004000
-    ANTI_SNORE = 0x00008000
-    SAVE_ZERO_G = FLAT | ZERO_G
-    SAVE_LOUNGE = FLAT | LOUNGE
-    SAVE_READING = SAVE_LOUNGE
-    SAVE_INCLINE = FLAT | INCLINE
-    LIGHT_TOGGLE = 0x00020000
-    LIGHT_ON = 0x00000040
-    LIGHT_OFF = 0x00000080
-    MASSAGE_OFF = 0x02000000
-    MASSAGE_INTENSITY = 0x00000C00
-    MASSAGE_INTENSITY_MINUS = 0x01800000
-    MASSAGE_WAVE_1 = 0x00080000
-    MASSAGE_WAVE_2 = 0x00100000
-    MASSAGE_WAVE_3 = 0x00200000
-    MASSAGE_FULL_BODY = 0x00000100
-    MASSAGE_HEAD_UP = 0x00000800
-    MASSAGE_HEAD_DOWN = 0x00800000
-    MASSAGE_FOOT_UP = 0x00000400
-    MASSAGE_FOOT_DOWN = 0x01000000
-    MASSAGE_TIMER_STEP = 0x00000200
-    MEMORY_M = 0x00010000
-    SAVE_MEMORY_M = FLAT | MEMORY_M
-
-
-CstControlCommands = CstRemoteCommands
-
-
-@dataclass(frozen=True)
-class CstFields:
-    """The two independently routed 32-bit fields in a CST frame."""
-
-    primary: int = 0
-    secondary: int = 0
-
-
-@dataclass(frozen=True)
-class CstMemorySlot:
-    """A product profile's named recall/program pair."""
-
-    name: str
-    recall: int
-    program: int
-
-
-class CstMassageFields(TypedDict, total=False):
-    """Optional zoned massage actions for fixed product profiles."""
-
-    massage_head_up: CstFields
-    massage_head_down: CstFields
-    massage_foot_up: CstFields
-    massage_foot_down: CstFields
-
-
-@dataclass(frozen=True)
-class CstProfile:
-    """Capabilities and product-specific command routing for one CST app."""
-
-    key: str
-    motors: tuple[str, ...]
-    lounge: bool
-    incline: bool
-    memory_slots: tuple[CstMemorySlot, ...]
-    lights: bool
-    massage_style: Literal["none", "global", "zoned", "increase_only"]
-    reading: bool = False
-    light_toggle_only: bool = False
-    memory_save_response_feedback: bool = False
-    massage_toggle: CstFields | None = None
-    massage_head_up: CstFields | None = None
-    massage_head_down: CstFields | None = None
-    massage_foot_up: CstFields | None = None
-    massage_foot_down: CstFields | None = None
-    massage_timer_step: CstFields | None = None
-
-
-_MEMORY_ZERO_G = CstMemorySlot(
-    "Zero Gravity", CstRemoteCommands.ZERO_G, CstRemoteCommands.SAVE_ZERO_G
-)
-_MEMORY_INCLINE = CstMemorySlot(
-    "Incline", CstRemoteCommands.INCLINE, CstRemoteCommands.SAVE_INCLINE
-)
-_MEMORY_LOUNGE = CstMemorySlot(
-    "Lounge", CstRemoteCommands.LOUNGE, CstRemoteCommands.SAVE_LOUNGE
-)
-_MEMORY_READING = CstMemorySlot(
-    "Reading", CstRemoteCommands.READING, CstRemoteCommands.SAVE_READING
-)
-_MEMORY_M = CstMemorySlot(
-    "M", CstRemoteCommands.MEMORY_M, CstRemoteCommands.SAVE_MEMORY_M
-)
-_THREE_MEMORIES = (_MEMORY_ZERO_G, _MEMORY_INCLINE, _MEMORY_LOUNGE)
-
-_ZONED_SANCTUARY: CstMassageFields = {
-    "massage_head_up": CstFields(primary=CstRemoteCommands.MASSAGE_HEAD_UP),
-    "massage_head_down": CstFields(primary=CstRemoteCommands.MASSAGE_HEAD_DOWN),
-    "massage_foot_up": CstFields(primary=CstRemoteCommands.MASSAGE_FOOT_UP),
-    "massage_foot_down": CstFields(primary=CstRemoteCommands.MASSAGE_FOOT_DOWN),
-}
-_ZONED_BOB: CstMassageFields = {
-    **_ZONED_SANCTUARY,
-    "massage_head_down": CstFields(
-        primary=CstRemoteCommands.MASSAGE_HEAD_DOWN,
-        secondary=CstRemoteCommands.MASSAGE_HEAD_DOWN,
-    ),
-    "massage_foot_down": CstFields(
-        primary=CstRemoteCommands.MASSAGE_FOOT_DOWN,
-        secondary=CstRemoteCommands.MASSAGE_FOOT_DOWN,
-    ),
-}
-_ZONED_SUPPORT: CstMassageFields = {
-    **_ZONED_BOB,
-    "massage_foot_down": CstFields(secondary=CstRemoteCommands.MASSAGE_FOOT_DOWN),
-}
-
-_CST_PROFILES: dict[str, CstProfile] = {
-    OKIN_CST_VARIANT_SANCTUARY: CstProfile(
-        key=OKIN_CST_VARIANT_SANCTUARY,
-        motors=("head", "feet"),
-        lounge=True,
-        incline=False,
-        memory_slots=(_MEMORY_ZERO_G, _MEMORY_LOUNGE),
-        lights=True,
-        massage_style="zoned",
-        massage_toggle=CstFields(secondary=CstRemoteCommands.MASSAGE_FULL_BODY),
-        **_ZONED_SANCTUARY,
-    ),
-    OKIN_CST_VARIANT_RESIDENT: CstProfile(
-        key=OKIN_CST_VARIANT_RESIDENT,
-        motors=("head", "feet"),
-        lounge=True,
-        incline=True,
-        memory_slots=(*_THREE_MEMORIES, _MEMORY_M),
-        lights=False,
-        massage_style="zoned",
-        massage_timer_step=CstFields(primary=CstRemoteCommands.MASSAGE_TIMER_STEP),
-        **_ZONED_SANCTUARY,
-    ),
-    OKIN_CST_VARIANT_AVIADA: CstProfile(
-        key=OKIN_CST_VARIANT_AVIADA,
-        motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
-        memory_slots=_THREE_MEMORIES,
-        lights=True,
-        massage_style="global",
-    ),
-    OKIN_CST_VARIANT_BOB: CstProfile(
-        key=OKIN_CST_VARIANT_BOB,
-        motors=("head", "feet"),
-        lounge=True,
-        incline=False,
-        memory_slots=(_MEMORY_ZERO_G, _MEMORY_LOUNGE),
-        lights=True,
-        massage_style="zoned",
-        massage_toggle=CstFields(secondary=CstRemoteCommands.MASSAGE_FULL_BODY),
-        **_ZONED_BOB,
-    ),
-    OKIN_CST_VARIANT_CONTEMPO: CstProfile(
-        key=OKIN_CST_VARIANT_CONTEMPO,
-        motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
-        memory_slots=_THREE_MEMORIES,
-        lights=True,
-        massage_style="global",
-    ),
-    OKIN_CST_VARIANT_CAREFREE: CstProfile(
-        key=OKIN_CST_VARIANT_CAREFREE,
-        motors=("head", "feet"),
-        lounge=False,
-        incline=False,
-        memory_slots=(_MEMORY_ZERO_G,),
-        lights=True,
-        massage_style="none",
-    ),
-    OKIN_CST_VARIANT_CLARITY: CstProfile(
-        key=OKIN_CST_VARIANT_CLARITY,
-        motors=("head", "feet"),
-        lounge=True,
-        incline=True,
-        memory_slots=_THREE_MEMORIES,
-        lights=True,
-        massage_style="global",
-    ),
-    OKIN_CST_VARIANT_MF900: CstProfile(
-        key=OKIN_CST_VARIANT_MF900,
-        motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
-        memory_slots=_THREE_MEMORIES,
-        lights=True,
-        massage_style="global",
-    ),
-    OKIN_CST_VARIANT_SUPPORT: CstProfile(
-        key=OKIN_CST_VARIANT_SUPPORT,
-        motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
-        memory_slots=_THREE_MEMORIES,
-        lights=True,
-        massage_style="zoned",
-        **_ZONED_SUPPORT,
-    ),
-    OKIN_CST_VARIANT_NECTAR_MOVE: CstProfile(
-        key=OKIN_CST_VARIANT_NECTAR_MOVE,
-        motors=("head", "feet"),
-        lounge=False,
-        reading=True,
-        incline=False,
-        memory_slots=(_MEMORY_ZERO_G, _MEMORY_READING),
-        lights=True,
-        light_toggle_only=True,
-        memory_save_response_feedback=True,
-        massage_style="increase_only",
-    ),
-}
+def _product(profile: OkinNFrameProfile) -> CstProduct:
+    if profile.product is None:
+        raise TypeError(f"{profile.key} is not a CST product profile")
+    return profile.product
 
 
 class OkinCstController(BedController):
@@ -313,18 +68,16 @@ class OkinCstController(BedController):
     def __init__(
         self, coordinator: AdjustableBedCoordinator, variant: str = VARIANT_AUTO
     ) -> None:
-        """Initialize the OKIN CST controller."""
         super().__init__(coordinator)
         self._motor_state: dict[str, int] = {}
         self._massage_wave_index: int | None = None
         self._previous_status = 0
         self._pending_memory_save_code: int | None = None
         self._cleanup_stop_cancel_counter: int | None = None
-        self._has_explicit_profile = variant in _CST_PROFILES
+        self._has_explicit_profile = variant in CST_PROFILES
         profile_key = OKIN_CST_VARIANT_MF900 if variant == VARIANT_AUTO else variant
-        self._profile = _CST_PROFILES.get(
-            profile_key, _CST_PROFILES[OKIN_CST_VARIANT_MF900]
-        )
+        self._nframe_profile = CST_PROFILES.get(profile_key, CST_PROFILES[OKIN_CST_VARIANT_MF900])
+        self._profile = _product(self._nframe_profile)
         self._memory_save_response_callback: Callable[[], None] | None = None
         if self._profile.memory_save_response_feedback:
             self.forward_controller_state_update("memory_save_response_observed", False)
@@ -332,8 +85,12 @@ class OkinCstController(BedController):
         _LOGGER.debug("OkinCstController initialized with profile %s", self._profile.key)
 
     @property
+    def profile(self) -> OkinNFrameProfile:
+        """The selected product's 96-bit profile: its words and timing."""
+        return self._nframe_profile
+
+    @property
     def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
         return OKIMAT_WRITE_CHAR_UUID
 
     # Capability properties
@@ -592,21 +349,17 @@ class OkinCstController(BedController):
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Keep the configured count; Nectar Move refreshes at the app's interval."""
         pulse_count, pulse_delay_ms = super().motor_pulse_settings()
-        if self._profile.key == OKIN_CST_VARIANT_NECTAR_MOVE:
-            return pulse_count, _NECTAR_HOLD_REFRESH_DELAY_MS
-        return pulse_count, pulse_delay_ms
+        return pulse_count, self.profile.hold.repeat_ms or pulse_delay_ms
 
     # Motor movement helpers
 
     def _get_motor_command(self) -> int:
-        """Calculate combined motor command from active motor states."""
         command = 0
         for value in self._motor_state.values():
             command |= value
         return command
 
     async def _move_motor(self, motor: str, command_value: int | None) -> None:
-        """Move a motor or stop it."""
         if self._profile.key == OKIN_CST_VARIANT_NECTAR_MOVE:
             if command_value is None:
                 self._motor_state.pop(motor, None)
@@ -626,7 +379,7 @@ class OkinCstController(BedController):
         try:
             if combined:
                 await self.write_command(
-                    build_cst_command(motor_value=combined),
+                    codec.frame96(combined),
                     repeat_count=pulse_count,
                     repeat_delay_ms=pulse_delay,
                 )
@@ -638,9 +391,9 @@ class OkinCstController(BedController):
     async def _send_stop_sequence(self) -> None:
         """Send the app-style CST STOP sequence."""
         stop_event = asyncio.Event()
-        for _ in range(_STOP_REPEAT_COUNT):
-            await asyncio.sleep(_STOP_REPEAT_DELAY_MS / 1000)
-            await self.write_command(build_cst_command(), cancel_event=stop_event)
+        for _ in range(self.profile.hold.releases):
+            await asyncio.sleep(self.profile.hold.release_ms / 1000)
+            await self.write_command(codec.frame96(0), cancel_event=stop_event)
 
     async def _send_stop_sequence_after_command(self) -> None:
         """Send cleanup STOPs and remember that an explicit STOP may follow."""
@@ -671,7 +424,7 @@ class OkinCstController(BedController):
         self._cleanup_stop_cancel_counter = None
         try:
             await self.write_command(
-                build_cst_command(motor_value=motor_value),
+                codec.frame96(motor_value),
                 repeat_count=pulse_count,
                 repeat_delay_ms=refresh_delay_ms,
             )
@@ -685,9 +438,7 @@ class OkinCstController(BedController):
         """Map a stateless HA press to one command and the bounded STOP pair."""
         self._cleanup_stop_cancel_counter = None
         try:
-            await self.write_command(
-                build_cst_command(motor_value=motor_value, control_value=control_value)
-            )
+            await self.write_command(codec.frame96(motor_value, control_value))
         finally:
             try:
                 await self._send_stop_sequence_after_command()
@@ -705,7 +456,7 @@ class OkinCstController(BedController):
         """Send a CST command with stop cleanup."""
         try:
             await self.write_command(
-                build_cst_command(motor_value=motor_value, control_value=control_value),
+                codec.frame96(motor_value, control_value),
                 repeat_count=repeat_count,
                 repeat_delay_ms=repeat_delay_ms,
             )
@@ -715,16 +466,23 @@ class OkinCstController(BedController):
             except (TimeoutError, BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send STOP during CST cleanup", exc_info=True)
 
+    @staticmethod
+    def _press_timing(tap: Tap | None) -> Tap:
+        if tap is None:
+            raise TypeError("CST profiles always define their press timing")
+        return tap
+
     async def _send_preset(self, motor_value: int) -> None:
         """Send a long-running preset recall command."""
         if self._profile.key == OKIN_CST_VARIANT_NECTAR_MOVE:
             self._pending_memory_save_code = None
             await self._send_nectar_tap(motor_value=motor_value)
             return
+        recall = self._press_timing(self.profile.recall)
         await self._send_repeated_command(
             motor_value=motor_value,
-            repeat_count=_PRESET_REPEAT_COUNT,
-            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
+            repeat_count=recall.repeats,
+            repeat_delay_ms=recall.repeat_ms,
         )
 
     async def _send_button_press(
@@ -740,78 +498,62 @@ class OkinCstController(BedController):
         await self._send_repeated_command(
             motor_value=motor_value,
             control_value=control_value,
-            repeat_count=_BUTTON_PRESS_REPEAT_COUNT,
-            repeat_delay_ms=_BUTTON_PRESS_REPEAT_DELAY_MS,
+            repeat_count=self.profile.tap.repeats,
+            repeat_delay_ms=self.profile.tap.repeat_ms,
         )
 
     # Motor control - Back/Head (primary)
 
     async def move_head_up(self) -> None:
-        """Move head/back up."""
         await self._move_motor("back", CstMotorCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
-        """Move head/back down."""
         await self._move_motor("back", CstMotorCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
-        """Stop head/back motor."""
         await self._move_motor("back", None)
 
     async def move_back_up(self) -> None:
-        """Move back up."""
         await self._move_motor("back", CstMotorCommands.HEAD_UP)
 
     async def move_back_down(self) -> None:
-        """Move back down."""
         await self._move_motor("back", CstMotorCommands.HEAD_DOWN)
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self._move_motor("back", None)
 
     # Motor control - Legs/Feet
 
     async def move_legs_up(self) -> None:
-        """Move legs up."""
         await self._move_motor("legs", CstMotorCommands.FOOT_UP)
 
     async def move_legs_down(self) -> None:
-        """Move legs down."""
         await self._move_motor("legs", CstMotorCommands.FOOT_DOWN)
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
         await self._move_motor("legs", None)
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
         await self._move_motor("legs", CstMotorCommands.FOOT_UP)
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
         await self._move_motor("legs", CstMotorCommands.FOOT_DOWN)
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         await self._move_motor("legs", None)
 
     # Motor control - Lumbar
 
     async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
         await self._move_motor("lumbar", CstMotorCommands.LUMBAR_UP)
 
     async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
         await self._move_motor("lumbar", CstMotorCommands.LUMBAR_DOWN)
 
     async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
         await self._move_motor("lumbar", None)
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
         self._motor_state = {}
         if self._profile.key == OKIN_CST_VARIANT_NECTAR_MOVE:
             await self._send_explicit_stop_sequence()
@@ -821,19 +563,15 @@ class OkinCstController(BedController):
     # Presets
 
     async def preset_flat(self) -> None:
-        """Go to flat position."""
         await self._send_preset(CstRemoteCommands.FLAT)
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
         await self._send_preset(CstRemoteCommands.ZERO_G)
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
         await self._send_preset(CstRemoteCommands.ANTI_SNORE)
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position."""
         await self._send_preset(CstRemoteCommands.LOUNGE)
 
     async def preset_reading(self) -> None:
@@ -841,7 +579,6 @@ class OkinCstController(BedController):
         await self._send_preset(CstRemoteCommands.READING)
 
     async def preset_incline(self) -> None:
-        """Go to incline/TV position."""
         await self._send_preset(CstRemoteCommands.INCLINE)
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -884,21 +621,17 @@ class OkinCstController(BedController):
     # Lights
 
     async def lights_on(self) -> None:
-        """Turn on lights."""
         await self._send_button_press(control_value=CstRemoteCommands.LIGHT_ON)
 
     async def lights_off(self) -> None:
-        """Turn off lights."""
         await self._send_button_press(control_value=CstRemoteCommands.LIGHT_OFF)
 
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
         await self._send_button_press(motor_value=CstRemoteCommands.LIGHT_TOGGLE)
 
     # Massage
 
     async def massage_off(self) -> None:
-        """Turn massage off."""
         await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_OFF)
 
     async def massage_toggle(self) -> None:
@@ -906,29 +639,23 @@ class OkinCstController(BedController):
         await self._send_profile_fields(self._profile.massage_toggle)
 
     async def massage_intensity_up(self) -> None:
-        """Increase overall massage intensity."""
         await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_INTENSITY)
 
     async def massage_intensity_down(self) -> None:
-        """Decrease overall massage intensity."""
         await self._send_button_press(
             motor_value=CstRemoteCommands.MASSAGE_INTENSITY_MINUS
         )
 
     async def massage_head_up(self) -> None:
-        """Increase head-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_head_up)
 
     async def massage_head_down(self) -> None:
-        """Decrease head-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_head_down)
 
     async def massage_foot_up(self) -> None:
-        """Increase foot-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_foot_up)
 
     async def massage_foot_down(self) -> None:
-        """Decrease foot-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_foot_down)
 
     async def _send_profile_fields(self, fields: CstFields | None) -> None:

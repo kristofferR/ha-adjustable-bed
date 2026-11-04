@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from types import MappingProxyType
-from typing import Final, Literal
+from typing import Final, Literal, TypedDict
 
 from ..const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -33,16 +33,30 @@ from ..const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_TRANQUIL,
+    BED_TYPE_ZSERIES,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
+    OKIN_CST_VARIANT_AVIADA,
+    OKIN_CST_VARIANT_BOB,
+    OKIN_CST_VARIANT_CAREFREE,
+    OKIN_CST_VARIANT_CLARITY,
+    OKIN_CST_VARIANT_CONTEMPO,
+    OKIN_CST_VARIANT_MF900,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
+    OKIN_CST_VARIANT_RESIDENT,
+    OKIN_CST_VARIANT_SANCTUARY,
+    OKIN_CST_VARIANT_SUPPORT,
 )
 
 WriteMode = Literal["response", "no_response", "characteristic"]
@@ -115,6 +129,8 @@ class OkinNFrameProfile:
     """Persistent press-and-hold or press-and-release handset setting."""
     tap: Tap = Tap()
     """Lights and massage keys."""
+    product: CstProduct | None = None
+    """A 96-bit CST product's capabilities and field routing."""
 
 
 OKIMAT: Final = OkinNFrameProfile(
@@ -693,5 +709,508 @@ STARCODE_ABM5_4_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyT
         ),
         "BOX15": _abm("starcode_abm5_4_box15", "BOX15", _ABM_SHARED, {}),
         "BOX1220": _abm("starcode_abm5_4_box1220", "BOX1220", _ABM_SHARED | _ABM_MASSAGE, {}),
+    }
+)
+
+
+# 96-bit routes: ``0C 02 <primary 32-bit field> <secondary 32-bit field> 00 00 00 00``.
+
+CST_REFRESH_MS: Final = 100
+"""Every CST app's timer: held keys refresh, and the two release STOPs follow, at 100 ms."""
+CST_PRESS: Final = Tap(repeats=6, repeat_ms=CST_REFRESH_MS, releases=2)
+"""A preset or button press: the key six times, then the two STOPs."""
+CST_RELEASE: Final = {
+    "releases": 2,
+    "release_ms": CST_REFRESH_MS,
+    "release_after_ms": CST_REFRESH_MS,
+}
+"""Two STOPs, 100 and 200 ms after the release."""
+
+
+class CstMotorCommands:
+    """Motor field command values (bytes 2-5)."""
+
+    STOP = 0x00000000
+    HEAD_UP = 0x00000001
+    HEAD_DOWN = 0x00000002
+    FOOT_UP = 0x00000004
+    FOOT_DOWN = 0x00000008
+    LUMBAR_UP = 0x00000010
+    LUMBAR_DOWN = 0x00000020
+
+
+class CstRemoteCommands:
+    """Remote action command values.
+
+    The CST app chooses the first or second 32-bit field per action. Call sites
+    pass these values to codec.frame96() in the matching field.
+    """
+
+    STOP = 0x00000000
+    FLAT = 0x08000000
+    ZERO_G = 0x00001000
+    LOUNGE = 0x00002000
+    READING = LOUNGE
+    INCLINE = 0x00004000
+    ANTI_SNORE = 0x00008000
+    SAVE_ZERO_G = FLAT | ZERO_G
+    SAVE_LOUNGE = FLAT | LOUNGE
+    SAVE_READING = SAVE_LOUNGE
+    SAVE_INCLINE = FLAT | INCLINE
+    LIGHT_TOGGLE = 0x00020000
+    LIGHT_ON = 0x00000040
+    LIGHT_OFF = 0x00000080
+    MASSAGE_OFF = 0x02000000
+    MASSAGE_INTENSITY = 0x00000C00
+    MASSAGE_INTENSITY_MINUS = 0x01800000
+    MASSAGE_WAVE_1 = 0x00080000
+    MASSAGE_WAVE_2 = 0x00100000
+    MASSAGE_WAVE_3 = 0x00200000
+    MASSAGE_FULL_BODY = 0x00000100
+    MASSAGE_HEAD_UP = 0x00000800
+    MASSAGE_HEAD_DOWN = 0x00800000
+    MASSAGE_FOOT_UP = 0x00000400
+    MASSAGE_FOOT_DOWN = 0x01000000
+    MASSAGE_TIMER_STEP = 0x00000200
+    MEMORY_M = 0x00010000
+    SAVE_MEMORY_M = FLAT | MEMORY_M
+
+
+CstControlCommands = CstRemoteCommands
+
+
+@dataclass(frozen=True)
+class CstFields:
+    """The two independently routed 32-bit fields in a CST frame."""
+
+    primary: int = 0
+    secondary: int = 0
+
+
+@dataclass(frozen=True)
+class CstMemorySlot:
+    """A product profile's named recall/program pair."""
+
+    name: str
+    recall: int
+    program: int
+
+
+class CstMassageFields(TypedDict, total=False):
+    """Optional zoned massage actions for fixed product profiles."""
+
+    massage_head_up: CstFields
+    massage_head_down: CstFields
+    massage_foot_up: CstFields
+    massage_foot_down: CstFields
+
+
+@dataclass(frozen=True)
+class CstProduct:
+    """Capabilities and product-specific command routing for one CST app."""
+
+    key: str
+    memory_slots: tuple[CstMemorySlot, ...]
+    massage_style: Literal["none", "global", "zoned", "increase_only"]
+    motors: tuple[str, ...] = ("head", "feet")
+    lounge: bool = True
+    incline: bool = True
+    lights: bool = True
+    reading: bool = False
+    light_toggle_only: bool = False
+    memory_save_response_feedback: bool = False
+    massage_toggle: CstFields | None = None
+    massage_head_up: CstFields | None = None
+    massage_head_down: CstFields | None = None
+    massage_foot_up: CstFields | None = None
+    massage_foot_down: CstFields | None = None
+    massage_timer_step: CstFields | None = None
+
+
+_MEMORY_ZERO_G = CstMemorySlot(
+    "Zero Gravity", CstRemoteCommands.ZERO_G, CstRemoteCommands.SAVE_ZERO_G
+)
+_MEMORY_INCLINE = CstMemorySlot(
+    "Incline", CstRemoteCommands.INCLINE, CstRemoteCommands.SAVE_INCLINE
+)
+_MEMORY_LOUNGE = CstMemorySlot("Lounge", CstRemoteCommands.LOUNGE, CstRemoteCommands.SAVE_LOUNGE)
+_MEMORY_READING = CstMemorySlot(
+    "Reading", CstRemoteCommands.READING, CstRemoteCommands.SAVE_READING
+)
+_MEMORY_M = CstMemorySlot("M", CstRemoteCommands.MEMORY_M, CstRemoteCommands.SAVE_MEMORY_M)
+_THREE_MEMORIES = (_MEMORY_ZERO_G, _MEMORY_INCLINE, _MEMORY_LOUNGE)
+
+_ZONED_SANCTUARY: CstMassageFields = {
+    "massage_head_up": CstFields(primary=CstRemoteCommands.MASSAGE_HEAD_UP),
+    "massage_head_down": CstFields(primary=CstRemoteCommands.MASSAGE_HEAD_DOWN),
+    "massage_foot_up": CstFields(primary=CstRemoteCommands.MASSAGE_FOOT_UP),
+    "massage_foot_down": CstFields(primary=CstRemoteCommands.MASSAGE_FOOT_DOWN),
+}
+_ZONED_BOB: CstMassageFields = {
+    **_ZONED_SANCTUARY,
+    "massage_head_down": CstFields(
+        primary=CstRemoteCommands.MASSAGE_HEAD_DOWN,
+        secondary=CstRemoteCommands.MASSAGE_HEAD_DOWN,
+    ),
+    "massage_foot_down": CstFields(
+        primary=CstRemoteCommands.MASSAGE_FOOT_DOWN,
+        secondary=CstRemoteCommands.MASSAGE_FOOT_DOWN,
+    ),
+}
+_ZONED_SUPPORT: CstMassageFields = {
+    **_ZONED_BOB,
+    "massage_foot_down": CstFields(secondary=CstRemoteCommands.MASSAGE_FOOT_DOWN),
+}
+
+CST_PRODUCTS: Final[dict[str, CstProduct]] = {
+    OKIN_CST_VARIANT_SANCTUARY: CstProduct(
+        key=OKIN_CST_VARIANT_SANCTUARY,
+        incline=False,
+        memory_slots=(_MEMORY_ZERO_G, _MEMORY_LOUNGE),
+        massage_style="zoned",
+        massage_toggle=CstFields(secondary=CstRemoteCommands.MASSAGE_FULL_BODY),
+        **_ZONED_SANCTUARY,
+    ),
+    OKIN_CST_VARIANT_RESIDENT: CstProduct(
+        key=OKIN_CST_VARIANT_RESIDENT,
+        memory_slots=(*_THREE_MEMORIES, _MEMORY_M),
+        lights=False,
+        massage_style="zoned",
+        massage_timer_step=CstFields(primary=CstRemoteCommands.MASSAGE_TIMER_STEP),
+        **_ZONED_SANCTUARY,
+    ),
+    OKIN_CST_VARIANT_AVIADA: CstProduct(
+        key=OKIN_CST_VARIANT_AVIADA,
+        motors=("head", "feet", "lumbar"),
+        memory_slots=_THREE_MEMORIES,
+        massage_style="global",
+    ),
+    OKIN_CST_VARIANT_BOB: CstProduct(
+        key=OKIN_CST_VARIANT_BOB,
+        incline=False,
+        memory_slots=(_MEMORY_ZERO_G, _MEMORY_LOUNGE),
+        massage_style="zoned",
+        massage_toggle=CstFields(secondary=CstRemoteCommands.MASSAGE_FULL_BODY),
+        **_ZONED_BOB,
+    ),
+    OKIN_CST_VARIANT_CONTEMPO: CstProduct(
+        key=OKIN_CST_VARIANT_CONTEMPO,
+        motors=("head", "feet", "lumbar"),
+        memory_slots=_THREE_MEMORIES,
+        massage_style="global",
+    ),
+    OKIN_CST_VARIANT_CAREFREE: CstProduct(
+        key=OKIN_CST_VARIANT_CAREFREE,
+        lounge=False,
+        incline=False,
+        memory_slots=(_MEMORY_ZERO_G,),
+        massage_style="none",
+    ),
+    OKIN_CST_VARIANT_CLARITY: CstProduct(
+        key=OKIN_CST_VARIANT_CLARITY,
+        memory_slots=_THREE_MEMORIES,
+        massage_style="global",
+    ),
+    OKIN_CST_VARIANT_MF900: CstProduct(
+        key=OKIN_CST_VARIANT_MF900,
+        motors=("head", "feet", "lumbar"),
+        memory_slots=_THREE_MEMORIES,
+        massage_style="global",
+    ),
+    OKIN_CST_VARIANT_SUPPORT: CstProduct(
+        key=OKIN_CST_VARIANT_SUPPORT,
+        motors=("head", "feet", "lumbar"),
+        memory_slots=_THREE_MEMORIES,
+        massage_style="zoned",
+        **_ZONED_SUPPORT,
+    ),
+    OKIN_CST_VARIANT_NECTAR_MOVE: CstProduct(
+        key=OKIN_CST_VARIANT_NECTAR_MOVE,
+        lounge=False,
+        reading=True,
+        incline=False,
+        memory_slots=(_MEMORY_ZERO_G, _MEMORY_READING),
+        light_toggle_only=True,
+        memory_save_response_feedback=True,
+        massage_style="increase_only",
+    ),
+}
+
+
+def cst_word(primary: int = 0, secondary: int = 0) -> int:
+    """The 96-bit CST word of two 32-bit fields; its last 32 bits stay zero."""
+    return primary << 64 | secondary << 32
+
+
+def _cst_keys(product: CstProduct) -> dict[str, int]:
+    """Every word a CST product's supported controls send, by control."""
+    m, r = CstMotorCommands, CstRemoteCommands
+    keys = {
+        "head_up": m.HEAD_UP,
+        "head_down": m.HEAD_DOWN,
+        "foot_up": m.FOOT_UP,
+        "foot_down": m.FOOT_DOWN,
+        "flat": r.FLAT,
+        "zero_g": r.ZERO_G,
+        "anti_snore": r.ANTI_SNORE,
+    }
+    if "lumbar" in product.motors:
+        keys |= {"lumbar_up": m.LUMBAR_UP, "lumbar_down": m.LUMBAR_DOWN}
+    if product.lounge or product.reading:
+        keys["lounge"] = r.LOUNGE
+    if product.incline:
+        keys["incline"] = r.INCLINE
+    for slot, memory in enumerate(product.memory_slots, 1):
+        keys |= {f"memory_{slot}": memory.recall, f"save_memory_{slot}": memory.program}
+    words = {name: cst_word(value) for name, value in keys.items()}
+    if product.lights:
+        words["light_toggle"] = cst_word(r.LIGHT_TOGGLE)
+        if not product.light_toggle_only:
+            words |= {"light_on": cst_word(0, r.LIGHT_ON), "light_off": cst_word(0, r.LIGHT_OFF)}
+    style = product.massage_style
+    if style in ("global", "zoned") or product.massage_timer_step is not None:
+        waves = (r.MASSAGE_WAVE_1, r.MASSAGE_WAVE_2, r.MASSAGE_WAVE_3)
+        words |= {f"wave_{index}": cst_word(0, wave) for index, wave in enumerate(waves, 1)}
+    if style not in ("none", "increase_only"):
+        words["massage_off"] = cst_word(r.MASSAGE_OFF)
+    if style in ("global", "increase_only"):
+        words["massage_intensity_up"] = cst_word(r.MASSAGE_INTENSITY)
+    if style == "global":
+        words["massage_intensity_down"] = cst_word(r.MASSAGE_INTENSITY_MINUS)
+    for name in (
+        "massage_toggle",
+        "massage_head_up",
+        "massage_head_down",
+        "massage_foot_up",
+        "massage_foot_down",
+        "massage_timer_step",
+    ):
+        if (fields := getattr(product, name)) is not None:
+            words[name] = cst_word(fields.primary, fields.secondary)
+    return words
+
+
+_CST_NAMES: Final = {
+    OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary",
+    OKIN_CST_VARIANT_RESIDENT: "Rize Resident",
+    OKIN_CST_VARIANT_AVIADA: "Rize Aviada",
+    OKIN_CST_VARIANT_BOB: "Rize Bob",
+    OKIN_CST_VARIANT_CONTEMPO: "Rize Contempo",
+    OKIN_CST_VARIANT_CAREFREE: "Rize II Carefree",
+    OKIN_CST_VARIANT_CLARITY: "Rize II Clarity",
+    OKIN_CST_VARIANT_MF900: "Rize MF900",
+    OKIN_CST_VARIANT_SUPPORT: "Support",
+    OKIN_CST_VARIANT_NECTAR_MOVE: "Nectar Move",
+}
+
+
+def _cst(
+    product: CstProduct,
+    name: str,
+    bed_type: str,
+    keys: Mapping[str, int],
+    *,
+    write: WriteMode = "response",
+    hold: Hold,
+    recall: Tap,
+    tap: Tap,
+) -> OkinNFrameProfile:
+    return OkinNFrameProfile(
+        key=product.key,
+        name=name,
+        bed_types=(bed_type,),
+        width=12,
+        write=write,
+        envelope="plain",
+        axes=product.motors,
+        keys=MappingProxyType(dict(keys)),
+        memory_slots=len(product.memory_slots),
+        product=product,
+        hold=hold,
+        recall=recall,
+        tap=tap,
+    )
+
+
+CST_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+    {
+        key: _cst(
+            product,
+            _CST_NAMES[key],
+            BED_TYPE_OKIN_CST,
+            _cst_keys(product),
+            # Nectar Move refreshes a held axis every 100 ms and sends a press
+            # once; the others follow the entry's pulses and press six times.
+            hold=Hold(
+                repeat_ms=CST_REFRESH_MS if key == OKIN_CST_VARIANT_NECTAR_MOVE else None,
+                **CST_RELEASE,
+            ),
+            recall=Tap(releases=2) if key == OKIN_CST_VARIANT_NECTAR_MOVE else CST_PRESS,
+            tap=Tap(releases=2) if key == OKIN_CST_VARIANT_NECTAR_MOVE else CST_PRESS,
+        )
+        for key, product in CST_PRODUCTS.items()
+    }
+)
+
+
+# OKIN Bedding apps over the CST frame: Jordan's Serenity 1.0.1 (S01), Jordan's
+# Tranquil 1.0.2 and the Customatic Z-Series 1.0.4 Z-230/Z-280 pages. Each
+# action table is its own app's, as (primary, secondary) field values.
+SERENITY_ACTIONS: Final = {
+    "head_up": (1, 0),
+    "head_down": (2, 0),
+    "foot_up": (4, 0),
+    "foot_down": (8, 0),
+    "selector_4_up": (0x10, 0),
+    "selector_4_down": (0x20, 0),
+    "selector_5_up": (0x40, 0),
+    "selector_5_down": (0x80, 0),
+    "flat": (0x08000000, 0),
+    "zero_g": (0x1000, 0),
+    "memory_1": (0x10000, 0),
+    "tv": (0x4000, 0),
+    "memory_2": (0x40000, 0),
+    "save_zero_g": (0x08001000, 0),
+    "save_memory_1": (0x08010000, 0),
+    "save_tv": (0x08004000, 0),
+    "save_memory_2": (0x08040000, 0),
+    "massage_head_cycle": (0x800, 0),
+    "massage_foot_cycle": (0x400, 0),
+    "massage_mode_cycle": (0x10000000, 0),
+    "massage_timer_cycle": (0x200, 0),
+    "massage_toggle": (0x100, 0),
+    "light_toggle": (0x20000, 0),
+    "leisure": (0x2000, 0),
+    "anti_snore": (0x8000, 0),
+    "wave_1": (0, 0x80000),
+    "wave_2": (0, 0x100000),
+    "wave_3": (0, 0x200000),
+    "massage_off": (0x02000000, 0),
+    "light_on": (0, 0x40),
+    "light_off": (0, 0x80),
+}
+SERENITY_SAVE_CODES: Final = {
+    "save_zero_g": 5,
+    "save_memory_1": 4,
+    "save_tv": 6,
+    "save_memory_2": 8,
+}
+
+# Jordan's Tranquil 1.0.2 live Z280 remote/massage pages plus its Activity
+# voice switch. Lounge is a touch button here (op9), and there is no TV.
+TRANQUIL_ACTIONS: Final = {
+    "head_up": (1, 0),
+    "head_down": (2, 0),
+    "foot_up": (4, 0),
+    "foot_down": (8, 0),
+    "selector_4_up": (0x10, 0),
+    "selector_4_down": (0x20, 0),
+    "selector_5_up": (0x40, 0),
+    "selector_5_down": (0x80, 0),
+    "flat": (0x08000000, 0),
+    "zero_g": (0x1000, 0),
+    "lounge": (0x2000, 0),
+    "memory_1": (0x10000, 0),
+    "memory_2": (0x40000, 0),
+    "save_zero_g": (0x08001000, 0),
+    "save_lounge": (0x08002000, 0),
+    "save_memory_1": (0x08010000, 0),
+    "save_memory_2": (0x08040000, 0),
+    "massage_head_cycle": (0x800, 0),
+    "massage_foot_cycle": (0x400, 0),
+    "massage_mode_cycle": (0x10000000, 0),
+    "massage_timer_cycle": (0x200, 0),
+    "massage_toggle": (0x100, 0),
+    "light_toggle": (0x20000, 0),
+    "anti_snore": (0x8000, 0),
+    "wave_1": (0, 0x80000),
+    "wave_2": (0, 0x100000),
+    "wave_3": (0, 0x200000),
+    "massage_off": (0x02000000, 0),
+    "light_on": (0, 0x40),
+    "light_off": (0, 0x80),
+}
+
+# Customatic Z-Series 1.0.4. Voice is unbound, so there are no waves, massage
+# off or discrete light frames. Builder op5 emits 0x10/0x20 in this app.
+_ZSERIES_COMMON_ACTIONS = {
+    "head_up": (1, 0),
+    "head_down": (2, 0),
+    "foot_up": (4, 0),
+    "foot_down": (8, 0),
+    "flat": (0x08000000, 0),
+    "anti_snore": (0x8000, 0),
+    "memory_1": (0x10000, 0),
+    "zero_g": (0x1000, 0),
+    "tv": (0x4000, 0),
+    "save_zero_g": (0x08001000, 0),
+    "save_memory_1": (0x08010000, 0),
+    "save_tv": (0x08004000, 0),
+    "light_toggle": (0x20000, 0),
+    "massage_toggle": (0x100, 0),
+    "massage_mode_cycle": (0x10000000, 0),
+    "massage_timer_cycle": (0x200, 0),
+}
+ZSERIES_Z230_ACTIONS: Final = {
+    **_ZSERIES_COMMON_ACTIONS,
+    "head_foot_up": (0x05, 0),
+    "head_foot_down": (0x0A, 0),
+    "massage_intensity_cycle": (0x0C00, 0),
+}
+ZSERIES_Z280_ACTIONS: Final = {
+    **_ZSERIES_COMMON_ACTIONS,
+    "selector_5_up": (0x10, 0),
+    "selector_5_down": (0x20, 0),
+    "memory_2": (0x40000, 0),
+    "save_memory_2": (0x08040000, 0),
+    "massage_head_cycle": (0x800, 0),
+    "massage_foot_cycle": (0x400, 0),
+}
+
+
+def _two_axis_product(
+    key: str,
+    memory_slots: tuple[CstMemorySlot, ...],
+    *,
+    lounge: bool,
+) -> CstProduct:
+    return CstProduct(
+        key=key,
+        lounge=lounge,
+        incline=False,
+        memory_slots=memory_slots,
+        massage_style="zoned",
+        massage_toggle=CstFields(primary=0x100),
+    )
+
+
+_M1 = CstMemorySlot("M1", 0x10000, 0x08010000)
+_M2 = CstMemorySlot("M2", 0x40000, 0x08040000)
+
+
+BEDDING_SAVE_HOLD_MS: Final = 5000
+"""The apps' save-help gesture, not a hardware threshold."""
+BEDDING_HOLD: Final = Hold(repeat_ms=CST_REFRESH_MS, **CST_RELEASE)
+"""Every action streams at 100 ms until its deadline, then two STOPs at +100/+200 ms."""
+_BEDDING: Final = (
+    ("serenity", "Jordan's Serenity", BED_TYPE_SERENITY, SERENITY_ACTIONS, (_M1, _M2), True),
+    ("tranquil", "Jordan's Tranquil", BED_TYPE_TRANQUIL, TRANQUIL_ACTIONS, (_M1, _M2), True),
+    ("zseries_z230", "Customatic Z-230", BED_TYPE_ZSERIES, ZSERIES_Z230_ACTIONS, (_M1,), False),
+    ("zseries_z280", "Customatic Z-280", BED_TYPE_ZSERIES, ZSERIES_Z280_ACTIONS, (_M1, _M2), False),
+)
+BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+    {
+        key: _cst(
+            _two_axis_product(key, memories, lounge=lounge),
+            name,
+            bed_type,
+            {action: cst_word(*fields) for action, fields in actions.items()},
+            # The apps' write type is framework default; HA follows the properties.
+            write="characteristic",
+            hold=BEDDING_HOLD,
+            recall=Tap(releases=2),
+            tap=Tap(releases=2),
+        )
+        for key, name, bed_type, actions, memories, lounge in _BEDDING
     }
 )
