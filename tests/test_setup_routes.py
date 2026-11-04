@@ -49,7 +49,7 @@ def test_routes_are_the_familys_own_and_exclude_its_apps():
     # The Keeson question asks for them itself, so the generic forms do not.
     assert _setup_routes(const.BED_TYPE_KEESON) == {}
     # A bed type with one route, or whose app step asks for its own, has none.
-    assert len(_setup_routes(const.BED_TYPE_SOLACE)) == 1
+    assert len(_setup_routes(const.BED_TYPE_SVANE)) == 1
     assert _setup_routes(const.BED_TYPE_DOUBLESLEEP) == {}
     # A bed type that accepts its automatic route lists it first.
     assert list(_setup_routes(const.BED_TYPE_SBI))[0] == const.VARIANT_AUTO

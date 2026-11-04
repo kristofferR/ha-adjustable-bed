@@ -866,6 +866,24 @@
           "motor_count": "Number of motors"
         }
       },
+      "solace_family": {
+        "title": "Which app controls this bed?",
+        "description": "QMS and similar names are shared by several apps, so the name doesn't choose one. Choose the app you use on your phone. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App"
+        }
+      },
+      "solace_woosa": {
+        "title": "Woosa Sleep controls",
+        "description": "Woosa Sleep has its own Favourite memory, massage levels, lights and alarm, and no HomeKobo hip, lumbar or wave controls. Choose it only if you control the bed with the Woosa Sleep app."
+      },
+      "solace_bedsense": {
+        "title": "BedSense layout",
+        "description": "Choose the layout the BedSense app shows, or keep the layout from the bed's Bluetooth name.",
+        "data": {
+          "protocol_variant": "Layout"
+        }
+      },
       "jiecang_legacy": {
         "title": "Motors on this bed",
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
@@ -9089,6 +9107,15 @@
         "2": "2M: back and feet",
         "3": "3M: back, feet and head",
         "4": "4M: back, feet, waist and lumbar"
+      }
+    },
+    "solace_family_choice": {
+      "options": {
+        "name_route": "HomeKobo, Sealy MotionFlex or Sweet Night app",
+        "woosa": "Woosa Sleep app",
+        "motion_bed": "Motion Bed app",
+        "bedsense": "BedSense app",
+        "keep": "I don't know: keep the detected controls"
       }
     }
   }

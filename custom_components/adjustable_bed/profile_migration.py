@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_SERTA,
+    BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -151,11 +152,22 @@ KEESON_FAMILY: Final = ManagedFamily(
     requires_check=lambda _data: False,
 )
 
+# Solace name routes and Woosa Sleep share the FFFF frame and controller, which
+# never refuses a link, so a change has nothing to check; Configure switched
+# them unchecked. Motion Bed and BedSense are separate bed types it can reach.
+SOLACE_FAMILY: Final = ManagedFamily(
+    key="solace_family",
+    bed_types=frozenset({BED_TYPE_SOLACE}),
+    route_keys=(CONF_PROTOCOL_VARIANT,),
+    requires_check=lambda _data: False,
+)
+
 MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     VIBRADORM_FAMILY,
     JIECANG_FAMILY,
     OKIN_FAMILY,
     KEESON_FAMILY,
+    SOLACE_FAMILY,
 )
 
 
