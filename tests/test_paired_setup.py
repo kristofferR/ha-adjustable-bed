@@ -29,6 +29,7 @@ from custom_components.adjustable_bed import (
     _maybe_create_pairing_issue_for,
     _shared_child_fields,
     async_unpair_entry,
+    paired_topology,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
@@ -4785,9 +4786,9 @@ class TestOctoOfflineSnapshot:
         button.hass = hass
         await button.async_added_to_hass()
 
-        monkeypatch.setattr(coordinator, "_shared_connection_slot_pressure", lambda *_args: True)
+        monkeypatch.setattr(paired_topology, "shared_connection_slot_pressure", lambda *_args: True)
         attempt_cursors = {
-            side: coordinator._connection_attempt_cursor(child)
+            side: paired_topology.connection_attempt_cursor(child)
             for side, child in coordinator.children.items()
         }
         published_attributes: list[dict[str, Any]] = []
@@ -4797,7 +4798,7 @@ class TestOctoOfflineSnapshot:
                 "async_write_ha_state",
                 side_effect=lambda: published_attributes.append(button.extra_state_attributes),
             ):
-                await coordinator._async_fallback_after_connection_slot_exhaustion(
+                await coordinator._lanes.fallback_after_connection_slot_exhaustion(
                     ConnectionError("connection slot exhausted"), attempt_cursors
                 )
 
