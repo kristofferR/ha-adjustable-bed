@@ -12,13 +12,10 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_7byte import (
-    OKIN_NORDIC_CONFIG,
-    _cmd,
-)
 from custom_components.adjustable_bed.beds.okin_nordic import (
     OkinNordicController,
 )
+from custom_components.adjustable_bed.codec.okin_5a import command as _cmd
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MATTRESSFIRM,
     CONF_BED_TYPE,
@@ -30,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     MATTRESSFIRM_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.okin_5a import OKIN_NORDIC
 
 
 @pytest.fixture
@@ -100,11 +98,11 @@ class TestOkinNordicController:
 
         # First call: INIT_1
         assert calls[0][0][0] == MATTRESSFIRM_WRITE_CHAR_UUID
-        assert calls[0][0][1] == OKIN_NORDIC_CONFIG.init_commands[0]
+        assert calls[0][0][1] == OKIN_NORDIC.wake[0]
 
         # Second call: INIT_2
         assert calls[1][0][0] == MATTRESSFIRM_WRITE_CHAR_UUID
-        assert calls[1][0][1] == OKIN_NORDIC_CONFIG.init_commands[1]
+        assert calls[1][0][1] == OKIN_NORDIC.wake[1]
 
         # Third call: HEAD_UP
         assert calls[2][0][0] == MATTRESSFIRM_WRITE_CHAR_UUID
@@ -143,18 +141,14 @@ class TestOkinNordicController:
         # Test head up
         await controller.move_head_up()
         assert mock_client.write_gatt_char.called
-        assert _cmd(0x00) in [
-            call[0][1] for call in mock_client.write_gatt_char.call_args_list
-        ]
+        assert _cmd(0x00) in [call[0][1] for call in mock_client.write_gatt_char.call_args_list]
 
         mock_client.reset_mock()
 
         # Test lumbar up (Nordic uses 0x06 instead of 0x04)
         await controller.move_lumbar_up()
         assert mock_client.write_gatt_char.called
-        assert _cmd(0x06) in [
-            call[0][1] for call in mock_client.write_gatt_char.call_args_list
-        ]
+        assert _cmd(0x06) in [call[0][1] for call in mock_client.write_gatt_char.call_args_list]
 
     @patch("asyncio.sleep", new_callable=AsyncMock)
     async def test_preset_commands(

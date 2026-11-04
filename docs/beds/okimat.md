@@ -49,9 +49,9 @@ Several apps use this protocol:
 > |----------|--------|----------------|
 > | **Okimat** | 6-byte | UUID-based writes; some receivers also expose FFE4 position feedback |
 > | [Leggett & Platt Okin](leggett-platt.md) | 6-byte | Same protocol, different name detection |
-> | [Nectar](nectar.md) | 7-byte | Different command structure |
+> | [Nectar](okin-5a.md#nectar) | 7-byte | Different command structure |
 > | [DewertOkin](dewertokin.md) | 6-byte | Handle-based writes (not UUID) |
-> | [Mattress Firm 900](mattressfirm.md) | 7-byte | Uses Nordic UART service |
+> | [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) | 7-byte | Uses Nordic UART service |
 > | [Okin CST](okin-cst.md) | 14-byte | MFirm 900-O / Rize MF900-style OKIN service devices |
 > | [Okin 64-Bit](okin-64bit.md) | 10-byte | 64-bit commands, `0x08 0x02` header |
 >

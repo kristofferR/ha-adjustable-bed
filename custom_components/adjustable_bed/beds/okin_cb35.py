@@ -1,51 +1,32 @@
-"""DewertOkin CB35 Star protocol bed controller implementation.
+"""DewertOkin CB35 Star (Sealy Posturematic): the ``okin_cb35`` profile.
 
-Reverse-engineered from the Sealy Posturematic app (com.okin.sealy v1.1.1).
-Protocol version: CB.35.22.01 ("star code new protocol")
+Reverse-engineered from the Sealy Posturematic app (com.okin.sealy v1.1.1),
+protocol CB.35.22.01 ("star code new protocol"). Ref #310.
 
-Known brands using this protocol:
-- Sealy Posturematic (Element, Ascent, Apex)
-
-BLE Name: Star*  (e.g., "Star352201011800")
-Service: Nordic UART (6e400001-b5a3-f393-e0a9-e50e24dcca9e)
-Write:   TX characteristic (6e400002), write-without-response
-Notify:  RX characteristic (6e400003)
-
-Uses the same 7-byte command frame as Okin Nordic:
-    5A 01 03 10 30 [CMD] A5
-
-Identical motor/preset/light/massage command bytes as Okin Nordic, but:
-- Init sequence is only the wake command (5A 0B 00 A5), no Mattress Firm handshake
-- Write-without-response required (Nordic uses write-with-response)
-- Presets are a tap (key x2 at 300 ms) released with STOP x3 at 300 ms. The
-  generic Okin preset path (key x100 at 300 ms, one STOP) leaves this bed
-  armed for ~20 s before it moves; the triple STOP is what commits the move.
+Beyond the shared Okin 5A controller this keeps what profile data cannot
+express, verified on a Sealy Element (2026-09):
+- A preset key only arms the bed; the STOP x3 release commits the move. With the
+  generic single STOP the bed sat armed for ~20 s before moving.
 - A preset in flight ignores STOP entirely. Any motor key interrupts it, the
-  same as pressing a button on the handset, so stop_all taps a motor key
-  first while a preset may still be moving.
-  (Verified on a Sealy Element, 2026-09)
-- Additional motors: neck (0x0A/0x0B), hips (0x08/0x09), head+foot simultaneous (0x0C/0x0D)
-- Additional presets: TV/PC, Read, Inverse, Work, Incline, Extension
-- Light brightness and color control
-- Separate head/foot massage strength
-- Massage status feedback via notifications
+  same as pressing a button on the handset, so stop_all taps a motor key first
+  while a preset may still be moving.
+- Neck, hips (tilt surface), light brightness and color, separate head/foot
+  massage strength, and massage status notifications.
 
-Protocol source: disassembly/output/com.okin.sealy/extracted/assets/flutter_assets/assets/protocol/35_22_01.json
-Ref: https://github.com/kristofferR/ha-adjustable-bed/issues/310
+See ``docs/beds/okin-5a.md``.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import NORDIC_UART_WRITE_CHAR_UUID
+from ..profiles.okin_5a import OKIN_CB35
 from .base import MotorControlSpec
-from .okin_7byte import Okin7ByteConfig, Okin7ByteController, _cmd
+from .okin_7byte import Okin7ByteController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -55,49 +36,11 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-# CB35 configuration: same command bytes as Okin Nordic but without the
-# Mattress Firm init handshake (09 05 0A 23 05 00 00).
-# Only the wake command (5A 0B 00 A5) is needed.
-OKIN_CB35_CONFIG = Okin7ByteConfig(
-    char_uuid=NORDIC_UART_WRITE_CHAR_UUID,
-    lumbar_up_byte=0x06,
-    lounge_byte=0x17,
-    tv_byte=0x11,
-    memory_1_byte=0x1A,
-    memory_2_byte=0x1B,
-    init_commands=(
-        bytes.fromhex("5A0B00A5"),  # Wake command only (no Mattress Firm handshake)
-    ),
-    has_incline=True,
-    incline_byte=0x18,
-    has_light_cycle=True,
-    has_massage_intensity=True,
-    massage_up_byte=0x60,
-    massage_down_byte=0x61,
-    extra_massage_modes=(0x52, 0x53, 0x54),
-    massage_off_byte=0x6F,
-    lights_off_repeat=3,
-    supports_tv=True,
-    write_with_response=False,
-    init_write_with_response=False,
-)
-
-
 class OkinCB35Controller(Okin7ByteController):
-    """Controller for DewertOkin CB35 Star beds (Sealy Posturematic).
-
-    Extends the Okin 7-byte protocol with:
-    - Write-without-response (required by CB35 firmware)
-    - Neck and hips motor control
-    - Head+foot simultaneous movement
-    - Light brightness and color control
-    - Separate head/foot massage strength
-    - Massage status feedback via Nordic UART notifications
-    """
+    """The Okin 5A controller over the ``okin_cb35`` profile."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the CB35 controller."""
-        super().__init__(coordinator, config=OKIN_CB35_CONFIG)
+        super().__init__(coordinator, profile=OKIN_CB35)
 
     @property
     def _preset_started_at(self) -> float | None:
@@ -108,64 +51,10 @@ class OkinCB35Controller(Okin7ByteController):
     def _preset_started_at(self, value: float | None) -> None:
         self._coordinator.okin_cb35_preset_started_at = value
 
-    # ─── Write override: CB35 requires write-without-response ─────────
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-        *,
-        on_write: Callable[[], None] | None = None,
-    ) -> None:
-        """Write a command using write-without-response."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        # Send init/wake on first command
-        if not self._initialized:
-            if effective_cancel is not None and effective_cancel.is_set():
-                return
-            _LOGGER.debug("Sending CB35 wake command before first command")
-            try:
-                for init_cmd in self._config.init_commands:
-                    async with self._ble_lock:
-                        await self.client.write_gatt_char(
-                            self._config.char_uuid,
-                            init_cmd,
-                            response=self._config.init_write_with_response,
-                        )
-                    await asyncio.sleep(0.1)
-                self._initialized = True
-            except BleakError:
-                _LOGGER.exception("Failed to send CB35 wake sequence")
-                raise
-
-        await self._write_gatt_with_retry(
-            self._config.char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=effective_cancel,
-            response=self._config.write_with_response,
-            on_write=on_write,
-        )
-
     # ─── Presets and stop ─────────────────────────────────────────────
     # The CB35 protocol doc records the app's release as STOP sent three times
-    # at 300 ms. On hardware a preset key only arms the bed; the triple STOP is
-    # what commits it. With the generic single STOP the bed sat armed for ~20 s
-    # before moving (Sealy Element, 2026-09). A preset already driving ignores
-    # STOP but is interrupted by any motor key, as on the handset.
+    # at 300 ms; the profile's recall and stop taps hold that timing.
 
-    _PRESET_TAP_REPEATS = 2
-    _PRESET_TAP_DELAY_MS = 300
-    _STOP_REPEATS = 3
-    _STOP_DELAY_MS = 300
     # Longer than any preset's full travel on the tested bed (~30 s).
     _PRESET_INTERRUPT_WINDOW_S = 45.0
 
@@ -177,17 +66,8 @@ class OkinCB35Controller(Okin7ByteController):
         """A transmitted motor key supersedes the previous preset."""
         self._preset_started_at = None
 
-    async def _send_stop(self) -> None:
-        """Send STOP x3 with a fresh cancel event so a pending cancel cannot suppress it."""
-        await self.write_command(
-            _cmd(0x0F),
-            repeat_count=self._STOP_REPEATS,
-            repeat_delay_ms=self._STOP_DELAY_MS,
-            cancel_event=asyncio.Event(),
-        )
-
     async def _preset_with_stop(
-        self, command: bytes, repeat_count: int = 2, repeat_delay_ms: int = 300
+        self, command: bytes, repeat_count: int = 100, repeat_delay_ms: int = 300
     ) -> None:
         """Tap the preset key, then release it with STOP x3 to commit the move."""
         command_failed = False
@@ -196,8 +76,8 @@ class OkinCB35Controller(Okin7ByteController):
                 return
             await self.write_command(
                 command,
-                repeat_count=self._PRESET_TAP_REPEATS,
-                repeat_delay_ms=self._PRESET_TAP_DELAY_MS,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
                 on_write=self._record_preset_write,
             )
         except BaseException:
@@ -246,7 +126,9 @@ class OkinCB35Controller(Okin7ByteController):
 
         interrupt_succeeded = False
         try:
-            await self.write_command(_cmd(0x00), repeat_count=1, cancel_event=asyncio.Event())
+            await self.write_command(
+                self.profile.frame("head_up"), repeat_count=1, cancel_event=asyncio.Event()
+            )
             interrupt_succeeded = True
             self._preset_started_at = None
         finally:
@@ -321,24 +203,24 @@ class OkinCB35Controller(Okin7ByteController):
         """Remove standard back/legs entities replaced by motor_control_specs."""
         return frozenset({"back", "legs"})
 
-    # ─── Neck motor (0x0A/0x0B) ───────────────────────────────────────
+    # ─── Neck motor ────────────────────────────────────────────────────
 
     async def move_neck_up(self) -> None:
-        await self._move_with_stop(_cmd(0x0A))
+        await self._move("neck_up")
 
     async def move_neck_down(self) -> None:
-        await self._move_with_stop(_cmd(0x0B))
+        await self._move("neck_down")
 
     async def move_neck_stop(self) -> None:
         await self._send_stop()
 
-    # ─── Hips motor via tilt surface (0x08/0x09) ──────────────────────
+    # ─── Hips motor via tilt surface ───────────────────────────────────
 
     async def move_tilt_up(self) -> None:
-        await self._move_with_stop(_cmd(0x08))
+        await self._move("hips_up")
 
     async def move_tilt_down(self) -> None:
-        await self._move_with_stop(_cmd(0x09))
+        await self._move("hips_down")
 
     async def move_tilt_stop(self) -> None:
         await self._send_stop()
@@ -347,43 +229,33 @@ class OkinCB35Controller(Okin7ByteController):
 
     async def light_brightness_up(self) -> None:
         """Increase light brightness."""
-        await self.write_command(_cmd(0x80))
+        await self._send("light_brightness_up")
 
     async def light_brightness_down(self) -> None:
         """Decrease light brightness."""
-        await self.write_command(_cmd(0x81))
+        await self._send("light_brightness_down")
 
     async def light_color_change(self) -> None:
         """Cycle light color."""
-        await self.write_command(_cmd(0x70))
-
-    # ─── Massage: override inherited intensity (parent uses 0x40 frame) ─
-
-    async def massage_intensity_up(self) -> None:
-        """Increase overall massage strength (CB35 uses 0x30 frame, not 0x40)."""
-        await self.write_command(_cmd(0x60))
-
-    async def massage_intensity_down(self) -> None:
-        """Decrease overall massage strength (CB35 uses 0x30 frame, not 0x40)."""
-        await self.write_command(_cmd(0x61))
+        await self._send("light_color")
 
     # ─── Massage: separate head/foot strength ─────────────────────────
 
     async def massage_head_up(self) -> None:
         """Increase head massage strength."""
-        await self.write_command(_cmd(0x60))
+        await self._send("massage_head_up")
 
     async def massage_head_down(self) -> None:
         """Decrease head massage strength."""
-        await self.write_command(_cmd(0x61))
+        await self._send("massage_head_down")
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage strength."""
-        await self.write_command(_cmd(0x62))
+        await self._send("massage_foot_up")
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage strength."""
-        await self.write_command(_cmd(0x63))
+        await self._send("massage_foot_down")
 
     # ─── Notification handling ────────────────────────────────────────
 
@@ -402,27 +274,23 @@ class OkinCB35Controller(Okin7ByteController):
 
     async def start_notify(self, callback=None) -> None:  # noqa: ARG002
         """Start listening for notifications via Nordic UART RX."""
-        from ..const import NORDIC_UART_READ_CHAR_UUID
-
         client = self.client
         if client is None or not client.is_connected:
             return
 
         try:
             async with self._ble_lock:
-                await client.start_notify(NORDIC_UART_READ_CHAR_UUID, self._on_notification)
+                await client.start_notify(self.profile.notify_uuid, self._on_notification)
             _LOGGER.debug("Subscribed to CB35 notifications")
         except BleakError:
             _LOGGER.warning("Could not subscribe to CB35 notifications")
 
     async def stop_notify(self) -> None:
         """Stop listening for notifications."""
-        from ..const import NORDIC_UART_READ_CHAR_UUID
-
         client = self.client
         if client is not None and client.is_connected:
             try:
                 async with self._ble_lock:
-                    await client.stop_notify(NORDIC_UART_READ_CHAR_UUID)
+                    await client.stop_notify(self.profile.notify_uuid)
             except BleakError:
                 pass

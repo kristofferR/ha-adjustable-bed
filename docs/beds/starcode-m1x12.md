@@ -14,7 +14,7 @@ current behavior until the user reconfigures them.
 
 - StarCode `STAR25*` beds operated with Adjustable Comfort M1X12, in three
   layouts: CB25, F23 and kneading (see [Configuration and groups](#configuration-and-groups))
-- Up to two [DewertOkin ELEVATE](star-elevate.md) lifts per main, configured as
+- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, configured as
   the **Adjustable Comfort M1X12 ELEVATE** variant
 
 ## Apps

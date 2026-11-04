@@ -3,6 +3,10 @@
 Recovered independently from the Adjustable Comfort M1X12 and AdjustableM5X5
 apps. ELEVATE devices advertise an ``ELEVATE*`` name, use Nordic UART, and have
 a dedicated 0x40-0x4F motor key range. They are not BOX25 bed controllers.
+
+Frames come from the ``star_elevate`` profile over the Okin 5A codec. This
+controller keeps what data cannot express: the keep-connected session and the
+accessory group. See ``docs/beds/okin-5a.md``.
 """
 
 from __future__ import annotations
@@ -14,7 +18,11 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import NORDIC_UART_READ_CHAR_UUID, NORDIC_UART_WRITE_CHAR_UUID
+from ..codec import okin_5a as codec
+
+# starcode_m1x12 imports the RX characteristic from here.
+from ..const import NORDIC_UART_READ_CHAR_UUID as NORDIC_UART_READ_CHAR_UUID
+from ..profiles.okin_5a import ELEVATE
 from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
@@ -24,29 +32,29 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-
-def _elevate_command(key: int) -> bytes:
-    """Build a StarCode ELEVATE command."""
-    return bytes([0x5A, 0x01, 0x03, 0x10, 0x30, key, 0xA5])
+# Kept for the M5X5 leaf proofs, which compare it with their own encoder.
+_elevate_command = codec.command
 
 
 class StarElevateCommands:
-    """Exact ELEVATE command vectors."""
+    """ELEVATE frames by app name, from the ``star_elevate`` profile."""
 
-    WAKE = bytes.fromhex("5A 0B 00 A5")
-    ACTUATOR_1_UP = _elevate_command(0x40)
-    ACTUATOR_1_DOWN = _elevate_command(0x41)
-    ACTUATOR_2_UP = _elevate_command(0x42)
-    ACTUATOR_2_DOWN = _elevate_command(0x43)
-    BOTH_UP = _elevate_command(0x44)
-    BOTH_DOWN = _elevate_command(0x45)
-    FLAT = _elevate_command(0x46)
-    STOP = _elevate_command(0x0F)
-    INTERRUPT = _elevate_command(0x4F)
+    WAKE = codec.WAKE
+    ACTUATOR_1_UP = ELEVATE.frame("head_up")
+    ACTUATOR_1_DOWN = ELEVATE.frame("head_down")
+    ACTUATOR_2_UP = ELEVATE.frame("feet_up")
+    ACTUATOR_2_DOWN = ELEVATE.frame("feet_down")
+    BOTH_UP = ELEVATE.frame("both_up")
+    BOTH_DOWN = ELEVATE.frame("both_down")
+    FLAT = ELEVATE.frame("flat")
+    STOP = ELEVATE.frame("stop")
+    INTERRUPT = ELEVATE.frame("interrupt")
 
 
 class StarElevateController(BedController):
     """Controller for the separate ``ELEVATE*`` Nordic UART accessory."""
+
+    profile = ELEVATE
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         super().__init__(coordinator)
@@ -55,7 +63,7 @@ class StarElevateController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        return NORDIC_UART_WRITE_CHAR_UUID
+        return self.profile.transport_uuid
 
     @property
     def ready(self) -> bool:
@@ -104,9 +112,7 @@ class StarElevateController(BedController):
     def stale_motor_entity_keys(self) -> frozenset[str]:
         return frozenset({"back", "legs", "head", "feet"})
 
-    def _effective_cancel_event(
-        self, cancel_event: asyncio.Event | None
-    ) -> asyncio.Event | None:
+    def _effective_cancel_event(self, cancel_event: asyncio.Event | None) -> asyncio.Event | None:
         return cancel_event if cancel_event is not None else self._coordinator.cancel_command
 
     async def _ensure_initialized(self, cancel_event: asyncio.Event | None = None) -> None:
@@ -114,12 +120,13 @@ class StarElevateController(BedController):
         effective_cancel = self._effective_cancel_event(cancel_event)
         if self._initialized or (effective_cancel is not None and effective_cancel.is_set()):
             return
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            StarElevateCommands.WAKE,
-            cancel_event=effective_cancel,
-            response=False,
-        )
+        for frame in self.profile.wake:
+            await self._write_gatt_with_retry(
+                self.control_characteristic_uuid,
+                frame,
+                cancel_event=effective_cancel,
+                response=self.profile.wake_with_response,
+            )
         if effective_cancel is None or not effective_cancel.is_set():
             self._initialized = True
 
@@ -143,12 +150,10 @@ class StarElevateController(BedController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=effective_cancel,
-            response=False,
+            response=self.profile.write_with_response,
         )
 
-    def _on_notification(
-        self, characteristic: BleakGATTCharacteristic, data: bytearray
-    ) -> None:
+    def _on_notification(self, characteristic: BleakGATTCharacteristic, data: bytearray) -> None:
         """Forward raw data; both analyzed apps assign no semantic ELEVATE fields."""
         self.forward_raw_notification(characteristic.uuid, bytes(data))
 
@@ -160,7 +165,7 @@ class StarElevateController(BedController):
         if client is None or not client.is_connected:
             return
         try:
-            await client.start_notify(NORDIC_UART_READ_CHAR_UUID, self._on_notification)
+            await client.start_notify(self.profile.notify_uuid, self._on_notification)
             await self._ensure_initialized()
         except BleakError:
             _LOGGER.warning("Could not initialize ELEVATE notifications", exc_info=True)
@@ -171,16 +176,22 @@ class StarElevateController(BedController):
         client = self.client
         if client is not None and client.is_connected:
             try:
-                await client.stop_notify(NORDIC_UART_READ_CHAR_UUID)
+                await client.stop_notify(self.profile.notify_uuid)
             except BleakError:
                 _LOGGER.debug("Could not stop ELEVATE notifications", exc_info=True)
 
     async def _send_stop(self) -> None:
-        await self.write_command(StarElevateCommands.STOP, cancel_event=asyncio.Event())
+        stop = self.profile.stop
+        await self.write_command(
+            self.profile.frame("stop"),
+            repeat_count=stop.repeats,
+            repeat_delay_ms=stop.repeat_ms,
+            cancel_event=asyncio.Event(),
+        )
 
     async def interrupt(self) -> None:
         """Interrupt held motion before a grouped AdjustableM5X5 peer moves."""
-        await self.write_command(StarElevateCommands.INTERRUPT, cancel_event=asyncio.Event())
+        await self.write_command(self.profile.frame("interrupt"), cancel_event=asyncio.Event())
 
     async def _interrupt_group(self) -> None:
         """As a lift or main, ordinary motion interrupts the other group members."""
@@ -197,10 +208,10 @@ class StarElevateController(BedController):
             await self._send_stop()
 
     async def move_head_up(self) -> None:
-        await self._move_with_stop(StarElevateCommands.ACTUATOR_1_UP)
+        await self._move_with_stop(self.profile.frame("head_up"))
 
     async def move_head_down(self) -> None:
-        await self._move_with_stop(StarElevateCommands.ACTUATOR_1_DOWN)
+        await self._move_with_stop(self.profile.frame("head_down"))
 
     async def move_head_stop(self) -> None:
         await self._send_stop()
@@ -215,10 +226,10 @@ class StarElevateController(BedController):
         await self._send_stop()
 
     async def move_feet_up(self) -> None:
-        await self._move_with_stop(StarElevateCommands.ACTUATOR_2_UP)
+        await self._move_with_stop(self.profile.frame("feet_up"))
 
     async def move_feet_down(self) -> None:
-        await self._move_with_stop(StarElevateCommands.ACTUATOR_2_DOWN)
+        await self._move_with_stop(self.profile.frame("feet_down"))
 
     async def move_feet_stop(self) -> None:
         await self._send_stop()
@@ -233,10 +244,10 @@ class StarElevateController(BedController):
         await self._send_stop()
 
     async def move_both_up(self) -> None:
-        await self._move_with_stop(StarElevateCommands.BOTH_UP)
+        await self._move_with_stop(self.profile.frame("both_up"))
 
     async def move_both_down(self) -> None:
-        await self._move_with_stop(StarElevateCommands.BOTH_DOWN)
+        await self._move_with_stop(self.profile.frame("both_down"))
 
     async def stop_all(self) -> None:
         from ..starcode_accessory_group import cancel_group_operations
@@ -247,7 +258,12 @@ class StarElevateController(BedController):
     async def preset_flat(self) -> None:
         """ELEVATE flat is an exact one-shot command with no appended STOP."""
         await self._interrupt_group()
-        await self.write_command(StarElevateCommands.FLAT)
+        recall = self.profile.recall
+        await self.write_command(
+            self.profile.frame("flat"),
+            repeat_count=recall.repeats,
+            repeat_delay_ms=recall.repeat_ms,
+        )
 
     async def preset_memory(self, memory_num: int) -> None:
         _LOGGER.warning("ELEVATE has no memory preset %d", memory_num)
