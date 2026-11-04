@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import ExitStack
+from dataclasses import replace
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -13,6 +14,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed import position_estimate as pe
+from custom_components.adjustable_bed.beds.base import ControllerMotorHoldSpec, MotorControlSpec
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
@@ -28,6 +31,7 @@ from custom_components.adjustable_bed.execution import (
     NO_EXECUTION_CAPABILITIES,
     ExecutionCapabilities,
 )
+from custom_components.adjustable_bed.position_estimate import EstimateState
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_controller_contract import _ContractController
 
@@ -307,3 +311,90 @@ async def test_native_both_claims_once_on_the_executing_side_view() -> None:
     # One peek and one reservation, both on the view the command executes on.
     assert both.claim_hold_lease.call_count == 2
     both.release_hold_claim.assert_called_once()
+
+
+class EstimatedStreamController(StreamController):
+    """Streams the back motor and lets a travel-time estimate follow it (#601)."""
+
+    held_back = False
+
+    @property
+    def estimated_position_motor_groups(self) -> dict[str, tuple[str, ...]]:
+        return {"back": ("back",)}
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        specs = super().motor_control_specs
+        if not self.held_back:
+            return specs
+        hold = ControllerMotorHoldSpec(up_control="back_up", down_control="back_down")
+        return tuple(replace(spec, hold=hold) if spec.key == "back" else spec for spec in specs)
+
+
+@pytest.mark.parametrize("ending", ["expiry", "stop"])
+@pytest.mark.parametrize("action", ["timed_move", "hold_control"])
+async def test_a_renewed_hold_is_one_estimated_movement(runtime, action, ending) -> None:
+    """Renewals write nothing, so the estimate sees one move until release or expiry."""
+    hass, coordinator = runtime
+    controller = EstimatedStreamController(coordinator, STREAM)
+    controller.held_back = action == "hold_control"
+    coordinator._controller = controller
+    manager = await pe.async_setup_position_estimates(
+        hass, coordinator.entry.entry_id, ((ADDRESS, None),)
+    )
+    try:
+        bed = manager.beds[ADDRESS]
+        bed.configure({"back": (20.0, 10.0)})
+        bed.set_reference()
+        begun: list[tuple[str, ...]] = []
+        ended: list[float | None] = []
+        begin_move, end_move = bed.begin_move, bed.end_move
+
+        def record_begin(motors: tuple[str, ...]) -> int:
+            begun.append(motors)
+            return begin_move(motors)
+
+        def record_end(token: int, direction: str, seconds: float | None) -> None:
+            ended.append(seconds)
+            end_move(token, direction, seconds)
+
+        bed.begin_move = record_begin  # type: ignore[method-assign]
+        bed.end_move = record_end  # type: ignore[method-assign]
+
+        async def call() -> None:
+            data = (
+                {"motor": "back", "direction": "up", "duration_ms": 100}
+                if action == "timed_move"
+                else {"control": "back_up", "duration": 0.1}
+            )
+            await hass.services.async_call(
+                DOMAIN,
+                action,
+                {"device_id": ["bed"], **data, "hold_owner": "card", "hold_generation": 1},
+                blocking=True,
+            )
+
+        start = asyncio.create_task(call())
+        loop = asyncio.get_running_loop()
+        began = loop.time()
+        for _ in range(5):
+            await asyncio.sleep(0.05)
+            await asyncio.wait_for(call(), 0.05)
+        released = loop.time() - began
+        if ending == "stop":
+            # The card's release: STOP ends the hold before its lease does.
+            await coordinator.async_stop_command()
+        await asyncio.wait_for(start, 2)
+
+        assert begun == [("back",)]
+        assert len(ended) == 1
+        assert ended[0] is not None
+        # Expiry adds the last 100 ms lease; a STOP ends the move at release.
+        assert 0.25 <= ended[0] <= loop.time() - began
+        if ending == "stop":
+            assert ended[0] < released + 0.1
+        back = bed.motors["back"]
+        assert back.state is EstimateState.TRACKING
+        assert back.percent == pytest.approx(ended[0] / 20.0 * 100.0)
+    finally:
+        await pe.async_unload_position_estimates(hass, coordinator.entry.entry_id)

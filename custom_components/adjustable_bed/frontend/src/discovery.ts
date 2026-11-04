@@ -3,7 +3,7 @@
 // integration sets a stable translation_key (see strings.json), so this mapping
 // is robust across all supported bed types — a section only appears when its
 // entities exist.
-import { heldReleaseButton } from "./hold";
+import { heldReleaseButton, holdLeaseRoute } from "./hold";
 import type {
   BedSide,
   BedEntities,
@@ -148,6 +148,8 @@ export function bedEntitiesForDevice(
   ): void => {
     const item = motor(key);
     item[direction] = id;
+    const holdLease = holdLeaseRoute(hass, id, ownerDeviceId ?? deviceId);
+    if (holdLease) item.holdLease = holdLease;
     const attributes = hass.states[id]?.attributes;
     const control = attributes?.held_control;
     const startDelayMs = attributes?.hold_start_delay_ms;
@@ -223,6 +225,8 @@ export function bedEntitiesForDevice(
           const down = attributes?.held_control_down;
           const releaseButton = heldReleaseButton(hass, id);
           if (releaseButton) item.releaseButton = releaseButton;
+          const holdLease = holdLeaseRoute(hass, id, entry.device_id);
+          if (holdLease) item.holdLease = holdLease;
           if (attributes?.held_stop_scope === "motor" || attributes?.held_stop_scope === "side") {
             item.coverStopScope = attributes.held_stop_scope;
           }

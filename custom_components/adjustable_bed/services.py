@@ -88,6 +88,7 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
+    TIMED_MOVE_MOTOR_OPTIONS,
     bed_type_has_position_feedback,
     resolve_explicit_bed_type,
 )
@@ -301,27 +302,6 @@ POSITION_MOTOR_OPTIONS = (
     "right_legs",
 )
 
-TIMED_MOVE_MOTOR_OPTIONS = (
-    "tv_lift",
-    "back",
-    "right_back",
-    "legs",
-    "head",
-    "feet",
-    "tilt",
-    "pillow",
-    "lumbar",
-    "bed_height",
-    "stair",
-    "m1x12_part_1",
-    "m1x12_part_2",
-    "m1x12_part_4",
-    "m1x12_part_8",
-    "m1x12_part_16",
-    "elevate_actuator_1",
-    "elevate_actuator_2",
-    "elevate_both",
-)
 LEGGETT_HELD_CONTROLS = (
     "flat",
     "snore",

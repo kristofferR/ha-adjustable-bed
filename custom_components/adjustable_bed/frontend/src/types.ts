@@ -107,6 +107,14 @@ export interface HeldControl {
   releaseDelayMs: number;
 }
 
+// A renewable hold (#483) the controller declares. `motor` names the
+// timed_move axis for a motor without a held control or timed route of its own.
+export interface HoldLeaseRoute {
+  deviceId: string;
+  motor?: string;
+  side?: BedSide;
+}
+
 export interface MotorEntity {
   key: string;
   cover?: string;
@@ -125,6 +133,7 @@ export interface MotorEntity {
     motor: "back" | "legs" | "lumbar";
     side?: BedSide;
   };
+  holdLease?: HoldLeaseRoute;
   angle?: string; // sensor.* angle in degrees
   position?: string; // number.* position
   estimate?: string; // number.* <motor>_position_estimated (travel-time estimate)

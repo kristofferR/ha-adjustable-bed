@@ -36,6 +36,7 @@ import {
   holdTargetForEntity,
   pairedPeerStopEntityIds,
   movementHold,
+  movementLease,
   MotorHold,
   movementPulse,
   registerHoldFocusLoss,
@@ -146,6 +147,7 @@ export class AdjustableBedCard extends LitElement {
   private readonly _hold = new MotorHold({
     pulse: (m, dir) => movementPulse(this.hass, m, dir),
     holdControl: (m, dir) => movementHold(this.hass, m, dir),
+    lease: (m, dir, lease) => movementLease(this.hass, m, dir, lease),
     stopCover: (cover, stopEntityId) =>
       this._stopCompactTarget(cover, stopEntityId ?? cover),
     // Which stop applies depends on the bed the held motor belongs to, so it is

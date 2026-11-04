@@ -2281,9 +2281,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # v4 introduces the paired-bed schema (Dual Bed 4.0). The v3->v4 migration is
     # a strict no-op for non-paired entries; see async_migrate_entry. Minor
     # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
-    # version 3 marks older entries for the one-time app profile review.
-    VERSION = 4
-    MINOR_VERSION = 3
+    # version 3 marks older entries for the one-time app profile review. v5
+    # stores the profile id each entry runs (profile_id.py); setup derives it
+    # for new entries.
+    VERSION = 5
+    MINOR_VERSION = 1
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:

@@ -259,8 +259,11 @@ same card works for every supported bed.
 
 ### Movement and paired beds
 
-Hold an Up/Down control to repeat movement; release it to send STOP. Each repeat
-is a finite controller operation, so a hold can have short pauses between pulses.
+Hold an Up/Down control to move; release it to send STOP. On beds whose app is
+proven to stream a held key until release, the card holds the motor in one
+continuous [renewable hold](docs/SERVICES.md#renewable-holds), and the
+integration stops it when its short lease runs out if the browser goes away.
+Other beds repeat finite movements, so a hold can have short pauses between them.
 Position sliders appear only when the selected controller exposes them.
 
 For a combined bed, the card offers **Left / Both sides / Right**. Selecting
