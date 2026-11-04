@@ -1066,6 +1066,13 @@ class KeesonController(BedController):
 
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes based on protocol variant."""
+        if self.command_side in {"left", "right"}:
+            if not self.supports_single_address_pairing:
+                raise ValueError("This Keeson profile has no proven single-side frame")
+            # com.sfd.hump 3.7 P1: Left=2, Right=1. Both retains E5/8 bytes.
+            data = b"\xe6\xfe\x16" + (command_value & 0xFFFFFFFF).to_bytes(4, "little")
+            data += bytes((2 if self.command_side == "left" else 1,))
+            return data + bytes((~sum(data) & 0xFF,))
         if self._is_json_variant:
             if command_value == 0:
                 return self._build_json_command(command_value, ctrm=0, km=1, keykt=0)
@@ -1107,6 +1114,13 @@ class KeesonController(BedController):
             checksum = sum(data) ^ 0xFF
             data.append(checksum & 0xFF)
             return bytes(data)
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        """Only opt-in P1 profiles have an artifact-backed Left/Right selector."""
+        return self._variant in {KEESON_VARIANT_BASE, KEESON_VARIANT_ERGOMOTION} and not (
+            self._betterliving_presets or self._cb1322_presets
+        )
 
     async def write_command(
         self,

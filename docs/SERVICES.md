@@ -612,3 +612,24 @@ the distinct wire builders and raw-data limitations.
 ### Good Vibe Sleep configuration
 
 `adjustable_bed.goodvibe` exposes product-gated alarm, light and snore settings plus independent sleep-sensor queries. Select an exact alarm action ID from the [command/profile tables](beds/goodvibe.md#alarms-and-snore-settings). Sleep reports use `operation: report`, a date, part and report type (1 day, 2 month); metadata, continuation and typed receipt form one operation. The status sensor retains typed reports and per-side live values. Use the app-labelled buttons for normal controls and the existing bounded `hold_control` action for held gestures. See the [protocol guide](beds/goodvibe.md) for every packet, profile gate and lifecycle limit.
+
+## Ergomotion 4.0
+
+The [Ergomotion 4.0 profile](beds/ergomotion-4.md) exposes each selected product's
+named action as a button. Held buttons work with `hold_control` (1–60000 ms);
+the guide's command table lists each control key. Existing device/side targeting
+routes P1 commands and cleanup through the same Left/Right child. A parent
+target defaults to native Both. P2 products do not have a side field.
+
+The existing `rename`, `sync_clock`, `configure_alarm_schedule` and
+`stop_wake_routine` actions also support this profile, including P2 layouts.
+Rename accepts a trimmed 1–16 UTF-16-unit name, with the app's byte-copy rules.
+Weekly/one-time alarm tables each hold three enabled records; both are
+validated before dispatch. One-time targets must be later today and unambiguous
+in the local timezone. These configuration frames have no side field: target
+the physical receiver/parent once when configuring shared state.
+
+RGB requires an eligible product and reported light-on state. Use its light
+toggle button while off. The named high/medium/low buttons preserve 100/60/20%
+channel scaling. Meditation Start/Stop is available only for the guide's exact
+product/name gates; an HA automation can repeat Start for cycle operation.

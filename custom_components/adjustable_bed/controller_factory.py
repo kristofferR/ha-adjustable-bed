@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
@@ -419,6 +420,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_ERGOMOTION: _ControllerSpec(
         "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_ERGOMOTION})
     ),
+    BED_TYPE_ERGOMOTION_4: _ControllerSpec("ergomotion4", "Ergomotion4Controller"),
     BED_TYPE_SERTA: _ControllerSpec(
         "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_SERTA})
     ),

@@ -154,6 +154,7 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    "ergomotion_4": _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     "gmmotor": GENERIC_FIELDS,
     "gmmotor_sleep_mm": GENERIC_FIELDS,
     "gmmotor_sleep_sxb": GENERIC_FIELDS,
@@ -257,6 +258,11 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     'serta_mp_remote': SideProfile('Serta MP Remote', SERTA_MEMORY_KEYS | {CONF_PRODUCT_TYPE}),
     'omazz_adjusto_iii': SideProfile('Omazz Adjusto III', frozenset({CONF_PRODUCT_TYPE})),
     'ergomotion_app': SideProfile('Ergomotion (app)', frozenset({CONF_PRODUCT_TYPE})),
+    "ergomotion_4": SideProfile("Ergomotion 4.0", frozenset({
+        CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_BLE_DEVICE_NAME,
+        "ergomotion4_model_keys", "ergomotion4_massage_keys", "ergomotion4_rgb",
+        "ergomotion4_product_name",
+    })),
     'row_control': SideProfile('ROW Control', frozenset({CONF_PRODUCT_TYPE})),
     'ergo_slim': SideProfile('Ergo Slim', frozenset({CONF_PRODUCT_TYPE})),
     'tempur_au': SideProfile('TEMPUR AU', frozenset({CONF_PRODUCT_TYPE})),

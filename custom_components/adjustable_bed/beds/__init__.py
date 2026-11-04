@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     )
     from .doublesleep import DoubleSleepController as DoubleSleepController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
+    from .ergomotion4 import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine import EshineController as EshineController
     from .fsm_relax import FsmRelaxController as FsmRelaxController
@@ -119,6 +120,7 @@ _EXPORT_MODULES = {
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',
+    'Ergomotion4Controller': 'ergomotion4',
     'RowControlController': 'row_control',
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
@@ -209,6 +211,7 @@ __all__ = [
     'SertaMPRemoteController',
     'OmazzAdjustoIIIController',
     'ErgomotionAppController',
+    'Ergomotion4Controller',
     'RowControlController',
     'ErgoSlimController',
     'TempurAUController',
