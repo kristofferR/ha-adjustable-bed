@@ -17,9 +17,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
-from custom_components.adjustable_bed.beds.okin_protocol import build_cst_command
 from custom_components.adjustable_bed.binary_sensor import AdjustableBedControllerStateBinarySensor
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
+from custom_components.adjustable_bed.codec.okin_nframe import frame96
 from custom_components.adjustable_bed.config_flow import _apply_bed_type_choice
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CST,
@@ -123,7 +123,7 @@ def _writes(client: MagicMock) -> list[bytes]:
 
 
 def _expected_tap(value: int, secondary: int = 0) -> list[bytes]:
-    return [build_cst_command(value, secondary), build_cst_command(), build_cst_command()]
+    return [frame96(value, secondary), frame96(0), frame96(0)]
 
 
 def test_nectar_move_is_an_explicit_bed_choice(
@@ -258,7 +258,7 @@ async def test_held_motor_vectors_refresh_then_release(
 
     await getattr(controller, method_name)()
 
-    assert wire.frames == [build_cst_command(value)] * _PULSE_COUNT + [build_cst_command()] * 2
+    assert wire.frames == [frame96(value)] * _PULSE_COUNT + [frame96(0)] * 2
     # Refreshes and both release frames are 100 ms apart, per the app.
     assert all(gap >= 0.09 for gap in wire.gaps())
     assert all(
@@ -282,8 +282,8 @@ async def test_cover_open_returns_after_bounded_movement(
     async with asyncio.timeout(5):
         await cover.async_open_cover()
 
-    assert wire.frames == [build_cst_command(0x00000001)] * _PULSE_COUNT + [
-        build_cst_command()
+    assert wire.frames == [frame96(0x00000001)] * _PULSE_COUNT + [
+        frame96(0)
     ] * 2
 
 
@@ -307,9 +307,9 @@ async def test_held_cleanup_uses_one_fresh_uncancellable_stop_event(
     await controller.move_head_up()
 
     assert [write[:3] for write in writes] == [
-        (build_cst_command(motor_value=0x00000001), _PULSE_COUNT, 100),
-        (build_cst_command(), 1, 100),
-        (build_cst_command(), 1, 100),
+        (frame96(0x00000001), _PULSE_COUNT, 100),
+        (frame96(0), 1, 100),
+        (frame96(0), 1, 100),
     ]
     # The movement observes the coordinator's cancellation; the release cannot.
     assert writes[0][3] is None
@@ -335,7 +335,7 @@ async def test_held_write_error_still_releases_with_fresh_stop_event(
     ) -> None:
         del repeat_count, repeat_delay_ms
         writes.append((payload, cancel_event))
-        if payload != build_cst_command():
+        if payload != frame96(0):
             raise BleakError("movement write failed")
 
     monkeypatch.setattr(controller, "write_command", record_write)
@@ -343,9 +343,9 @@ async def test_held_write_error_still_releases_with_fresh_stop_event(
         await controller.move_head_up()
 
     assert [payload for payload, _event in writes] == [
-        build_cst_command(motor_value=0x00000001),
-        build_cst_command(),
-        build_cst_command(),
+        frame96(0x00000001),
+        frame96(0),
+        frame96(0),
     ]
     assert isinstance(writes[1][1], asyncio.Event)
     assert writes[1][1] is writes[2][1]
@@ -503,7 +503,7 @@ async def test_save_coordinator_cancel_event_clears_pending_feedback(
 
     await controller.program_memory(1)
 
-    assert _writes(mock_bleak_client) == [build_cst_command(), build_cst_command()]
+    assert _writes(mock_bleak_client) == [frame96(0), frame96(0)]
     assert controller._pending_memory_save_code is None
     assert nectar_move_coordinator.controller_state["memory_save_response_observed"] is False
 
@@ -731,12 +731,12 @@ async def test_coordinator_serializes_replacement_and_stop_cleanup(
         await asyncio.gather(first, replacement)
 
     assert wire.frames == [
-        build_cst_command(motor_value=0x00000001),
-        build_cst_command(),
-        build_cst_command(),
-        build_cst_command(motor_value=0x00000002),
-        build_cst_command(),
-        build_cst_command(),
+        frame96(0x00000001),
+        frame96(0),
+        frame96(0),
+        frame96(0x00000002),
+        frame96(0),
+        frame96(0),
     ]
 
 
@@ -766,16 +766,16 @@ async def test_normal_cover_resources_replace_nectar_head_with_feet(
 
     # Feet was admitted after Head's finally sent both release frames.
     assert wire.frames == [
-        build_cst_command(motor_value=0x00000001),
-        build_cst_command(),
-        build_cst_command(),
-        build_cst_command(motor_value=0x00000004),
+        frame96(0x00000001),
+        frame96(0),
+        frame96(0),
+        frame96(0x00000004),
     ]
     await coordinator.async_stop_command()
     async with asyncio.timeout(5):
         await asyncio.gather(head_task, feet_task)
 
-    assert wire.frames[4:] == [build_cst_command(), build_cst_command()]
+    assert wire.frames[4:] == [frame96(0), frame96(0)]
 
 
 async def test_coordinator_stop_settles_held_refresh_before_explicit_stop(
@@ -811,9 +811,9 @@ async def test_coordinator_stop_settles_held_refresh_before_explicit_stop(
     # STOP waited for the movement's release frames, then sent no duplicate pair.
     assert frames_at_stop == [3]
     assert wire.frames == [
-        build_cst_command(motor_value=0x00000001),
-        build_cst_command(),
-        build_cst_command(),
+        frame96(0x00000001),
+        frame96(0),
+        frame96(0),
     ]
 
 
@@ -838,9 +838,9 @@ async def test_later_explicit_stop_is_not_suppressed_by_old_cancel_cleanup(
     await coordinator.async_stop_command()
 
     assert wire.frames == [
-        build_cst_command(motor_value=0x00000001),
-        build_cst_command(),
-        build_cst_command(),
-        build_cst_command(),
-        build_cst_command(),
+        frame96(0x00000001),
+        frame96(0),
+        frame96(0),
+        frame96(0),
+        frame96(0),
     ]

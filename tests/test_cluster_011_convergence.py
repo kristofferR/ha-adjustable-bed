@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
-from custom_components.adjustable_bed.beds.okin_protocol import build_cst_command
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
+from custom_components.adjustable_bed.codec.okin_nframe import frame96
 from custom_components.adjustable_bed.config_flow import _motor_count_options
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CST,
@@ -60,7 +60,7 @@ def _assert_command_and_stop_sequence(
     assert isinstance(stop_event, asyncio.Event)
     assert not stop_event.is_set()
     for stop in (first_stop, second_stop):
-        assert stop.args == (build_cst_command(),)
+        assert stop.args == (frame96(0),)
         assert stop.kwargs == {"cancel_event": stop_event}
     return stop_event
 
@@ -235,7 +235,7 @@ def test_frozen_cluster_vectors_build_exact_frames(
     primary: int, secondary: int, expected_hex: str
 ) -> None:
     """The shared builder must preserve both independently routed fields."""
-    assert build_cst_command(primary, secondary).hex() == expected_hex
+    assert frame96(primary, secondary).hex() == expected_hex
 
 
 @pytest.mark.parametrize("expected", _PROFILE_EXPECTATIONS, ids=lambda expected: expected.variant)

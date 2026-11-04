@@ -153,7 +153,7 @@ _ORE_APPS: Final = _keeson(
 )
 # The app accepts base-i4 (Keeson Base) and base-i5 (Cool Base) names (row058).
 _RESTONIC_APPS: Final = _keeson(KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B)
-# Same 14-byte CST frame as the OKIN routes (serenity.md, row052).
+# Same 14-byte CST frame as the OKIN routes (okin-nframe.md#jordans-serenity, row052).
 _OKIN_BEDDING_APPS: Final = (
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
