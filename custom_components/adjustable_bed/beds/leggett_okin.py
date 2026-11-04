@@ -109,6 +109,7 @@ class LeggettOkinController(BedController):
         self._notify_started: set[str] = set()
         self._notifications_stopped = False
         self._settings_initialized = False
+        self._stream_tick_started: float | None = None
         _LOGGER.debug(
             "LeggettOkinController initialized (protocol revision: %s)",
             self._protocol_revision if self._protocol_revision is not None else "unknown",
@@ -838,7 +839,12 @@ class LeggettOkinController(BedController):
     # word; releasing a key sends the next word without its bit.
     @property
     def stream_tick_s(self) -> float:
-        return LEGGETT_REFRESH_MS / 1000
+        # The stream waits this long after a tick's write returns. Subtract the
+        # write's own time so refreshes keep their start-to-start cadence, as
+        # wall-clock pacing does: CU170 stops 217-218 ms after the last frame.
+        started = self._stream_tick_started
+        elapsed = 0.0 if started is None else asyncio.get_running_loop().time() - started
+        return max(0.0, LEGGETT_REFRESH_MS / 1000 - elapsed)
 
     def _stream_word(self, members: tuple[StreamMember, ...]) -> int:
         word = 0
@@ -850,6 +856,7 @@ class LeggettOkinController(BedController):
         return word
 
     async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        self._stream_tick_started = asyncio.get_running_loop().time()
         await self.write_command(self._build_command(self._stream_word(members)))
 
     async def end_stream_member(

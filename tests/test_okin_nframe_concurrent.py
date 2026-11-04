@@ -258,3 +258,24 @@ async def test_each_member_feeds_the_estimate_with_its_own_duration(make_runtime
             assert feet_done < serial_feet
     finally:
         await pe.async_unload_position_estimates(hass, entry_id)
+
+
+async def test_slow_writes_keep_the_start_to_start_cadence(make_runtime) -> None:
+    """A proxy's write time is absorbed, as wall-clock pacing does for serial moves."""
+    hass, coordinator, frames = make_runtime("prodigy4")
+    loop = asyncio.get_running_loop()
+    starts: list[float] = []
+    write = coordinator.client.write_gatt_char
+
+    async def slow(characteristic, payload, **kwargs) -> None:
+        starts.append(loop.time())
+        await asyncio.sleep(0.06)
+        await write(characteristic, payload, **kwargs)
+
+    coordinator.client.write_gatt_char = slow
+    await asyncio.wait_for(_move(hass, "head", 600), 3)
+    held = [start for start, frame in zip(starts, frames, strict=True) if frame == HEAD]
+    gaps = [b - a for a, b in zip(held, held[1:], strict=False)]
+    assert len(gaps) >= 4
+    # 100 ms apart, not 100 ms after each 60 ms write.
+    assert max(gaps) < 0.13
