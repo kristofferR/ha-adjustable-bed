@@ -16,9 +16,15 @@ from pathlib import Path
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
-_FENCE = re.compile(r"^(```|~~~).*?^\1", re.DOTALL | re.MULTILINE)
+# A fence closes on the same character, at least as long, with nothing after it.
+_FENCE = re.compile(
+    r"^ {0,3}(?:(?P<b>`{3,})|(?P<t>~{3,}))[^\n]*\n.*?"
+    r"(?:^ {0,3}(?:(?P=b)`*|(?P=t)~*)[ \t]*$|\Z)",
+    re.DOTALL | re.MULTILINE,
+)
 _CODE = re.compile(r"`[^`\n]*`")
 _LINK = re.compile(r"\[(?:[^\[\]]|\[[^\]]*\])*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
+_REFERENCE = re.compile(r"^ {0,3}\[[^\]]+\]:[ \t]*<?([^\s>]+)>?", re.MULTILINE)
 _HEADING = re.compile(r"^#{1,6}[ \t]+(.+?)[ \t#]*$", re.MULTILINE)
 _HTML_ANCHOR = re.compile(r"<a\s+(?:id|name)=[\"']([^\"']+)[\"']", re.IGNORECASE)
 
@@ -56,19 +62,21 @@ def _slug(heading: str) -> str:
 @cache
 def anchors(path: Path) -> frozenset[str]:
     text = _FENCE.sub("", path.read_text(encoding="utf-8"))
-    seen: dict[str, int] = {}
-    found = set(_HTML_ANCHOR.findall(text))
+    # github-slugger: a repeated slug takes the next unused numeric suffix.
+    taken: dict[str, int] = {}
     for heading in _HEADING.findall(text):
-        slug = _slug(heading)
-        count = seen.get(slug, 0)
-        seen[slug] = count + 1
-        found.add(slug if count == 0 else f"{slug}-{count}")
-    return frozenset(found)
+        base = slug = _slug(heading)
+        while slug in taken:
+            taken[base] += 1
+            slug = f"{base}-{taken[base]}"
+        taken[slug] = 0
+    return frozenset({*taken, *_HTML_ANCHOR.findall(text)})
 
 
 def broken_links(path: Path) -> list[str]:
     problems = []
-    for target in _LINK.findall(_strip_code(path.read_text(encoding="utf-8"))):
+    text = _strip_code(path.read_text(encoding="utf-8"))
+    for target in (*_LINK.findall(text), *_REFERENCE.findall(text)):
         if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.IGNORECASE):
             continue
         file_part, _, anchor = target.partition("#")

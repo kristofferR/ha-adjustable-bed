@@ -166,7 +166,7 @@ disconnects before service discovery completes.
 
 ### Home Assistant setup
 
-Select **FurniMove / OKIN Smart Remote** and the exact `furnimove_remote` ID used
+Select **FurniMove / OKIN Smart Remote** and the exact handset ID used
 by the app. The catalog includes all 87 captured production IDs and three
 shipped local/offline IDs. Motor count, massage capability and ordered commands
 come from the selected table; manual motor count and pulse delay are hidden.
