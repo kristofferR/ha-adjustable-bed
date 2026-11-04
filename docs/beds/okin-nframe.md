@@ -87,6 +87,7 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
 | Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Held motors combine |
+| Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
 | Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
 | Other presets | Zero-G, anti-snore / quiet sleep where the handset has them | Zero-G, TV, Quiet Sleep | ❌ | Named memory-page controls | Snore |
@@ -199,13 +200,13 @@ Sleepy's Elite and AdjustableM5X4 are explicit app choices.
 | Okimat handset table | entry pulse delay | entry pulse count | 1 STOP |
 | DewertOkin | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN Smart Remote RF ECO BT stair lift | 100 ms | entry pulse count | none (refresh ends) |
-| Customatic Clarity | 120 ms | entry pulse count | 1 STOP, 100 ms after the last write |
-| Customatic Jerome's | 120 ms | entry pulse count | 1 STOP, 100 ms after the last write |
-| Customatic Remedy | 120 ms | entry pulse count | 1 STOP, 100 ms after the last write |
-| Prodigy 2L | 100 ms | entry pulse count | 4 STOP at 100 ms |
-| Prodigy 2 | 100 ms | entry pulse count | 4 STOP at 100 ms |
-| Prodigy CE | 100 ms | entry pulse count | 4 STOP at 100 ms |
-| U Series | 100 ms | entry pulse count | 4 STOP at 100 ms |
+| Customatic Clarity | 120 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| Customatic Jerome's | 120 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| Customatic Remedy | 120 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| Prodigy 2L | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
+| Prodigy 2 | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
+| Prodigy CE | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
+| U Series | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
 | OKIN SmartBed CB24 | entry pulse delay | entry pulse count | 1 STOP |
 | DewertOkin DOT handset table | entry pulse delay | entry pulse count | 1 STOP |
 | SIMMONS SmartBed names | 300 ms | entry pulse count | 2 STOP at 300 ms, 100 ms after the last write |
@@ -1265,6 +1266,11 @@ mask immediately.
 - All motor covers of one physical bed share the global scheduler resource,
   because zero releases every motor: a Stop from any axis preempts movement on
   another. Two-address paired children keep separate physical-side resources.
+- Each app streams a held mask until release, so `timed_move` and
+  `hold_control` accept a renewable hold lease
+  ([Renewable holds](../SERVICES.md#renewable-holds)). The mask refreshes at
+  120 ms until the lease runs out or a Stop arrives, then the normal release
+  follows.
 
 #### Services
 
@@ -1437,6 +1443,12 @@ See the [timing tables](#hold-and-release-timing).
 - LP Control 2.9.0 uses a 200 ms cadence where Prodigy CE uses 100 ms; the
   integration uses the accepted Prodigy/U Series cadence and the recorded CU170
   policy.
+- Every app streams a held key until release, so `timed_move` and
+  `hold_control` accept a renewable hold lease
+  ([Renewable holds](../SERVICES.md#renewable-holds)). The key refreshes at
+  100 ms until the lease runs out or a Stop arrives, then the four zero frames
+  follow. On Prodigy CE's CU170 box, motion stops 217 to 218 ms after the last
+  frame (measured in #368 and #516), so a lost link cannot leave a motor running.
 
 #### Notifications
 
