@@ -120,7 +120,7 @@ async def test_legacy_entry_changes_to_an_app_after_checking_its_transport(
         assert result["step_id"] == "jiecang_family"
         assert "keep" in result["data_schema"].schema["choice"].config["options"]
         result = await manager.async_configure(result["flow_id"], {"choice": "dreamotion"})
-        assert result["step_id"] == "jiecang_app"
+        assert result["step_id"] == "profile_questions"
         result = await manager.async_configure(
             result["flow_id"], {const.CONF_JIECANG_APP_LAYOUT: "standard_2"}
         )
