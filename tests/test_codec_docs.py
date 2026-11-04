@@ -287,3 +287,34 @@ async def test_richmat_bed_types_match_the_factory() -> None:
                 _FactoryCoordinator(), bed_type, variants.get(key), _make_connected_client()
             )
             assert controller.profile.key == key, (key, bed_type)
+
+
+def test_malouf_guide_frames_are_frozen_vectors() -> None:
+    """Every fully spelled Richmat-framed, E6, 04 02 or 05 02 frame in the guide is frozen."""
+    from tests.malouf_vectors import FROZEN_FRAMES
+
+    frozen = frozenset().union(*FROZEN_FRAMES.values())
+    text = (ROOT / "docs" / "beds" / "malouf.md").read_text(encoding="utf-8")
+    frames = re.findall(r"`((?:6E 01|E6 FE 16|0[45] 02)(?: [0-9A-F]{2}){3,})`", text, re.IGNORECASE)
+    assert frames
+    unknown = sorted(
+        {spelled for spelled in frames if spelled.replace(" ", "").lower() not in frozen}
+    )
+    assert not unknown, f"Frames no profile was frozen sending: {unknown}"
+
+
+async def test_malouf_bed_types_match_the_factory() -> None:
+    """Each Malouf profile is the one the factory builds for its bed type and app choice."""
+    from custom_components.adjustable_bed import const
+    from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.profiles.malouf import APP_PROFILES, NEW_OKIN
+    from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
+
+    routes = [(const.BED_TYPE_MALOUF_NEW_OKIN, None, NEW_OKIN)]
+    routes += [(const.BED_TYPE_MALOUF_APP, key, profile) for key, profile in APP_PROFILES.items()]
+    for bed_type, app, profile in routes:
+        coordinator = _FactoryCoordinator()
+        if app is not None:
+            coordinator.entry.data[const.CONF_MALOUF_APP_PROFILE] = app
+        controller = await create_controller(coordinator, bed_type, None, _make_connected_client())
+        assert getattr(controller, "profile", None) is profile, (bed_type, app)

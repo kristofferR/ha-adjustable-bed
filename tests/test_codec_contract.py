@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
 from custom_components.adjustable_bed.profiles.keeson import KeesonProfile
 from custom_components.adjustable_bed.profiles.limoss import LimossProfile
 from custom_components.adjustable_bed.profiles.logicdata import LogicdataProfile
+from custom_components.adjustable_bed.profiles.malouf import MaloufAppProfile, MaloufRouteProfile
 from custom_components.adjustable_bed.profiles.okin_5a import Okin5AProfile
 from custom_components.adjustable_bed.profiles.okin_nframe import OkinNFrameProfile
 from custom_components.adjustable_bed.profiles.richmat import RichmatProfile
@@ -34,6 +35,7 @@ from tests.jiecang_vectors import FROZEN_FRAMES as JIECANG_VECTORS
 from tests.keeson_vectors import FROZEN_FRAMES as KEESON_VECTORS
 from tests.limoss_vectors import FROZEN_BODIES as LIMOSS_VECTORS
 from tests.logicdata_vectors import FROZEN_FRAMES as LOGICDATA_VECTORS
+from tests.malouf_vectors import FROZEN_FRAMES as MALOUF_VECTORS
 from tests.okin_5a_vectors import FROZEN_FRAMES as OKIN_5A_VECTORS
 from tests.okin_nframe_vectors import FROZEN_FRAMES as OKIN_NFRAME_VECTORS
 from tests.richmat_vectors import FROZEN_FRAMES as RICHMAT_VECTORS
@@ -56,6 +58,9 @@ CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
     OkinNFrameProfile: OKIN_NFRAME_VECTORS,
     LimossProfile: LIMOSS_VECTORS,
     RichmatProfile: RICHMAT_VECTORS,
+    # Malouf: the malouf_new_okin route and the Malouf Base / Lucid Base apps.
+    MaloufRouteProfile: MALOUF_VECTORS,
+    MaloufAppProfile: MALOUF_VECTORS,
 }
 
 # App choices of codec-backed bed types: bed type -> (config key, choices).
@@ -65,7 +70,11 @@ APP_ROUTES: dict[str, tuple[str, tuple[str, ...]]] = {
         const.CONF_LOGICDATA_APP_PROFILE,
         tuple(const.LOGICDATA_APP_PROFILES),
     ),
-    const.BED_TYPE_LEGGETT_OKIN: (const.CONF_LEGGETT_APP_PROFILE, tuple(const.LEGGETT_APP_PROFILES)),
+    const.BED_TYPE_LEGGETT_OKIN: (
+        const.CONF_LEGGETT_APP_PROFILE,
+        tuple(const.LEGGETT_APP_PROFILES),
+    ),
+    const.BED_TYPE_MALOUF_APP: (const.CONF_MALOUF_APP_PROFILE, tuple(const.MALOUF_APP_PROFILES)),
 }
 
 UNMIGRATED: dict[str, str] = {
@@ -97,9 +106,7 @@ UNMIGRATED: dict[str, str] = {
     "linak": "standalone: own wire format",
     "logicdata": "standalone: own wire format",
     "logicdata_air_pump": "standalone: own wire format",
-    "malouf_app": "#745 O2 Okin 5A, Okin-like Malouf frames",
     "malouf_legacy_okin": "#745 K1 Keeson E5/E6",
-    "malouf_new_okin": "#745 O2 Okin 5A, Okin-like Malouf frames",
     "motosleep": "standalone: own wire format",
     "octo": "standalone: own wire format",
     "okin_64bit": "#745 O1 Okin N-frame",
