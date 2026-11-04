@@ -270,10 +270,6 @@ class _MergedStream:
                             self.retire(member, CommandOutcome.EXPIRED)
                     if not self.ending:
                         break
-                    if not self.members:
-                        # Last one out: newcomers queue behind this release
-                        # instead of joining while it is under way.
-                        self.closing = True
                     await _settled(self._clean_up(driver))
                 if not self.members or context.cancel_event.is_set():
                     break
@@ -337,6 +333,10 @@ class _MergedStream:
         """Run every ending member's cleanup, then raise the first failure."""
         first_error: BaseException | None = None
         while self.ending:
+            if not self.members:
+                # Last ones out: newcomers queue behind this release instead
+                # of joining while it is under way.
+                self.closing = True
             member = self.ending.popleft()
             try:
                 await driver.end_stream_member(member, tuple(self.members.values()))
@@ -347,6 +347,7 @@ class _MergedStream:
             if self.members:
                 member.done.set()
             else:
+                self.closing = True
                 self.awaiting_release.append(member)
         if first_error is not None:
             raise first_error

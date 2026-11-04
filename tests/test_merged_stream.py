@@ -396,3 +396,35 @@ async def test_last_member_returns_before_a_newcomer_streams() -> None:
     assert await asyncio.wait_for(legs, 1) is CommandOutcome.EXPIRED
     # The newcomer started its own stream after the first one's release.
     assert driver.events.index(("release",)) < driver.events.index(("tick", "legs:up"))
+
+
+async def test_members_ending_back_to_back_close_the_stream() -> None:
+    scheduler = DeviceCommandScheduler("back-to-back")
+    driver = FakeDriver()
+    original_end = driver.end_stream_member
+    back_cleanup = asyncio.Event()
+    finish_back_cleanup = asyncio.Event()
+
+    async def slow_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        if item.motor == "back":
+            back_cleanup.set()
+            await finish_back_cleanup.wait()
+        else:
+            await asyncio.sleep(0.02)
+        await original_end(item, remaining)
+
+    driver.end_stream_member = slow_end  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back", seconds=0.02))
+    legs = join(scheduler, driver, member("legs"))
+    await asyncio.wait_for(back_cleanup.wait(), 1)
+    # legs stops while back's cleanup is still on the wire.
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:legs")))
+    finish_back_cleanup.set()
+    while not legs.done() and ("end", "legs:up") not in driver.events:
+        await asyncio.sleep(0)
+    head = join(scheduler, driver, member("head", seconds=0.02))
+    assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
+    assert await asyncio.wait_for(legs, 1) is CommandOutcome.STOPPED
+    assert not head.done()
+    assert await asyncio.wait_for(head, 1) is CommandOutcome.EXPIRED
+    assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
