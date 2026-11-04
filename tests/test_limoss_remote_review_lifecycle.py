@@ -102,9 +102,15 @@ async def pair_runtime(hass):
 
 async def public_call(hass, target, service, data, side=None):
     await async_register_services(hass)
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(target, side or const.SIDE_BOTH)], []),
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(target, side or const.SIDE_BOTH)], []),
+        ) as resolve,
+        patch(
+            "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+            new=resolve,
+        ),
     ):
         await hass.services.async_call(
             const.DOMAIN, service, {"device_id": "review", **data}, blocking=True

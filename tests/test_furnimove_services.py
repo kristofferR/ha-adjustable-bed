@@ -32,8 +32,12 @@ async def target(handset="82417", *, bed_type=BED_TYPE_FURNIMOVE, entry=None, re
 
 async def invoke(hass, targets, service, data):
     await async_register_services(hass)
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
-               return_value=([(value, SIDE_BOTH) for value in targets], [])):
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              return_value=([(value, SIDE_BOTH) for value in targets], [])) as resolve,
+        patch("custom_components.adjustable_bed.furnimove_services._resolve_sided_targets",
+              new=resolve),
+    ):
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
 
 

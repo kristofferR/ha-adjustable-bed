@@ -64,7 +64,7 @@ async def test_comfort_service_sends_one_typed_request_under_command_lock(
     coordinator, controller = _target()
     await async_register_services(hass)
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.reverie_services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         await hass.services.async_call(
@@ -90,7 +90,7 @@ async def test_comfort_service_preflights_every_target_before_any_write(
     await async_register_services(hass)
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.reverie_services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
         pytest.raises(ServiceValidationError, match="unsupported selected model field"),
@@ -123,7 +123,7 @@ async def test_pairlink_alarm_comfort_forces_complete_typed_request(
         "mode": 2,
     }
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.reverie_services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         await hass.services.async_call(
@@ -160,7 +160,7 @@ async def test_pairlink_alarm_comfort_preflights_all_targets_before_any_write(
     }
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.reverie_services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
         pytest.raises(ServiceValidationError, match="unsupported selected model field"),
@@ -184,7 +184,7 @@ async def test_routine_service_uses_selected_target_queue_without_scheduler(
     coordinator, controller = _target()
     await async_register_services(hass)
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.reverie_services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         await hass.services.async_call(
@@ -235,7 +235,7 @@ async def test_deferred_actions_preflight_pair_connection_policy(
     if service == "reverie_run_routine":
         data["steps"] = [{"comfort": {"head_position": 25}, "duration_minutes": 1}]
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.reverie_services._resolve_sided_targets",
         return_value=([(first, SIDE_BOTH), (pair, side)], []),
     ):
         if mode == "sequential" and not local_role:
@@ -279,7 +279,7 @@ async def test_comfort_rejects_only_deferred_sequential_targets(hass, bed_type, 
     await async_register_services(hass)
     rejected = bed_type == BED_TYPE_REVERIE and mode != "concurrent"
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.reverie_services._resolve_sided_targets",
         return_value=([(first, SIDE_BOTH), (pair, side)], []),
     ):
         call = hass.services.async_call(

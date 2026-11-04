@@ -25,7 +25,9 @@ from custom_components.adjustable_bed.beds import reverie_pairlink_transport as 
 from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import decrypt_user_frame
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.number import _number_entities_for
-from custom_components.adjustable_bed.services import SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT
+from custom_components.adjustable_bed.reverie_services import (
+    SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT,
+)
 from tests.test_reverie_pairlink import _controller, _join_central
 from tests.test_reverie_pairlink_production import (
     _adapter_objects,

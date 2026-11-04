@@ -9,7 +9,7 @@ from bleak.backends.device import BLEDevice
 from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed import const, services
+from custom_components.adjustable_bed import const, limoss_remote_services, services
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
@@ -116,7 +116,7 @@ async def loaded_runtime(hass, paired):
 async def test_capability_reload_waits_for_real_public_transaction(hass, paired, service, changed):
     async with loaded_runtime(hass, paired) as (entry, original, children, trace, state, _, _):
         state["capacity"] = 7 if changed else 8
-        preflight = services._preflight_live_limoss_remote
+        preflight = limoss_remote_services._preflight_live_limoss_remote
 
         async def preflight_then_disconnect(*args, **kwargs):
             await preflight(*args, **kwargs)
@@ -134,9 +134,11 @@ async def test_capability_reload_waits_for_real_public_transaction(hass, paired,
             data["duration"] = 0.1
         elif service == "limoss_remote_features":
             data = {"underbed_light": False, "massage": False}
+        targets = ([(original, const.SIDE_BOTH)], [])
         with (
-            patch.object(services, "_resolve_sided_targets", return_value=([(original, const.SIDE_BOTH)], [])),
-            patch.object(services, "_preflight_live_limoss_remote", side_effect=preflight_then_disconnect),
+            patch.object(services, "_resolve_sided_targets", return_value=targets),
+            patch.object(limoss_remote_services, "_resolve_sided_targets", return_value=targets),
+            patch.object(limoss_remote_services, "_preflight_live_limoss_remote", side_effect=preflight_then_disconnect),
         ):
             await asyncio.wait_for(hass.services.async_call(
                 const.DOMAIN, service, {"device_id": ["physical"], **data}, blocking=True,
@@ -193,7 +195,7 @@ async def test_failed_or_cancelled_public_transaction_releases_reload_after_nati
 async def test_unselected_sibling_reload_waits_for_selected_service_phases(hass):
     async with loaded_runtime(hass, True) as (entry, original, children, _, _, _, _):
         left, right = children
-        preflight = services._preflight_live_limoss_remote
+        preflight = limoss_remote_services._preflight_live_limoss_remote
 
         async def changed_sibling_after_preflight(*args, **kwargs):
             await preflight(*args, **kwargs)
@@ -204,7 +206,7 @@ async def test_unselected_sibling_reload_waits_for_selected_service_phases(hass)
 
         with (
             patch.object(services, "_resolve_sided_targets", return_value=([(original, const.SIDE_LEFT)], [])),
-            patch.object(services, "_preflight_live_limoss_remote", side_effect=changed_sibling_after_preflight),
+            patch.object(limoss_remote_services, "_preflight_live_limoss_remote", side_effect=changed_sibling_after_preflight),
         ):
             await asyncio.wait_for(hass.services.async_call(
                 const.DOMAIN, "goto_preset", {"device_id": ["physical"], "preset": 1}, blocking=True,

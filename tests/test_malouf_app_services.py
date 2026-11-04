@@ -12,9 +12,9 @@ from custom_components.adjustable_bed.beds.malouf_app import MaloufAppController
 from custom_components.adjustable_bed.codec.malouf import TRANSPORTS
 from custom_components.adjustable_bed.const import BED_TYPE_MALOUF_APP, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.linak_services import SERVICE_LINAK_MOVE_SIMULTANEOUS
+from custom_components.adjustable_bed.malouf_app_services import SERVICE_MALOUF_SET_ALARM
 from custom_components.adjustable_bed.services import (
-    SERVICE_LINAK_MOVE_SIMULTANEOUS,
-    SERVICE_MALOUF_SET_ALARM,
     SERVICE_MALOUF_SYNC_CLOCK,
     SERVICE_TIMED_MOVE,
     async_register_services,
@@ -38,8 +38,12 @@ async def service_target(hass: HomeAssistant):
         await command(controller)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
-               return_value=([(coordinator, SIDE_BOTH)], [])) as resolve:
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              return_value=([(coordinator, SIDE_BOTH)], [])) as resolve,
+        patch("custom_components.adjustable_bed.malouf_app_services._resolve_sided_targets",
+              new=resolve),
+    ):
         yield coordinator, controller, resolve
 
 
@@ -141,8 +145,12 @@ async def test_explicit_split_head_actions_route_main_dual_and_partner_foot(hass
     def resolve(_hass, ids, _side):
         return [(coordinators[name], SIDE_BOTH) for name in ids], []
 
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
-               side_effect=resolve):
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              side_effect=resolve),
+        patch("custom_components.adjustable_bed.linak_services._resolve_sided_targets",
+              side_effect=resolve),
+    ):
         await asyncio.gather(
             hass.services.async_call(DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS, {
                 "device_id": "main", "first_motor": "back", "first_direction": "up",

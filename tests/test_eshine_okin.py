@@ -533,7 +533,7 @@ def test_discovery_candidate_never_selects_a_product(name):
 async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, monkeypatch):
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed import eshine_okin_services
     from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 
     coordinator, device_id = ha_target
@@ -563,7 +563,9 @@ async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, 
     other.is_connected = True
     other.async_execute_controller_command = AsyncMock()
     monkeypatch.setattr(
-        services, "_call_targets", lambda call: [(coordinator, SIDE_BOTH), (other, SIDE_BOTH)]
+        eshine_okin_services,
+        "_call_targets",
+        lambda call: [(coordinator, SIDE_BOTH), (other, SIDE_BOTH)],
     )
     with pytest.raises(ServiceValidationError, match="does not expose"):
         await hass.services.async_call(
