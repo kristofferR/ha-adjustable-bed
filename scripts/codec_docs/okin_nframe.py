@@ -171,6 +171,8 @@ _WRITES = {
 
 # AdjustableM5X4 selectors whose movement is a Keeson E6 or A5 5A frame.
 _OKIN_OWN_MOTION = frozenset({"starcode_abm5_4_box15", "starcode_abm5_4_box1220"})
+# The OKIN Bedding apps stream every action at 100 ms until its own deadline.
+_DEADLINE = "held to its deadline, 2 STOP"
 
 
 def render_okin_nframe_profiles() -> str:
@@ -211,7 +213,9 @@ def render_okin_nframe_profiles() -> str:
             "Control mode",
         ),
         (
-            (
+            (profile.name, *([_DEADLINE] * 3), "n/a", _DEADLINE, "n/a")
+            if profile.key in okin_profiles.BEDDING_PROFILES
+            else (
                 profile.name,
                 _okin_tap(profile.recall),
                 _okin_tap(profile.memory_recall or profile.recall),

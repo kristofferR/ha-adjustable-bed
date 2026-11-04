@@ -250,10 +250,10 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Rize MF900 | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Support | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Nectar Move | once, 2 STOP | once, 2 STOP | n/a | n/a | n/a | n/a |
-| Jordan's Serenity | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
-| Jordan's Tranquil | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
-| Customatic Z-230 | once, 2 STOP | once, 2 STOP | n/a | n/a | n/a | n/a |
-| Customatic Z-280 | once, 2 STOP | once, 2 STOP | n/a | n/a | n/a | n/a |
+| Jordan's Serenity | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 
 Leggett Okin profiles also stream Flat for 30000 ms and program a favorite by
 holding the store key 5000 ms, then the slot 2000 ms. Customatic named memory
