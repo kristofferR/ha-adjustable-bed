@@ -127,3 +127,25 @@ def test_every_profile_with_questions_has_a_setup_step_that_asks_them():
     for key, profile in SETUP_PROFILES.items():
         if profile.questions:
             assert profile_route(key).bed_type in _APP_SETUP_STEPS, key
+
+
+def test_no_declaration_uses_a_condition_until_its_rendering_is_decided():
+    # Conditional fields wait for the minimum Home Assistant version decision.
+    for key, profile in SETUP_PROFILES.items():
+        assert all(question.when is None for question in profile.questions), key
+
+
+def test_a_profile_cleans_its_answers_before_checking_them():
+    legacy = SETUP_PROFILES[const.BED_TYPE_LEGGETT_LP_LEGACY]
+    staged = legacy.staged(
+        {},
+        {
+            const.CONF_LP_LEGACY_MODEL: " a2rm ",
+            const.CONF_LP_LEGACY_MODE: "framed",
+            const.CONF_LP_LEGACY_WRITE_UUID: "11111111222233334444555555555555",
+            const.CONF_LP_LEGACY_READ_UUID: "",
+        },
+    )
+    assert staged[const.CONF_LP_LEGACY_MODEL] == "A2RM"
+    assert staged[const.CONF_LP_LEGACY_WRITE_UUID] == "11111111-2222-3333-4444-555555555555"
+    assert legacy.validate is not None and legacy.validate(staged) == {}

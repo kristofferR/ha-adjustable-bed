@@ -85,7 +85,7 @@ async def test_mlrm_base_and_the_legacy_app_keep_their_routes(hass):
 
     flow = setup_flow(hass, const.BED_TYPE_LEGGETT_OKIN)
     result = await flow.async_step_leggett_family({"choice": "lp_legacy"})
-    assert result["step_id"] == "lp_legacy"
+    assert result["step_id"] == "profile_questions"
 
 
 async def test_umbrella_entry_keeps_its_saved_id_through_a_bonded_change(
