@@ -17650,10 +17650,10 @@
 "cover:legs_stop": {"as":"legs_stop","ok":"ok","status":"same"},
 "read_positions": {"status":"no_writes"},
 "move_back_legs_up": {"status":"ok","writes":[[0,"000001ac",true,"01",2,807],[1614,"000001ac",true,"ff",2,7]]},
-"stop:back_open": {"status":"ok","writes":[[0,"000001ac",true,"01",1,0],[807,"000001ac",true,"ff",4,7]]},
-"stop:back_close": {"status":"ok","writes":[[0,"0000bae9",true,"01",1,0],[807,"000001ac",true,"ff",4,7]]},
-"stop:legs_open": {"status":"ok","writes":[[0,"000001ac",true,"01",1,0],[807,"000001ac",true,"ff",4,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"0000bae9",true,"01",1,0],[807,"000001ac",true,"ff",4,7]]}
+"stop:back_open": {"status":"ok","writes":[[0,"000001ac",true,"01",1,0],[300,"000001ac",true,"ff",4,7]]},
+"stop:back_close": {"status":"ok","writes":[[0,"0000bae9",true,"01",1,0],[300,"000001ac",true,"ff",4,7]]},
+"stop:legs_open": {"status":"ok","writes":[[0,"000001ac",true,"01",1,0],[300,"000001ac",true,"ff",4,7]]},
+"stop:legs_close": {"status":"ok","writes":[[0,"0000bae9",true,"01",1,0],[300,"000001ac",true,"ff",4,7]]}
 }},
 "svane:props_write": {
 "info": {"bed_type": "svane", "controller": "SvaneController", "gaps": ["memory_recall_1"], "module": "svane", "pulse": [10, 100]},
