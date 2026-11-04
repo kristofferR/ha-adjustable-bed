@@ -18,6 +18,7 @@ from unittest.mock import AsyncMock
 import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
 
+from custom_components.adjustable_bed import paired_topology
 from custom_components.adjustable_bed.beds.okin_cb24 import OkinCB24Controller
 from custom_components.adjustable_bed.beds.sbi import SBIController
 from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
@@ -968,7 +969,7 @@ class TestPreemption:
         log: list = []
         coord, left, right = _pair(log)
         # Simulate an active WHOLE-BED move (both children under one command).
-        coord._active_children = {left, right}
+        coord._admission.active_children = {left, right}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
 
@@ -984,7 +985,7 @@ class TestPreemption:
         log: list = []
         coord, left, _right = _pair(log)
         # Simulate an active LEFT-ONLY move.
-        coord._active_children = {left}
+        coord._admission.active_children = {left}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_RIGHT)
 
@@ -996,7 +997,7 @@ class TestPreemption:
     async def test_cancel_running_both_preempts_both_sides(self):
         log: list = []
         coord, left, right = _pair(log)
-        coord._active_children = {left, right}
+        coord._admission.active_children = {left, right}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
 
@@ -1006,11 +1007,11 @@ class TestPreemption:
     async def test_stop_bumps_pair_cancel_counter_per_side(self):
         log: list = []
         coord, _left, _right = _pair(log)
-        before = dict(coord._pair_cancel_counter)
+        before = dict(coord._admission.cancel_counter)
         await coord.async_stop_command(side=SIDE_LEFT)
         # A left-only stop bumps only the left counter.
-        assert coord._pair_cancel_counter[SIDE_LEFT] == before[SIDE_LEFT] + 1
-        assert coord._pair_cancel_counter[SIDE_RIGHT] == before[SIDE_RIGHT]
+        assert coord._admission.cancel_counter[SIDE_LEFT] == before[SIDE_LEFT] + 1
+        assert coord._admission.cancel_counter[SIDE_RIGHT] == before[SIDE_RIGHT]
 
     async def test_concurrent_single_side_does_not_take_pair_lock(self):
         log: list = []
@@ -1018,7 +1019,7 @@ class TestPreemption:
         # Concurrent-mode children own independent physical schedulers. The
         # parent lock is now reserved for sequential connection switching, so a
         # left-only request does not wait behind unrelated pair metadata work.
-        async with coord._pair_command_lock:
+        async with coord._sequential.command_lock:
             command = asyncio.ensure_future(
                 coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
             )
@@ -1030,12 +1031,12 @@ class TestPreemption:
         coord, _left, _right = _pair(log)
         # A queued RIGHT movement must NOT be dropped when LEFT's counter bumps
         # (an independent left reverse), only when RIGHT's does.
-        async with coord._pair_command_lock:
+        async with coord._sequential.command_lock:
             queued = asyncio.ensure_future(
                 coord.async_execute_controller_command(_noop, side=SIDE_RIGHT)
             )
             await asyncio.sleep(0.01)
-            coord._pair_cancel_counter[SIDE_LEFT] += 1  # independent left activity
+            coord._admission.cancel_counter[SIDE_LEFT] += 1  # independent left activity
         await asyncio.wait_for(queued, timeout=1)
         assert ("right", "command") in log
 
@@ -2430,7 +2431,7 @@ class TestConnectionModeResolution:
             None, entry, {SIDE_LEFT: left, SIDE_RIGHT: right}
         )
         attempt_cursors = {
-            side: coordinator._connection_attempt_cursor(child)
+            side: paired_topology.connection_attempt_cursor(child)
             for side, child in coordinator.children.items()
         }
         right.connection_attempt_details.append(
@@ -2444,7 +2445,7 @@ class TestConnectionModeResolution:
         )
 
         fallback = asyncio.create_task(
-            coordinator._async_fallback_after_connection_slot_exhaustion(
+            coordinator._lanes.fallback_after_connection_slot_exhaustion(
                 error, attempt_cursors
             )
         )
@@ -2500,12 +2501,12 @@ class TestConnectionModeResolution:
             {"error": "Old connection slot failure"}
         ]
         child.connection_attempt_count = 1
-        cursor = coordinator._connection_attempt_cursor(child)
+        cursor = paired_topology.connection_attempt_cursor(child)
 
         child.connection_attempt_count = 3
         child.connection_attempt_details.append({"error": "Unrelated failure"})
 
-        assert not coordinator._connection_slot_exhausted(
+        assert not paired_topology.connection_slot_exhausted(
             child, ConnectionError("Not connected to bed"), cursor
         )
 
@@ -2515,13 +2516,13 @@ class TestConnectionModeResolution:
         right = RecordingChild(SIDE_RIGHT, log, connected=False)
         coordinator = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
 
-        await coordinator._pair_group_lock.acquire()
+        await coordinator._lanes.group_lock.acquire()
         task = asyncio.create_task(
             coordinator.async_execute_controller_command(_noop, side=SIDE_BOTH)
         )
         await asyncio.sleep(0)
         coordinator._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
-        coordinator._pair_group_lock.release()
+        coordinator._lanes.group_lock.release()
 
         await task
 
