@@ -542,6 +542,23 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         # that started after this stop was called (rapid stop→move sequence)
         stop_generation = self._movement_generation
 
+        # A motor streaming with others (#516) ends alone; its cleanup runs in
+        # the streamer. A side-wide declared STOP keeps the ordinary path,
+        # which ends every member.
+        from .coordinator import AdjustableBedCoordinator
+
+        hold = self.entity_description.hold
+        if (
+            isinstance(self._coordinator, AdjustableBedCoordinator)
+            and (hold is None or hold.stop_scope == "motor")
+            and self._coordinator.stop_stream_member(self._motor_resource)
+        ):
+            if self._movement_generation == stop_generation:
+                self._is_moving = False
+                self._move_direction = None
+                self.async_write_ha_state()
+            return
+
         try:
             _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
             # cancel_running=True (the default) cancels the in-flight movement

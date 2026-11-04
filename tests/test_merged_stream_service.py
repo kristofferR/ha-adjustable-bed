@@ -84,3 +84,32 @@ async def test_motor_outside_the_declaration_stays_serialized(
     assert "up" in controller.frames
     assert "release" not in controller.frames
     assert coordinator._command_scheduler.recent_records[-1].kind is CommandKind.COMMAND
+
+
+async def test_cover_stop_ends_only_its_streaming_motor(
+    runtime: tuple[HomeAssistant, AdjustableBedCoordinator],  # noqa: F811
+) -> None:
+    from custom_components.adjustable_bed.cover import (
+        AdjustableBedCover,
+        _build_cover_description,
+    )
+
+    hass, coordinator = runtime
+    controller = ComposingController(coordinator, CONCURRENT)
+    coordinator._controller = controller
+    spec = next(spec for spec in controller.motor_control_specs if spec.key == "back")
+    cover = AdjustableBedCover(coordinator, _build_cover_description(spec))
+    cover.hass = hass
+    cover.async_write_ha_state = lambda: None  # type: ignore[method-assign]
+    back = asyncio.create_task(_move(hass, "back", 5000))
+    legs = asyncio.create_task(_move(hass, "legs", 300))
+    while "back:up+legs:up" not in controller.frames:
+        await asyncio.sleep(0.005)
+    await cover.async_stop_cover()
+    await asyncio.wait_for(back, 1)
+    assert "end back" in controller.frames
+    assert not legs.done()
+    while controller.frames[-1] != "legs:up":
+        await asyncio.sleep(0.005)
+    await asyncio.wait_for(legs, 1)
+    assert controller.frames[-1] == "release"

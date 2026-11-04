@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.command_scheduler import (
     CommandIntent,
     CommandKind,
     CommandOutcome,
+    CommandRecord,
     DeviceCommandScheduler,
     HoldClaim,
     HoldLease,
@@ -85,6 +86,14 @@ def join(
     )
 
 
+async def last_record(scheduler: DeviceCommandScheduler) -> CommandRecord:
+    """The streamer's record lands just after its members resolve."""
+    async with asyncio.timeout(1):
+        while not scheduler.recent_records or scheduler._streams:
+            await asyncio.sleep(0)
+    return scheduler.recent_records[-1]
+
+
 async def settle(driver: FakeDriver, ticks: int = 2) -> None:
     for _ in range(ticks):
         driver.ticked.clear()
@@ -103,8 +112,8 @@ async def test_every_member_appears_in_each_composed_tick() -> None:
     scheduler.finish_stop(scheduler.request_stop(ALL_COMMAND_RESOURCES))
     assert await asyncio.wait_for(back, 1) is CommandOutcome.STOPPED
     assert await asyncio.wait_for(legs, 1) is CommandOutcome.STOPPED
-    assert scheduler.recent_records[-1].kind is CommandKind.STREAM
-    assert scheduler.recent_records[-1].scheduler_strategy == "merged_stream"
+    assert (await last_record(scheduler)).kind is CommandKind.STREAM
+    assert (await last_record(scheduler)).scheduler_strategy == "merged_stream"
 
 
 async def test_replacing_one_member_leaves_the_other_streaming() -> None:
@@ -134,7 +143,7 @@ async def test_members_expire_independently_and_the_last_one_releases() -> None:
     assert ("release",) not in driver.events
     assert await asyncio.wait_for(long, 1) is CommandOutcome.EXPIRED
     assert driver.events[-2:] == [("end", "legs:up"), ("release",)]
-    assert scheduler.recent_records[-1].outcome is CommandOutcome.COMPLETED
+    assert (await last_record(scheduler)).outcome is CommandOutcome.COMPLETED
 
 
 async def test_bed_wide_stop_clears_every_member_before_a_later_member() -> None:
@@ -186,7 +195,7 @@ async def test_member_cleanup_failure_ends_the_stream_and_releases() -> None:
         await asyncio.wait_for(legs, 1)
     assert ("end", "legs:up") in driver.events
     assert driver.events[-1] == ("release",)
-    assert scheduler.recent_records[-1].outcome is CommandOutcome.FAILED
+    assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
 
 
 async def test_serial_command_on_a_member_motor_replaces_the_stream() -> None:
@@ -255,7 +264,7 @@ async def test_tick_failure_reaches_every_member() -> None:
         with pytest.raises(ConnectionError, match="link lost"):
             await asyncio.wait_for(task, 1)
     assert driver.events[-1] == ("release",)
-    assert scheduler.recent_records[-1].outcome is CommandOutcome.FAILED
+    assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
 
 
 async def test_stop_runs_every_member_cleanup_despite_a_failure() -> None:
@@ -301,3 +310,67 @@ async def test_overdue_stream_lease_is_not_renewed() -> None:
     time.sleep(0.04)  # block the loop past the deadline before the streamer wakes
     assert scheduler.claim_hold(held, ("motor:back",)) is HoldClaim.STALE
     assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
+
+
+async def test_motor_stop_keeps_a_queued_stream_for_its_other_members() -> None:
+    scheduler = DeviceCommandScheduler("queued-stream")
+    blocker_started = asyncio.Event()
+    release_blocker = asyncio.Event()
+
+    async def blocker(_context: CommandContext) -> None:
+        blocker_started.set()
+        await release_blocker.wait()
+
+    blocking = asyncio.create_task(
+        scheduler.execute(CommandIntent(blocker, resources=command_resources("light")))
+    )
+    await blocker_started.wait()
+    driver = FakeDriver()
+    back = join(scheduler, driver, member("back"))
+    legs = join(scheduler, driver, member("legs", seconds=0.05))
+    await asyncio.sleep(0)
+    scheduler.finish_stop(scheduler.request_stop(command_resources("motor:back")))
+    assert await asyncio.wait_for(back, 1) is CommandOutcome.STOPPED
+    release_blocker.set()
+    await blocking
+    assert await asyncio.wait_for(legs, 1) is CommandOutcome.EXPIRED
+    assert driver.ticks()[0] == ("legs:up",)
+    # back never reached the wire, so it had no cleanup of its own.
+    assert not any(event[:2] == ("end", "back:up") for event in driver.events)
+
+
+async def test_stop_during_the_final_release_lets_it_finish() -> None:
+    scheduler = DeviceCommandScheduler("release-cancel")
+    driver = FakeDriver()
+    release_started = asyncio.Event()
+    finish_release = asyncio.Event()
+
+    async def slow_release() -> None:
+        release_started.set()
+        await finish_release.wait()
+        driver.events.append(("release",))
+
+    driver.release_stream = slow_release  # type: ignore[method-assign]
+
+    async def preemptible(body: Callable[[StreamDriver], Awaitable[None]]) -> None:
+        # The coordinator cancels the operation task when STOP sets its event.
+        task = asyncio.ensure_future(body(driver))
+        context_event = scheduler._active.context.cancel_event  # type: ignore[union-attr]
+        stop = asyncio.ensure_future(context_event.wait())
+        await asyncio.wait({task, stop}, return_when=asyncio.FIRST_COMPLETED)
+        if not task.done():
+            task.cancel()
+        stop.cancel()
+        await asyncio.gather(task, stop, return_exceptions=True)
+
+    back = asyncio.create_task(
+        scheduler.execute_stream_member(member("back", seconds=0.02), CONCURRENT, preemptible)
+    )
+    await asyncio.wait_for(release_started.wait(), 1)
+    epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
+    await asyncio.sleep(0.01)
+    assert not back.done()  # the caller waits for the release
+    finish_release.set()
+    await asyncio.wait_for(back, 1)
+    scheduler.finish_stop(epoch)
+    assert driver.events[-1] == ("release",)

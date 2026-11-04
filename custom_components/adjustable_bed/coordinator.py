@@ -6578,6 +6578,19 @@ class AdjustableBedCoordinator:
             command_resources(*controller.execution.concurrent)
         )
 
+    def stop_stream_member(self, resource: str) -> bool:
+        """End a motor's merged-stream member for a motor-scoped STOP (#516).
+
+        Returns False when the motor is not streaming, so the caller sends its
+        ordinary STOP. The member's own cleanup runs in the streamer, and the
+        other members keep moving.
+        """
+        resources = self._protocol_command_resources(command_resources(resource))
+        if not self._command_scheduler.has_stream_member(resources):
+            return False
+        self._command_scheduler.finish_stop(self._command_scheduler.request_stop(resources))
+        return True
+
     async def async_execute_stream_member(
         self,
         *,

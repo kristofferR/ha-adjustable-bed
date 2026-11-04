@@ -28,7 +28,7 @@ import asyncio
 import contextlib
 import time
 from collections import OrderedDict, deque
-from collections.abc import Awaitable, Callable, Collection
+from collections.abc import Awaitable, Callable, Collection, Coroutine
 from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -270,7 +270,7 @@ class _MergedStream:
                             self.retire(member, CommandOutcome.EXPIRED)
                     if not self.ending:
                         break
-                    await self._clean_up(driver)
+                    await _settled(self._clean_up(driver))
                 if not self.members or context.cancel_event.is_set():
                     break
                 self.wake.clear()
@@ -308,21 +308,26 @@ class _MergedStream:
                 self.retire(member, outcome)
                 if outcome is CommandOutcome.FAILED and failure is not None:
                     member.error = failure
+            # A STOP arriving now cancels this task; the cleanup and release
+            # still finish before the wire lane is handed on.
+            await _settled(self._close(driver))
+
+    async def _close(self, driver: StreamDriver) -> None:
+        try:
+            await self._clean_up(driver)
+        finally:
             try:
-                await self._clean_up(driver)
+                await driver.release_stream()
+            except BaseException as err:
+                for member in self.awaiting_release:
+                    member.error = member.error or err
+                    member.outcome = CommandOutcome.FAILED
+                raise
             finally:
-                try:
-                    await driver.release_stream()
-                except BaseException as err:
-                    for member in self.awaiting_release:
-                        member.error = member.error or err
-                        member.outcome = CommandOutcome.FAILED
-                    raise
-                finally:
-                    # The last members out return after the release, as a
-                    # serial move returns after its STOP.
-                    for member in self.awaiting_release:
-                        member.done.set()
+                # The last members out return after the release, as a
+                # serial move returns after its STOP.
+                for member in self.awaiting_release:
+                    member.done.set()
 
     async def _clean_up(self, driver: StreamDriver) -> None:
         """Run every ending member's cleanup, then raise the first failure."""
@@ -331,9 +336,6 @@ class _MergedStream:
             member = self.ending.popleft()
             try:
                 await driver.end_stream_member(member, tuple(self.members.values()))
-            except asyncio.CancelledError:
-                self.ending.appendleft(member)
-                raise
             except Exception as err:
                 member.error = err
                 member.outcome = CommandOutcome.FAILED
@@ -344,6 +346,20 @@ class _MergedStream:
                 self.awaiting_release.append(member)
         if first_error is not None:
             raise first_error
+
+
+async def _settled(cleanup: Coroutine[Any, Any, None]) -> None:
+    """Finish ``cleanup`` even when the caller is cancelled meanwhile."""
+    task = asyncio.ensure_future(cleanup)
+    try:
+        await asyncio.shield(task)
+    except asyncio.CancelledError:
+        while not task.done():
+            with contextlib.suppress(asyncio.CancelledError):
+                await asyncio.shield(task)
+        if not task.cancelled():
+            task.exception()  # members already carry a cleanup failure
+        raise
 
 
 async def _first_set(*events: asyncio.Event) -> None:
@@ -797,12 +813,38 @@ class DeviceCommandScheduler:
         if self._streams.get(stream.resources) is stream:
             del self._streams[stream.resources]
 
-    def _stop_stream_members(self, resources: Collection[str]) -> None:
-        """End only the members a motor-scoped STOP names."""
+    def has_stream_member(self, resources: Collection[str]) -> bool:
+        """Return whether a live stream member holds any of ``resources``."""
+        return any(
+            _resources_overlap((member.resource,), resources)
+            for stream in self._streams.values()
+            if stream.accepting
+            for member in stream.members.values()
+        )
+
+    def _stop_stream_members(self, resources: Collection[str], stop_epoch: int) -> None:
+        """End only the members a motor-scoped STOP names.
+
+        A stream still queued keeps its other members: it is re-admitted at
+        this STOP's epoch, or finished without writing once it has none left.
+        """
         for stream in tuple(self._streams.values()):
             for member in tuple(stream.members.values()):
                 if _resources_overlap((member.resource,), resources):
                     stream.retire(member, CommandOutcome.STOPPED)
+            handle = stream.handle
+            if handle is None or handle.started_at is not None or handle.future.done():
+                continue
+            # Nothing reached the wire yet, so there is nothing to clean up.
+            while stream.ending:
+                stream.ending.popleft().done.set()
+            if stream.members:
+                handle.context.admitted_stop_epoch = stop_epoch
+            elif handle in self._queue:
+                self._queue.remove(handle)
+                self._finish_locked(
+                    handle, CommandOutcome.STOPPED, invalidated_stop_epoch=stop_epoch
+                )
 
     def admit_stop(
         self,
@@ -975,7 +1017,7 @@ class DeviceCommandScheduler:
         # STOP cancels the whole streamer below.
         wide = self._is_wide(resources)
         if not wide:
-            self._stop_stream_members(resources)
+            self._stop_stream_members(resources, self._stop_epoch)
         self._cancel_matching(
             resources,
             outcome=CommandOutcome.STOPPED,

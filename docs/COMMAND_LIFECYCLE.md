@@ -118,7 +118,8 @@ a prepared reservation, where a streamer cannot start.
 - A member on a motor that already streams replaces it. A member that ends,
   expires or is replaced gets its own cleanup while the others keep moving.
   The last member out runs the profile release, and its call returns after it.
-- A motor-scoped STOP ends only its member. A side or bed-wide STOP, a
+- A motor-scoped STOP, including a cover's own Stop, ends only its member,
+  even while the stream still waits for the link. A side or bed-wide STOP, a
   disconnect or unload ends every member at the stop epoch, and a later member
   waits for that STOP to finish before a new streamer starts.
 - An ordinary command on a streamed motor, such as a preset, replaces the
