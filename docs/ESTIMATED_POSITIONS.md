@@ -56,9 +56,11 @@ is calibrated on its own.
 
 Each time runs from the motor's first movement command. Every calibration
 movement stops by itself after 60 seconds, **Stop, something is wrong** stops
-it at once, and closing the dialog stops it too. Nothing is saved when you
-cancel. Motors you just measured end flat, so their reference is set and they
-start at 0%. Typed times alone set no reference: set it when the bed is flat.
+it at once, and closing the dialog stops it too. Cancelling keeps your previous
+motors and times, but a motor you started measuring needs its reference set
+again, because it may have moved. Motors you just measured end flat, so their
+reference is set and they start at 0%, unless something moved them before you
+saved. Typed times alone set no reference: set it when the bed is flat.
 
 To recalibrate, open **Estimated positions** again and keep **Measure travel
 times now** ticked. Saved positions keep their percentages. To turn the feature

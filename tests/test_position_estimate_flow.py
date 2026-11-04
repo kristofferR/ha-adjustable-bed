@@ -37,6 +37,10 @@ class Bench:
         self.now = 0.0
         self.moves: list[tuple[str, str, int]] = []
         self.stops = 0
+        self.fail_after_stop = False
+        self.started = asyncio.Event()
+        self.admit = asyncio.Event()
+        self.admit.set()
         self._release = asyncio.Event()
         monkeypatch.setattr(pe, "_clock", lambda: self.now)
         monkeypatch.setattr(
@@ -50,13 +54,19 @@ class Bench:
         bed = manager.beds[ADDRESS]
         self.moves.append((motor, direction, duration_ms))
         self._release.clear()
+        await self.admit.wait()  # queued behind earlier work until admitted
         token = bed.begin_move((motor,))
+        self.started.set()
         await self._release.wait()
+        if self.fail_after_stop:
+            bed.end_move(token, direction, None)
+            raise ConnectionError("lost during STOP")
         bed.end_move(token, direction, 0.0)
 
     async def stop(self, *_args: object) -> None:
         self.stops += 1
         self._release.set()
+        self.admit.set()  # STOP ends queued work too
 
 
 @pytest.fixture
@@ -227,3 +237,110 @@ async def test_clearing_every_motor_turns_estimates_off(
     await hass.async_block_till_done()
     manager = pe.position_estimates(hass, entry.entry_id)
     assert manager is not None and not manager.active
+
+
+async def measure_back_from_flat(hass: HomeAssistant, entry: MockConfigEntry) -> str:
+    options = hass.config_entries.options
+    result = await open_estimates(hass, entry)
+    flow_id = result["flow_id"]
+    await options.async_configure(
+        flow_id, {"back": True, "legs": True, "measure": True, "acknowledge": True}
+    )
+    await options.async_configure(flow_id, {"next_step_id": "estimate_flat_confirm"})
+    await settle()
+    return flow_id
+
+
+async def test_a_move_failing_during_stop_is_not_a_measurement(
+    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bench = Bench(hass, monkeypatch)
+    flow_id = await measure_back_from_flat(hass, entry)
+    bench.fail_after_stop = True
+    bench.now += 12.0
+    result = await hass.config_entries.options.async_configure(
+        flow_id, {"next_step_id": "estimate_top"}
+    )
+    assert result["step_id"] == "estimate_retry"
+
+
+async def test_an_earlier_move_is_not_the_calibration(
+    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A card move still running when calibration queues must not be timed."""
+    bench = Bench(hass, monkeypatch)
+    manager = pe.position_estimates(hass, entry.entry_id)
+    assert manager is not None
+    bench.admit.clear()
+    options = hass.config_entries.options
+    result = await open_estimates(hass, entry)
+    flow_id = result["flow_id"]
+    await options.async_configure(
+        flow_id, {"back": True, "legs": True, "measure": True, "acknowledge": True}
+    )
+    manager.beds[ADDRESS].begin_move(("back",))  # an older card hold, not ours
+    await options.async_configure(flow_id, {"next_step_id": "estimate_flat_confirm"})
+    await settle()
+    assert not bench.started.is_set()
+    bench.now += 12.0
+    result = await hass.config_entries.options.async_configure(
+        flow_id, {"next_step_id": "estimate_top"}
+    )
+    assert result["step_id"] == "estimate_retry"
+
+
+async def test_cancel_restores_the_initial_calibration_without_trust(
+    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    Bench(hass, monkeypatch)
+    manager = pe.position_estimates(hass, entry.entry_id)
+    assert manager is not None
+    bed = manager.beds[ADDRESS]
+    bed.configure({"back": (20.0, 10.0), "legs": (10.0, 8.0)})
+    bed.set_reference()
+    bed.motors["back"].percent = 50.0
+    options = hass.config_entries.options
+    result = await open_estimates(hass, entry)
+    flow_id = result["flow_id"]
+    # Deselect legs and recalibrate back, then cancel.
+    await options.async_configure(
+        flow_id, {"back": True, "legs": False, "measure": True, "acknowledge": True}
+    )
+    result = await options.async_configure(flow_id, {"next_step_id": "estimate_cancel"})
+    assert result["reason"] == "estimate_cancelled"
+    assert {m: (e.up_s, e.down_s) for m, e in bed.motors.items()} == {
+        "back": (20.0, 10.0),
+        "legs": (10.0, 8.0),
+    }
+    # The user may have flattened the back for calibration: its old 50% is gone.
+    assert bed.state("back") is EstimateState.UNKNOWN
+    assert bed.state("legs") is EstimateState.TRACKING
+
+
+async def test_a_move_after_the_bottom_withholds_the_reference(
+    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bench = Bench(hass, monkeypatch)
+    options = hass.config_entries.options
+    result = await open_estimates(hass, entry)
+    flow_id = result["flow_id"]
+    await options.async_configure(
+        flow_id, {"back": True, "legs": False, "measure": True, "acknowledge": True}
+    )
+    await options.async_configure(flow_id, {"next_step_id": "estimate_flat_confirm"})
+    await settle()
+    bench.now += 18.0
+    await options.async_configure(flow_id, {"next_step_id": "estimate_top"})
+    await settle()
+    bench.now += 16.0
+    await options.async_configure(flow_id, {"next_step_id": "estimate_bottom"})
+    manager = pe.position_estimates(hass, entry.entry_id)
+    assert manager is not None
+    bed = manager.beds[ADDRESS]
+    later = bed.begin_move(("back",))  # someone raised the back before Submit
+    bed.end_move(later, "up", 5.0)
+    await options.async_configure(flow_id, {"back_up": 18.0, "back_down": 16.0})
+    await hass.async_block_till_done()
+    manager = pe.position_estimates(hass, entry.entry_id)
+    assert manager is not None
+    assert manager.beds[ADDRESS].state("back") is EstimateState.UNKNOWN

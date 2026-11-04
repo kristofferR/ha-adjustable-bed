@@ -12,7 +12,6 @@ for fine tuning. Measured motors end flat, so their reference is set.
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -30,6 +29,7 @@ from .position_estimate import (
     MAX_TRAVEL_S,
     MIN_TRAVEL_S,
     BedEstimate,
+    EstimateReason,
     PositionEstimates,
     async_measure_move,
     async_stop_bed,
@@ -90,7 +90,11 @@ class EstimatedPositionsFlowMixin:
 
     _est_manager: PositionEstimates | None = None
     _est_bed: BedEstimate | None = None
-    _est_initial: frozenset[str] = frozenset()
+    _est_initial: dict[str, tuple[float | None, float | None]]
+    # Only a tracked move newer than this token belongs to the calibration.
+    _est_after: int = 0
+    # Token of each measured motor's lowering move, which ended flat.
+    _est_bottom: dict[str, int]
     _est_queue: list[str]
     _est_motor: str | None = None
     _est_times: dict[str, list[float | None]]
@@ -182,25 +186,31 @@ class EstimatedPositionsFlowMixin:
             else:
                 self._est_manager = manager
                 self._est_bed = bed
-                self._est_initial = frozenset(bed.motors)
+                self._est_initial = {
+                    motor: (estimate.up_s, estimate.down_s)
+                    for motor, estimate in bed.motors.items()
+                }
                 if not chosen:
                     bed.configure({})
                     return self._async_estimate_finish()
+                # Motors being measured must be enabled so their moves are
+                # timed. The final selection applies only when the review is
+                # saved; cancelling restores the initial calibration.
                 bed.configure(
                     {
-                        motor: (
-                            (bed.motors[motor].up_s, bed.motors[motor].down_s)
-                            if motor in bed.motors
-                            else (None, None)
-                        )
-                        for motor in chosen
+                        **self._est_initial,
+                        **{motor: (None, None) for motor in chosen if motor not in bed.motors},
                     }
                 )
                 self._est_times = {
                     motor: [bed.motors[motor].up_s, bed.motors[motor].down_s] for motor in chosen
                 }
                 self._est_measured = set()
+                self._est_bottom = {}
                 self._est_queue = list(chosen) if user_input.get(CONF_MEASURE) else []
+                # Moving a motor to flat by any means ends trust in its old
+                # reference; only a measured flat restores it.
+                bed.invalidate(EstimateReason.NOT_REFERENCED, self._est_queue)
                 self._est_steps = 2 + 3 * len(self._est_queue)
                 return await self._async_estimate_next_motor()
         not_offered = not_offered_motors(controller)
@@ -241,6 +251,7 @@ class EstimatedPositionsFlowMixin:
     def _estimate_start(self, direction: str) -> None:
         manager, bed, motor = self._est_manager, self._est_bed, self._est_motor
         assert manager is not None and bed is not None and motor is not None
+        self._est_after = bed.move_counter
         self._est_task = self.hass.async_create_background_task(
             async_measure_move(self.hass, manager, bed, motor, direction),
             f"{DOMAIN} calibrate {motor} {direction}",
@@ -257,15 +268,23 @@ class EstimatedPositionsFlowMixin:
         self._est_task = None
         if manager is None or bed is None or motor is None or task is None:
             return None
-        elapsed = None if task.done() else bed.move_elapsed(motor)
+        # Only this calibration's own, unfailed move is a measurement.
+        elapsed = None if task.done() else bed.move_elapsed(motor, after=self._est_after)
         try:
             await async_stop_bed(self.hass, manager, bed)
         except Exception:  # noqa: BLE001 - the measurement fails, the flow reports it
             _LOGGER.warning("STOP after a calibration move failed", exc_info=True)
             elapsed = None
-        with contextlib.suppress(Exception, asyncio.CancelledError):
+        try:
             async with asyncio.timeout(_STOP_TIMEOUT_S):
                 await task
+        except asyncio.CancelledError:
+            current = asyncio.current_task()
+            if current is not None and current.cancelling():
+                raise
+        except Exception:  # noqa: BLE001 - a failed move is not a measurement
+            _LOGGER.debug("Calibration move ended with an error", exc_info=True)
+            elapsed = None
         if elapsed is None or not MIN_TRAVEL_S <= elapsed <= MAX_TRAVEL_S:
             return None
         return round(elapsed, 1)
@@ -276,22 +295,29 @@ class EstimatedPositionsFlowMixin:
             self.hass.async_create_background_task(
                 self._async_estimate_stop(), f"{DOMAIN} stop abandoned calibration"
             )
-        self._async_estimate_reload()
+        self._async_estimate_restore()
         parent_remove = getattr(super(), "async_remove", None)
         if parent_remove is not None:
             parent_remove()
 
-    def _async_estimate_reload(self) -> None:
-        """Reload once when the enabled motors changed, so their entities follow."""
+    def _async_estimate_restore(self) -> None:
+        """Cancelled or closed: restore the initial motors and their times.
+
+        Motors that were being measured stay without a reference.
+        """
         bed = self._est_bed
         if bed is None or self._est_finished:
             return
         self._est_finished = True
-        if frozenset(bed.motors) != self._est_initial:
-            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        bed.configure(self._est_initial)
 
     def _async_estimate_finish(self) -> ConfigFlowResult:
-        self._async_estimate_reload()
+        """Reload once when the enabled motors changed, so their entities follow."""
+        bed = self._est_bed
+        if bed is not None and not self._est_finished:
+            self._est_finished = True
+            if frozenset(bed.motors) != frozenset(self._est_initial):
+                self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
         return self.async_create_entry(title="", data=dict(self.config_entry.options))
 
     # ----------------------------------------------------------- flat, raise, lower
@@ -360,6 +386,8 @@ class EstimatedPositionsFlowMixin:
             return await self.async_step_estimate_retry()
         self._est_times[self._est_motor][1] = elapsed
         self._est_measured.add(self._est_motor)
+        assert self._est_bed is not None
+        self._est_bottom[self._est_motor] = self._est_bed.last_move(self._est_motor)
         self._est_queue.pop(0)
         return await self._async_estimate_next_motor()
 
@@ -373,7 +401,7 @@ class EstimatedPositionsFlowMixin:
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         await self._async_estimate_stop()
-        self._async_estimate_reload()
+        self._async_estimate_restore()
         return self.async_abort(reason="estimate_cancelled")
 
     # ----------------------------------------------------------------- review
@@ -403,9 +431,16 @@ class EstimatedPositionsFlowMixin:
                     for motor in self._est_times
                 }
             )
-            if self._est_measured:
-                # Each measured motor ended its last move at the bottom: flat.
-                bed.set_reference(self._est_measured)
+            # A measured motor ended its lowering at the bottom: flat, unless
+            # anything moved it since. Then it stays without a reference.
+            flat = [
+                motor
+                for motor in self._est_measured
+                if bed.last_move(motor) == self._est_bottom.get(motor)
+                and bed.move_elapsed(motor, after=0) is None
+            ]
+            if flat:
+                bed.set_reference(flat)
             return self._async_estimate_finish()
         return self.async_show_form(
             step_id="estimate_review",

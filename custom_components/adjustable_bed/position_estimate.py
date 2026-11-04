@@ -216,6 +216,8 @@ class BedEstimate:
         self.motors: dict[str, MotorEstimate] = {}
         self._moves: dict[int, _Move] = {}
         self._next_move = 0
+        # Token of the latest tracked move of each motor, started or finished.
+        self._last_move: dict[str, int] = {}
 
     @property
     def key(self) -> str:
@@ -280,11 +282,25 @@ class BedEstimate:
         self._moves[self._next_move] = _Move(
             motors, {motor: self.motors[motor].generation for motor in motors}, _clock()
         )
+        for motor in motors:
+            self._last_move[motor] = self._next_move
         return self._next_move
 
-    def move_elapsed(self, motor: str) -> float | None:
-        """Seconds since the running tracked move of ``motor`` started, if any."""
-        started = [move.started for move in self._moves.values() if motor in move.motors]
+    @property
+    def move_counter(self) -> int:
+        """Token of the latest tracked move; later moves have larger tokens."""
+        return self._next_move
+
+    def last_move(self, motor: str) -> int:
+        return self._last_move.get(motor, 0)
+
+    def move_elapsed(self, motor: str, *, after: int) -> float | None:
+        """Seconds since a still-running, unfailed move of ``motor`` newer than ``after`` started."""
+        started = [
+            move.started
+            for token, move in self._moves.items()
+            if token > after and motor in move.motors and not move.failed
+        ]
         return _clock() - max(started) if started else None
 
     def end_move(self, token: int, direction: str, seconds: float | None) -> None:
