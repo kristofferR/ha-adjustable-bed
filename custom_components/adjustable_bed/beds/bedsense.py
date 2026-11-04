@@ -13,8 +13,10 @@ from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
 from ..detection import is_mac_like_name
+from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -25,47 +27,15 @@ from .base import (
     PositionNumberSpec,
     SideBoundController,
 )
-from .bedsense_commands import ACTIONS
-from .bedsense_memory import MEMORY_RULES
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
-CHARACTERISTIC = "0000ffe1-0000-1000-8000-00805f9b34fb"
-LAYOUTS = {
-    1: ("back", "waist", "back_and_leg", "legs"),
-    2: ("back", "waist", "head", "legs"),
-    3: ("back", "waist", "head", "legs"),
-    4: ("back", "hip", "head", "legs"),
-    5: ("back", "hip", "head", "legs"),
-    6: ("back",),
-    7: ("back", "legs"),
-    8: ("back", "rise_and_fall"),
-    9: ("back", "hip", "lift", "legs"),
-}
+CHARACTERISTIC = codec.CHARACTERISTIC_UUID
+LAYOUTS = BEDSENSE.layouts
+ACTIONS = BEDSENSE.actions
 MEMORIES = ("m1", "m2", "tv", "zero_g", "anti_snore")
-
-
-def bedsense_layout(name: str | None) -> int:
-    """Exact, case-sensitive selection precedence; not a discovery signature."""
-    name = name or ""
-    if "JQ-D" in name:
-        return 2
-    if "JQ" in name or "NQ" in name:
-        return 1
-    if "IQ" in name:
-        return 4
-    if "LQ" in name:
-        return 5
-    if "KQ" in name and "H" not in name:
-        return 6
-    if "MQ" in name or "UPS" in name:
-        return 7
-    if "S4-2" in name:
-        return 9
-    if "H" in name and "S4" not in name:
-        return 8
-    return 3
+__all__ = ["CHARACTERISTIC", "BedSenseController", "BedSenseSession", "bedsense_layout"]
 
 
 def _action(key: str) -> MotorCommandCallable:
@@ -92,6 +62,8 @@ class BedSenseSession:
 
 class BedSenseController(BedController):
     """One GATT target, with explicit app-labelled controls for nine layouts."""
+
+    profile: BedSenseProfile = BEDSENSE
 
     def __init__(
         self,
@@ -349,13 +321,13 @@ class BedSenseController(BedController):
             for characteristic in roles:
                 await client.start_notify(characteristic, self._notification)
                 self._subscribed.append(characteristic)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(self.profile.read_delay_ms / 1000)
             for characteristic in roles:
                 async with self._ble_lock:
                     data = await client.read_gatt_char(characteristic)
                 self._parse(bytes(data), "read")
-            # askState's first write is 2 seconds after setup; then 200 ms spacing.
-            await asyncio.sleep(1.8)
+            # askState's first write follows setup by query_start_ms.
+            await asyncio.sleep((self.profile.query_start_ms - self.profile.read_delay_ms) / 1000)
             await self._query_memory(initial_delay=False)
         except BaseException:
             await self.stop_notify()
@@ -381,7 +353,7 @@ class BedSenseController(BedController):
 
     def _parse(self, data: bytes, source: str) -> None:
         s = data.hex(" ").upper() + " "
-        for rule in MEMORY_RULES:
+        for rule in self.profile.memory_rules:
             if rule.required_n is not None and rule.required_n != self._n:
                 continue
             if not (s == rule.pattern if rule.exact else rule.pattern in s):
@@ -433,13 +405,13 @@ class BedSenseController(BedController):
 
     async def _query_memory(self, *, initial_delay: bool = True) -> None:
         if initial_delay:
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.profile.query_start_ms / 1000)
         group = "68" if self.layout in (6, 8) else "7" if self.layout == 7 else "default"
         for index, slot in enumerate((3, 4, 1, 2, 5)):
             if self._coordinator.cancel_command.is_set():
                 return
             if index:
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(self.profile.query_spacing_ms / 1000)
             await self.write_command(ACTIONS[f"query_{group}_{slot}"].frame)
 
     async def execute_action(self, key: str) -> None:

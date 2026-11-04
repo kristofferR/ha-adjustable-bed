@@ -11,6 +11,7 @@ from typing import NotRequired, TypedDict, cast
 import pytest
 
 from custom_components.adjustable_bed import motion_bed_protocol as protocol
+from custom_components.adjustable_bed.codec import ff_frame
 
 
 class VectorInputs(TypedDict):
@@ -77,7 +78,7 @@ def _run(vector: Vector) -> str | list[str] | None:
         decoded = protocol.decode_source_hex(inputs["s"])
         return decoded.hex().upper() if decoded is not None else None
     if function in ("addsum", "addcrc"):
-        checksum = protocol.additive_checksum if function == "addsum" else protocol.with_crc
+        checksum = ff_frame.with_sum if function == "addsum" else ff_frame.with_crc
         result = checksum(bytes.fromhex(inputs["s"]))
     elif function == "pressure_live":
         result = protocol.build_pressure_live(inputs["index"], inputs["value"])
@@ -162,11 +163,11 @@ def test_literal_catalogue_is_complete_and_immutable() -> None:
 
 
 def test_checksums_preserve_minimal_width_and_full_crc_header() -> None:
-    assert protocol.additive_checksum(b"\x00") == b"\x00"
-    assert protocol.additive_checksum(b"\x01") == b"\x01\x01"
-    assert protocol.additive_checksum(b"\xff\x01") == b"\xff\x01\x00\x01"
-    assert protocol.with_crc(b"") == b"\xff\xff"
-    assert protocol.with_crc(b"123456789")[-2:] == bytes.fromhex("374B")
+    assert ff_frame.with_sum(b"\x00") == b"\x00"
+    assert ff_frame.with_sum(b"\x01") == b"\x01\x01"
+    assert ff_frame.with_sum(b"\xff\x01") == b"\xff\x01\x00\x01"
+    assert ff_frame.with_crc(b"") == b"\xff\xff"
+    assert ff_frame.with_crc(b"123456789")[-2:] == bytes.fromhex("374B")
 
 
 @pytest.mark.parametrize("mode", list(protocol.AlarmMode))
@@ -179,7 +180,7 @@ def test_alarm_all_six_modes_and_uninitialized_modular_switch(
     )
     assert frame[:8] == bytes.fromhex("FFFFFFFF01000213")
     assert frame[8:17] == bytes((switch, 0, 0, 0, 0, 1, mode, 0, 0))
-    assert frame == protocol.additive_checksum(frame[:17])
+    assert frame == ff_frame.with_sum(frame[:17])
 
 
 @pytest.mark.parametrize(
@@ -319,5 +320,4 @@ def test_invalid_builder_domains_are_rejected_before_io(build: Callable[[], byte
 
 @pytest.mark.parametrize("vector", [v for v in _FIXTURE["vectors"] if v["function"] == "addsum"], ids=lambda vector: vector["id"])
 def test_existing_additive_helper_matches_all_accepted_vectors(vector: Vector) -> None:
-    from custom_components.adjustable_bed.beds.solace import _with_additive_checksum
-    assert _with_additive_checksum(bytes.fromhex(vector["inputs"]["s"])) == bytes.fromhex(vector["expected"])
+    assert ff_frame.with_sum(bytes.fromhex(vector["inputs"]["s"])) == bytes.fromhex(vector["expected"])

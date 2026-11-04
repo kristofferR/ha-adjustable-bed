@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.solace import SolaceController, SolaceProfile
+from custom_components.adjustable_bed.beds.solace import SolaceController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.pairing import (
     effective_child_data,
     supports_single_address_pairing,
 )
+from custom_components.adjustable_bed.profiles.ff_frame import SOLACE_PROFILES
 from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
     is_valid_variant_for_bed_type,
@@ -84,10 +85,10 @@ async def test_factory_requires_explicit_woosa_selection(
     )
     if variant == SOLACE_VARIANT_WOOSA:
         assert isinstance(controller, WoosaController)
-        assert controller.profile is SolaceProfile.WOOSA
+        assert controller.profile is SOLACE_PROFILES["woosa"]
     else:
         assert type(controller) is SolaceController
-        assert controller.profile is SolaceProfile.COMMON
+        assert controller.profile is SOLACE_PROFILES["common"]
         assert not controller.supports_massage
 
 
@@ -128,7 +129,7 @@ async def test_options_select_woosa_and_offline_reload(hass: HomeAssistant) -> N
     coordinator = AdjustableBedCoordinator(hass, entry)
     await coordinator.async_prime_offline_controller()
     assert isinstance(coordinator.capability_controller, WoosaController)
-    assert coordinator.capability_controller.profile is SolaceProfile.WOOSA
+    assert coordinator.capability_controller.profile is SOLACE_PROFILES["woosa"]
     assert coordinator.capability_controller.supports_massage
 
 
@@ -150,7 +151,7 @@ async def test_paired_options_preserve_different_side_profiles(hass: HomeAssista
     assert left_data[CONF_PROTOCOL_VARIANT] == SOLACE_VARIANT_WOOSA
     assert right_data[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
     for side_data, expected in (
-        (left_data, SolaceProfile.WOOSA), (right_data, SolaceProfile.COMMON)
+        (left_data, SOLACE_PROFILES["woosa"]), (right_data, SOLACE_PROFILES["common"])
     ):
         child = AdjustableBedCoordinator(hass, MockConfigEntry(domain=DOMAIN, data=side_data))
         await child.async_prime_offline_controller()
