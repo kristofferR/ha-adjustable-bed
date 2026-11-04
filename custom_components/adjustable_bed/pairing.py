@@ -24,9 +24,12 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
     BED_TYPE_CASPER_BASE,
+    BED_TYPE_ERGOMOTION,
+    BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR,
     BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
+    BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
@@ -139,6 +142,9 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_ERGOMOTION,
+        BED_TYPE_ERGOMOTION_4,
+        BED_TYPE_KEESON,
         BED_TYPE_SBI,
         BED_TYPE_RONDURE,
         BED_TYPE_OKIN_CB24,
@@ -161,6 +167,14 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_KEESON:
+        # Auto can resolve to incompatible P2/JSON/OEM frames at connection.
+        return protocol_variant in {"base", "ergomotion"}
+    if bed_type == BED_TYPE_ERGOMOTION_4:
+        from .ergomotion4_profiles import PRODUCTS
+
+        product = PRODUCTS.get(product_type or "H")
+        return product is not None and product.protocol == "P1"
     if bed_type == BED_TYPE_GMMOTOR:
         from .gmmotor_profiles import load_profile
 

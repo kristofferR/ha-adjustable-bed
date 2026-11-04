@@ -21,6 +21,7 @@ FAMILY = CodecFamily(
             "comfort_enhancements",
             "coolbase",
             "ergo_slim",
+            "ergomotion_4",
             "ergomotion_app",
             "furnimove",
             "glideaway_motion",

@@ -284,6 +284,17 @@ def render_keeson_carriers() -> str:
                 _knames(keys),
             )
         )
+    split = [key for key, profile in keeson_profiles.PROFILES.items() if profile.single_side]
+    for side, selector in keeson_codec.SIDE_SELECTORS.items():
+        frame = keeson_profiles.encode(keeson_profiles.PROFILES[split[0]], _K.MOTOR_HEAD_UP, side=side)
+        rows.append(
+            (
+                f"K1 `E6`, little-endian, {side.title()} side `{selector:02X}`",
+                "`E6 FE 16` + word + side + checksum",
+                _hex(frame),
+                _knames(split),
+            )
+        )
     return _block(_table(("Frame", "Layout", "Head up", "Profiles"), rows))
 
 

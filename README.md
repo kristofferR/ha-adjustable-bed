@@ -144,6 +144,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [Q-Plus Adjustable Remote app](docs/beds/q-plus-adjustable-remote.md) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
 | 🧪 [Serta MP Remote app](docs/beds/serta-mp-remote.md) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
 | 🧪 [Omazz Adjusto III app](docs/beds/omazz-adjusto-iii.md) | Reachable RemoteB controls and alarm tables; hardware unverified |
+| 🧪 [Ergomotion 4.0](docs/beds/ergomotion-4.md) | Explicit H/M1–M22/M30 layouts and 21 catalog products; P1 Left/Right/Both, RGB, massage and alarms; hardware unverified |
 | 🧪 [Ergomotion app](docs/beds/ergomotion.md) | Explicit B1/B2/C1/D1 app layouts; hardware unverified |
 | 🧪 [ROW Control app](docs/beds/row-control.md) | Elevate, Lifestyle, Curve, Lifestyle Plus and Zero-G Box; hardware unverified |
 | 🧪 [Ergo Slim app](docs/beds/ergo-slim.md) | Explicit A/B/C app layouts; hardware unverified |
