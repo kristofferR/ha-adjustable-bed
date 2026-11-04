@@ -174,8 +174,11 @@ A new app is normally a profile plus its vectors, not a new controller.
    codec's vector file (for example `tests/jiecang_vectors.py`) and run its
    harness (`tests/test_jiecang_vectors.py`). An existing codec is the right one
    only if it reproduces every frozen literal byte for byte. Shared names, UUIDs,
-   packet resemblance or constructor calls are not proof. Families without a
-   codec yet are listed, with their #745 family, in `tests/test_codec_contract.py`.
+   packet resemblance or constructor calls are not proof. Each codec family
+   registers in its own `tests/codec_families/<family>.py`: the bed types it
+   backs, and the ones still `pending` with their #745 item. Standalone bed types
+   are in `tests/codec_families/_standalone.py`. A migration moves a bed type
+   from `pending` to `bed_types`; `tests/test_codec_contract.py` checks them all.
    - **A codec reproduces the vectors:** add a profile to its
      `profiles/<family>.py`. Timing, layouts, presets, memory slots, setup
      schedules and name rules are profile data, from this app's evidence only.
@@ -256,7 +259,8 @@ A new app is normally a profile plus its vectors, not a new controller.
     A profile over an existing codec adds a profile section, with the format's
     fixed headings, to that codec's guide. A new codec gets a new codec guide in
     the [codec guide format](docs/BED_GUIDE_FORMAT.md#codec-guides), with a
-    renderer in `scripts/generate_codec_docs.py` for every table its code knows.
+    renderer in its own `scripts/codec_docs/<family>.py` for every table its code
+    knows.
     A protocol outside the codec split gets `docs/beds/newbed.md` in the
     single-protocol format. Evidence and dispositions go in the discovery ledger,
     not the guide.
