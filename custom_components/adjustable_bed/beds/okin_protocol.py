@@ -1,13 +1,8 @@
-"""Shared Okin protocol implementation.
+"""Okin command-word helpers for the routes not yet on ``codec/okin_nframe.py``.
 
-This module provides the core Okin BLE protocol used by multiple bed types:
-- Okimat (UUID-based writes)
-- DewertOkin (handle-based writes)
-- Leggett & Platt Okin variant (UUID-based writes)
-
-All use the same 6-byte command format: [0x04, 0x02, <4-byte-command-big-endian>]
-
-The protocol was originally developed by OKIN (now part of DewertOkin GmbH).
+The 32-bit routes (Okimat, DewertOkin, Customatic, Leggett Okin, RF ECO BT)
+frame through the codec. The 40-bit and 96-bit routes still build their
+frames here until they move onto it (#759).
 """
 
 from __future__ import annotations
@@ -36,18 +31,6 @@ def int_to_bytes(value: int) -> list[int]:
         (value >> 8) & 0xFF,
         value & 0xFF,
     ]
-
-
-def build_okin_command(command_value: int) -> bytes:
-    """Build a 6-byte Okin protocol command.
-
-    Args:
-        command_value: 32-bit integer representing the command
-
-    Returns:
-        6-byte command: [0x04, 0x02, <4-byte-command>]
-    """
-    return bytes([0x04, 0x02] + int_to_bytes(command_value))
 
 
 def build_cst_command(

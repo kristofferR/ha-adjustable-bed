@@ -13,10 +13,8 @@ from custom_components.adjustable_bed.beds.dewertokin_rf_gateway import (
     DewertOkinRfGatewayController,
     DewertOkinUuidRfGatewayController,
 )
-from custom_components.adjustable_bed.beds.okin_handle import (
-    OkinHandleCommands,
-    OkinHandleController,
-)
+from custom_components.adjustable_bed.beds.okin_handle import OkinHandleController
+from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_OKIN_HANDLE,
@@ -242,15 +240,9 @@ async def test_rf_gateway_back_up_uses_8_byte_rf_packet(
 
 def test_rf_gateway_wraps_okin_payload_order_and_checksum() -> None:
     """Test RF-Gateway framing preserves Okin payload order and checksum."""
-    assert DewertOkinRfGatewayController._wrap_rf_gateway_frame(
-        OkinHandleCommands.FLAT
-    ) == bytes.fromhex("e5fe1610000000f6")
-    assert DewertOkinRfGatewayController._wrap_rf_gateway_frame(
-        OkinHandleCommands.UNDERLIGHT
-    ) == bytes.fromhex("e5fe160002000004")
-    assert DewertOkinRfGatewayController._wrap_rf_gateway_frame(
-        OkinHandleCommands.STOP
-    ) == bytes.fromhex("e5fe160000000006")
+    assert codec.gateway_frame(0x10000000) == bytes.fromhex("e5fe1610000000f6")
+    assert codec.gateway_frame(0x00020000) == bytes.fromhex("e5fe160002000004")
+    assert codec.gateway_frame(0) == bytes.fromhex("e5fe160000000006")
 
 
 async def test_rf_gateway_keeps_standard_dewertokin_motor_keys(

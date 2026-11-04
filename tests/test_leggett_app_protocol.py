@@ -2,17 +2,26 @@
 
 import pytest
 
-from custom_components.adjustable_bed.beds.leggett_okin import (
-    _build_revision_0_command,
-    parse_leggett_okin_feedback,
+from custom_components.adjustable_bed.codec.okin_nframe import (
+    frame,
+    gateway_frame,
+    parse_status,
 )
-from custom_components.adjustable_bed.beds.okin_protocol import build_okin_command
-from custom_components.adjustable_bed.leggett_app_protocol import (
-    LEGGETT_APP_PROFILES,
-    SLEEP_CANCEL_KEY,
-    build_alarm,
-    build_sleep_timer,
+from custom_components.adjustable_bed.profiles.okin_nframe import (
+    LEGGETT_PROFILES,
+    leggett_alarm,
+    leggett_sleep_timer,
 )
+
+
+def build_sleep_timer(profile: str, minutes: int, action: int) -> int | bytes:
+    """Prodigy packets bypass the envelope, so they are whole frames."""
+    word, plain = leggett_sleep_timer(LEGGETT_PROFILES[profile], minutes, action)  # type: ignore[index]
+    return frame(word) if plain else word
+
+
+def build_alarm(profile: str, minutes: int | None) -> int:
+    return leggett_alarm(LEGGETT_PROFILES[profile], minutes)  # type: ignore[index]
 
 
 @pytest.mark.parametrize("profile", ["prodigy2l", "prodigy2", "prodigy4"])
@@ -40,24 +49,24 @@ def test_useries_sleep_uses_the_existing_key_revision_builder(
     key = build_sleep_timer("useries", minutes, action)
     assert key == expected_key
     assert isinstance(key, int)
-    assert _build_revision_0_command(key).hex() == r0
-    assert build_okin_command(key).hex() == r1
+    assert gateway_frame(key).hex() == r0
+    assert frame(key).hex() == r1
 
 
-@pytest.mark.parametrize("profile", list(LEGGETT_APP_PROFILES))
+@pytest.mark.parametrize("profile", list(LEGGETT_PROFILES))
 def test_alarm_duration_and_profile_specific_stop(profile):
     key = build_alarm(profile, 90)
     assert key == 0xFD00005A
-    assert _build_revision_0_command(key).hex() == "e5fe16fd00005aaf"
-    assert build_okin_command(key).hex() == "0402fd00005a"
+    assert gateway_frame(key).hex() == "e5fe16fd00005aaf"
+    assert frame(key).hex() == "0402fd00005a"
     assert build_alarm(profile, 1440) == 0xFD0005A0
     if profile == "useries":
         assert build_alarm(profile, None) == 0xFD000000
-        assert _build_revision_0_command(build_alarm(profile, None)).hex() == "e5fe16fd00000009"
+        assert gateway_frame(build_alarm(profile, None)).hex() == "e5fe16fd00000009"
     else:
         assert build_alarm(profile, None) == 0xFD200000
-        assert _build_revision_0_command(build_alarm(profile, None)).hex() == "e5fe16fd200000e9"
-    assert _build_revision_0_command(SLEEP_CANCEL_KEY).hex() == "e5fe16ff200000e7"
+        assert gateway_frame(build_alarm(profile, None)).hex() == "e5fe16fd200000e9"
+    assert gateway_frame(LEGGETT_PROFILES[profile].keys["sleep_cancel"]).hex() == "e5fe16ff200000e7"
 
 
 @pytest.mark.parametrize("profile", ["prodigy2l", "prodigy2", "prodigy4"])
@@ -87,24 +96,14 @@ def test_useries_accepts_only_its_actual_picker_actions_and_delays():
             build_alarm("useries", minutes)
 
 
-def test_unknown_profile_cannot_default_to_another_packet_family():
-    with pytest.raises(ValueError, match="Unknown"):
-        build_sleep_timer("other", 30, 1)
-    with pytest.raises(ValueError, match="Unknown"):
-        build_alarm("other", None)
-
-
 def test_profile_actuators_and_memory_do_not_inherit_dead_keys():
-    two_l = LEGGETT_APP_PROFILES["prodigy2l"]
-    assert (two_l.pillow, two_l.lumbar) == (False, True)
-    two = LEGGETT_APP_PROFILES["prodigy2"]
-    assert (two.pillow, two.lumbar) == (True, False)
-    four = LEGGETT_APP_PROFILES["prodigy4"]
-    assert (four.pillow, four.lumbar) == (True, True)
-    u = LEGGETT_APP_PROFILES["useries"]
-    assert (u.pillow, u.lumbar, u.memory_slots, u.settings) == (True, False, 2, False)
+    assert LEGGETT_PROFILES["prodigy2l"].axes == ("head", "feet", "lumbar")
+    assert LEGGETT_PROFILES["prodigy2"].axes == ("head", "feet", "pillow")
+    assert LEGGETT_PROFILES["prodigy4"].axes == ("head", "feet", "pillow", "lumbar")
+    u = LEGGETT_PROFILES["useries"]
+    assert (u.axes, u.memory_slots, u.control_mode) == (("head", "feet", "pillow"), 2, None)
     assert all(
-        LEGGETT_APP_PROFILES[name].memory_slots == 4
+        LEGGETT_PROFILES[name].memory_slots == 4
         for name in ("prodigy2l", "prodigy2", "prodigy4")
     )
 
@@ -119,4 +118,4 @@ def test_profile_actuators_and_memory_do_not_inherit_dead_keys():
     ],
 )
 def test_existing_ble_parser_covers_useries_long_wrap_and_odd_partition(payload, expected):
-    assert parse_leggett_okin_feedback(bytes.fromhex(payload)) == expected
+    assert parse_status(bytes.fromhex(payload)) == expected

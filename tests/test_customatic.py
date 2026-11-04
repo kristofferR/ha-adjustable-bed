@@ -9,13 +9,13 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.beds.customatic import (
-    COMMAND_CHARACTERISTIC,
-    COMMAND_SERVICE,
     DEVICE_INFO_FIELDS,
     DEVICE_INFO_SERVICE,
     CustomaticController,
-    command_frame,
 )
+from custom_components.adjustable_bed.codec.okin_nframe import SERVICE_UUID as COMMAND_SERVICE
+from custom_components.adjustable_bed.codec.okin_nframe import WRITE_UUID as COMMAND_CHARACTERISTIC
+from custom_components.adjustable_bed.codec.okin_nframe import frame as command_frame
 
 
 def make_controller(

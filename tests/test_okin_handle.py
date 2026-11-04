@@ -10,9 +10,6 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_handle import (
-    OkinHandleCommands,
-)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     CONF_BED_TYPE,
@@ -24,6 +21,27 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+
+class OkinHandleCommands:
+    """Frames the pre-v5 DewertOkin controller sent, pinned as literals."""
+
+    FLAT = bytes.fromhex("040210000000")
+    ZERO_G = bytes.fromhex("040200004000")
+    TV = bytes.fromhex("040200003000")
+    QUIET_SLEEP = bytes.fromhex("040200008000")
+    MEMORY_1 = bytes.fromhex("040200001000")
+    MEMORY_2 = bytes.fromhex("040200002000")
+    HEAD_UP = bytes.fromhex("040200000001")
+    HEAD_DOWN = bytes.fromhex("040200000002")
+    FOOT_UP = bytes.fromhex("040200000004")
+    FOOT_DOWN = bytes.fromhex("040200000008")
+    WAVE_MASSAGE = bytes.fromhex("040280000000")
+    HEAD_MASSAGE = bytes.fromhex("040200000800")
+    FOOT_MASSAGE = bytes.fromhex("040200000400")
+    MASSAGE_OFF = bytes.fromhex("040202000000")
+    UNDERLIGHT = bytes.fromhex("040200020000")
+    STOP = bytes.fromhex("040200000000")
 
 
 @pytest.fixture
@@ -246,7 +264,7 @@ class TestOkinHandlePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await coordinator.controller.preset_flat()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -263,7 +281,7 @@ class TestOkinHandlePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await coordinator.controller.preset_zero_g()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -280,7 +298,7 @@ class TestOkinHandlePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await coordinator.controller.preset_tv()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -297,7 +315,7 @@ class TestOkinHandlePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await coordinator.controller.preset_anti_snore()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -323,7 +341,7 @@ class TestOkinHandlePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await coordinator.controller.preset_memory(memory_num)
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
