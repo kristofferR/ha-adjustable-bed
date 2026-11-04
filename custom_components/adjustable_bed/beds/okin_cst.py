@@ -68,7 +68,6 @@ class OkinCstController(BedController):
     def __init__(
         self, coordinator: AdjustableBedCoordinator, variant: str = VARIANT_AUTO
     ) -> None:
-        """Initialize the OKIN CST controller."""
         super().__init__(coordinator)
         self._motor_state: dict[str, int] = {}
         self._massage_wave_index: int | None = None
@@ -92,7 +91,6 @@ class OkinCstController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
         return OKIMAT_WRITE_CHAR_UUID
 
     # Capability properties
@@ -356,14 +354,12 @@ class OkinCstController(BedController):
     # Motor movement helpers
 
     def _get_motor_command(self) -> int:
-        """Calculate combined motor command from active motor states."""
         command = 0
         for value in self._motor_state.values():
             command |= value
         return command
 
     async def _move_motor(self, motor: str, command_value: int | None) -> None:
-        """Move a motor or stop it."""
         if self._profile.key == OKIN_CST_VARIANT_NECTAR_MOVE:
             if command_value is None:
                 self._motor_state.pop(motor, None)
@@ -509,71 +505,55 @@ class OkinCstController(BedController):
     # Motor control - Back/Head (primary)
 
     async def move_head_up(self) -> None:
-        """Move head/back up."""
         await self._move_motor("back", CstMotorCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
-        """Move head/back down."""
         await self._move_motor("back", CstMotorCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
-        """Stop head/back motor."""
         await self._move_motor("back", None)
 
     async def move_back_up(self) -> None:
-        """Move back up."""
         await self._move_motor("back", CstMotorCommands.HEAD_UP)
 
     async def move_back_down(self) -> None:
-        """Move back down."""
         await self._move_motor("back", CstMotorCommands.HEAD_DOWN)
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self._move_motor("back", None)
 
     # Motor control - Legs/Feet
 
     async def move_legs_up(self) -> None:
-        """Move legs up."""
         await self._move_motor("legs", CstMotorCommands.FOOT_UP)
 
     async def move_legs_down(self) -> None:
-        """Move legs down."""
         await self._move_motor("legs", CstMotorCommands.FOOT_DOWN)
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
         await self._move_motor("legs", None)
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
         await self._move_motor("legs", CstMotorCommands.FOOT_UP)
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
         await self._move_motor("legs", CstMotorCommands.FOOT_DOWN)
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         await self._move_motor("legs", None)
 
     # Motor control - Lumbar
 
     async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
         await self._move_motor("lumbar", CstMotorCommands.LUMBAR_UP)
 
     async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
         await self._move_motor("lumbar", CstMotorCommands.LUMBAR_DOWN)
 
     async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
         await self._move_motor("lumbar", None)
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
         self._motor_state = {}
         if self._profile.key == OKIN_CST_VARIANT_NECTAR_MOVE:
             await self._send_explicit_stop_sequence()
@@ -583,19 +563,15 @@ class OkinCstController(BedController):
     # Presets
 
     async def preset_flat(self) -> None:
-        """Go to flat position."""
         await self._send_preset(CstRemoteCommands.FLAT)
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
         await self._send_preset(CstRemoteCommands.ZERO_G)
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
         await self._send_preset(CstRemoteCommands.ANTI_SNORE)
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position."""
         await self._send_preset(CstRemoteCommands.LOUNGE)
 
     async def preset_reading(self) -> None:
@@ -603,7 +579,6 @@ class OkinCstController(BedController):
         await self._send_preset(CstRemoteCommands.READING)
 
     async def preset_incline(self) -> None:
-        """Go to incline/TV position."""
         await self._send_preset(CstRemoteCommands.INCLINE)
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -646,21 +621,17 @@ class OkinCstController(BedController):
     # Lights
 
     async def lights_on(self) -> None:
-        """Turn on lights."""
         await self._send_button_press(control_value=CstRemoteCommands.LIGHT_ON)
 
     async def lights_off(self) -> None:
-        """Turn off lights."""
         await self._send_button_press(control_value=CstRemoteCommands.LIGHT_OFF)
 
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
         await self._send_button_press(motor_value=CstRemoteCommands.LIGHT_TOGGLE)
 
     # Massage
 
     async def massage_off(self) -> None:
-        """Turn massage off."""
         await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_OFF)
 
     async def massage_toggle(self) -> None:
@@ -668,29 +639,23 @@ class OkinCstController(BedController):
         await self._send_profile_fields(self._profile.massage_toggle)
 
     async def massage_intensity_up(self) -> None:
-        """Increase overall massage intensity."""
         await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_INTENSITY)
 
     async def massage_intensity_down(self) -> None:
-        """Decrease overall massage intensity."""
         await self._send_button_press(
             motor_value=CstRemoteCommands.MASSAGE_INTENSITY_MINUS
         )
 
     async def massage_head_up(self) -> None:
-        """Increase head-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_head_up)
 
     async def massage_head_down(self) -> None:
-        """Decrease head-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_head_down)
 
     async def massage_foot_up(self) -> None:
-        """Increase foot-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_foot_up)
 
     async def massage_foot_down(self) -> None:
-        """Decrease foot-zone massage intensity."""
         await self._send_profile_fields(self._profile.massage_foot_down)
 
     async def _send_profile_fields(self, fields: CstFields | None) -> None:

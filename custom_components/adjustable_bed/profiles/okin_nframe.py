@@ -810,12 +810,12 @@ class CstProduct:
     """Capabilities and product-specific command routing for one CST app."""
 
     key: str
-    motors: tuple[str, ...]
-    lounge: bool
-    incline: bool
     memory_slots: tuple[CstMemorySlot, ...]
-    lights: bool
     massage_style: Literal["none", "global", "zoned", "increase_only"]
+    motors: tuple[str, ...] = ("head", "feet")
+    lounge: bool = True
+    incline: bool = True
+    lights: bool = True
     reading: bool = False
     light_toggle_only: bool = False
     memory_save_response_feedback: bool = False
@@ -865,20 +865,14 @@ _ZONED_SUPPORT: CstMassageFields = {
 CST_PRODUCTS: Final[dict[str, CstProduct]] = {
     OKIN_CST_VARIANT_SANCTUARY: CstProduct(
         key=OKIN_CST_VARIANT_SANCTUARY,
-        motors=("head", "feet"),
-        lounge=True,
         incline=False,
         memory_slots=(_MEMORY_ZERO_G, _MEMORY_LOUNGE),
-        lights=True,
         massage_style="zoned",
         massage_toggle=CstFields(secondary=CstRemoteCommands.MASSAGE_FULL_BODY),
         **_ZONED_SANCTUARY,
     ),
     OKIN_CST_VARIANT_RESIDENT: CstProduct(
         key=OKIN_CST_VARIANT_RESIDENT,
-        motors=("head", "feet"),
-        lounge=True,
-        incline=True,
         memory_slots=(*_THREE_MEMORIES, _MEMORY_M),
         lights=False,
         massage_style="zoned",
@@ -888,19 +882,13 @@ CST_PRODUCTS: Final[dict[str, CstProduct]] = {
     OKIN_CST_VARIANT_AVIADA: CstProduct(
         key=OKIN_CST_VARIANT_AVIADA,
         motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
         memory_slots=_THREE_MEMORIES,
-        lights=True,
         massage_style="global",
     ),
     OKIN_CST_VARIANT_BOB: CstProduct(
         key=OKIN_CST_VARIANT_BOB,
-        motors=("head", "feet"),
-        lounge=True,
         incline=False,
         memory_slots=(_MEMORY_ZERO_G, _MEMORY_LOUNGE),
-        lights=True,
         massage_style="zoned",
         massage_toggle=CstFields(secondary=CstRemoteCommands.MASSAGE_FULL_BODY),
         **_ZONED_BOB,
@@ -908,57 +896,40 @@ CST_PRODUCTS: Final[dict[str, CstProduct]] = {
     OKIN_CST_VARIANT_CONTEMPO: CstProduct(
         key=OKIN_CST_VARIANT_CONTEMPO,
         motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
         memory_slots=_THREE_MEMORIES,
-        lights=True,
         massage_style="global",
     ),
     OKIN_CST_VARIANT_CAREFREE: CstProduct(
         key=OKIN_CST_VARIANT_CAREFREE,
-        motors=("head", "feet"),
         lounge=False,
         incline=False,
         memory_slots=(_MEMORY_ZERO_G,),
-        lights=True,
         massage_style="none",
     ),
     OKIN_CST_VARIANT_CLARITY: CstProduct(
         key=OKIN_CST_VARIANT_CLARITY,
-        motors=("head", "feet"),
-        lounge=True,
-        incline=True,
         memory_slots=_THREE_MEMORIES,
-        lights=True,
         massage_style="global",
     ),
     OKIN_CST_VARIANT_MF900: CstProduct(
         key=OKIN_CST_VARIANT_MF900,
         motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
         memory_slots=_THREE_MEMORIES,
-        lights=True,
         massage_style="global",
     ),
     OKIN_CST_VARIANT_SUPPORT: CstProduct(
         key=OKIN_CST_VARIANT_SUPPORT,
         motors=("head", "feet", "lumbar"),
-        lounge=True,
-        incline=True,
         memory_slots=_THREE_MEMORIES,
-        lights=True,
         massage_style="zoned",
         **_ZONED_SUPPORT,
     ),
     OKIN_CST_VARIANT_NECTAR_MOVE: CstProduct(
         key=OKIN_CST_VARIANT_NECTAR_MOVE,
-        motors=("head", "feet"),
         lounge=False,
         reading=True,
         incline=False,
         memory_slots=(_MEMORY_ZERO_G, _MEMORY_READING),
-        lights=True,
         light_toggle_only=True,
         memory_save_response_feedback=True,
         massage_style="increase_only",
@@ -1205,11 +1176,9 @@ def _two_axis_product(
 ) -> CstProduct:
     return CstProduct(
         key=key,
-        motors=("head", "feet"),
         lounge=lounge,
         incline=False,
         memory_slots=memory_slots,
-        lights=True,
         massage_style="zoned",
         massage_toggle=CstFields(primary=0x100),
     )
