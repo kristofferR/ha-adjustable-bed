@@ -225,7 +225,8 @@ def render_okin_nframe_profiles() -> str:
                 + (" (or the handset's hold)" if not profile.keys else ""),
                 _okin_tap(profile.long_press),
                 _okin_tap(profile.tap)
-                if not profile.keys or "light" in profile.keys or "massage_off" in profile.keys
+                if not profile.keys
+                or any(key.startswith(("light", "massage")) for key in profile.keys)
                 else "n/a",
                 _okin_tap(profile.control_mode),
             )

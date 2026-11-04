@@ -257,28 +257,28 @@ Entry pulse settings are the configured motor pulse count and delay.
 | SIMMONS SmartBed names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | SIMMONS OKIN names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | OKIN SleepEase | n/a | n/a | n/a | n/a | n/a | n/a |
-| Sleepy's Elite legacy CB25 | 3 × 100 ms, 1 STOP | 3 × 100 ms, 1 STOP | 110 × 100 ms, no STOP | n/a | n/a | n/a |
-| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | n/a | n/a | n/a | n/a | n/a | n/a |
-| AdjustableM5X4 BOX3633 | n/a | n/a | n/a | n/a | n/a | n/a |
-| AdjustableM5X4 BOX25 | n/a | n/a | n/a | n/a | n/a | n/a |
-| AdjustableM5X4 BOX15 | n/a | n/a | n/a | n/a | n/a | n/a |
-| AdjustableM5X4 BOX1220 | n/a | n/a | n/a | n/a | n/a | n/a |
+| Sleepy's Elite legacy CB25 | 3 × 100 ms, 1 STOP | 3 × 100 ms, 1 STOP | 110 × 100 ms, no STOP | n/a | once, no STOP | n/a |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX3633 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX25 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX15 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX1220 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
 | Rize Sanctuary | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize Resident | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize Aviada | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize Bob | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize Contempo | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
-| Rize II Carefree | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | n/a | n/a |
+| Rize II Carefree | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize II Clarity | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize MF900 | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Support | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
-| Nectar Move | once, 2 STOP | once, 2 STOP | n/a | n/a | n/a | n/a |
+| Nectar Move | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Jordan's Serenity | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
-| OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | n/a | n/a |
-| OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | n/a | n/a |
+| OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | Adjustable bed (Lumbar) 36_33_04a | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Adjustable bed (Lumbar) 25_42_02 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 
