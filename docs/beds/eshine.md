@@ -85,6 +85,10 @@
 - Generic motor count, massage, angle and protocol fields are hidden because
   this profile owns them.
 
+### Home Assistant setup
+
+Choose **Eshine app (E6000)** manually for `com.richmat.eshinesleep`. Its fixed head, feet, lumbar, pillow, massage and light layout does not depend on shared Bluetooth names or received capability flags. Only pulse count remains configurable for movement; refresh is fixed at 100 ms. Named preset saves are separate buttons. A two-address pair preserves this profile per physical bed; single-address side control is unsupported.
+
 ## Commands
 
 Framed bytes are shown; compact endpoints send only the opcode.
