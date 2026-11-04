@@ -175,8 +175,9 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 ### Aliases
 
 `leggett_platt` is kept for existing entries and is not offered in the bed-type
-list. With variant `gen2`, or `auto`, it builds the same Gen2 controller with the
-same timing as `leggett_gen2`, so the two send identical bytes; with variant
+list. With variant `gen2`, or `auto` when the bed exposes no WiLinke service,
+it builds the same Gen2 controller with the same timing as `leggett_gen2`, so
+the two send identical bytes; with variant
 `okin` it is an alias of `leggett_okin` (see the
 [Okin N-frame aliases](okin-nframe.md#aliases)). The
 [protocol inventory](../design/protocol-inventory.md) proves both by capture.

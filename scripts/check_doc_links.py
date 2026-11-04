@@ -8,6 +8,7 @@ headings, plus explicit ``<a id>``/``<a name>`` targets.
 
 from __future__ import annotations
 
+import html
 import re
 import sys
 from functools import cache
@@ -30,10 +31,25 @@ def _strip_code(text: str) -> str:
     return _CODE.sub("", _FENCE.sub("", text))
 
 
-def _slug(heading: str) -> str:
-    text = re.sub(r"<[^>]+>", "", heading)
+def _rendered(heading: str) -> str:
+    """The heading's rendered text: no links, tags, emphasis or entities; code kept literal."""
+    spans: list[str] = []
+
+    def keep(match: re.Match[str]) -> str:
+        spans.append(match[1])
+        return f"\0{len(spans) - 1}\0"
+
+    text = re.sub(r"`([^`]*)`", keep, heading)
+    text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
-    text = text.replace("`", "").strip().lower()
+    text = re.sub(r"(\*{1,3})(\S(?:.*?\S)?)\1", r"\2", text)
+    text = re.sub(r"(?<!\w)(_{1,3})(\S(?:.*?\S)?)\1(?!\w)", r"\2", text)
+    text = html.unescape(text)
+    return re.sub(r"\0(\d+)\0", lambda match: spans[int(match[1])], text)
+
+
+def _slug(heading: str) -> str:
+    text = _rendered(heading).strip().lower()
     return re.sub(r"[^\w\- ]", "", text).replace(" ", "-")
 
 
