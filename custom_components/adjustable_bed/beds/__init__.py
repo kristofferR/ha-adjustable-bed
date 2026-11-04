@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from .ergomotion4 import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine import EshineController as EshineController
+    from .eshine_okin import EshineOkinController as EshineOkinController
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
     from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
@@ -128,6 +129,7 @@ _EXPORT_MODULES = {
     "CasperSleepController": "casper_sleep",
     "ComfortEnhancementsController": "comfort_enhancements",
     "EshineController": "eshine",
+    "EshineOkinController": "eshine_okin",
     "GlideawayMotionController": "glideaway_motion",
     "BedSenseController": "bedsense",
     "InnovaController": "innova",

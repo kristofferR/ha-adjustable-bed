@@ -633,3 +633,16 @@ RGB requires an eligible product and reported light-on state. Use its light
 toggle button while off. The named high/medium/low buttons preserve 100/60/20%
 channel scaling. Meditation Start/Stop is available only for the guide's exact
 product/name gates; an HA automation can repeat Start for cycle operation.
+
+## eShine E2000 / E3000 / E3100 / E5000 alarm
+
+`adjustable_bed.eshine_set_alarm` sets or disables the next-occurrence bed-local
+alarm. Required fields: `device_id`, `enabled`; an enabled alarm also requires
+minute-precision `time`. `wake_mode` is `zero_g` (default), `flat`, or `massage`
+(E3000/E3100/E5000 only). Optional `side` retains native paired-side routing.
+Every selected target is validated before any clock or alarm write.
+
+Use `sync_clock`, `hold_control`, and the profile's refresh/strength/timer buttons
+for other controls. See the [protocol guide](beds/eshine-okin.md#clock-and-alarms)
+for packet values, timing and hardware-unverified status. This is separate from
+the E6000 app profile.

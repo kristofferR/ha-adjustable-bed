@@ -1021,3 +1021,13 @@ HA uses the app builder's Left=`02` and Right=`01` branches. The Android app's
 A/B radio labels do not establish physical orientation and contain a selector
 mismatch. Confirm the halves with the real bed after beta/release. For two
 separately advertising receivers, use the ordinary two-address combined bed.
+
+### eShine E2000 / E3000 / E3100 / E5000
+
+Choose the same product selector as in the `com.okin.eshine` app. E3000/E3100 is
+one shared choice. Name and UART service matches only suggest the app, never the
+product. The explicit profile owns its axes, massage/light capabilities and
+300 ms refresh cadence. Pulse count bounds ordinary presses; use held controls
+for sustained presets. Each side of a two-address pair keeps its own profile.
+Single-address split controls are unavailable. See the
+[guide](beds/eshine-okin.md) and [dispositions](apk-analysis/dispositions/row122-eshine.md).
