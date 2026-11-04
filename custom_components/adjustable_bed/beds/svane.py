@@ -811,12 +811,13 @@ class SvaneController(BedController):
     ) -> None:
         if self.profile == "jmc":
             # The mask drops the released axis; the last one out gets the
-            # global STOP in ``release_stream``.
+            # global STOP in ``release_stream``. It carries only axes already
+            # written, so a newcomer starts with its own timed tick.
             if remaining:
-                mask = SvaneCommands.motion(*self._stream_axes(remaining))
+                moving = tuple(m for m in remaining if m in self._stream_written)
+                mask = SvaneCommands.motion(*self._stream_axes(moving))
                 await self._start_role(OLD, OLD_CHAR, mask)
                 done = asyncio.get_running_loop().time()
-                self._stream_written.update(remaining)
                 self._stream_last = (done, done)
             return
         # P1 has no global STOP: release the member's own direction role.

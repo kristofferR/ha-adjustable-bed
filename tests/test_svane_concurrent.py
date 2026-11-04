@@ -266,3 +266,45 @@ async def test_release_during_preflight_restores_the_idle_disconnect(bed) -> Non
         frame[2] == "0100" or frame[2].startswith("1001") for frame in written(controller)
     )
     ensure.assert_awaited_with(reset_timer=True)
+
+
+@pytest.mark.parametrize("runtime", ["jmc"], indirect=True)
+async def test_jmc_newcomer_starts_with_a_tick_not_a_cleanup_mask(
+    hass, runtime  # noqa: F811
+) -> None:
+    """P2: a feet press just before head ends is introduced by a timed tick.
+
+    With slow writes, feet joins while head's mask is on the wire and head
+    expires before feet's first tick. Head's reduced mask must not start feet
+    early, or feet would move before the stream starts timing it.
+    """
+    coordinator, controller = runtime
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ),
+        virtual_clock(),
+    ):
+        loop = asyncio.get_running_loop()
+        writes: list[tuple[float, str]] = []
+
+        async def slow(role, payload, **kwargs):
+            writes.append((loop.time(), bytes(payload).hex()))
+            await asyncio.sleep(0.06)
+
+        controller.client.write_gatt_char.side_effect = slow
+        head = asyncio.create_task(_move(hass, "back", 200))
+        await asyncio.sleep(0.18)
+        joined = loop.time()
+        await asyncio.wait_for(_move(hass, "legs", 400), 2)
+        await asyncio.wait_for(head, 2)
+
+    def carries_feet(frame: str) -> bool:
+        return bool(bytes.fromhex(frame)[1] & 0xF0)
+
+    # Head's reduced mask, written as head expires, carries no feet: feet is
+    # introduced by its own tick, after the app's 100 ms pre-feet wait.
+    first_feet = next(at for at, frame in writes if carries_feet(frame))
+    assert first_feet >= joined + 0.1 - 1e-6
+    assert all(frame in {f[2] for f in FROZEN} for _, frame in writes)
