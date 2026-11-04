@@ -1517,3 +1517,23 @@ test("SleepEase exposes held motors, massage, lights, sensors and the local chil
   expect(bed.utilityStates).toEqual(["sensor.hr", "binary_sensor.flag"]);
   expect(bed.utilitySelects).toEqual(["select.child"]);
 });
+
+test("Good Vibe Sleep exposes app controls, side selection and independent sleep state", () => {
+  const hass = hassWith([
+    entry("button.app_action", "goodvibe_action"),
+    entry("button.monitor", "goodvibe_action"),
+    entry("select.side", "goodvibe_side"),
+    entry("select.light_duration", "goodvibe_light_duration"),
+    entry("select.countdown", "goodvibe_massage_timer"),
+    entry("number.snore", "goodvibe_snore_count"),
+    entry("sensor.status", "goodvibe_status"),
+    entry("sensor.live", "goodvibe_L_heart"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.utility).toEqual(["button.app_action", "button.monitor"]);
+  expect(bed.utilityStates).toEqual(["sensor.status", "sensor.live"]);
+  expect(bed.controlSide).toBe("select.side");
+  expect(bed.utilitySelects).toEqual(["select.light_duration", "select.countdown"]);
+  expect(bed.utilityNumbers).toEqual(["number.snore"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});

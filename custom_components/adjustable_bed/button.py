@@ -15,7 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import ProductButtonSpec, SideBoundController
+from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec, SideBoundController
 from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LIMOSS_REMOTE,
@@ -1477,6 +1477,16 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
+        if self._spec.release_only:
+            controller = self._coordinator.capability_controller
+            if controller is not None:
+                controller.on_gesture_release()
+            token = CONTROLLER_GESTURE_RELEASE.set(True)
+            try:
+                await self._coordinator.async_stop_command()
+            finally:
+                CONTROLLER_GESTURE_RELEASE.reset(token)
+            return
         if self._spec.key == "hjbed_release":
             from .hjbed_state import GESTURE_RELEASE
 

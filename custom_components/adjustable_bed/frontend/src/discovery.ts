@@ -249,6 +249,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key.startsWith("goodvibe_")) { bed.utilityStates?.push(id); break; }
         if (key.startsWith("doublesleep_")) {
           if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
           else if (key === "doublesleep_light") (bed.lights.states ??= []).push(id);
@@ -303,6 +304,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "number":
+        if (key.startsWith("goodvibe_")) { (bed.utilityNumbers ??= []).push(id); break; }
         if (key.startsWith("adjustamattress_")) {
           (bed.utilityNumbers ??= []).push(id);
           break;
@@ -447,7 +449,7 @@ export function bedEntitiesForDevice(
         } else if (key === "richmat_mh_preset") {
           // App-labelled presets share one translation key; keep each entity.
           presetMap.set(`${key}:${id}`, id);
-        } else if (key === "hjbed_action") {
+        } else if (key === "hjbed_action" || key === "goodvibe_action") {
           bed.utility.push(id);
         } else if (key.startsWith("richmat_mh_")) {
           // Saves, app actions, the smart set lock and detection controls.
@@ -569,7 +571,7 @@ export function bedEntitiesForDevice(
           (bed.utilitySelects ??= []).push(id);
           break;
         }
-        if (key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
+        if (key === "goodvibe_massage_timer" || key === "goodvibe_light_duration" || key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
         else if (key === "reverie_stk_side")
           (bed.utilitySelects ??= []).push(id);
@@ -581,7 +583,7 @@ export function bedEntitiesForDevice(
           (bed.massage.selects ??= []).push(id);
         else if (key === "light_timer") bed.lights.timer = id;
         // A split bed's local left/right selector routes the motor controls.
-        else if (key === "remacro_control_side") bed.controlSide = id;
+        else if (key === "remacro_control_side" || key === "goodvibe_side") bed.controlSide = id;
         else if (key === "starcode_color") mood().selects.push(id);
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);

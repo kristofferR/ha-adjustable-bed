@@ -85,3 +85,5 @@ hardware evidence.
 [row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).
 
 [HJBed app controls and telemetry](beds/hjbed.md), including the complete [row121 disposition ledger](apk-analysis/dispositions/row121-hjbed.md).
+
+[Good Vibe Sleep profiles and independent sleep sensors](beds/goodvibe.md), with the complete [row116 disposition ledger](apk-analysis/dispositions/row116-goodvibe.md).

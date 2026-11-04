@@ -2416,6 +2416,7 @@ class TestPairBedsConversion:
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
             on_disconnect=MagicMock(),
@@ -2479,6 +2480,7 @@ class TestPairBedsConversion:
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
             on_disconnect=MagicMock(),
@@ -2688,6 +2690,7 @@ class TestPairBedsConversion:
         client.disconnect = AsyncMock(side_effect=stalled_disconnect)
         controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             requires_notification_channel=True,
             stop_notify=AsyncMock(),
@@ -2750,6 +2753,7 @@ class TestPairBedsConversion:
         client.disconnect = AsyncMock(side_effect=stalled_disconnect)
         controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             requires_notification_channel=True,
             stop_notify=AsyncMock(),

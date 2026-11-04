@@ -991,3 +991,7 @@ requires the selected product's actual side choices. See the
 ### HJBed app
 
 Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. See [HJBed](beds/hjbed.md) for all current and conditional profiles.
+
+### Good Vibe Sleep app
+
+Choose the exact app product/configuration or remote/image alias. The profile owns its layout, feature gates and gesture timing; generic motor meanings are not inferred. Add an independent RM-/HJ- sleep device using its own address and type 1/type 2 profile. App side selection is local, while light duration and supported snore settings use device controls. See [Good Vibe Sleep](beds/goodvibe.md).

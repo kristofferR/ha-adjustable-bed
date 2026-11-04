@@ -110,6 +110,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
 | ✅ [FSM Relax](docs/beds/fsm_relax.md) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
+| ❓ [Good Vibe Sleep](docs/beds/goodvibe.md) | Exact app catalog, remote aliases and independent RM-/HJ- sleep sensors; hardware unverified |
 | 🧪 [HJBed app](docs/beds/hjbed.md) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
 | ✅ [Glideaway Motion / Montion app](docs/beds/glideaway-motion.md) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE / Dream Motion / Dream Motion HD apps](docs/beds/jiecang-app.md), [Comfort Motion app](docs/beds/comfort-motion.md) |

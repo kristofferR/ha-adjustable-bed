@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from .gmmotor import GmmotorController as GmmotorController
     from .gmmotor_desk import GmmotorDeskController as GmmotorDeskController
     from .gmmotor_sleep import GmmotorSleepController as GmmotorSleepController
+    from .goodvibe import GoodVibeController as GoodVibeController
     from .hjbed import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
     from .isleep import IsleepController as IsleepController
@@ -107,6 +108,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "GoodVibeController": "goodvibe",
     "HJBedController": "hjbed",
     "DoubleSleepController": "doublesleep",
     "GmmotorController": "gmmotor",
