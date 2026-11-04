@@ -748,6 +748,15 @@
           "product_type": "Exact GM Control product / configuration",
           "gmmotor_side": "App bed side"
         }
+      },
+      "cluster018": {
+        "title": "Choose your app and layout",
+        "description": "Select the app used with this bed and its four-character layout code. Shared Bluetooth services do not identify the app or model.",
+        "data": {
+          "protocol_variant": "App",
+          "product_type": "Layout code",
+          "cluster018_third_service": "Allow the app’s third-service fallback"
+        }
       }
     },
     "progress": {
@@ -847,7 +856,8 @@
       "cluster033_layout": "Choose a layout belonging to the selected app.",
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
-      "gmmotor_side": "This product does not expose the selected app side."
+      "gmmotor_side": "This product does not expose the selected app side.",
+      "cluster018_layout": "Choose a layout shipped in the selected app."
     }
   },
   "options": {
@@ -955,7 +965,8 @@
           "ergomotion4_model_keys": "Other product: ordered model keys",
           "ergomotion4_massage_keys": "Other product: massage keys",
           "ergomotion4_rgb": "Other product: RGB lighting",
-          "ergomotion4_product_name": "Other product: exact app product name"
+          "ergomotion4_product_name": "Other product: exact app product name",
+          "cluster018_third_service": "Allow the app’s third-service fallback"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1182,7 +1193,8 @@
       "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls.",
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
-      "gmmotor_side": "This product does not expose the selected app side."
+      "gmmotor_side": "This product does not expose the selected app side.",
+      "cluster018_layout": "Choose a layout shipped in the selected app."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -3096,6 +3108,12 @@
       },
       "eshine_okin_massage_timer": {
         "name": "Massage timer"
+      },
+      "cluster018_action": {
+        "name": "{action}"
+      },
+      "cluster018_release": {
+        "name": "Release held action"
       }
     },
     "cover": {
@@ -4873,6 +4891,9 @@
       },
       "eshine_okin_alarm": {
         "name": "Alarm state"
+      },
+      "cluster018_status": {
+        "name": "App connection and state"
       }
     },
     "light": {
@@ -5996,6 +6017,35 @@
           "10": "10 minutes",
           "20": "20 minutes",
           "30": "30 minutes"
+        }
+      },
+      "cluster018_mode": {
+        "name": "App mode",
+        "state": {
+          "0": "Mode 1",
+          "1": "Mode 2",
+          "2": "Mode 3"
+        }
+      },
+      "cluster018_program": {
+        "name": "Memory selection",
+        "state": {
+          "recall": "Recall",
+          "armed": "Save next action"
+        }
+      },
+      "cluster018_hold": {
+        "name": "Press behavior",
+        "state": {
+          "release": "Release",
+          "hold": "Hold"
+        }
+      },
+      "cluster018_head_foot": {
+        "name": "Selected control",
+        "state": {
+          "head": "Head",
+          "foot": "Foot"
         }
       }
     },
@@ -8024,6 +8074,55 @@
         },
         "wake_mode": {
           "name": "Wake action"
+        }
+      }
+    },
+    "richmat_classic": {
+      "name": "Classic Richmat app settings",
+      "description": "Direct BLE settings for the selected Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior app and layout.",
+      "fields": {
+        "operation": {
+          "name": "Operation"
+        },
+        "action": {
+          "name": "Layout alarm action"
+        },
+        "time": {
+          "name": "Alarm time"
+        },
+        "minutes": {
+          "name": "Lamp minutes"
+        },
+        "rgb_color": {
+          "name": "RGB color"
+        },
+        "aroma_times": {
+          "name": "Aroma times"
+        },
+        "progress": {
+          "name": "Massage timer slider"
+        },
+        "height": {
+          "name": "Desk target"
+        },
+        "unit": {
+          "name": "Desk unit"
+        },
+        "slot": {
+          "name": "Desk button"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "device_id": {
+          "name": "Bed"
+        },
+        "popup": {
+          "name": "Massage popup choice"
+        },
+        "duration_ms": {
+          "name": "Desk button duration",
+          "description": "Bounded duration in milliseconds."
         }
       }
     }

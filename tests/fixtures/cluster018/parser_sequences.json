@@ -1,0 +1,411 @@
+[
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-SEQ1",
+    "events": [
+      "UNBIND",
+      "6e08005ad0",
+      "BIND",
+      "6e08005ad0"
+    ],
+    "expected": [
+      {
+        "exception": null,
+        "oldPack": "null",
+        "visible": true,
+        "scrollable": true,
+        "events": []
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": [
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": []
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": []
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-SEQ2",
+    "events": [
+      "UNBIND",
+      "6e08005ad0",
+      "BIND",
+      "RESET",
+      "6e08005ad0"
+    ],
+    "expected": [
+      {
+        "exception": null,
+        "oldPack": "null",
+        "visible": true,
+        "scrollable": true,
+        "events": []
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": [
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": []
+      },
+      {
+        "exception": null,
+        "oldPack": "null",
+        "visible": true,
+        "scrollable": true,
+        "events": []
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-SEQ3",
+    "events": [
+      "6e08005ad0",
+      "RESET",
+      "6e08005ad0"
+    ],
+    "expected": [
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "null",
+        "visible": false,
+        "scrollable": false,
+        "events": []
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-SEQ4",
+    "events": [
+      "6e08005ad0",
+      "6e940006000c3206000c320800070099",
+      "6e08005ad0"
+    ],
+    "expected": [
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": [
+          {
+            "unit": 0,
+            "minimum": 60.0,
+            "maximum": 125.0,
+            "initial": 70.0,
+            "initial_other": 80.0,
+            "reveal_modern_controls": true
+          },
+          {
+            "visible": true
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": []
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-SEQ5",
+    "events": [
+      "6e08005ad0",
+      "6e940006000c3206000c320800070099",
+      "6e08005bd1"
+    ],
+    "expected": [
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": true,
+        "scrollable": true,
+        "events": [
+          {
+            "unit": 0,
+            "minimum": 60.0,
+            "maximum": 125.0,
+            "initial": 70.0,
+            "initial_other": 80.0,
+            "reveal_modern_controls": true
+          },
+          {
+            "visible": true
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005bd1",
+        "visible": true,
+        "scrollable": true,
+        "events": [
+          {
+            "height": {
+              "cm": 91.0,
+              "inch": 35.8
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-SEQ6",
+    "events": [
+      "6e08005ad0",
+      "6e920006000c3206000c320800070097",
+      "6e08005bd1"
+    ],
+    "expected": [
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "unit": 0,
+            "minimum": 60.0,
+            "maximum": 125.0,
+            "initial": 70.0,
+            "initial_other": 80.0,
+            "reveal_modern_controls": false
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005bd1",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "height": {
+              "cm": 91.0,
+              "inch": 35.8
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-SEQ7",
+    "events": [
+      "6e08005ad0",
+      "RESET",
+      "6e940006000c3206000c320800070099",
+      "6e08005ad0"
+    ],
+    "expected": [
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "null",
+        "visible": false,
+        "scrollable": false,
+        "events": []
+      },
+      {
+        "exception": null,
+        "oldPack": "null",
+        "visible": true,
+        "scrollable": true,
+        "events": [
+          {
+            "unit": 0,
+            "minimum": 60.0,
+            "maximum": 125.0,
+            "initial": 70.0,
+            "initial_other": 80.0,
+            "reveal_modern_controls": true
+          },
+          {
+            "visible": true
+          }
+        ]
+      },
+      {
+        "exception": null,
+        "oldPack": "6e08005ad0",
+        "visible": false,
+        "scrollable": false,
+        "events": [
+          {
+            "visible": false
+          },
+          {
+            "height": {
+              "cm": 90.0,
+              "inch": 35.4
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

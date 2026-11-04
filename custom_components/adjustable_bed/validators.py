@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
+from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .const import (
     ADAPTER_AUTO,
     ADJUSTABLE_LUMBAR_VARIANTS,
@@ -114,6 +115,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
+    "richmat_classic_apps": CLUSTER018_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,

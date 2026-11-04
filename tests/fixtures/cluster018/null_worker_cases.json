@@ -1,0 +1,1352 @@
+[
+  {
+    "id": "NW066-26683c7c9f81ae871ef1033debad04db86bde18d67c1dfcd2db92a293610b6c8",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-0f807981afbc40e2f9873590bd0427102c3251cfcf5a57de6d2cba87aef01f58",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-37a56f5ddf64d162345aa36a1853686f8f9709ca630eadb4cdfa9495b1bfab9f",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-ec6fb287e996951b2c6cdbcd6e62fdc769594bf40e4f18fa43ca3cf7a5c57597",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-aca557980f125fa32354f7b04d8705f468c30f8c1041277de44314cb1d696848",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-b2d6ecdca88ed14eb2e9f3ee32d8a71618c377b3c01fcf9ce80eb93df153c7cc",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-fc190dbfc14b6653752743678e7da3d2dd28a8fe3696b0142b9349082b638848",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-666fe0fe2be785ca513bf39508f3d9145eaf68fe12399447e4638887d4b5eca8",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-a19381c6ec4b8ca0239f0ce30efc9cec631aa1d0809b3ea9e2b61a086f09bf24",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-68fe9a728916b66cc3c055c911bd5a07e4baa65745bb7c6b0c5093d5b97f9e5c",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-aa46af4e07b6e4c5acf4565df0ad701912a93c69a7bcc4925a2ea2b9bfab0851",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-e3d5d3086ff78b0169d9ca4257585ede5e15bd8aebaebbdc19b01fd41efb651e",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-b70b2a8c4071aa4ecb95e31c5610ca305b380b204a206584ec7dba4545d8db34",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-ef96899df338628120f86efbaa65ca30bf70744dd399690eb11c20e8a3ad753a",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-15e70f4082f1589fb5ed96c818de402a62e05f233bc189d14a9947e43066946b",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-3afd55ab611e6be37b5e26afa8d52bbf7abbd39f81ee002d6b4665a236a90747",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-f0c871d46ef510aed35cbf04aa2dc76c88d7f12449350a095c330424ee0894b6",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-da47663ed37811489faed4af7392a4b876a1620744cc0b71e6c462ecf5a5a9e7",
+    "member": "com.richmat.avocadoecobase",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-667e11029c1c03c3693a1132d36cf0b1286e049f0a83c88a17f41fe24c09b221",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-57e00f64f2b0d9d2c0e5bdd3e72d2427f5561de03dad86e52bbc8397e95465b7",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-7b9871801142fac4fd2b36466b504389c9960bff0c85b4a1aece741e6097996c",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-2613a4f21d85d839de257b8e6dd7efa051b2043419f20ef9b04e54c88c5f3fde",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-8319997141afcdb8e30228e5a5f55c7df13d4e1dc5d387b853a9cb0f2a0551dd",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-a9c2de1bb447c4f9c66398e6e004291f15afcb5c03a67e5729bad608f08a52fb",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-f31af43ffc4280837e9b7363e57f969628e1b520f0d4ca35f6530d013ae6d6f0",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-f330484f2758a0bd970eaffda35f5749a08d9230c67880750884cf228371280a",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-5cddabcbf36cbc4fb9e255d0b49637c4faf846f5d234616005d87125add6eb35",
+    "member": "com.richmat.coastersleep",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-cdfcfed5b16bcab6fdb274684487bfc8a47ae09c5794a12faafab92b4fe912c1",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-61fe577a3b3fa63fc0384ea84828e2b5491fc9d04a031458e57ed323b9a1cb6c",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-25d55fe6a7169629239e4154b3ea268c2b12349fb8bcde67d989e607d335203a",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-9130c1e7e5340bde47a490d4f53f1f3ba6b1d6eb6d5a03f105ce2fa42498e581",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-deb227a64835d74be432df49d690a6280325c727c0d6da1ffcdba11d32740117",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-f05c17c99e1067c7b8fecca317dad06c0ca6b55bfbd7f0d3f1bfa9ae2b207426",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-6af489b176529e71c33f96bb1a538fbc977800becd471fac81a670a6fa026d3b",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-1eb2385f4c875a812f48275930cb20caa4368b24b9d1147d57294bc70ec91dd8",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-d3dbc904443ca448adde2fa3c8896160df71f196c7d84d6b3f802f5a7dddf3e4",
+    "member": "com.richmat.coastersleep",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-18cb4ccf75143e1e52dc5d35438d19b6a6bf4119fe7f820e59563e6d593c89b0",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-527885791bdd36e31a3a15e9caac47f4423428e2aae3446695dc795a9e49ce53",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-448ae062ea6664e86397876f9952144ac602f5adbbbdd5dfc43661bc5f6c9bc8",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-7c98465f52388bed9955620eba1a16a8babe4a5c54f0e4683b7848b5bf1d2eb2",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-1745366e779bf6fbcf17944e6460ba541adb10d377a50a787869132ee09452a5",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-5b5fa9697305d225ef842f929496f4d368c1d093ba90424b272537e1dda0afe7",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-c52c696ca3da94d07d175318367cce6dc4989591e43e4cf3b59d0acf44649960",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-4734d73eb2ace7b8f1ccf9fb939967395bbe54ab1188ebd2905699405559dae0",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-d181453033a20de11ee55d900bcf9220050222947cbf6bcf7ce1d79c51031658",
+    "member": "com.richmat.fortywinks",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-a66a700f83b4d235eaa4cbe04f1cd75a5315bcd6b5b9be8aeef9ab291ce70ee9",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-31e961c56705826c30b3b30f6e5ef93c089ad9109b377f24fc08b9c37216c395",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-0ff6262fd518225067750f7e6f7e3728ddb9d898330f7b12caeee4e528f1a00c",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-8cf7593a8a45224b222855c6875c287a7d44d0c8c54f25e30be710b4d1eedfb8",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-52601f1bbd215a98d029dea7324a9de7810a4e1574003e0fae465b05d590a89d",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-ea93b69bb3ef49d3db1b534267e6a69414fd24df811ba858f297de9ea2ff86fb",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-824a6f0c05759c9dc13f72760a0874290bf5d7bb5d4cd1787c373dc08065f071",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-cedb6f06398f70605ba55dfefe2b686b13270839ab8adce6f0f82d5f19c90d20",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-604c7ad7551196adcb5fa0406b145bea58f12d6ed6a32a85101241e66451cb0e",
+    "member": "com.richmat.fortywinks",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-8d6f499668c07ecfab93dfff5f6257b41626c16a4f8112b1afba190b5f97c737",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-ff492836002ffa05b69ebdd43954daf05e7e0140ddf50010e110477a9219e2ad",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-cd9dc26a43d10b53141e388cf54b5e80950e625bb6e398b4bf6f748267e3702d",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-1ccb6d0b76eabc5a27741a54c5de46697fb2f431e485c025e425731d1ce107f4",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-35c6415afadc95bc613d44deb8df89c73b733591a748cc00748431cfbb746d43",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-828d87670185910d2aee56d21453e13498d6400f19d99d22fa7e989894fb44eb",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-8dd94b2031bc24384d6d11ad8fb99cc25d33e376daf5cdd36bdda543a32d2809",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-32763c115d16c5908bfdde8fb194854e0f072a084eba22f16e9c7e8a19ff6b37",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-889d37687280fc8dc657423239940b7214d061ab6a7bf1f9d8ebc99361d59517",
+    "member": "com.richmat.milemont",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-aa40516eaf16657e94efff3a460126b7c7b5fa6cd55ec603b4f3fea9a416b612",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-0f226d79504999f23bf26a06cda9ad9cc08095fad4b8e27f6adfba0e6ac0b423",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-35b0d07197c305088bb2f8daf4d73d0b8825db9847f755a1ea03133d7d341634",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-78b5799b2147e0807522b56f008e0a516d5f70f109ae91537dd18473e6780b4e",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-67e687ac898b2d55f70a52e688d6debc25e10149c6f66ead44526f8f591487d9",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-ce2617654689ea3859e456b1867032012eaf8314f83e883b601ad9f16f6ed1fb",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-828c139d83ded2eece487ad41bdf675f0ca6c91d8935ae7754f95b441bcd7cca",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-66ae7683c611b357c6a74567a4fe85681185b32ebdb1b5bcf27bc7379ca4f937",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-ab0b511d1df10332174aeace0d6aff2705949d456d9c581642b2d1d2496243e9",
+    "member": "com.richmat.milemont",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-6e5c3e932c467b1b9ac4f438b65144867f8da33bfc58bf9283fc0095615fcb62",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-ffa1dcff7a5da439fd44f6df3af61832be9d733ab0f776b479fd1cab4ca4c17a",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-ee9f97c3f100b8080c60fc1314ab06f6041285c815b33de2758ec34f6e724694",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-51d883edb3a88977e64cf629af1df6ca507eb46f8b60306daf6da9e403741c28",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-c7fd0f7c8c527df7924d6149f8d4969b26a50ade8554c31135f7220b2e1ef1b8",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-08ac44f9faeb24aecd592ca4f66bc73eb7d227aba8b3690b501d3c2be2ffbba3",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-70c20b8b17c3052e6254c6e623c587e538f34d42d7b8a5aef6cb057c3468a776",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-78d9d48d7cd97c6eadf549a8efe08f279999482a06125a067b9fd6727c4709ef",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-d9eb541cc135e525abc012f5416003d53a14de7b1901aca3963da41daca06351",
+    "member": "com.richmat.superior",
+    "wire": "RAW",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "ENQUEUE_NULL_POST_HANDLER_THEN_POLL_NULL_DROP",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-b413dccc3f56b4d32bfb3d77102fa972a80c8b8cb2971c9726bbf44d967237b1",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": -1,
+      "worker_phase": "idle",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-cfc8c6d190106841faaf3b26378ee165e2402b9f4dcad70cfaab90fb9cc704a8",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 0,
+      "worker_phase": "release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 50
+  },
+  {
+    "id": "NW066-b6eccf3b459ec7837ad762faee8eb253c1eff21f84d139c9707b25f830257cdc",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 1,
+      "worker_phase": "refresh",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-6a19cb27a7f78d5407bcd53d7c5846c57e6753cc7961fba3a6637e09bbffa754",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 2,
+      "worker_phase": "once",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-4131e49e6c88502965915846383f4a3a7cea66a60643a97e01df3ccf53937e48",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "below_threshold",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-e67fc926f4252d68f4590a2b30412d6e4f68bc000c27fd38f6e2b0cb4d192f1f",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 3,
+      "worker_phase": "threshold_reached",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-9b3116dbf16b9cc9a7fd913632ad1645110d4c1398119dc03b61bc5de81c6499",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "short_eligible",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  },
+  {
+    "id": "NW066-4c60d8db05ab493897637143ec5f7d4e4763bfefe7488cec014c6ae5dd13c500",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 4,
+      "worker_phase": "long_latch_set",
+      "z": true,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "NO_PAYLOAD_ATTEMPT",
+    "release_reached": true,
+    "release_delay_ms": 150
+  },
+  {
+    "id": "NW066-6ca81785327f15bfdd47d35b4b52e4e997bceb332f6961c1ab3f1513a25e145b",
+    "member": "com.richmat.superior",
+    "wire": "FRAMED",
+    "input": {
+      "shared_bytesData": null,
+      "mode": 5,
+      "worker_phase": "once_no_release",
+      "z": false,
+      "guards": "Worker running,mode observed as declared;Q and handles independently symbolic"
+    },
+    "payload_action": "THROW_BEFORE_ENQUEUE_OR_POST;UNCAUGHT_WORKER_CAN_TERMINATE",
+    "release_reached": false,
+    "release_delay_ms": null
+  }
+]

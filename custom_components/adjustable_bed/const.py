@@ -6,6 +6,7 @@ from typing import Final, overload
 
 from . import casper_base_catalog as _casper_base_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
+from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 
@@ -473,6 +474,7 @@ BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
 BED_TYPE_GOODVIBE: Final = "goodvibe"
+BED_TYPE_CLUSTER018: Final = "richmat_classic_apps"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
@@ -661,6 +663,7 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_CLUSTER018,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
@@ -818,6 +821,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_CLUSTER018,
         BED_TYPE_ERGOMOTION_4,
         *CLUSTER033_BED_TYPES,
         BED_TYPE_BEDSENSE,
@@ -2699,6 +2703,7 @@ OKIN_64BIT_VARIANTS: Final = {
 
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
+    *CLUSTER018_APPS,
     *CASPER_BASE_VARIANTS,
 
     "p1", "p2", "p3",
@@ -2988,6 +2993,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_CLUSTER018,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_DOUBLESLEEP,
         # The app exposes raw motor-index/desk reports, without a proven
