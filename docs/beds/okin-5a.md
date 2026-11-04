@@ -95,6 +95,25 @@ STOP. Massage and light commands are single writes unless listed here.
 | DewertOkin ELEVATE | once | once | n/a |
 <!-- /generated -->
 
+### Aliases
+
+Bed types that build the same controller over the same profile with the same
+default timing, so they send identical bytes. They stay separate bed types so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type | Same as | Profile |
+|----------|---------|---------|
+| `nectar` | `okin_7byte` | [Nectar](#nectar) |
+| `mattressfirm` | `okin_nordic` | [Mattress Firm 900 / iFlex](#mattress-firm-900--iflex) |
+
+`nectar` and `mattressfirm` are kept for existing entries and are not offered in
+the bed-type list.
+
+Each also keeps its own [profile id](../design/profile-id.md#aliases): besides
+the bed-type list, the device manufacturer differs ("Nectar" and "MattressFirm"
+against "Okin").
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/okin_5a.py`. Profiles
@@ -499,7 +518,8 @@ sends the shared STOP frame once.
 A renewable hold (`timed_move` with `hold_owner` and `hold_generation`, see
 [Renewable holds](../SERVICES.md#renewable-holds)) refreshes at the apps' 100 ms
 on both routes, whatever the entry's motor pulse settings, until its lease runs
-out. Then STOP follows. A finite move keeps the entry's pulse settings.
+out. Then STOP follows. A finite move on the default route keeps the entry's
+pulse settings; the M1X12 variant always holds at the 100 ms sender interval.
 
 #### Notifications
 

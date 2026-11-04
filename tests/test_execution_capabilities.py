@@ -45,57 +45,87 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Latched (FFFF frame): one start, STOP at release.
+    "BedSenseProfile:bedsense": {"hold": ("bedsense",)},
     # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
     # the 5A keys those profiles send, so only ELEVATE declares.
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
-    # Standalone controllers with stream evidence. The generic ``vibradorm``
-    # route keeps finite pulses; ``svane`` and ``leggett_lp_legacy`` are not
-    # declared yet (see the design note).
-    "eshine": {"hold": ('eshine',)},
-    "furnimove": {"hold": ('fm157',)},
-    "jensen": {"hold": ('jensen', 'jensen-disp')},
-    "leggett_gen2": {"hold": ('universal',)},
-    "linak": {"hold": ('linak-iot', 'linak-lp', 'linak-mem', 'linak-guide')},
-    "octo": {"hold": ('octo',)},
-    "sleepys_elite_app": {"hold": ('sleepy',)},
-    "starcode_m1x12": {"hold": ('m1x12',)},
-    "starcode_m5x5": {"hold": ('abm5_5',)},
-    "timotion_ahf": {"hold": ('ahf',)},
-    "vibradorm_app": {"hold": ('diamant', 'werkmeister', 'vmat')},
-    "vmatbasic": {"hold": ('vmatbasic',)},
-    # Latched (FFFF frame and distinct protocols): one start, STOP at release.
-    # Solace's S4-Y and unidentified routes and Kaidi's Floyd have no report;
-    # Motion Bed has no renewable route; Kaidi's dual-seat variant stays finite.
+    # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
+    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
+    "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
+    "OkinNFrameProfile:prodigy4": {
+        "hold": ("p4", "leggett-disp", "#483c"),
+        # CU170 watchdog onset measured on hardware: 217-218 ms.
+        "sustain_ms": ("#368", "#483c", "#516c"),
+    },
+    "OkinNFrameProfile:useries": {"hold": ("useries", "leggett-disp")},
+    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
+    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
+    "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Latched Solace routes. S4-Y and unidentified entries have no report, and
+    # Motion Bed has no route a lease could renew.
     "SolaceProfile:common": {"hold": ("homekobo", "dianqi")},
     "SolaceProfile:home_k1": {"hold": ("homekobo",)},
     "SolaceProfile:home_k2": {"hold": ("homekobo",)},
     "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
     "SolaceProfile:woosa": {"hold": ("woosa",)},
-    "BedSenseProfile:bedsense": {"hold": ("bedsense",)},
-    "reverie": {"hold": ("reverie", "row041")},
+    # Standalone controllers with stream evidence. The generic ``vibradorm``
+    # route keeps finite pulses; ``svane`` and ``leggett_lp_legacy`` are not
+    # declared yet (see the design note).
+    "eshine": {"hold": ("eshine",)},
+    "furnimove": {"hold": ("fm157",)},
+    "isleep": {"hold": ("kaidi",)},  # latched
+    "jensen": {"hold": ("jensen", "jensen-disp")},
+    # Latched; Floyd (no report) and dual-seat beds stay finite.
     "kaidi": {"hold": ("kaidi",)},
-    "isleep": {"hold": ("kaidi",)},
-    "remacro": {"hold": ("brick", "jewmes", "slumber", "row050")},
+    "leggett_gen2": {"hold": ("universal",)},
+    "linak": {"hold": ("linak-iot", "linak-lp", "linak-mem", "linak-guide")},
+    "octo": {"hold": ("octo",)},
+    "remacro": {"hold": ("brick", "jewmes", "slumber", "row050")},  # latched
+    "reverie": {"hold": ("reverie", "row041")},  # latched
+    "sleepys_elite_app": {"hold": ("sleepy",)},
+    "starcode_m1x12": {"hold": ("m1x12",)},
+    "starcode_m5x5": {"hold": ("abm5_5",)},
+    "timotion_ahf": {"hold": ("ahf",)},
+    "vibradorm_app": {"hold": ("diamant", "werkmeister", "vmat")},
+    "vmatbasic": {"hold": ("vmatbasic",)},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
+_LEGGETT_STREAM = (
+    "OkinNFrameProfile:prodigy2l",
+    "OkinNFrameProfile:prodigy2",
+    "OkinNFrameProfile:useries",
+)
+_CUSTOMATIC = (
+    "OkinNFrameProfile:clarity",
+    "OkinNFrameProfile:jeromes",
+    "OkinNFrameProfile:remedy",
+)
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
-    "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
     "beds/eshine.py:<module>.EshineController": ("eshine",),
     "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
+    "beds/isleep.py:<module>.IsleepController": ("isleep",),
+    "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
     "beds/jensen.py:<module>.JensenController": ("jensen",),
     "beds/jensen.py:<module>.JensenController.execution": ("jensen",),
+    "beds/kaidi.py:<module>.KaidiController": ("kaidi",),
+    "beds/kaidi.py:<module>.KaidiController.execution": ("kaidi",),
     "beds/leggett_gen2.py:<module>.LeggettGen2Controller": ("leggett_gen2",),
     "beds/leggett_gen2.py:<module>.LeggettGen2Controller.execution": ("leggett_gen2",),
     "beds/linak.py:<module>.LinakController": ("linak",),
     "beds/linak.py:<module>.LinakController.execution": ("linak",),
     "beds/octo.py:<module>.OctoController": ("octo",),
     "beds/octo.py:<module>.OctoController.execution": ("octo",),
+    "beds/remacro.py:<module>.RemacroController": ("remacro",),
+    "beds/remacro.py:<module>.RemacroController.execution": ("remacro",),
+    "beds/reverie.py:<module>.ReverieController": ("reverie",),
+    "beds/reverie.py:<module>.ReverieController.execution": ("reverie",),
     "beds/sleepys_app.py:<module>.SleepysEliteAppController": ("sleepys_elite_app",),
     "beds/sleepys_app.py:<module>.SleepysEliteAppController.execution": ("sleepys_elite_app",),
     "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller": ("starcode_m1x12",),
@@ -108,6 +138,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/vibradorm_app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
     "beds/vmatbasic.py:<module>.VMatBasicController": ("vmatbasic",),
     "beds/vmatbasic.py:<module>.VMatBasicController.execution": ("vmatbasic",),
+    "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
     "profiles/ff_frame.py:<module>.SOLACE_PROFILES": (
         "SolaceProfile:common",
         "SolaceProfile:home_k1",
@@ -115,15 +146,12 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         "SolaceProfile:motion_flex",
         "SolaceProfile:woosa",
     ),
-    "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
-    "beds/reverie.py:<module>.ReverieController": ("reverie",),
-    "beds/reverie.py:<module>.ReverieController.execution": ("reverie",),
-    "beds/kaidi.py:<module>.KaidiController": ("kaidi",),
-    "beds/kaidi.py:<module>.KaidiController.execution": ("kaidi",),
-    "beds/isleep.py:<module>.IsleepController": ("isleep",),
-    "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
-    "beds/remacro.py:<module>.RemacroController": ("remacro",),
-    "beds/remacro.py:<module>.RemacroController.execution": ("remacro",),
+    "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
+    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
+    "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
+    "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
+    "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

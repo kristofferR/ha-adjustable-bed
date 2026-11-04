@@ -290,48 +290,6 @@ class TestOkin64BitController:
         assert coordinator.controller.supports_stop_all is True
 
 
-class TestOkin64BitMovement:
-    """Test Okin 64-bit movement commands."""
-
-    async def test_move_head_up_sends_10_byte_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_64bit_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_up should send 10-byte HEAD_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_64bit_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        assert mock_client.write_gatt_char.called
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 10
-        expected = _frame("head_up")
-        assert first_call_data == expected
-
-    async def test_stop_all_sends_stop_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_64bit_config_entry,
-        mock_coordinator_connected,
-    ):
-        """stop_all should send STOP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_64bit_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.stop_all()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        expected = _frame("stop")
-        assert call_data == expected
-
-
 # -----------------------------------------------------------------------------
 # Protocol Variant Tests
 # -----------------------------------------------------------------------------

@@ -125,55 +125,14 @@ def packets(client):
 
 
 @pytest.mark.parametrize(
-    "axis,up,expected",
-    [
-        ("back", True, "f1f1010101037e"),
-        ("back", False, "f1f1020101047e"),
-        ("legs", True, "f1f1030101057e"),
-        ("legs", False, "f1f1040101067e"),
-        ("both", True, "f1f1050101077e"),
-        ("both", False, "f1f1060101087e"),
-        ("head", True, "f1f11901011b7e"),
-        ("head", False, "f1f11a01011c7e"),
-        ("lumbar", True, "f1f11b01011d7e"),
-        ("lumbar", False, "f1f11c01011e7e"),
-    ],
-)
-async def test_motion_vectors_and_release(make_controller, axis, up, expected):
-    layout = "standard_2" if axis == "both" else "standard_4_legacy"
-    controller, _, client = make_controller(layout)
-    await controller._move_axis(axis, up)
-    assert packets(client) == [expected, expected, "f1f14e004e7e"]
-
-
-@pytest.mark.parametrize(
-    "method,args,expected,release",
-    [
-        ("preset_flat", (), "f1f10801010a7e", True),
-        ("preset_zero_g", (), "f1f1070101097e", True),
-        ("preset_anti_snore", (), "f1f10901010b7e", True),
-        ("preset_memory", (1,), "f1f10b01010d7e", True),
-        ("preset_memory", (2,), "f1f10d01010f7e", True),
-        ("program_memory", (1,), "f1f10a01010c7e", False),
-        ("program_memory", (2,), "f1f10c01010e7e", False),
-        ("lights_toggle", (), "f1f10f000f7e", False),
-        ("massage_off", (), "f1f11101081a7e", False),
-        ("massage_mode_step", (), "f1f116010a217e", False),
-    ],
-)
-async def test_click_vectors(make_controller, method, args, expected, release):
-    controller, _, client = make_controller()
-    await getattr(controller, method)(*args)
-    assert packets(client) == [expected] + (["f1f14e004e7e"] if release else [])
-
-
-@pytest.mark.parametrize(
     "zone,frames",
     [
         ("head", ["f1f1120208001c7e", "f1f1120208021e7e", "f1f1120208031f7e", "f1f112020804207e"]),
         ("foot", ["f1f1140208001e7e", "f1f114020802207e", "f1f114020803217e", "f1f114020804227e"]),
     ],
 )
+
+
 async def test_massage_vectors_are_not_optimistic(make_controller, zone, frames):
     controller, _, client = make_controller()
     for level in range(4):

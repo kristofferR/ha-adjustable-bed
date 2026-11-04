@@ -3,7 +3,7 @@
 // integration sets a stable translation_key (see strings.json), so this mapping
 // is robust across all supported bed types — a section only appears when its
 // entities exist.
-import { heldReleaseButton } from "./hold";
+import { heldReleaseButton, holdLeaseRoute } from "./hold";
 import type {
   BedSide,
   BedEntities,
@@ -34,6 +34,7 @@ export const SECTION_ORDER = [
   "motors",
   "firmness",
   "presets",
+  "saved_positions",
   "memory",
   "lighting",
   "massage",
@@ -147,6 +148,8 @@ export function bedEntitiesForDevice(
   ): void => {
     const item = motor(key);
     item[direction] = id;
+    const holdLease = holdLeaseRoute(hass, id, ownerDeviceId ?? deviceId);
+    if (holdLease) item.holdLease = holdLease;
     const attributes = hass.states[id]?.attributes;
     const control = attributes?.held_control;
     const startDelayMs = attributes?.hold_start_delay_ms;
@@ -222,6 +225,8 @@ export function bedEntitiesForDevice(
           const down = attributes?.held_control_down;
           const releaseButton = heldReleaseButton(hass, id);
           if (releaseButton) item.releaseButton = releaseButton;
+          const holdLease = holdLeaseRoute(hass, id, entry.device_id);
+          if (holdLease) item.holdLease = holdLease;
           if (attributes?.held_stop_scope === "motor" || attributes?.held_stop_scope === "side") {
             item.coverStopScope = attributes.held_stop_scope;
           }
@@ -249,6 +254,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key === "saved_positions") { bed.savedPositions = id; break; }
         if (key.startsWith("doublesleep_")) {
           if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
           else if (key === "doublesleep_light") (bed.lights.states ??= []).push(id);
@@ -303,6 +309,10 @@ export function bedEntitiesForDevice(
         break;
 
       case "number":
+        if (key.endsWith("_position_estimated")) {
+          motor(key.slice(0, -"_position_estimated".length)).estimate = id;
+          break;
+        }
         if (key.startsWith("adjustamattress_")) {
           (bed.utilityNumbers ??= []).push(id);
           break;
@@ -351,6 +361,8 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
+        if (key === "estimate_remote_used") { bed.estimateRemote = id; break; }
+        if ((match = key.match(/^set_(.+)_reference$/))) { motor(match[1]).reference = id; break; }
         if (key === "doublesleep_massage_action") { bed.massage.buttons.push(id); break; }
         if (key === "doublesleep_light_action") { (bed.lights.buttons ??= []).push(id); break; }
         if (key === "doublesleep_action") { bed.utility.push(id); break; }
@@ -723,7 +735,8 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.utility.length === 0 &&
     !bed.utilityNumbers?.length &&
     !bed.utilitySelects?.length &&
-    !bed.utilityStates?.length
+    !bed.utilityStates?.length &&
+    !bed.savedPositions
   );
 }
 

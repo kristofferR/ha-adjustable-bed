@@ -193,3 +193,29 @@ async def test_finite_move_keeps_the_entry_pulses(lift: Lift) -> None:
     times = [at for at, frame in lift.writes if frame == HELD]
     assert len(times) == 3
     assert times[1] - times[0] >= 0.24
+
+
+async def test_a_renewed_hold_is_one_tracked_movement(lift: Lift) -> None:
+    """Renewals extend the running command, so position estimates see one move."""
+    from custom_components.adjustable_bed import services
+
+    runs: list[str] = []
+    track = services.track_motor_command
+
+    def spy(hass, motor, direction, command):
+        tracked = track(hass, motor, direction, command)
+
+        async def run(controller) -> None:
+            runs.append(motor)
+            await tracked(controller)
+
+        return run
+
+    with patch.object(services, "track_motor_command", spy):
+        start = asyncio.create_task(_move(lift, 5))
+        for _ in range(4):
+            await asyncio.sleep(0.15)
+            await asyncio.wait_for(_move(lift, 5), 1)
+        await asyncio.wait_for(start, 3)
+    assert runs == ["elevate_actuator_1"]
+    assert lift.frames()[-1] == STOP

@@ -28,7 +28,7 @@ from .const import (
     SIDE_BOTH,
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
-from .entity import AdjustableBedEntity
+from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
@@ -37,6 +37,11 @@ from .paired_coordinator import (
     SingleAddressPairedCoordinator,
     entity_runtimes,
 )
+from .position_estimate import (
+    invalidate_on_command,
+    track_motor_command,
+)
+from .position_estimate_entities import async_setup_estimate_buttons
 from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
@@ -735,6 +740,11 @@ def _button_resource(key: str) -> str | None:
     return None
 
 
+def _moves_untimed(key: str, *, held: bool = False) -> bool:
+    """Hardware presets, memory recalls and held actions move the bed untimed."""
+    return held or key.startswith("preset_")
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -742,6 +752,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed button entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    # Opt-in travel-time estimates and saved positions (#601).
+    async_setup_estimate_buttons(hass, entry, async_add_entities)
 
     # Paired beds expose per-side buttons (presets, stop, connect) built against
     # each child, plus combined controls on the parent device: a resilient "Stop"
@@ -1283,9 +1295,10 @@ class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Use the current connection's controller and ordinary command locking."""
-        await self._coordinator.async_execute_controller_command(
-            self._spec.press_fn, cancel_running=True
-        )
+        press_fn = self._spec.press_fn
+        if _moves_untimed(self._spec.key, held=self._spec.hold is not None):
+            press_fn = invalidate_on_command(self.hass, press_fn)
+        await self._coordinator.async_execute_controller_command(press_fn, cancel_running=True)
 
 
 class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
@@ -1365,6 +1378,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
+            attributes.update(hold_lease_attributes([controller]))
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
@@ -1411,8 +1425,11 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                     "No press function defined for button: %s", self.entity_description.key
                 )
                 return
+            press_fn = self.entity_description.press_fn
+            if _moves_untimed(self.entity_description.key):
+                press_fn = invalidate_on_command(self.hass, press_fn)
             await self._coordinator.async_execute_controller_command(
-                self.entity_description.press_fn,
+                press_fn,
                 cancel_running=self.entity_description.cancel_movement,
                 resource=_button_resource(self.entity_description.key),
             )
@@ -1488,15 +1505,18 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             finally:
                 GESTURE_RELEASE.reset(token)
             return
+        press_fn = self._spec.press_fn
+        if _moves_untimed(self._spec.key, held=self._spec.hold is not None):
+            press_fn = invalidate_on_command(self.hass, press_fn)
         if self._spec.scheduler_resource is not None:
             await self._coordinator.async_execute_controller_command(
-                self._spec.press_fn,
+                press_fn,
                 cancel_running=self._spec.cancel_movement,
                 resource=self._spec.scheduler_resource,
             )
             return
         await self._coordinator.async_execute_controller_command(
-            self._spec.press_fn, cancel_running=self._spec.cancel_movement
+            press_fn, cancel_running=self._spec.cancel_movement
         )
 
     @property
@@ -1509,6 +1529,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 held_control=hold.control,
                 hold_start_delay_ms=hold.start_delay_ms,
                 hold_release_delay_ms=hold.release_delay_ms,
+                **hold_lease_attributes([self._coordinator.capability_controller]),
             )
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
@@ -1614,8 +1635,11 @@ class PairedBedCombinedButton(ButtonEntity):
                         f"Cannot validate memory for unavailable device '{child.name}'"
                     )
                 controller.validate_memory_recall(description.memory_slot)
+        press_fn = description.press_fn
+        if _moves_untimed(description.key):
+            press_fn = invalidate_on_command(self.hass, press_fn)
         await self._coordinator.async_execute_controller_command(
-            description.press_fn,
+            press_fn,
             side=SIDE_BOTH,
             cancel_running=description.cancel_movement,
             resource=_button_resource(description.key),
@@ -1651,6 +1675,7 @@ class PairedBedCombinedButton(ButtonEntity):
                     held_control=(hold.up_control if direction == "up" else hold.down_control),
                     hold_start_delay_ms=hold.start_delay_ms,
                     hold_release_delay_ms=hold.release_delay_ms,
+                    **_paired_hold_lease_attributes(self._coordinator),
                 )
                 if hold.release_button_key is not None:
                     attributes["hold_release_button_key"] = hold.release_button_key
@@ -1712,6 +1737,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Advertise this common motor through the bounded paired action."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        attributes.update(_paired_hold_lease_attributes(self._coordinator, self._motor_key))
         hold = _paired_motor_hold_spec(self._coordinator, self._motor_key, self._direction)
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
@@ -1760,7 +1786,10 @@ class PairedBedCombinedMotorButton(ButtonEntity):
                 await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
 
             await self._coordinator.async_execute_controller_command(
-                finite_app_move, side=SIDE_BOTH, cancel_running=True, resource=self._resource
+                track_motor_command(self.hass, self._motor_key, self._direction, finite_app_move),
+                side=SIDE_BOTH,
+                cancel_running=True,
+                resource=self._resource,
             )
             return
         if self._hold_spec is not None:
@@ -1776,13 +1805,31 @@ class PairedBedCombinedMotorButton(ButtonEntity):
                 1000,
             )
             return
-        move_fn = self._move_fn
+        move_fn = track_motor_command(self.hass, self._motor_key, self._direction, self._move_fn)
         await self._coordinator.async_execute_controller_command(
             move_fn,
             side=SIDE_BOTH,
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _paired_hold_lease_attributes(
+    coordinator: PairedBedCoordinator, motor: str | None = None
+) -> dict[str, str]:
+    """Offer a combined renewable hold only when both sides can run it together.
+
+    Separate receivers must be connected concurrently, as for a Both hold
+    contract; a single address holds both sides on one link.
+    """
+    if not isinstance(coordinator, SingleAddressPairedCoordinator) and (
+        coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+        or len(coordinator.children) != 2
+    ):
+        return {}
+    return hold_lease_attributes(
+        (child.capability_controller for child in coordinator.children.values()), motor
+    )
 
 
 def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:

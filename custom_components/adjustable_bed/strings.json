@@ -863,7 +863,10 @@
           "remove_bond": "Remove the Bluetooth bond",
           "left_settings": "Change left receiver settings",
           "right_settings": "Change right receiver settings",
-          "vibradorm_setup": "Choose Vibradorm app and remote"
+          "vibradorm_setup": "Choose Vibradorm app and remote",
+          "estimated_positions": "Estimated positions",
+          "left_estimated_positions": "Estimated positions, left side",
+          "right_estimated_positions": "Estimated positions, right side"
         }
       },
       "settings": {
@@ -1129,6 +1132,109 @@
       "vibradorm_setup": {
         "title": "Guided Vibradorm setup",
         "description": "Close this window. Under Settings > Devices & services > Adjustable Bed, open the three-dot menu for this entry and select Reconfigure. Choose your app and remote there. The wizard verifies the selection before offering to save it. Your current setup remains saved until you confirm."
+      },
+      "estimated_positions": {
+        "title": "Estimated positions",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "data": {
+          "back": "Back",
+          "legs": "Legs",
+          "head": "Head",
+          "feet": "Feet",
+          "measure": "Measure travel times now",
+          "acknowledge": "I understand that positions are estimated"
+        },
+        "data_description": {
+          "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
+          "acknowledge": "Required to turn estimated positions on."
+        }
+      },
+      "left_estimated_positions": {
+        "title": "Estimated positions, left side",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "data": {
+          "back": "Back",
+          "legs": "Legs",
+          "head": "Head",
+          "feet": "Feet",
+          "measure": "Measure travel times now",
+          "acknowledge": "I understand that positions are estimated"
+        },
+        "data_description": {
+          "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
+          "acknowledge": "Required to turn estimated positions on."
+        }
+      },
+      "right_estimated_positions": {
+        "title": "Estimated positions, right side",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "data": {
+          "back": "Back",
+          "legs": "Legs",
+          "head": "Head",
+          "feet": "Feet",
+          "measure": "Measure travel times now",
+          "acknowledge": "I understand that positions are estimated"
+        },
+        "data_description": {
+          "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
+          "acknowledge": "Required to turn estimated positions on."
+        }
+      },
+      "estimate_flat": {
+        "title": "Calibrate {motor}",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} must be completely flat before it is measured. Lower it with the card or the remote, or let this step lower it. Only you can confirm that it is flat.",
+        "menu_options": {
+          "estimate_flat_confirm": "It is flat, raise it now",
+          "estimate_flat_lower": "Lower it for me",
+          "estimate_cancel": "Cancel, nothing is saved"
+        }
+      },
+      "estimate_lowering": {
+        "title": "Lowering {motor}",
+        "description": "The {motor} is moving down. Select **It is flat now** once it has stopped moving. Movement stops by itself after {max_s} s.",
+        "menu_options": {
+          "estimate_lowered": "It is flat now",
+          "estimate_cancel": "Stop, something is wrong"
+        }
+      },
+      "estimate_raise": {
+        "title": "Calibrate {motor}",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} is moving up from flat. Select **Reached the top** the moment it stops moving.\n\nThe time runs from the first movement command. Movement stops by itself after {max_s} s if you do nothing. Tapping adds a small delay; you can fine tune the times on the last step.",
+        "menu_options": {
+          "estimate_top": "Reached the top",
+          "estimate_cancel": "Stop, something is wrong. Nothing is saved"
+        }
+      },
+      "estimate_lower": {
+        "title": "Calibrate {motor}",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} is moving down. Select **Reached the bottom** the moment it stops moving. Movement stops by itself after {max_s} s if you do nothing.",
+        "menu_options": {
+          "estimate_bottom": "Reached the bottom",
+          "estimate_cancel": "Stop, something is wrong. Nothing is saved"
+        }
+      },
+      "estimate_retry": {
+        "title": "{motor} was not measured",
+        "description": "The movement was not timed. It may not have started yet, it may have reached the {max_s} s safety stop first, or it failed. The {motor} has been stopped.",
+        "menu_options": {
+          "estimate_retry_again": "Measure the {motor} again",
+          "estimate_cancel": "Cancel, nothing is saved"
+        }
+      },
+      "estimate_review": {
+        "title": "Review calibration",
+        "description": "Step {step} of {steps}.\n\nThe seconds each motor takes for its full travel. Adjust them to fine tune, or type them if you timed the bed with a stopwatch. Motors you just measured ended flat, so their reference is set and they start at 0%. Times can be measured again any time from this menu; changing them keeps your saved positions.",
+        "data": {
+          "back_up": "Back, full travel up",
+          "back_down": "Back, full travel down",
+          "legs_up": "Legs, full travel up",
+          "legs_down": "Legs, full travel down",
+          "head_up": "Head, full travel up",
+          "head_down": "Head, full travel down",
+          "feet_up": "Feet, full travel up",
+          "feet_down": "Feet, full travel down"
+        }
       }
     },
     "error": {
@@ -1182,7 +1288,8 @@
       "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls.",
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
-      "gmmotor_side": "This product does not expose the selected app side."
+      "gmmotor_side": "This product does not expose the selected app side.",
+      "estimate_acknowledge_required": "Confirm that you understand positions are estimated."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1196,7 +1303,9 @@
       "remove_bond_ambiguous": "Home Assistant cannot tell which Bluetooth bond you mean for **{name}** ({address}). Either more than one adapter on this host is bonded to it, or the adapter it was paired through no longer holds a bond. Set the bed's preferred adapter to the one you want to clear, then try again.",
       "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there.",
       "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings.",
-      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving."
+      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
+      "estimate_cancelled": "Calibration cancelled. The motor was stopped and your previous times were kept. Set the reference again for any motor you started measuring.",
+      "estimated_positions_unavailable": "Estimated positions are not available for this bed."
     }
   },
   "entity": {
@@ -3066,6 +3175,21 @@
       },
       "hjbed_release_right": {
         "name": "Right Release held action"
+      },
+      "set_back_reference": {
+        "name": "Set back reference"
+      },
+      "set_legs_reference": {
+        "name": "Set legs reference"
+      },
+      "set_head_reference": {
+        "name": "Set head reference"
+      },
+      "set_feet_reference": {
+        "name": "Set feet reference"
+      },
+      "estimate_remote_used": {
+        "name": "I used the remote"
       }
     },
     "cover": {
@@ -4804,6 +4928,9 @@
       },
       "gmmotor_sleep_state": {
         "name": "GM Control sleep module state"
+      },
+      "saved_positions": {
+        "name": "Saved positions"
       }
     },
     "light": {
@@ -5394,6 +5521,18 @@
       },
       "bf_cherish_wave": {
         "name": "Massage wave"
+      },
+      "back_position_estimated": {
+        "name": "Back position (estimated)"
+      },
+      "legs_position_estimated": {
+        "name": "Legs position (estimated)"
+      },
+      "head_position_estimated": {
+        "name": "Head position (estimated)"
+      },
+      "feet_position_estimated": {
+        "name": "Feet position (estimated)"
       }
     },
     "select": {
@@ -7873,6 +8012,172 @@
           "name": "Bed side"
         }
       }
+    },
+    "save_position": {
+      "name": "Save position",
+      "description": "Save the current estimated position under a name. Every included motor must be tracking.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to save. Both saves both sides; Left or Right saves only that side."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name of the saved position."
+        },
+        "create_button": {
+          "name": "Create button",
+          "description": "Also create a button entity that recalls this position."
+        }
+      }
+    },
+    "rename_position": {
+      "name": "Rename saved position",
+      "description": "Rename a saved position, and optionally show or hide its button entity.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+        },
+        "position": {
+          "name": "Saved position",
+          "description": "The saved position's name or ID."
+        },
+        "name": {
+          "name": "New name",
+          "description": "The new name."
+        },
+        "create_button": {
+          "name": "Create button",
+          "description": "Whether a button entity recalls this position."
+        }
+      }
+    },
+    "update_position": {
+      "name": "Update saved position",
+      "description": "Replace a saved position with the current estimated position of the sides it covers.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+        },
+        "position": {
+          "name": "Saved position",
+          "description": "The saved position's name or ID."
+        }
+      }
+    },
+    "delete_position": {
+      "name": "Delete saved position",
+      "description": "Delete a saved position and its button entity.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+        },
+        "position": {
+          "name": "Saved position",
+          "description": "The saved position's name or ID."
+        }
+      }
+    },
+    "recall_position": {
+      "name": "Recall saved position",
+      "description": "Move each motor for its calculated time to reach a saved position. Every covered side must be tracking. The result is estimated.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+        },
+        "position": {
+          "name": "Saved position",
+          "description": "The saved position's name or ID."
+        }
+      }
+    },
+    "set_position_reference": {
+      "name": "Set position reference",
+      "description": "Confirm the selected motors are flat now. Their estimates start again at 0%.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+        },
+        "motors": {
+          "name": "Motors",
+          "description": "Estimated motors to include. Leave unset for every estimated motor."
+        }
+      }
+    },
+    "confirm_position_unchanged": {
+      "name": "Confirm position unchanged",
+      "description": "Trust the estimate restored after a restart because the bed has not moved since.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+        }
+      }
+    },
+    "mark_position_unknown": {
+      "name": "Mark position unknown",
+      "description": "Report a movement the integration could not see, such as the remote or the bed's app.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+        }
+      }
+    },
+    "lower_to_flat": {
+      "name": "Lower to flat",
+      "description": "Lower the selected motors for their full travel time plus a margin. This never sets the reference: confirm flat afterwards.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+        },
+        "motors": {
+          "name": "Motors",
+          "description": "Estimated motors to include. Leave unset for every estimated motor."
+        }
+      }
     }
   },
   "exceptions": {
@@ -7956,6 +8261,39 @@
     },
     "preset_duration_not_supported": {
       "message": "Device \"{device_name}\" does not accept a hold duration for preset recall. Leave the duration unset."
+    },
+    "position_estimate_not_enabled": {
+      "message": "Estimated positions are not enabled or calibrated for this bed."
+    },
+    "position_estimate_not_tracking": {
+      "message": "The estimated position is not confirmed. Set the reference, or confirm the bed has not moved, first."
+    },
+    "saved_position_not_found": {
+      "message": "There is no saved position named \"{position}\"."
+    },
+    "saved_position_exists": {
+      "message": "A saved position named \"{position}\" already exists."
+    },
+    "saved_position_name_invalid": {
+      "message": "Saved position names need 1 to 40 characters."
+    },
+    "saved_position_not_reached": {
+      "message": "{position} was not reached. Check the bed and set the reference if needed."
+    },
+    "estimated_position_not_reached": {
+      "message": "The estimated position was not reached. Check the bed and set the reference if needed."
+    },
+    "saved_position_other_side": {
+      "message": "\"{position}\" also covers the other side. Select the whole bed to use it."
+    },
+    "position_estimate_moving": {
+      "message": "The bed is moving. Stop it, then try again."
+    },
+    "position_estimate_move_failed": {
+      "message": "A movement failed, so the estimated position is unknown. Set the reference again."
+    },
+    "saved_position_unavailable": {
+      "message": "\"{position}\" includes a motor that is no longer estimated. Update or delete it."
     }
   },
   "issues": {

@@ -387,6 +387,13 @@ class ReverieController(BedController):
             repeat_count,
             repeat_delay_ms,
         )
+        self._record_command_trace(
+            REVERIE_CHAR_UUID,
+            command,
+            response=True,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+        )
 
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():

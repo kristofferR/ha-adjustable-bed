@@ -25,5 +25,12 @@ export function bedHasGraphicFeedback(
     const entityId = motor.angle ?? motor.position;
     return hass.states[entityId ?? ""]?.attributes.unit_of_measurement === "°";
   });
-  return selectBedGraphicMotors(degreeMotors) !== undefined;
+  // A calibrated estimate is drawn too, dashed, when its maximum angle is set.
+  const estimatedMotors = bed.motors.filter(
+    (motor) => typeof hass.states[motor.estimate ?? ""]?.attributes.max_angle === "number",
+  );
+  return (
+    selectBedGraphicMotors(degreeMotors) !== undefined ||
+    selectBedGraphicMotors(estimatedMotors) !== undefined
+  );
 }

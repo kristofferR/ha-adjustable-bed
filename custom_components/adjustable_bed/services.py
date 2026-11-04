@@ -88,6 +88,7 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
+    TIMED_MOVE_MOTOR_OPTIONS,
     bed_type_has_position_feedback,
     resolve_explicit_bed_type,
 )
@@ -101,6 +102,7 @@ from .paired_coordinator import (
 )
 from .paired_devices import side_identifier
 from .pairing import is_paired, iter_children, pair_member_addresses
+from .position_estimate import invalidate_on_command, track_held_control, track_motor_command
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerMotorHoldSpec, SideBoundController
@@ -301,27 +303,6 @@ POSITION_MOTOR_OPTIONS = (
     "right_legs",
 )
 
-TIMED_MOVE_MOTOR_OPTIONS = (
-    "tv_lift",
-    "back",
-    "right_back",
-    "legs",
-    "head",
-    "feet",
-    "tilt",
-    "pillow",
-    "lumbar",
-    "bed_height",
-    "stair",
-    "m1x12_part_1",
-    "m1x12_part_2",
-    "m1x12_part_4",
-    "m1x12_part_8",
-    "m1x12_part_16",
-    "elevate_actuator_1",
-    "elevate_actuator_2",
-    "elevate_both",
-)
 LEGGETT_HELD_CONTROLS = (
     "flat",
     "snore",
@@ -902,7 +883,7 @@ async def handle_goto_preset(call: ServiceCall) -> None:
         # so never reset their idle timer) before propagating.
         try:
             for coordinator, side in targets:
-                await _execute_sided(coordinator, side, recall)
+                await _execute_sided(coordinator, side, invalidate_on_command(hass, recall))
         except Exception:
             await _release_preflighted(preflighted)
             raise
@@ -2136,11 +2117,23 @@ async def _timed_move_plan(
             calculated_repeat_count,
         )
 
+        async def held_movement(ctrl: BedController, _control: str | None = hold_control) -> None:
+            assert _control is not None
+            await ctrl.hold_control(_control, duration_ms)
+
+        # Only the movement itself is timed: hold start and release delays and
+        # the STOP cleanup around it are not travel. Single-address side views
+        # carry no hass and are never estimated.
+        estimate_hass = getattr(coordinator, "hass", None)
+        tracked_hold = track_motor_command(estimate_hass, motor, direction, held_movement)
+        tracked_move = track_motor_command(estimate_hass, motor, direction, move_fn)
+
         # Bind closure variables as defaults to avoid late-binding bugs
         async def timed_movement(
             ctrl: BedController,
             *,
-            _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
+            _move_fn: Callable[..., Coroutine[Any, Any, None]] = tracked_move,
+            _held: Callable[..., Coroutine[Any, Any, None]] = tracked_hold,
             _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
             _hold_control: str | None = hold_control,
             _hold_spec: ControllerMotorHoldSpec | None = hold_spec,
@@ -2157,7 +2150,7 @@ async def _timed_move_plan(
                     await ctrl.prepare_for_movement()
                     if _hold_spec.start_delay_ms:
                         await asyncio.sleep(_hold_spec.start_delay_ms / 1000)
-                    await ctrl.hold_control(_hold_control, duration_ms)
+                    await _held(ctrl)
                     if _hold_spec.release_delay_ms:
                         await asyncio.sleep(_hold_spec.release_delay_ms / 1000)
                     return
@@ -2165,7 +2158,7 @@ async def _timed_move_plan(
                 try:
                     await ctrl.prepare_for_movement()
                     if _hold_control is not None:
-                        await ctrl.hold_control(_hold_control, duration_ms)
+                        await _held(ctrl)
                     else:
                         deadline = asyncio.timeout(duration_ms / 1000)
                         try:
@@ -3172,7 +3165,7 @@ async def _hold_targets(
             await _execute_sided(
                 coordinator,
                 side,
-                hold,
+                track_held_control(getattr(coordinator, "hass", None), control, hold),
                 cancel_running=True,
                 expected_stop_epoch=admission.stop_epoch,
                 expected_pair_generations=admission.pair_generations,
@@ -4778,6 +4771,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .gmmotor_services import async_register_gmmotor_services
     from .hjbed_services import async_register_hjbed_services
     from .motion_bed_services import async_register_motion_bed_services
+    from .position_estimate_services import async_register_position_estimate_services
     from .richmat_mh_services import async_register_richmat_mh_services
     from .rmcontrol_services import async_register_rmcontrol_services
     from .sleep_number_services import async_register_sleep_number_services
@@ -4788,6 +4782,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_casper_base_services(hass)
     async_register_gmmotor_services(hass)
     async_register_richmat_mh_services(hass)
+    async_register_position_estimate_services(hass)
     async_register_hjbed_services(hass)
     async_register_rmcontrol_services(hass)
     async_register_sleep_number_services(hass)

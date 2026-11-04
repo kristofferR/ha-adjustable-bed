@@ -188,5 +188,5 @@ Left/Right orientation, actual motor and preset effects, release semantics,
 notifications, RGB, rename and alarm behavior. Those are real-user checks after
 a beta/release, never a maintainer acquisition or immediate hardware-test task.
 
-User guide: [Ergomotion 4.0](../../beds/ergomotion-4.md).
+User guide: [Ergomotion 4.0](../../beds/keeson.md#ergomotion-40).
 Ref [#558](https://github.com/kristofferR/ha-adjustable-bed/issues/558).

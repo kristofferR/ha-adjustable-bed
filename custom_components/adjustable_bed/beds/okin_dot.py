@@ -115,6 +115,7 @@ class OkinDotController(OkinUuidController):
         # Mark first so a failing handshake doesn't retry on every command;
         # a reconnect produces a new client object and a fresh attempt.
         self._affirmed_client = client
+        self._record_command_trace(NORDIC_UART_WRITE_CHAR_UUID, _AFFIRM_HANDSHAKE, response=False)
         try:
             async with self._ble_lock:
                 await client.write_gatt_char(

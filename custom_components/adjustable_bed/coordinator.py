@@ -165,7 +165,7 @@ from .const import (
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
-    CONF_PROTOCOL_VARIANT,
+    CONF_PROFILE_ID,
     CONF_REMACRO_LED_LEVEL,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
@@ -258,6 +258,7 @@ from .pairing import (
     is_paired,
     octo_snapshot_from_descriptor,
 )
+from .position_estimate import notify_connection_lost as notify_position_estimate_connection_lost
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -268,6 +269,7 @@ from .position_seek import (
     SeekSample,
     SeekTimeoutError,
 )
+from .profile_id import entry_profile_id, profile_route, resolve_profile_id
 from .unsupported import (
     create_pairing_required_issue,
     delete_pairing_required_issue,
@@ -424,9 +426,13 @@ class AdjustableBedCoordinator:
         self.hass = hass
         self.entry = entry
         self._address: str = entry.data[CONF_ADDRESS].upper()
-        self._bed_type: str = entry.data[CONF_BED_TYPE]
-        self._protocol_variant: str = entry.data.get(
-            CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
+        # The stored profile id is the lookup key; its route is what the
+        # controller factory and every bed-type branch below read.
+        self._profile_id: str = entry_profile_id(entry.data)
+        route = profile_route(self._profile_id)
+        self._bed_type: str = route.bed_type
+        self._protocol_variant: str = (
+            route.variant if route.variant is not None else DEFAULT_PROTOCOL_VARIANT
         )
         self._name: str = entry.data.get(CONF_NAME, "Adjustable Bed")
         # Malouf's APK has one command exception keyed to Smartbed238. Keep the
@@ -989,6 +995,8 @@ class AdjustableBedCoordinator:
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
+        if bed_type_changed:
+            self._profile_id = entry_data[CONF_PROFILE_ID] = resolve_profile_id(entry_data)
         if migrate_leggett_okin_defaults and corrected_defaults is not None:
             entry_data[CONF_MOTOR_PULSE_COUNT] = corrected_defaults[0]
             entry_data[CONF_MOTOR_PULSE_DELAY_MS] = corrected_defaults[1]
@@ -1103,6 +1111,11 @@ class AdjustableBedCoordinator:
     def bed_type(self) -> str:
         """Return the bed type."""
         return self._bed_type
+
+    @property
+    def profile_id(self) -> str:
+        """Return the profile id this coordinator builds its controller from."""
+        return self._profile_id
 
     @property
     def motor_count(self) -> int:
@@ -4961,6 +4974,8 @@ class AdjustableBedCoordinator:
         controller = self._controller
         if controller is not None:
             controller.on_disconnect()
+        # A tracked movement cut off by the link loss has no known stop time.
+        notify_position_estimate_connection_lost(self)
 
         # If we're in the middle of connecting, this is likely bleak's internal retry
         # for le-connection-abort-by-local - don't log warnings or clear references

@@ -330,10 +330,10 @@ class SvaneController(BedController):
             raise ConnectionError("Svane link is not connected")
         # The app inherits runtime mode. Host policy prefers advertised
         # no-response; a write-only role uses its advertised response mode.
+        response = "write-without-response" not in properties
+        self._record_command_trace(char, data, response=response, characteristic=role)
         async with self._ble_lock:
-            await client.write_gatt_char(
-                role, data, response="write-without-response" not in properties
-            )
+            await client.write_gatt_char(role, data, response=response)
 
     async def _wait(self, seconds: float) -> bool:
         cancel = self._coordinator.cancel_command

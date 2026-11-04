@@ -2224,6 +2224,20 @@ class OctoController(BedController, OctoPacketCodec):
         return tuple(specs)
 
     @property
+    def estimated_position_motor_groups(self) -> Mapping[str, tuple[str, ...]]:
+        """Every OCTO motor control is a directional stream ended by the STOP frame."""
+        groups = {
+            "back": ("back",),
+            "legs": ("legs",),
+            "back_legs": ("back", "legs"),
+            "head": ("head",),
+            "feet": ("feet",),
+            "head_feet": ("head", "feet"),
+        }
+        keys = {spec.key for spec in self.motor_control_specs}
+        return {key: motors for key, motors in groups.items() if key in keys}
+
+    @property
     def supports_preset_both_up(self) -> bool:
         """Return whether Both Up remains a separate preset control."""
         count = self.effective_motor_count
