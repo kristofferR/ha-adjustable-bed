@@ -18,7 +18,9 @@ from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
+from custom_components.adjustable_bed.profiles.richmat import RichmatProfile
 from tests.jiecang_vectors import FROZEN_FRAMES as JIECANG_VECTORS
+from tests.richmat_vectors import FROZEN_FRAMES as RICHMAT_VECTORS
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
     _FactoryCoordinator,
@@ -26,7 +28,10 @@ from tests.test_controller_contract import (
 )
 
 # Codec families: profile class -> frozen vectors by profile key.
-CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {JiecangProfile: JIECANG_VECTORS}
+CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
+    JiecangProfile: JIECANG_VECTORS,
+    RichmatProfile: RICHMAT_VECTORS,
+}
 
 # App choices of codec-backed bed types: bed type -> (config key, choices).
 APP_ROUTES: dict[str, tuple[str, tuple[str, ...]]] = {
@@ -37,7 +42,6 @@ UNMIGRATED: dict[str, str] = {
     "adjustable_lumbar": "#745 O1 Okin N-frame",
     "adjustamattress": "#745 K1 Keeson E5/E6",
     "bedsense": "#745 S1 FFFF",
-    "bedtech": "#745 R1 Richmat 6E",
     "bf": "#745 K1 Keeson E5/E6",
     "casper_base": "standalone: own wire format",
     "casper_remote": "standalone: remote without bed commands",
@@ -59,10 +63,9 @@ UNMIGRATED: dict[str, str] = {
     "fsm_relax": "#745 L1 Limoss DD",
     "furnimove": "#745 K1 Keeson E5/E6",
     "glideaway_motion": "#745 K1 Keeson E5/E6",
-    "gmmotor": "#745 R1 Richmat 6E, partial",
+    "gmmotor": "#745 R1 Richmat 6E: frames use codec/richmat.py, catalog session stays",
     "gmmotor_sleep_mm": "standalone: sleep sensor without bed commands",
     "gmmotor_sleep_sxb": "standalone: sleep sensor without bed commands",
-    "hjbed": "#745 R1 Richmat 6E",
     "isleep": "standalone: Kaidi mesh frames",
     "jensen": "standalone: own wire format",
     "kaidi": "standalone: Kaidi mesh frames",
@@ -71,7 +74,6 @@ UNMIGRATED: dict[str, str] = {
     "leggett_lp_legacy": "standalone: own wire format",
     "leggett_okin": "#745 O1 Okin N-frame",
     "leggett_platt": "#745 O1 Okin N-frame",
-    "leggett_wilinke": "#745 R1 Richmat 6E",
     "limoss": "#745 L1 Limoss DD",
     "limoss_remote": "#745 L1 Limoss DD",
     "linak": "standalone: own wire format",
@@ -105,12 +107,6 @@ UNMIGRATED: dict[str, str] = {
     "reverie": "standalone: own wire format",
     "reverie_nightstand": "standalone: own wire format",
     "reverie_pairlink": "standalone: own wire format behind a Pairlink session",
-    "richmat": "#745 R1 Richmat 6E",
-    "richmat_best_mattress": "#745 R1 Richmat 6E",
-    "richmat_blvd_home": "#745 R1 Richmat 6E",
-    "richmat_harmony": "#745 R1 Richmat 6E",
-    "richmat_idealbed": "#745 R1 Richmat 6E",
-    "richmat_revive": "#745 R1 Richmat 6E",
     "rondure": "#745 K1 Keeson E5/E6",
     "row_control": "#745 K1 Keeson E5/E6",
     "sbi": "#745 K1 Keeson E5/E6",

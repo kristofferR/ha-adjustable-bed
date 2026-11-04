@@ -11,26 +11,7 @@ from datetime import datetime
 from time import monotonic
 from typing import Literal
 
-_ACTION_PREFIXES = {
-    "deviceFunctionItemExitLimit": bytes.fromhex("6e0201"),
-    "deviceFunctionItemCheckClock": bytes.fromhex("6e0801"),
-    "deviceFunctionItemCheckLight": bytes.fromhex("6e0a00"),
-    "deviceFunctionItemCheckMusic": bytes.fromhex("6e1501"),
-    "deviceFunctionItemCheckAroma": bytes.fromhex("6e1a00"),
-    "deviceFunctionItemCheckMattress": bytes.fromhex("5e1a00"),
-    "deviceFunctionItemCheckSnore": bytes.fromhex("6e2100"),
-    "deviceFunctionItemCheckSpeech": bytes.fromhex("6e2200"),
-    "deviceFunctionItemCheckDetection": bytes.fromhex("6e9ac0"),
-    "deviceFunctionItemSendStartDetection": bytes.fromhex("6e88c2"),
-    "deviceFunctionItemQueryVersion": bytes.fromhex("6e9a00"),
-    "deviceFunctionVersionOneBedCurrentMode": bytes.fromhex("6e9a10"),
-    "deviceFunctionVersionOneMotor1CurrentAngle": bytes.fromhex("6e9a30"),
-    "deviceFunctionVersionOneMotor2CurrentAngle": bytes.fromhex("6e9a30"),
-    "deviceFunctionVersionOneMotor3CurrentAngle": bytes.fromhex("6e9a30"),
-    "deviceFunctionVersionOneMotor4CurrentAngle": bytes.fromhex("6e9a30"),
-    "deviceFunctionVersionOneCurrentMassageMode": bytes.fromhex("6e9aa0"),
-    "deviceFunctionVersionOneCurrentBedLightStatus": bytes.fromhex("6e9ab0"),
-}
+from .codec import richmat as codec
 
 
 def _integer(value: int, name: str, maximum: int = 255, minimum: int = 0) -> int:
@@ -39,30 +20,23 @@ def _integer(value: int, name: str, maximum: int = 255, minimum: int = 0) -> int
     return value
 
 
-def _checksum(body: bytes) -> bytes:
-    return body + bytes((sum(body) & 0xFF,))
-
-
 def _extended(domain: int, command: int, operation: int, data: bytes) -> bytes:
     # Outbound extended frames place length before 0x20. Notifications do not.
-    return _checksum(bytes((0x6E, len(data) + 7, 0x20, domain, command, operation)) + data)
+    return codec.record(domain, command, operation, data)
 
 
 def build_action(command: int, *, side: int = 0, nordic: bool = False, action: str = "") -> bytes:
     """Build a resolved detail command; profile/gesture selection belongs to the caller."""
     _integer(command, "command")
     _integer(side, "side", 2)
-    if nordic:
-        return bytes((command,))
-    prefix = _ACTION_PREFIXES.get(action, bytes((0x6E, 1, side)))
-    return _checksum(prefix + bytes((command,)))
+    return codec.function(command, side, action=action, single=nordic)
 
 
 def build_light_timer(seconds: int) -> bytes:
     """Build the 16-bit seconds command, with zero meaning no timeout."""
     _integer(seconds, "seconds", 65535)
     value = seconds if seconds else 65535
-    return _checksum(bytes((0x6E, 0x0B, value >> 8, value & 255)))
+    return codec.light_timer(value >> 8, value & 255)
 
 
 def build_light_color(rgb: tuple[int, int, int]) -> bytes:
@@ -70,17 +44,14 @@ def build_light_color(rgb: tuple[int, int, int]) -> bytes:
     if len(rgb) != 3:
         raise ValueError("RGB requires exactly three components")
     red, green, blue = (_integer(value, "RGB component") for value in rgb)
-    return _checksum(bytes((0x6E, 0x0C, 255, red))) + _checksum(bytes((0x6E, 0x0D, green, blue)))
+    return codec.rgb(red, green, blue)
 
 
 def build_single_alarm(minutes: int, command: int) -> tuple[bytes, bytes]:
     """Build the ordered countdown/action frames; (0, 0) cancels the alarm."""
     _integer(minutes, "minutes", 65535)
     _integer(command, "command")
-    return (
-        _checksum(bytes((0x6E, 5, minutes & 255, 0))),
-        _checksum(bytes((0x6E, 6, minutes >> 8, command))),
-    )
+    return codec.countdown(minutes, command)
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,19 +107,11 @@ def build_alarm_time_sync(now: datetime) -> tuple[bytes, bytes]:
     The artifact truncates timezone offsets to whole hours toward zero. Aware
     datetime input makes that limitation explicit instead of using host timezone.
     """
-    offset = now.utcoffset()
-    if offset is None:
+    if now.utcoffset() is None:
         raise ValueError("Alarm time synchronization requires an aware datetime")
-    timestamp = int(now.timestamp())
-    _integer(timestamp, "Unix timestamp", 0xFFFFFFFF)
+    _integer(int(now.timestamp()), "Unix timestamp", 0xFFFFFFFF)
     _integer(now.year - 1970, "year offset", 255)
-    zone = int(offset.total_seconds() / 3600) & 255
-    return (
-        _extended(8, 2, 1, timestamp.to_bytes(4, "big") + bytes((zone,))),
-        _extended(
-            8, 3, 1, bytes((now.year - 1970, now.month, now.day, now.hour, now.minute, now.second))
-        ),
-    )
+    return codec.time_sync(now)
 
 
 def build_anti_snore_config(mode: Literal["count", "time"], value: int) -> bytes:

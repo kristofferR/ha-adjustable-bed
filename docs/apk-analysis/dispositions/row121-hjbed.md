@@ -122,6 +122,6 @@ convenience, model prevalence, missing hardware or lack of an entity is an
 exclusion reason. Physical effects, ATT and firmware acceptance remain unverified
 and are deferred to real users after beta/release.
 
-Implementation: [HJBed guide](../../beds/hjbed.md). Focused checks live in
+Implementation: [HJBed guide](../../beds/richmat.md#hjbed). Focused checks live in
 `tests/test_hjbed.py`, its artifact fixtures, the controller/HA service/entity
 contracts and the card's discovery/hold tests.

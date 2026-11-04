@@ -305,65 +305,7 @@ Multiple motors can be moved simultaneously by OR-ing their command values toget
 
 ## MlRM Variant (WiLinke)
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Josh Pearce](https://github.com/joshpearce)
-
-**Characteristic UUID:** `d44bc439-abfd-45a2-b575-925416129600`
-**Format:** 5 bytes `[0x6E, 0x01, 0x00, command, checksum]`
-**Checksum:** Sum of first 4 bytes, truncated to 8 bits
-
-This variant uses Richmat WiLinke BLE hardware but with Leggett & Platt-specific commands. A key differentiator from standard Richmat WiLinke is discrete massage UP/DOWN commands instead of cycling step commands.
-
-### Preset Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Flat | `0x31` | Flat position |
-| Zero-G | `0x45` | Zero gravity |
-| Anti-Snore | `0x46` | Anti-snore position |
-| TV | `0x58` | TV viewing position |
-| Lounge | `0x59` | Lounge position |
-| Memory 1 | `0x2E` | Recall memory slot 1 |
-| Memory 2 | `0x2F` | Recall memory slot 2 |
-
-### Program Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Program Memory 1 | `0x2B` | Save current position to slot 1 |
-| Program Memory 2 | `0x2C` | Save current position to slot 2 |
-| Program Zero-G | `0x66` | Save as zero-g position |
-| Program Anti-Snore | `0x69` | Save as anti-snore position |
-| Program TV | `0x64` | Save as TV position |
-| Program Lounge | `0x65` | Save as lounge position |
-
-### Motor Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Head Up | `0x24` | Raise head |
-| Head Down | `0x25` | Lower head |
-| Feet Up | `0x26` | Raise feet |
-| Feet Down | `0x27` | Lower feet |
-| End/Stop | `0x6E` | Stop all movement |
-
-### Massage Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Head Massage Up | `0x4C` | Increase head massage |
-| Head Massage Down | `0x4D` | Decrease head massage |
-| Foot Massage Up | `0x4E` | Increase foot massage |
-| Foot Massage Down | `0x4F` | Decrease foot massage |
-| Stop Massage | `0x47` | Stop all massage |
-| Head Toggle | `0x32` | Toggle head massage |
-| Foot Toggle | `0x33` | Toggle foot massage |
-| Intensity Up | `0x34` | Overall intensity up |
-| Intensity Down | `0x35` | Overall intensity down |
-| Pattern Step | `0x38` | Cycle massage patterns |
-| Wave Mode | `0x39` | Toggle wave mode |
-
-### Light Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Lights Toggle | `0x3C` | Toggle under-bed lights |
+This variant uses Richmat WiLinke BLE hardware with Leggett & Platt codes: discrete
+massage up/down commands instead of the Richmat step commands, and held presets.
+Its frames, timing and controls are in the [L&P MlRM profile](richmat.md#lp-mlrm)
+of the Richmat codec guide.

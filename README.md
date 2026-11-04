@@ -94,7 +94,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](docs/beds/ore-comfort-bed.md), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
 | 🧪 [Casper Base app](docs/beds/casper-base.md) | PRO / MAX, conditional stored products, separate MM/SXB sensors and RCRM remote; artifact-proven, hardware unverified |
 | 🧪 [GM Control app](docs/beds/gmmotor.md) | Exact product catalogs, FWRM/WFRM desks, separate MM/SXB sleep modules; hardware unverified |
-| ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md) |
+| ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/richmat.md#rmcontrol), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat.md#richmat-mh-apps) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
 | ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/woosa.md) |
@@ -110,7 +110,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
 | ✅ [FSM Relax](docs/beds/fsm_relax.md) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
-| 🧪 [HJBed app](docs/beds/hjbed.md) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
+| 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
 | ✅ [Glideaway Motion / Montion app](docs/beds/glideaway-motion.md) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md); legacy ISleep entries |
@@ -123,7 +123,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
 | ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf-app.md) |
-| ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
+| ✅ [BedTech](docs/beds/richmat.md#bedtech) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | 🧪 [BedSense app](docs/beds/bedsense.md) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
 | 🧪 [OKIN SleepEase](docs/beds/doublesleep.md) | DoubleSleep / XiaoBao and sensor-only XiaoBao Only; artifact-proven, hardware unverified |

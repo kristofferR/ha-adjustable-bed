@@ -10,7 +10,7 @@ validation limits; the feature summaries below depend on the selected controller
 |-------|--------------|
 | [Linak](beds/linak.md) | Auto-detected models, up to 5 axes, 0/4 memories, speed/status/errors, massage, alarms, lights |
 | [Keeson](beds/keeson.md) | Position feedback (Ergomotion), presets, massage, lights; [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil / Dynasty / Bedsense](beds/ore-comfort-bed.md), [Restonic BT](beds/keeson.md#restonic-bt-profiles) |
-| [Richmat](beds/richmat.md) | Model-dependent motors, memory, massage, lighting, alarms and reported state; [RMControl](beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md) |
+| [Richmat](beds/richmat.md) | Model-dependent motors, memory, massage, lighting, alarms and reported state; [RMControl](beds/richmat.md#rmcontrol), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) |
 | [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [OCTO Smart Control](beds/octo.md) | Standard OCTO capability-advertised motor, memory, light and setting controls; separate Star2 variant. Hardware validation is deferred |
 | [Solace](beds/solace.md) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/woosa.md) profile with one Favourite memory |
@@ -27,7 +27,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Mattress Firm 900](beds/mattressfirm.md) | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
 | [Nectar](beds/nectar.md) | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
 | [Malouf/Lucid](beds/malouf.md) | Model-dependent motor layout, memory, massage and lights; [Malouf Base / Lucid Base](beds/malouf-app.md) model and transport selection |
-| [BedTech](beds/bedtech.md) | 5 presets, 4 massage modes, dual-base support |
+| [BedTech](beds/richmat.md#bedtech) | 5 presets, 4 massage modes; the app's dual-base frames are documented, not sent |
 | [Sleep Number](beds/sleep_number.md) | Fuzion and BAM/MCR: capability-dependent position, firmness, presets, lighting and thermal controls |
 | [Sleepy's Elite](beds/sleepys.md) | BOX15/24/25 variants, presets, BOX25 position sliders including lumbar |
 | [AdjustableM5X4](beds/starcode-abm5-4.md) / [AdjustableM5X5](beds/starcode-m5x5.md) apps | StarCode Star-name beds: M5X4 command and transport selectors; M5X5 CB25/F23/kneading layouts and up to three [ELEVATE](beds/star-elevate.md) lift entries |

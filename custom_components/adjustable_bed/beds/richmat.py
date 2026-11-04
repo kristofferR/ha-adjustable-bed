@@ -1,17 +1,19 @@
-"""Richmat bed controller implementation.
+"""Richmat bed controllers over the Richmat 6E codec.
 
 Reverse engineering by getrav and Richard Hopton (smartbed-mqtt).
 
-Richmat beds have several protocol variants:
-- Nordic/Single: Simple single-byte commands
-- WiLinke: 5-byte commands [0x6E, 0x01, 0x00, cmd, (cmd + 111) & 0xFF]
-- Prefix55: 5-byte commands [0x55, 0x01, 0x00, cmd, (cmd + 0x56) & 0xFF]
-- PrefixAA: 5-byte commands [0xAA, 0x01, 0x00, cmd, (cmd + 0xAB) & 0xFF]
+``RichmatProfileController`` drives the fixed-table routes from profile data:
+held movement with a guaranteed STOP, one-shot presets and buttons, memory
+recall and programming. ``RichmatController`` adds what a Richmat remote code
+decides: which motors, presets and memory slots exist, the compatibility STOP,
+the light packet family and the GGRM catalog actions. Frames come from
+``codec/richmat.py``; codes and timing from ``profiles/richmat.py``.
 """
 
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import logging
 from functools import partial
 from typing import TYPE_CHECKING, cast
@@ -19,6 +21,7 @@ from typing import TYPE_CHECKING, cast
 from bleak import BleakClient
 from bleak.exc import BleakError
 
+from ..codec import richmat as codec
 from ..const import (
     RICHMAT_NORDIC_CHAR_UUID,
     RICHMAT_PROTOCOL_PREFIX55,
@@ -28,14 +31,12 @@ from ..const import (
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
-    RICHMAT_WILINKE_CHAR_UUIDS,
-    RICHMAT_WILINKE_SERVICE_UUIDS,
     RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES,
-    RICHMAT_WILINKE_W1_SERVICE_UUID,
     RichmatFeatures,
     get_richmat_features,
     richmat_remote_has_combined_head_feet,
 )
+from ..profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
 from .base import BedController, ControllerButtonSpec, MotorControlSpec, SideBoundController
 
 if TYPE_CHECKING:
@@ -52,22 +53,6 @@ RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES = frozenset({"qrrm"})
 RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS = ("casper",)
 RICHMAT_LIGHT_TIMER_ALWAYS_ON = "Always On"
 
-# Accepted row055 GGRM binding rows, including the ONCE queue's release delay.
-_GGRM_ACTIONS = {
-    0x66: ("Save Zero G", "richmat_mh_save"),
-    0x69: ("Save Anti-snore", "richmat_mh_save"),
-    0x5F: ("Massage 10 min", "richmat_mh_massage"),
-    0x63: ("Massage 20 min", "richmat_mh_massage"),
-    0x61: ("Massage 30 min", "richmat_mh_massage"),
-}
-
-
-async def _ggrm_button_action(controller: BedController, *, command: int) -> None:
-    target = controller._controller if isinstance(controller, SideBoundController) else controller
-    if not isinstance(target, RichmatController):
-        raise TypeError("This action requires the GGRM remote profile")
-    await target.tap_ggrm_action(command)
-
 RICHMAT_RGB_STRIP_LIGHT_DEFAULT_COLOR = (1, 221, 255)
 RICHMAT_RGB_STRIP_LIGHT_TIMER_MAX_MINUTES = 30
 RICHMAT_RGB_STRIP_LIGHT_TIMER_OPTIONS = [
@@ -82,113 +67,277 @@ RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS = [
     *(f"{minute} min" for minute in range(1, 6)),
 ]
 
-
-class RichmatCommands:
-    """Richmat command constants (command byte values).
-
-    Verified from GM Bed Control APK v3.0.33 (com.desarketing.gmmotor)
-    and SleepFunction APK (com.richmat.sleepfunction).
-    """
-
-    # Presets
-    PRESET_FLAT = 0x31
-    PRESET_ANTI_SNORE = 0x46
-    PRESET_LOUNGE = 0x59
-    PRESET_MEMORY_1 = 0x2E
-    PRESET_MEMORY_2 = 0x2F
-    PRESET_MEMORY_3 = 0x30
-    PRESET_MEMORY_4 = 0xB2
-    PRESET_MEMORY_5 = 0xF4
-    PRESET_TV = 0x58
-    PRESET_ZERO_G = 0x45
-    PRESET_SIDE_SLEEPER = 0xBA
-    PRESET_YOGA = 0xF0
-    PRESET_SLEEP = 0x8E
-    PRESET_WAKEUP = 0x93
-    PRESET_FLAT_SLEEP = 0xF6
-
-    # Program presets
-    PROGRAM_ANTI_SNORE = 0x69
-    PROGRAM_LOUNGE = 0x65
-    PROGRAM_MEMORY_1 = 0x2B
-    PROGRAM_MEMORY_2 = 0x2C
-    PROGRAM_MEMORY_3 = 0x2D
-    PROGRAM_MEMORY_4 = 0xB3
-    PROGRAM_MEMORY_5 = 0xF5
-    PROGRAM_TV = 0x64
-    PROGRAM_ZERO_G = 0x66
-    PROGRAM_SIDE_SLEEPER = 0xBB
-    PROGRAM_YOGA = 0xF1
-    PROGRAM_SLEEP = 0x8F
-    PROGRAM_WAKEUP = 0x94
-    PROGRAM_FLAT_SLEEP = 0xF7
-
-    # Preset resets
-    RESET_MOTOR = 0xBE
-    RESET_TV = 0xCA
-    RESET_SNORE = 0xCB
-    RESET_ZERO_G = 0xCC
-
-    # Massage
-    MASSAGE_HEAD_STEP = 0x4C
-    MASSAGE_FOOT_STEP = 0x4E
-    MASSAGE_PATTERN_STEP = 0x48
-    MASSAGE_TOGGLE = 0x5D
-    MASSAGE_ALL_OFF = 0x5E
-    MASSAGE_HEAD_OFF = 0x98
-    MASSAGE_HEAD_1 = 0x99
-    MASSAGE_HEAD_2 = 0x9A
-    MASSAGE_HEAD_3 = 0x9B
-    MASSAGE_FOOT_OFF = 0x9C
-    MASSAGE_FOOT_1 = 0x9D
-    MASSAGE_FOOT_2 = 0x9E
-    MASSAGE_FOOT_3 = 0x9F
-    MASSAGE_THIRD_INC = 0xE0
-
-    # Lights
-    LIGHTS_TOGGLE = 0x3C
-
-    # Motors
-    MOTOR_PILLOW_UP = 0x3F
-    MOTOR_PILLOW_DOWN = 0x40
-    MOTOR_HEAD_UP = 0x24
-    MOTOR_HEAD_DOWN = 0x25
-    MOTOR_FEET_UP = 0x26
-    MOTOR_FEET_DOWN = 0x27
-    MOTOR_LUMBAR_UP = 0x41
-    MOTOR_LUMBAR_DOWN = 0x42
-    MOTOR_5_UP = 0x71
-    MOTOR_5_DOWN = 0x72
-    MOTOR_6_UP = 0x73
-    MOTOR_6_DOWN = 0x74
-    MOTOR_7_UP = 0xD0
-    MOTOR_7_DOWN = 0xD1
-
-    # Combined motor movements
-    MOTOR_HEAD_FEET_UP = 0x29
-    MOTOR_HEAD_FEET_DOWN = 0x2A
-    MOTOR_LUMBAR_PILLOW_UP = 0x43
-    MOTOR_LUMBAR_PILLOW_DOWN = 0x44
-    MOTOR_FEET_LUMBAR_UP = 0x96
-    MOTOR_FEET_LUMBAR_DOWN = 0x97
-    MOTOR_LUMBAR_PILLOW_TILT_UP = 0x5B
-    MOTOR_LUMBAR_PILLOW_TILT_DOWN = 0x5C
-    MOTOR_ALL_UP = 0x56
-    MOTOR_ALL_DOWN = 0x57
-    MOTOR_HEAD_UP_FEET_DOWN = 0x21
-    MOTOR_HEAD_DOWN_FEET_UP = 0x22
-
-    # Sync mode (split king)
-    SYNC_ON = 0xBC
-    SYNC_OFF = 0xBD
-
-    # End/Stop
-    END = 0x6E
-    END_COMPAT = 0x5E  # WiLinke compatibility stop for selected remotes (e.g. QRRM)
+_FRAMINGS: dict[str, codec.Framing] = {
+    RICHMAT_PROTOCOL_WILINKE: "wilinke",
+    RICHMAT_PROTOCOL_PREFIX55: "prefix55",
+    RICHMAT_PROTOCOL_PREFIXAA: "prefixaa",
+}
 
 
-class RichmatController(BedController):
-    """Controller for Richmat beds."""
+async def _ggrm_button_action(controller: BedController, *, command: int) -> None:
+    target = controller._controller if isinstance(controller, SideBoundController) else controller
+    if not isinstance(target, RichmatController):
+        raise TypeError("This action requires the GGRM remote profile")
+    await target.tap_ggrm_action(command)
+
+
+class RichmatProfileController(BedController):
+    """Fixed-table Richmat route: every frame comes from the profile's codes."""
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        profile: RichmatProfile,
+        *,
+        char_uuid: str,
+        write_with_response: bool = True,
+    ) -> None:
+        super().__init__(coordinator)
+        self.profile = profile
+        self._char_uuid = char_uuid
+        self._write_with_response = write_with_response
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        return self._char_uuid
+
+    def _code(self, button: Button) -> int:
+        code = (self.profile.codes or {}).get(button)
+        if code is None:
+            raise NotImplementedError(f"{button} is not supported on this bed")
+        return code
+
+    def _build_command(self, command_byte: int) -> bytes:
+        return self.profile.frame(command_byte)
+
+    def _build_stop_command(self) -> bytes:
+        return self._build_command(self.profile.stop)
+
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        try:
+            await self._write_gatt_with_retry(
+                self._char_uuid,
+                command,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                cancel_event=cancel_event,
+                response=self._write_with_response,
+            )
+        except BleakError as err:
+            if "not found" in str(err).lower() or "invalid" in str(err).lower():
+                _LOGGER.warning(
+                    "Characteristic %s may not exist on this device. "
+                    "Please report this to help add support for your device.",
+                    self._char_uuid,
+                )
+                self.log_discovered_services(level=logging.INFO)
+            raise
+
+    async def _send(self, button: Button) -> None:
+        await self.write_command(self._build_command(self._code(button)))
+
+    async def _send_stop(self) -> None:
+        await self.write_command(self._build_stop_command(), cancel_event=asyncio.Event())
+
+    async def _release(self) -> None:
+        """Cleanup STOP; quiet profiles keep the original error, if any."""
+        if not self.profile.quiet_release:
+            await self._send_stop()
+            return
+        try:
+            await self._send_stop()
+        except Exception:
+            _LOGGER.debug("Failed to send STOP during cleanup")
+
+    async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        """Pulse a movement code at the entry's pulse settings, then always STOP."""
+        try:
+            await self.write_command(
+                self._build_command(command_byte),
+                repeat_count=self._coordinator.motor_pulse_count,
+                repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+            )
+        finally:
+            await self._release()
+
+    async def _move(self, button: Button) -> None:
+        await self._move_with_stop(self._code(button))
+
+    async def _stop_axis(self, button: Button) -> None:
+        self._code(button)
+        await self._send_stop()
+
+    async def _recall(self, code: int) -> None:
+        recall = self.profile.recall
+        command = self._build_command(code)
+        if not recall.release:
+            await self.write_command(
+                command, repeat_count=recall.repeats, repeat_delay_ms=recall.repeat_ms
+            )
+            return
+        try:
+            await self.write_command(
+                command, repeat_count=recall.repeats, repeat_delay_ms=recall.repeat_ms
+            )
+        finally:
+            await self._release()
+
+    # Capabilities follow the profile's codes.
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return "zero_g" in (self.profile.codes or {})
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return "anti_snore" in (self.profile.codes or {})
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return "tv" in (self.profile.codes or {})
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return "lounge" in (self.profile.codes or {})
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        return bool(self.profile.memory)
+
+    @property
+    def memory_slot_count(self) -> int:
+        return len(self.profile.memory)
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        return bool(self.profile.memory)
+
+    @property
+    def supports_lights(self) -> bool:
+        return "light_toggle" in (self.profile.codes or {})
+
+    @property
+    def has_pillow_support(self) -> bool:
+        return "pillow_up" in (self.profile.codes or {})
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        return "lumbar_up" in (self.profile.codes or {})
+
+    # Motors. Back and legs are the head and feet motors.
+    async def move_head_up(self) -> None:
+        await self._move("head_up")
+
+    async def move_head_down(self) -> None:
+        await self._move("head_down")
+
+    async def move_head_stop(self) -> None:
+        await self._send_stop()
+
+    async def move_back_up(self) -> None:
+        await self.move_head_up()
+
+    async def move_back_down(self) -> None:
+        await self.move_head_down()
+
+    async def move_back_stop(self) -> None:
+        await self.move_head_stop()
+
+    async def move_legs_up(self) -> None:
+        await self._move("feet_up")
+
+    async def move_legs_down(self) -> None:
+        await self._move("feet_down")
+
+    async def move_legs_stop(self) -> None:
+        await self._send_stop()
+
+    async def move_feet_up(self) -> None:
+        await self._move("feet_up")
+
+    async def move_feet_down(self) -> None:
+        await self._move("feet_down")
+
+    async def move_feet_stop(self) -> None:
+        await self._send_stop()
+
+    async def move_pillow_up(self) -> None:
+        await self._move("pillow_up")
+
+    async def move_pillow_down(self) -> None:
+        await self._move("pillow_down")
+
+    async def move_pillow_stop(self) -> None:
+        await self._stop_axis("pillow_up")
+
+    async def move_lumbar_up(self) -> None:
+        await self._move("lumbar_up")
+
+    async def move_lumbar_down(self) -> None:
+        await self._move("lumbar_down")
+
+    async def move_lumbar_stop(self) -> None:
+        await self._stop_axis("lumbar_up")
+
+    async def stop_all(self) -> None:
+        await self._send_stop()
+
+    # Presets and memory
+    async def preset_flat(self) -> None:
+        await self._recall(self._code("flat"))
+
+    async def preset_zero_g(self) -> None:
+        await self._recall(self._code("zero_g"))
+
+    async def preset_anti_snore(self) -> None:
+        await self._recall(self._code("anti_snore"))
+
+    async def preset_tv(self) -> None:
+        await self._recall(self._code("tv"))
+
+    async def preset_lounge(self) -> None:
+        await self._recall(self._code("lounge"))
+
+    async def preset_memory(self, memory_num: int) -> None:
+        if 1 <= memory_num <= len(self.profile.memory):
+            await self._recall(self.profile.memory[memory_num - 1][0])
+        else:
+            _LOGGER.warning(
+                "Invalid memory number %d (valid: 1-%d)", memory_num, len(self.profile.memory)
+            )
+
+    async def program_memory(self, memory_num: int) -> None:
+        if 1 <= memory_num <= len(self.profile.memory):
+            await self.write_command(self._build_command(self.profile.memory[memory_num - 1][1]))
+        else:
+            _LOGGER.warning(
+                "Invalid memory number %d (valid: 1-%d)", memory_num, len(self.profile.memory)
+            )
+
+    # Every fixed-table route has these buttons.
+    async def lights_toggle(self) -> None:
+        await self._send("light_toggle")
+
+    async def massage_toggle(self) -> None:
+        await self._send("massage_toggle")
+
+    async def massage_head_toggle(self) -> None:
+        await self._send("massage_head")
+
+    async def massage_foot_toggle(self) -> None:
+        await self._send("massage_foot")
+
+    async def massage_mode_step(self) -> None:
+        await self._send("massage_mode")
+
+
+class RichmatController(RichmatProfileController):
+    """Richmat bed whose remote code selects motors, presets and light packets."""
 
     def __init__(
         self,
@@ -205,67 +354,50 @@ class RichmatController(BedController):
         """Initialize the Richmat controller.
 
         Args:
-            coordinator: The AdjustableBedCoordinator instance
-            is_wilinke: Whether this is a WiLinke variant (uses 5-byte commands)
+            is_wilinke: WiLinke variant (5-byte frames) unless ``command_protocol`` is set
             char_uuid: The characteristic UUID to use for writing commands
             remote_code: The remote code for feature detection (e.g., "VIRM", "I7RM")
             command_protocol: Override the command protocol (single, wilinke, prefix55, prefixaa)
-            write_with_response: Whether to use write-with-response for GATT writes
-            entry_title: Config entry title for Richmat model-specific hints
-            configured_name: User-configured name for Richmat model-specific hints
-            device_name: BLE device name for Richmat model-specific hints
+            entry_title, configured_name, device_name: model hints for the light family
         """
-        super().__init__(coordinator)
-        self._is_wilinke = is_wilinke
-        self._char_uuid = char_uuid or RICHMAT_NORDIC_CHAR_UUID
+        if not command_protocol:
+            command_protocol = RICHMAT_PROTOCOL_WILINKE if is_wilinke else RICHMAT_PROTOCOL_SINGLE
+        self._command_protocol = command_protocol
         self._remote_code = remote_code or RICHMAT_REMOTE_AUTO
-        self._write_with_response = write_with_response
-        # Use get_richmat_features which looks up from both manual overrides
-        # and the comprehensive 456-code generated mapping
+        profile = RICHMAT[_FRAMINGS.get(command_protocol, "nordic")]
+        if (
+            command_protocol == RICHMAT_PROTOCOL_WILINKE
+            and self._remote_code.lower() in RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES
+        ):
+            _LOGGER.info(
+                "Using Richmat WiLinke compatibility stop byte 0x%02X for remote '%s'",
+                codec.COMPAT_STOP,
+                self._remote_code,
+            )
+            profile = dataclasses.replace(profile, stop=codec.COMPAT_STOP)
+        super().__init__(
+            coordinator,
+            profile,
+            char_uuid=char_uuid or RICHMAT_NORDIC_CHAR_UUID,
+            write_with_response=write_with_response,
+        )
+        self._is_wilinke = is_wilinke
+        # The 456-code generated mapping plus manual overrides.
         self._features = get_richmat_features(self._remote_code)
-
-        # Determine command protocol: explicit override > is_wilinke flag > default
-        if command_protocol:
-            self._command_protocol = command_protocol
-        elif is_wilinke:
-            self._command_protocol = RICHMAT_PROTOCOL_WILINKE
-        else:
-            self._command_protocol = RICHMAT_PROTOCOL_SINGLE
-        self._stop_command_byte = self._resolve_stop_command_byte()
         self._light_protocol_family = self._resolve_light_protocol_family(
             entry_title=entry_title,
             configured_name=configured_name,
             device_name=device_name,
         )
-
         _LOGGER.debug(
             "RichmatController initialized (char: %s, protocol: %s, remote: %s, stop: 0x%02X, light_protocol: %s, response: %s)",
             self._char_uuid,
             self._command_protocol,
             self._remote_code,
-            self._stop_command_byte,
+            self.profile.stop,
             self._light_protocol_family,
             self._write_with_response,
         )
-
-    def _resolve_stop_command_byte(self) -> int:
-        """Resolve stop command byte for protocol/remote compatibility."""
-        remote_code = (self._remote_code or "").lower()
-        if (
-            self._command_protocol == RICHMAT_PROTOCOL_WILINKE
-            and remote_code in RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES
-        ):
-            _LOGGER.info(
-                "Using Richmat WiLinke compatibility stop byte 0x%02X for remote '%s'",
-                RichmatCommands.END_COMPAT,
-                self._remote_code,
-            )
-            return RichmatCommands.END_COMPAT
-        return RichmatCommands.END
-
-    def _build_stop_command(self) -> bytes:
-        """Build stop command bytes using resolved stop compatibility byte."""
-        return self._build_command(self._stop_command_byte)
 
     def _resolve_light_protocol_family(
         self,
@@ -283,9 +415,7 @@ class RichmatController(BedController):
             return None
 
         haystack = " ".join(
-            part.lower()
-            for part in (entry_title, configured_name, device_name)
-            if part
+            part.lower() for part in (entry_title, configured_name, device_name) if part
         )
 
         if remote_code in RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES:
@@ -308,16 +438,10 @@ class RichmatController(BedController):
         return RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB
 
     @property
-    def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
-        return self._char_uuid
-
-    @property
     def features(self) -> RichmatFeatures:
         """Return the feature flags for this controller."""
         return self._features
 
-    # Capability properties based on remote code features
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         if (
@@ -336,13 +460,15 @@ class RichmatController(BedController):
                 translation_key=kind,
                 translation_placeholders={"action": label},
             )
-            for command, (label, kind) in _GGRM_ACTIONS.items()
+            for command, (label, kind) in GGRM_ACTIONS.items()
             if kind != "richmat_mh_massage" or self._coordinator.has_massage
         )
 
     async def tap_ggrm_action(self, command: int) -> None:
         """Send a catalog ONCE action, then its release after 120 ms."""
-        if not any(spec.key == f"richmat_mh_{command:02x}" for spec in self.controller_button_specs):
+        if not any(
+            spec.key == f"richmat_mh_{command:02x}" for spec in self.controller_button_specs
+        ):
             raise ValueError("This action is not available for the selected Richmat remote")
         try:
             await self.write_command(self._build_command(command))
@@ -424,10 +550,9 @@ class RichmatController(BedController):
         ]
 
         if self._has_head_feet_support:
-            # Richmat drives head and feet together as one hardware step
-            # (MOTOR_HEAD_FEET_UP/DOWN), which is what the combined button on
-            # the physical remote sends. This is not the same as opening the
-            # head and feet covers one after the other.
+            # Richmat drives head and feet together as one hardware step, which
+            # is what the combined button on the physical remote sends. This is
+            # not the same as opening the head and feet covers one after another.
             specs.append(
                 MotorControlSpec(
                     key="head_feet",
@@ -530,28 +655,22 @@ class RichmatController(BedController):
         return []
 
     @property
-    def supports_memory_presets(self) -> bool:
-        """Return True if this bed supports memory presets based on detected features."""
-        return bool(
-            self._features
-            & (
-                RichmatFeatures.PRESET_MEMORY_1
-                | RichmatFeatures.PRESET_MEMORY_2
-                | RichmatFeatures.PRESET_MEMORY_3
-            )
+    def _memory_slots(self) -> int:
+        """Remote codes enable slots 1 to 3; recall and save still accept 1 to 5."""
+        memory = (
+            RichmatFeatures.PRESET_MEMORY_1,
+            RichmatFeatures.PRESET_MEMORY_2,
+            RichmatFeatures.PRESET_MEMORY_3,
         )
+        return sum(1 for flag in memory if self._features & flag)
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        return self._memory_slots > 0
 
     @property
     def memory_slot_count(self) -> int:
-        """Return number of memory slots based on detected features."""
-        count = 0
-        if self._features & RichmatFeatures.PRESET_MEMORY_1:
-            count += 1
-        if self._features & RichmatFeatures.PRESET_MEMORY_2:
-            count += 1
-        if self._features & RichmatFeatures.PRESET_MEMORY_3:
-            count += 1
-        return count
+        return self._memory_slots
 
     @property
     def memory_slot_names(self) -> tuple[str | None, ...]:
@@ -562,7 +681,6 @@ class RichmatController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return True if this bed supports programming memory positions."""
         return bool(
             self._features
             & (
@@ -577,214 +695,43 @@ class RichmatController(BedController):
         """Return True - Richmat beds support split-king sync mode."""
         return True
 
-    def _build_command(self, command_byte: int) -> bytes:
-        """Build command bytes based on command protocol."""
-        if self._command_protocol == RICHMAT_PROTOCOL_WILINKE:
-            # WiLinke: [0x6E, 0x01, 0x00, command, checksum]
-            # checksum = (command + 0x6E + 0x01) & 0xFF = (command + 111) & 0xFF
-            return bytes([0x6E, 0x01, 0x00, command_byte, (command_byte + 111) & 0xFF])
-        elif self._command_protocol == RICHMAT_PROTOCOL_PREFIX55:
-            # Prefix55: [0x55, 0x01, 0x00, command, checksum]
-            # checksum = (command + 0x55 + 0x01) & 0xFF = (command + 0x56) & 0xFF
-            return bytes([0x55, 0x01, 0x00, command_byte, (command_byte + 0x56) & 0xFF])
-        elif self._command_protocol == RICHMAT_PROTOCOL_PREFIXAA:
-            # PrefixAA: [0xAA, 0x01, 0x00, command, checksum]
-            # checksum = (command + 0xAA + 0x01) & 0xFF = (command + 0xAB) & 0xFF
-            return bytes([0xAA, 0x01, 0x00, command_byte, (command_byte + 0xAB) & 0xFF])
-        else:
-            # Single/Nordic: just the command byte
-            return bytes([command_byte])
-
-    @staticmethod
-    def _richmat_checksum(payload: bytes) -> int:
-        """Return the Richmat additive checksum for a single command segment."""
-        return sum(payload) & 0xFF
-
-    def _build_rgb_light_frame(self, command_id: int, payload: bytes) -> bytes:
-        """Build a Richmat RGB-strip frame with additive checksum."""
-        frame = bytearray((0x04, 0x00, command_id, 0x01, 0x00))
-        frame.extend(payload)
-        frame.extend((0x00, 0x00))
-        frame[1] = len(frame) + 1
-        frame.append(self._richmat_checksum(bytes(frame)))
-        return bytes(frame)
-
-    def _build_legacy_rgb_light_segment(self, command_id: int, payload: bytes) -> bytes:
-        """Build a legacy Richmat RGB-light command segment with checksum."""
-        if len(payload) != 2:
-            raise ValueError(f"Legacy Richmat light payload must be 2 bytes, got {payload!r}")
-
-        segment = bytes((0x6E, command_id, payload[0], payload[1]))
-        return segment + bytes((self._richmat_checksum(segment),))
+    def _check_rgb(self, rgb_color: tuple[int, int, int]) -> None:
+        if not all(0 <= value <= 255 for value in rgb_color):
+            raise ValueError(f"RGB values must be between 0 and 255: {rgb_color}")
 
     def _build_legacy_light_power_on_command(self) -> bytes:
         """Build the legacy Richmat light power-on packet from the Java OEM apps."""
         if self._light_protocol_family != RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
             raise NotImplementedError("Legacy Richmat light power command not supported")
-
-        return self._build_legacy_rgb_light_segment(0x0A, bytes((0x00, 0x01)))
-
-    def _build_legacy_light_color_command(self, rgb_color: tuple[int, int, int]) -> bytes:
-        """Build the legacy Richmat RGB color packet."""
-        red, green, blue = rgb_color
-        if not all(0 <= value <= 255 for value in (red, green, blue)):
-            raise ValueError(f"RGB values must be between 0 and 255: {rgb_color}")
-
-        return self._build_legacy_rgb_light_segment(0x0C, bytes((0xFF, red))) + (
-            self._build_legacy_rgb_light_segment(0x0D, bytes((green, blue)))
-        )
-
-    def _build_legacy_light_timer_command(self, seconds: int) -> bytes:
-        """Build the legacy Richmat light timer packet."""
-        if not 0 <= seconds <= RICHMAT_LEGACY_RGB_LIGHT_TIMER_MAX_SECONDS:
-            raise ValueError(f"Legacy Richmat light timer must be 0-300 seconds: {seconds}")
-
-        return self._build_legacy_rgb_light_segment(
-            0x0B,
-            bytes(((seconds >> 8) & 0xFF, seconds & 0xFF)),
-        )
+        return codec.frame(codec.BED, 0x0A, 0x00, 0x01)
 
     def _build_light_color_command(self, rgb_color: tuple[int, int, int]) -> bytes:
         """Build the Richmat RGB color packet for the selected light family."""
         if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
-            return self._build_legacy_light_color_command(rgb_color)
+            self._check_rgb(rgb_color)
+            return codec.rgb(*rgb_color)
         if self._light_protocol_family != RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
             raise NotImplementedError("RGB light control not supported for this Richmat remote")
-
-        red, green, blue = rgb_color
-        if not all(0 <= value <= 255 for value in (red, green, blue)):
-            raise ValueError(f"RGB values must be between 0 and 255: {rgb_color}")
-
-        return self._build_rgb_light_frame(0x01, bytes((red, green, blue)))
+        self._check_rgb(rgb_color)
+        return codec.strip(0x01, bytes(rgb_color))
 
     def _build_light_power_command(self, *, is_on: bool) -> bytes:
         """Build the Richmat QRRM-family RGB-strip power packet."""
         if self._light_protocol_family != RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
             raise NotImplementedError("Discrete light power control not supported")
-
-        return self._build_rgb_light_frame(0x04, bytes((0x02 if is_on else 0x00,)))
-
-    def _build_rgb_strip_light_timer_command(self, minutes: int) -> bytes:
-        """Build the Richmat QRRM-family RGB-strip timer packet."""
-        if minutes < 0:
-            raise ValueError(f"Timer minutes must be >= 0: {minutes}")
-
-        return self._build_rgb_light_frame(0x02, bytes(((minutes >> 8) & 0xFF, minutes & 0xFF)))
+        return codec.strip(0x04, bytes((0x02 if is_on else 0x00,)))
 
     def _build_light_timer_command(self, value: int) -> bytes:
-        """Build the Richmat light timer packet for the selected light family."""
+        """Build the timer packet: minutes for the RGB strip, seconds for legacy RGB."""
         if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
-            return self._build_rgb_strip_light_timer_command(value)
+            if value < 0:
+                raise ValueError(f"Timer minutes must be >= 0: {value}")
+            return codec.strip(0x02, bytes(((value >> 8) & 0xFF, value & 0xFF)))
         if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
-            return self._build_legacy_light_timer_command(value)
+            if not 0 <= value <= RICHMAT_LEGACY_RGB_LIGHT_TIMER_MAX_SECONDS:
+                raise ValueError(f"Legacy Richmat light timer must be 0-300 seconds: {value}")
+            return codec.light_timer(value >> 8, value & 0xFF)
         raise NotImplementedError("Light timer not supported for this Richmat remote")
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to Richmat bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        try:
-            await self._write_gatt_with_retry(
-                self._char_uuid,
-                command,
-                repeat_count=repeat_count,
-                repeat_delay_ms=repeat_delay_ms,
-                cancel_event=cancel_event,
-                response=self._write_with_response,
-            )
-        except BleakError as err:
-            # Additional diagnostics for characteristic issues
-            if "not found" in str(err).lower() or "invalid" in str(err).lower():
-                _LOGGER.warning(
-                    "Characteristic %s may not exist on this device. "
-                    "Please report this to help add support for your device.",
-                    self._char_uuid,
-                )
-                self.log_discovered_services(level=logging.INFO)
-            raise
-
-    async def _send_command(self, command_byte: int, repeat: int | None = None) -> None:
-        """Send a command to the bed."""
-        command = self._build_command(command_byte)
-        pulse_count = repeat if repeat is not None else self._coordinator.motor_pulse_count
-        pulse_delay = self._coordinator.motor_pulse_delay_ms
-        await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-
-    async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Execute a movement command and always send STOP at the end."""
-        try:
-            await self._send_command(command_byte)
-        finally:
-            # Wrap in try-except to prevent masking the original exception
-            try:
-                await self.write_command(
-                    self._build_stop_command(),
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send END command during cleanup")
-
-    # Motor control methods
-    async def move_head_up(self) -> None:
-        """Move head up."""
-        await self._move_with_stop(RichmatCommands.MOTOR_HEAD_UP)
-
-    async def move_head_down(self) -> None:
-        """Move head down."""
-        await self._move_with_stop(RichmatCommands.MOTOR_HEAD_DOWN)
-
-    async def move_head_stop(self) -> None:
-        """Stop head motor."""
-        await self.write_command(
-            self._build_stop_command(),
-            cancel_event=asyncio.Event(),
-        )
-
-    async def move_back_up(self) -> None:
-        """Move back up (same as head for Richmat)."""
-        await self.move_head_up()
-
-    async def move_back_down(self) -> None:
-        """Move back down (same as head for Richmat)."""
-        await self.move_head_down()
-
-    async def move_back_stop(self) -> None:
-        """Stop back motor."""
-        await self.move_head_stop()
-
-    async def move_legs_up(self) -> None:
-        """Move legs up (same as feet for Richmat)."""
-        await self._move_with_stop(RichmatCommands.MOTOR_FEET_UP)
-
-    async def move_legs_down(self) -> None:
-        """Move legs down (same as feet for Richmat)."""
-        await self._move_with_stop(RichmatCommands.MOTOR_FEET_DOWN)
-
-    async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
-        await self.move_head_stop()
-
-    async def move_feet_up(self) -> None:
-        """Move feet up."""
-        await self._move_with_stop(RichmatCommands.MOTOR_FEET_UP)
-
-    async def move_feet_down(self) -> None:
-        """Move feet down."""
-        await self._move_with_stop(RichmatCommands.MOTOR_FEET_DOWN)
-
-    async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
-        await self.move_head_stop()
 
     async def move_head_feet_up(self) -> None:
         """Move head and feet up together.
@@ -794,124 +741,25 @@ class RichmatController(BedController):
         not equivalent: each motor command ends with its own STOP frame, so a
         second concurrent command would cut the first one short.
         """
-        await self._move_with_stop(RichmatCommands.MOTOR_HEAD_FEET_UP)
+        await self._move("head_feet_up")
 
     async def move_head_feet_down(self) -> None:
         """Move head and feet down together."""
-        await self._move_with_stop(RichmatCommands.MOTOR_HEAD_FEET_DOWN)
+        await self._move("head_feet_down")
 
     async def move_head_feet_stop(self) -> None:
         """Stop the combined head and feet movement."""
-        await self.move_head_stop()
-
-    async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
-        await self._move_with_stop(RichmatCommands.MOTOR_LUMBAR_UP)
-
-    async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
-        await self._move_with_stop(RichmatCommands.MOTOR_LUMBAR_DOWN)
-
-    async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
-        await self.move_head_stop()
-
-    async def move_pillow_up(self) -> None:
-        """Move pillow up."""
-        await self._move_with_stop(RichmatCommands.MOTOR_PILLOW_UP)
-
-    async def move_pillow_down(self) -> None:
-        """Move pillow down."""
-        await self._move_with_stop(RichmatCommands.MOTOR_PILLOW_DOWN)
+        await self._send_stop()
 
     async def move_pillow_stop(self) -> None:
-        """Stop pillow motor."""
-        await self.move_head_stop()
+        await self._send_stop()
 
-    async def stop_all(self) -> None:
-        """Stop all motors."""
-        await self.write_command(
-            self._build_stop_command(),
-            cancel_event=asyncio.Event(),
-        )
-
-    # Preset methods
-    async def preset_flat(self) -> None:
-        """Go to flat position.
-
-        Presets are single-command triggered - the bed's internal controller
-        handles moving to the position automatically after receiving one command.
-        """
-        await self.write_command(self._build_command(RichmatCommands.PRESET_FLAT))
-
-    async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset.
-
-        Presets are single-command triggered - the bed's internal controller
-        handles moving to the position automatically after receiving one command.
-        """
-        commands = {
-            1: RichmatCommands.PRESET_MEMORY_1,
-            2: RichmatCommands.PRESET_MEMORY_2,
-            3: RichmatCommands.PRESET_MEMORY_3,
-            4: RichmatCommands.PRESET_MEMORY_4,
-            5: RichmatCommands.PRESET_MEMORY_5,
-        }
-        if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
-        else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-5)", memory_num)
-
-    async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory."""
-        commands = {
-            1: RichmatCommands.PROGRAM_MEMORY_1,
-            2: RichmatCommands.PROGRAM_MEMORY_2,
-            3: RichmatCommands.PROGRAM_MEMORY_3,
-            4: RichmatCommands.PROGRAM_MEMORY_4,
-            5: RichmatCommands.PROGRAM_MEMORY_5,
-        }
-        if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
-        else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-5)", memory_num)
-
-    async def preset_zero_g(self) -> None:
-        """Go to zero gravity position.
-
-        Presets are single-command triggered - the bed's internal controller
-        handles moving to the position automatically after receiving one command.
-        """
-        await self.write_command(self._build_command(RichmatCommands.PRESET_ZERO_G))
-
-    async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position.
-
-        Presets are single-command triggered - the bed's internal controller
-        handles moving to the position automatically after receiving one command.
-        """
-        await self.write_command(self._build_command(RichmatCommands.PRESET_ANTI_SNORE))
-
-    async def preset_tv(self) -> None:
-        """Go to TV position.
-
-        Presets are single-command triggered - the bed's internal controller
-        handles moving to the position automatically after receiving one command.
-        """
-        await self.write_command(self._build_command(RichmatCommands.PRESET_TV))
-
-    async def preset_lounge(self) -> None:
-        """Go to lounge position."""
-        await self.write_command(self._build_command(RichmatCommands.PRESET_LOUNGE))
+    async def move_lumbar_stop(self) -> None:
+        await self._send_stop()
 
     async def program_lounge(self) -> None:
         """Program current position as lounge preset."""
-        await self.write_command(self._build_command(RichmatCommands.PROGRAM_LOUNGE))
-
-    # Light methods
-    async def lights_toggle(self) -> None:
-        """Toggle under-bed lights."""
-        await self.write_command(self._build_command(RichmatCommands.LIGHTS_TOGGLE))
+        await self._send("save_lounge")
 
     async def lights_on(self) -> None:
         """Turn on under-bed lights."""
@@ -935,69 +783,38 @@ class RichmatController(BedController):
         await self.write_command(self._build_light_color_command(rgb_color))
 
     async def set_light_timer(self, timer_option: str) -> None:
-        """Set the Richmat under-bed light auto-off timer."""
+        """Set the under-bed light auto-off timer, in minutes or seconds per family."""
         if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
-            if timer_option == RICHMAT_LIGHT_TIMER_ALWAYS_ON:
-                minutes = 0
-            elif timer_option.endswith(" min") and timer_option.split()[0].isdigit():
-                minutes = int(timer_option.split()[0])
-            else:
-                minutes = -1
+            scale, limit = 1, RICHMAT_RGB_STRIP_LIGHT_TIMER_MAX_MINUTES
+        elif self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            scale, limit = 60, RICHMAT_LEGACY_RGB_LIGHT_TIMER_MAX_SECONDS
+        else:
+            raise NotImplementedError("Light timer not supported for this Richmat remote")
+        if timer_option == RICHMAT_LIGHT_TIMER_ALWAYS_ON:
+            value = 0
+        elif timer_option.endswith(" min") and timer_option.split()[0].isdigit():
+            value = int(timer_option.split()[0]) * scale
+        else:
+            value = -1
+        if not 0 <= value <= limit:
+            raise ValueError(f"Unsupported Richmat light timer option: {timer_option}")
+        await self.write_command(self._build_light_timer_command(value))
 
-            if not 0 <= minutes <= RICHMAT_RGB_STRIP_LIGHT_TIMER_MAX_MINUTES:
-                raise ValueError(f"Unsupported Richmat light timer option: {timer_option}")
-            await self.write_command(self._build_light_timer_command(minutes))
-            return
-
-        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
-            if timer_option == RICHMAT_LIGHT_TIMER_ALWAYS_ON:
-                seconds = 0
-            elif timer_option.endswith(" min") and timer_option.split()[0].isdigit():
-                seconds = int(timer_option.split()[0]) * 60
-            else:
-                seconds = -1
-
-            if not 0 <= seconds <= RICHMAT_LEGACY_RGB_LIGHT_TIMER_MAX_SECONDS:
-                raise ValueError(f"Unsupported Richmat light timer option: {timer_option}")
-            await self.write_command(self._build_light_timer_command(seconds))
-            return
-
-        raise NotImplementedError("Light timer not supported for this Richmat remote")
-
-    # Massage methods
     async def massage_toggle(self) -> None:
         """Toggle massage."""
         if not self.supports_massage_toggle_control:
             raise NotImplementedError("Massage toggle not supported for this Richmat remote")
-        await self.write_command(self._build_command(RichmatCommands.MASSAGE_TOGGLE))
+        await self._send("massage_toggle")
 
     async def massage_off(self) -> None:
         """Turn off all massage using the GGRM app catalogs' All Off command."""
         if not self.supports_massage_off_control:
             raise NotImplementedError("Massage off not supported for this Richmat remote")
-        await self.write_command(self._build_command(RichmatCommands.MASSAGE_ALL_OFF))
+        await self._send("massage_off")
 
-    async def massage_head_toggle(self) -> None:
-        """Toggle head massage."""
-        await self.write_command(self._build_command(RichmatCommands.MASSAGE_HEAD_STEP))
-
-    async def massage_foot_toggle(self) -> None:
-        """Toggle foot massage."""
-        await self.write_command(self._build_command(RichmatCommands.MASSAGE_FOOT_STEP))
-
-    async def massage_mode_step(self) -> None:
-        """Step through massage modes."""
-        await self.write_command(self._build_command(RichmatCommands.MASSAGE_PATTERN_STEP))
-
-    # Sync mode (split king)
     async def set_synchro(self, enabled: bool) -> None:
-        """Enable or disable split-king sync mode.
-
-        When enabled, both sides of a split-king bed move together.
-        Sends 0xBC (sync on) or 0xBD (sync off) as a single-shot command.
-        """
-        cmd = RichmatCommands.SYNC_ON if enabled else RichmatCommands.SYNC_OFF
-        await self.write_command(self._build_command(cmd))
+        """Enable or disable split-king sync mode (both sides move together)."""
+        await self._send("sync_on" if enabled else "sync_off")
 
 
 async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None, bool]:
@@ -1006,33 +823,28 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None,
     Returns:
         Tuple of (is_wilinke, characteristic_uuid, write_with_response)
     """
+    nordic = codec.TRANSPORTS["n1"]
     # Guard against missing service discovery
     if client.services is None:
         _LOGGER.warning("BLE services not discovered, falling back to Nordic Richmat variant")
-        return False, RICHMAT_NORDIC_CHAR_UUID, True
+        return False, nordic.write_uuid, True
 
-    # Log all discovered services for debugging
     service_uuids = [s.uuid.lower() for s in client.services]
     _LOGGER.debug("Richmat variant detection - discovered services: %s", service_uuids)
 
-    # Try WiLinke variants first
-    for i, service_uuid in enumerate(RICHMAT_WILINKE_SERVICE_UUIDS):
+    wilinke = [codec.TRANSPORTS[key] for key in RICHMAT["wilinke"].transports if key != "n1"]
+    for transport in wilinke:
+        service_uuid, write_uuid = transport.service_uuid, transport.write_uuid
         try:
             service = client.services.get_service(service_uuid)
             if service:
-                write_uuid = RICHMAT_WILINKE_CHAR_UUIDS[i][0]
                 _LOGGER.debug(
-                    "Found WiLinke service %s (index %d), looking for write char %s",
+                    "Found WiLinke service %s, looking for write char %s; characteristics: %s",
                     service_uuid,
-                    i,
                     write_uuid,
+                    [c.uuid.lower() for c in service.characteristics],
                 )
-                # Log all characteristics in this service for debugging
-                char_uuids = [c.uuid.lower() for c in service.characteristics]
-                _LOGGER.debug("Service %s characteristics: %s", service_uuid, char_uuids)
-
-                char = service.get_characteristic(write_uuid)
-                if char:
+                if service.get_characteristic(write_uuid):
                     _LOGGER.info(
                         "Detected WiLinke Richmat variant (service: %s, write char: %s)",
                         service_uuid,
@@ -1040,21 +852,13 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None,
                     )
                     return True, write_uuid, True
 
-                _LOGGER.debug(
-                    "Write characteristic %s not found in service %s",
-                    write_uuid,
-                    service_uuid,
-                )
-
-                # Fallback: try using the notify char for writing
                 # Some beds (like Germany Motions DHN-*) use a single characteristic
                 # for both read/write/notify instead of separate write and notify chars
-                notify_uuid = RICHMAT_WILINKE_CHAR_UUIDS[i][1]
+                notify_uuid = transport.notify_uuid
                 if notify_uuid != write_uuid:
                     notify_char = service.get_characteristic(notify_uuid)
                     if notify_char:
-                        # Normalize properties to lowercase set for exact matching
-                        # (avoids false positive from "write-without-response")
+                        # Exact property match avoids "write-without-response".
                         props = {prop.lower() for prop in notify_char.properties}
                         if "write" in props:
                             _LOGGER.info(
@@ -1063,47 +867,28 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None,
                                 service_uuid,
                                 notify_uuid,
                             )
-                            # Use write-without-response for single-char variants
-                            # to maximize compatibility with devices that don't ack writes.
+                            # Single-char variants may not ack writes.
                             return True, notify_uuid, False
-                    _LOGGER.debug(
-                        "Notify characteristic %s not writable or not found",
-                        notify_uuid,
-                    )
+                    _LOGGER.debug("Notify characteristic %s not writable or not found", notify_uuid)
         except Exception as err:
-            _LOGGER.debug(
-                "WiLinke variant check failed for service %s: %s",
-                service_uuid,
-                err,
-            )
+            _LOGGER.debug("WiLinke variant check failed for service %s: %s", service_uuid, err)
 
-    # Check for Nordic UART service before falling back to WiLinke W1.
     # Devices with Nordic UART use single-byte commands, not 5-byte WiLinke packets.
-    from ..const import RICHMAT_NORDIC_SERVICE_UUID
-
     nordic_service = None
     try:
-        nordic_service = client.services.get_service(RICHMAT_NORDIC_SERVICE_UUID)
+        nordic_service = client.services.get_service(nordic.service_uuid)
     except Exception:
         pass
 
     if nordic_service:
         _LOGGER.info(
             "Found Nordic UART service, using single-byte Richmat variant (char: %s)",
-            RICHMAT_NORDIC_CHAR_UUID,
+            nordic.write_uuid,
         )
-        return False, RICHMAT_NORDIC_CHAR_UUID, True
+        return False, nordic.write_uuid, True
 
-    # Fall back to WiLinke W1 variant (like the Germany Motions app does)
-    # The app defaults to W1 when no specific service is found, not Nordic.
-    # W1 uses FEE9 service with d44bc439 characteristics.
-    # Look up W1 by its service UUID to avoid hardcoded index dependency.
-    try:
-        w1_index = RICHMAT_WILINKE_SERVICE_UUIDS.index(RICHMAT_WILINKE_W1_SERVICE_UUID)
-        w1_write_char = RICHMAT_WILINKE_CHAR_UUIDS[w1_index][0]
-    except (ValueError, IndexError):
-        # Fallback if W1 UUID not found (should never happen)
-        w1_write_char = "d44bc439-abfd-45a2-b575-925416129600"
+    # Like the Germany Motions app, default to W1 (FEE9) rather than Nordic.
+    w1_write_char = codec.TRANSPORTS["w1"].write_uuid
     _LOGGER.info(
         "No WiLinke service/characteristic found, falling back to W1 WiLinke variant "
         "(write char: %s)",

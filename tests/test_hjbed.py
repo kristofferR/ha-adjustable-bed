@@ -560,7 +560,7 @@ async def test_setup_choices_and_factory(hass, coordinator):
         assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_HJBED, profile)
         assert per_side_profile(BED_TYPE_HJBED, profile).variant_owned
         c = await create_controller(coordinator, BED_TYPE_HJBED, profile, None)
-        assert isinstance(c, bed.HJBedController) and c.profile == profile
+        assert isinstance(c, bed.HJBedController) and c.product_key == profile
     assert not is_valid_variant_for_bed_type(BED_TYPE_HJBED, "auto")
 
 

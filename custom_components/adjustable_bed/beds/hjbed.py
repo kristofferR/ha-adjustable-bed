@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, cast
 
 from homeassistant.util import dt as dt_util
 
+from ..codec import richmat as codec
 from ..hjbed_catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
 from ..hjbed_protocol import (
     Alarm,
@@ -29,6 +30,7 @@ from ..hjbed_protocol import (
 from ..hjbed_receive import Value
 from ..hjbed_requests import Request
 from ..hjbed_state import GESTURE_RELEASE, NonProgressFrame, State, Stream
+from ..profiles.richmat import HJBED
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -47,12 +49,11 @@ if TYPE_CHECKING:
 
 # Order is the artifact's enum table. Selection iterates the returned services.
 GATT = {
-    "0000fee9-0000-1000-8000-00805f9b34fb": ("d44bc439-abfd-45a2-b575-925416129600", False),
-    "6e400001-b5a3-f393-e0a9-e50e24dcca9e": ("6e400002-b5a3-f393-e0a9-e50e24dcca9e", True),
-    "0000e0ff-3c17-d293-8e48-14fe2e4da212": ("00000002-3c17-d293-8e48-14fe2e4da212", False),
-    "0000fff0-0000-1000-8000-00805f9b34fb": ("0000fff2-0000-1000-8000-00805f9b34fb", False),
-    "0000ffe0-0000-1000-8000-00805f9b34fb": ("0000ffe2-0000-1000-8000-00805f9b34fb", False),
-    "0000fee9-0000-1000-8000-00805f9b34bb": ("d44bc439-abfd-45a2-b575-925416129622", False),
+    codec.TRANSPORTS[key].service_uuid: (
+        codec.TRANSPORTS[key].write_uuid,
+        codec.TRANSPORTS[key].single,
+    )
+    for key in HJBED.transports
 }
 
 
@@ -113,7 +114,8 @@ class HJBedController(BedController):
         super().__init__(coordinator)
         if profile not in PRODUCTS:
             raise ValueError("Choose the exact product shown in HJBed")
-        self.profile = profile
+        self.profile = HJBED
+        self.product_key = profile
         self._target_address = coordinator.address
         self.product = PRODUCTS[profile]
         self._session: Session | None = None
@@ -129,7 +131,7 @@ class HJBedController(BedController):
         previous = coordinator.capability_controller
         if (
             isinstance(previous, HJBedController)
-            and previous.profile == profile
+            and previous.product_key == profile
             and previous._target_address == coordinator.address
         ):
             self._state = deepcopy(previous._state)
@@ -182,7 +184,7 @@ class HJBedController(BedController):
 
     @property
     def persisted_app_state_key(self) -> str:
-        return f"hjbed:{self.profile}"
+        return f"hjbed:{self.product_key}"
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
@@ -222,7 +224,7 @@ class HJBedController(BedController):
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {
-            "profile": self.profile,
+            "profile": self.product_key,
             "product": self.product.label,
             "hardware_verified": False,
             "coupled_default": self.product.coupled,
