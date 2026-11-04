@@ -78,6 +78,8 @@ from .command_scheduler import (
     DeviceCommandScheduler,
     HoldClaim,
     HoldLease,
+    StreamDriver,
+    StreamMember,
     command_resources,
     current_command_context,
 )
@@ -6618,6 +6620,89 @@ class AdjustableBedCoordinator:
             controller_command=command_fn,
             expected_stop_epoch=expected_stop_epoch,
             lease=lease,
+        )
+
+    def stream_resources(self) -> frozenset[str] | None:
+        """Scheduler resources the live controller may merge into one stream (#516)."""
+        controller = self.capability_controller
+        if controller is None or not controller.execution.concurrent:
+            return None
+        return self._protocol_command_resources(
+            command_resources(*controller.execution.concurrent)
+        )
+
+    def stop_stream_member(self, resource: str) -> bool:
+        """End a motor's merged-stream member for a motor-scoped STOP (#516).
+
+        Returns False when no live stream owns the motor, so the caller sends
+        its ordinary STOP. The member's own cleanup runs in the streamer, and the
+        other members keep moving.
+        """
+        resources = self._protocol_command_resources(command_resources(resource))
+        if not self._command_scheduler.stream_owns(resources):
+            return False
+        self._command_scheduler.finish_stop(self._command_scheduler.request_stop(resources))
+        return True
+
+    async def async_execute_stream_member(
+        self,
+        *,
+        motor: str,
+        resource: str,
+        action: str,
+        duration_s: float,
+        ceiling_s: float | None = None,
+        lease: HoldLease | None = None,
+        expected_stop_epoch: int | None = None,
+        on_wire: Callable[[], None] | None = None,
+        on_left: Callable[[float | None], None] | None = None,
+    ) -> CommandOutcome | None:
+        """Run a held or timed motion as a member of the merged stream (#516).
+
+        The caller has checked that ``resource`` is one of the controller's
+        concurrent motors. The streamer owns the wire through the ordinary
+        controller-operation lane, so connection, locking and STOP preemption
+        work as for any command.
+        """
+        resources = self.stream_resources()
+        if resources is None:
+            raise ValueError("This controller does not declare concurrent motors")
+        context = current_command_context()
+        if context is not None and context.scheduler_token is self._command_scheduler.token:
+            # A streamer queues behind the reservation this call runs in.
+            raise ValueError("A stream member cannot start inside another command")
+        loop = asyncio.get_running_loop()
+        member = StreamMember(
+            motor=motor,
+            resource=resource,
+            action=action,
+            # A lease is a dead-man deadline from this call; a timed move's
+            # budget starts with its first written tick.
+            deadline=loop.time() + duration_s if lease is not None else math.inf,
+            duration_s=None if lease is not None else duration_s,
+            lease=lease,
+            ceiling=None if ceiling_s is None else loop.time() + ceiling_s,
+            on_wire=on_wire,
+            on_left=on_left,
+        )
+
+        async def runner(body: Callable[[StreamDriver], Awaitable[None]]) -> None:
+            async def stream(controller: BedController) -> None:
+                await body(controller)
+
+            await self._async_execute_controller_operation(
+                stream,
+                cancel_running=False,
+                skip_disconnect=False,
+                raise_on_lock_cancel=False,
+                preemptible=True,
+                enable_position_polling=False,
+                read_positions_after_operation=False,
+                operation_name="merged stream",
+            )
+
+        return await self._command_scheduler.execute_stream_member(
+            member, resources, runner, expected_stop_epoch=expected_stop_epoch
         )
 
     def claim_hold_lease(

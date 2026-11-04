@@ -115,6 +115,10 @@ def _recall(profile: richmat_profiles.RichmatProfile) -> str:
     return f"{sends}, then STOP" if recall.release else sends
 
 
+def _lease(profile: richmat_profiles.RichmatProfile) -> str:
+    return "renewable lease" if profile.execution.hold == "stream" else "no"
+
+
 def render_richmat_profiles() -> str:
     types = bed_types()
     fixed = _table(
@@ -126,6 +130,7 @@ def render_richmat_profiles() -> str:
             "Default pulses",
             "Presets and recall",
             "Memory",
+            "Hold until release",
         ),
         (
             (
@@ -136,18 +141,20 @@ def render_richmat_profiles() -> str:
                 "{} × {} ms".format(*_const.get_motor_pulse_defaults(types[profile.key][0])),
                 _recall(profile),
                 f"{len(profile.memory)} slots",
+                _lease(profile),
             )
             for profile in _FIXED_ROUTES
         ),
     )
     catalog = _table(
-        ("Profile", "Bed type", "Transport order", "Commands"),
+        ("Profile", "Bed type", "Transport order", "Commands", "Hold until release"),
         (
             (
                 _RICHMAT_NAMES[key],
                 ", ".join(f"`{bed_type}`" for bed_type in types[key]),
                 ", ".join(transport.upper() for transport in profile.transports),
                 "per-product catalog" if key == "hjbed" else "per-model catalog",
+                _lease(profile),
             )
             for key, profile in _richmat_profiles().items()
             if profile.codes is None
@@ -157,7 +164,9 @@ def render_richmat_profiles() -> str:
         "### Fixed-table routes",
         "Movement repeats the code at the entry's pulse count and delay, whose defaults "
         "are listed, then always sends STOP with a fresh cancel event. Every other "
-        "button is one write.",
+        "button is one write. Under a [renewable hold](../SERVICES.md#renewable-holds), "
+        "movement repeats at the same delay until the lease ends or STOP arrives, up to "
+        "30 s, then sends STOP.",
         fixed,
         "### Catalog apps",
         catalog,

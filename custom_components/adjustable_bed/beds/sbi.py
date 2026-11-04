@@ -372,7 +372,11 @@ class SBIController(BedController):
             if key:
                 await self.write_command(
                     self._build_command(key),
-                    repeat_count=self._coordinator.motor_pulse_count,
+                    # A leased hold (#483) refreshes until its lease ends.
+                    repeat_count=self.leased_hold_refreshes(
+                        self._coordinator.motor_pulse_delay_ms
+                    )
+                    or self._coordinator.motor_pulse_count,
                     repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
                 )
         finally:

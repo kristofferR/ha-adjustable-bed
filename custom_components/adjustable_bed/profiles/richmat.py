@@ -16,7 +16,7 @@ from typing import Final, Literal
 
 from ..codec import richmat as codec
 from ..codec.richmat import COMPAT_STOP, STOP, Framing, Transport, TransportKey
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
 
 Button = Literal[
     "head_up",
@@ -136,6 +136,7 @@ GGRM_ACTIONS: Final = {
 RICHMAT: Final[dict[Framing, RichmatProfile]] = {
     framing: RichmatProfile(
         key=f"richmat_{framing}",
+        execution=STREAM_HOLD,
         transports=_LEGACY_TRANSPORTS,
         framing=framing,
         codes=RICHMAT_CODES,
@@ -174,6 +175,7 @@ BEDTECH: Final = RichmatProfile(
 )
 LEGGETT_WILINKE: Final = RichmatProfile(
     key="leggett_wilinke",
+    execution=STREAM_HOLD,
     transports=("w1",),
     codes={
         "head_up": 0x24,
@@ -208,7 +210,11 @@ LEGGETT_WILINKE: Final = RichmatProfile(
 
 # The five apps share one BLE library and its transport order.
 RICHMAT_MH: Final[dict[str, RichmatProfile]] = {
-    app: RichmatProfile(key=f"richmat_mh_{app}", transports=("n1", "w1", "w2", "w3", "w4"))
+    app: RichmatProfile(
+        key=f"richmat_mh_{app}", execution=STREAM_HOLD, transports=("n1", "w1", "w2", "w3", "w4")
+    )
     for app in ("revive", "best_mattress", "blvd_home", "harmony", "idealbed")
 }
-HJBED: Final = RichmatProfile(key="hjbed", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
+HJBED: Final = RichmatProfile(
+    key="hjbed", execution=STREAM_HOLD, transports=("w1", "n1", "w5", "w4", "w3", "w2")
+)
