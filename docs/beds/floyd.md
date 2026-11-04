@@ -124,6 +124,16 @@
   takeover, then let HA adopt the resulting advertised room.
 - This is local BLE administration, not Wi-Fi provisioning.
 
+### Home Assistant setup
+
+Choose **Floyd Home app (product 139)** under the Kaidi transport. Auto selects
+this profile for advertised product 139. It owns its two-axis layout and disables
+unsupported massage/position controls. Pulse count and delay bound an HA hold,
+not a hardware repeat loop. Each physical address keeps its own BLE room and
+node metadata; do not copy those fields to another side. This guide
+covers confirmation, conditional internal preset
+selectors and explicit assignment of an unassigned BLE room.
+
 ## Movement and presets
 
 ### Movement

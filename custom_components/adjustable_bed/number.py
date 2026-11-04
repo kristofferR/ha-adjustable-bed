@@ -50,6 +50,7 @@ from .paired_coordinator import (
     SingleAddressPairedCoordinator,
     entity_runtimes,
 )
+from .position_estimate_entities import async_setup_estimate_numbers
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
@@ -323,6 +324,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed number entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    # Opt-in travel-time estimates and saved positions (#601).
+    async_setup_estimate_numbers(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
             hass, entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)

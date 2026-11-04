@@ -2766,3 +2766,100 @@ gmmotor:
           min: 0
           max: 2559.999
           mode: box
+
+save_position:
+  fields:
+    device_id: &estimate_device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side: &estimate_side
+      required: false
+      selector:
+        select:
+          options:
+            - value: both
+              label: Both sides
+            - value: left
+              label: Left
+            - value: right
+              label: Right
+    name: &position_name
+      required: true
+      example: Reading
+      selector:
+        text:
+    create_button:
+      required: false
+      default: true
+      selector:
+        boolean:
+
+rename_position:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+    position: &saved_position
+      required: true
+      example: Reading
+      selector:
+        text:
+    name: *position_name
+    create_button:
+      required: false
+      selector:
+        boolean:
+
+update_position:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+    position: *saved_position
+
+delete_position:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+    position: *saved_position
+
+recall_position:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+    position: *saved_position
+
+set_position_reference:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+    motors: &estimated_motors
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - value: back
+              label: Back
+            - value: legs
+              label: Legs
+            - value: head
+              label: Head
+            - value: feet
+              label: Feet
+
+confirm_position_unchanged:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+
+mark_position_unknown:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+
+lower_to_flat:
+  fields:
+    device_id: *estimate_device
+    side: *estimate_side
+    motors: *estimated_motors
