@@ -1,4 +1,9 @@
-"""LOGICDATA MOTIONrelax and Sleep Smart bed app protocols with explicit layout and transport."""
+"""LOGICDATA MOTIONrelax and Sleep Smart bed apps over the Jiecang codec.
+
+Frames and timing come from ``profiles/logicdata.py``. This controller keeps
+what data cannot express: transport selection, each app's startup session and
+name role, the packet-family guard and clock-request answering.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +16,17 @@ from typing import TYPE_CHECKING, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from .. import logicdata_app_protocol as protocol
+from ..codec import jiecang as codec
+from ..profiles import logicdata as profiles
+from ..profiles.logicdata import (
+    APP_PROFILES,
+    TRANSPORTS,
+    WIRE_MASSAGE_LEVELS,
+    Family,
+    HeldPreset,
+    Layout,
+    TransportChoice,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -24,6 +39,7 @@ from .base import (
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
+    from ..codec.jiecang import Axis, MassageZone, Transport
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,34 +69,30 @@ class LogicdataAppController(BedController):
         has_massage: bool,
     ) -> None:
         super().__init__(coordinator)
-        if profile not in protocol.APP_PROFILES or command_family not in protocol.FAMILIES:
+        app = APP_PROFILES.get(cast(profiles.AppKey, profile))
+        if app is None:
             raise ValueError("Select a supported MOTIONrelax app edition and packet family")
-        if profile == "sleep_smart":
-            if layout not in protocol.SLEEP_SMART_LAYOUTS:
-                raise ValueError("Sleep Smart uses the two-motor standard or split-series layout")
-        elif layout not in protocol.LAYOUTS or (command_family == "p2") != (layout == "middle"):
-            raise ValueError("The middle layout requires P2; other layouts require P1")
-        if transport not in (*protocol.TRANSPORTS, "auto"):
+        profiles.validate_setup(app, command_family, layout)
+        if transport not in (*TRANSPORTS, "auto"):
             raise ValueError("Select a supported MOTIONrelax transport")
-        self._profile: protocol.AppProfile = profile
-        self._family: protocol.Family = command_family
-        self._layout: protocol.Layout = layout
+        self.profile = app
+        self._family: Family = cast(Family, command_family)
+        self._layout: Layout = cast(Layout, layout)
         self._transport_choice = transport
-        self._transport_id: protocol.TransportProfile | None = (
-            None if transport == "auto" else cast(protocol.TransportProfile, transport)
+        self._transport_id: TransportChoice | None = (
+            None if transport == "auto" else cast(TransportChoice, transport)
         )
         self._has_light = has_light
-        # Sleep Smart's massage tab stays reachable for every bed profile.
-        self._has_massage = has_massage and (command_family == "p1" or profile == "sleep_smart")
+        self._has_massage = has_massage and command_family in app.massage_families
         self._subscribed: list[str] = []
         self._clock_task: asyncio.Task[None] | None = None
         self._clock_requests = 0
         self._initialized = False
         self._discovered = False
         self._has_startup_profile = False
-        self._candidates: tuple[protocol.TransportProfile, ...] = ()
-        self._notify_roles: tuple[protocol.TransportProfile, ...] = ()
-        self._name_roles: frozenset[protocol.TransportProfile] = frozenset()
+        self._candidates: tuple[TransportChoice, ...] = ()
+        self._notify_roles: tuple[TransportChoice, ...] = ()
+        self._name_roles: frozenset[TransportChoice] = frozenset()
         self._family_matches: bool | None = None
         self._massage_state: dict[str, int] = {}
         self._light_state: dict[str, bool] = {}
@@ -89,7 +101,7 @@ class LogicdataAppController(BedController):
     def control_characteristic_uuid(self) -> str:
         if self._transport_id is None:
             return ""
-        return protocol.TRANSPORTS[self._transport_id].write_uuid
+        return TRANSPORTS[self._transport_id].write_uuid
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -97,26 +109,24 @@ class LogicdataAppController(BedController):
 
     def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
         """Reserve the last cadence interval for terminal movement and release."""
-        cadence = protocol.MOVEMENT_REPEAT_MS
+        cadence = self.profile.movement_repeat_ms
         return max(0, (duration_ms + cadence - 1) // cadence - 1)
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Report the app cadence to generic timed-movement planning."""
-        return self._coordinator.motor_pulse_count, protocol.MOVEMENT_REPEAT_MS
+        return self._coordinator.motor_pulse_count, self.profile.movement_repeat_ms
 
     @property
     def _sleep_smart(self) -> bool:
-        return self._profile == "sleep_smart"
+        return self.profile.session == "sleep_smart"
 
     @property
-    def _axes(self) -> tuple[protocol.Axis, ...]:
-        if self._sleep_smart:
-            return protocol.SLEEP_SMART_AXES
-        return protocol.layout_axes(self._layout)
+    def _axes(self) -> tuple[Axis, ...]:
+        return self.profile.layouts[self._layout]
 
     @property
     def memory_slot_count(self) -> int:
-        return 1 if self._sleep_smart else 2
+        return self.profile.memory_slots
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -128,9 +138,7 @@ class LogicdataAppController(BedController):
 
     @property
     def held_preset_options(self) -> tuple[str, ...]:
-        if self._sleep_smart:
-            return protocol.SLEEP_SMART_HELD_PRESETS
-        return protocol.MIDDLE_HELD_PRESETS if self._family == "p2" else ()
+        return self.profile.held_presets[self._family]
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -138,15 +146,15 @@ class LogicdataAppController(BedController):
 
     @property
     def supports_preset_zero_g(self) -> bool:
-        return self._family == "p1" or self._sleep_smart
+        return "zero_g" in self.profile.presets[self._family]
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        return self._family == "p1" or self._sleep_smart
+        return "anti_snore" in self.profile.presets[self._family]
 
     @property
     def supports_factory_reset(self) -> bool:
-        return self._sleep_smart
+        return self.profile.factory_reset
 
     @property
     def supports_massage(self) -> bool:
@@ -187,7 +195,7 @@ class LogicdataAppController(BedController):
         return self._rename_transport is not None
 
     @property
-    def _rename_transport(self) -> protocol.TransportProfile | None:
+    def _rename_transport(self) -> TransportChoice | None:
         if not self._sleep_smart:
             return self._transport_id if self._transport_id in ("t1", "t3") else None
         if self._transport_id in self._name_roles:
@@ -208,7 +216,7 @@ class LogicdataAppController(BedController):
 
     @property
     def supports_clock_alarm(self) -> bool:
-        return self._profile == "phone" and self._family == "p1"
+        return self._family in self.profile.alarm_families
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -227,24 +235,18 @@ class LogicdataAppController(BedController):
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
-        active = set(self._axes)
-        return frozenset(
-            axis
-            for layout in protocol.LAYOUTS
-            for axis in protocol.layout_axes(layout)
-            if axis not in active
-        )
+        return profiles.ALL_AXES - set(self._axes)
 
     @property
     def _reports_massage_mode(self) -> bool:
-        return self._sleep_smart and self.supports_massage
+        return self.profile.massage_mode_reply and self.supports_massage
 
     @property
     def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
         stale = set()
         if not self.supports_clock_alarm:
             stale.add("logicdata_app_alarm")
-        if self._sleep_smart:
+        if not self.profile.family_reply:
             # Sleep Smart never sends the MOTIONrelax family selector.
             stale.add("logicdata_app_family_match")
         if not self._reports_massage_mode:
@@ -286,7 +288,7 @@ class LogicdataAppController(BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = []
-        if not self._sleep_smart:
+        if self.profile.family_reply:
             specs.append(
                 ControllerStateSensorSpec(
                     key="logicdata_app_family_match",
@@ -333,7 +335,7 @@ class LogicdataAppController(BedController):
         candidates = []
         notify_roles = []
         name_roles = set()
-        for key, transport in protocol.TRANSPORTS.items():
+        for key, transport in TRANSPORTS.items():
             service = client.services.get_service(transport.service_uuid)
             if service is None:
                 continue
@@ -341,9 +343,9 @@ class LogicdataAppController(BedController):
             if transport.notify_uuid in uuids:
                 notify_roles.append(key)
             required = {transport.write_uuid, transport.notify_uuid}
-            if transport.rename_uuid and transport.rename_uuid in uuids:
+            if transport.name_uuid and transport.name_uuid in uuids:
                 name_roles.add(key)
-            elif transport.rename_uuid and not self._sleep_smart:
+            elif transport.name_uuid and not self._sleep_smart:
                 # MOTIONrelax readiness needs all three roles; Sleep Smart
                 # assigns its name role only when the characteristic exists.
                 continue
@@ -393,8 +395,8 @@ class LogicdataAppController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         if self._family_matches is False and command not in (
-            protocol.P1_RELEASE,
-            protocol.P2_RELEASE,
+            codec.SHORT_RELEASE,
+            codec.LONG_RELEASE,
         ):
             raise ValueError("MOTIONrelax bed reports a different packet family; reconfigure it")
         loop = asyncio.get_running_loop()
@@ -429,99 +431,84 @@ class LogicdataAppController(BedController):
                 await self.write_command(packet, cancel_event=cancel)
         return True
 
-    async def _action(self, packet: bytes, action: protocol.Action) -> None:
+    async def _action(self, packet: bytes, releases: profiles.Schedule) -> None:
         if self._coordinator.cancel_command.is_set():
             return
         started = asyncio.get_running_loop().time()
         try:
             await self.write_command(packet)
         finally:
-            await self._schedule(
-                protocol.release_schedule(action, self._family, self._profile),
-                cleanup=True,
-                started=started,
-            )
+            await self._schedule(releases, cleanup=True, started=started)
 
     async def move_axis(self, axis: str, up: bool) -> None:
         if axis not in self._axes:
             raise ValueError("Motor axis is absent from the selected layout")
-        packet = (
-            protocol.sleep_smart_motion_command(self._family, cast(protocol.Axis, axis), up)
-            if self._sleep_smart
-            else protocol.motion_command(self._family, self._layout, axis, up)
+        packet = profiles.motion_command(
+            self.profile, self._family, self._layout, cast("Axis", axis), up
         )
         if self._coordinator.cancel_command.is_set():
             return
         loop = asyncio.get_running_loop()
         started = loop.time()
+        cadence = self.profile.movement_repeat_ms
         release_started: float | None = None
         try:
             for tick in range(self._coordinator.motor_pulse_count):
                 await self.write_command(packet)
                 if not await self._pause(
-                    max(0, started + (tick + 1) * protocol.MOVEMENT_REPEAT_MS / 1000 - loop.time())
+                    max(0, started + (tick + 1) * cadence / 1000 - loop.time())
                 ):
                     return
             # Touch-up dispatches one terminal repeat before its delayed release.
             release_started = loop.time()
             await self.write_command(packet)
         finally:
-            await self._schedule(
-                protocol.release_schedule("movement", self._family, self._profile),
-                cleanup=True,
-                started=release_started,
-            )
+            await self._schedule(self.profile.touch_release, cleanup=True, started=release_started)
 
-    def _default_hold_ms(self) -> int:
-        """A button press holds a hold-only preset for the configured pulse count."""
-        return max(1, self._coordinator.motor_pulse_count) * protocol.SLEEP_SMART_PRESET_REPEAT_MS
+    async def _preset(self, preset: HeldPreset) -> None:
+        """Tap a preset or memory recall, or hold it when the app only holds them."""
+        if self.profile.hold_only_presets:
+            # A button press holds for the configured pulse count.
+            pulses = max(1, self._coordinator.motor_pulse_count)
+            await self.hold_preset(preset, pulses * self.profile.hold_repeat_ms[preset])
+            return
+        if preset in ("memory_1", "memory_2"):
+            packet = profiles.memory_command(self.profile, self._family, int(preset[-1]))
+        else:
+            packet = profiles.preset_command(self.profile, self._family, preset)
+        await self._action(packet, self.profile.touch_release)
 
     async def preset_flat(self) -> None:
-        if self._sleep_smart:
-            await self.hold_preset("flat", self._default_hold_ms())
-            return
-        await self._action(protocol.preset_command(self._family, "flat"), "flat")
+        await self._preset("flat")
 
     async def preset_zero_g(self) -> None:
-        if self._sleep_smart:
-            await self.hold_preset("zero_g", self._default_hold_ms())
-            return
-        await self._action(protocol.preset_command(self._family, "zero_g"), "preset")
+        await self._preset("zero_g")
 
     async def preset_anti_snore(self) -> None:
-        if self._sleep_smart:
-            await self.hold_preset("anti_snore", self._default_hold_ms())
-            return
-        await self._action(protocol.preset_command(self._family, "anti_snore"), "preset")
+        await self._preset("anti_snore")
 
     async def preset_memory(self, memory_num: int) -> None:
-        if self._sleep_smart:
-            if memory_num != 1:
-                raise ValueError("Sleep Smart has one memory slot")
-            await self.hold_preset("memory_1", self._default_hold_ms())
-            return
-        await self._action(protocol.memory_command(self._family, memory_num), "memory")
+        profiles.check_memory_slot(self.profile, memory_num)
+        await self._preset("memory_1" if memory_num == 1 else "memory_2")
 
     async def program_memory(self, memory_num: int) -> None:
-        if self._sleep_smart:
-            # The memory dialog's return sends one save frame, without a release.
-            if memory_num != 1:
-                raise ValueError("Sleep Smart has one memory slot")
-            await self.write_command(protocol.SLEEP_SMART_MEMORY_SAVE)
+        schedule = profiles.memory_save_schedule(self.profile, self._family, memory_num)
+        if len(schedule) == 1:
+            # Sleep Smart's memory dialog writes its one frame without a release.
+            await self.write_command(schedule[0][1])
             return
-        packet = protocol.memory_command(self._family, memory_num, save=True)
-        await self._schedule(((0, packet), (30, packet), (60, packet)))
+        await self._schedule(schedule)
 
     async def factory_reset(self) -> None:
-        if not self._sleep_smart:
+        if not self.profile.factory_reset:
             raise NotImplementedError("Only the Sleep Smart app exposes a factory reset")
-        await self.write_command(protocol.FACTORY_RESET)
+        await self.write_command(codec.FACTORY_RESET)
 
     async def query_massage(self) -> None:
         """Send the massage-tab parameter query at its 100/250/450 ms offsets."""
         if not self._reports_massage_mode:
             raise NotImplementedError("Only the Sleep Smart massage tab sends this query")
-        await self._schedule(protocol.MASSAGE_QUERY_SCHEDULE)
+        await self._schedule(self.profile.massage_query)
 
     async def hold_preset(self, preset: str, duration_ms: int) -> None:
         """Run a bounded held preset with the selected app's cadence and release.
@@ -533,24 +520,15 @@ class LogicdataAppController(BedController):
             raise NotImplementedError("Held presets are unavailable for this app profile")
         if preset not in self.held_preset_options:
             raise ValueError(f"Held preset must be one of {', '.join(self.held_preset_options)}")
-        if self._sleep_smart:
-            cadence = protocol.SLEEP_SMART_PRESET_REPEAT_MS
-        else:
-            cadence = (
-                protocol.MOVEMENT_REPEAT_MS if preset == "flat" else protocol.MEMORY_HOLD_REPEAT_MS
-            )
+        held = cast(HeldPreset, preset)
+        cadence = self.profile.hold_repeat_ms[held]
         if (
             isinstance(duration_ms, bool)
             or not isinstance(duration_ms, int)
             or not cadence <= duration_ms <= 60000
         ):
             raise ValueError(f"Preset hold duration must be {cadence}..60000 milliseconds")
-        if self._sleep_smart:
-            packet = protocol.held_preset_command(cast(protocol.HeldPreset, preset))
-        elif preset == "flat":
-            packet = protocol.preset_command(self._family, "flat")
-        else:
-            packet = protocol.memory_command(self._family, 1 if preset == "memory_1" else 2)
+        packet = profiles.held_preset_command(self.profile, self._family, held)
         if self._coordinator.cancel_command.is_set():
             return
         loop = asyncio.get_running_loop()
@@ -564,42 +542,38 @@ class LogicdataAppController(BedController):
                 next_offset = min(duration_ms, (tick + 1) * cadence)
                 if not await self._pause(max(0, started + next_offset / 1000 - loop.time())):
                     return
-            if preset == "flat" and not self._sleep_smart:
-                # Flat uses the repeating-button terminal touch-up dispatch.
+            if held in self.profile.hold_final_frame:
+                # The repeating-button terminal touch-up dispatch.
                 release_started = loop.time()
                 await self.write_command(packet)
         finally:
-            await self._schedule(
-                ((100, protocol.P1_RELEASE),), cleanup=True, started=release_started
-            )
+            await self._schedule(self.profile.touch_release, cleanup=True, started=release_started)
 
     async def stop_all(self) -> None:
-        await self.write_command(protocol.P1_RELEASE, cancel_event=asyncio.Event())
+        await self.write_command(codec.SHORT_RELEASE, cancel_event=asyncio.Event())
 
     async def lights_toggle(self) -> None:
         if not self.supports_lights:
             raise NotImplementedError("The selected layout has no light control")
-        # Sleep Smart sends the P1 toggle for every bed profile; its middle
-        # light helper is unused.
-        family: protocol.Family = "p1" if self._sleep_smart else self._family
-        await self._action(protocol.light_command(family), "light")
+        await self._action(
+            profiles.light_command(self.profile, self._family), self.profile.light_releases
+        )
 
     async def massage_off(self) -> None:
         if not self.supports_massage:
             raise NotImplementedError("The selected layout has no massage control")
-        await self.write_command(protocol.MASSAGE_STOP)
+        await self.write_command(codec.massage_stop())
 
     async def massage_mode_step(self) -> None:
         if not self.supports_massage:
             raise NotImplementedError("The selected layout has no massage control")
-        await self._action(protocol.MASSAGE_MODE, "massage_mode")
+        await self._action(codec.massage_mode(), self.profile.massage_mode_releases)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in self.massage_intensity_zones:
             raise ValueError("Massage zone is absent from the selected layout")
-        zones: dict[str, protocol.MassageZone] = {"head": "back", "foot": "legs", "right": "right"}
-        protocol_zone = zones[zone]
-        await self.write_command(protocol.massage_command(protocol_zone, level))
+        zones: dict[str, MassageZone] = {"head": "back", "foot": "legs", "right": "right"}
+        await self.write_command(profiles.massage_command(zones[zone], level))
 
     def get_massage_state(self) -> dict[str, int]:
         return dict(self._massage_state)
@@ -610,15 +584,15 @@ class LogicdataAppController(BedController):
         return {"is_on": self._light_state["under_bed_lights_on"]}
 
     def validate_device_rename(self, name: str) -> None:
-        protocol.validate_rename(self._profile, name)
+        self.profile.name_rule.encode(name)
 
     async def rename_device(self, name: str) -> None:
         rename_transport = self._rename_transport
         if rename_transport is None:
             raise NotImplementedError("The selected transport has no rename characteristic")
         await self._schedule(
-            protocol.rename_schedule(self._profile, rename_transport, name),
-            uuid=protocol.TRANSPORTS[rename_transport].rename_uuid,
+            profiles.rename_schedule(self.profile, rename_transport, name),
+            uuid=TRANSPORTS[rename_transport].name_uuid,
         )
 
     async def configure_clock_alarm(
@@ -638,21 +612,22 @@ class LogicdataAppController(BedController):
             raise ValueError("Alarm weekdays must use Monday=0 through Sunday=6")
         if preset not in ("flat", "zero_g", "anti_snore", "memory_1", "memory_2"):
             raise ValueError("Alarm preset is unsupported")
-        packet = protocol.alarm_command(
+        packet = codec.alarm(
             enabled,
             tuple(day in weekdays for day in range(7)),
             hour,
             minute,
-            cast(protocol.Wake, preset),
+            cast(profiles.Wake, preset),
             head_level,
             foot_level,
         )
         await self.write_command(packet)
 
     async def _sync_clock(self) -> None:
-        if self._profile == "tablet":
+        if self.profile.clock_request_length is None:
             raise NotImplementedError("The tablet app has no clock writer")
-        await self._write_to(self.control_characteristic_uuid, protocol.clock_command(dt_util.now()))
+        # The phone always builds a P1 clock, including for the P2 family.
+        await self._write_to(self.control_characteristic_uuid, codec.clock(dt_util.now()))
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
@@ -661,12 +636,12 @@ class LogicdataAppController(BedController):
         if not self._discovered:
             await self.async_discover_capabilities()
         assert self._transport_id is not None
-        transport = protocol.TRANSPORTS[self._transport_id]
+        transport = TRANSPORTS[self._transport_id]
         if self._sleep_smart:
             await self._start_sleep_smart_notify(transport)
             return
         try:
-            if not await self._pause(1.0):
+            if not await self._pause(self.profile.subscribe_delay_ms / 1000):
                 raise asyncio.CancelledError
             client = self.client
             if client is None:
@@ -679,23 +654,21 @@ class LogicdataAppController(BedController):
                 loop = asyncio.get_running_loop()
                 started = loop.time()
                 if not await self._schedule(
-                    protocol.startup_schedule(self._profile, self._family),
+                    self.profile.startup[self._family],
                     uuid=self.control_characteristic_uuid,
                     started=started,
                 ):
                     raise asyncio.CancelledError
-                late_offsets = (
-                    protocol.CLOCK_STARTUP_OFFSETS
-                    if self._profile == "phone"
-                    else ((3000,) if self._transport_id == "t3" else ())
-                )
+                clock_offsets = self.profile.clock_startup_offsets
+                name_offset = self.profile.name_subscribe_ms if self._transport_id == "t3" else None
+                late_offsets = sorted({*clock_offsets, *filter(None, (name_offset,))})
                 for offset in late_offsets:
                     if not await self._pause(max(0, started + offset / 1000 - loop.time())):
                         raise asyncio.CancelledError
-                    if offset == 3000 and self._transport_id == "t3" and transport.rename_uuid:
-                        await client.start_notify(transport.rename_uuid, self._notification_handler)
-                        self._subscribed.append(transport.rename_uuid)
-                    if self._profile == "phone":
+                    if offset == name_offset and transport.name_uuid:
+                        await client.start_notify(transport.name_uuid, self._notification_handler)
+                        self._subscribed.append(transport.name_uuid)
+                    if offset in clock_offsets:
                         await self._sync_clock()
             self._initialized = True
         except BaseException:
@@ -715,7 +688,7 @@ class LogicdataAppController(BedController):
         self._subscribed.append(uuid)
         return True
 
-    async def _start_sleep_smart_notify(self, transport: protocol.Transport) -> None:
+    async def _start_sleep_smart_notify(self, transport: Transport) -> None:
         """Subscribe like Sleep Smart; only T3's two subscriptions start its queries.
 
         The app subscribes every recognized notify role, and both T3
@@ -725,7 +698,7 @@ class LogicdataAppController(BedController):
         connection usable without the startup queries.
         """
         try:
-            if not await self._pause(protocol.SLEEP_SMART_SETUP_DELAY_MS / 1000):
+            if not await self._pause(self.profile.subscribe_delay_ms / 1000):
                 raise asyncio.CancelledError
             client = self.client
             if client is None:
@@ -736,19 +709,19 @@ class LogicdataAppController(BedController):
             # Every other data notify role the app finds is subscribed too.
             for key in self._notify_roles:
                 if key not in (self._transport_id, "t3"):
-                    await self._subscribe_optional(protocol.TRANSPORTS[key].notify_uuid)
+                    await self._subscribe_optional(TRANSPORTS[key].notify_uuid)
             ready = False
-            t3 = protocol.TRANSPORTS["t3"]
-            if "t3" in self._notify_roles and "t3" in self._name_roles and t3.rename_uuid:
+            t3 = TRANSPORTS["t3"]
+            if "t3" in self._notify_roles and "t3" in self._name_roles and t3.name_uuid:
                 data_ready = self._transport_id == "t3" or await self._subscribe_optional(
                     t3.notify_uuid
                 )
-                if not await self._pause(protocol.SLEEP_SMART_NAME_NOTIFY_DELAY_MS / 1000):
+                if not await self._pause(self.profile.name_subscribe_ms / 1000):
                     raise asyncio.CancelledError
-                name_ready = await self._subscribe_optional(t3.rename_uuid)
+                name_ready = await self._subscribe_optional(t3.name_uuid)
                 ready = data_ready and name_ready
             if ready and not await self._schedule(
-                protocol.sleep_smart_startup_schedule(self._family),
+                self.profile.startup[self._family],
                 uuid=self.control_characteristic_uuid,
             ):
                 raise asyncio.CancelledError
@@ -759,7 +732,7 @@ class LogicdataAppController(BedController):
 
     def _notification_handler(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         self.forward_raw_notification(sender.uuid, bytes(data))
-        notification = protocol.parse_notification(self._profile, bytes(data))
+        notification = profiles.parse_notification(self.profile, bytes(data))
         if notification is None:
             return
         updates: dict[str, object] = {}
@@ -774,8 +747,8 @@ class LogicdataAppController(BedController):
                 ("head", notification.massage_back),
                 ("right" if self._layout == "split_series" else "foot", notification.massage_legs),
             ):
-                if raw_level is not None and raw_level in protocol.WIRE_MASSAGE_LEVELS:
-                    level = protocol.WIRE_MASSAGE_LEVELS.index(raw_level)
+                if raw_level is not None and raw_level in WIRE_MASSAGE_LEVELS:
+                    level = WIRE_MASSAGE_LEVELS.index(raw_level)
                     self._massage_state[f"{zone}_intensity"] = level
                     updates[f"{zone}_intensity"] = level
         if notification.massage_mode_reported and self._reports_massage_mode:

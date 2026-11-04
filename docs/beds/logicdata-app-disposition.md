@@ -9,6 +9,10 @@ shared service UUID does not establish the appropriate profile.
 **Hardware status:** artifact-proven, physical operation unverified. All accepted
 analysis is preserved. Hardware checks are deferred to users after beta/release.
 
+The reference guide is [MOTIONrelax phone and tablet](jiecang.md#motionrelax-phone-and-tablet).
+Since v5 (#745) the profiles live in `profiles/logicdata.py` over the Jiecang codec,
+with unchanged bytes and timing.
+
 ## Accepted whole-cluster evidence
 
 The cluster contains exactly these two packages, both independently audited and

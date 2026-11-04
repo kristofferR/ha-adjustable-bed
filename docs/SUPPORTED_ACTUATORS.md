@@ -44,7 +44,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [SBI/Q-Plus](beds/sbi.md) | Position feedback via pulse lookup |
 | [Rondure](beds/rondure.md) | 4 motors, split-king, massage, lights |
 | [Remacro](beds/remacro.md) | Slumberland, The Brick and Jerome's app screens: up to 3 motors, split sides, presets, memory, massage, light |
-| [Logicdata](beds/logicdata.md) | SILVERmotion / SimplicityFrame memory, lights and massage; [MOTIONrelax](beds/logicdata-app.md) layouts and alarms; [Sleep Smart](beds/logicdata-sleep-smart.md) bed controls and separate air mattress pump |
+| [Logicdata](beds/logicdata.md) | SILVERmotion / SimplicityFrame memory, lights and massage; [MOTIONrelax](beds/jiecang.md#motionrelax-phone-and-tablet) layouts and alarms; [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) bed controls and separate [air mattress pump](beds/logicdata-sleep-smart.md) |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
 | [Customatic](beds/customatic.md) | Clarity, Jerome's C and Remedy apps: back and legs (Remedy adds lumbar), memory page, light toggle |
 | [Customatic Z-Series](beds/customatic-z-series.md), [Jordan's Serenity](beds/serenity.md), [Jordan's Tranquil](beds/tranquil.md) | OKIN CST 14-byte apps: head/foot and selector controls, presets, saved positions, massage; Z-230/Z-280 pages |
@@ -117,7 +117,7 @@ Beds that won't be supported:
 - **Logicdata eLift / desk controllers** — Uses local UDP/HTTP, not Bluetooth
 - **ErgoWifi** — Uses Xlink cloud platform
 
-LOGICDATA MOTIONrelax BLE app layouts have an explicit [LOGICDATA app profile](beds/logicdata-app.md); the Sleep Smart Air Mattress app has its own [bed profile and pump type](beds/logicdata-sleep-smart.md). Existing legacy [Jiecang](beds/jiecang.md#legacy-route) entries retain their original protocol.
+LOGICDATA MOTIONrelax BLE app layouts have an explicit [LOGICDATA app profile](beds/jiecang.md#motionrelax-phone-and-tablet) over the Jiecang codec; the Sleep Smart Air Mattress app has its own [bed profile](beds/jiecang.md#sleep-smart-air-mattress-bed) and [pump type](beds/logicdata-sleep-smart.md). Existing legacy [Jiecang](beds/jiecang.md#legacy-route) entries retain their original protocol.
 
 If you have one of these beds, consider running [smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt) as an add-on or make a separate integration for WiFi/Cloud adjustable beds.
 

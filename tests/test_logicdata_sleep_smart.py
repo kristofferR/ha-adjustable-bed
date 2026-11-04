@@ -9,54 +9,56 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed import logicdata_app_protocol as protocol
 from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.codec import jiecang as codec
+from custom_components.adjustable_bed.profiles import logicdata as profiles
+from custom_components.adjustable_bed.profiles.logicdata import SLEEP_SMART
 
-T1, T2, T3 = (protocol.TRANSPORTS[key] for key in ("t1", "t2", "t3"))
+T1, T2, T3 = (profiles.TRANSPORTS[key] for key in ("t1", "t2", "t3"))
 
 # Every reachable P1 command row in the accepted report, by row number. P2 and
 # P3 rows carry identical bytes on their own write role.
 ROWS = {
-    1: ("f1f1010101037e", lambda: protocol.sleep_smart_motion_command("p1", "back", True)),
-    2: ("f1f1020101047e", lambda: protocol.sleep_smart_motion_command("p1", "back", False)),
-    3: ("f1f1030101057e", lambda: protocol.sleep_smart_motion_command("p1", "legs", True)),
-    4: ("f1f1040101067e", lambda: protocol.sleep_smart_motion_command("p1", "legs", False)),
-    5: ("f1f1050101077e", lambda: protocol.sleep_smart_motion_command("p2", "both", True)),
-    6: ("f1f1060101087e", lambda: protocol.sleep_smart_motion_command("p1", "both", False)),
-    7: ("f1f101020000037e", lambda: protocol.sleep_smart_motion_command("p2", "back", True)),
-    8: ("f1f102020000047e", lambda: protocol.sleep_smart_motion_command("p2", "back", False)),
-    9: ("f1f103020000057e", lambda: protocol.sleep_smart_motion_command("p2", "legs", True)),
-    10: ("f1f104020000067e", lambda: protocol.sleep_smart_motion_command("p2", "legs", False)),
-    11: ("f1f1070101097e", lambda: protocol.held_preset_command("zero_g")),
-    12: ("f1f10801010a7e", lambda: protocol.held_preset_command("flat")),
-    13: ("f1f10901010b7e", lambda: protocol.held_preset_command("anti_snore")),
-    14: ("f1f10b01010d7e", lambda: protocol.held_preset_command("memory_1")),
-    15: ("f1f10a000a7e", lambda: protocol.SLEEP_SMART_MEMORY_SAVE),
-    16: ("f1f14e004e7e", lambda: protocol.P1_RELEASE),
-    17: ("f1f14e020000507e", lambda: protocol.P2_RELEASE),
-    18: ("f1f10f000f7e", lambda: protocol.light_command("p1")),
-    19: ("f1f1120208001c7e", lambda: protocol.massage_command("back", 0)),
-    20: ("f1f1120208021e7e", lambda: protocol.massage_command("back", 1)),
-    21: ("f1f1120208031f7e", lambda: protocol.massage_command("back", 2)),
-    22: ("f1f112020804207e", lambda: protocol.massage_command("back", 3)),
-    23: ("f1f1140208001e7e", lambda: protocol.massage_command("legs", 0)),
-    24: ("f1f114020802207e", lambda: protocol.massage_command("legs", 1)),
-    25: ("f1f114020803217e", lambda: protocol.massage_command("legs", 2)),
-    26: ("f1f114020804227e", lambda: protocol.massage_command("legs", 3)),
-    27: ("f1f1220208002c7e", lambda: protocol.massage_command("right", 0)),
-    28: ("f1f1220208022e7e", lambda: protocol.massage_command("right", 1)),
-    29: ("f1f1220208032f7e", lambda: protocol.massage_command("right", 2)),
-    30: ("f1f122020804307e", lambda: protocol.massage_command("right", 3)),
-    31: ("f1f11101081a7e", lambda: protocol.MASSAGE_STOP),
-    32: ("f1f116010a217e", lambda: protocol.MASSAGE_MODE),
-    33: ("f1f11d0200001f7e", lambda: protocol.FACTORY_RESET),
-    34: ("f1f100024000427e", lambda: protocol.QUERY_SOFTWARE),
-    35: ("f1f1000108097e", lambda: protocol.QUERY_VIBRATION),
-    36: ("f1f1000140417e", lambda: protocol.QUERY_HARDWARE),
-    37: ("f1f1000150517e", lambda: protocol.QUERY_ACTUATOR),
-    38: ("f1f100020100037e", lambda: protocol.QUERY_LIGHT),
-    39: ("f1f10000007e", lambda: protocol.QUERY_STATUS),
-    41: ("f1f1000208000a7e", lambda: protocol.QUERY_MASSAGE),
+    1: ("f1f1010101037e", lambda: profiles.motion_command(SLEEP_SMART, "p1", "standard_2", "back", True)),
+    2: ("f1f1020101047e", lambda: profiles.motion_command(SLEEP_SMART, "p1", "standard_2", "back", False)),
+    3: ("f1f1030101057e", lambda: profiles.motion_command(SLEEP_SMART, "p1", "standard_2", "legs", True)),
+    4: ("f1f1040101067e", lambda: profiles.motion_command(SLEEP_SMART, "p1", "standard_2", "legs", False)),
+    5: ("f1f1050101077e", lambda: profiles.motion_command(SLEEP_SMART, "p2", "standard_2", "both", True)),
+    6: ("f1f1060101087e", lambda: profiles.motion_command(SLEEP_SMART, "p1", "standard_2", "both", False)),
+    7: ("f1f101020000037e", lambda: profiles.motion_command(SLEEP_SMART, "p2", "standard_2", "back", True)),
+    8: ("f1f102020000047e", lambda: profiles.motion_command(SLEEP_SMART, "p2", "standard_2", "back", False)),
+    9: ("f1f103020000057e", lambda: profiles.motion_command(SLEEP_SMART, "p2", "standard_2", "legs", True)),
+    10: ("f1f104020000067e", lambda: profiles.motion_command(SLEEP_SMART, "p2", "standard_2", "legs", False)),
+    11: ("f1f1070101097e", lambda: profiles.held_preset_command(SLEEP_SMART, "p1", "zero_g")),
+    12: ("f1f10801010a7e", lambda: profiles.held_preset_command(SLEEP_SMART, "p1", "flat")),
+    13: ("f1f10901010b7e", lambda: profiles.held_preset_command(SLEEP_SMART, "p1", "anti_snore")),
+    14: ("f1f10b01010d7e", lambda: profiles.held_preset_command(SLEEP_SMART, "p1", "memory_1")),
+    15: ("f1f10a000a7e", lambda: profiles.memory_save_schedule(SLEEP_SMART, "p1", 1)[0][1]),
+    16: ("f1f14e004e7e", lambda: codec.SHORT_RELEASE),
+    17: ("f1f14e020000507e", lambda: codec.LONG_RELEASE),
+    18: ("f1f10f000f7e", lambda: profiles.light_command(SLEEP_SMART, "p1")),
+    19: ("f1f1120208001c7e", lambda: profiles.massage_command("back", 0)),
+    20: ("f1f1120208021e7e", lambda: profiles.massage_command("back", 1)),
+    21: ("f1f1120208031f7e", lambda: profiles.massage_command("back", 2)),
+    22: ("f1f112020804207e", lambda: profiles.massage_command("back", 3)),
+    23: ("f1f1140208001e7e", lambda: profiles.massage_command("legs", 0)),
+    24: ("f1f114020802207e", lambda: profiles.massage_command("legs", 1)),
+    25: ("f1f114020803217e", lambda: profiles.massage_command("legs", 2)),
+    26: ("f1f114020804227e", lambda: profiles.massage_command("legs", 3)),
+    27: ("f1f1220208002c7e", lambda: profiles.massage_command("right", 0)),
+    28: ("f1f1220208022e7e", lambda: profiles.massage_command("right", 1)),
+    29: ("f1f1220208032f7e", lambda: profiles.massage_command("right", 2)),
+    30: ("f1f122020804307e", lambda: profiles.massage_command("right", 3)),
+    31: ("f1f11101081a7e", lambda: codec.massage_stop()),
+    32: ("f1f116010a217e", lambda: codec.massage_mode()),
+    33: ("f1f11d0200001f7e", lambda: codec.FACTORY_RESET),
+    34: ("f1f100024000427e", lambda: profiles.QUERY_SOFTWARE),
+    35: ("f1f1000108097e", lambda: profiles.QUERY_VIBRATION),
+    36: ("f1f1000140417e", lambda: profiles.QUERY_HARDWARE),
+    37: ("f1f1000150517e", lambda: profiles.QUERY_ACTUATOR),
+    38: ("f1f100020100037e", lambda: profiles.QUERY_LIGHT),
+    39: ("f1f10000007e", lambda: profiles.QUERY_STATUS),
+    41: ("f1f1000208000a7e", lambda: profiles.QUERY_MASSAGE),
 }
 
 
@@ -68,22 +70,22 @@ def test_every_fixed_command_row_is_byte_exact(row):
 
 def test_dynamic_rows_reproduce_the_report_vectors():
     # Row 40, middle hardware query, is the software-config frame (V-cmdHardConfig).
-    assert protocol.FACTORY_RESET.hex() == "f1f11d0200001f7e"  # V-reset
-    assert protocol.P2_RELEASE.hex() == "f1f14e020000507e"  # V-touchRelease
+    assert codec.FACTORY_RESET.hex() == "f1f11d0200001f7e"  # V-reset
+    assert codec.LONG_RELEASE.hex() == "f1f14e020000507e"  # V-touchRelease
     # Row 42 (V-time1, V-time2): Calendar weekday is Sunday=0.
     assert (
-        protocol.clock_command(datetime(2026, 10, 1, 12, 34, 56)).hex()
+        codec.clock(datetime(2026, 10, 1, 12, 34, 56)).hex()
         == "f1f15007380a01040c2238047e"
     )
     assert (
-        protocol.clock_command(datetime(2025, 1, 5, 1, 2, 3)).hex()
+        codec.clock(datetime(2025, 1, 5, 1, 2, 3)).hex()
         == "f1f15007370105000102039a7e"
     )
     # Row 43 (V-name-ascii, V-name-allowed-utf8): 01 FC 07, byte length, UTF-8.
     for transport in ("t1", "t3"):
-        assert protocol.rename_command("sleep_smart", transport, "Bed").hex() == "01fc0703426564"
-        assert protocol.rename_command("sleep_smart", transport, "Ä").hex() == "01fc0702c384"
-    assert protocol.rename_schedule("sleep_smart", "t1", "Bed") == (
+        assert profiles.rename_schedule(SLEEP_SMART, transport, "Bed")[0][1].hex() == "01fc0703426564"
+        assert profiles.rename_schedule(SLEEP_SMART, transport, "Ä")[0][1].hex() == "01fc0702c384"
+    assert profiles.rename_schedule(SLEEP_SMART, "t1", "Bed") == (
         (0, bytes.fromhex("01fc0703426564")),
     )
 
@@ -91,12 +93,12 @@ def test_dynamic_rows_reproduce_the_report_vectors():
 @pytest.mark.parametrize("name", ["", "Å", "Bed 1", "A" * 21, "bed\n", "Bett-1"])
 def test_rename_uses_the_edit_alphabet_and_length(name):
     with pytest.raises(ValueError, match="1..20"):
-        protocol.rename_command("sleep_smart", "t3", name)
-    assert len(protocol.validate_rename("sleep_smart", "ÄÖÜäöüß" + "a" * 13)) == 27
+        profiles.rename_schedule(SLEEP_SMART, "t3", name)
+    assert len(SLEEP_SMART.name_rule.encode("ÄÖÜäöüß" + "a" * 13)) == 27
 
 
 def test_startup_merges_both_ready_handlers():
-    p1 = [(t, data.hex()) for t, data in protocol.sleep_smart_startup_schedule("p1")]
+    p1 = [(t, data.hex()) for t, data in SLEEP_SMART.startup["p1"]]
     assert p1 == [
         (300, "f1f100024000427e"),
         (600, "f1f1000108097e"),
@@ -114,42 +116,42 @@ def test_startup_merges_both_ready_handlers():
         (2400, "f1f10000007e"),
         (2700, "f1f10000007e"),
     ]
-    p2 = [(t, data.hex()) for t, data in protocol.sleep_smart_startup_schedule("p2")]
+    p2 = [(t, data.hex()) for t, data in SLEEP_SMART.startup["p2"]]
     assert p2[6:8] == [(1200, "f1f100024000427e"), (1300, "f1f100024000427e")]
     assert tuple(
-        (offset, protocol.QUERY_MASSAGE) for offset in (100, 250, 450)
-    ) == protocol.MASSAGE_QUERY_SCHEDULE
+        (offset, profiles.QUERY_MASSAGE) for offset in (100, 250, 450)
+    ) == SLEEP_SMART.massage_query
 
 
 @pytest.mark.parametrize(
     ("data", "expected"),
     [
         # V-bed-state1: byte 4 back, byte 6 foot/right, byte 8 bit 6 light.
-        ("f2f206050200040040", protocol.Notification(massage_back=2, massage_legs=4, light_on=True)),
-        ("f2f205000000000040", protocol.Notification(light_on=True)),
-        ("f2f205000000000000", protocol.Notification(light_on=False)),
+        ("f2f206050200040040", profiles.Notification(massage_back=2, massage_legs=4, light_on=True)),
+        ("f2f205000000000040", profiles.Notification(light_on=True)),
+        ("f2f205000000000000", profiles.Notification(light_on=False)),
         ("f2f205", None),
         # V-bed-mode-*: byte 4 hex text parsed as decimal.
-        ("f2f20d0101", protocol.Notification(massage_mode="long_interval", massage_mode_reported=True)),
-        ("f2f20d0102", protocol.Notification(massage_mode="short_interval", massage_mode_reported=True)),
-        ("f2f20d0103", protocol.Notification(massage_mode="wave", massage_mode_reported=True)),
-        ("f2f20d0104", protocol.Notification(massage_mode="continuous", massage_mode_reported=True)),
-        ("f2f20d0110", protocol.Notification(massage_mode_reported=True)),
+        ("f2f20d0101", profiles.Notification(massage_mode="long_interval", massage_mode_reported=True)),
+        ("f2f20d0102", profiles.Notification(massage_mode="short_interval", massage_mode_reported=True)),
+        ("f2f20d0103", profiles.Notification(massage_mode="wave", massage_mode_reported=True)),
+        ("f2f20d0104", profiles.Notification(massage_mode="continuous", massage_mode_reported=True)),
+        ("f2f20d0110", profiles.Notification(massage_mode_reported=True)),
         ("f2f20d010a", None),
         ("f2f20d", None),
-        ("f2f250", protocol.Notification(clock_requested=True)),
+        ("f2f250", profiles.Notification(clock_requested=True)),
         # No family selector exists in this app.
         ("f2f2110001", None),
     ],
 )
 def test_parser_vectors(data, expected):
-    assert protocol.parse_notification("sleep_smart", bytes.fromhex(data)) == expected
+    assert profiles.parse_notification(SLEEP_SMART, bytes.fromhex(data)) == expected
 
 
 def _client(coordinator, transports=(T1, T2, T3), *, without=()):
     services, characteristics = {}, {}
     for transport in transports:
-        uuids = {transport.write_uuid, transport.notify_uuid, transport.rename_uuid} - {None}
+        uuids = {transport.write_uuid, transport.notify_uuid, transport.name_uuid} - {None}
         chars = [MagicMock(uuid=uuid, properties=["write", "notify"]) for uuid in uuids - set(without)]
         services[transport.service_uuid] = MagicMock(
             uuid=transport.service_uuid, characteristics=chars
@@ -211,7 +213,7 @@ async def test_movement_repeats_then_releases(coordinator, instant, family, axis
 
 
 async def test_two_motor_layout_for_every_series(coordinator):
-    for layout in protocol.SLEEP_SMART_LAYOUTS:
+    for layout in SLEEP_SMART.layouts:
         controller = bed(coordinator, layout=layout, command_family="p2")
         assert [spec.key for spec in controller.motor_control_specs] == ["back", "legs", "both"]
         assert controller.supports_massage
@@ -317,22 +319,22 @@ async def test_t3_ready_event_runs_both_startup_handlers(coordinator, instant):
         T3.notify_uuid,
         T1.notify_uuid,
         T2.notify_uuid,
-        T3.rename_uuid,
+        T3.name_uuid,
     ]
     assert writes(coordinator) == [
-        (T3.write_uuid, packet.hex()) for _, packet in protocol.sleep_smart_startup_schedule("p1")
+        (T3.write_uuid, packet.hex()) for _, packet in SLEEP_SMART.startup["p1"]
     ]
     assert controller._initialized
 
 
 @pytest.mark.parametrize("transport", ["t1", "t2"])
 async def test_t1_or_t2_alone_never_become_ready(coordinator, instant, transport):
-    _client(coordinator, (protocol.TRANSPORTS[transport],))
+    _client(coordinator, (profiles.TRANSPORTS[transport],))
     controller = bed(coordinator, transport="auto")
     await controller.async_discover_capabilities()
     await controller.start_notify()
     assert [call.args[0] for call in coordinator.client.start_notify.call_args_list] == [
-        protocol.TRANSPORTS[transport].notify_uuid
+        profiles.TRANSPORTS[transport].notify_uuid
     ]
     assert packets(coordinator) == []
     assert controller._initialized
@@ -346,7 +348,7 @@ async def test_copresent_t3_readiness_initializes_the_selected_write_role(coordi
         T2.notify_uuid,
         T1.notify_uuid,
         T3.notify_uuid,
-        T3.rename_uuid,
+        T3.name_uuid,
     ]
     assert {uuid for uuid, _ in writes(coordinator)} == {T2.write_uuid}
     assert len(packets(coordinator)) == 15
@@ -366,7 +368,7 @@ async def test_every_discovered_notify_role_is_subscribed(coordinator, instant):
 
 async def test_failed_name_subscription_skips_queries_but_keeps_the_link(coordinator, instant):
     async def start_notify(uuid, callback):
-        if uuid == T3.rename_uuid:
+        if uuid == T3.name_uuid:
             raise BleakError("CCCD rejected")
 
     coordinator.client.start_notify.side_effect = start_notify
@@ -379,7 +381,7 @@ async def test_failed_name_subscription_skips_queries_but_keeps_the_link(coordin
 
 
 async def test_t1_without_name_role_still_controls(coordinator, instant):
-    _client(coordinator, (T1,), without=(T1.rename_uuid,))
+    _client(coordinator, (T1,), without=(T1.name_uuid,))
     controller = bed(coordinator, transport="t1")
     await controller.async_discover_capabilities()
     assert not controller.supports_device_rename
@@ -389,7 +391,7 @@ async def test_t1_without_name_role_still_controls(coordinator, instant):
 
 @pytest.mark.parametrize(
     ("transport", "services", "uuid"),
-    [("t1", (T1, T3), T1.rename_uuid), ("t3", (T3,), T3.rename_uuid), ("t2", (T2, T3), T3.rename_uuid), ("t2", (T1, T2), T1.rename_uuid)],
+    [("t1", (T1, T3), T1.name_uuid), ("t3", (T3,), T3.name_uuid), ("t2", (T2, T3), T3.name_uuid), ("t2", (T1, T2), T1.name_uuid)],
 )
 async def test_rename_targets_the_name_role_once(coordinator, instant, transport, services, uuid):
     _client(coordinator, services)

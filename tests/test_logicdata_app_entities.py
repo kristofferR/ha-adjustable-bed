@@ -295,7 +295,7 @@ async def test_profile_reload_removes_obsolete_entities(
     family,
     massage,
 ):
-    from custom_components.adjustable_bed.logicdata_app_protocol import layout_axes
+    from custom_components.adjustable_bed.profiles.logicdata import MOTIONRELAX_LAYOUTS
 
     entry = _entry(hass, layout=old_layout)
     assert await hass.config_entries.async_setup(entry.entry_id)
@@ -314,7 +314,7 @@ async def test_profile_reload_removes_obsolete_entities(
     )
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert _keys(hass, entry, "cover") == set(layout_axes(new_layout))
+    assert _keys(hass, entry, "cover") == set(MOTIONRELAX_LAYOUTS[new_layout])
     assert ("logicdata_app_alarm" in _keys(hass, entry, "sensor")) == (
         profile == "phone" and family == "p1"
     )
