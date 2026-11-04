@@ -4877,6 +4877,9 @@ class TestOctoOfflineSnapshot:
             "held_control": "back_up",
             "hold_start_delay_ms": 100,
             "hold_release_delay_ms": 100,
+            # The standard OCTO controller declares a renewable stream hold (#483).
+            "hold_lease_mode": "stream",
+            "hold_lease_motor": "back",
         }
 
     async def test_octo_side_without_snapshot_not_minted(self, hass: HomeAssistant):
