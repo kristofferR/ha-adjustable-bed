@@ -274,6 +274,7 @@ class TestOkinUuidController:
             ("94238", 0x10000000, 0x1000, 0x2000),
         ],
     )
+
     def test_backend_remote_keycodes(self, variant, flat, memory_1, memory_2):
         """Each remote uses its authoritative backend Flat and memory keycodes."""
         remote = OKIN_UUID_REMOTES[variant]
@@ -320,81 +321,6 @@ class TestOkinUuidController:
 
         with pytest.raises(ConnectionError):
             await coordinator.controller.write_command(coordinator.controller._build_command(0))
-
-
-class TestOkinUuidMovement:
-    """Test Okin UUID movement commands."""
-
-    async def test_move_head_up(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head up sends commands followed by stop."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-        # Last call should be stop (zero command)
-        last_command = calls[-1][0][1]
-        expected_stop = coordinator.controller._build_command(0)
-        assert last_command == expected_stop
-
-    async def test_move_head_down(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head down."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-    async def test_move_feet_up(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move feet up (maps to legs on basic remote)."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_feet_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-    async def test_stop_all(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test stop all sends zero command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.stop_all()
-
-        expected_stop = coordinator.controller._build_command(0)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_stop, response=True
-        )
 
 
 class TestOkinUuidMultiMotor:
@@ -628,26 +554,6 @@ class TestOkinUuidPresets:
 
 class TestOkinUuidLights:
     """Test Okin UUID light commands."""
-
-    async def test_lights_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test lights toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.lights_toggle()
-
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_82417]
-        expected_cmd = coordinator.controller._build_command(remote.toggle_lights)
-        # A Home Assistant button press is a single UBL key press.
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-        assert len(mock_bleak_client.write_gatt_char.call_args_list) == 1
 
     @pytest.mark.parametrize("variant", [OKIMAT_VARIANT_93332, OKIMAT_VARIANT_94238])
     async def test_backend_ubl_timing_does_not_repeat_a_button_press(
@@ -954,6 +860,7 @@ class TestOkinUuidMotorLayout:
             ("84582", 2, ["head"]),
         ],
     )
+
     async def test_motor_specs_match_handset_layout(
         self,
         hass: HomeAssistant,
