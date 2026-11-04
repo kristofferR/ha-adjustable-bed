@@ -124,6 +124,15 @@ one section per profile. Tables the profile data already knows sit between
 `tests/test_codec_docs.py` fails when one is stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
 Discovery ledgers stay separate documents linked from each profile section.
 
+Byte-identical bed types kept for existing entries are listed under each codec
+guide's **Aliases**; `tests/test_codec_docs.py` fails when two codec-backed bed
+types build the same controller, profile and default timing without being
+listed there. The default pulse timing table in
+[Configuration](../CONFIGURATION.md#default-values-by-bed-type) is generated the
+same way, from `scripts/codec_docs/_configuration.py`. `scripts/check_doc_links.py`
+and `tests/test_doc_links.py` check every relative link and anchor in the README
+and `docs/`.
+
 ## Controller glue
 
 `JiecangProfileController` (`beds/jiecang.py`) implements, from profile data

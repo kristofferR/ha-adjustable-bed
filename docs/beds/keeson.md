@@ -262,6 +262,23 @@ with or without the dot, is detected as Keeson (Auto keeps Base); any `base-i5`
 name is still offered as Cool Base. See
 [Restonic BT profiles](#restonic-bt-profiles) for switching to the profile.
 
+### Aliases
+
+Bed types and routes that build the same controller over the same profile with
+the same default timing, so they send identical bytes. They stay separate so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type or route | Same as | Notes |
+|-------------------|---------|-------|
+| `ergomotion` | `keeson` variant `ergomotion` | See [Ergomotion](#ergomotion) |
+| `serta` | `keeson` variant `serta` | See [Serta](#serta) |
+| `keeson` variants `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | `keeson` variant `americanstar` | Identical profiles under each app's own key; see [ORE comfort-bed profiles](#ore-comfort-bed-profiles) |
+
+`okin_ffe` and the `keeson` variant `okin` share the [OKIN FFE](#okin-ffe)
+profile but not its timing: `okin_ffe` defaults to 7 pulses 150 ms apart and
+the variant to 10 pulses 100 ms apart, so they are not aliases.
+
 ## Wire codec
 
 `custom_components/adjustable_bed/codec/keeson.py` owns the transports, the K1
@@ -1316,6 +1333,42 @@ equivalence between apps.
   child device, or the paired action's `side`; conflicting child and side
   requests are rejected. No one-address pairing or left/right mapping is
   inferred.
+
+##### Home Assistant setup
+
+Choose the exact app in the bed-type picker: [Tempur Curve](#tempur-curve),
+[Q-Plus Adjustable Remote](#q-plus-adjustable-remote),
+[Serta MP Remote](#serta-mp-remote), [Omazz Adjusto III](#omazz-adjusto-iii),
+[Ergomotion](#ergomotion-app), [ROW Control](#row-control),
+[Ergo Slim](#ergo-slim), or [TEMPUR AU](#tempur-au).
+Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
+Select the bed address manually when automatic discovery cannot disambiguate it.
+
+**App controls** asks for the layout shown by the app. Q-Plus defaults to M2;
+Ergomotion and TEMPUR AU default to B2; Omazz uses its reachable RemoteB layout.
+The layout fixes the available actions and source timing. It does not prove
+physical motor count. The pulse count bounds a normal held-action button press;
+it does not change the source 100 ms refresh interval. Serta's local angle-edit
+controls instead change one degree every 200 ms and send only on release.
+
+Q-Plus's **Both/Side A/Side B** setting controls its P1 packet selector. It is
+independent of a Home Assistant paired Left/Right target. MX Memory1 is an
+opaque app-labelled action, with no invented physical save/recall meaning.
+Serta MP's four configurable local head/foot memory targets are likewise
+separate from the remote M4 key and from physical memory programming.
+
+Each physical side owns its app layout and Serta local memory targets. Configure
+a two-address pair's sides independently. Saving ordinary or shared settings retains
+each declared app layout, Q-Plus A/B/Both wire selector and Serta local targets
+through reload; unrelated settings from a previous protocol are removed.
+Shared options do not overwrite side-owned settings. Native child-device
+targeting and side conflicts follow the existing
+paired rules. No unproven single-address physical side mapping is added.
+
+All eight profiles require both current-session write and notification roles.
+The seven profiles without position feedback keep angle sensing disabled and
+still subscribe for their proven timer state. Serta MP exposes calibrated angle
+feedback and direct pulse targets. Hardware behavior remains unverified.
 
 #### Controls
 
@@ -2654,6 +2707,13 @@ available as entities in Home Assistant.
 - Neither app provides an advertisement signature that can safely select its
   profile. Shared FFE9/FFE4 characteristics do not identify either product.
 - Existing beds using other profiles are unchanged.
+
+##### Home Assistant setup
+
+Select the exact BF or Cherish app in manual setup.
+The app fixes its motor layout, capabilities and 200 ms movement refresh.
+Only the bounded pulse count is configurable. A shared FFE9 service does not
+select either app automatically. Each physical address keeps its own profile.
 
 #### Commands
 

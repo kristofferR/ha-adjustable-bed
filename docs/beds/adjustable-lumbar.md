@@ -94,6 +94,10 @@ Existing entries keep their bed type until you change it.
 - In a two-address pair the variant belongs to each physical bed: unpair, set
   each bed, then combine them again.
 
+### Home Assistant setup
+
+Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the shared services do not identify this app. `auto` applies the app's name rule: a name starting with `okin` uses the OKIN-service table; a name starting with `star` uses a Nordic UART table chosen by the Device Information manufacturer. Any other name needs a fixed variant. Head, foot and lumbar are fixed, as is the 100 ms refresh. The variant belongs to each physical bed: split a two-address pair before changing it.
+
 ## Commands
 
 ### Motor Control

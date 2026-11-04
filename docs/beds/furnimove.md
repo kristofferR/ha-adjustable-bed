@@ -164,6 +164,21 @@ otherwise arrive before its characteristic objects exist, producing
 the race observed in #633, but does not establish the cause of a link that
 disconnects before service discovery completes.
 
+### Home Assistant setup
+
+Select **FurniMove / OKIN Smart Remote** and the exact `furnimove_remote` ID used
+by the app. The catalog includes all 87 captured production IDs and three
+shipped local/offline IDs. Motor count, massage capability and ordered commands
+come from the selected table; manual motor count and pulse delay are hidden.
+Shared RF ECO BT receiver labels and GATT UUIDs do not choose a handset.
+The profile has no angle feedback or mandatory pairing/protected-read gate.
+
+Old RF ECO BT entries receive a [guided layout repair](#repairing-existing-configurations),
+including offline entries and unconfirmed one-motor configurations. It preserves
+the existing entry and matching entity IDs. Confirm a staircase or select the
+FurniMove handset. For a bed using another app, select its corresponding profile
+in integration options. Paired repairs change only their own physical side.
+
 ## Repairing existing configurations
 
 After upgrading, every legacy **RF ECO BT single actuator** entry without an

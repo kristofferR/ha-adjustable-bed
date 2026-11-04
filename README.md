@@ -91,16 +91,16 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | Manufacturer or brand | Supported brands, models and apps |
 |-----------------------|----------------------------------|
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
-| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](docs/beds/keeson.md#ore-comfort-bed-profiles), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
+| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive, [OKIN FFE 13/15 series](docs/beds/keeson.md#okin-ffe); [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](docs/beds/keeson.md#ore-comfort-bed-profiles), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
 | 🧪 [Casper Base app](docs/beds/casper-base.md) | PRO / MAX, conditional stored products, separate MM/SXB sensors and RCRM remote; artifact-proven, hardware unverified |
 | 🧪 [GM Control app](docs/beds/gmmotor.md) | Exact product catalogs, FWRM/WFRM desks, separate MM/SXB sleep modules; hardware unverified |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/richmat.md#rmcontrol), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat.md#richmat-mh-apps) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
 | ✅ [Solace](docs/beds/ff_frame.md#solace-name-routes) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/ff_frame.md#woosa-sleep) |
-| ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Prodigy LBR (LP Comfort Connect), Prodigy Comfort Elite / CE; [Prodigy 2L / 2 / 4 and U / Ultra Series](docs/beds/okin-nframe.md#leggett-okin-family), [L&P Adjustable Base](docs/beds/lp-legacy.md) |
+| ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Prodigy LBR (LP Comfort Connect), Prodigy Comfort Elite / CE, [MlRM (WiLinke)](docs/beds/richmat.md#lp-mlrm); [Prodigy 2L / 2 / 4 and U / Ultra Series](docs/beds/okin-nframe.md#leggett-okin-family), [L&P Adjustable Base](docs/beds/lp-legacy.md) |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie app (Protocol 108), Reverie Nightstand app (Protocol 110), R510L / Harmoniq Upgrade (Pairlink) |
-| ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers |
+| ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers; [OKIN SmartBed CB24 / Amada](docs/beds/okin-nframe.md#okin-smartbed-cb24) |
 | ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) |
 | 🧪 [AdjustaMattress](docs/beds/adjustamattress.md) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
 | ⚠️ [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
@@ -111,14 +111,14 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
 | 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
-| ✅ [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
+| ✅ [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified; separate from the legacy Okin ORE (A5 5A) bed type |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md); legacy ISleep entries |
 | 🔬 [ISleep](docs/beds/isleep.md) | Explicit com.kaidi_test4 1.6.3 profile, products 129–134, 142, 143 (artifact verified, hardware unverified) |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett; [Limoss Remote](docs/beds/limoss.md#limoss-remote) bed and chair layouts |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | ✅ [Svane](docs/beds/svane.md) | Svane Remote, JMC400, Jensen LinOn |
-| ✅ [DewertOkin](docs/beds/okin-nframe.md#dewertokin) | Many older Rize models, Simmons, Nectar, Resident, Symphony |
+| ✅ [DewertOkin](docs/beds/okin-nframe.md#dewertokin) | Many older Rize models, Simmons, Nectar, Resident, Symphony, A H Beard ([brands](docs/beds/okin-nframe.md#dewertokin-brands)) |
 | ✅ [Serta](docs/beds/keeson.md#serta) | Serta Motion Perfect |
 | ✅ [Mattress Firm 900](docs/beds/okin-5a.md#mattress-firm-900--iflex) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/okin-5a.md#nectar) | Nectar |

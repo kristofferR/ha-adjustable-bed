@@ -140,6 +140,13 @@ one write.
 | HJBed | BJRN preset save | waits 3 s |
 <!-- /generated -->
 
+### Aliases
+
+No two Richmat bed types send identical bytes. The
+[protocol inventory](../design/protocol-inventory.md) found one model identical in two apps:
+`model_bfrm` in Best Mattress and in Blvd Home. Each app keeps its own catalog,
+so the model stays a choice in both [Richmat MH apps](#richmat-mh-apps).
+
 ## Wire codec
 
 `codec/richmat.py` holds the transports, framing, checksum and every command
@@ -943,6 +950,10 @@ after the link is released. Revive Control, Blvd Home and HARMONY switch to the
 VER1 pages on the first initialization reply; Best Mattress and Idealbed switch
 on the version reply.
 
+##### Home Assistant setup
+
+Choose the app your phone uses, for example **Revive Control app (Richmat)**. Shared Richmat names and services never select these profiles. `auto` applies the app's name rule: the first four characters of the raw Bluetooth name, lowercased, select the model. Names starting with `QRRM` (and Idealbed names starting with `Cool Touch`) make the app ask, so choose the model variant (`model_<id>`, labelled as in the app's picker, wizard or manual list). The form reports a name the app cannot resolve. Motor count is fixed; the model's catalog decides the motors, and each control keeps the app's KEEP interval. The variant belongs to each physical bed: split a two-address pair before changing it.
+
 #### Controls
 
 | Surface | Entities | Frames |
@@ -1190,6 +1201,10 @@ Write selection requires `write`. A selected `write-without-response` property
 uses writes without response; otherwise writes use response. Selection retains
 the first eligible write and first notify, while the last matched service decides
 the generic packet mode. HA/Bleak handles MTU negotiation without an arbitrary override.
+
+##### Home Assistant setup
+
+Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. This profile section lists all current and conditional profiles.
 
 #### Controls
 
