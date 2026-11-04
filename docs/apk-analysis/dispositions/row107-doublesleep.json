@@ -221,14 +221,14 @@
     "HA_CONNECTION": {
       "disposition": "ALREADY_IMPLEMENTED",
       "code": [
-        "custom_components/adjustable_bed/coordinator.py:async_ensure_connected",
-        "custom_components/adjustable_bed/coordinator.py:_async_connect_locked",
-        "custom_components/adjustable_bed/coordinator.py:async_disconnect",
+        "custom_components/adjustable_bed/coordinator_connection.py:async_ensure_connected",
+        "custom_components/adjustable_bed/coordinator_connection.py:_async_connect_locked",
+        "custom_components/adjustable_bed/coordinator_connection.py:async_disconnect",
         "custom_components/adjustable_bed/bluetooth_transport.py"
       ],
       "tests": [
-        "tests/test_coordinator.py:test_ensure_connected_reconnects",
-        "tests/test_coordinator.py:test_disconnect",
+        "tests/test_coordinator_positions.py:test_ensure_connected_reconnects",
+        "tests/test_coordinator_positions.py:test_disconnect",
         "tests/test_bluetooth_transport.py:test_proxy_only"
       ],
       "equivalence": "Per-physical-address connect/reconnect, adapter/proxy path selection and intentional disconnect are provided by HA. Phone-wide connection maps, OS permission dialogs and3/5/10-second mobile scan UI policies are excluded companion lifecycle; no bed timing is inferred from them."

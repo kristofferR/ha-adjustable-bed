@@ -74,17 +74,15 @@ from .const import (
     supports_runtime_authentication_recovery,
 )
 from .controller_factory import create_controller
-from .coordinator import (
-    AdjustableBedCoordinator,
-    ChildEntryView,
-    PairingOnlyConnectionActiveError,
-)
+from .coordinator import AdjustableBedCoordinator, ChildEntryView
+from .coordinator_connection import PairingOnlyConnectionActiveError
 from .entity_runtime import EntityRuntime
 from .furnimove_repair import (
     async_clear_furnimove_layout_issues,
     async_refresh_furnimove_layout_issues,
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .linak_services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
 from .paired_registry import (
@@ -160,19 +158,16 @@ from .services import (
     MIN_TIMED_MOVE_DURATION_MS,
     SERVICE_GENERATE_SUPPORT_BUNDLE,
     SERVICE_GOTO_PRESET,
-    SERVICE_LINAK_MOVE_SIMULTANEOUS,
     SERVICE_LINAK_RENAME,
-    SERVICE_LINAK_SET_ALARM,
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_SET_POSITIONS,
-    SERVICE_SOLACE_AUDIO,
-    SERVICE_SOLACE_SET_ALARM,
     SERVICE_STOP_ALL,
     SERVICE_TIMED_MOVE,
     TIMED_MOVE_MOTOR_OPTIONS,
     async_register_services,
 )
+from .solace_services import SERVICE_SOLACE_AUDIO, SERVICE_SOLACE_SET_ALARM
 from .unsupported import (
     async_clear_unsupported_device_issues,
     clear_octo_pin_required_issue,

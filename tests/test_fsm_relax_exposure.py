@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed import const, services
+from custom_components.adjustable_bed import const, fsm_relax_services, services
 from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
 from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
@@ -81,11 +81,11 @@ async def test_calibration_preflight_serialized_current_action():
 
     with (
         patch.object(services, "_resolve_sided_targets", return_value=([(c, "both")], [])),
-        patch.object(services, "_command_targets", return_value=[c]),
-        patch.object(services, "_preflight_capability", side_effect=preflight),
-        patch.object(services, "_execute_sided", side_effect=execute),
+        patch.object(fsm_relax_services, "_command_targets", return_value=[c]),
+        patch.object(fsm_relax_services, "_preflight_capability", side_effect=preflight),
+        patch.object(fsm_relax_services, "_execute_sided", side_effect=execute),
     ):
-        await services.handle_fsm_relax_calibrate(call)
+        await fsm_relax_services.handle_fsm_relax_calibrate(call)
     ctrl.calibrate.assert_awaited_once_with(confirmed=True)
 
 
@@ -94,14 +94,14 @@ async def test_false_confirmation_and_wrong_profile_fail_before_execution():
     call = SimpleNamespace(hass=MagicMock(), data={"device_id": ["device"], "confirmed": False})
     with (
         patch.object(services, "_resolve_sided_targets", return_value=([(c, "both")], [])),
-        patch.object(services, "_command_targets", return_value=[c]),
-        patch.object(services, "_execute_sided", AsyncMock()) as execute,
+        patch.object(fsm_relax_services, "_command_targets", return_value=[c]),
+        patch.object(fsm_relax_services, "_execute_sided", AsyncMock()) as execute,
     ):
         with pytest.raises(ServiceValidationError, match="confirmation"):
-            await services.handle_fsm_relax_calibrate(call)
+            await fsm_relax_services.handle_fsm_relax_calibrate(call)
         call.data["confirmed"] = True
         with pytest.raises(ServiceValidationError, match="profile"):
-            await services.handle_fsm_relax_calibrate(call)
+            await fsm_relax_services.handle_fsm_relax_calibrate(call)
         execute.assert_not_called()
 
 

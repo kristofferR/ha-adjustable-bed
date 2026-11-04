@@ -400,11 +400,11 @@ async def test_failed_accessory_execution_releases_preflight_idle_ownership(hass
     try:
         with (
             patch(
-                "custom_components.adjustable_bed.services._preflight_capability",
+                "custom_components.adjustable_bed.vmatbasic_services._preflight_capability",
                 new=AsyncMock(return_value=[(child, child)]),
             ),
             patch(
-                "custom_components.adjustable_bed.services._execute_sided",
+                "custom_components.adjustable_bed.vmatbasic_services._execute_sided",
                 new=AsyncMock(side_effect=RuntimeError("before admission")),
             ),
             patch.object(

@@ -1,5 +1,6 @@
 """SIMMONS hold and alarm actions: profile preflight before any write."""
 
+from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -30,11 +31,19 @@ def target(profile=BED_TYPE_SIMMONS, variant=None):
     return coordinator, controller
 
 
+@contextmanager
 def _targets(coordinator):
-    return patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    )
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch(
+            "custom_components.adjustable_bed.simmons_services._resolve_sided_targets",
+            new=resolve,
+        ),
+    ):
+        yield resolve
 
 
 @pytest.mark.parametrize(
@@ -183,7 +192,7 @@ async def test_multi_bed_alarm_validates_every_bed_before_any_write(hass, second
     second, second_controller = _real_target("B", second_records)
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.simmons_services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
         patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
@@ -212,7 +221,7 @@ async def test_multi_bed_alarm_programs_every_bed_after_all_pass(hass):
     second, second_controller = _real_target("B", FREE)
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.simmons_services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
         patch("asyncio.sleep", new=AsyncMock()),
@@ -239,11 +248,11 @@ async def test_cancelled_alarm_call_releases_every_preflighted_bed(hass):
     with (
         _targets(coordinator),
         patch(
-            "custom_components.adjustable_bed.services._preflight_capability",
+            "custom_components.adjustable_bed.simmons_services._preflight_capability",
             new=AsyncMock(return_value=preflighted),
         ),
         patch(
-            "custom_components.adjustable_bed.services._release_preflighted", new=AsyncMock()
+            "custom_components.adjustable_bed.simmons_services._release_preflighted", new=AsyncMock()
         ) as release,
         pytest.raises(asyncio.CancelledError),
     ):

@@ -35,10 +35,16 @@ def target(*, memory=8):
 async def service_target(hass):
     await async_register_services(hass)
     coordinator, controller = target()
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    ) as resolve:
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch(
+            "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+            new=resolve,
+        ),
+    ):
         yield coordinator, controller, resolve
 
 
