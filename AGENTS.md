@@ -280,7 +280,8 @@ A new app is normally a profile plus its vectors, not a new controller.
     gets an entry in `APP_VARIANT_CHOICES` (`detection.py`); the bed type's own
     label names the app its `auto` variant selects. An app chosen inside its app
     step (for example `vibradorm_app_profile`) is named in its bed type's label.
-    In `app_profiles.py`, list the generic fields the profile sets itself and
+    In `setup_questions.py`, declare the profile's setup questions and the
+    generic fields it sets itself; in `app_profiles.py`, list
     the settings that belong to one side of a two-address pair. Reuse the shared
     keys (`has_massage`, `has_light`, `product_type`, `reverse_motor_1`–`4`,
     `ble_device_name`) instead of adding per-app copies.

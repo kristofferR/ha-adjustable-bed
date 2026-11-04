@@ -481,9 +481,9 @@
           "has_light": "Expose under-bed light controls when the selected standard layout has lighting."
         }
       },
-      "jiecang_app": {
-        "title": "{app} layout",
-        "description": "Choose the controls your bed has. Only layouts {app} supports are listed. The app sets the motor count and its own timing, so they aren't asked here.",
+      "profile_questions": {
+        "title": "{profile} settings",
+        "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
         "data": {
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls"
@@ -494,7 +494,7 @@
         },
         "sections": {
           "advanced": {
-            "name": "Advanced: transport",
+            "name": "Advanced",
             "data": {
               "jiecang_app_transport": "BLE transport"
             },

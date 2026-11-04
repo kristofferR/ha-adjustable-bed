@@ -55,6 +55,7 @@ testing status.
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer and rollback |
 | [Guided setup changes](design/guided-setup-changes.md) | Staged app and layout changes, Repairs, Keep and the paired split rules |
+| [Setup questions](design/setup-questions.md) | Profile-declared setup questions, owned generic fields and the generic setup step |
 
 ## Protocol Research
 
