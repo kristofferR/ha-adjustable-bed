@@ -253,7 +253,12 @@ class _MergedStream:
             return
         del self.members[member.resource]
         member.outcome = outcome
-        member.left_at = asyncio.get_running_loop().time()
+        now = asyncio.get_running_loop().time()
+        # An expired member stopped moving at its deadline, however late the
+        # streamer noticed.
+        member.left_at = (
+            min(now, member.deadline) if outcome is CommandOutcome.EXPIRED else now
+        )
         self.ending.append(member)
         self.scheduler._end_member_lease(member)
         self.membership_changed = True
@@ -375,12 +380,16 @@ class _MergedStream:
         """
         loop = asyncio.get_running_loop()
         tick = asyncio.ensure_future(driver.write_stream_tick(members))
+        ours = False
         try:
             while not tick.done():
                 live = [m for m in members if self.members.get(m.resource) is m]
-                if len(live) < len(members) or any(m.deadline <= loop.time() for m in live):
-                    break
-                if context.cancel_event.is_set():
+                overdue = [m for m in live if m.deadline <= loop.time()]
+                # Retire at the interruption, before the write unwinds, so the
+                # unwinding never counts as travel.
+                for member in overdue:
+                    self.retire(member, CommandOutcome.EXPIRED)
+                if overdue or len(live) < len(members) or context.cancel_event.is_set():
                     break
                 self.wake.clear()
                 timeout = max(0.0, min(m.deadline for m in live) - loop.time())
@@ -389,6 +398,7 @@ class _MergedStream:
                         await _first_set_or_done(tick, self.wake, context.cancel_event)
         finally:
             if not tick.done():
+                ours = True
                 tick.cancel()
             # Never hand the wire on while this write is still running, even
             # when a STOP cancels the streamer meanwhile.
@@ -400,6 +410,10 @@ class _MergedStream:
                     interrupted = True
             if interrupted:
                 raise asyncio.CancelledError
+        if tick.cancelled() and not ours:
+            # Something under the write cancelled it: the frame's fate is
+            # unknown, so the stream fails and every member is cleaned up.
+            raise RuntimeError("A stream write was cancelled")
         error = None if tick.cancelled() else tick.exception()
         if error is not None:
             raise error

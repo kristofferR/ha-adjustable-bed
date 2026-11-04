@@ -558,3 +558,53 @@ async def test_a_cancelled_cleanup_write_still_settles_its_caller() -> None:
         await asyncio.wait_for(legs, 1)
     assert driver.events[-1] == ("release",)
     assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
+
+
+async def test_an_unexpected_write_cancellation_fails_the_stream() -> None:
+    scheduler = DeviceCommandScheduler("unexpected-cancel")
+    driver = FakeDriver()
+    pending: list[asyncio.Future[None]] = []
+
+    async def tick(members: tuple[StreamMember, ...]) -> None:
+        driver.events.append(("tick", *sorted(f"{m.motor}:{m.action}" for m in members)))
+        driver.ticked.set()
+        if len(pending) < 2:
+            pending.append(asyncio.get_running_loop().create_future())
+            await pending[-1]
+
+    driver.write_stream_tick = tick  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back"))
+    await asyncio.wait_for(driver.ticked.wait(), 1)
+    pending[0].cancel()  # cancelled under the write, not by the scheduler
+    with pytest.raises(RuntimeError, match="stream write was cancelled"):
+        await asyncio.wait_for(back, 1)
+    assert driver.events[-2:] == [("end", "back:up"), ("release",)]
+
+
+async def test_a_slow_cancellation_is_not_counted_as_travel() -> None:
+    scheduler = DeviceCommandScheduler("slow-teardown")
+    driver = FakeDriver()
+    reported: list[float | None] = []
+
+    async def tick(members: tuple[StreamMember, ...]) -> None:
+        driver.events.append(("tick",))
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await asyncio.sleep(0.15)  # a slow teardown after cancellation
+            raise
+
+    driver.write_stream_tick = tick  # type: ignore[method-assign]
+    timed = StreamMember(
+        motor="back",
+        resource="motor:back",
+        action="up",
+        deadline=math.inf,
+        duration_s=0.02,
+        on_left=reported.append,
+    )
+    timed.on_wire = lambda: None
+    assert await asyncio.wait_for(
+        scheduler.execute_stream_member(timed, CONCURRENT, runner_for(driver)), 1
+    ) is CommandOutcome.EXPIRED
+    assert reported[0] == pytest.approx(0.02, abs=0.01)
