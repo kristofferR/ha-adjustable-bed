@@ -187,6 +187,20 @@ Each query is listed with every offset it is sent at.
 | 1800 ms, 1900 ms | Software | `F1 F1 00 02 40 00 42 7E` |
 <!-- /generated -->
 
+### Aliases
+
+Bed types that build the same controller over the same profile with the same
+default timing, so they send identical bytes. They stay separate bed types so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type | Same as | Differs only in |
+|----------|---------|-----------------|
+| `comfort_motion` | `jiecang` | Detection signal, setup label and profile-review suggestions; both select the [legacy route](#legacy-route) |
+
+Those differences, plus the device manufacturer, keep separate
+[profile ids](../design/profile-id.md#aliases): the profile review is a Repairs issue.
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/jiecang.py`. Profiles
@@ -1271,12 +1285,6 @@ hardware checks are in the
 [row053 ledger](../apk-analysis/dispositions/row053-logicdata-sleep-smart.md).
 
 ## Notes
-
-### Profile ids and aliases
-
-`comfort_motion` and `jiecang` send the same bytes but keep separate
-[profile id](../design/profile-id.md#aliases)s: the app profile review (Repairs) lists the LOGICDATA app for
-`comfort_motion` only, and the device manufacturer differs.
 
 ### Analysis provenance
 

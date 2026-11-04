@@ -94,6 +94,25 @@ STOP. Massage and light commands are single writes unless listed here.
 | DewertOkin ELEVATE | once | once | n/a |
 <!-- /generated -->
 
+### Aliases
+
+Bed types that build the same controller over the same profile with the same
+default timing, so they send identical bytes. They stay separate bed types so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type | Same as | Profile |
+|----------|---------|---------|
+| `nectar` | `okin_7byte` | [Nectar](#nectar) |
+| `mattressfirm` | `okin_nordic` | [Mattress Firm 900 / iFlex](#mattress-firm-900--iflex) |
+
+`nectar` and `mattressfirm` are kept for existing entries and are not offered in
+the bed-type list.
+
+Each also keeps its own [profile id](../design/profile-id.md#aliases): besides
+the bed-type list, the device manufacturer differs ("Nectar" and "MattressFirm"
+against "Okin").
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/okin_5a.py`. Profiles
@@ -543,16 +562,6 @@ migration. Its commands and timing are in the
   [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family).
 - Generic `OKIN-XXXXXX` names require user confirmation because several Okin
   protocols share the same advertised UUID.
-
-### Profile ids and aliases
-
-Byte-identical routes keep separate [profile id](../design/profile-id.md#aliases)s until their setup fields,
-capabilities, entities and Repairs are proven equal too:
-
-| Routes | Why they stay separate |
-|--------|------------------------|
-| `nectar`, `okin_7byte` | `nectar` is a legacy bed type setup no longer offers; the device manufacturer differs |
-| `mattressfirm`, `okin_nordic` | `mattressfirm` is a legacy bed type setup no longer offers; the device manufacturer differs |
 
 ### Analysis provenance
 
