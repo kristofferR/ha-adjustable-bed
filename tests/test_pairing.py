@@ -49,6 +49,7 @@ from custom_components.adjustable_bed.pairing import (
     pair_member_addresses,
     single_data_from_child,
     single_options_from_child,
+    standalone_config_after_split,
     supports_single_address_pairing,
     with_updated_child,
 )
@@ -257,6 +258,64 @@ class TestBuildPairEntryData:
         restored = single_data_from_child(child)
 
         assert restored[CONF_BLE_DEVICE_NAME] == "SealyMF Base"
+
+
+class TestSplitRetention:
+    """Decision 13 of #676: connection preferences survive a split, the rest reverts."""
+
+    def test_separate_address_split_keeps_current_connection_preferences(self):
+        original = {
+            "address": LEFT_ADDR,
+            "name": "Left",
+            "bed_type": "linak",
+            "motor_count": 2,
+            "preferred_adapter": "auto",
+        }
+        original_options = {"idle_disconnect_seconds": 40, "back_max_angle": 55.0}
+        data = build_pair_entry_data(
+            {**original, **original_options},
+            {"address": RIGHT_ADDR, "bed_type": "linak"},
+            name="Master",
+            left_origin_data=original,
+            left_origin_options=original_options,
+        )
+        data = with_updated_child(
+            data,
+            SIDE_LEFT,
+            {"preferred_adapter": "hci1", "motor_count": 4, "idle_disconnect_seconds": 90},
+        )
+        # Parent options win over the side descriptor, as at runtime.
+        restored, options = standalone_config_after_split(
+            data, {"disconnect_after_command": True}, SIDE_LEFT
+        )
+        assert restored == {
+            **original,
+            "preferred_adapter": "hci1",
+            "idle_disconnect_seconds": 90,
+            "disconnect_after_command": True,
+        }
+        assert options == {"back_max_angle": 55.0}
+
+    def test_single_address_revert_keeps_current_connection_preferences(self):
+        original = {
+            "address": LEFT_ADDR,
+            "name": "Bed",
+            "bed_type": "okin_cb24",
+            "preferred_adapter": "auto",
+            "idle_disconnect_seconds": 40,
+        }
+        data = build_single_address_pair_entry_data(
+            original, name="Bed", origin_options={"back_max_angle": 50.0}
+        )
+        data["preferred_adapter"] = "hci2"
+        side = iter_children(data)[0][CONF_SIDE]
+        restored, options = standalone_config_after_split(
+            data, {"idle_disconnect_seconds": 0}, side
+        )
+        assert restored["preferred_adapter"] == "hci2"
+        assert restored["idle_disconnect_seconds"] == 0
+        assert restored["bed_type"] == "okin_cb24"
+        assert options == {"back_max_angle": 50.0}
 
 
 class TestBuildSingleAddressPairEntryData:

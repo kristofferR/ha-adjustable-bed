@@ -334,6 +334,10 @@ CONF_SIDE: Final = "side"
 # profiles whose route gained some, to the reviewed bed types and variants;
 # cleared once the review is answered or the route changes.
 CONF_PROFILE_REVIEW_PENDING: Final = "profile_review_pending"
+# An explicit "Keep current setup" answer: the reviewed route signature and the
+# app choices offered at that time. The review returns only for that route when
+# a later release offers an app the user was not shown.
+CONF_PROFILE_REVIEW_KEPT: Final = "profile_review_kept"
 
 # pair_mode values: one shared BLE link vs two separate per-side links.
 PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"

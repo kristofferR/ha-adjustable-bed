@@ -33,6 +33,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
+    CONF_PROFILE_REVIEW_KEPT,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
@@ -183,8 +184,60 @@ async def test_keep_dismisses_the_review_for_good(hass: HomeAssistant) -> None:
     result = await flow.async_step_init({"choice": "keep"})
 
     assert result["type"] == "create_entry"
-    assert dict(entry.data) == before
+    kept = entry.data[CONF_PROFILE_REVIEW_KEPT]
+    assert kept == {"route": "keeson:ksbt", "apps": ["keeson:adjustable_lite"]}
+    assert {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_KEPT} == before
     async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+
+
+async def test_keep_asks_again_only_when_a_new_app_is_offered(hass: HomeAssistant) -> None:
+    # Richmat's apps do not depend on an advertisement, so the review is complete.
+    entry = _entry(hass, BED_TYPE_RICHMAT)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    shown = [choice for choice in _offered(form) if choice != "keep"]
+    await flow.async_step_init({"choice": "keep"})
+    assert entry.data[CONF_PROFILE_REVIEW_KEPT]["apps"] == sorted(shown)
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+
+    # A later release adds an app the user was not shown when keeping.
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_PROFILE_REVIEW_KEPT: {"route": "richmat:auto", "apps": sorted(shown)[1:]},
+        },
+    )
+    async_refresh_profile_review_issue(hass, entry)
+
+    assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "richmat:auto"
+    assert _issue(hass, entry) is not None
+    flow, _form = await _open(hass, entry)
+    await flow.async_step_init({"choice": "keep"})
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+
+
+async def test_keep_for_another_route_never_asks(hass: HomeAssistant) -> None:
+    entry = _entry(hass, BED_TYPE_KEESON, variant=KEESON_VARIANT_KSBT)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            key: value
+            for key, value in {
+                **entry.data,
+                CONF_PROFILE_REVIEW_KEPT: {"route": "keeson:base", "apps": []},
+            }.items()
+            if key != CONF_PROFILE_REVIEW_PENDING
+        },
+    )
+
+    async_refresh_profile_review_issue(hass, entry)
+
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
     assert _issue(hass, entry) is None
 
 
@@ -239,9 +292,22 @@ async def test_app_that_cannot_be_applied_here_points_to_configure(
     assert result["description_placeholders"]["app"] == choice_label(choice)
     assert dict(entry.data) == before
     assert not hass.config_entries.options.async_progress()
-    await flow.async_step_configure({})
-    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
-    assert _issue(hass, entry) is None
+    result = await flow.async_step_configure({})
+
+    # The handoff opens Configure with the app selected, or leaves the review
+    # open when that form cannot be prepared. Either way nothing is answered.
+    assert result["type"] == "abort"
+    assert dict(entry.data) == before
+    assert _issue(hass, entry) is not None
+    if result["reason"] == "profile_review_handoff":
+        flow_type, flow_id = result["next_flow"]
+        assert flow_type == "options_flow"
+        handoff = hass.config_entries.options.async_get(flow_id)
+        assert handoff["step_id"] == "settings"
+        hass.config_entries.options.async_abort(flow_id)
+    else:
+        assert result["reason"] == "profile_review_open"
+    assert dict(entry.data) == before
 
 
 async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -> None:
@@ -361,9 +427,11 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
     assert form["data_schema"] is None
     assert form["description_placeholders"]["apps"] == "- Adjustable Lite app (Keeson)"
     result = await flow.async_step_unpair({})
-    assert result["type"] == "create_entry"
-    assert dict(entry.data) == before
-    assert _issue(hass, entry) is None
+    assert result["type"] == "abort"
+    assert result["reason"] == "profile_review_open"
+    assert {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING} == before
+    assert CONF_PROFILE_REVIEW_PENDING in entry.data
+    assert _issue(hass, entry) is not None
 
 
 def test_every_offered_app_is_a_selectable_profile() -> None:
@@ -393,7 +461,7 @@ def test_review_text_is_translated_identically() -> None:
     for key in ("app_profile_review", "app_profile_match"):
         issue = strings["issues"][key]
         assert issue == english["issues"][key]
-        assert set(issue["fix_flow"]["step"]) == {"init", "configure", "unpair", "vibradorm"}
+        assert set(issue["fix_flow"]["step"]) == {"init", "configure", "unpair", "managed"}
         assert "entry_missing" in issue["fix_flow"]["abort"]
         assert "—" not in json.dumps(issue, ensure_ascii=False)
     assert strings["selector"]["app_profile_review"] == {

@@ -35,9 +35,9 @@ from .pairing import (
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     is_paired,
     iter_children,
-    single_data_from_child,
-    single_options_from_child,
+    standalone_config_after_split,
 )
+from .profile_review import carry_profile_review
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -416,8 +416,10 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
         children = iter_children(entry.data)
         if not children:
             raise HomeAssistantError("Single-address pair has no provenance")
-        origin_data = single_data_from_child(children[0])
-        origin_options = single_options_from_child(children[0])
+        origin_data, origin_options = standalone_config_after_split(
+            entry.data, entry.options, str(children[0].get(CONF_SIDE))
+        )
+        carry_profile_review(entry.data, origin_data)
         origin_title = children[0].get(KEY_ORIGIN_TITLE) or entry.title
         origin_unique_id = children[0].get(KEY_ORIGIN_UNIQUE_ID) or entry.unique_id
         paired_data = dict(entry.data)
@@ -507,8 +509,12 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             )
         title = child.get(KEY_ORIGIN_TITLE) or child.get("name") or address
         source = child.get(KEY_ORIGIN_SOURCE) or SOURCE_IMPORT
+        single_data, single_options = standalone_config_after_split(
+            entry.data, entry.options, str(child.get(CONF_SIDE))
+        )
+        carry_profile_review(entry.data, single_data)
         single = ConfigEntry(
-            data=single_data_from_child(child),
+            data=single_data,
             # Register both target entry ids before moving registry rows, but do
             # not let async_add() set up their platforms until the transfer is
             # complete. This avoids temporary duplicate entities/devices under
@@ -518,7 +524,7 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             domain=DOMAIN,
             entry_id=origin_entry_id,
             minor_version=1,
-            options=single_options_from_child(child),
+            options=single_options,
             source=source,
             subentries_data=(),
             title=title,

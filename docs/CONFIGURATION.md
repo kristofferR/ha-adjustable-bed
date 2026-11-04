@@ -52,6 +52,33 @@ To adjust settings after setup:
 
 ![Configuration options location](https://github.com/user-attachments/assets/8d6dc2b9-7df2-48dc-9ea5-61aaadce6c63)
 
+### Changing the app or layout of an existing bed
+
+Some families have a guided change: Configure shows **Change app or layout**
+with the bed's current setup. Home Assistant cannot open the guided change from
+Configure itself, so start it from the entry's three-dot menu, **Reconfigure**,
+or from the bed's repair. Today this covers the Vibradorm family; more families
+follow.
+
+1. Choose the app you use, then the layout or remote the app shows. **Keep
+   current setup** leaves the entry exactly as it is.
+2. Where the family has exact Bluetooth endpoint or pairing requirements,
+   Home Assistant releases its connection and checks the chosen setup. Nothing
+   is saved yet.
+3. A review lists the controls that are added and removed, how many keep their
+   entity IDs, and the automations and scripts that use a removed control.
+4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
+
+A failed check, a closed window, **Keep current setup** or a concurrent edit
+leaves the saved setup unchanged and working. Choosing a label that resolves to
+the saved setup changes nothing. A passed check does not prove the bed's
+physical layout or presets, so test the controls after applying a change.
+
+A paired bed is split first, because an app belongs to one physical bed.
+Splitting keeps the Bluetooth adapter or proxy, idle disconnect and disconnect
+after each command that you chose while combined, and restores the bed type,
+app profile and side settings from before the beds were combined.
+
 ---
 
 ## Profile recommendations
@@ -440,8 +467,8 @@ listed together below, with links to their setup instructions.
    names and services do not always identify the right layout.
 
 Existing entries keep their selection until you change it. Beds added before
-4.1.0 whose bed type gained app profiles are asked once, through a repair,
-which app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
+4.1.0 whose bed type gained app profiles are asked, through a repair, which
+app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a two-address pair, settings belong to each physical bed. If the shared form
 refuses a change, split the pair, configure each side, then combine them again.
 
@@ -540,9 +567,11 @@ The family choice shares setup navigation, while each selected app keeps its
 existing controller, features and Bluetooth pairing requirements.
 
 For an existing bed, open **Settings → Devices & services → Adjustable Bed**,
-then the entry's three-dot menu and **Reconfigure**. The one-time app review in
-Repairs opens the same wizard. Choose **Keep current setup** to keep your
-working controls and dismiss the review, or choose your app and remote/product.
+then the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](#changing-the-app-or-layout-of-an-existing-bed)).
+The app review in Repairs opens the same wizard. Choose **Keep current setup**
+to keep your working controls and answer the review, or choose your app and
+remote/product.
 Keeping the same app seeds the form with your saved settings.
 
 The wizard temporarily releases Home Assistant's connection to check the chosen
@@ -553,16 +582,17 @@ setup. Closing the wizard leaves the saved configuration and pending review
 unchanged. A failed connection remains owned until it is observed closed, so
 another setup attempt cannot overlap it.
 
-After a successful check, a final confirmation shows the chosen app and
-remote/product. Saving keeps the entry, address, device and unchanged entity
-IDs. Controls follow the selected profile; obsolete controls and angle estimates
-may disappear. This check does not prove physical movement, lighting or massage
+After a successful check, a final review shows the chosen app and
+remote/product, and the controls it adds and removes. Saving keeps the entry,
+address, device and unchanged entity IDs. Controls follow the selected profile;
+obsolete controls and angle estimates may disappear. This check does not prove physical movement, lighting or massage
 behavior. If settings changed in another window, the wizard refuses to overwrite
 them. Routine brightness, timer and connection changes remain in **Configure**.
 
 A paired bed must first be split explicitly, or have its standalone controls
 restored for a one-address pair. The wizard offers the existing reversible split
-action and preserves each receiver's settings and identities. Afterwards,
+action and preserves identities. Each receiver keeps its current connection
+preferences and gets back its original bed settings. Afterwards,
 reconfigure the intended receiver separately and combine compatible beds again
 if needed. It never assigns one app/remote to both receivers or guesses from
 Bluetooth identifiers or motor count.
@@ -760,7 +790,9 @@ used by two-address beds.
 
 This conversion keeps the existing config entry, Bluetooth address, device,
 and standalone entity history. It is reversible through **Restore standalone
-controls**. Existing entries do not change automatically.
+controls**, which keeps the Bluetooth adapter, idle disconnect and disconnect
+after each command chosen while combined. Existing entries do not change
+automatically.
 
 Routing remains protocol-native:
 
