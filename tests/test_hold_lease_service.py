@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 from collections.abc import AsyncIterator
 from contextlib import ExitStack
 from dataclasses import replace
@@ -402,30 +401,42 @@ async def test_a_renewed_hold_is_one_estimated_movement(runtime, action, ending)
 
 
 async def test_expiry_lets_a_delayed_release_finish(runtime) -> None:
-    """A lease ending is a normal end: the controller's delayed release still runs."""
+    """A lease ending is a normal end: the controller's delayed release still runs.
+
+    The coordinator used to cancel the operation task on expiry, which cut off
+    a release the controller sends after a wait. Expiry is driven through the
+    scheduler's own expiry path, and the release wait by an event, so no real
+    timer decides the outcome.
+    """
     from custom_components.adjustable_bed.command_scheduler import HoldLease
 
     _hass, coordinator = runtime
     controller = _install(coordinator, STREAM)
+    started = asyncio.Event()
+    release_due = asyncio.Event()
 
     async def hold_then_release_later(ctrl) -> None:
-        cancel = coordinator.cancel_command
         try:
-            while not cancel.is_set():
-                ctrl.frames.append("up")
-                with contextlib.suppress(TimeoutError):
-                    await asyncio.wait_for(cancel.wait(), 0.02)
+            ctrl.frames.append("up")
+            started.set()
+            await coordinator.cancel_command.wait()
         finally:
             # The app's release follows the last frame after a delay.
-            await asyncio.sleep(0.05)
+            await release_due.wait()
             ctrl.frames.append("release")
 
-    held = HoldLease(owner="card", generation=1, action="up", duration_s=0.06)
-    await asyncio.wait_for(
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=30)
+    hold = asyncio.create_task(
         coordinator.async_execute_controller_command(
             hold_then_release_later, resource="motor:back", lease=held
-        ),
-        2,
+        )
     )
-    assert controller.frames[-1] == "release"
+    await asyncio.wait_for(started.wait(), 2)
+    # The lease timer's own path: expire the record, which sets the cancel event.
+    coordinator._command_scheduler.end_holds(CommandOutcome.EXPIRED)
+    for _ in range(10):
+        await asyncio.sleep(0)
+    release_due.set()
+    await asyncio.wait_for(hold, 2)
+    assert controller.frames == ["up", "release"]
     assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
