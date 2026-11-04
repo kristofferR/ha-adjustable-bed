@@ -11,10 +11,11 @@ task and then sends ``stop_all``. Timing is exact, and no real timer is awaited.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import importlib.util
 import json
 import sys
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -40,6 +41,19 @@ def _tool() -> Any:
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
     return module
+
+
+@contextlib.contextmanager
+def virtual_clock() -> Iterator[Any]:
+    """The harness's virtual clock alone, for scheduler tests with fake drivers.
+
+    ``asyncio`` sleeps, waits, timeouts and the loop's clock and timers run on
+    it; the clock advances only to the earliest pending deadline.
+    """
+    tool = _tool()
+    clock = tool.FakeClock()
+    with tool.virtual_time(clock):
+        yield clock
 
 
 @dataclass(frozen=True)

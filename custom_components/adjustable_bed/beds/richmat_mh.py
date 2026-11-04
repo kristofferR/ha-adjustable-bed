@@ -1518,6 +1518,8 @@ class RichmatMhController(BedController):
             raise NotImplementedError(f"The selected model has no '{key}' motor")
         control = axis.up if direction == "up" else axis.down
         count, _ = self.motor_pulse_settings()
+        # A leased hold (#483) repeats KEEP until its lease ends.
+        count = self.leased_hold_refreshes(control.keep_ms) or count
         try:
             await self.write_command(
                 control_frame(control.code), repeat_count=count, repeat_delay_ms=control.keep_ms

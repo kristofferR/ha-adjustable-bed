@@ -33,6 +33,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..app_session import app_session
+from ..command_scheduler import current_command_context
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -59,6 +60,7 @@ _LOGGER = logging.getLogger(__name__)
 SIMON_MEMORY_SAVE_HOLD_MS: Final = 2100
 # A recall press stays below that threshold whatever the pulse settings.
 SIMON_MEMORY_RECALL_MAX_MS: Final = 2000
+_SIMON_MEMORY: Final = frozenset({"memory_1", "memory_2"})
 HOLD_MIN_MS: Final = 100
 HOLD_MAX_MS: Final = 60_000
 
@@ -347,7 +349,7 @@ class OkinAppKeesonController(KeesonController):
 
     async def hold_app_control(self, control: str) -> None:
         """Hold a control for the configured burst, as one app press."""
-        repeat_count, repeat_delay_ms = self.motor_pulse_settings()
+        repeat_count, repeat_delay_ms = self._held_cadence()
         await self._stream(self._held_key(control), repeat_count, repeat_delay_ms)
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
@@ -355,12 +357,21 @@ class OkinAppKeesonController(KeesonController):
         key = self._held_key(control)
         if isinstance(duration_ms, bool) or not HOLD_MIN_MS <= duration_ms <= HOLD_MAX_MS:
             raise ValueError("Hold duration must be 100..60000 milliseconds")
+        context = current_command_context()
+        if self._is_simon and control in _SIMON_MEMORY and context and context.lease:
+            # Holding a Simon Li memory key past SIMON_MEMORY_SAVE_HOLD_MS saves it.
+            raise ValueError("A renewable hold cannot hold a memory key; it would save it")
         await self._hold_for(key, duration_ms)
 
     async def _hold_for(self, key: int, duration_ms: int) -> None:
         writes = -(-duration_ms // self._refresh_ms)
         tail = (duration_ms - (writes - 1) * self._refresh_ms) / 1000
-        await self._stream(key, writes, self._refresh_ms, tail_s=tail)
+        # A leased hold (#483) ends at its elapsed ceiling, whatever write latency adds.
+        context = current_command_context()
+        leased = context is not None and context.lease is not None
+        await self._stream(
+            key, writes, self._refresh_ms, tail_s=tail, max_s=duration_ms / 1000 if leased else None
+        )
 
     async def _stream(
         self,
