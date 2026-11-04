@@ -112,6 +112,7 @@ The 40-bit profiles:
 | Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ Per selector |
 | Alarms and clock | ❌ | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ |
 | Single-address sides | ✅ Legacy CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hold until release | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
 | BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 The 96-bit profiles:
@@ -124,6 +125,7 @@ The 96-bit profiles:
 | Massage | ⚠️ Per product | ✅ Head, foot, mode, timer, waves, off | ✅ Head, foot, mode, timer, waves, off | ✅ Toggle, mode, timer; zones or intensity per page |
 | Under-bed lights | ✅ Every product except Resident | ✅ Toggle, on, off | ✅ Toggle, on, off | ✅ Toggle |
 | Alarm and clock | ❌ | ❌ | ❌ | ✅ CST13/CST14 receivers |
+| Hold until release | ✅ | ✅ | ✅ | ✅ |
 | BLE pairing | ⚠️ Most products | ❌ | ❌ | ❌ |
 
 The 64-bit profiles:
@@ -135,6 +137,7 @@ The 64-bit profiles:
 | Memory presets | ✅ Two recalls, no save | ✅ Named saves by a 6 s hold |
 | Massage | ✅ Toggle, intensity, wave mode | ✅ Waves, intensity, stop, check |
 | Under-bed lights | ✅ Toggle, on, off | ✅ Toggle |
+| Hold until release | ❌ | ✅ |
 | BLE pairing | ❌ | ❌ |
 
 ## Choosing a profile
@@ -209,33 +212,33 @@ Sleepy's Elite and AdjustableM5X4 are explicit app choices.
 | U Series | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
 | OKIN SmartBed CB24 | entry pulse delay | entry pulse count | 1 STOP |
 | DewertOkin DOT handset table | entry pulse delay | entry pulse count | 1 STOP |
-| SIMMONS SmartBed names | 300 ms | entry pulse count | 2 STOP at 300 ms, 100 ms after the last write |
-| SIMMONS OKIN names | 300 ms | entry pulse count | 2 STOP at 300 ms, 100 ms after the last write |
+| SIMMONS SmartBed names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
+| SIMMONS OKIN names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
 | OKIN SleepEase | 300 ms | entry pulse count | 1 STOP |
 | Sleepy's Elite legacy CB25 | entry pulse delay | entry pulse count | 1 STOP |
-| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | 100 ms | entry pulse count | 1 STOP |
-| AdjustableM5X4 BOX3633 | 100 ms | entry pulse count | 1 STOP |
-| AdjustableM5X4 BOX25 | 100 ms | entry pulse count | 1 STOP |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| AdjustableM5X4 BOX3633 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| AdjustableM5X4 BOX25 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | AdjustableM5X4 BOX15 | n/a | n/a | moves with its own frames |
 | AdjustableM5X4 BOX1220 | n/a | n/a | moves with its own frames |
-| Rize Sanctuary | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Resident | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Aviada | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Bob | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Contempo | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize II Carefree | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize II Clarity | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize MF900 | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Support | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Nectar Move | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Jordan's Serenity | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Jordan's Tranquil | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Customatic Z-230 | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Customatic Z-280 | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Sanctuary | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Resident | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Aviada | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Bob | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Contempo | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize II Carefree | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize II Clarity | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize MF900 | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Support | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Nectar Move | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Jordan's Serenity | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
-| Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count | 2 STOP at 300 ms |
-| Adjustable bed (Lumbar) 25_42_02 | 100 ms | entry pulse count | 2 STOP at 300 ms |
+| Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
+| Adjustable bed (Lumbar) 25_42_02 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 
 Entry pulse settings are the configured motor pulse count and delay.
 

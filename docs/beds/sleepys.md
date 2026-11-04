@@ -162,6 +162,7 @@ verified on a bed.
 | Under-Bed Lights | ❌ | ❌ | ✅ (RGB color, on/off and level 0-6; legacy CB25: on/off and level) |
 | Massage | ❌ | ❌ | ✅ (toggle/off, 3 wave modes, timer) |
 | Massage Intensity | ❌ | ❌ | ✅ (head/foot steps and combined level 0-7) |
+| Hold until release | ❌ | ❌ | ✅ (both dialects; renewable `timed_move`) |
 
 ## Protocol Details
 
@@ -459,6 +460,10 @@ From app disassembly:
 - **Stop Required:** Yes, explicit stop after motor release
 - **BOX25 Star normal write mode:** write without response
 - **BOX25 Star wake:** one write with response before notifications, no app delay
+- **BOX25 renewable hold:** on both BOX25 dialects, `timed_move` accepts a
+  renewable hold lease ([Renewable holds](../SERVICES.md#renewable-holds)); the
+  motor key refreshes until the lease runs out or a Stop arrives, then the STOP
+  frame follows.
 
 ## Detection
 

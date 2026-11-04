@@ -25,12 +25,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
 from ..codec import okin_nframe as codec
 from ..const import NORDIC_UART_WRITE_CHAR_UUID
+from ..execution import ExecutionCapabilities
 from ..profiles.okin_nframe import (
     SLEEPYS_BOX25_LEGACY,
     SLEEPYS_BOX25_RECALL,
@@ -137,6 +138,10 @@ _MEMORY_STORE_REPEAT_COUNT = SLEEPYS_BOX25_STORE.repeats
 _DEFAULT_LIGHT_RGB = (255, 255, 255)
 
 
+BOX25_EXECUTION: Final = ExecutionCapabilities(hold="stream")
+"""Both BOX25 dialects refresh a held motor key every 100 ms until release (sleepy)."""
+
+
 class SleepysBox25Controller(BedController):
     """Controller for Sleepy's Elite BOX25 Star beds.
 
@@ -151,6 +156,11 @@ class SleepysBox25Controller(BedController):
     _HEAD_MAX_ANGLE: float = 100.0
     _FEET_MAX_ANGLE: float = 100.0
     _LUMBAR_MAX_ANGLE: float = 100.0
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The Sleepy's app streams a held motor on both dialects (#483)."""
+        return BOX25_EXECUTION
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the BOX25 Star controller."""

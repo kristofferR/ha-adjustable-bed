@@ -179,20 +179,27 @@ def test_frame_widths_and_word_ranges():
 HOLD_PROFILES = sorted(key for key, profile in PROFILES.items() if profile.execution.hold)
 
 
-def test_hold_declarations_are_leggett_and_customatic():
+def test_hold_declarations_follow_the_evidence_matrix():
+    """Stream-supported rows only; DewertOkin, CB24, DOT, 64-bit and SleepEase are blocked."""
     assert set(HOLD_PROFILES) == {
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,
+        *(p.key for p in profiles.CST_PROFILES.values()),
+        *(p.key for p in profiles.BEDDING_PROFILES.values()),
+        *(p.key for p in profiles.SIMMONS_PROFILES.values()),
+        *(p.key for p in profiles.STARCODE_ABM5_4_PROFILES.values()),
+        *(p.key for p in profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
     }
 
 
 @pytest.mark.parametrize("key", HOLD_PROFILES)
 def test_held_and_release_frames_are_frozen(key):
-    """A renewable hold streams only frozen motor frames, then the frozen zero word."""
+    """A renewable hold streams only frozen key frames, then the frozen release."""
     profile = PROFILES[key]
-    words = {profile.keys[f"{axis}_{d}"] for axis in profile.axes for d in ("up", "down")} | {0}
-    frames = {codec.frame(word).hex() for word in words}
+    frozen = FROZEN_FRAMES[key] | FIELD_FRAMES.get(key, frozenset())
+    # Every key, motors included, framed as this route frames it, and the zero
+    # release word wherever the profile releases with STOP frames.
+    assert _census(profile) <= frozen
     if profile.envelope == "revision_selector":
-        frames |= {codec.gateway_frame(word).hex() for word in words}
-    assert frames <= FROZEN_FRAMES[key]
-    assert profile.hold.releases
+        words = {profile.keys[f"{a}_{d}"] for a in profile.axes for d in ("up", "down")} | {0}
+        assert {codec.gateway_frame(word).hex() for word in words} <= frozen

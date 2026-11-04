@@ -45,40 +45,89 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
-    # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
-    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
+    # Rows sort by identity, so parallel declarations merge cleanly.
+    # Okin N-frame (#483): each app streams a held key until release. Nectar
+    # Move is the Nectar app's CST route.
+    "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
+    "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
+    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
+    "OkinNFrameProfile:cst_aviada": {"hold": ("aviada",)},
+    "OkinNFrameProfile:cst_bob": {"hold": ("bob",)},
+    "OkinNFrameProfile:cst_carefree": {"hold": ("carefree",)},
+    "OkinNFrameProfile:cst_clarity": {"hold": ("iiclarity",)},
+    "OkinNFrameProfile:cst_contempo": {"hold": ("contempo",)},
+    "OkinNFrameProfile:cst_mf900": {"hold": ("mf900",)},
+    "OkinNFrameProfile:cst_nectar_move": {"hold": ("nectar", "row042")},
+    "OkinNFrameProfile:cst_resident": {"hold": ("resident",)},
+    "OkinNFrameProfile:cst_sanctuary": {"hold": ("sanctuary",)},
+    "OkinNFrameProfile:cst_support": {"hold": ("support",)},
+    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
+    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
     "OkinNFrameProfile:prodigy4": {
         "hold": ("p4", "leggett-disp", "#483c"),
         # CU170 watchdog onset measured on hardware: 217-218 ms.
         "sustain_ms": ("#368", "#483c", "#516c"),
     },
-    "OkinNFrameProfile:useries": {"hold": ("useries", "leggett-disp")},
-    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
-    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    "OkinNFrameProfile:serenity": {"hold": ("serenity",)},
+    "OkinNFrameProfile:simmons_okin": {"hold": ("simmons",)},
+    "OkinNFrameProfile:simmons_smartbed": {"hold": ("simmons",)},
+    "OkinNFrameProfile:starcode_abm5_4": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box1220": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box15": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box25": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box3633": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:tranquil": {"hold": ("tranquil",)},
+    "OkinNFrameProfile:useries": {"hold": ("useries", "leggett-disp")},
+    "OkinNFrameProfile:zseries_z230": {"hold": ("glory",)},
+    "OkinNFrameProfile:zseries_z280": {"hold": ("glory",)},
+    # Both Sleepy's BOX25 dialects, declared on the controller.
+    "sleepys_box25": {"hold": ("sleepy",)},
 }
 
-# Source site -> the EVIDENCE identities it declares. A site is
-# "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
-# enumeration cannot reach every variant, layout or product, so every place
-# that can declare a capability must be listed and reviewed here.
-_LEGGETT_STREAM = (
-    "OkinNFrameProfile:prodigy2l",
-    "OkinNFrameProfile:prodigy2",
-    "OkinNFrameProfile:useries",
+_ABM = tuple(identity for identity in EVIDENCE if identity.startswith("OkinNFrameProfile:starcode"))
+# Okin CST and the OKIN Bedding apps (Serenity, Tranquil, Z-Series) share ``_cst``.
+_CST = tuple(
+    identity
+    for identity in EVIDENCE
+    if identity.startswith("OkinNFrameProfile:cst_")
+    or identity.removeprefix("OkinNFrameProfile:")
+    in ("serenity", "tranquil", "zseries_z230", "zseries_z280")
 )
 _CUSTOMATIC = (
     "OkinNFrameProfile:clarity",
     "OkinNFrameProfile:jeromes",
     "OkinNFrameProfile:remedy",
 )
+_LEGGETT_STREAM = (
+    "OkinNFrameProfile:prodigy2",
+    "OkinNFrameProfile:prodigy2l",
+    "OkinNFrameProfile:useries",
+)
+_LUMBAR = (
+    "OkinNFrameProfile:adjustable_lumbar_okin",
+    "OkinNFrameProfile:adjustable_lumbar_star",
+)
+_SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbed")
+
+# Source site -> the EVIDENCE identities it declares. A site is
+# "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
+# enumeration cannot reach every variant, layout or product, so every place
+# that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
-    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
+    "beds/sleepys_box25.py:<module>.BOX25_EXECUTION": ("sleepys_box25",),
+    "beds/sleepys_box25.py:<module>.SleepysBox25Controller": ("sleepys_box25",),
+    "profiles/okin_nframe.py:<module>.APP_STREAM_HOLD": (*_ABM, *_CST, *_LUMBAR, *_SIMMONS),
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
-    "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
+    "profiles/okin_nframe.py:<module>._abm": _ABM,
+    "profiles/okin_nframe.py:<module>._cst": _CST,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
+    "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
+    "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
