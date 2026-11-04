@@ -39,7 +39,7 @@ two-address pair. See [support capture](GETTING_HELP.md#generating-a-support-bun
 `side`. Its `action` selects alarm setup, anti-snore apply/demo, sensitivity,
 day/month report retrieval, named preset programming or MFP capability queries.
 The fields and model/driver gates are documented in the
-[SleepEase guide](beds/doublesleep.md#configuration-and-reports).
+[SleepEase guide](beds/okin-nframe.md#configuration-and-reports).
 `report_side` chooses a sensor stream independently of paired-device `side`.
 Report sensors retain raw results and typed records for automations.
 
@@ -308,13 +308,13 @@ they are not exposed through `hold_control`.
 | [Jordan's Serenity](beds/serenity.md#reachable-commands) | 31 literal app actions | Two-frame release |
 | [Jordan's Tranquil](beds/tranquil.md#reachable-commands) | 30 literal app actions | Two-frame release |
 | [Customatic Z-Series](beds/customatic-z-series.md#reachable-commands) | Literal Z-230 or Z-280 actions | A Z-230 rejects Z-280-only actions and the reverse |
-| [SIMMONS](beds/simmons.md) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Frame every 300 ms, then STOP at +100 and +400 ms. Holding `memory` for 5 seconds mirrors the app's Custom Mode save; whether the bed stores it is unverified |
+| [SIMMONS](beds/okin-nframe.md#simmons) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Frame every 300 ms, then STOP at +100 and +400 ms. Holding `memory` for 5 seconds mirrors the app's Custom Mode save; whether the bed stores it is unverified |
 | [AdjustaMattress](beds/adjustamattress.md) | App action identifiers such as `headUp`, `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `flatPosition`, `zeroGravity`, `m1`, `underbedLighting`, `headStrengthAdd`, `timer10`, subject to the selected model/layout | 200 ms refresh; movement/lift starts at +200 ms. STOP at +200 ms after release. Ordinary P3/P4 massage additionally queries at +400/+600 ms. P2 unsafe prior-frame lighting replay is excluded |
 | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Frame every 100 ms, then STOP immediately and 300 ms later. Whether a save stores the position is unverified |
 | [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) | Simon Li: `back_up`, `back_down`, `foot_up`, `foot_down`, `lumbar_up`, `lumbar_down`, `home`, `memory_1`, `memory_2`. OKIN-Seating: `back_up`, `back_down`, `foot_up`, `foot_down`, `home`. Heal Every Night: `head_up`, `head_down`, `foot_up`, `foot_down`, plus `tilt_up`, `tilt_down`, `lumbar_up`, `lumbar_down` on Healing 7 and 8 | Key every 100 ms, then the zero frame 10 ms (Simon Li, OKIN-Seating) or 100 ms (Heal Every Night) later. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save |
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` repeat every 100 ms; the others are sent once. One zero frame 100 ms after the hold |
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | Key every 100 ms, then the zero key 100 ms later |
-| [AdjustableM5X4](beds/starcode-abm5-4.md) | Movement, preset, save and massage controls | Movement and memory refresh every 100 ms with immediate STOP. Flat runs 600 ms; save and reset run the six-second confirmation interval regardless of `duration`. Positive massage controls require observed active state. One physical address only |
+| [AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) | Movement, preset, save and massage controls | Movement and memory refresh every 100 ms with immediate STOP. Flat runs 600 ms; save and reset run the six-second confirmation interval regardless of `duration`. Positive massage controls require observed active state. One physical address only |
 | [Adjustable Comfort M1X12](beds/starcode-m1x12.md) | Parts 1, 2, 4, 8, 16 and union movement, massage wave/intensity, plus explicit ELEVATE actions | 100 ms held refresh, 0.1–60 seconds, fresh STOP on release/cancellation. The native card invokes one bounded service window and routes STOP to the owning side |
 | [Caresse / Werkmeister](beds/vibradorm_app.md) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
 | [V-MAT Basic](beds/vmatbasic.md) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
@@ -359,7 +359,7 @@ still work, with their original name checks.
 
 Set each targeted controller's clock to Home Assistant's local time. Supported
 by the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
-transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/simmons.md#alarms-and-clock), and
+transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/okin-nframe.md#alarms-and-clock), and
 [Customatic Z-Series](beds/customatic-z-series.md) controllers whose
 manufacturer string enables the alarm page (see
 [`zseries_set_alarm`](#zseries_set_alarm)). Z-Series beds cannot share a call
@@ -386,7 +386,7 @@ enable additional commands.
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/okin-nframe.md#customatic-family) |
 | Glideaway Motion / Montion app | `glideaway_set_alarm` | [Glideaway Motion](beds/glideaway-motion.md#alarm-and-clock) |
 | Customatic Z-Series app | `zseries_set_alarm` | [Z-Series](beds/customatic-z-series.md) |
-| SIMMONS app | `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
+| SIMMONS app | `simmons_set_alarm` | [SIMMONS](beds/okin-nframe.md#simmons) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_hold_preset` | [LOGICDATA](beds/jiecang.md#motionrelax-phone-and-tablet) |
 | LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1) | [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake` | [Jiecang](beds/jiecang.md#dream-app-family) |
@@ -426,7 +426,7 @@ Available only when the controller's Device Information manufacturer string is e
 
 ### `simmons_set_alarm`
 
-Accepts `device_id`, `slot` (1 or 2), `enabled`, `time`, `weekdays` (empty for the next occurrence), `mode` (`custom_mode`, `flat`, or regular-bed `anti_snore`), `confirm_custom_mode` and optional `side`. Custom Mode requires `confirm_custom_mode: true`. An enabled alarm cannot share its time or mode with the other enabled alarm. Both alarm records must be reported on the current connection; HA queries the bed and refuses the call, writing nothing, if it does not answer. With several beds, every bed is checked before any bed is programmed, so one failing bed changes none. See [SIMMONS alarms](beds/simmons.md#alarms-and-clock).
+Accepts `device_id`, `slot` (1 or 2), `enabled`, `time`, `weekdays` (empty for the next occurrence), `mode` (`custom_mode`, `flat`, or regular-bed `anti_snore`), `confirm_custom_mode` and optional `side`. Custom Mode requires `confirm_custom_mode: true`. An enabled alarm cannot share its time or mode with the other enabled alarm. Both alarm records must be reported on the current connection; HA queries the bed and refuses the call, writing nothing, if it does not answer. With several beds, every bed is checked before any bed is programmed, so one failing bed changes none. See [SIMMONS alarms](beds/okin-nframe.md#alarms-and-clock).
 
 ## Support Bundle
 

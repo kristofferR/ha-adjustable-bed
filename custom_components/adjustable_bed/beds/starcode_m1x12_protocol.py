@@ -2,6 +2,8 @@
 
 This codec follows the accepted M1X12 artifact report. It deliberately keeps
 raw Part numbers instead of assigning physical names to unverified actuators.
+The legacy dialect's frames are Okin N-frames (``codec/okin_nframe.py``); the
+StarCode dialect's ``5A`` frames are its own.
 """
 
 from __future__ import annotations
@@ -9,6 +11,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import datetime
 from typing import Final
+
+from ..codec import okin_nframe
 
 type StateValue = str | int | float | bool | None | list[StateValue] | dict[str, StateValue]
 
@@ -49,22 +53,21 @@ def normal_packet(key: int, dialect: str) -> bytes:
     if dialect == "star":
         return b"\x5a\x01" + payload + b"\xa5"
     if dialect == "legacy":
-        return b"\x05\x02" + payload + b"\x00"
+        return okin_nframe.frame40(key & 0xFFFFFFFF)
     raise ValueError(f"Unknown M1X12 dialect: {dialect}")
 
 
 def long_packet(key: int) -> bytes:
-    """Build the ten-byte C-maker light command."""
-    return b"\x08\x02\x00\x00\x00\x00" + _key_bytes(key)
+    """Build the ten-byte C-maker light command, a 64-bit Okin N-frame."""
+    return okin_nframe.frame(key & 0xFFFFFFFF, 8)
 
 
 def extended_packet(command: int, value: int, dialect: str) -> bytes:
     """Build the accepted brightness/color/duration packet."""
-    payload = bytes((command & 0xFF, value & 0xFF, 0, 0))
     if dialect == "star":
-        return b"\x5a\xe0\x04" + payload + b"\xa5"
+        return b"\x5a\xe0\x04" + bytes((command & 0xFF, value & 0xFF, 0, 0)) + b"\xa5"
     if dialect == "legacy":
-        return b"\x04\xe0" + payload
+        return okin_nframe.extended(command & 0xFF, value & 0xFF)
     raise ValueError(f"Unknown M1X12 dialect: {dialect}")
 
 
@@ -74,7 +77,7 @@ def position_packet(axis: int, target: int, dialect: str) -> bytes:
     if dialect == "star":
         return b"\x5a\xf0\x03" + pair + b"\x00\xa5"
     if dialect == "legacy":
-        return b"\x03\xf0" + pair + b"\x00"
+        return okin_nframe.position_target(*pair)
     raise ValueError(f"Unknown M1X12 dialect: {dialect}")
 
 
@@ -83,7 +86,7 @@ def query_packet(dialect: str) -> bytes:
     if dialect == "star":
         return b"\x5a\xb0\x00\xa5"
     if dialect == "legacy":
-        return b"\x00\xb0"
+        return okin_nframe.request(0xB0)
     raise ValueError(f"Unknown M1X12 dialect: {dialect}")
 
 

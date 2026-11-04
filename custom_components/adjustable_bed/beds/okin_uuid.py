@@ -260,18 +260,12 @@ class OkinUuidController(OkinNFrameController):
         )
 
     # Timing and framing of this route. Subclasses with their own command
-    # surface (the stair lift) replace it.
+    # surface (the stair lift, DOT boxes) replace it.
     _route_profile: ClassVar[OkinNFrameProfile] = OKIMAT
 
     @property
-    def profile(self) -> OkinNFrameProfile | None:
-        """This route's profile; ``None`` for a subclass with its own frame.
-
-        DOT boxes reuse these flows with a 40-bit frame (``okin_dot.py``), which
-        is not this 32-bit profile.
-        """
-        if type(self)._build_command is not OkinUuidController._build_command:
-            return None
+    def profile(self) -> OkinNFrameProfile:
+        """This route's profile."""
         return self._route_profile
 
     @property
@@ -605,7 +599,8 @@ class OkinUuidController(OkinNFrameController):
         if keycode is None:
             _LOGGER.warning("Memory %d not available on remote %s", memory_num, self._variant)
             return
-        await self._press(keycode, self._route_profile.recall, f"Memory {memory_num}")
+        profile = self._route_profile
+        await self._press(keycode, profile.memory_recall or profile.recall, f"Memory {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program the current position.

@@ -6,6 +6,12 @@ one held key, and the all-zero word releases every key (STOP). Profiles use
 32-bit (``04 02``), 40-bit, 48-bit, 64-bit or 96-bit words; the word's width is
 profile data, never inferred from a key.
 
+The 40-bit routes carry a 32-bit key word followed by one selector byte, which
+picks a CB24 bed side (``AA``/``BB``) and is ``00`` everywhere else. Several of
+them also send 64-bit ``08 02`` frames for a few lights and massage keys,
+two-byte ``00 <code>`` requests, ``04 E0`` setting frames and ``03 F0`` position
+targets. What a request or setting means is profile data.
+
 Two transports carry the frame. The plain route writes it to the Okin write
 characteristic. RF-Gateway receivers and revision-0 Leggett boxes take the same
 32-bit word in an 8-byte envelope, ``E5 FE 16 <word> checksum``, where the
@@ -53,6 +59,30 @@ def frame(word: int, width: int = 4) -> bytes:
     if isinstance(word, bool) or not isinstance(word, int) or not 0 <= word < 1 << (8 * width):
         raise ValueError(f"Command word must be an unsigned {8 * width}-bit integer")
     return bytes((width, 0x02)) + word.to_bytes(width, "big")
+
+
+def frame40(key: int, selector: int = 0) -> bytes:
+    """Encode a 40-bit frame: the 32-bit key word, then the selector byte."""
+    if isinstance(key, bool) or not isinstance(key, int) or not 0 <= key <= 0xFFFFFFFF:
+        raise ValueError("Key word must be an unsigned 32-bit integer")
+    if not 0 <= selector <= 0xFF:
+        raise ValueError("Selector must be one byte")
+    return frame(key << 8 | selector, 5)
+
+
+def request(code: int) -> bytes:
+    """Encode a two-byte ``00 <code>`` request."""
+    return bytes((0x00, code))
+
+
+def extended(parameter: int, value: int, value2: int = 0) -> bytes:
+    """Encode a 6-byte ``04 E0`` setting frame: light, massage level or timer."""
+    return bytes((0x04, 0xE0, parameter, value, value2, 0x00))
+
+
+def position_target(axis: int, target: int) -> bytes:
+    """Encode a 5-byte ``03 F0`` position target."""
+    return bytes((0x03, 0xF0, axis, target, 0x00))
 
 
 def word_of(data: bytes) -> int:

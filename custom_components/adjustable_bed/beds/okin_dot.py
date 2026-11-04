@@ -14,9 +14,11 @@ Protocol reverse-engineered from the FurniMove app (com.okin.okinsmartcomfort):
   in the app). The earlier analysis this controller came from also recorded an
   ASCII ``affirm`` write there; the accepted 2.2.0 audit has no such write, and
   it stays here only so released entries keep their behavior.
-- Commands are CB24-style 7-byte frames ``[0x05, 0x02, <keycode BE>, 0x00]``
+- Commands are 40-bit Okin N-frames ``[0x05, 0x02, <keycode BE>, 0x00]``
   (``HexValueConverter.toByteArray`` with ``isDOTProtocol=true``) instead of
-  the standard Okin 6-byte ``[0x04, 0x02, <keycode BE>]``.
+  the standard Okin 6-byte ``[0x04, 0x02, <keycode BE>]``. Memory keys are
+  tap-to-recall, hold-to-save, so the ``OKIN_DOT`` profile recalls them with
+  one press and a STOP: streaming the Okimat recall would overwrite them.
 - Held buttons are re-sent ~every 100ms; release sends keycode 0
   (``DisobeyStandbyTime``), which is the same stop the base controller sends.
 
@@ -33,8 +35,9 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import okin_nframe as codec
 from ..const import NORDIC_UART_WRITE_CHAR_UUID, VARIANT_AUTO
-from .okin_protocol import int_to_bytes
+from ..profiles.okin_nframe import OKIN_DOT
 from .okin_uuid import OKIN_UUID_REMOTES, OkinUuidController
 from .okin_uuid_remotes import DEFAULT_OKIN_DOT_REMOTE
 
@@ -57,6 +60,7 @@ class OkinDotController(OkinUuidController):
     """
 
     _write_with_response = False
+    _route_profile = OKIN_DOT
 
     def __init__(self, coordinator: AdjustableBedCoordinator, variant: str = VARIANT_AUTO) -> None:
         """Initialize the DOT controller with a DOT remote variant.
@@ -101,7 +105,7 @@ class OkinDotController(OkinUuidController):
 
     def _build_command(self, command_value: int) -> bytes:
         """Build a DOT frame: [0x05, 0x02, <4-byte keycode big-endian>, 0x00]."""
-        return bytes([0x05, 0x02, *int_to_bytes(command_value), 0x00])
+        return codec.frame40(command_value)
 
     async def _ensure_affirmed(self) -> None:
         """Send the FurniMove "affirm" handshake once per connection."""
@@ -135,38 +139,6 @@ class OkinDotController(OkinUuidController):
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
         )
-
-    async def preset_memory(self, memory_num: int) -> None:
-        """Recall a memory position with a short press.
-
-        DOT memory buttons are tap-to-recall / hold-to-save: on RF34 97544 the
-        recall and save keycodes are even identical (``0x10000``), only the
-        press duration distinguishes them. Streaming the Okimat-style 100x300ms
-        recall would therefore overwrite the stored position, so send the
-        keycode once and release with STOP like the handset does.
-        """
-        commands = {
-            1: self._remote.memory_1,
-            2: self._remote.memory_2,
-            3: self._remote.memory_3,
-            4: self._remote.memory_4,
-        }
-        command = commands.get(memory_num)
-        if command is None:
-            _LOGGER.warning("Memory %d not available on remote %s", memory_num, self._variant)
-            return
-        try:
-            await self.write_command(self._build_command(command))
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug(
-                    "Failed to send STOP command during preset_memory cleanup", exc_info=True
-                )
 
     # DOT boxes expose no known position-feedback characteristic; the Okimat
     # FFE4 notify/read paths do not exist on them.

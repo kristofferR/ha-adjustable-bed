@@ -9,7 +9,13 @@ from custom_components.adjustable_bed.beds.okin_uuid import (
 from custom_components.adjustable_bed.beds.okin_uuid_remotes import (
     OKIN_UUID_VARIANT_LABELS,
 )
+from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.codec import okin_nframe as okin_codec
+from custom_components.adjustable_bed.const import (
+    NORDIC_UART_READ_CHAR_UUID,
+    NORDIC_UART_SERVICE_UUID,
+    NORDIC_UART_WRITE_CHAR_UUID,
+)
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -61,6 +67,33 @@ _OKIN_KEY_LABELS = {
     "sleep_cancel": "Sleep timer cancel",
     "alarm_cancel": "Alarm cancel / stop",
     "cu170_stop": "CU170 stop (DUMMY)",
+    "foot_up": "Foot up",
+    "foot_down": "Foot down",
+    "neck_tilt_up": "Neck tilt up",
+    "neck_tilt_down": "Neck tilt down",
+    "motor_stop": "STOP / release",
+    "preset_flat": "Flat",
+    "preset_tv": "TV",
+    "preset_zero_gravity": "Zero-G",
+    "preset_anti_snore": "Anti-snore",
+    "preset_lounge": "Lounge",
+    "preset_memory_1": "Memory 1",
+    "preset_memory_2": "Memory 2",
+    "stop": "STOP / release",
+    "memory": "Custom Mode (memory)",
+    "store_memory_1": "Store memory 1",
+    "store_memory_2": "Store memory 2",
+    "massage_toggle": "Massage toggle",
+    "massage_exit": "Massage exit",
+    "massage_intensity_up": "Massage intensity up",
+    "massage_intensity_down": "Massage intensity down",
+    "massage_wave1": "Massage wave 1",
+    "massage_wave2": "Massage wave 2",
+    "massage_wave3": "Massage wave 3",
+    "light_toggle": "Under-bed light toggle",
+    "inclined_left": "Inclined Left",
+    "inclined_middle": "Inclined Middle",
+    "inclined_right": "Inclined Right",
 }
 _OKIN_GROUPS = {
     "Okimat": (okin_profiles.OKIMAT,),
@@ -68,16 +101,19 @@ _OKIN_GROUPS = {
     "RF ECO BT": (okin_profiles.RF_ECO_BT,),
     "Customatic": tuple(okin_profiles.CUSTOMATIC_PROFILES.values()),
     "Leggett Okin": tuple(okin_profiles.LEGGETT_PROFILES.values()),
+    "CB24": (okin_profiles.OKIN_CB24,),
+    "DOT": (okin_profiles.OKIN_DOT,),
+    "SIMMONS": tuple(okin_profiles.SIMMONS_PROFILES.values()),
+    "SleepEase": (okin_profiles.DOUBLESLEEP,),
+    "Sleepy's legacy CB25": (okin_profiles.SLEEPYS_BOX25_LEGACY,),
+    "AdjustableM5X4": tuple(
+        {id(p): p for p in okin_profiles.STARCODE_ABM5_4_PROFILES.values()}.values()
+    ),
 }
 
 
 def _okin_profiles() -> list[okin_profiles.OkinNFrameProfile]:
     return [profile for group in _OKIN_GROUPS.values() for profile in group]
-
-
-def bed_types() -> dict[str, tuple[str, ...]]:
-    """Bed types per profile, as the profile summary lists them."""
-    return {profile.key: profile.bed_types for profile in _okin_profiles()}
 
 
 def _okin_tap(tap: okin_profiles.Tap | None) -> str:
@@ -110,12 +146,17 @@ _ENVELOPES = {
     "plain": "plain frame",
     "gateway_detected": "plain; RF-Gateway envelope when detected",
     "revision_selector": "plain (R1) or envelope (R0), by selector characteristic",
+    "keeson_e6": "Keeson E6 frame; inclined keys plain",
 }
 _WRITES = {
     "response": "with response",
     "no_response": "without response",
     "characteristic": "from the characteristic's properties",
 }
+
+
+# AdjustableM5X4 selectors whose movement is a Keeson E6 or A5 5A frame.
+_OKIN_OWN_MOTION = frozenset({"starcode_abm5_4_box15", "starcode_abm5_4_box1220"})
 
 
 def render_okin_nframe_profiles() -> str:
@@ -138,12 +179,18 @@ def render_okin_nframe_profiles() -> str:
     )
     hold = _table(
         ("Profile", "Hold refresh", "Repeats", "Release"),
-        ((profile.name, *_okin_hold(profile.hold)) for profile in profiles),
+        (
+            (profile.name, *_okin_hold(profile.hold))
+            if profile.key not in _OKIN_OWN_MOTION
+            else (profile.name, "n/a", "n/a", "moves with its own frames")
+            for profile in profiles
+        ),
     )
     one_shot = _table(
         (
             "Profile",
             "Presets and recall",
+            "Memory recall",
             "Memory save",
             "Sync, child lock",
             "Light, massage",
@@ -153,8 +200,9 @@ def render_okin_nframe_profiles() -> str:
             (
                 profile.name,
                 _okin_tap(profile.recall),
+                _okin_tap(profile.memory_recall or profile.recall),
                 _okin_tap(profile.memory_save)
-                + (" (or the handset's hold)" if profile is okin_profiles.OKIMAT else ""),
+                + (" (or the handset's hold)" if not profile.keys else ""),
                 _okin_tap(profile.long_press),
                 _okin_tap(profile.tap)
                 if not profile.keys or "light" in profile.keys or "massage_off" in profile.keys
@@ -176,7 +224,12 @@ def render_okin_nframe_profiles() -> str:
         f"Leggett Okin profiles also stream Flat for {okin_profiles.LEGGETT_FLAT_HOLD_MS} ms "
         f"and program a favorite by holding the store key {store_ms} ms, then the slot "
         f"{slot_ms} ms. Customatic named memory controls hold "
-        f"{okin_profiles.CUSTOMATIC_APP_HOLD_MS} ms with no STOP.",
+        f"{okin_profiles.CUSTOMATIC_APP_HOLD_MS} ms with no STOP. SIMMONS saves Custom "
+        f"Mode by holding its recall key {okin_profiles.SIMMONS_SAVE_HOLD_MS} ms. "
+        "AdjustableM5X4 presets and recalls are held keys on its refresh; it streams "
+        f"Flat for {okin_profiles.STARCODE_ABM5_4_FLAT_HOLD_MS} ms and saves or resets for "
+        f"{okin_profiles.STARCODE_ABM5_4_SAVE_HOLD_MS} ms. SleepEase P1 presets are held "
+        "keys on its refresh too.",
     )
 
 
@@ -193,13 +246,26 @@ def render_okin_nframe_transports() -> str:
         ),
         ("Settings write", okin_codec.SETTINGS_WRITE_UUID, "Leggett Okin Prodigy profiles"),
         ("Settings notify", okin_codec.SETTINGS_NOTIFY_UUID, "Leggett Okin Prodigy profiles"),
+        ("Service", NORDIC_UART_SERVICE_UUID, "40-bit profiles"),
+        ("Write", NORDIC_UART_WRITE_CHAR_UUID, "40-bit profiles"),
+        ("Notify", NORDIC_UART_READ_CHAR_UUID, "SIMMONS, SleepEase, Sleepy's, AdjustableM5X4"),
     )
     return _block(
         _table(
             ("Role", "UUID", "Used by"), ((role, f"`{uuid}`", users) for role, uuid, users in rows)
         ),
-        f"The settings channel opens with {_hex(okin_codec.SETTINGS_INIT)} after subscribing.",
+        f"The settings channel opens with {_hex(okin_codec.SETTINGS_INIT)} after subscribing. "
+        "SIMMONS also accepts FFE5/FFE9 with FFE0/FFE4, and AdjustableM5X4 two more "
+        "transports; see their profiles.",
     )
+
+
+def _okin_frame(profile: okin_profiles.OkinNFrameProfile, word: int, name: str = "") -> str:
+    if profile.envelope == "keeson_e6" and name not in profile.plain_keys:
+        return _hex(keeson_codec.frame(word, header=0xE6, side=0))
+    if profile.width == 5:
+        return _hex(okin_codec.frame40(word))
+    return _hex(okin_codec.frame(word))
 
 
 def _okin_key_table(
@@ -208,6 +274,9 @@ def _okin_key_table(
     names: list[str] = []
     for profile in sorted(profiles, key=lambda profile: -len(profile.keys)):
         names += [name for name in profile.keys if name not in names]
+    longs: list[str] = []
+    for profile in profiles:
+        longs += [name for name in profile.long_keys if name not in longs]
     multi = len(profiles) > 1
     header = ["Command", "Word"]
     if multi:
@@ -216,18 +285,33 @@ def _okin_key_table(
     if envelope:
         header.append("Envelope (R0)")
     rows = []
-    for name in names:
-        words = {profile.keys[name] for profile in profiles if name in profile.keys}
-        for word in sorted(words):
-            row = [_OKIN_KEY_LABELS[name], f"`0x{word:08X}`"]
-            if multi:
-                users = [p.name for p in profiles if p.keys.get(name) == word]
-                row.append(", ".join(users) if len(users) < len(profiles) else "all")
-            row.append(_hex(okin_codec.frame(word)))
-            if envelope:
-                row.append(_hex(okin_codec.gateway_frame(word)))
-            rows.append(tuple(row))
-    stop = ["STOP / release", "`0x00000000`", *(["all"] if multi else []), _hex(okin_codec.STOP)]
+    for table, width in (("keys", 4), ("long_keys", 8)):
+        for name in names if table == "keys" else longs:
+            words = {
+                getattr(profile, table)[name]
+                for profile in profiles
+                if name in getattr(profile, table)
+            }
+            for word in sorted(words):
+                users = [p for p in profiles if getattr(p, table).get(name) == word]
+                label = _OKIN_KEY_LABELS.get(name, f"`{name}`")
+                if name.isdigit():
+                    label = f"Index {name}"
+                row = [label, f"`0x{word:0{width * 2}X}`"]
+                if multi:
+                    labels = [p.name for p in users]
+                    row.append(", ".join(labels) if len(users) < len(profiles) else "all")
+                if table == "long_keys":
+                    row.append(_hex(okin_codec.frame(word, 8)))
+                else:
+                    row.append(" or ".join(sorted({_okin_frame(p, word, name) for p in users})))
+                if envelope:
+                    row.append(_hex(okin_codec.gateway_frame(word)))
+                rows.append(tuple(row))
+    if any(0 in profile.keys.values() for profile in profiles):
+        return _table(tuple(header), rows)
+    stop_frames = " or ".join(sorted({_okin_frame(p, 0) for p in profiles}))
+    stop = ["STOP / release", "`0x00000000`", *(["all"] if multi else []), stop_frames]
     if envelope:
         stop.append(_hex(okin_codec.gateway_frame(0)))
     return _table(tuple(header), [*rows, tuple(stop)])
@@ -244,6 +328,26 @@ def render_okin_nframe_keys() -> str:
         _okin_key_table(_OKIN_GROUPS["Customatic"], envelope=False),
         "#### Leggett Okin keys",
         _okin_key_table(_OKIN_GROUPS["Leggett Okin"], envelope=True),
+        "#### CB24 keys",
+        _okin_key_table(_OKIN_GROUPS["CB24"], envelope=False),
+        "Legacy CB24 replaces the last byte with `AA` (Side A) or `BB` (Side B) for one "
+        "side; held motors send the sum of their words.",
+        "#### SIMMONS keys",
+        _okin_key_table(_OKIN_GROUPS["SIMMONS"], envelope=False),
+        "SmartBed and unmatched names send the 40-bit frame, OKIN names the Keeson E6 "
+        "frame. The inclined keys keep the 40-bit frame on both.",
+        "#### SleepEase keys",
+        _okin_key_table(_OKIN_GROUPS["SleepEase"], envelope=False),
+        "SleepDriver (P1) words by the app's command index; index 1 is STOP. The "
+        "profile's other static frames and the XiaoBao (P2) and P3 packets are listed "
+        "in its section.",
+        "#### Sleepy's legacy CB25 keys",
+        _okin_key_table(_OKIN_GROUPS["Sleepy's legacy CB25"], envelope=False),
+        "#### AdjustableM5X4 keys",
+        _okin_key_table(_OKIN_GROUPS["AdjustableM5X4"], envelope=False),
+        "Keyed by the app's action names. BOX15 and BOX1220 move with their own "
+        "frames, so their profiles hold only the shared keys; BOX25_STAR sends "
+        "StarCode only.",
     )
 
 
