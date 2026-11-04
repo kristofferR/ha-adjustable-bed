@@ -221,9 +221,9 @@
     "HA_CONNECTION": {
       "disposition": "ALREADY_IMPLEMENTED",
       "code": [
-        "custom_components/adjustable_bed/coordinator.py:async_ensure_connected",
-        "custom_components/adjustable_bed/coordinator.py:_async_connect_locked",
-        "custom_components/adjustable_bed/coordinator.py:async_disconnect",
+        "custom_components/adjustable_bed/coordinator_connection.py:async_ensure_connected",
+        "custom_components/adjustable_bed/coordinator_connection.py:_async_connect_locked",
+        "custom_components/adjustable_bed/coordinator_connection.py:async_disconnect",
         "custom_components/adjustable_bed/bluetooth_transport.py"
       ],
       "tests": [

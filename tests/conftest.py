@@ -801,7 +801,7 @@ def mock_bluetooth_service_info_okimat() -> MagicMock:
 def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMock]:
     """Mock bleak_retry_connector.establish_connection."""
     with patch(
-        "custom_components.adjustable_bed.coordinator.establish_connection",
+        "custom_components.adjustable_bed.coordinator_connection.establish_connection",
         new_callable=AsyncMock,
     ) as mock:
         async def _establish(*_args, **_kwargs):

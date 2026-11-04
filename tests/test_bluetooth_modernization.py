@@ -88,9 +88,9 @@ async def test_cancelled_connect_releases_state_and_can_reconnect(
         await asyncio.Event().wait()
 
     target = (
-        "custom_components.adjustable_bed.coordinator.establish_connection"
+        "custom_components.adjustable_bed.coordinator_connection.establish_connection"
         if phase == "waiting_for_proxy"
-        else "custom_components.adjustable_bed.coordinator.read_ble_device_info"
+        else "custom_components.adjustable_bed.coordinator_connection.read_ble_device_info"
     )
     with patch(target, side_effect=blocked):
         task = hass.async_create_task(coordinator.async_connect())
@@ -130,7 +130,7 @@ async def test_proxy_loss_during_slot_wait_records_failure_and_allows_retry(
         mock_bleak_client,
     ]
     with patch(
-        "custom_components.adjustable_bed.coordinator.connection_reachability",
+        "custom_components.adjustable_bed.coordinator_connection.connection_reachability",
         return_value="No scanner currently reachable",
     ):
         assert not await coordinator.async_connect()

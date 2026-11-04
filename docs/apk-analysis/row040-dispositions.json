@@ -11316,7 +11316,7 @@
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController._invalidate_notification_channel",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.on_disconnect",
         "custom_components/adjustable_bed/beds/base.py::BedController.on_disconnect",
-        "custom_components/adjustable_bed/coordinator.py::AdjustableBedCoordinator._on_disconnect"
+        "custom_components/adjustable_bed/coordinator_connection.py::CoordinatorConnectionMixin._on_disconnect"
       ],
       "test_symbols": [
         "tests/test_limoss_remote.py::test_exact_first_service_and_handle_no_fallback_invalid_roles",
@@ -11337,7 +11337,7 @@
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController._invalidate_notification_channel",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.on_disconnect",
         "custom_components/adjustable_bed/beds/base.py::BedController.on_disconnect",
-        "custom_components/adjustable_bed/coordinator.py::AdjustableBedCoordinator._on_disconnect"
+        "custom_components/adjustable_bed/coordinator_connection.py::CoordinatorConnectionMixin._on_disconnect"
       ],
       "test_symbols": [
         "tests/test_limoss_remote.py::test_all16_reversal_parameters_and_format_time_sequence",
@@ -11371,7 +11371,7 @@
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController._invalidate_notification_channel",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.on_disconnect",
         "custom_components/adjustable_bed/beds/base.py::BedController.on_disconnect",
-        "custom_components/adjustable_bed/coordinator.py::AdjustableBedCoordinator._on_disconnect"
+        "custom_components/adjustable_bed/coordinator_connection.py::CoordinatorConnectionMixin._on_disconnect"
       ],
       "test_symbols": [
         "tests/test_limoss_remote.py::test_every_signed_response_preserves_bits_without_idle_queries_or_memory_mutation",

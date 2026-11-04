@@ -198,7 +198,7 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     device = BLEDevice(address, "Bed", {"source": source})
     adapter = AdapterSelectionResult(device, source, -50, True, [source])
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     cancels = disconnect_kind in ("cancel", "task_cancel")
     try:
         with (
@@ -331,7 +331,7 @@ async def test_public_stop_reconnects_vmat_with_its_own_startup_cancellation(has
     device = BLEDevice(address, "Bed", {"source": source})
     adapter = AdapterSelectionResult(device, source, -50, True, [source])
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     try:
         with (
             patch(module + "select_adapter", return_value=adapter),
@@ -363,7 +363,7 @@ async def test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._client = client = MagicMock(is_connected=True)
     client.disconnect = AsyncMock(side_effect=(BleakError("disconnect failed") if disconnect_kind == "error" else asyncio.CancelledError() if disconnect_kind == "cancel" else None))
-    with patch("custom_components.adjustable_bed.coordinator.establish_connection", new=AsyncMock()) as establish:
+    with patch("custom_components.adjustable_bed.coordinator_connection.establish_connection", new=AsyncMock()) as establish:
         with pytest.raises(asyncio.CancelledError) if disconnect_kind == "cancel" else nullcontext():
             assert not await coordinator.async_connect()
         establish.assert_not_awaited()

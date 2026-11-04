@@ -169,7 +169,7 @@ class TestIntegrationSetup:
     ):
         """Test setup fails on connection timeout."""
         with patch(
-            "custom_components.adjustable_bed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
             new_callable=AsyncMock,
             side_effect=TimeoutError("Connection timed out"),
         ):

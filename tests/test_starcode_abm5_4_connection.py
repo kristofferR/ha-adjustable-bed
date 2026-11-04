@@ -54,7 +54,7 @@ async def test_connection_driver_receives_exact_app_deadline_without_changing_ot
     settings = const.CONNECTION_PROFILES[profile]
     with (
         patch(
-            "custom_components.adjustable_bed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
             new_callable=AsyncMock,
             return_value=mock_bleak_client,
         ) as connect,
@@ -174,7 +174,7 @@ async def test_real_reconnect_retains_only_same_address_observed_app_state(
 
     with (
         patch(
-            "custom_components.adjustable_bed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
             AsyncMock(side_effect=connect),
         ),
         patch("custom_components.adjustable_bed.coordinator.asyncio.sleep", AsyncMock()),

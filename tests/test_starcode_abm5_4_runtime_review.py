@@ -143,7 +143,7 @@ async def test_cold_public_coordinator_classification_and_pending_query_do_not_d
     try:
         with (
             patch(
-                "custom_components.adjustable_bed.coordinator.establish_connection",
+                "custom_components.adjustable_bed.coordinator_connection.establish_connection",
                 AsyncMock(return_value=client),
             ),
             patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", advance),
