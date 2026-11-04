@@ -125,8 +125,14 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         "hold": ("p4", "leggett-disp", "#483c"),
         # CU170 watchdog onset measured on hardware: 217-218 ms.
         "sustain_ms": ("#368", "#483c", "#516c"),
+        # Normal keys combine by OR; release removes one key (#516).
+        "concurrent": ("p4", "#516c"),
     },
-    "OkinNFrameProfile:useries": {"hold": ("useries", "leggett-disp")},
+    "OkinNFrameProfile:useries": {
+        "hold": ("useries", "leggett-disp"),
+        # The output thread's accumulator ORs keys; ACTION_UP removes one.
+        "concurrent": ("useries",),
+    },
     "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
     "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
@@ -152,11 +158,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
-_LEGGETT_STREAM = (
-    "OkinNFrameProfile:prodigy2l",
-    "OkinNFrameProfile:prodigy2",
-    "OkinNFrameProfile:useries",
-)
+_LEGGETT_STREAM = ("OkinNFrameProfile:prodigy2l", "OkinNFrameProfile:prodigy2")
 _CUSTOMATIC = (
     "OkinNFrameProfile:clarity",
     "OkinNFrameProfile:jeromes",
@@ -192,7 +194,12 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
-    "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
+    "profiles/okin_nframe.py:<module>.USERIES_EXECUTION": ("OkinNFrameProfile:useries",),
+    "profiles/okin_nframe.py:<module>._leggett": (
+        *_LEGGETT_STREAM,
+        "OkinNFrameProfile:prodigy4",
+        "OkinNFrameProfile:useries",
+    ),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
     "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),

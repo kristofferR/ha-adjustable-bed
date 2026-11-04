@@ -2567,8 +2567,9 @@ class TestServices:
         device_id = devices[0].id
 
         controller = hass.data[DOMAIN][entry.entry_id].controller
-        controller.move_pillow_up = AsyncMock()
-        controller.move_pillow_stop = AsyncMock()
+        # Prodigy CE motors are concurrent (#516), so the move joins the stream.
+        controller.write_stream_tick = AsyncMock()
+        controller.release_stream = AsyncMock()
 
         await hass.services.async_call(
             DOMAIN,
@@ -2577,10 +2578,11 @@ class TestServices:
                 "device_id": [device_id],
                 "motor": "pillow",
                 "direction": "up",
-                "duration_ms": 1000,
+                "duration_ms": 200,
             },
             blocking=True,
         )
 
-        controller.move_pillow_up.assert_awaited_once()
-        controller.move_pillow_stop.assert_awaited_once()
+        (members,) = controller.write_stream_tick.await_args_list[0].args
+        assert [(member.motor, member.action) for member in members] == [("pillow", "up")]
+        controller.release_stream.assert_awaited_once()

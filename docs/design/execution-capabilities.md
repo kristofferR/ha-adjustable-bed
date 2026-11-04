@@ -224,6 +224,16 @@ below keeps it and adds the missing facts beside it, as Taudris proposed in #483
 | `customatic_clarity`, `_jeromes`, `_remedy` | Held motor masks OR into one shared mask | Partial release clears one bit; the reduced mask keeps streaming | Zero mask after the final release | clarity, jeromes, remedy, row028 |
 | `svane` (Svane Remote) | P2 composes a head and feet mask; P1 refreshes per-role characteristics | P2 drops the released axis from the mask; P1 releases that role | P2 global STOP frame | svane, [svane.md](../beds/svane.md#release) |
 
+**Customatic stays serialized for now.** Its app evidence proves composition,
+but every Customatic motor cover shares the bed-wide `*` scheduler resource,
+because its zero mask releases every motor: a Stop on one cover preempts a move
+on another at once. The merged stream composes only distinct per-motor
+resources, and with per-motor resources a cover Stop on one motor would queue
+behind a serial move on another instead of preempting it. A per-motor Stop
+must never wait behind another cover's move, so Customatic keeps `*` and
+declares no `concurrent` until a motor-scoped Stop can preempt whatever holds
+the writer, as today's bed-wide Stop does.
+
 Disconnect safety is unconditional only for Leggett Okin CU170, where motion
 needs a fresh frame within the watchdog. For Customatic and Svane, a dropped
 link leaves the last command to the firmware. That stays deferred validation
