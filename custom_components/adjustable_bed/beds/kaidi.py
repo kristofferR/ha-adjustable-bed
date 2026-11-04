@@ -999,11 +999,16 @@ class KaidiController(BedController):
 
     async def _move_with_stop_command(self, move_command: int, stop_command: int) -> None:
         """Send a movement command, then stop that motor."""
+        count = self._coordinator.motor_pulse_count
+        delay = self._coordinator.motor_pulse_delay_ms
+        if delay > 0:
+            # A renewable hold (#483) repeats until its lease ends, within its ceiling.
+            count = self.leased_hold_ms(count * delay) // delay
         try:
             await self._write_control_command(
                 move_command,
-                repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                repeat_count=count,
+                repeat_delay_ms=delay,
             )
         finally:
             try:

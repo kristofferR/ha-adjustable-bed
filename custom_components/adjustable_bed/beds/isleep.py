@@ -508,8 +508,12 @@ class IsleepController(BedController):
         try:
             await self._send_opcode(self._opcode(axis + ("_up" if up else "_down"), lane))
             # HA gesture duration, not a hardware refresh interval. No repeated writes.
+            # A renewable hold (#483) waits for its lease, within its ceiling.
             duration = (
-                self._coordinator.motor_pulse_count * self._coordinator.motor_pulse_delay_ms / 1000
+                self.leased_hold_ms(
+                    self._coordinator.motor_pulse_count * self._coordinator.motor_pulse_delay_ms
+                )
+                / 1000
             )
             try:
                 await asyncio.wait_for(self._coordinator.cancel_command.wait(), duration)

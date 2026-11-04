@@ -487,7 +487,8 @@ class RemacroController(BedController):
             raise NotImplementedError(f"{self._model.name} has no such control")
         code = axis.up if up else axis.down
         pulse_count, pulse_delay_ms = self.motor_pulse_settings()
-        hold_s = max(pulse_count, 1) * pulse_delay_ms / 1000
+        # A renewable hold (#483) waits for its lease, within its ceiling.
+        hold_s = self.leased_hold_ms(max(pulse_count, 1) * pulse_delay_ms) / 1000
         cancel_event = self._coordinator.cancel_command
         one_activity = self._model.screen.one_activity_timing
         stream = one_activity and combined and self._app != APP_THE_BRICK
