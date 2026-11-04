@@ -855,10 +855,14 @@ class LeggettOkinController(BedController):
     async def end_stream_member(
         self, member: StreamMember, remaining: tuple[StreamMember, ...]
     ) -> None:
-        # The last member out leaves its release to ``release_stream``.
+        # The last member out leaves its release to ``release_stream``. The
+        # reduced word carries only members a tick has started, so the stream
+        # times every member from the tick that introduces it; a newcomer
+        # follows on the next tick, which a membership change brings at once.
         if remaining:
+            started = tuple(m for m in remaining if m.wire_started is not None)
             await self.write_command(
-                self._build_command(self._stream_word(remaining)),
+                self._build_command(self._stream_word(started)),
                 cancel_event=asyncio.Event(),
             )
 
