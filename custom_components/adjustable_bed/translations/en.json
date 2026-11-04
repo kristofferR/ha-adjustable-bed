@@ -8156,7 +8156,10 @@
           },
           "unpair": {
             "title": "Split the pair to change the app",
-            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, or until you choose **Keep current configuration**."
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current configuration.",
+            "data": {
+              "choice": "Setup choice"
+            }
           },
           "managed": {
             "title": "Choose the app for {name}",
@@ -8192,7 +8195,10 @@
           },
           "unpair": {
             "title": "Split the pair to change the app",
-            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, or until you choose **Keep current configuration**."
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current configuration.",
+            "data": {
+              "choice": "Setup choice"
+            }
           },
           "managed": {
             "title": "Choose the app for {name}",
@@ -8390,6 +8396,12 @@
       "options": {
         "configure": "Choose my app",
         "keep": "Keep current setup"
+      }
+    },
+    "profile_review_unpair": {
+      "options": {
+        "split": "I'll split the pair in Configure",
+        "keep": "Keep current configuration"
       }
     }
   }

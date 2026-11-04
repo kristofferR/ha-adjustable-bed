@@ -424,14 +424,22 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
     flow, form = await _open(hass, entry)
 
     assert form["step_id"] == "unpair"
-    assert form["data_schema"] is None
+    assert form["data_schema"].schema["choice"].config["options"] == ["split", "keep"]
     assert form["description_placeholders"]["apps"] == "- Adjustable Lite app (Keeson)"
-    result = await flow.async_step_unpair({})
+    result = await flow.async_step_unpair({"choice": "split"})
     assert result["type"] == "abort"
     assert result["reason"] == "profile_review_open"
     assert {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING} == before
     assert CONF_PROFILE_REVIEW_PENDING in entry.data
     assert _issue(hass, entry) is not None
+
+    # A working pair can keep its setup without splitting.
+    flow, _form = await _open(hass, entry)
+    result = await flow.async_step_unpair({"choice": "keep"})
+    assert result["type"] == "create_entry"
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
 
 
 def test_every_offered_app_is_a_selectable_profile() -> None:
