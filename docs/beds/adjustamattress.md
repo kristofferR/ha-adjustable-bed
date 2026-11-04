@@ -111,6 +111,8 @@ explicit choices (`P1_L0` to `P4_L6`) combine two independent dimensions.
 
 **Format:** model-specific control frames; P1/P2 carry a one-byte checksum, P3/P4 do not
 
+The P1 and P2 key frames are built by the [Keeson codec](keeson.md#e6-controller-profiles).
+
 - Short UUIDs expand to the Bluetooth base UUID. Nordic UART's suffix is
   `-b5a3-f393-e0a9-e50e24dcca9e`.
 

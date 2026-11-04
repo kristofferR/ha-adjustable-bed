@@ -74,6 +74,8 @@ using independently identified Keeson protocols remains supported. See the
 | ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) 1.1 (3) | `com.ore.sfmc2bedsence` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [Avanti Bases](https://play.google.com/store/apps/details?id=com.ore.AvantiBases) 1.0.5 (7) | `com.ore.AvantiBases` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), hardware unverified | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
+| ✅ | [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (11) | `com.ore.bedding.glideawaymontion` | [Glideaway Motion](#glideaway-motion) |
+| ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
 | Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
 The eight apps of the [cluster033 app family](#cluster033-app-family) (Tempur
@@ -143,12 +145,20 @@ are generated from the profile data.
 | Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
 | Dynasty Bases | `keeson` `dynasty_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
 | MaxCoil Una | `keeson` `maxcoil_una` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| Glideaway Motion | bed type `glideaway_motion` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
+| Malouf legacy OKIN | bed type `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
+| Sleepy's BOX15 | bed type `sleepys_box15` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
+| Scott Living | bed type `scott_living` | K1 `E6`, little-endian, side `01` | app controller | app controller | app controller |
+| SIMMONS (OKIN names) | bed type `simmons`, `okin` names | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
+| AdjustaMattress P1 | bed type `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
+| AdjustaMattress P2 | bed type `adjustamattress`, model P2 | K1 `E5`, big-endian | app controller | app controller | app controller |
 
 ### Hold and release timing
 
 A hold writes its frame the given number of times while the stored cadence is the
 Keeson default; a customized cadence wins. Release waits count from the previous
-write. An explicit stop sends the release without its waits.
+write. An explicit stop sends the release without its waits. The [E6 controller
+profiles](#e6-controller-profiles) keep their timing in their controllers.
 
 | Profile | Hold | Three motors | Release after a hold | Explicit stop | Released after one-shots | Wait before one-shots |
 |---|---|---|---|---|---|---|
@@ -184,9 +194,11 @@ write. An explicit stop sends the release without its waits.
 
 ### Presets and memory
 
-Words, encoded in the profile's frame. AMERICANSTAR, Avanti Bases, Bedsense Bases,
-Dynasty Bases, Heal Every Night, INNOVA, MaxCoil Una, OKIN-Seating, Simon Li keep
-their key tables with their app controllers; see their sections.
+Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
+AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, Glideaway Motion, Heal
+Every Night, INNOVA, Malouf legacy OKIN, MaxCoil Una, OKIN-Seating, Scott Living,
+SIMMONS (OKIN names), Simon Li, Sleepy's BOX15 keep their key tables with their
+app controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -284,13 +296,14 @@ family's codec exists.
 |---|---|---|---|
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
-| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una |
+| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2 |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
 | P2 7-byte, checksum end | `04 02` + big-endian word + checksum | `04 02 00 00 00 01 F8` | KSBT04C, Sleep Harmony (KSBT04C) |
-| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5) |
+| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, SIMMONS (OKIN names), AdjustaMattress P1 |
 | P2 7-byte, `00` end | `04 02` + big-endian word + `00` | `04 02 00 00 00 01 00` | Purple Premium Plus |
+| K1 `E6`, little-endian, side `01` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 01 03` | Scott Living |
 <!-- /generated -->
 
 #### Split-bed side byte (Member's Mark)
@@ -417,8 +430,8 @@ unsafe.
 `tests/keeson_vectors.py` lists each profile's frozen single-frame literals:
 the test vectors of the accepted Adjustable Lite, Restonic BT, INNOVA, Simon Li,
 Heal Every Night, OKIN-Seating, MaxCoil Una, Dynasty Bases, Bedsense Bases,
-Avanti Bases and AMERICANSTAR reports, every codec frame the cluster033 reports
-spell (plus the pre-v5 frame of any key a report lists without spelling it), and
+Avanti Bases and AMERICANSTAR reports, every codec frame the cluster033, Glideaway Motion,
+AdjustaMattress and SIMMONS reports spell (plus the pre-v5 frame of any key a report lists without spelling it), and
 for every other route (which has no report) every frame the pre-v5 controller
 could send.
 `tests/test_keeson_vectors.py` checks that every literal round-trips through the
@@ -1812,6 +1825,232 @@ Bed type `tempur_au`. Memory Level 1-3 on B2 are opaque keys.
 | Anti Snooze | `anti_snooze` | `0x8000` | `E5 FE 16 00 80 00 00 86` | `single` | E1 |
 | Music | `music` | `0x10000` | `E5 FE 16 00 00 01 00 05` | `single` | E1 |
 <!-- /generated -->
+
+### E6 controller profiles
+
+These bed types keep their own key tables, sessions and timing in their
+controllers; their profile holds only the frame. Each frame is built by the
+codec. Glideaway Motion and Scott Living are documented here; the other routes
+share a guide with frames of other families and keep it.
+
+<!-- generated:keeson-e6 -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Profile | Bed type | Frame | Head up (`0x1`) | Zero word | Guide |
+|---|---|---|---|---|---|
+| Glideaway Motion | `glideaway_motion` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Glideaway Motion](#glideaway-motion) |
+| Malouf legacy OKIN | `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Malouf](malouf.md) |
+| Sleepy's BOX15 | `sleepys_box15` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Sleepy's](sleepys.md) |
+| Scott Living | `scott_living` | K1 `E6`, little-endian, side `01` | `E6 FE 16 01 00 00 00 01 03` | `E6 FE 16 00 00 00 00 01 04` | [Scott Living](#scott-living) |
+| SIMMONS (OKIN names) | `simmons`, `okin` names | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [SIMMONS](simmons.md) |
+| AdjustaMattress P1 | `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [AdjustaMattress](adjustamattress.md) |
+| AdjustaMattress P2 | `adjustamattress`, model P2 | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [AdjustaMattress](adjustamattress.md) |
+<!-- /generated -->
+
+### Glideaway Motion
+
+**App:** [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (code 11), `com.ore.bedding.glideawaymontion`
+
+Choose **Glideaway Motion / Montion app** and the model selected in the Android
+app (the archive label misspells Motion as "Montion"). It is separate from the
+legacy **Okin ORE (A5 5A)** profile; existing legacy entries are not migrated,
+because the app uses different bytes and does not prove which hardware an
+existing entry controls. Hardware is unverified.
+
+#### Setup
+
+- The app scans without a name or service filter and needs a manual model
+  choice, so the integration is added manually with the model as the protocol
+  variant. Shared FFE services, names and GM descriptions do not identify a
+  model, and no pairing, PIN, status query or clock write is sent on connect.
+- The model owns the layout and extras; generic motor count, massage, angle
+  sensing and refresh settings are hidden. The motor pulse count still sets a
+  cover movement's duration.
+- Two physical addresses may use native paired-bed routing; there is no
+  app-proven single-address side protocol.
+- It writes to FFE9 in FFE5 and subscribes to FFE4 in FFE0, with response only
+  when the characteristic offers `write` alone (the app leaves Android's write
+  type unchanged).
+
+| App model | Description | Covers | Extra controls |
+| --- | --- | --- | --- |
+| MOTION 400 | GM-A4Z | Back/head, feet, head + feet | None |
+| MOTION 450 | GM-A450Z | Back/head, feet, bed height | None |
+| MOTION 500 | GM-A5Z | Back/head, feet, head + feet, bed height | Light and massage |
+| MOTION 600 | GM-A6Z | Back/head, feet, neck tilt, bed height | Light and massage |
+
+Every model has Flat, Anti-snore, Zero gravity, Memory A/B recall and save, a
+bed alarm sensor and a Refresh alarm button. Models 500 and 600 add a
+toggle-only light button, massage intensity and wave up/down, timer cycle,
+massage off and a massage timer sensor. There is no light-state feedback,
+direct massage level, position feedback or angle slider.
+
+#### Controls
+
+<!-- generated:keeson-glideaway -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Word | Frame |
+|---|---|---|
+| Back/head up | `0x00000001` | `E6 FE 16 01 00 00 00 00 04` |
+| Back/head down | `0x00000002` | `E6 FE 16 02 00 00 00 00 03` |
+| Feet up | `0x00000004` | `E6 FE 16 04 00 00 00 00 01` |
+| Feet down | `0x00000008` | `E6 FE 16 08 00 00 00 00 FD` |
+| Head + feet up | `0x00000005` | `E6 FE 16 05 00 00 00 00 00` |
+| Head + feet down | `0x0000000A` | `E6 FE 16 0A 00 00 00 00 FB` |
+| Neck tilt up | `0x00000010` | `E6 FE 16 10 00 00 00 00 F5` |
+| Neck tilt down | `0x00000020` | `E6 FE 16 20 00 00 00 00 E5` |
+| Bed height up | `0x00000040` | `E6 FE 16 40 00 00 00 00 C5` |
+| Bed height down | `0x00000080` | `E6 FE 16 80 00 00 00 00 85` |
+| Flat | `0x08000000` | `E6 FE 16 00 00 00 08 00 FD` |
+| Anti snore | `0x00008000` | `E6 FE 16 00 80 00 00 00 85` |
+| Zero g | `0x00001000` | `E6 FE 16 00 10 00 00 00 F5` |
+| Memory 1 | `0x00002000` | `E6 FE 16 00 20 00 00 00 E5` |
+| Memory 2 | `0x00004000` | `E6 FE 16 00 40 00 00 00 C5` |
+| Light toggle (500/600) | `0x00020000` | `E6 FE 16 00 00 02 00 00 03` |
+| Massage intensity up (500/600) | `0x00000C00` | `E6 FE 16 00 0C 00 00 00 F9` |
+| Massage intensity down (500/600) | `0x01800000` | `E6 FE 16 00 00 80 01 00 84` |
+| Massage wave up (500/600) | `0x10000000` | `E6 FE 16 00 00 00 10 00 F5` |
+| Massage wave down (500/600) | `0x04000000` | `E6 FE 16 00 00 00 04 00 01` |
+| Massage timer (500/600) | `0x00000200` | `E6 FE 16 00 02 00 00 00 03` |
+| Massage off (500/600) | `0x00000100` | `E6 FE 16 00 01 00 00 00 04` |
+| Release | `0x00000000` | `E6 FE 16 00 00 00 00 00 05` |
+<!-- /generated -->
+
+For longer holds use `adjustable_bed.hold_control` with `back_up/down`,
+`feet_up/down`, `both_up/down`, `bed_height_up/down`, `tilt_up/down` (as the
+model has them), `flat`, `anti_snore`, `zero_g`, `memory_1`, `memory_2`, and on
+500/600 `light`, `massage_intensity_up/down`, `massage_wave_up/down`,
+`massage_timer` and `massage_off`. Holds accept 0.1-30 seconds; a memory recall
+must be shorter than five seconds. `save_preset` slot 1 or 2 (or the Save Memory
+buttons) holds the recall frame for 5.2 seconds; the app's saved toast is local,
+not an acknowledgement.
+
+#### Timing
+
+| Operation | Timing |
+| --- | --- |
+| Held refresh | Every 300 ms, counting the write time |
+| Cover movement | Configured pulse count × 300 ms, as a monotonic deadline |
+| Release | Zero frame at +300 and +600 ms, both attempted even if the first fails |
+| Preset, recall, light and massage buttons | One 300 ms press |
+| Memory save | 5.2 second hold |
+| Alarm set | Clock, 300 ms wait, alarm |
+| Refresh alarm | `E2 80 03 00 9A` twice, 200 ms apart |
+
+No held write starts after the deadline. Cancellation sends the same release
+pair with fresh cancel events and keeps the command lane until it finishes.
+
+#### Alarm and clock
+
+`adjustable_bed.glideaway_set_alarm` takes `device_id`, `enabled`, optional
+`side`, `time` (required when enabling) and `wake_mode` (`none`, `memory_1`,
+`memory_2`). Disabling needs no time, and every target must be this profile.
+`adjustable_bed.sync_clock` sends only the clock.
+
+```yaml
+action: adjustable_bed.glideaway_set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  enabled: true
+  time: "06:30:00"
+  wake_mode: memory_1
+```
+
+The app's calendar encoding is kept as shipped:
+
+- The clock frame carries year minus 1900, zero-based month, day minus one and
+  hour minus one (midnight becomes `FF`), then minute and second.
+- The alarm frame is `ED 80 03`, hour, minute, weekday bit, wake byte, eight
+  zeros and the checksum. The public hour is the wire hour (0-23); the app's
+  1-12 wheel sends its zero-based index plus AM/PM × 12.
+- For weekday `d` (Sunday 1 to Saturday 7), a time at or before now uses bit
+  `d-1` and a later time bit `d%7`. There is no weekday selector.
+- Wake bytes are `00` (none), `11` (Memory A) and `13` (Memory B). Disabling
+  writes zero fields.
+
+Physical alarm and clock behavior, especially at midnight and weekday
+boundaries, needs real-user confirmation.
+
+#### Notifications
+
+- The massage timer comes from byte 8 of `E7 FE` (length 10 or more), byte 14
+  of `ED FE` (16 or more), byte 19 of `F4 FE` (more than 20), or byte 19 of a
+  fragmented packet starting `F4`. Raw `FF` is zero; otherwise the value is
+  multiplied by ten only when the previous displayed minutes differ from the raw
+  byte, as the app does. The raw value is an attribute.
+- `ED 80` alarm replies use bytes 3-6; the alarm sensor reports enabled, hour,
+  minute and wake mode. Unknown wake values map to none.
+- No incoming checksum is checked. Fragments are buffered per controller,
+  cleared on a recognized frame or disconnect and expired after two seconds.
+
+#### Evidence
+
+Accepted report row068, XAPK set SHA-256
+`7eb30a03349b9d9b9bffc43e2dafdb672c422fdd70e16b3e2c9ec2a55730c315`; see the
+[discovery ledger](../apk-analysis/dispositions/row068-glideaway-motion.md). The
+app leaves combined movement and the light without a release and lets streams
+outlive the page; the integration bounds every hold and releases those too,
+with the same zero frame.
+
+### Scott Living
+
+**App:** Scott Living, `com.keeson.scottlivingrelease`
+
+Bed type `scott_living`, selected manually: it shares the FFE5 service with
+other Keeson beds and has no distinct name. It writes FFE9 and subscribes to
+FFE4. The side byte is always `01`. There is no accepted report; the frames are
+the pre-v5 controller's.
+
+#### Controls
+
+<!-- generated:keeson-scott-living -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Command | Word | Frame |
+|---|---|---|
+| Motor Head Up | `0x00000001` | `E6 FE 16 01 00 00 00 01 03` |
+| Motor Head Down | `0x00000002` | `E6 FE 16 02 00 00 00 01 02` |
+| Motor Feet Up | `0x00000004` | `E6 FE 16 04 00 00 00 01 00` |
+| Motor Feet Down | `0x00000008` | `E6 FE 16 08 00 00 00 01 FC` |
+| Motor Tilt Up | `0x00000010` | `E6 FE 16 10 00 00 00 01 F4` |
+| Motor Tilt Down | `0x00000020` | `E6 FE 16 20 00 00 00 01 E4` |
+| Motor Lumbar Up | `0x00000040` | `E6 FE 16 40 00 00 00 01 C4` |
+| Motor Lumbar Down | `0x00000080` | `E6 FE 16 80 00 00 00 01 84` |
+| Memory 1 | `0x00000100` | `E6 FE 16 00 01 00 00 01 03` |
+| Massage Timer | `0x00000200` | `E6 FE 16 00 02 00 00 01 02` |
+| Massage Foot Up | `0x00000400` | `E6 FE 16 00 04 00 00 01 00` |
+| Massage Head Up | `0x00000800` | `E6 FE 16 00 08 00 00 01 FC` |
+| Zero G | `0x00001000` | `E6 FE 16 00 10 00 00 01 F4` |
+| Memory 2 | `0x00002000` | `E6 FE 16 00 20 00 00 01 E4` |
+| Memory 3 | `0x00004000` | `E6 FE 16 00 40 00 00 01 C4` |
+| Anti Snore | `0x00008000` | `E6 FE 16 00 80 00 00 01 84` |
+| Memory 4 | `0x00010000` | `E6 FE 16 00 00 01 00 01 03` |
+| Light | `0x00020000` | `E6 FE 16 00 00 02 00 01 02` |
+| Massage Head Down | `0x00800000` | `E6 FE 16 00 00 80 00 01 84` |
+| Massage Foot Down | `0x01000000` | `E6 FE 16 00 00 00 01 01 03` |
+| Preset Flat | `0x08000000` | `E6 FE 16 00 00 00 08 01 FC` |
+| Stop | `0x00000000` | `E6 FE 16 00 00 00 00 01 04` |
+<!-- /generated -->
+
+Movement repeats at the configured pulse count and delay (default 10 × 100 ms)
+and always ends with the zero frame. Presets, light and massage are single
+frames. Memory 3 and TV share one word.
+
+### Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 and P2, SIMMONS OKIN
+
+These routes build their E6 (AdjustaMattress P2: big-endian E5) frames through
+this codec and keep the rest of their guides:
+
+- [Malouf legacy OKIN](malouf.md) (`malouf_legacy_okin`): Malouf words, side
+  byte `00`; the configured pulse settings, then the zero frame.
+- [Sleepy's BOX15](sleepys.md) (`sleepys_box15`): the motor byte is the word's
+  first byte, the preset bytes its second and fourth.
+- [AdjustaMattress](adjustamattress.md) (`adjustamattress`): models P1 (E6) and
+  P2 (big-endian E5). Models P3 and P4 send Okin N-frames.
+- [SIMMONS](simmons.md) (`simmons`): names starting `okin` use E6 frames, the
+  `E7 80 01` clock and the `E1 80 03 9B` alarm query; the bed type stays with the
+  Okin N-frame family, whose `05 02` frames its other names use.
 
 ## Notes
 

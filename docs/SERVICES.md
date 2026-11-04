@@ -303,7 +303,7 @@ they are not exposed through `hold_control`.
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
-| [Glideaway Motion / Montion](beds/glideaway-motion.md) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
+| [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide. `leggett_hold_control` remains as an alias limited to this list |
 | [Jordan's Serenity](beds/serenity.md#reachable-commands) | 31 literal app actions | Two-frame release |
 | [Jordan's Tranquil](beds/tranquil.md#reachable-commands) | 30 literal app actions | Two-frame release |
@@ -359,7 +359,7 @@ still work, with their original name checks.
 
 Set each targeted controller's clock to Home Assistant's local time. Supported
 by the [Malouf Base / Lucid Base](beds/malouf-app.md) app profile on its OKIN
-transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/simmons.md#alarms-and-clock), and
+transports, [Glideaway Motion / Montion](beds/keeson.md#alarm-and-clock), [SIMMONS](beds/simmons.md#alarms-and-clock), and
 [Customatic Z-Series](beds/customatic-z-series.md) controllers whose
 manufacturer string enables the alarm page (see
 [`zseries_set_alarm`](#zseries_set_alarm)). Z-Series beds cannot share a call
@@ -384,7 +384,7 @@ enable additional commands.
 | Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer` | [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family) |
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/okin-nframe.md#customatic-family) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/okin-nframe.md#customatic-family) |
-| Glideaway Motion / Montion app | `glideaway_set_alarm` | [Glideaway Motion](beds/glideaway-motion.md#alarm-and-clock) |
+| Glideaway Motion / Montion app | `glideaway_set_alarm` | [Glideaway Motion](beds/keeson.md#alarm-and-clock) |
 | Customatic Z-Series app | `zseries_set_alarm` | [Z-Series](beds/customatic-z-series.md) |
 | SIMMONS app | `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_hold_preset` | [LOGICDATA](beds/jiecang.md#motionrelax-phone-and-tablet) |
@@ -416,7 +416,7 @@ For the explicit MOTION 400/450/500/600 profiles. Accepts `device_id`, `enabled`
 `memory_1`, `memory_2`, default `none`) and optional `side`. Sends HA local RTC,
 then the alarm 300 ms later. Time is the wire 24-hour value; the app sends one
 hour below its 1–12 wheel label. The app's unusual automatic weekday rule and
-RTC offsets are preserved. Read the [calendar details](beds/glideaway-motion.md#alarm-and-clock)
+RTC offsets are preserved. Read the [calendar details](beds/keeson.md#alarm-and-clock)
 before use. `sync_clock` sends only RTC; Refresh alarm queries twice, 200 ms apart.
 Alarm state is reported by a sensor. Hardware semantics remain unverified.
 

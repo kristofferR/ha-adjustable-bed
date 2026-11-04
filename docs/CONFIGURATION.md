@@ -30,7 +30,7 @@ During initial setup, you'll configure basic options like bed type, motor count,
 **Glideaway Motion / Montion app:** Select the explicit MOTION 400, 450, 500 or
 600 app entry matching the app's model selection. Layout, massage and light
 capabilities follow that choice, with a fixed 300 ms refresh interval. No
-advertisement identifies the model. See the [Glideaway guide](beds/glideaway-motion.md).
+advertisement identifies the model. See the [Glideaway guide](beds/keeson.md#glideaway-motion).
 
 **OKIN ORE:** The **Okin ORE (legacy A5 5A)** entry preserves existing legacy
 configurations. The accepted Glideaway Motion app uses a separate protocol. Beds controlled with the current Dynasty Bases or INNOVA apps use

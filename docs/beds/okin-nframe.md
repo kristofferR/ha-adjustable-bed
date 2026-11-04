@@ -534,7 +534,7 @@ Brands using DewertOkin/ORE actuators, from 79 analyzed apps:
   [Sleepy's Elite](sleepys.md)), Nectar Motion, Glory Furniture, Tranquil Sleep,
   Luxe, Ultra
 - **ORE/Glideaway family:** Glideaway Motion (current app:
-  [explicit MOTION 400/450/500/600 profile](glideaway-motion.md)), Symphony
+  [explicit MOTION 400/450/500/600 profile](keeson.md#glideaway-motion)), Symphony
   Sleep, Movita, Dynasty Bases (current app:
   [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](keeson.md#ore-comfort-bed-profiles)),
   Better Living, LevaSleep, American Star, Avanti Bases (current app: explicit
@@ -567,7 +567,7 @@ The 79 apps use one of these protocols:
 | Resident | `com.okin.resident.release` | Flutter |
 | Rize II | `com.okin.bedding.rizeii` | OKIN UUID |
 | Simmons | `com.okin.simmons` | Flutter; own frames, see [SIMMONS app](simmons.md) |
-| Glideaway | `com.ore.bedding.glideawaymontion` | E6 FE 16 on FFE5/FFE9, [explicit Motion app profile](glideaway-motion.md) |
+| Glideaway | `com.ore.bedding.glideawaymontion` | E6 FE 16 on FFE5/FFE9, [explicit Motion app profile](keeson.md#glideaway-motion) |
 | Symphony | `com.ore.bedding.symphony` | FFE5 + Nordic |
 | INNOVA/SFM | `com.ore.sfm` | FFE9/FFE4, little-endian E5 FE 16; see the [INNOVA profile](keeson.md#innova-profile) |
 | OkinSmartComfort | `com.okin.okinsmartcomfort` | OKIN UUID + Nordic |

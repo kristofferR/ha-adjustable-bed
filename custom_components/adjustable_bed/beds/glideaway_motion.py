@@ -1,7 +1,7 @@
 """Glideaway Motion 400/450/500/600, com.ore.bedding.glideawaymontion 1.0.3.
 
 Accepted row068 revision01 proves the E6 FE 16 protocol. This is independent of
-legacy Okin ORE (A5 5A). See docs/beds/glideaway-motion.md for artifact provenance,
+legacy Okin ORE (A5 5A). See docs/beds/keeson.md for artifact provenance,
 the app's calendar quirks, and deliberate safety differences. Hardware unverified.
 """
 

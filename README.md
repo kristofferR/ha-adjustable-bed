@@ -111,7 +111,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
 | 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
-| ✅ [Glideaway Motion / Montion app](docs/beds/glideaway-motion.md) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
+| ✅ [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md); legacy ISleep entries |
 | 🔬 [ISleep](docs/beds/isleep.md) | Explicit com.kaidi_test4 1.6.3 profile, products 129–134, 142, 143 (artifact verified, hardware unverified) |
@@ -138,7 +138,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |
 | ✅ [Remacro](docs/beds/remacro.md) | Slumberland, The Brick, Jerome's |
 | ✅ [Cool Base](docs/beds/coolbase.md) | Cool Base (Keeson with fan) |
-| ✅ [Scott Living](docs/beds/scott-living.md) | Scott Living |
+| ✅ [Scott Living](docs/beds/keeson.md#scott-living) | Scott Living |
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
 | 🧪 [Tempur Curve app](docs/beds/keeson.md#tempur-curve) | Explicit com.ore.tempur app profile; static artifact proven, hardware unverified |
 | 🧪 [Q-Plus Adjustable Remote app](docs/beds/keeson.md#q-plus-adjustable-remote) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |

@@ -33,6 +33,8 @@ Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
 | BOX24 | 7 bytes | No | ❌ | ❌ | ❌ | ❌ | ❌ | 62741523 (OKIN 64-bit) |
 | BOX25 (StarCode or legacy) | 2-20 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
 
+BOX15 sends the nine-byte E6 frame of the [Keeson codec](keeson.md#e6-controller-profiles).
+
 **Protocol Selection:**
 
 - If your device name starts with **"Star25"** and advertises Nordic UART, use BOX25. Auto mode reads Device Information `2A29`: text containing `star` selects StarCode; any other/missing value selects legacy CB25. A manual dialect override is available.
