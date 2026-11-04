@@ -107,9 +107,11 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ Jordan's | [Serenity](docs/beds/okin-nframe.md#jordans-serenity), [Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) |
 | ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
 | ✅ [Adjustable bed (Lumbar)](docs/beds/okin-nframe.md#adjustable-bed-lumbar) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
+| ❓ [eShine E2000 / E3000 / E3100 / E5000](docs/beds/eshine-okin.md) | eShine app (`com.okin.eshine`), explicit products, held presets, massage/light feedback and local alarm (needs testing) |
 | ✅ [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-nframe.md#okin-64-bit) | NORA_CON / NORACON Mattress Firm controllers |
+| ❓ [Good Vibe Sleep](docs/beds/goodvibe.md) | Exact app catalog, remote aliases and independent RM-/HJ- sleep sensors; hardware unverified |
 | 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
 | ✅ [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified; separate from the legacy Okin ORE (A5 5A) bed type |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
@@ -194,6 +196,10 @@ Requires **Home Assistant 2026.9.0 or newer**.
 3. Install/download the latest stable version
 4. Restart Home Assistant
 
+Upgrading from 4.x to v5? Read the [v5 breaking changes](docs/V5_BREAKING_CHANGES.md)
+first. v5 migrates your config entries, and **a Home Assistant backup taken
+before the upgrade is the only way back to 4.x**.
+
 ### Manual
 
 Use a release archive, or check out `main` for the current development
@@ -271,6 +277,9 @@ either the parent device or a side's child device opens the paired card. Both-si
 controls expose shared capabilities; select a side for its additional features.
 The **Match both to** controls copy the selected side's reported positions to the
 other side when both provide the required feedback. This is a one-time move.
+
+Beds without position feedback can show [estimated positions and saved
+positions](docs/ESTIMATED_POSITIONS.md#in-the-card) once calibrated.
 
 See [paired-bed configuration](docs/CONFIGURATION.md#two-independent-frames)
 and [action targeting](docs/SERVICES.md#targeting-a-bed-or-side) for setup and
@@ -371,6 +380,7 @@ show_graphic: true
 show_motors: true
 show_firmness: true
 show_presets: true
+show_saved_positions: true
 show_memory: true
 show_lighting: true
 show_massage: true

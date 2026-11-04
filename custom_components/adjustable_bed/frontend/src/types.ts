@@ -73,6 +73,7 @@ export interface AdjustableBedCardConfig {
   show_motors?: boolean;
   show_firmness?: boolean;
   show_presets?: boolean;
+  show_saved_positions?: boolean;
   show_memory?: boolean;
   show_lighting?: boolean;
   show_massage?: boolean;
@@ -135,6 +136,8 @@ export interface MotorEntity {
   holdLease?: HoldLeaseRoute;
   angle?: string; // sensor.* angle in degrees
   position?: string; // number.* position
+  estimate?: string; // number.* <motor>_position_estimated (travel-time estimate)
+  reference?: string; // button.* set_<motor>_reference
 }
 
 export interface MemorySlot {
@@ -184,6 +187,8 @@ export interface BedEntities {
   utilityNumbers?: string[]; // controller-declared number controls without a card section
   utilitySelects?: string[]; // select.* active app/module surface
   utilityStates?: string[]; // read-only app/device state
+  estimateRemote?: string; // button.* estimate_remote_used
+  savedPositions?: string; // sensor.* saved_positions (whole bed)
 }
 
 // Replaced at build time with the integration version (see build.mjs).

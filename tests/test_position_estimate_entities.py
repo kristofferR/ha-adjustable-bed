@@ -343,3 +343,18 @@ async def test_timed_move_times_only_the_hold(
     ):
         await call(hass, "timed_move", motor="back", direction="up", duration_ms=2000)
     assert hass.states.get(entity_id(hass, "number", "back_position_estimated")).state == "10"
+
+
+async def test_configured_max_angle_reaches_the_card(
+    hass: HomeAssistant, octo_bed: MockConfigEntry
+) -> None:
+    """Only an axis with a configured maximum angle gets the dashed graphic."""
+    from custom_components.adjustable_bed.const import CONF_BACK_MAX_ANGLE
+
+    back = entity_id(hass, "number", "back_position_estimated")
+    assert "max_angle" not in hass.states.get(back).attributes
+    hass.config_entries.async_update_entry(octo_bed, options={CONF_BACK_MAX_ANGLE: 60.0})
+    await hass.async_block_till_done()
+    assert hass.states.get(back).attributes["max_angle"] == 60.0
+    legs = hass.states.get(entity_id(hass, "number", "legs_position_estimated"))
+    assert "max_angle" not in legs.attributes

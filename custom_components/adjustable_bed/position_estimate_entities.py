@@ -22,7 +22,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import CONF_BACK_MAX_ANGLE, CONF_LEGS_MAX_ANGLE, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
@@ -37,6 +37,15 @@ from .position_estimate import (
     async_recall_position,
     position_estimates,
 )
+
+# The card draws a dashed estimate only for an axis whose maximum angle the
+# user configured; percent of travel is not an angle otherwise.
+MAX_ANGLE_OPTIONS = {
+    "back": CONF_BACK_MAX_ANGLE,
+    "head": CONF_BACK_MAX_ANGLE,
+    "legs": CONF_LEGS_MAX_ANGLE,
+    "feet": CONF_LEGS_MAX_ANGLE,
+}
 
 ESTIMATED_MOTOR_ICONS = {
     "back": "mdi:human-handsup",
@@ -131,6 +140,11 @@ class EstimatedPositionNumber(_ListensToEstimates, AdjustableBedEntity, NumberEn
             full_travel_down_s=estimate.down_s,
             moves_since_reference=estimate.moves_since_reference,
         )
+        option = MAX_ANGLE_OPTIONS.get(self._motor)
+        entry = self._coordinator.entry
+        configured = None if option is None else entry.options.get(option, entry.data.get(option))
+        if isinstance(configured, int | float) and not isinstance(configured, bool):
+            attributes["max_angle"] = float(configured)
         return attributes
 
     async def async_set_native_value(self, value: float) -> None:

@@ -66,6 +66,18 @@ To recalibrate, open **Estimated positions** again and keep **Measure travel
 times now** ticked. Saved positions keep their percentages. To turn the feature
 off, clear every motor.
 
+## Physical Validation
+
+Hardware status: unverified. Proven offline: tests cover the timing arithmetic
+in both directions, STOP and cancellation, failed writes and lost links,
+invalidation by presets and **I used the remote**, restoring after a restart or reload,
+saved positions, recall, lowering to flat, independent paired sides and every
+calibration step, including a real OCTO Standard entry. Needs real-bed reports
+on OCTO Standard and Richmat beds: how close a recall lands to the saved
+position, how fast the estimate drifts over many short moves, and whether
+calibrating by tapping is accurate enough. Report the target, what the bed
+actually did and your calibrated times in the v5 beta feedback issue.
+
 ## States
 
 | State | Meaning | Entity state | Saved positions and sliders |
@@ -106,6 +118,33 @@ Flat is the only reference. To recover:
 
 Reloading the integration, for example after changing options, keeps tracking
 estimates tracking. A Home Assistant restart does not.
+
+## In the Card
+
+The Adjustable Bed card shows estimates in its **Position** rows as "≈ 42%", with
+an **Estimated** chip on the section heading. When you have set a maximum angle
+for the back or legs in the options, the bed graphic draws the estimate dashed
+and translucent, so it never looks like measured feedback.
+
+An alert at the top of the card explains when an estimate cannot be trusted:
+
+- **Calibrate now**, when estimated positions are on but not calibrated. It
+  opens Settings, where the calibration runs.
+- **Position unconfirmed after restart**, with the last estimate, plus **It
+  hasn't moved** and **Set reference…**.
+- **Position unknown**, with the reason and **Set reference…**.
+
+**Set reference…** opens a dialog: the bed is flat now, lower to flat and then
+confirm, or one motor only. The bed only moves when you choose to lower it, and
+you confirm flat afterwards.
+
+The **Saved positions** section lists your saved positions. Tap one to recall
+it. Tiles are disabled while a side they cover is not tracking. **Save…** names
+the current position and offers the optional button entity. **Edit** lets you
+rename, update to the current position, show or hide the button, or delete.
+On a paired bed, the **Both** tab saves both sides and lists every position
+with "Both sides", "Left only" or "Right only"; the **Left** and **Right** tabs
+save, list and edit only the positions saved for their side. You can hide the section in the card editor.
 
 ## Entities
 

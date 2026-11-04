@@ -1517,3 +1517,69 @@ test("SleepEase exposes held motors, massage, lights, sensors and the local chil
   expect(bed.utilityStates).toEqual(["sensor.hr", "binary_sensor.flag"]);
   expect(bed.utilitySelects).toEqual(["select.child"]);
 });
+
+test("Good Vibe Sleep exposes app controls, side selection and independent sleep state", () => {
+  const hass = hassWith([
+    entry("button.app_action", "goodvibe_action"),
+    entry("button.monitor", "goodvibe_action"),
+    entry("select.side", "goodvibe_side"),
+    entry("select.light_duration", "goodvibe_light_duration"),
+    entry("select.countdown", "goodvibe_massage_timer"),
+    entry("number.snore", "goodvibe_snore_count"),
+    entry("sensor.status", "goodvibe_status"),
+    entry("sensor.live", "goodvibe_l_heart"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.utility).toEqual(["button.app_action", "button.monitor"]);
+  expect(bed.utilityStates).toEqual(["sensor.status", "sensor.live"]);
+  expect(bed.controlSide).toBe("select.side");
+  expect(bed.utilitySelects).toEqual(["select.light_duration", "select.countdown"]);
+  expect(bed.utilityNumbers).toEqual(["number.snore"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("eShine product actions and feedback appear on the card and retain side routing", () => {
+  const hass = hassWith([
+    entry("button.chord", "eshine_okin_flat_zero_g", "left"),
+    entry("button.strength", "eshine_okin_massage_head_strength", "left"),
+    entry("sensor.massage", "eshine_okin_massage", "left"),
+    entry("sensor.alarm", "eshine_okin_alarm", "left"),
+    entry("button.other", "eshine_okin_query_state", "right"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "left");
+  expect(bed.utility).toEqual(["button.chord"]);
+  expect(bed.utilityStates).toEqual(["sensor.alarm"]);
+  expect(bed.massage.buttons).toEqual(["button.strength"]);
+  expect(bed.massage.states).toEqual(["sensor.massage"]);
+  expect(bedEntitiesForDevice(hass, "right").utility).toEqual(["button.other"]);
+});
+
+
+test("eShine motor hold metadata uses one bounded controller stream per physical side", () => {
+  const hass = hassWith([
+    entry("cover.left_head", "head", "left"),
+    entry("cover.left_feet", "feet", "left"),
+    entry("cover.left_pillow", "pillow", "left"),
+    entry("cover.right_head", "head", "right"),
+  ]);
+  for (const axis of ["head", "feet", "pillow"]) {
+    const id = `cover.left_${axis}`;
+    hass.states[id] = {
+      entity_id: id, state: "open", last_changed: "", last_updated: "",
+      attributes: {
+        held_control_up: `${axis}_up`, held_control_down: `${axis}_down`,
+        held_stop_scope: "motor", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+      },
+    };
+  }
+  const bed = bedEntitiesForDevice(hass, "left");
+  expect(bed.motors).toHaveLength(3);
+  for (const motor of bed.motors) {
+    expect(motor.deviceId).toBe("left");
+    expect(motor.heldControls).toEqual({
+      up: { control: `${motor.key}_up`, startDelayMs: 0, releaseDelayMs: 0 },
+      down: { control: `${motor.key}_down`, startDelayMs: 0, releaseDelayMs: 0 },
+    });
+  }
+  expect(bedEntitiesForDevice(hass, "right").motors[0].heldControls).toBeUndefined();
+});
