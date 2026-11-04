@@ -3,10 +3,9 @@
 ``scripts/wire_snapshot.py`` drives each bed type, protocol variant and app
 profile route through the real controller factory and records the characteristic,
 bytes, write mode, order and virtual timing of every GATT write, subscription,
-read and pairing. The committed snapshot and its replayed GATT layouts are the
-contract for the v5 protocol-split refactors (#742): a refactor that moves code
-between codecs and profiles must keep this test green without touching either
-file. A deliberate wire change (a bug fix) regenerates them in the same PR:
+read and pairing, on stored GATT layouts. The committed snapshot is the contract
+for the v5 protocol-split refactors (#742): a refactor that moves code between
+codecs and profiles must keep this test green without touching it. A deliberate wire change (a bug fix) regenerates them in the same PR:
 
     uv run --no-sync python scripts/wire_snapshot.py
 """
@@ -84,6 +83,15 @@ async def test_virtual_clock_orders_sleeps_and_timeouts() -> None:
         assert not budget.expired()
         async with asyncio.timeout_at(None):
             await asyncio.sleep(0.1)
+
+        # An inner timeout that fires first is handled before an outer one can fire.
+        inner_fired = False
+        async with asyncio.timeout(1):
+            try:
+                await asyncio.wait_for(asyncio.Event().wait(), 0.08)
+            except TimeoutError:
+                inner_fired = True
+        assert inner_fired
 
         # A pending background sleep does not delay a timeout past its own deadline.
         background = asyncio.ensure_future(asyncio.sleep(5))
