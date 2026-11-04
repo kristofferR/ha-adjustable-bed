@@ -22,7 +22,7 @@ The original comparison and artifact acceptance remain preserved separately.
 The addendum itself does not grant whole-unit implementation acceptance;
 whole-unit and affected implementation reviews were accepted separately.
 
-The public controller/profile contract is [AdjustableM5X4](../beds/starcode-abm5-4.md).
+The public controller/profile contract is [AdjustableM5X4](../beds/okin-nframe.md#adjustablem5x4).
 Only this standalone accepted app is covered. Related protocol names, UUIDs and
 checksum helpers do not establish whole-controller equivalence.
 

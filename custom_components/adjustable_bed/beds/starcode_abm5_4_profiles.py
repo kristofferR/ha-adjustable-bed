@@ -9,6 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
+from ..codec import okin_nframe as codec
+from ..profiles.okin_nframe import STARCODE_ABM5_4_PROFILES
+
 
 @dataclass(frozen=True, slots=True)
 class RetainedAppState:
@@ -73,33 +76,12 @@ STATE_KEYS: Final = tuple("raw_" + field for field in FIELDS) + (
     "automatic_white_flag",
 )
 
+# The 40-bit and 64-bit key frames are the ``STARCODE_ABM5_4_PROFILES`` data;
+# these are the selectors' other frames, as the app's builders emit them.
+KEEP_CONNECT: Final = bytes.fromhex("5a0b00a5")
+_BOX25_LIGHT_SWITCHES: Final = {"turnonUnderbedLighting": 1, "turnoffUnderbedLighting": 0}
 FRAMES: Final[dict[str, dict[str, str]]] = {
-    "none": {
-        "headUp": "05020000000100",
-        "headDown": "05020000000200",
-        "footUp": "05020000000400",
-        "footDown": "05020000000800",
-        "unionUp": "05020000000500",
-        "unionDown": "05020000000a00",
-        "stop": "05020000000000",
-        "flatPosition": "05020800000000",
-        "tv": "05020000400000",
-        "lounge": "05020000200000",
-        "zeroGravity": "05020000100000",
-        "anti": "05020000800000",
-        "m1": "05020001000000",
-        "saveM1": "05020001000000",
-        "saveTv": "05028000400000",
-        "saveLounge": "05028000200000",
-        "saveZeroGravity": "05028000100000",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "underbedLighting": "08020002000000000000",
-        "turnonUnderbedLighting": "05020002000000",
-        "turnoffUnderbedLighting": "05020002000000",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
-    },
+    "none": {},
     "BOX15": {
         "headUp": "e6fe16010000000004",
         "headDown": "e6fe16020000000003",
@@ -118,40 +100,9 @@ FRAMES: Final[dict[str, dict[str, str]]] = {
         "saveTv": "e6fe160040000000c5",
         "saveLounge": "e6fe160020000000e5",
         "saveZeroGravity": "e6fe160010000000f5",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
         "underbedLighting": "e6fe16000002000003",
-        "turnonUnderbedLighting": "05020002000000",
-        "turnoffUnderbedLighting": "05020002000000",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
     },
-    "BOX24": {
-        "headUp": "05020000000100",
-        "headDown": "05020000000200",
-        "footUp": "05020000000400",
-        "footDown": "05020000000800",
-        "unionUp": "05020000000500",
-        "unionDown": "05020000000a00",
-        "stop": "05020000000000",
-        "flatPosition": "05020800000000",
-        "tv": "05020000400000",
-        "lounge": "05020000200000",
-        "zeroGravity": "05020000100000",
-        "anti": "05020000800000",
-        "m1": "05020001000000",
-        "saveM1": "05020001000000",
-        "saveTv": "05028000400000",
-        "saveLounge": "05028000200000",
-        "saveZeroGravity": "05028000100000",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "underbedLighting": "08020002000000000000",
-        "turnonUnderbedLighting": "05020002000000",
-        "turnoffUnderbedLighting": "05020002000000",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
-    },
+    "BOX24": {},
     "BOX1220": {
         "headUp": "a55ade00002001",
         "headDown": "a55add00002002",
@@ -170,163 +121,13 @@ FRAMES: Final[dict[str, dict[str, str]]] = {
         "saveTv": "a55a7d00002062",
         "saveLounge": "a55a7e00002061",
         "saveZeroGravity": "a55a7f00002060",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "headStrengthAdd": "05020000080000",
-        "headStrengthReduce": "05020080000000",
-        "footStrengthAdd": "05020000040000",
-        "footStrengthReduce": "05020100000000",
-        "waveAdd": "05021000000000",
-        "waveReduce": "05020400000000",
         "underbedLighting": "a55a5f00002080",
-        "turnonUnderbedLighting": "05020002000000",
-        "turnoffUnderbedLighting": "05020002000000",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
     },
-    "BOX1221": {
-        "headUp": "05020000000100",
-        "headDown": "05020000000200",
-        "footUp": "05020000000400",
-        "footDown": "05020000000800",
-        "unionUp": "05020000000500",
-        "unionDown": "05020000000a00",
-        "stop": "05020000000000",
-        "flatPosition": "05020800000000",
-        "tv": "05020000400000",
-        "lounge": "05020000200000",
-        "zeroGravity": "05020000100000",
-        "anti": "05020000800000",
-        "m1": "05020001000000",
-        "saveM1": "05020001000000",
-        "saveTv": "05028000400000",
-        "saveLounge": "05028000200000",
-        "saveZeroGravity": "05028000100000",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "underbedLighting": "08020002000000000000",
-        "turnonUnderbedLighting": "05020002000000",
-        "turnoffUnderbedLighting": "05020002000000",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
-    },
-    "BOX2422": {
-        "headUp": "05020000000100",
-        "headDown": "05020000000200",
-        "footUp": "05020000000400",
-        "footDown": "05020000000800",
-        "unionUp": "05020000000500",
-        "unionDown": "05020000000a00",
-        "stop": "05020000000000",
-        "flatPosition": "05020800000000",
-        "tv": "05020000400000",
-        "lounge": "05020000200000",
-        "zeroGravity": "05020000100000",
-        "anti": "05020000800000",
-        "m1": "05020001000000",
-        "saveM1": "05020001000000",
-        "saveTv": "05028000400000",
-        "saveLounge": "05028000200000",
-        "saveZeroGravity": "05028000100000",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "underbedLighting": "08020002000000000000",
-        "turnonUnderbedLighting": "05020002000000",
-        "turnoffUnderbedLighting": "05020002000000",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
-    },
-    "BOX2442": {
-        "headUp": "05020000000100",
-        "headDown": "05020000000200",
-        "footUp": "05020000000400",
-        "footDown": "05020000000800",
-        "unionUp": "05020000000500",
-        "unionDown": "05020000000a00",
-        "stop": "05020000000000",
-        "flatPosition": "05020800000000",
-        "tv": "05020000400000",
-        "lounge": "05020000200000",
-        "zeroGravity": "05020000100000",
-        "anti": "05020000800000",
-        "m1": "05020001000000",
-        "saveM1": "05020001000000",
-        "saveTv": "05028000400000",
-        "saveLounge": "05028000200000",
-        "saveZeroGravity": "05028000100000",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "underbedLighting": "08020002000000000000",
-        "turnonUnderbedLighting": "05020002000000",
-        "turnoffUnderbedLighting": "05020002000000",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
-    },
-    "BOX3633": {
-        "headUp": "05020000000100",
-        "headDown": "05020000000200",
-        "footUp": "05020000000400",
-        "footDown": "05020000000800",
-        "unionUp": "05020000000500",
-        "unionDown": "05020000000a00",
-        "stop": "05020000000000",
-        "flatPosition": "05020800000000",
-        "tv": "05020000400000",
-        "lounge": "05020000200000",
-        "zeroGravity": "05020000100000",
-        "anti": "05020000800000",
-        "m1": "05020001000000",
-        "saveM1": "05020001000000",
-        "saveTv": "05028000400000",
-        "saveLounge": "05028000200000",
-        "saveZeroGravity": "05028000100000",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "headStrengthAdd": "05020000080000",
-        "headStrengthReduce": "05020080000000",
-        "footStrengthAdd": "05020000040000",
-        "footStrengthReduce": "05020100000000",
-        "waveAdd": "05021000000000",
-        "waveReduce": "05020400000000",
-        "underbedLighting": "05020002000000",
-        "turnonUnderbedLighting": "08020000000000000040",
-        "turnoffUnderbedLighting": "08020000000000000080",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
-    },
-    "BOX25": {
-        "headUp": "05020000000100",
-        "headDown": "05020000000200",
-        "footUp": "05020000000400",
-        "footDown": "05020000000800",
-        "unionUp": "05020000000500",
-        "unionDown": "05020000000a00",
-        "stop": "05020000000000",
-        "flatPosition": "05020800000000",
-        "tv": "05020000400000",
-        "lounge": "05020000200000",
-        "zeroGravity": "05020000100000",
-        "anti": "05020000800000",
-        "m1": "05020001000000",
-        "saveM1": "05020001000000",
-        "saveTv": "05028000400000",
-        "saveLounge": "05028000200000",
-        "saveZeroGravity": "05028000100000",
-        "resetMemory": "05028800000000",
-        "massageOnOff": "05020008000000",
-        "headStrengthAdd": "05020000080000",
-        "headStrengthReduce": "05020080000000",
-        "footStrengthAdd": "05020000040000",
-        "footStrengthReduce": "05020100000000",
-        "waveAdd": "05021000000000",
-        "waveReduce": "05020400000000",
-        "underbedLighting": "08020002000000000000",
-        "turnonUnderbedLighting": "04e001010000",
-        "turnoffUnderbedLighting": "04e001000000",
-        "change2White": "05020002000400",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "00b0",
-    },
+    "BOX1221": {},
+    "BOX2422": {},
+    "BOX2442": {},
+    "BOX3633": {},
+    "BOX25": {},
     "BOX25_STAR": {
         "headUp": "5a0103103000a5",
         "headDown": "5a0103103001a5",
@@ -425,18 +226,30 @@ FIRMWARE_UUID: Final = "00002a28-0000-1000-8000-00805f9b34fb"
 
 def build_frame(selector: str, action: str, value: int = 0) -> bytes:
     validate_selector(selector)
+    star = selector == "BOX25_STAR"
     if action in ("changeMassageTime", "changeLightBrightness"):
         maximum = 255
         if type(value) is not int or not 0 <= value <= maximum:
             raise ValueError("Input is outside the private one-byte builder domain")
         parameter = 7 if action == "changeMassageTime" else 0
-        if selector == "BOX25_STAR":
+        if star:
             return bytes((0x5A, 0xE0, 4, parameter, value, 0, 0, 0xA5))
-        return bytes((4, 0xE0, parameter, value, 0, 0))
-    try:
-        return bytes.fromhex(FRAMES[selector][action])
-    except KeyError as err:
-        raise ValueError("Action is unreachable for this command selector") from err
+        return codec.extended(parameter, value)
+    if literal := FRAMES[selector].get(action):
+        return bytes.fromhex(literal)
+    if not star:
+        if action == "keepConnect":
+            return KEEP_CONNECT
+        if action == "queryMassage":
+            return codec.request(0xB0)
+        if selector == "BOX25" and action in _BOX25_LIGHT_SWITCHES:
+            return codec.extended(0x01, _BOX25_LIGHT_SWITCHES[action])
+    profile = STARCODE_ABM5_4_PROFILES.get(selector)
+    if profile is not None and action in profile.keys:
+        return codec.frame40(profile.keys[action])
+    if profile is not None and action in profile.long_keys:
+        return codec.frame(profile.long_keys[action], 8)
+    raise ValueError("Action is unreachable for this command selector")
 
 
 def initial_fields() -> dict[str, int | bool]:

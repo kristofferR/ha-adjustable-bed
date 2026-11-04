@@ -105,7 +105,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [AdjustaMattress](docs/beds/adjustamattress.md) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
 | ⚠️ [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
 | ✅ Jordan's | [Serenity](docs/beds/serenity.md), [Tranquil](docs/beds/tranquil.md) |
-| ✅ [SIMMONS](docs/beds/simmons.md) | SIMMONS app, regular and inclined beds |
+| ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
 | ✅ [Adjustable bed (Lumbar)](docs/beds/adjustable-lumbar.md) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
 | ✅ [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
@@ -126,10 +126,10 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [BedTech](docs/beds/richmat.md#bedtech) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | 🧪 [BedSense app](docs/beds/ff_frame.md#bedsense) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
-| 🧪 [OKIN SleepEase](docs/beds/doublesleep.md) | DoubleSleep / XiaoBao and sensor-only XiaoBao Only; artifact-proven, hardware unverified |
+| 🧪 [OKIN SleepEase](docs/beds/okin-nframe.md#okin-sleepease) | DoubleSleep / XiaoBao and sensor-only XiaoBao Only; artifact-proven, hardware unverified |
 | 🧪 [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, hardware unverified |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's BOX15 / BOX24 / BOX25 and the explicit Sleepy's Elite app profile |
-| ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/starcode-abm5-4.md); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |
+| ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/okin-nframe.md#adjustablem5x4); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |
 | 🧪 [Adjustable Comfort M1X12 app](docs/beds/starcode-m1x12.md) | Explicit CB25, F23 or kneading app profile, with up to two explicitly configured M1X12 ELEVATE accessories |
 | ✅ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | [Caresse / Werkmeister](docs/beds/vibradorm_app.md), [VMAT](docs/beds/vmat.md), [V-MAT Basic / CBI / XT-Box](docs/beds/vmatbasic.md) |
@@ -157,7 +157,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Motion Bed](docs/beds/ff_frame.md#motion-bed) | QMS/SealyMF and TL beds, air and thermal controls |
 | ✅ [FurniMove / OKIN Smart Remote](docs/beds/furnimove.md) | App handset layouts, including RF ECO BT adjustable-bed receivers |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-nframe.md#rf-eco-bt-stair-lift) | Elda BTH / MEGAMAT staircase actuator |
-| ✅ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF34/RF6707 handset beds (new RF1058 setups use FurniMove) |
+| ✅ [Okin DOT](docs/beds/okin-nframe.md#okin-dot) | DewertOkin RF34/RF6707 handset beds (new RF1058 setups use FurniMove) |
 
 ✅ means supported by the integration. 🧪 marks app behavior implemented from
 accepted artifact evidence while hardware remains unverified. Each linked guide

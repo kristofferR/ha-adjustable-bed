@@ -2,11 +2,14 @@
 
 Feedback is a delta: callers retain fields from other domains. Short frames are
 ignored safely instead of reproducing the application's out-of-bounds errors.
+Legacy-dialect frames are Okin N-frames (``codec/okin_nframe.py``).
 """
 
 from collections.abc import Mapping
 from datetime import datetime
 from typing import Final
+
+from ..codec import okin_nframe
 
 type StateValue = str | int | float | bool | None | list[StateValue] | dict[str, StateValue]
 
@@ -32,22 +35,24 @@ def manufacturer_dialect(data: bytes) -> str:
 
 def normal_packet(key: int, dialect: str) -> bytes:
     """Preserve the low 32 bits, including negative source integers."""
-    payload = (key & 0xFFFFFFFF).to_bytes(4, "big")
-    return b"\x5a\x01" + payload + b"\xa5" if _is_star(dialect) else b"\x05\x02" + payload + b"\x00"
+    if not _is_star(dialect):
+        return okin_nframe.frame40(key & 0xFFFFFFFF)
+    return b"\x5a\x01" + (key & 0xFFFFFFFF).to_bytes(4, "big") + b"\xa5"
 
 
 def long_normal_packet(key: int) -> bytes:
-    """Legacy light on/off uses the separate ten-byte builder."""
-    return b"\x08\x02\x00\x00\x00\x00" + (key & 0xFFFFFFFF).to_bytes(4, "big")
+    """Legacy light on/off uses the separate ten-byte builder, a 64-bit Okin N-frame."""
+    return okin_nframe.frame(key & 0xFFFFFFFF, 8)
 
 
 def extended_packet(key: int, value: int, dialect: str) -> bytes:
-    payload = bytes((key & 0xFF, value & 0xFF, 0, 0))
-    return b"\x5a\xe0\x04" + payload + b"\xa5" if _is_star(dialect) else b"\x04\xe0" + payload
+    if not _is_star(dialect):
+        return okin_nframe.extended(key & 0xFF, value & 0xFF)
+    return b"\x5a\xe0\x04" + bytes((key & 0xFF, value & 0xFF, 0, 0)) + b"\xa5"
 
 
 def query_packet(dialect: str) -> bytes:
-    return b"\x5a\xb0\x00\xa5" if _is_star(dialect) else b"\x00\xb0"
+    return b"\x5a\xb0\x00\xa5" if _is_star(dialect) else okin_nframe.request(0xB0)
 
 
 def clock_packet(local_time: datetime) -> bytes:

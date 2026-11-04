@@ -76,7 +76,7 @@ routes, dialogs, loading widgets, debug formatting and operating-system scan UI
 are not copied into HA; their reachable bed commands and HA Bluetooth setup,
 proxy selection and reconnect infrastructure remain supported.
 
-The [protocol and usage guide](../../beds/doublesleep.md) describes controls,
+The [protocol and usage guide](../../beds/okin-nframe.md#okin-sleepease) describes controls,
 services, returned state and deferred real-user checks after beta/release.
 
 ## Reconciled totals

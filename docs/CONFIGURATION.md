@@ -328,7 +328,7 @@ controller-specific choices are documented here:
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Auto, StarCode, Legacy CB25 |
 | [SBI](beds/keeson.md#protocol-variants) / [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
 | [OKIN CB24](beds/okin-nframe.md#cb24-preset-safety) | Legacy/CBNew and specific SmartBed profiles |
-| [Okin DOT](beds/okin-dot.md) / [Okin 64-bit](beds/okin-64bit.md) | Handset or transport-specific selection |
+| [Okin DOT](beds/okin-nframe.md#okin-dot) / [Okin 64-bit](beds/okin-64bit.md) | Handset or transport-specific selection |
 
 ### Keeson Variants
 
@@ -448,7 +448,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
 | Sleepy's Elite app | [Explicit app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile): select the app's control-box selector independently for each physical receiver. The existing BOX15, BOX24 and BOX25 profiles remain available. |
-| OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/doublesleep.md): select the saved app model independently of the advertisement-selected P1/P2/P3 driver. Keep each physical receiver's settings separate. Sensor sides do not select motor halves. |
+| OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/okin-nframe.md#okin-sleepease): select the saved app model independently of the advertisement-selected P1/P2/P3 driver. Keep each physical receiver's settings separate. Sensor sides do not select motor halves. |
 | Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/keeson.md#ore-comfort-bed-profiles), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
 | Richmat | [RMControl](beds/richmat.md#rmcontrol): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps): app and model. |
@@ -462,11 +462,11 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
 | Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | [Exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
-| SIMMONS | [Regular/inclined bed and packet format](beds/simmons.md). |
+| SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/adjustamattress.md). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/adjustable-lumbar.md). |
-| AdjustableM5X4 / M5X5 | [M5X4](beds/starcode-abm5-4.md): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
+| AdjustableM5X4 / M5X5 | [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
 | Limoss | [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. |
 | FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/limoss.md#fsm-relax). |
@@ -482,7 +482,7 @@ Choose the app your phone uses, for example **Revive Control app (Richmat)**. Sh
 
 ### SIMMONS app profile
 
-Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it. See [SIMMONS](beds/simmons.md).
+Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it. See [SIMMONS](beds/okin-nframe.md#simmons).
 
 ### Eshine app profile
 
@@ -529,7 +529,7 @@ Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). For 
 
 ### AdjustableM5X4 app selectors
 
-Choose the AdjustableM5X4 app profile explicitly. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings. See the [complete selector and capability contract](beds/starcode-abm5-4.md).
+Choose the AdjustableM5X4 app profile explicitly. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings. See the [complete selector and capability contract](beds/okin-nframe.md#adjustablem5x4).
 
 ### Vibradorm guided setup and migration
 

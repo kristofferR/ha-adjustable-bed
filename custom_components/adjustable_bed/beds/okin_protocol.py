@@ -1,8 +1,8 @@
 """Okin command-word helpers for the routes not yet on ``codec/okin_nframe.py``.
 
 The 32-bit routes (Okimat, DewertOkin, Customatic, Leggett Okin, RF ECO BT)
-frame through the codec. The 40-bit and 96-bit routes still build their
-frames here until they move onto it (#759).
+frame through the codec, as do the 40-bit routes. The 96-bit routes still build
+their frames here until they move onto it (#759).
 """
 
 from __future__ import annotations

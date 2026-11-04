@@ -7,10 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
-from custom_components.adjustable_bed.beds.okin_cb24 import (
-    OkinCB24Commands,
-    OkinCB24Controller,
-)
+from custom_components.adjustable_bed.beds.okin_cb24 import OkinCB24Controller
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CB24,
     MANUFACTURER_ID_OKIN,
@@ -27,10 +24,13 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.profiles.okin_nframe import OKIN_CB24
 from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
     is_valid_variant_for_bed_type,
 )
+
+KEYS = OKIN_CB24.keys
 
 
 def _make_factory_coordinator(hass) -> SimpleNamespace:
@@ -57,21 +57,21 @@ class TestOkinCB24Controller:
         coordinator_default = MagicMock()
         coordinator_default.address = "AA:BB:CC:DD:EE:FF"
         controller_default = OkinCB24Controller(coordinator_default)
-        assert controller_default._build_command(OkinCB24Commands.PRESET_FLAT) == bytes(
+        assert controller_default._build_command(KEYS["flat"]) == bytes(
             [0x05, 0x02, 0x08, 0x00, 0x00, 0x00, 0x00]
         )
 
         coordinator_bed_a = MagicMock()
         coordinator_bed_a.address = "AA:BB:CC:DD:EE:FF"
         controller_bed_a = OkinCB24Controller(coordinator_bed_a, bed_selection=0xAA)
-        assert controller_bed_a._build_command(OkinCB24Commands.MASSAGE_ALL_TOGGLE) == bytes(
+        assert controller_bed_a._build_command(KEYS["massage_toggle"]) == bytes(
             [0x05, 0x02, 0x00, 0x00, 0x01, 0x00, 0xAA]
         )
 
     def test_per_call_side_binding_preserves_configured_default(self) -> None:
         """Legacy CB24 selects A/B/broadcast without changing standalone bytes."""
         controller = OkinCB24Controller(MagicMock(), bed_selection=0x00)
-        command = OkinCB24Commands.PRESET_FLAT
+        command = KEYS["flat"]
 
         legacy = controller._build_command(command)
         assert controller.bind_side(SIDE_LEFT)._build_command(command)[-1] == 0xAA
@@ -92,7 +92,7 @@ class TestOkinCB24Controller:
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_CB27NEW)
 
-        assert controller._build_motor_command(OkinCB24Commands.MOTOR_HEAD_UP) == bytes(
+        assert controller._build_motor_command(KEYS["head_up"]) == bytes(
             [0x2A, 0x00, 0x00, 0x01, 0x01, 0x04, 0x01, 0x00, 0x00, 0x00]
         )
         assert controller._build_stop_command() == bytes([0xAA, 0x00, 0x00, 0x01, 0x02, 0x00])
@@ -103,13 +103,13 @@ class TestOkinCB24Controller:
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_CB27NEW)
 
-        assert controller._build_preset_command(OkinCB24Commands.PRESET_FLAT) == bytes(
+        assert controller._build_preset_command(KEYS["flat"]) == bytes(
             [0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, 0x09]
         )
-        assert controller._build_preset_command(OkinCB24Commands.PRESET_ZERO_G) == bytes(
+        assert controller._build_preset_command(KEYS["zero_g"]) == bytes(
             [0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, 0x01]
         )
-        assert controller._build_preset_command(OkinCB24Commands.PRESET_MEMORY_1) == bytes(
+        assert controller._build_preset_command(KEYS["memory_1"]) == bytes(
             [0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, 0x02]
         )
 
@@ -121,7 +121,7 @@ class TestOkinCB24Controller:
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_CB27NEW)
         controller.write_command = AsyncMock()
 
-        await controller._send_preset(OkinCB24Commands.PRESET_ZERO_G)
+        await controller._send_preset(KEYS["zero_g"])
 
         controller.write_command.assert_awaited_once_with(
             bytes([0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, 0x01]),
@@ -135,10 +135,10 @@ class TestOkinCB24Controller:
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_OLD)
         controller.write_command = AsyncMock()
 
-        await controller._send_preset(OkinCB24Commands.PRESET_FLAT)
+        await controller._send_preset(KEYS["flat"])
 
         controller.write_command.assert_awaited_once_with(
-            controller._build_command(OkinCB24Commands.PRESET_FLAT),
+            controller._build_command(KEYS["flat"]),
         )
 
     @pytest.mark.asyncio
@@ -149,10 +149,10 @@ class TestOkinCB24Controller:
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_CB24)
         controller.write_command = AsyncMock()
 
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+        await controller._send_preset(KEYS["memory_1"])
 
         controller.write_command.assert_awaited_once_with(
-            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+            controller._build_command(KEYS["memory_1"]),
         )
 
     @pytest.mark.asyncio
@@ -166,11 +166,11 @@ class TestOkinCB24Controller:
         )
         controller.write_command = AsyncMock()
 
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+        await controller._send_preset(KEYS["memory_1"])
+        await controller._send_preset(KEYS["memory_1"])
+        await controller._send_preset(KEYS["memory_1"])
 
-        expected_call = call(controller._build_command(OkinCB24Commands.PRESET_MEMORY_1))
+        expected_call = call(controller._build_command(KEYS["memory_1"]))
         assert controller.write_command.await_args_list == [expected_call] * 3
 
     @pytest.mark.asyncio
@@ -181,11 +181,11 @@ class TestOkinCB24Controller:
         controller = OkinCB24Controller(coordinator)
         controller.write_command = AsyncMock()
 
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+        await controller._send_preset(KEYS["memory_1"])
 
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
         controller.write_command.assert_awaited_once_with(
-            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+            controller._build_command(KEYS["memory_1"]),
         )
 
     @pytest.mark.asyncio
@@ -308,10 +308,10 @@ class TestOkinCB24FactoryProfiles:
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
         controller.write_command = AsyncMock()
 
-        await controller._send_preset(OkinCB24Commands.PRESET_ZERO_G)
+        await controller._send_preset(KEYS["zero_g"])
 
         controller.write_command.assert_awaited_once_with(
-            controller._build_command(OkinCB24Commands.PRESET_ZERO_G),
+            controller._build_command(KEYS["zero_g"]),
         )
 
     @pytest.mark.asyncio

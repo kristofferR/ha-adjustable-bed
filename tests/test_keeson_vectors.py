@@ -23,7 +23,6 @@ from custom_components.adjustable_bed.beds import (
     scott_living,
     sleepys,
 )
-from custom_components.adjustable_bed.beds import simmons_protocol as simmons
 from custom_components.adjustable_bed.beds.cluster033 import AppController
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import BED_TYPE_KEESON, KEESON_VARIANTS, VARIANT_AUTO
@@ -42,7 +41,6 @@ E6_CONTROLLERS = frozenset(
         "malouf_legacy_okin",
         "sleepys_box15",
         "scott_living",
-        "simmons_okin",
         "adjustamattress",
         "adjustamattress_p2",
         "sbi",
@@ -86,7 +84,6 @@ def _decode(data: bytes) -> bytes:
         codec.STATUS_QUERY,
         codec.ALARM_DISMISS,
         codec.ALARM_QUERY,
-        codec.ALARM_RECORDS_QUERY,
     ):
         return data
     if data[:2] == b"\xef\x02":
@@ -227,10 +224,6 @@ def _e6_census(key: str) -> set[bytes]:
         words |= _words_named(coolbase.CoolBaseController, coolbase.CoolBaseCommands)
     elif key in _SNAPSHOT_CENSUS:
         return _snapshot_frames(key)
-    elif key == "simmons_okin":
-        frames = {simmons.control_frame("okin", action) for action in simmons.MASKS}
-        frames = {frame for frame in frames if frame[0] == profile.header}
-        return frames | set(simmons.query_frames("okin"))
     else:
         model = "P1" if key == "adjustamattress" else "P2"
         am = adjustamattress

@@ -190,10 +190,8 @@ def clock(now: datetime) -> bytes:
 
 # Dismisses a ringing wake alarm.
 ALARM_DISMISS: Final = checked(b"\xe1\x80\x04")
-# Ask for the stored alarm records: E2 80 (Glideaway Motion, AdjustaMattress P1)
-# and E1 80 03 (SIMMONS OKIN, both records at once).
+# Asks for the stored alarm records (Glideaway Motion, AdjustaMattress P1).
 ALARM_QUERY: Final = checked(b"\xe2\x80\x03\x00")
-ALARM_RECORDS_QUERY: Final = checked(b"\xe1\x80\x03")
 
 
 @dataclass(frozen=True)

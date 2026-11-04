@@ -30,6 +30,12 @@ from ..const import (
     SIMMONS_VARIANT_SMARTBED,
 )
 from ..detection import is_mac_like_name
+from ..profiles.okin_nframe import (
+    SIMMONS_PROFILES,
+    SIMMONS_REFRESH_MS,
+    SIMMONS_SAVE_HOLD_MS,
+    OkinNFrameProfile,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -77,13 +83,8 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-REPEAT_MS: Final = 300  # Held controls repeat every 300 ms.
-RELEASE_STOP_OFFSETS_S: Final = (0.1, 0.4)  # Two delayed STOPs after release.
 QUERY_GAP_S: Final = 0.3  # Slot 2 query, and the query after an alarm write.
 PAGE_QUERY_OFFSETS_S: Final = (0.0, 0.3, 0.6)  # Alarm page opening.
-# The app's "Custom Mode has been set" toast fires after 5.5 s of continuous
-# hold; its help text says to hold M for 5 s. No separate save opcode exists.
-PROGRAM_HOLD_MS: Final = 5500
 # Integration-side guard, not a protocol value: how long a write waits for the
 # bed to report unknown alarm records before refusing to overwrite them.
 ALARM_REPLY_TIMEOUT_S: Final = 2.0
@@ -235,8 +236,13 @@ class SimmonsController(BedController):
         # Every release writes the all-zero STOP, so axes share one resource.
         return tuple(replace(spec, scheduler_resource="*") for spec in super().motor_control_specs)
 
+    @property
+    def profile(self) -> OkinNFrameProfile:
+        """The name-selected protocol's profile: its masks, write mode and timing."""
+        return SIMMONS_PROFILES[self._protocol]
+
     def motor_pulse_settings(self) -> tuple[int, int]:
-        return self._coordinator.motor_pulse_count, REPEAT_MS
+        return self._coordinator.motor_pulse_count, SIMMONS_REFRESH_MS
 
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -372,7 +378,7 @@ class SimmonsController(BedController):
             cancel_event=cancel_event,
             # OKIN-name frames use Android's default (acknowledged) write;
             # SmartBed and unmatched names write without response.
-            response=self._protocol == "okin",
+            response=self.profile.write == "response",
             wall_clock_pacing=True,
             characteristic=self._write_char,
         )
@@ -412,12 +418,17 @@ class SimmonsController(BedController):
 
     async def _release(self) -> None:
         """Send the release STOPs at +100/+400 ms, both attempted, uncancellable."""
+        hold = self.profile.hold
+        offsets = [
+            (hold.release_after_ms + index * hold.release_ms) / 1000
+            for index in range(hold.releases)
+        ]
 
         async def release() -> None:
             failure: Exception | None = None
             loop = asyncio.get_running_loop()
             started = loop.time()
-            for offset in RELEASE_STOP_OFFSETS_S:
+            for offset in offsets:
                 await asyncio.sleep(max(0, started + offset - loop.time()))
                 try:
                     await self.write_command(
@@ -471,8 +482,10 @@ class SimmonsController(BedController):
                     try:
                         await self.write_command(
                             control_frame(self._protocol, control),
-                            repeat_count=self.timed_move_repeat_count(duration_ms, REPEAT_MS),
-                            repeat_delay_ms=REPEAT_MS,
+                            repeat_count=self.timed_move_repeat_count(
+                                duration_ms, SIMMONS_REFRESH_MS
+                            ),
+                            repeat_delay_ms=SIMMONS_REFRESH_MS,
                         )
                     except TimeoutError:
                         write_timeout = True
@@ -553,7 +566,7 @@ class SimmonsController(BedController):
         if memory_num != 1 or isinstance(memory_num, bool):
             raise ValueError("SIMMONS has one Custom Mode memory")
         # Programming is the same recall frame held past the help's 5 s.
-        await self.hold_control("memory", PROGRAM_HOLD_MS)
+        await self.hold_control("memory", SIMMONS_SAVE_HOLD_MS)
 
     async def lights_toggle(self) -> None:
         await self.tap("light")

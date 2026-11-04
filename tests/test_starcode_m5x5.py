@@ -464,6 +464,7 @@ def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
         extended_packet,
         normal_packet,
     )
+    from custom_components.adjustable_bed.codec import okin_nframe
 
     raw_arguments = case["arguments"]
     assert isinstance(raw_arguments, list)
@@ -475,13 +476,13 @@ def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
     assert isinstance(vector, str)
     expected = bytes.fromhex(vector)
     name = case["function"]
-    if name == "_legacy_normal":
+    if name == "_legacy_normal":  # now the 40-bit Okin N-frame codec
         assert len(arguments) == 1
-        actual = sleepys_box25._legacy_normal(arguments[0])
+        actual = okin_nframe.frame40(arguments[0])
         replacement = normal_packet(arguments[0], "legacy")
     elif name == "_legacy_extended":
         assert len(arguments) == 2
-        actual = sleepys_box25._legacy_extended(arguments[0], arguments[1])
+        actual = okin_nframe.extended(arguments[0], arguments[1])
         replacement = extended_packet(arguments[0], arguments[1], "legacy")
     elif name == "_star_command":
         assert len(arguments) == 2
