@@ -22,6 +22,7 @@ from the controller they are called with, so a paired fan-out updates each side.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
 from collections.abc import Callable, Coroutine, Iterable, Mapping
@@ -294,14 +295,18 @@ class BedEstimate:
                 estimate.travel(direction, max(0.0, seconds))
         self._owner.changed()
 
-    def connection_lost(self) -> None:
-        """A link lost while a tracked move runs cannot prove where it stopped."""
+    @property
+    def moving(self) -> bool:
+        return bool(self._moves)
+
+    def abandon_moves(self, reason: EstimateReason) -> None:
+        """A running tracked move ended in a way that cannot prove where it stopped."""
         motors: set[str] = set()
         for move in self._moves.values():
             move.failed = True
             motors.update(move.motors)
         if motors:
-            self.invalidate(EstimateReason.CONNECTION_LOST, motors)
+            self.invalidate(reason, motors)
 
     def _selected(self, motors: Iterable[str] | None) -> list[str]:
         if motors is None:
@@ -609,7 +614,14 @@ def notify_connection_lost(coordinator: object) -> None:
     """Coordinator hook: the link of a physical bed dropped."""
     bed = _bed_for_coordinator(coordinator)
     if bed is not None:
-        bed.connection_lost()
+        bed.abandon_moves(EstimateReason.CONNECTION_LOST)
+
+
+def notify_release_failed(coordinator: object) -> None:
+    """Controller hook: a movement cleanup STOP failed without raising."""
+    bed = _bed_for_coordinator(coordinator)
+    if bed is not None:
+        bed.abandon_moves(EstimateReason.FAILED_MOVE)
 
 
 # ------------------------------------------------------------ command wrappers
@@ -628,7 +640,8 @@ async def _run_tracked(
     direction: str,
     command: MotorCommand,
     controller: BedController,
-    overhead_s: float,
+    start_s: float,
+    release_s: float,
 ) -> None:
     token = bed.begin_move(motors)
     started = _clock()
@@ -636,12 +649,14 @@ async def _run_tracked(
         await command(controller)
     except asyncio.CancelledError:
         # STOP or a replacing command ended the move; the stop time is known.
-        bed.end_move(token, direction, _clock() - started - overhead_s)
+        # Cancellation skips the release delay, so only the start delay ran.
+        elapsed = _clock() - started
+        bed.end_move(token, direction, elapsed - min(start_s, elapsed))
         raise
     except BaseException:
         bed.end_move(token, direction, None)
         raise
-    bed.end_move(token, direction, _clock() - started - overhead_s)
+    bed.end_move(token, direction, _clock() - started - start_s - release_s)
 
 
 def track_motor_command(
@@ -650,12 +665,13 @@ def track_motor_command(
     direction: str,
     command: MotorCommand,
     *,
-    overhead_ms: int = 0,
+    start_delay_ms: int = 0,
+    release_delay_ms: int = 0,
 ) -> MotorCommand:
     """Time a motor control command, keyed like ``MotorControlSpec.key``.
 
-    ``overhead_ms`` is fixed wrapper time in which the motor is not moving, such
-    as a declared hold start or release delay.
+    The delays are wrapper time before and after the movement in which the
+    motor is not moving, such as a declared hold's start and release delays.
     """
     if not _estimates_active(hass):
         return command
@@ -674,7 +690,15 @@ def track_motor_command(
         if not selected:
             await command(controller)
             return
-        await _run_tracked(bed, selected, direction, command, controller, overhead_ms / 1000)
+        await _run_tracked(
+            bed,
+            selected,
+            direction,
+            command,
+            controller,
+            start_delay_ms / 1000,
+            release_delay_ms / 1000,
+        )
 
     return tracked
 
@@ -703,7 +727,7 @@ def track_held_control(
                 await command(controller)
                 return
             direction = "up" if control == hold.up_control else "down"
-            await _run_tracked(bed, selected, direction, command, controller, 0.0)
+            await _run_tracked(bed, selected, direction, command, controller, 0.0, 0.0)
             return
         bed.invalidate(
             EstimateReason.HARDWARE_PRESET
@@ -762,11 +786,41 @@ async def _async_timed_move(
     await timed_move([(parent, bed.target_side)], motor, direction, round(seconds * 1000))
 
 
+async def async_stop_bed(hass: HomeAssistant, manager: PositionEstimates, bed: BedEstimate) -> None:
+    """STOP one estimated bed, or only its side of a pair."""
+    from .paired_coordinator import PairedBedCoordinator
+
+    parent = _parent(hass, manager)
+    if isinstance(parent, PairedBedCoordinator):
+        await parent.async_stop_command(side=bed.target_side)
+    else:
+        await parent.async_stop_command()
+
+
+async def _async_settle(
+    hass: HomeAssistant, manager: PositionEstimates, beds: Iterable[BedEstimate]
+) -> dict[str, int | None]:
+    """STOP any running tracked move, then capture each bed's STOP epoch.
+
+    A plan is only valid from a settled estimate: a move still running would
+    add its travel after the plan was calculated.
+    """
+    parent = _parent(hass, manager)
+    selected = list(beds)
+    for bed in selected:
+        if bed.moving:
+            await async_stop_bed(hass, manager, bed)
+    return {bed.address: _stop_epoch(parent, bed) for bed in selected}
+
+
 async def async_move_bed(
     hass: HomeAssistant,
     manager: PositionEstimates,
     bed: BedEstimate,
     targets: Mapping[str, float],
+    *,
+    epoch: int | None = None,
+    settled: bool = False,
 ) -> bool:
     """Move tracking motors to estimated targets one at a time.
 
@@ -776,8 +830,10 @@ async def async_move_bed(
     """
     motors = [motor for motor in targets if motor in bed.motors]
     _require_tracking(bed, motors)
+    if not settled:
+        epoch = (await _async_settle(hass, manager, [bed]))[bed.address]
+        _require_tracking(bed, motors)
     parent = _parent(hass, manager)
-    epoch = _stop_epoch(parent, bed)
     for motor in motors:
         if _stop_epoch(parent, bed) != epoch:
             return False
@@ -802,7 +858,11 @@ def _arrived(bed: BedEstimate, motor: str, target: float) -> bool:
 async def async_recall_position(
     hass: HomeAssistant, manager: PositionEstimates, position: SavedPosition
 ) -> None:
-    """Move every bed a saved position covers; a bed that is not tracking blocks it."""
+    """Move every bed a saved position covers; a bed that is not tracking blocks it.
+
+    Sides move together. A side that fails stops the others, like any paired
+    command; a side stopped by the user just reports the position not reached.
+    """
     plans: list[tuple[BedEstimate, dict[str, float]]] = []
     for key, targets in position.targets.items():
         bed = manager.bed_for_key(key)
@@ -818,14 +878,33 @@ async def async_recall_position(
             translation_domain=DOMAIN,
             translation_key="position_estimate_not_enabled",
         )
-    results = await asyncio.gather(
-        *(async_move_bed(hass, manager, bed, targets) for bed, targets in plans),
-        return_exceptions=True,
-    )
-    for result in results:
-        if isinstance(result, BaseException):
-            raise result
-    if not all(results):
+    epochs = await _async_settle(hass, manager, [bed for bed, _targets in plans])
+    for bed, targets in plans:
+        _require_tracking(bed, targets)
+    tasks = {
+        asyncio.create_task(
+            async_move_bed(hass, manager, bed, targets, epoch=epochs[bed.address], settled=True)
+        ): bed
+        for bed, targets in plans
+    }
+    try:
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+        failed = next((task for task in done if task.exception() is not None), None)
+        if failed is not None:
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            for task in pending:
+                with contextlib.suppress(Exception):
+                    await async_stop_bed(hass, manager, tasks[task])
+            exception = failed.exception()
+            assert exception is not None
+            raise exception
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+    if not all(task.result() for task in tasks):
         raise HomeAssistantError(
             f"{position.name} was not reached",
             translation_domain=DOMAIN,
@@ -844,29 +923,42 @@ def lower_to_flat_seconds(estimate: MotorEstimate) -> float:
 async def async_lower_to_flat(
     hass: HomeAssistant,
     manager: PositionEstimates,
-    bed: BedEstimate,
+    beds: Iterable[BedEstimate],
     motors: Iterable[str] | None = None,
 ) -> None:
     """Lower the selected motors past their full travel; the user then confirms flat.
 
-    Only an explicit user request starts this. It never sets the reference.
+    Only an explicit user request starts this. It never sets the reference. A
+    STOP during any part of the request ends the whole request.
     """
-    selected = [
-        motor
-        for motor in (bed.motors if motors is None else motors)
-        if motor in bed.motors and bed.motors[motor].calibrated
+    wanted = None if motors is None else list(motors)
+    plans = [
+        (bed, selected)
+        for bed in beds
+        if (
+            selected := [
+                motor
+                for motor in (bed.motors if wanted is None else wanted)
+                if motor in bed.motors and bed.motors[motor].calibrated
+            ]
+        )
     ]
-    if not selected:
+    if not plans:
         raise ServiceValidationError(
             "No calibrated estimated motors to lower",
             translation_domain=DOMAIN,
             translation_key="position_estimate_not_enabled",
         )
+    epochs = await _async_settle(hass, manager, [bed for bed, _motors in plans])
     parent = _parent(hass, manager)
-    epoch = _stop_epoch(parent, bed)
-    for motor in selected:
-        if _stop_epoch(parent, bed) != epoch:
-            return
-        await _async_timed_move(
-            parent, bed, motor, "down", lower_to_flat_seconds(bed.motors[motor])
-        )
+
+    def stopped() -> bool:
+        return any(_stop_epoch(parent, bed) != epochs[bed.address] for bed, _motors in plans)
+
+    for bed, selected in plans:
+        for motor in selected:
+            if stopped():
+                return
+            await _async_timed_move(
+                parent, bed, motor, "down", lower_to_flat_seconds(bed.motors[motor])
+            )

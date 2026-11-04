@@ -64,6 +64,7 @@ def _estimated_beds(
 class _ListensToEstimates(Entity):
     """Write state whenever the entry's estimates or saved positions change."""
 
+    _attr_should_poll = False
     _manager: PositionEstimates
 
     async def async_added_to_hass(self) -> None:
@@ -173,6 +174,7 @@ class SetReferenceButton(_ListensToEstimates, AdjustableBedEntity, ButtonEntity)
 class RemoteUsedButton(AdjustableBedEntity, ButtonEntity):
     """Report a movement the integration could not see."""
 
+    _attr_should_poll = False
     _attr_icon = "mdi:remote"
 
     def __init__(self, runtime: EntityRuntime, bed: BedEstimate) -> None:

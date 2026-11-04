@@ -1773,9 +1773,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
             entry.entry_id
         )
-        await async_unload_position_estimates(hass, entry.entry_id)
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
+        # After shutdown settled any movement, so its travel is persisted.
+        await async_unload_position_estimates(hass, entry.entry_id)
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
     return unload_ok

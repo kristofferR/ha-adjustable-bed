@@ -293,6 +293,11 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
         "Reading": {"left", "right"},
     }
 
+    # A side selection cannot move or change a position that covers both sides.
+    with pytest.raises(ServiceValidationError) as err:
+        await call_pair("delete_position", side="left", position="Reading")
+    assert err.value.translation_key == "saved_position_other_side"
+
     await call_pair("mark_position_unknown", side="right")
     assert manager.beds[left].tracking(["back"])
     with pytest.raises(ServiceValidationError):

@@ -125,9 +125,51 @@ async def test_tracked_moves_follow_direction_and_combined_motors(
 
 async def test_declared_hold_overhead_is_not_travel(hass: HomeAssistant, clock: Clock) -> None:
     manager = await calibrated(hass)
-    command = pe.track_motor_command(hass, "back", "up", moving(clock, 2.2), overhead_ms=200)
+    command = pe.track_motor_command(
+        hass, "back", "up", moving(clock, 2.2), start_delay_ms=100, release_delay_ms=100
+    )
     await command(controller(hass, LEFT))
     assert manager.beds[LEFT].motors["back"].percent == pytest.approx(10.0)
+
+
+async def test_cancelled_hold_subtracts_only_the_start_delay(
+    hass: HomeAssistant, clock: Clock
+) -> None:
+    manager = await calibrated(hass)
+    command = pe.track_motor_command(
+        hass,
+        "back",
+        "up",
+        moving(clock, 1.1, asyncio.CancelledError()),
+        start_delay_ms=100,
+        release_delay_ms=100,
+    )
+    with pytest.raises(asyncio.CancelledError):
+        await command(controller(hass, LEFT))
+    assert manager.beds[LEFT].motors["back"].percent == pytest.approx(5.0)
+
+
+async def test_swallowed_release_failure_is_not_travel(hass: HomeAssistant, clock: Clock) -> None:
+    """A Richmat quiet release logs a failed STOP; the estimate must not trust it."""
+    from unittest.mock import MagicMock
+
+    from custom_components.adjustable_bed.beds.richmat import RichmatController
+
+    manager = await calibrated(hass)
+    ctrl = controller(hass, LEFT)
+    richmat = MagicMock(spec=RichmatController)
+    richmat._coordinator = ctrl._coordinator
+    richmat.profile = SimpleNamespace(quiet_release=True)
+    richmat._send_stop = AsyncMock(side_effect=BleakError("stop lost"))
+
+    async def pulse_then_release(_controller: object) -> None:
+        clock.now += 2.0
+        await RichmatController._release(richmat)
+
+    await pe.track_motor_command(hass, "back", "up", pulse_then_release)(ctrl)
+    back = manager.beds[LEFT].motors["back"]
+    assert back.state is EstimateState.UNKNOWN
+    assert back.reason is EstimateReason.FAILED_MOVE
 
 
 async def test_stop_mid_move_keeps_tracking_at_the_stop_time(
@@ -383,7 +425,7 @@ async def test_lower_to_flat_runs_past_full_travel_and_keeps_unknown(
     hass.data[DOMAIN]["entry"] = object()
     timed_move = AsyncMock()
     monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
-    await pe.async_lower_to_flat(hass, manager, bed, ["legs"])
+    await pe.async_lower_to_flat(hass, manager, [bed], ["legs"])
     assert [call.args[1:] for call in timed_move.await_args_list] == [("legs", "down", 10600)]
     assert bed.state("legs") is EstimateState.UNKNOWN
 
@@ -413,3 +455,69 @@ def test_octo_and_richmat_declare_their_estimated_motors() -> None:
     }
     assert groups(RmcontrolController, ("head", "feet")) == {}
     assert groups(BedController, ("back", "legs")) == {}
+
+
+async def test_recall_plans_from_the_settled_estimate(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A move still running when recall starts is stopped first, then counted."""
+    manager = await calibrated(hass)
+    bed = manager.beds[LEFT]
+    hass.data[DOMAIN]["entry"] = object()
+    running = bed.begin_move(("back",))
+    stops: list[str] = []
+
+    async def stop(_hass: object, _manager: object, stopped: pe.BedEstimate) -> None:
+        stops.append(stopped.address)
+        stopped.end_move(running, "up", 4.0)  # the interrupted move adds 20%
+
+    timed_move = AsyncMock(
+        side_effect=lambda _t, motor, direction, ms: bed.motors[motor].travel(direction, ms / 1000)
+    )
+    monkeypatch.setattr(pe, "async_stop_bed", stop)
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+    await pe.async_move_bed(hass, manager, bed, {"back": 50.0})
+    assert stops == [LEFT]
+    assert [call.args[1:] for call in timed_move.await_args_list] == [("back", "up", 6000)]
+
+
+async def test_a_failed_side_stops_the_other_side(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manager = await calibrated(hass, ((LEFT, "left"), (RIGHT, "right")))
+    position = manager.save_position("Reading", manager.beds.values(), button=False)
+    for bed in manager.beds.values():
+        bed.motors["back"].percent = 50.0
+    hass.data[DOMAIN]["entry"] = object()
+    stopped: list[str | None] = []
+
+    async def timed_move(targets, _motor, _direction, _ms) -> None:
+        if targets[0][1] == "left":
+            raise BleakError("write failed")
+        await asyncio.Event().wait()
+
+    async def stop(_hass: object, _manager: object, bed: pe.BedEstimate) -> None:
+        stopped.append(bed.side)
+
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+    monkeypatch.setattr(pe, "async_stop_bed", stop)
+    with pytest.raises(BleakError):
+        await pe.async_recall_position(hass, manager, position)
+    assert stopped == ["right"]
+
+
+async def test_stop_during_lower_both_ends_the_whole_request(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manager = await calibrated(hass, ((LEFT, "left"), (RIGHT, "right")))
+    parent = SimpleNamespace(_command_scheduler=SimpleNamespace(stop_epoch=0))
+    hass.data[DOMAIN]["entry"] = parent
+    moved: list[str] = []
+
+    async def timed_move(targets, motor, _direction, _ms) -> None:
+        moved.append(f"{targets[0][1]}:{motor}")
+        parent._command_scheduler.stop_epoch += 1  # the user pressed STOP
+
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+    await pe.async_lower_to_flat(hass, manager, manager.beds.values())
+    assert moved == ["left:back"]

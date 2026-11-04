@@ -7918,6 +7918,10 @@
           "name": "Device",
           "description": "The adjustable bed device."
         },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+        },
         "position": {
           "name": "Saved position",
           "description": "The saved position's name or ID."
@@ -7940,6 +7944,10 @@
           "name": "Device",
           "description": "The adjustable bed device."
         },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+        },
         "position": {
           "name": "Saved position",
           "description": "The saved position's name or ID."
@@ -7954,6 +7962,10 @@
           "name": "Device",
           "description": "The adjustable bed device."
         },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+        },
         "position": {
           "name": "Saved position",
           "description": "The saved position's name or ID."
@@ -7967,6 +7979,10 @@
         "device_id": {
           "name": "Device",
           "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
         },
         "position": {
           "name": "Saved position",
@@ -8141,6 +8157,9 @@
     },
     "estimated_position_not_reached": {
       "message": "The estimated position was not reached. Check the bed and set the reference if needed."
+    },
+    "saved_position_other_side": {
+      "message": "\"{position}\" also covers the other side. Select the whole bed to use it."
     }
   },
   "issues": {

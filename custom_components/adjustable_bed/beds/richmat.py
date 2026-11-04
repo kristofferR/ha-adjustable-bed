@@ -37,6 +37,7 @@ from ..const import (
     get_richmat_features,
     richmat_remote_has_combined_head_feet,
 )
+from ..position_estimate import notify_release_failed
 from ..profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
 from .base import BedController, ControllerButtonSpec, MotorControlSpec, SideBoundController
 
@@ -155,6 +156,8 @@ class RichmatProfileController(BedController):
             await self._send_stop()
         except Exception:
             _LOGGER.debug("Failed to send STOP during cleanup")
+            # The motor may still be moving: a running estimate cannot be trusted.
+            notify_release_failed(self._coordinator)
 
     async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Pulse a movement code at the entry's pulse settings, then always STOP."""

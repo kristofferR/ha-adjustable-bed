@@ -2141,11 +2141,7 @@ async def _timed_move_plan(
                             raise
 
         # A declared hold's start and release delays are wrapper time, not travel.
-        overhead_ms = (
-            hold_spec.start_delay_ms + hold_spec.release_delay_ms
-            if hold_spec is not None and coordinator.bed_type != BED_TYPE_SLEEPYS_ELITE_APP
-            else 0
-        )
+        delayed = hold_spec is not None and coordinator.bed_type != BED_TYPE_SLEEPYS_ELITE_APP
         return (
             track_motor_command(
                 # Single-address side views carry no hass and are never estimated.
@@ -2153,7 +2149,8 @@ async def _timed_move_plan(
                 motor,
                 direction,
                 timed_movement,
-                overhead_ms=overhead_ms,
+                start_delay_ms=hold_spec.start_delay_ms if delayed and hold_spec else 0,
+                release_delay_ms=hold_spec.release_delay_ms if delayed and hold_spec else 0,
             ),
             calculated_repeat_count,
             pulse_delay_ms,

@@ -505,7 +505,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                         self.entity_description.key,
                         "up" if direction == "open" else "down",
                         bounded_movement,
-                        overhead_ms=hold.start_delay_ms + hold.release_delay_ms,
+                        start_delay_ms=hold.start_delay_ms,
+                        release_delay_ms=hold.release_delay_ms,
                     ),
                     resource=self._motor_resource,
                 )

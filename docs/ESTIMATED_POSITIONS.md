@@ -129,7 +129,8 @@ Every action takes `device_id`, and `side` where it applies to a paired bed. See
 | `mark_position_unknown` | None | Same as **I used the remote** |
 | `lower_to_flat` | optional `motors` | Lower past full travel; confirm flat afterwards |
 
-`position` accepts a saved position's name or its ID.
+`position` accepts a saved position's name or its ID. Selecting one side of a
+paired bed limits the position actions to positions saved for that side.
 
 ```yaml
 action: adjustable_bed.recall_position

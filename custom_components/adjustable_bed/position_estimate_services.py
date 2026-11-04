@@ -17,6 +17,7 @@ from .position_estimate import (
     BedEstimate,
     EstimateReason,
     PositionEstimates,
+    SavedPosition,
     async_lower_to_flat,
     async_recall_position,
     position_estimates,
@@ -53,10 +54,11 @@ SAVE_SCHEMA = vol.Schema(
         vol.Optional(ATTR_CREATE_BUTTON, default=True): cv.boolean,
     }
 )
-POSITION_SCHEMA = vol.Schema({**_DEVICE, vol.Required(ATTR_POSITION): cv.string})
+POSITION_SCHEMA = vol.Schema({**_DEVICE, **SIDE_FIELD, vol.Required(ATTR_POSITION): cv.string})
 RENAME_SCHEMA = vol.Schema(
     {
         **_DEVICE,
+        **SIDE_FIELD,
         vol.Required(ATTR_POSITION): cv.string,
         vol.Required(ATTR_NAME): _NAME,
         vol.Optional(ATTR_CREATE_BUTTON): cv.boolean,
@@ -65,7 +67,7 @@ RENAME_SCHEMA = vol.Schema(
 
 
 def _selection(call: ServiceCall) -> tuple[PositionEstimates, list[BedEstimate]]:
-    """Resolve one bed device, and its side for a pair, to its estimates."""
+    """Resolve one bed device, and its side for a pair, to its estimated beds."""
     targets, missing = _resolve_sided_targets(
         call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
     )
@@ -93,6 +95,20 @@ def _selection(call: ServiceCall) -> tuple[PositionEstimates, list[BedEstimate]]
     return manager, beds
 
 
+def _selected_position(call: ServiceCall) -> tuple[PositionEstimates, SavedPosition]:
+    """A saved position must stay within the selected bed or side."""
+    manager, beds = _selection(call)
+    position = manager.position(call.data[ATTR_POSITION])
+    if not set(position.targets) <= {bed.key for bed in beds}:
+        raise ServiceValidationError(
+            f"{position.name} also covers the other side; select the whole bed",
+            translation_domain=DOMAIN,
+            translation_key="saved_position_other_side",
+            translation_placeholders={"position": position.name},
+        )
+    return manager, position
+
+
 async def handle_save_position(call: ServiceCall) -> ServiceResponse:
     manager, beds = _selection(call)
     position = manager.save_position(
@@ -102,27 +118,25 @@ async def handle_save_position(call: ServiceCall) -> ServiceResponse:
 
 
 async def handle_rename_position(call: ServiceCall) -> None:
-    manager, _beds = _selection(call)
+    manager, position = _selected_position(call)
     manager.rename_position(
-        manager.position(call.data[ATTR_POSITION]),
-        call.data[ATTR_NAME],
-        button=call.data.get(ATTR_CREATE_BUTTON),
+        position, call.data[ATTR_NAME], button=call.data.get(ATTR_CREATE_BUTTON)
     )
 
 
 async def handle_update_position(call: ServiceCall) -> None:
-    manager, _beds = _selection(call)
-    manager.update_position(manager.position(call.data[ATTR_POSITION]))
+    manager, position = _selected_position(call)
+    manager.update_position(position)
 
 
 async def handle_delete_position(call: ServiceCall) -> None:
-    manager, _beds = _selection(call)
-    manager.delete_position(manager.position(call.data[ATTR_POSITION]))
+    manager, position = _selected_position(call)
+    manager.delete_position(position)
 
 
 async def handle_recall_position(call: ServiceCall) -> None:
-    manager, _beds = _selection(call)
-    await async_recall_position(call.hass, manager, manager.position(call.data[ATTR_POSITION]))
+    manager, position = _selected_position(call)
+    await async_recall_position(call.hass, manager, position)
 
 
 async def handle_set_position_reference(call: ServiceCall) -> None:
@@ -145,8 +159,7 @@ async def handle_mark_position_unknown(call: ServiceCall) -> None:
 
 async def handle_lower_to_flat(call: ServiceCall) -> None:
     manager, beds = _selection(call)
-    for bed in beds:
-        await async_lower_to_flat(call.hass, manager, bed, call.data.get(ATTR_MOTORS))
+    await async_lower_to_flat(call.hass, manager, beds, call.data.get(ATTR_MOTORS))
 
 
 def async_register_position_estimate_services(hass: HomeAssistant) -> None:

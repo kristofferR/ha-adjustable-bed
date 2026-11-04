@@ -2773,6 +2773,7 @@ save_position:
 rename_position:
   fields:
     device_id: *estimate_device
+    side: *estimate_side
     position: &saved_position
       required: true
       example: Reading
@@ -2787,16 +2788,19 @@ rename_position:
 update_position:
   fields:
     device_id: *estimate_device
+    side: *estimate_side
     position: *saved_position
 
 delete_position:
   fields:
     device_id: *estimate_device
+    side: *estimate_side
     position: *saved_position
 
 recall_position:
   fields:
     device_id: *estimate_device
+    side: *estimate_side
     position: *saved_position
 
 set_position_reference:
