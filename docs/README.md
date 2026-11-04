@@ -85,3 +85,7 @@ hardware evidence.
 [row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).
 
 [HJBed app controls and telemetry](beds/hjbed.md), including the complete [row121 disposition ledger](apk-analysis/dispositions/row121-hjbed.md).
+
+[Ergomotion 4.0 setup and protocol](beds/ergomotion-4.md), including the
+[issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
+and opt-in P1 split-side controls.

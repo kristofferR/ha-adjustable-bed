@@ -1,0 +1,541 @@
+[
+  {
+    "id": "P1-head",
+    "inputs": {
+      "key": 1,
+      "side": "Both"
+    },
+    "expected_bytes": "e5fe160100000005"
+  },
+  {
+    "id": "P1-release",
+    "inputs": {
+      "key": 0,
+      "side": "Both"
+    },
+    "expected_bytes": "e5fe160000000006"
+  },
+  {
+    "id": "P1-flat",
+    "inputs": {
+      "key": 134217728,
+      "side": "Both"
+    },
+    "expected_bytes": "e5fe1600000008fe"
+  },
+  {
+    "id": "P1-left",
+    "inputs": {
+      "key": 1,
+      "side": "Left"
+    },
+    "expected_bytes": "e6fe16010000000202"
+  },
+  {
+    "id": "P1-right",
+    "inputs": {
+      "key": 1,
+      "side": "Right"
+    },
+    "expected_bytes": "e6fe16010000000103"
+  },
+  {
+    "id": "P1-ui-A",
+    "inputs": {
+      "key": 1,
+      "side": "A"
+    },
+    "expected_bytes": "e6fe16010000000004"
+  },
+  {
+    "id": "P2-key-0",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "040200000000"
+  },
+  {
+    "id": "P2-key-1",
+    "inputs": {
+      "key": 1
+    },
+    "expected_bytes": "040200000001"
+  },
+  {
+    "id": "P2-key-2",
+    "inputs": {
+      "key": 2
+    },
+    "expected_bytes": "040200000002"
+  },
+  {
+    "id": "P2-key-4",
+    "inputs": {
+      "key": 4
+    },
+    "expected_bytes": "040200000004"
+  },
+  {
+    "id": "P2-key-8",
+    "inputs": {
+      "key": 8
+    },
+    "expected_bytes": "040200000008"
+  },
+  {
+    "id": "P2-key-16",
+    "inputs": {
+      "key": 16
+    },
+    "expected_bytes": "040200000010"
+  },
+  {
+    "id": "P2-key-32",
+    "inputs": {
+      "key": 32
+    },
+    "expected_bytes": "040200000020"
+  },
+  {
+    "id": "P2-key-64",
+    "inputs": {
+      "key": 64
+    },
+    "expected_bytes": "040200000040"
+  },
+  {
+    "id": "P2-key-80",
+    "inputs": {
+      "key": 80
+    },
+    "expected_bytes": "040200000050"
+  },
+  {
+    "id": "P2-key-128",
+    "inputs": {
+      "key": 128
+    },
+    "expected_bytes": "040200000080"
+  },
+  {
+    "id": "P2-key-160",
+    "inputs": {
+      "key": 160
+    },
+    "expected_bytes": "0402000000a0"
+  },
+  {
+    "id": "P2-key-192",
+    "inputs": {
+      "key": 192
+    },
+    "expected_bytes": "0402000000c0"
+  },
+  {
+    "id": "P2-key-240",
+    "inputs": {
+      "key": 240
+    },
+    "expected_bytes": "0402000000f0"
+  },
+  {
+    "id": "P2-key-256",
+    "inputs": {
+      "key": 256
+    },
+    "expected_bytes": "040200000100"
+  },
+  {
+    "id": "P2-key-512",
+    "inputs": {
+      "key": 512
+    },
+    "expected_bytes": "040200000200"
+  },
+  {
+    "id": "P2-key-1024",
+    "inputs": {
+      "key": 1024
+    },
+    "expected_bytes": "040200000400"
+  },
+  {
+    "id": "P2-key-2048",
+    "inputs": {
+      "key": 2048
+    },
+    "expected_bytes": "040200000800"
+  },
+  {
+    "id": "P2-key-4096",
+    "inputs": {
+      "key": 4096
+    },
+    "expected_bytes": "040200001000"
+  },
+  {
+    "id": "P2-key-8192",
+    "inputs": {
+      "key": 8192
+    },
+    "expected_bytes": "040200002000"
+  },
+  {
+    "id": "P2-key-16384",
+    "inputs": {
+      "key": 16384
+    },
+    "expected_bytes": "040200004000"
+  },
+  {
+    "id": "P2-key-32768",
+    "inputs": {
+      "key": 32768
+    },
+    "expected_bytes": "040200008000"
+  },
+  {
+    "id": "P2-key-65536",
+    "inputs": {
+      "key": 65536
+    },
+    "expected_bytes": "040200010000"
+  },
+  {
+    "id": "P2-key-69632",
+    "inputs": {
+      "key": 69632
+    },
+    "expected_bytes": "040200011000"
+  },
+  {
+    "id": "P2-key-131072",
+    "inputs": {
+      "key": 131072
+    },
+    "expected_bytes": "040200020000"
+  },
+  {
+    "id": "P2-key-8388608",
+    "inputs": {
+      "key": 8388608
+    },
+    "expected_bytes": "040200800000"
+  },
+  {
+    "id": "P2-key-16777216",
+    "inputs": {
+      "key": 16777216
+    },
+    "expected_bytes": "040201000000"
+  },
+  {
+    "id": "P2-key-33554432",
+    "inputs": {
+      "key": 33554432
+    },
+    "expected_bytes": "040202000000"
+  },
+  {
+    "id": "P2-key-67108864",
+    "inputs": {
+      "key": 67108864
+    },
+    "expected_bytes": "040204000000"
+  },
+  {
+    "id": "P2-key-134217728",
+    "inputs": {
+      "key": 134217728
+    },
+    "expected_bytes": "040208000000"
+  },
+  {
+    "id": "P2-key-134221824",
+    "inputs": {
+      "key": 134221824
+    },
+    "expected_bytes": "040208001000"
+  },
+  {
+    "id": "P2-key-1073741824",
+    "inputs": {
+      "key": 1073741824
+    },
+    "expected_bytes": "040240000000"
+  },
+  {
+    "id": "P2-key-1207959552",
+    "inputs": {
+      "key": 1207959552
+    },
+    "expected_bytes": "040248000000"
+  },
+  {
+    "id": "P2-query",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "custom-1",
+    "inputs": {
+      "key": 1
+    },
+    "expected_bytes": "07d002060000090001"
+  },
+  {
+    "id": "custom-2",
+    "inputs": {
+      "key": 2
+    },
+    "expected_bytes": "07d002040000090002"
+  },
+  {
+    "id": "custom-8",
+    "inputs": {
+      "key": 8
+    },
+    "expected_bytes": "07d004060000090008"
+  },
+  {
+    "id": "custom-999",
+    "inputs": {
+      "key": 999
+    },
+    "expected_bytes": "07d004040000100000"
+  },
+  {
+    "id": "RGB-False",
+    "inputs": {
+      "r": 127,
+      "g": 200,
+      "b": 255,
+      "invert": false
+    },
+    "expected_bytes": "090a00020000017fc8ff00"
+  },
+  {
+    "id": "RGB-True",
+    "inputs": {
+      "r": 127,
+      "g": 200,
+      "b": 255,
+      "invert": true
+    },
+    "expected_bytes": "0a02000000000101bb80370000"
+  },
+  {
+    "id": "rename",
+    "inputs": {
+      "text": "A"
+    },
+    "expected_bytes": "ef02410000000000000000000000000000cd"
+  },
+  {
+    "id": "clock",
+    "inputs": {
+      "year": 2026,
+      "zero_based_month": 10,
+      "day": 3,
+      "hour": 21,
+      "minute": 7,
+      "second": 40
+    },
+    "expected_bytes": "e780017e0a03150728c8"
+  },
+  {
+    "id": "alarm-True",
+    "inputs": {
+      "records": [
+        {
+          "enabled": true,
+          "hour": 7,
+          "minute": 30,
+          "days": [
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true
+          ],
+          "vibrate": true,
+          "delta_ms": 3661000
+        }
+      ],
+      "recurring": true
+    },
+    "expected_bytes": "ed8003071e83030000000000000000e4"
+  },
+  {
+    "id": "alarm-False",
+    "inputs": {
+      "records": [
+        {
+          "enabled": true,
+          "hour": 7,
+          "minute": 30,
+          "days": [
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true
+          ],
+          "vibrate": true,
+          "delta_ms": 3661000
+        }
+      ],
+      "recurring": false
+    },
+    "expected_bytes": "ed80020101010300000000000000008a"
+  },
+  {
+    "id": "notify-52",
+    "inputs": {
+      "style": "H",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "080f000000000000000000",
+    "expected_state": null
+  },
+  {
+    "id": "notify-53",
+    "inputs": {
+      "style": "M10",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "a50b0d02590200000000010b010dff0b",
+    "expected_state": {
+      "timer": 2
+    }
+  },
+  {
+    "id": "notify-54",
+    "inputs": {
+      "style": "H",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "a50b0d02590200000000010b010dff0b",
+    "expected_state": {
+      "timer": 2
+    }
+  },
+  {
+    "id": "notify-55",
+    "inputs": {
+      "style": "M16",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "a50b0d02590200000000010b010dff0b",
+    "expected_state": {
+      "timer": 2,
+      "light": true
+    }
+  },
+  {
+    "id": "notify-56",
+    "inputs": {
+      "style": "H",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "a50b0f02590200000000010b010dff0b0000",
+    "expected_state": {
+      "timer": 2,
+      "light": true
+    }
+  },
+  {
+    "id": "notify-57",
+    "inputs": {
+      "style": "M12",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "a50d1002590200000000010b010dff0b0c0d00",
+    "expected_state": null
+  },
+  {
+    "id": "notify-58",
+    "inputs": {
+      "style": "M19",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "00000002590200000000010b010dff0b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "notify-59",
+    "inputs": {
+      "style": "H",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "00000002590200000000010b010dff0b0c0d0000",
+    "expected_state": {
+      "timer": -1
+    }
+  },
+  {
+    "id": "notify-60",
+    "inputs": {
+      "style": "H",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "00000002590200000000010b010dff0b0c0d0000000000",
+    "expected_state": {
+      "timer": 11
+    }
+  },
+  {
+    "id": "notify-61",
+    "inputs": {
+      "style": "H",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "1d0b0002590200000000010b010dff0b0c0d00000000000000000000000000",
+    "expected_state": {
+      "timer": -1,
+      "light": true
+    }
+  },
+  {
+    "id": "notify-62",
+    "inputs": {
+      "style": "H",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "1c0b0002590200000000010b010dff0b0c0d00000000000000000000000000",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        1,
+        13
+      ]
+    }
+  }
+]
