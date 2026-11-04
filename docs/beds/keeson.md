@@ -41,8 +41,7 @@ Brands using Keeson/Ergomotion actuators:
 `com.keeson.beautyrestblack` 1.2.1 (18) uses TCP and network services, with no
 reachable Bluetooth bed-control transport in that exact artifact. BLE hardware
 using independently identified Keeson protocols remains supported. See the
-[complete app disposition](../apk-analysis/dispositions/row044-beautyrest-black.md)
-for all 128 exclusions and exact accepted evidence.
+[complete app disposition](../apk-analysis/dispositions/row044-beautyrest-black.md).
 
 **DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
 - Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [explicit profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
@@ -133,15 +132,15 @@ data.
 | Adjustable Lite (KSBT03C) | `keeson` `adjustable_lite`: name contains `KSBT03C` (case-sensitive) | P2 6-byte | KSBT (fixed) | toggle | zone_steps |
 | Restonic BT remote A | `keeson` `restonic_a` | K1 `E5`, little-endian | BASE (fixed) | none | none |
 | Restonic BT remote B | `keeson` `restonic_b` | K1 `E5`, little-endian | BASE (fixed) | toggle | none |
-| INNOVA | `keeson` `innova` | K1 `E5`, little-endian | BASE (fixed) | toggle | step |
-| Simon Li | `keeson` `simon_li` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
-| OKIN-Seating | `keeson` `okin_seating` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
-| Heal Every Night | `keeson` `heal_every_night` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
-| AMERICANSTAR | `keeson` `americanstar` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
-| Avanti Bases | `keeson` `avanti_bases` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
-| Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
-| Dynasty Bases | `keeson` `dynasty_bases` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
-| MaxCoil Una | `keeson` `maxcoil_una` | K1 `E5`, big-endian | BASE (fixed) | toggle | step |
+| INNOVA | `keeson` `innova` | K1 `E5`, little-endian | BASE (fixed) | app controller | app controller |
+| Simon Li | `keeson` `simon_li` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| OKIN-Seating | `keeson` `okin_seating` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| Heal Every Night | `keeson` `heal_every_night` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| AMERICANSTAR | `keeson` `americanstar` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| Avanti Bases | `keeson` `avanti_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| Dynasty Bases | `keeson` `dynasty_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
+| MaxCoil Una | `keeson` `maxcoil_una` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller |
 
 ### Hold and release timing
 
@@ -1211,8 +1210,7 @@ discards them. No position, light, massage or acknowledgement state exists.
 #### Evidence
 
 The app's phone settings (haptic feedback, actuator 1/2, installation) change no
-packet; dead legacy screens and Bluetooth Classic, Wi-Fi, cloud and OTA paths are
-excluded in the ledgers below. Real users should confirm after a beta or release:
+packet. Exclusions are in the [ledgers](#analysis-provenance). Real users should confirm after a beta or release:
 the physical axis for each layout (especially 2M's combined key and 4M's waist),
 hold and release behavior, preset save/recall, massage levels and timer
 durations, and the actual write type.

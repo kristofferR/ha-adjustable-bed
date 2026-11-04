@@ -687,8 +687,8 @@ def render_keeson_profiles() -> str:
                 _route(key),
                 _carrier(profile),
                 profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
-                profile.lights or "none",
-                profile.massage,
+                "app controller" if key in _KEESON_APP_TABLES else profile.lights or "none",
+                "app controller" if key in _KEESON_APP_TABLES else profile.massage,
             )
             for key, profile in profiles.items()
         ),
