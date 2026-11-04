@@ -6,7 +6,8 @@ one held key, and the all-zero word releases every key (STOP). Profiles use
 32-bit (``04 02``), 40-bit, 48-bit, 64-bit or 96-bit words; the word's width is
 profile data, never inferred from a key.
 
-The 40-bit routes carry a 32-bit key word followed by one selector byte, which
+The 96-bit (CST) routes carry two independently routed 32-bit fields and 32
+zero bits. The 40-bit routes carry a 32-bit key word followed by one selector byte, which
 picks a CB24 bed side (``AA``/``BB``) and is ``00`` everywhere else. Several of
 them also send 64-bit ``08 02`` frames for a few lights and massage keys,
 two-byte ``00 <code>`` requests, ``04 E0`` setting frames and ``03 F0`` position
@@ -68,6 +69,14 @@ def frame40(key: int, selector: int = 0) -> bytes:
     if not 0 <= selector <= 0xFF:
         raise ValueError("Selector must be one byte")
     return frame(key << 8 | selector, 5)
+
+
+def frame96(primary: int, secondary: int = 0) -> bytes:
+    """Encode a 96-bit CST frame: two 32-bit fields, then 32 zero bits."""
+    for value in (primary, secondary):
+        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 0xFFFFFFFF:
+            raise ValueError("CST fields must be unsigned 32-bit integers")
+    return frame(primary << 64 | secondary << 32, 12)
 
 
 def request(code: int) -> bytes:
