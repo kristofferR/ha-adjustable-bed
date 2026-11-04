@@ -1,25 +1,19 @@
-"""Keeson bed controller implementation.
+"""Keeson controller: glue that drives the Keeson codec from a profile.
 
 Reverse engineering by alanbixby and Richard Hopton (smartbed-mqtt).
 
-Keeson beds (Member's Mark, Purple, Ergomotion, GhostBed, Beautyrest) have several
-protocol variants:
-- KSBT: Simple 6-byte commands [0x04, 0x02, ...int_to_bytes(command)]
-- KSBT04C: 7-byte with NOT-checksum [0x04, 0x02, ...int_to_bytes(command), checksum]
-- Adjustable Lite: the KSBT 6-byte frames with that app's memory, cadence and status
-- Restonic BT: the BaseI4 8-byte frames with that app's two remote styles and release
-- BaseI4: 8-byte commands with XOR checksum
-- BaseI5: Same as BaseI4 with notification support
-- Ergomotion: Same as BaseI4/I5 but with position feedback via BLE notifications
-
-All use 32-bit command values for motor and preset operations.
+Every ``keeson`` protocol variant, and the ``ergomotion``, ``serta`` and
+``okin_ffe`` bed types, is a profile in ``profiles/keeson.py``; the frames come
+from ``codec/keeson.py``. This module keeps what the data cannot express: motor
+key combination, the release and touch-up sequences, Sino's emulated light
+toggle and absolute massage levels, Ergomotion position notifications, the
+Adjustable Lite status poll and the Restonic BT held controls.
 """
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
@@ -27,35 +21,26 @@ from typing import TYPE_CHECKING, Any, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..const import (
-    BED_MOTOR_PULSE_DEFAULTS,
-    BED_TYPE_KEESON,
-    KEESON_BASE_NOTIFY_CHAR_UUID,
-    KEESON_BASE_SERVICE_UUID,
-    KEESON_BASE_WRITE_CHAR_UUID,
-    KEESON_FALLBACK_GATT_PAIRS,
-    KEESON_JSON_NOTIFY_CHAR_UUID,
-    KEESON_JSON_SERVICE_UUID,
-    KEESON_JSON_WRITE_CHAR_UUID,
-    KEESON_KSBT_CHAR_UUID,
-    KEESON_KSBT_FALLBACK_GATT_PAIRS,
-    KEESON_KSBT_SERVICE_UUID,
-    KEESON_VARIANT_ADJUSTABLE_LITE,
-    KEESON_VARIANT_BASE,
-    KEESON_VARIANT_ERGOMOTION,
-    KEESON_VARIANT_INNOVA,
-    KEESON_VARIANT_JSON,
-    KEESON_VARIANT_KSBT,
-    KEESON_VARIANT_KSBT04C,
-    KEESON_VARIANT_KSBT_CR,
-    KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_PURPLE,
-    KEESON_VARIANT_RESTONIC_A,
-    KEESON_VARIANT_RESTONIC_B,
-    KEESON_VARIANT_SERTA,
-    KEESON_VARIANT_SINO,
-    KEESON_VARIANT_SLEEP_HARMONY,
-    NORDIC_UART_READ_CHAR_UUID,
+from ..codec import keeson as codec
+from ..const import BED_MOTOR_PULSE_DEFAULTS, BED_TYPE_KEESON, KEESON_VARIANT_PURPLE
+from ..profiles import keeson as profiles
+from ..profiles.keeson import (
+    RESTONIC_A_CONTROLS as RESTONIC_A_CONTROLS,
+)
+from ..profiles.keeson import (
+    RESTONIC_B_CONTROLS as RESTONIC_B_CONTROLS,
+)
+from ..profiles.keeson import (
+    KeesonCommands as KeesonCommands,
+)
+from ..profiles.keeson import (
+    KeesonProfile,
+)
+from ..profiles.keeson import (
+    SinoCommands as SinoCommands,
+)
+from ..profiles.keeson import (
+    is_ksbt03c_name as is_ksbt03c_name,
 )
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -67,77 +52,16 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .okin_protocol import int_to_bytes
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-# OEM app hold cadences, normalized to an approximately one-second HA movement
-# command. JSON/A00A remains at the generic setting: Juna and Linx request writes
-# every 5/3 ms respectively, but their BLE service drops requests while a
-# write-with-response is outstanding, so there is no fixed on-air interval to copy.
-_APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
-    KEESON_VARIANT_BASE: (3, 400),
-    KEESON_VARIANT_JSON: (10, 100),
-    KEESON_VARIANT_KSBT: (10, 100),
-    KEESON_VARIANT_KSBT_CR: (4, 300),
-    KEESON_VARIANT_KSBT04C: (4, 300),
-    KEESON_VARIANT_SLEEP_HARMONY: (4, 300),
-    KEESON_VARIANT_ERGOMOTION: (10, 100),
-    KEESON_VARIANT_OKIN: (10, 100),
-    KEESON_VARIANT_SERTA: (10, 100),
-    KEESON_VARIANT_SINO: (10, 100),
-    KEESON_VARIANT_PURPLE: (10, 100),
-    # Adjustable Lite schedules held movement at 0 ms then every 300 ms.
-    KEESON_VARIANT_ADJUSTABLE_LITE: (4, 300),
-    # INNOVA writes held keys at 0 ms then every 100 ms.
-    KEESON_VARIANT_INNOVA: (10, 100),
-    # Restonic BT schedules held controls at 0 ms then every 100 ms.
-    KEESON_VARIANT_RESTONIC_A: (10, 100),
-    KEESON_VARIANT_RESTONIC_B: (10, 100),
-}
-
-_THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
-_ERGOMOTION_SYNC_KSBT03C_PULSES = (4, 300)
-
-# The direct six-byte P2 protocol has no dedicated release/STOP frame. Current
-# SFD apps stop refreshing the held key and request status three times at 300 ms
-# intervals. Complete clean-room analysis of Ergomotion Sync found no release
-# write: its independent status timer continues while release stops the held-key
-# refresh. Do not substitute an unverified zero-key frame for KSBT03C.
-_KSBT_RELEASE_QUERY = bytes([0x00, 0xB0])
-_KSBT_RELEASE_QUERY_DELAY_SECONDS = 0.3
-_KSBT_RELEASE_QUERY_COUNT = 3
-
-_PURPLE_PLUS_NAME_PREFIX = "ksbt04c"
-_PURPLE_RELEASE_COMMAND = bytes.fromhex("04020000000000")
-_PURPLE_MEMORY_PROGRAM_COUNT = 26
-_PURPLE_MEMORY_PROGRAM_DELAY_SECONDS = 0.2
-
-# Adjustable Lite 1.0.2 (com.keeson.adjustablelite). The app shows its KSBT03C
-# remote when the product identity contains this case-sensitive token and its
-# KSBT01C remote otherwise. Both remotes poll the 00 B0 status query every 500 ms
-# while connected and read notifications longer than 12 bytes.
-_ADJUSTABLE_LITE_KSBT03C_TOKEN = "KSBT03C"
-_ADJUSTABLE_LITE_STATUS_POLL_SECONDS = 0.5
 _ADJUSTABLE_LITE_STATUS_MIN_LENGTH = 13
 STATE_ADJUSTABLE_LITE_LIGHT = "adjustable_lite_light"
 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER = "adjustable_lite_massage_timer"
 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW = "adjustable_lite_massage_timer_raw"
-
-_SLEEP_HARMONY_BASE_I5_PREFIX = "base-i5."
-_SLEEP_HARMONY_RELEASE_DELAY_SECONDS = 0.2
-
-# Restonic BT Remote 1.2.0 (com.keeson.restonicBT). Both remote styles write the
-# Base E5 FE 16 + command_le32 + complement-checksum frame to FFE5/FFE9 only.
-# Held controls write at once and then every 100 ms; touch release cancels that
-# refresh and writes one zero frame 100 ms later. One-shot controls write once on
-# touch-down and are released the same way.
-_RESTONIC_VARIANTS = frozenset({KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B})
-_RESTONIC_REPEAT_MS = 100
-_RESTONIC_RELEASE_DELAY_SECONDS = 0.1
 RESTONIC_ZZZ_BUTTON_KEY = "restonic_zzz"
 
 
@@ -147,19 +71,6 @@ async def _wait_unless_cancelled(event: asyncio.Event, seconds: float) -> None:
         return
     with contextlib.suppress(TimeoutError):
         await asyncio.wait_for(event.wait(), seconds)
-
-
-def is_ksbt03c_name(name: str | None) -> bool:
-    """Return True if the device name identifies a KSBT03C control box.
-
-    KSBT03C beds (e.g. Ergomotion RIO 5.0) drive three motors: head/back
-    (0x1/0x2), feet/legs (0x4/0x8) and lumbar (0x40/0x80). The Ergomotion
-    Sync app's KSBT03C remote has no head-tilt (0x10/0x20) buttons at all,
-    so those beds have no tilt motor. KSBT03CR is a different control box
-    and is excluded.
-    """
-    normalized = (name or "").strip().lower()
-    return normalized.startswith("ksbt03c") and not normalized.startswith("ksbt03cr")
 
 
 def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> dict[str, Any] | None:
@@ -182,153 +93,16 @@ def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> dict[st
     return state
 
 
-class KeesonCommands:
-    """Keeson command constants (32-bit values)."""
-
-    # Presets - common
-    PRESET_FLAT = 0x8000000
-    PRESET_ZERO_G = 0x1000
-
-    # KSBT-specific presets (not available on BaseI4/I5)
-    PRESET_MEMORY_1 = 0x2000  # KSBT "Read" button (Ergomotion Sync remotes A/B/C)
-    PRESET_TV = 0x4000  # KSBT only
-    PRESET_ANTI_SNORE = 0x8000  # KSBT only
-
-    # BaseI4/I5-specific presets (0x8000 means Memory 3 on BaseI4/I5, Snore on KSBT)
-    PRESET_MEMORY_3_BASE = 0x8000  # BaseI4/I5 only
-    PRESET_MEMORY_3 = 0x8000  # Alias for backward compatibility
-
-    # Memory presets (availability varies by variant)
-    PRESET_MEMORY_2 = 0x4000  # Same as TV on KSBT
-    PRESET_MEMORY_4 = 0x10000  # KSBT "M" button (Ergomotion Sync remotes A/B/C)
-
-    # Aliases
-    PRESET_LOUNGE = 0x2000  # Same as Memory 1 / KSBT "Read" button
-
-    # Motors
-    MOTOR_HEAD_UP = 0x1
-    MOTOR_HEAD_DOWN = 0x2
-    MOTOR_FEET_UP = 0x4
-    MOTOR_FEET_DOWN = 0x8
-    MOTOR_TILT_UP = 0x10
-    MOTOR_TILT_DOWN = 0x20
-    MOTOR_LUMBAR_UP = 0x40
-    MOTOR_LUMBAR_DOWN = 0x80
-
-    # Massage (standard Keeson)
-    MASSAGE_HEAD_UP = 0x800
-    MASSAGE_HEAD_DOWN = 0x800000
-    MASSAGE_FOOT_UP = 0x400
-    MASSAGE_FOOT_DOWN = 0x1000000
-    MASSAGE_STEP = 0x100
-    MASSAGE_TIMER_STEP = 0x200
-    MASSAGE_WAVE_STEP = 0x10000000
-
-    # BaseI4/I5 massage controls confirmed on GlideAway ComfortBase Odessa.
-    MASSAGE_WAVE_PREVIOUS = 0x4000000
-    MASSAGE_INTENSITY_1 = 0x80000
-    MASSAGE_INTENSITY_2 = 0x100000
-    MASSAGE_INTENSITY_3 = 0x200000
-
-    # Additional massage commands (from Sleep Harmony / KSBT04C)
-    MASSAGE_LUMBAR = 0x400000
-    MASSAGE_LUMBAR_DOWN = 0x10000000  # Same value as MASSAGE_WAVE_STEP
-    MASSAGE_MODE_ONE = 0x80000
-    MASSAGE_MODE_TWO = 0x100000
-    MASSAGE_MODE_THREE = 0x200000
-    MASSAGE_ALL_STOP = 0x2000000
-    MASSAGE_ALL_TOGGLE = 0x4000000
-
-    # Lights (standard Keeson)
-    TOGGLE_SAFETY_LIGHTS = 0x20000
-    TOGGLE_LIGHTS = 0x20000  # Alias for Ergomotion compatibility
-
-
-class SinoCommands:
-    """Sino (Dynasty, BetterLiving) specific command constants.
-
-    Sino beds with FFE5/FFE9 service UUIDs use SinoProtocol command values.
-    Motor and preset commands use the same values as standard Keeson.
-    Light commands are Sino-specific (discrete on/off, not toggle).
-
-    Based on reverse engineering of com.ore.Dynasty iOS IPA.
-    """
-
-    # Lights - discrete on/off (not toggle)
-    LIGHT_ON = 0x31000001
-    LIGHT_OFF = 0x31000000
-
-    # Massage absolute intensity base addresses (add level 0-10)
-    MASSAGE_HEAD_INTENSITY_BASE = 0x10000010
-    MASSAGE_FOOT_INTENSITY_BASE = 0x11000010
-
-    # Massage wave/pattern base (add pattern 0-10)
-    MASSAGE_HEAD_WAVE_BASE = 0x10000020
-
-
-class BetterLivingCommands:
-    """BetterLiving BED_DEFAULT preset command constants.
-
-    BetterLiving beds (OKIN-BLE device name, FFF0+FFB0 services) use Sino
-    big-endian packet format but with different preset values in the 0x01000000
-    range. Motors, massage, and lights match standard Sino commands.
-
-    Based on reverse engineering of BetterLiving APK (com.betterliving.bed).
-    """
-
-    PRESET_ZERO_G = 0x01000001
-    PRESET_FLAT = 0x01000002
-    PRESET_ANTI_SNORE = 0x01000004
-    PRESET_MEMORY_1 = 0x01000008
-    PRESET_MEMORY_2 = 0x01000009
-    STOP_POSITION = 0x01000000
-    SAVE_ZERO_G = 0x20000001
-    SAVE_MEMORY_1 = 0x20000008
-    SAVE_MEMORY_2 = 0x20000009
-
-
-class CB1322Commands:
-    """BetterLiving CB1322 sub-variant preset command constants.
-
-    CB1322 devices use OKIN variant (0xE6 prefix, little-endian) with
-    different memory values than standard Keeson OKIN. Identified by
-    manufacturer name "BLE-4.0 Module" or "DewertOKIN" from BLE 0x2A29.
-
-    Based on reverse engineering of BetterLiving APK (com.betterliving.bed).
-    """
-
-    PRESET_MEMORY_1 = 0x00010000
-    PRESET_MEMORY_2 = 0x00040000
-
-
-# Restonic BT app controls: name -> (32-bit command, repeats while held).
-_RESTONIC_COMMON_CONTROLS: dict[str, tuple[int, bool]] = {
-    "head_up": (KeesonCommands.MOTOR_HEAD_UP, True),
-    "head_down": (KeesonCommands.MOTOR_HEAD_DOWN, True),
-    "feet_up": (KeesonCommands.MOTOR_FEET_UP, True),
-    "feet_down": (KeesonCommands.MOTOR_FEET_DOWN, True),
-    "flat": (KeesonCommands.PRESET_FLAT, False),
-}
-# Remote A holds Zero G like a motor key.
-RESTONIC_A_CONTROLS: dict[str, tuple[int, bool]] = {
-    **_RESTONIC_COMMON_CONTROLS,
-    "zero_g": (KeesonCommands.PRESET_ZERO_G, True),
-}
-# Remote B adds the back-up/back-down glyphs (one combined head + foot command),
-# and taps Zero G, the bulb and the ZZZ button once. The app proves neither the
-# light's on/off semantics nor what ZZZ does, so ZZZ is not mapped to anti-snore.
-RESTONIC_B_CONTROLS: dict[str, tuple[int, bool]] = {
-    **_RESTONIC_COMMON_CONTROLS,
-    "back_legs_up": (KeesonCommands.MOTOR_HEAD_UP | KeesonCommands.MOTOR_FEET_UP, True),
-    "back_legs_down": (KeesonCommands.MOTOR_HEAD_DOWN | KeesonCommands.MOTOR_FEET_DOWN, True),
-    "zero_g": (KeesonCommands.PRESET_ZERO_G, False),
-    "light": (KeesonCommands.TOGGLE_SAFETY_LIGHTS, False),
-    "zzz": (KeesonCommands.PRESET_ANTI_SNORE, False),
+_MOTOR_BITS: dict[str, tuple[int, int]] = {
+    "head": (codec.HEAD_UP, codec.HEAD_DOWN),
+    "feet": (codec.FOOT_UP, codec.FOOT_DOWN),
+    "tilt": (codec.TILT_UP, codec.TILT_DOWN),
+    "lumbar": (codec.LUMBAR_UP, codec.LUMBAR_DOWN),
 }
 
 
 class KeesonController(BedController):
-    """Controller for Keeson beds (including Ergomotion variant with position feedback)."""
+    """Controller for every Keeson profile that has no app controller of its own."""
 
     def __init__(
         self,
@@ -340,55 +114,26 @@ class KeesonController(BedController):
         cb1322_presets: bool = False,
         device_name: str | None = None,
     ) -> None:
-        """Initialize the Keeson controller.
+        """Resolve the profile for ``variant``.
 
-        Args:
-            coordinator: The AdjustableBedCoordinator instance
-            variant: Protocol variant ('ksbt', 'base', 'ergomotion', or 'purple')
-            char_uuid: The characteristic UUID to use for writing commands
-            betterliving_presets: Use BetterLiving BED_DEFAULT preset values
-            cb1322_presets: Use CB1322 sub-variant memory preset values
-            device_name: Raw BLE device name (used to detect KSBT03C motor layout)
+        The raw BLE name is authoritative; the configured name is only used when
+        this connection surfaced none, so an edited name never overrides it.
         """
         super().__init__(coordinator)
         self._variant = variant
-        self._betterliving_presets = betterliving_presets
-        self._cb1322_presets = cb1322_presets
-        # KSBT03C control boxes have no head-tilt motor; their third motor is
-        # lumbar. The raw BLE name is authoritative when present; only fall
-        # back to the configured name (defaults to the BLE name) when this
-        # connection didn't surface a device name, so a stale or user-edited
-        # configured name can never override the real hardware name.
-        resolved_device_name = device_name or getattr(coordinator, "name", None)
-        self._is_ksbt03c = variant == KEESON_VARIANT_KSBT and is_ksbt03c_name(resolved_device_name)
-        self._is_sleep_harmony = variant == KEESON_VARIANT_SLEEP_HARMONY
-        self._is_adjustable_lite = variant == KEESON_VARIANT_ADJUSTABLE_LITE
-        self._is_adjustable_lite_ksbt03c = (
-            self._is_adjustable_lite
-            and _ADJUSTABLE_LITE_KSBT03C_TOKEN in (resolved_device_name or "")
-        )
-        self._is_restonic = variant in _RESTONIC_VARIANTS
-        self._is_restonic_b = variant == KEESON_VARIANT_RESTONIC_B
-        self._restonic_controls = (
-            RESTONIC_B_CONTROLS
-            if self._is_restonic_b
-            else RESTONIC_A_CONTROLS
-            if self._is_restonic
-            else {}
-        )
-        self._is_sleep_harmony_base_i5 = self._is_sleep_harmony and (
-            resolved_device_name or ""
-        ).strip().lower().startswith(_SLEEP_HARMONY_BASE_I5_PREFIX)
-        self._is_purple_plus = variant == KEESON_VARIANT_PURPLE and (
-            (resolved_device_name or "").strip().lower().startswith(_PURPLE_PLUS_NAME_PREFIX)
-            or self._has_ksbt_service()
+        self.profile: KeesonProfile = profiles.resolve(
+            variant,
+            device_name or getattr(coordinator, "name", None),
+            ksbt_service=variant == KEESON_VARIANT_PURPLE and self._has_ksbt_service(),
+            betterliving=betterliving_presets,
+            cb1322=cb1322_presets,
         )
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
         self._write_with_response = True
         self._write_mode_initialized = False
 
-        # Position feedback state (for ergomotion variant)
+        # State from Ergomotion notifications and Sino's tracked massage levels.
         self._head_position: int | None = None
         self._foot_position: int | None = None
         self._head_moving: bool = False
@@ -399,221 +144,55 @@ class KeesonController(BedController):
         self._led_on: bool = False
         self._timer_mode: str | None = None
 
-        # Determine the characteristic UUID
+        transport = codec.TRANSPORTS[self.profile.transport]
         if char_uuid:
             self._char_uuid = char_uuid
-        elif self._is_adjustable_lite:
-            # The app writes only to this fixed characteristic; it has no fallback.
-            self._char_uuid = KEESON_KSBT_CHAR_UUID
-        elif self._is_restonic:
-            # Restonic BT looks up only FFE5/FFE9 at write time; it has no fallback.
-            self._char_uuid = KEESON_BASE_WRITE_CHAR_UUID
-        elif self._is_sleep_harmony_base_i5:
-            self._char_uuid = self._detect_characteristic_uuid()
-        elif self._is_purple_plus:
-            self._char_uuid = self._detect_ksbt_characteristic_uuid()
-        elif variant == KEESON_VARIANT_JSON:
-            self._char_uuid = self._detect_json_characteristic_uuid()
-        elif variant in {
-            "ksbt",
-            KEESON_VARIANT_KSBT_CR,
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            # For KSBT variants, try to find a working characteristic UUID
-            self._char_uuid = self._detect_ksbt_characteristic_uuid()
+        elif self.profile.fixed_write:
+            self._char_uuid = transport.write_uuid
         else:
-            # For base/ergomotion variant, try to find a working characteristic UUID
-            self._char_uuid = self._detect_characteristic_uuid()
-
-        # Notify characteristic for variants with BLE feedback.
-        if variant == KEESON_VARIANT_JSON:
-            self._notify_char_uuid = KEESON_JSON_NOTIFY_CHAR_UUID
-        elif self._is_adjustable_lite:
-            self._notify_char_uuid = NORDIC_UART_READ_CHAR_UUID
-        else:
-            self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
-
+            self._char_uuid = self._detect_write_uuid(transport)
+        self._notify_char_uuid = codec.TRANSPORTS[self.profile.notify].notify_uuid
         _LOGGER.debug(
-            "KeesonController initialized (variant: %s, purple_plus: %s, "
-            "sleep_harmony_base_i5: %s, char: %s)",
+            "KeesonController initialized (variant: %s, profile: %s, char: %s)",
             variant,
-            self._is_purple_plus,
-            self._is_sleep_harmony_base_i5,
+            self.profile.key,
             self._char_uuid,
         )
 
     def _has_ksbt_service(self) -> bool:
-        """Return whether the connected device exposes Nordic UART service."""
+        """Return whether the connected device exposes the KSBT (Nordic UART) service."""
         client = self.client
         if client is None or client.services is None:
             return False
-        return any(
-            str(service.uuid).lower() == KEESON_KSBT_SERVICE_UUID.lower()
-            for service in client.services
-        )
+        ksbt = codec.TRANSPORTS["ksbt"].service_uuid
+        return any(str(service.uuid).lower() == ksbt for service in client.services)
 
-    def _detect_characteristic_uuid(self) -> str:
-        """Detect the correct write characteristic UUID from available services.
-
-        Tries the primary UUID first, then falls back to alternative UUIDs
-        if the primary service is not available. Verifies that the characteristic
-        actually exists within the service before returning.
-        """
+    def _detect_write_uuid(self, transport: codec.Transport) -> str:
+        """Return the first of the primary and fallback write roles the device exposes."""
         client = self.client
         if client is None or client.services is None:
-            _LOGGER.debug("No BLE services available, using default UUID")
-            return KEESON_BASE_WRITE_CHAR_UUID
-
-        # Build a map of service UUID -> service object for efficient lookup
-        services_map = {str(service.uuid).lower(): service for service in client.services}
-        _LOGGER.debug("Available Keeson services: %s", list(services_map.keys()))
-
-        # Check if primary service is available and has the expected characteristic
-        primary_service = services_map.get(KEESON_BASE_SERVICE_UUID.lower())
-        if primary_service is not None:
-            char = primary_service.get_characteristic(KEESON_BASE_WRITE_CHAR_UUID)
-            if char is not None:
-                _LOGGER.debug("Found primary Keeson service with expected characteristic")
-                return KEESON_BASE_WRITE_CHAR_UUID
-            _LOGGER.debug(
-                "Primary service found but characteristic %s not present",
-                KEESON_BASE_WRITE_CHAR_UUID,
-            )
-
-        # Try fallback service/characteristic pairs, verifying characteristic exists
-        for fallback_service, fallback_char in KEESON_FALLBACK_GATT_PAIRS:
-            service = services_map.get(fallback_service.lower())
-            if service is not None:
-                char = service.get_characteristic(fallback_char)
-                if char is not None:
-                    _LOGGER.info(
-                        "Using fallback service/characteristic: %s/%s",
-                        fallback_service,
-                        fallback_char,
-                    )
-                    return fallback_char
-                _LOGGER.debug(
-                    "Fallback service %s found but characteristic %s not present",
-                    fallback_service,
-                    fallback_char,
-                )
-
-        # No matching service/characteristic found, log all services for debugging
+            return transport.write_uuid
+        services = {str(service.uuid).lower(): service for service in client.services}
+        for service_uuid, write_uuid in (
+            (transport.service_uuid, transport.write_uuid),
+            *transport.fallbacks,
+        ):
+            service = services.get(service_uuid.lower())
+            if service is not None and service.get_characteristic(write_uuid) is not None:
+                if write_uuid != transport.write_uuid:
+                    _LOGGER.info("Using fallback service/characteristic: %s/%s", service_uuid, write_uuid)
+                return write_uuid
         _LOGGER.warning(
             "No recognized Keeson service/characteristic found. "
             "Please report this to help add support for your device."
         )
         self.log_discovered_services(level=logging.INFO)
-        return KEESON_BASE_WRITE_CHAR_UUID
-
-    def _detect_json_characteristic_uuid(self) -> str:
-        """Detect the JSON/A00A write characteristic UUID from available services."""
-        client = self.client
-        if client is None or client.services is None:
-            _LOGGER.debug("No BLE services available, using default JSON/A00A UUID")
-            return KEESON_JSON_WRITE_CHAR_UUID
-
-        services_map = {str(service.uuid).lower(): service for service in client.services}
-        json_service = services_map.get(KEESON_JSON_SERVICE_UUID.lower())
-        if json_service is not None:
-            char = json_service.get_characteristic(KEESON_JSON_WRITE_CHAR_UUID)
-            if char is not None:
-                _LOGGER.debug("Found JSON/A00A service with expected characteristic")
-                return KEESON_JSON_WRITE_CHAR_UUID
-            _LOGGER.debug(
-                "JSON/A00A service found but characteristic %s not present",
-                KEESON_JSON_WRITE_CHAR_UUID,
-            )
-
-        _LOGGER.warning(
-            "No recognized JSON/A00A service/characteristic found. "
-            "Falling back to the default Keeson JSON write UUID."
-        )
-        self.log_discovered_services(level=logging.INFO)
-        return KEESON_JSON_WRITE_CHAR_UUID
-
-    def _detect_ksbt_characteristic_uuid(self) -> str:
-        """Detect the correct write characteristic UUID for KSBT variant.
-
-        Tries the primary Nordic UART service first, then falls back to alternative
-        UUIDs if the primary service is not available.
-        """
-        client = self.client
-        if client is None or client.services is None:
-            _LOGGER.debug("No BLE services available, using default KSBT UUID")
-            return KEESON_KSBT_CHAR_UUID
-
-        # Build a map of service UUID -> service object for efficient lookup
-        services_map = {str(service.uuid).lower(): service for service in client.services}
-        _LOGGER.debug("Available KSBT services: %s", list(services_map.keys()))
-
-        # Check if primary KSBT service (Nordic UART) is available
-        primary_service = services_map.get(KEESON_KSBT_SERVICE_UUID.lower())
-        if primary_service is not None:
-            char = primary_service.get_characteristic(KEESON_KSBT_CHAR_UUID)
-            if char is not None:
-                _LOGGER.debug("Found primary KSBT service with expected characteristic")
-                return KEESON_KSBT_CHAR_UUID
-            _LOGGER.debug(
-                "Primary KSBT service found but characteristic %s not present",
-                KEESON_KSBT_CHAR_UUID,
-            )
-
-        # Try fallback service/characteristic pairs
-        for fallback_service, fallback_char in KEESON_KSBT_FALLBACK_GATT_PAIRS:
-            service = services_map.get(fallback_service.lower())
-            if service is not None:
-                char = service.get_characteristic(fallback_char)
-                if char is not None:
-                    _LOGGER.info(
-                        "Using KSBT fallback service/characteristic: %s/%s",
-                        fallback_service,
-                        fallback_char,
-                    )
-                    return fallback_char
-                _LOGGER.debug(
-                    "KSBT fallback service %s found but characteristic %s not present",
-                    fallback_service,
-                    fallback_char,
-                )
-
-        # No matching service/characteristic found, log all services for debugging
-        _LOGGER.warning(
-            "No recognized KSBT service/characteristic found. "
-            "Please report this to help add support for your device."
-        )
-        self.log_discovered_services(level=logging.INFO)
-        return KEESON_KSBT_CHAR_UUID
+        return transport.write_uuid
 
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return self._char_uuid
-
-    @property
-    def _is_ksbt(self) -> bool:
-        """Return True if this controller uses a KSBT-family protocol."""
-        return self._variant in {
-            "ksbt",
-            KEESON_VARIANT_KSBT_CR,
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }
-
-    @property
-    def _is_json_variant(self) -> bool:
-        """Return True when using the Keeson JSON/A00A command family."""
-        return self._variant == KEESON_VARIANT_JSON
-
-    @property
-    def _single_shot_count(self) -> int:
-        """Repeat count for single-shot commands (massage, presets, lights).
-
-        Current OEM apps send UI one-shot commands once. Sleep Harmony follows
-        each command with a delayed STOP rather than duplicating the command.
-        """
-        return 1
 
     # Capability properties
     @property
@@ -622,137 +201,48 @@ class KeesonController(BedController):
 
     @property
     def supports_preset_lounge(self) -> bool:
-        """Return True when the 0x2000 preset should be exposed."""
-        return (
-            self._is_ksbt
-            or self._is_json_variant
-            or self._variant == "ergomotion"
-            or (self._variant == KEESON_VARIANT_PURPLE and not self._is_purple_plus)
-        )
+        return "lounge" in self.profile.presets
 
     @property
     def supports_preset_tv(self) -> bool:
-        """Return True when the 0x4000 preset should be exposed."""
-        return self._is_ksbt or self._is_json_variant or self._variant == "ergomotion"
+        return "tv" in self.profile.presets and "tv" not in self.profile.unlisted_presets
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        """KSBT, Ergomotion, Purple, and BetterLiving have anti-snore preset."""
-        return (
-            self._is_ksbt
-            or self._is_json_variant
-            or self._betterliving_presets
-            or self._is_adjustable_lite_ksbt03c
-            or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
-        )
+        return "anti_snore" in self.profile.presets
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True unless the selected app has no memory buttons (Restonic BT)."""
-        return not self._is_restonic
+        return bool(self.profile.memory)
 
     @property
     def memory_slot_count(self) -> int:
-        """Return memory slot count based on variant.
-
-        KSBT/KSBT04C: Slots 1-3 (Read = slot 1, TV = slot 2, M = slot 3,
-            from Ergomotion Sync APK remotes A/B/C)
-        Sleep Harmony: Slots 1-3 (Read = slot 1, TV = slot 2, Snore = slot 3)
-        KSBT03CR: Slots 1-2 (not covered by Ergomotion Sync, keep legacy)
-        BetterLiving/CB1322: Slots 1-2 (from APK analysis)
-        BaseI4/I5: Slot 3 only (from APK analysis)
-        Ergomotion: 4 slots (needs verification)
-        JSON/A00A: Quest proves slots 1-4; other remotes reuse some addresses
-        Purple: 2 slots for premium base, 3 slot for plus. Slot 1 is mapped to the standard slot 4
-        Adjustable Lite: MI/MII/MIII recall buttons on both remotes
-        """
-        if self._is_json_variant:
-            return 4
-        if self._is_restonic:
-            return 0
-        if self._is_adjustable_lite:
-            return 3
-        if self._betterliving_presets or self._cb1322_presets:
-            return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
-        if self._variant in {
-            "ksbt",
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            return 3  # Read (0x2000), TV (0x4000), M (0x10000) buttons
-        if self._is_ksbt:
-            return 2  # KSBT03CR: Memory 1 and Memory 2 only (unverified beyond that)
-        elif self._variant == KEESON_VARIANT_PURPLE:
-            return 3 if self._is_purple_plus else 2
-        elif self._variant == "ergomotion":
-            return 4  # Ergomotion may support all 4
-        else:
-            # BaseI4/I5 - the APK only shows Memory 3 button
-            # But we'll expose all 4 as they may work
-            return 4
+        return self.profile.memory_slots
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return True for BetterLiving (save commands) and CB1322 (long-press save)."""
-        return (
-            self._betterliving_presets
-            or self._cb1322_presets
-            or self._variant == KEESON_VARIANT_PURPLE
-        )
+        return self.profile.memory_save is not None
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - Keeson beds support under-bed/safety lighting.
-
-        Purple Premium Smart Base lacks lighting; Purple Plus (with massage) has it.
-        """
-        if self._variant in {
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            # The guessed KSBT04C light/audio mappings are not verified and field
-            # reports showed they were wrong or unsafe. Hide them until captured.
-            return False
-        if self._variant == KEESON_VARIANT_PURPLE:
-            # Plus model has massage and lighting; Premium base has neither
-            return self._is_purple_plus
-        if self._is_restonic:
-            # Only remote B has the bulb button.
-            return self._is_restonic_b
-        return True
+        """KSBT04C light mappings are unverified; Purple Premium and Restonic A have no light."""
+        return self.profile.lights is not None and self.profile.lights_listed
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return True for ORE variant (discrete on/off), False for others (toggle only)."""
-        return self._variant == KEESON_VARIANT_SINO
+        return self.profile.lights == "discrete"
 
     @property
     def supports_light_toggle_control(self) -> bool:
-        """Return whether the toggle-light button should be exposed."""
-        if self._variant in {
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            return False
-        if self._is_restonic:
-            return self._is_restonic_b
-        return super().supports_light_toggle_control
+        return self.profile.lights is not None
 
     @property
     def has_tilt_support(self) -> bool:
-        """Return True if the bed has a head-tilt motor.
-
-        KSBT03C control boxes (e.g. Ergomotion RIO 5.0) have no tilt motor:
-        the Ergomotion Sync app's KSBT03C remote exposes only head, feet and
-        lumbar movement. Adjustable Lite exposes only head/back and leg/foot.
-        Other Keeson variants keep tilt control.
-        """
-        return not self._is_ksbt03c and not self._is_adjustable_lite and not self._is_restonic
+        return self.profile.tilt
 
     @property
     def has_lumbar_support(self) -> bool:
-        """Return True unless the selected app exposes no lumbar control."""
-        return not self._is_adjustable_lite and not self._is_restonic
+        return self.profile.lumbar
 
     @property
     def supports_stop_all(self) -> bool:
@@ -766,37 +256,19 @@ class KeesonController(BedController):
 
     @property
     def motor_translation_keys(self) -> dict[str, str] | None:
-        """Return Keeson-specific translation keys for motor cover entities.
-
-        Standard Keeson motor naming differs from standard naming:
-        - "head" motor → controls back/upper body → use "keeson_back"
-        - "tilt" motor → controls head/pillow → use "keeson_head"
-        - "feet" motor → controls legs → use "keeson_legs"
-
-        BetterLiving/Sino beds use standard motor naming (head=head, feet=feet),
-        so no translation overrides are needed.
-        """
-        if self._variant == KEESON_VARIANT_SINO or self._is_json_variant:
+        """Keeson's head motor moves the back, tilt the head and feet the legs."""
+        if not self.profile.keeson_motor_names:
             return None
-        return {
-            "head": "keeson_back",
-            "tilt": "keeson_head",
-            "feet": "keeson_legs",
-        }
+        return {"head": "keeson_back", "tilt": "keeson_head", "feet": "keeson_legs"}
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
-        """Return Keeson's percentage sliders.
+        """Ergomotion's percentage sliders.
 
-        Keeson remotes are labelled head/feet, but the firmware reports those
-        axes as "back"/"legs" in its position frames, so the entity keys and the
-        position keys deliberately differ. Positions are percentages, not angles,
-        so the user's angle calibration does not apply.
-
-        Only the Ergomotion variant reports positions at all; the shared Keeson
-        protocol is also used by Serta and OKIN FFE frames, which report none.
+        Remotes label the axes head/feet; the firmware reports them as
+        "back"/"legs". Percentages ignore the user's angle calibration.
         """
-        if self._variant != KEESON_VARIANT_ERGOMOTION:
+        if not self.profile.position_feedback:
             return ()
         return (
             build_position_number_spec(
@@ -810,11 +282,11 @@ class KeesonController(BedController):
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         """Return the Keeson motor layout used by entities and timed move."""
-        translation_overrides = self.motor_translation_keys or {}
+        names = self.motor_translation_keys or {}
         specs = [
             MotorControlSpec(
                 key="head",
-                translation_key=translation_overrides.get("head", "head"),
+                translation_key=names.get("head", "head"),
                 open_fn=lambda ctrl: ctrl.move_head_up(),
                 close_fn=lambda ctrl: ctrl.move_head_down(),
                 stop_fn=lambda ctrl: ctrl.move_head_stop(),
@@ -822,7 +294,7 @@ class KeesonController(BedController):
             ),
             MotorControlSpec(
                 key="feet",
-                translation_key=translation_overrides.get("feet", "feet"),
+                translation_key=names.get("feet", "feet"),
                 open_fn=lambda ctrl: ctrl.move_feet_up(),
                 close_fn=lambda ctrl: ctrl.move_feet_down(),
                 stop_fn=lambda ctrl: ctrl.move_feet_stop(),
@@ -830,16 +302,13 @@ class KeesonController(BedController):
                 max_angle=45,
             ),
         ]
-
-        # Allocate the extra motor slots (motor_count beyond the standard 2)
-        # in remote order: tilt first where the bed has one, then lumbar.
-        # KSBT03C beds have no tilt motor, so their third motor is lumbar.
+        # Extra motors fill the motor count in remote order: tilt, then lumbar.
         optional_specs = []
         if self.has_tilt_support:
             optional_specs.append(
                 MotorControlSpec(
                     key="tilt",
-                    translation_key=translation_overrides.get("tilt", "tilt"),
+                    translation_key=names.get("tilt", "tilt"),
                     open_fn=lambda ctrl: ctrl.move_tilt_up(),
                     close_fn=lambda ctrl: ctrl.move_tilt_down(),
                     stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
@@ -850,19 +319,17 @@ class KeesonController(BedController):
             optional_specs.append(
                 MotorControlSpec(
                     key="lumbar",
-                    translation_key=translation_overrides.get("lumbar", "lumbar"),
+                    translation_key=names.get("lumbar", "lumbar"),
                     open_fn=lambda ctrl: ctrl.move_lumbar_up(),
                     close_fn=lambda ctrl: ctrl.move_lumbar_down(),
                     stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
                     max_angle=30,
                 )
             )
+        specs.extend(optional_specs[: max(0, self._coordinator.motor_count - 2)])
 
-        extra_slots = max(0, self._coordinator.motor_count - 2)
-        specs.extend(optional_specs[:extra_slots])
-
-        if self._is_restonic_b:
-            # Remote B's back-up/back-down glyphs drive head and foot together.
+        if "back_legs_up" in self.profile.held_controls:
+            # Restonic BT remote B's back glyphs drive head and foot together.
             specs.append(
                 MotorControlSpec(
                     key="back_legs",
@@ -875,30 +342,21 @@ class KeesonController(BedController):
                     scheduler_resource="motor:*",
                 )
             )
-
         return tuple(specs)
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Clean up optional motor covers that no longer apply.
-
-        Removes the phantom tilt cover on KSBT03C beds (no tilt motor),
-        covers left behind when the configured motor count is reduced, and the
-        Restonic BT remote B combined cover. Active keys are skipped by the cleanup.
-        """
+        """Optional covers that may no longer apply; active keys are skipped."""
         return frozenset({"tilt", "lumbar", "back_legs"})
 
-    # Adjustable Lite's KSBT03C remote has only head/leg increase/decrease and
-    # one timer button; its KSBT01C remote has no massage at all.
     @property
     def auto_enable_massage(self) -> bool:
-        """Expose massage without opt-in when the app's KSBT03C remote shows it."""
-        return self._is_adjustable_lite_ksbt03c
+        """Expose massage without opt-in when the Adjustable Lite KSBT03C remote shows it."""
+        return self.profile.massage == "zone_steps"
 
-    # The Restonic BT app has no massage control on either remote style.
     @property
     def _app_without_generic_massage(self) -> bool:
-        return self._is_adjustable_lite or self._is_restonic
+        return self.profile.massage in ("none", "zone_steps")
 
     @property
     def supports_massage_toggle_control(self) -> bool:
@@ -928,23 +386,21 @@ class KeesonController(BedController):
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._is_adjustable_lite_ksbt03c
+            return self.profile.massage == "zone_steps"
         return super().supports_head_massage_intensity_step_control
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._is_adjustable_lite_ksbt03c
+            return self.profile.massage == "zone_steps"
         return super().supports_foot_massage_intensity_step_control
 
     @property
     def supports_massage_mode_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._is_adjustable_lite_ksbt03c
+            return self.profile.massage == "zone_steps"
         return super().supports_massage_mode_step_control
 
-    # Massage timer - Keeson only has step command, no direct timer set
-    # We cannot reliably emulate stepping without knowing current state
     @property
     def supports_massage_timer(self) -> bool:
         """Return False - Keeson can only step through timer, not set directly."""
@@ -952,84 +408,53 @@ class KeesonController(BedController):
 
     @property
     def supports_massage_off_control(self) -> bool:
-        """Return True for variants with a verified massage-off command.
-
-        Sino sets both zones to intensity zero. Sleep Harmony KSBT04C uses the
-        dedicated 0x02000000 all-zone STOP command.
-        """
-        return self._variant in {
-            KEESON_VARIANT_SINO,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }
+        """Sino zeroes both zones; Sleep Harmony has an all-zone STOP word."""
+        return self.profile.massage == "absolute" or self.profile.massage_off is not None
 
     @property
     def supports_massage_intensity_control(self) -> bool:
-        """Return True for ORE variant which supports step up/down intensity."""
-        return self._variant == KEESON_VARIANT_SINO
+        return self.profile.massage == "absolute"
 
     @property
     def massage_mode_step_is_timer(self) -> bool:
         """Return True when the shared action sends the Keeson timer-step command."""
-        return self._variant != KEESON_VARIANT_SINO
+        return self.profile.massage != "absolute"
 
     @property
     def supports_massage_wave_direction_control(self) -> bool:
-        """Return True for the hardware-confirmed BaseI4/I5 wave controls."""
-        return self._variant == KEESON_VARIANT_BASE
+        return self.profile.wave_controls
 
     @property
     def supports_massage_intensity_preset_control(self) -> bool:
-        """Return True for the hardware-confirmed BaseI4/I5 intensity presets."""
-        return self._variant == KEESON_VARIANT_BASE
+        return self.profile.wave_controls
 
     @property
     def massage_intensity_max(self) -> int:
-        """Return max massage intensity based on variant."""
-        if self._variant == KEESON_VARIANT_SINO:
-            return 10  # Sino uses 0-10 scale
-        return 6  # Keeson/Ergomotion use 0-6 scale
+        return 10 if self.profile.massage == "absolute" else 6
 
     def _refresh_write_mode(self) -> None:
         """Resolve the write mode required by the selected Keeson profile."""
         if self._write_mode_initialized:
             return
-
         client = self.client
         if client is None or client.services is None:
             return
-
         for service in client.services:
             for char in service.characteristics:
                 if str(char.uuid).lower() != self._char_uuid.lower():
                     continue
-
                 props = {prop.lower() for prop in getattr(char, "properties", [])}
-                if (
-                    self._is_ksbt03c or self._is_adjustable_lite or self._is_restonic
-                ) and "write-without-response" in props:
-                    # Ergomotion Sync leaves the Android characteristic write
-                    # type unchanged. Android initializes dual-mode
-                    # characteristics to WRITE_TYPE_NO_RESPONSE, so mirror that
-                    # behavior for the identified KSBT03C profile. Waiting for
-                    # an acknowledgement here stretches every 300 ms refresh by
-                    # a full BLE/proxy round trip and makes motion stutter.
-                    # Adjustable Lite and Restonic BT likewise never set a
-                    # write type.
+                if self.profile.no_response and "write-without-response" in props:
+                    # These apps never set a write type, and Android starts
+                    # dual-mode characteristics without response. Waiting for an
+                    # acknowledgement stretches every refresh and makes motion stutter.
                     self._write_with_response = False
                 elif "write" in props:
                     self._write_with_response = True
                 elif "write-without-response" in props:
                     self._write_with_response = False
-
-                _LOGGER.debug(
-                    "Keeson write mode: response=%s (char=%s props=%s)",
-                    self._write_with_response,
-                    self._char_uuid,
-                    getattr(char, "properties", []),
-                )
                 self._write_mode_initialized = True
                 return
-
         self._write_mode_initialized = True
 
     def _json_device_identifier(self) -> str:
@@ -1043,70 +468,14 @@ class KeesonController(BedController):
                 return str(candidate)
         return "unknown"
 
-    def _build_json_command(
-        self,
-        command_value: int,
-        *,
-        ctrm: int,
-        km: int,
-        keykt: int,
-    ) -> bytes:
-        """Build a JSON/A00A command payload from the Juna/Linx protocol family."""
-        payload = {
-            "code": 2,
-            "dvid": self._json_device_identifier(),
-            "cmd": {
-                "key": f"{command_value:08x}",
-                "ctrm": ctrm,
-                "km": km,
-                "keykt": keykt,
-            },
-        }
-        return json.dumps(payload, separators=(",", ":")).encode()
-
     def _build_command(self, command_value: int) -> bytes:
-        """Build command bytes based on protocol variant."""
-        if self._is_json_variant:
-            if command_value == 0:
-                return self._build_json_command(command_value, ctrm=0, km=1, keykt=0)
-            return self._build_json_command(command_value, ctrm=1, km=1, keykt=0)
-        if self._is_sleep_harmony_base_i5:
-            # Sleep Harmony base-i5: E6/FE/16 + command_le32 + side 00 + checksum.
-            int_bytes = int_to_bytes(command_value)
-            int_bytes.reverse()
-            data = [0xE6, 0xFE, 0x16] + int_bytes + [0x00]
-            return bytes(data + [(~sum(data)) & 0xFF])
-        if self._is_purple_plus:
-            # Purple Premium Plus P2: [0x04, 0x02, command_be32, 0x00].
-            return bytes([0x04, 0x02] + int_to_bytes(command_value) + [0x00])
-        if self._variant in {KEESON_VARIANT_KSBT, KEESON_VARIANT_ADJUSTABLE_LITE}:
-            # KSBT: [0x04, 0x02, ...int_to_bytes(command)]
-            return bytes([0x04, 0x02] + int_to_bytes(command_value))
-        elif self._variant == KEESON_VARIANT_KSBT_CR:
-            # KSBT03CR: [0x05, 0x02, ...int_to_bytes(command), 0x00]
-            return bytes([0x05, 0x02] + int_to_bytes(command_value) + [0x00])
-        elif self._variant in {
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            # KSBT04C: [0x04, 0x02, ...int_to_bytes(command), checksum]
-            # Source: com.keeson.ssbaudio (Sleep Harmony) BleClient.buildInstruct0()
-            data = [0x04, 0x02] + int_to_bytes(command_value)
-            checksum = (~sum(data)) & 0xFF
-            return bytes(data + [checksum])
-        else:
-            # BaseI4/I5/OKIN/Serta/Ergomotion/Sino: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
-            # OKIN FFE (13/15 series) uses 0xE6 prefix, others use 0xE5
-            int_bytes = int_to_bytes(command_value)
-            # Sino variant (Dynasty) and BetterLiving BED_DEFAULT use
-            # big-endian byte order. All other variants use little-endian.
-            if self._variant != KEESON_VARIANT_SINO and not self._betterliving_presets:
-                int_bytes.reverse()  # Little-endian for non-Sino variants
-            prefix = 0xE6 if self._variant == KEESON_VARIANT_OKIN else 0xE5
-            data = [prefix, 0xFE, 0x16] + int_bytes
-            checksum = sum(data) ^ 0xFF
-            data.append(checksum & 0xFF)
-            return bytes(data)
+        """Encode one key word in the profile's carrier."""
+        if self.profile.carrier == "json":
+            return profiles.encode(self.profile, command_value, self._json_device_identifier())
+        return profiles.encode(self.profile, command_value)
+
+    def _step_frame(self, step: int | bytes) -> bytes:
+        return step if isinstance(step, bytes) else self._build_command(step)
 
     async def write_command(
         self,
@@ -1117,21 +486,11 @@ class KeesonController(BedController):
     ) -> None:
         """Write a command to the bed."""
         selected_cancel_event = (
-            cancel_event
-            if cancel_event is not None
-            else self._coordinator.cancel_command
+            cancel_event if cancel_event is not None else self._coordinator.cancel_command
         )
         if selected_cancel_event.is_set():
-            _LOGGER.debug("Skipping Keeson write because command was cancelled")
             return
-
         self._refresh_write_mode()
-        _LOGGER.debug(
-            "Writing command to Keeson bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
         await self._write_gatt_with_retry(
             self._char_uuid,
             command,
@@ -1141,31 +500,31 @@ class KeesonController(BedController):
             response=self._write_with_response,
         )
 
+    # Adjustable Lite status: a 500 ms 00 B0 poll answered by notifications.
     @property
     def protocol_diagnostics(self) -> dict[str, Any]:
         """Record which Adjustable Lite remote the device name selected."""
-        if not self._is_adjustable_lite:
+        if not self.profile.status_poll_ms:
             return {}
-        return {"adjustable_lite_remote": "KSBT03C" if self._is_adjustable_lite_ksbt03c else "KSBT01C"}
+        return {"adjustable_lite_remote": "KSBT03C" if self.profile.status_timer else "KSBT01C"}
 
     @property
     def requires_notification_channel(self) -> bool:
-        """Adjustable Lite status replies arrive as notifications, angles or not."""
-        return self._is_adjustable_lite
+        return self.profile.status_poll_ms is not None
 
     @property
     def diagnostic_poll_interval(self) -> float | None:
-        """Mirror Adjustable Lite's 500 ms status query on a live connection."""
-        return _ADJUSTABLE_LITE_STATUS_POLL_SECONDS if self._is_adjustable_lite else None
+        poll_ms = self.profile.status_poll_ms
+        return poll_ms / 1000 if poll_ms else None
 
     async def async_refresh_diagnostics(self) -> None:
-        """Send one Adjustable Lite status query; the reply is a notification."""
-        if self._is_adjustable_lite:
-            await self.write_command(_KSBT_RELEASE_QUERY, cancel_event=asyncio.Event())
+        """Send one status query; the reply is a notification."""
+        if self.profile.status_poll_ms:
+            await self.write_command(codec.STATUS_QUERY, cancel_event=asyncio.Event())
 
     def invalidate_diagnostics(self) -> None:
-        """Forget Adjustable Lite reported state when the BLE session ends."""
-        if self._is_adjustable_lite:
+        """Forget reported status when the BLE session ends."""
+        if self.profile.status_poll_ms:
             self.forward_controller_state_updates(
                 dict.fromkeys(
                     (
@@ -1181,7 +540,7 @@ class KeesonController(BedController):
         self,
     ) -> tuple[ControllerStateBinarySensorSpec, ...]:
         """The app's bulb icon, driven by notification byte 12."""
-        if not self._is_adjustable_lite:
+        if not self.profile.status_poll_ms:
             return ()
         return (
             ControllerStateBinarySensorSpec(
@@ -1194,12 +553,14 @@ class KeesonController(BedController):
 
     @property
     def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset() if self._is_adjustable_lite else frozenset({STATE_ADJUSTABLE_LITE_LIGHT})
+        if self.profile.status_poll_ms:
+            return frozenset()
+        return frozenset({STATE_ADJUSTABLE_LITE_LIGHT})
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """The KSBT03C remote's 10/20/30 minute massage timer indicator."""
-        if not self._is_adjustable_lite_ksbt03c:
+        if not self.profile.status_timer:
             return ()
         return (
             ControllerStateSensorSpec(
@@ -1214,41 +575,30 @@ class KeesonController(BedController):
 
     @property
     def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        if self._is_adjustable_lite_ksbt03c:
+        if self.profile.status_timer:
             return frozenset()
         return frozenset({STATE_ADJUSTABLE_LITE_MASSAGE_TIMER})
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start position (Ergomotion) or status (Adjustable Lite) notifications."""
         self._notify_callback = callback
-
-        if self._variant not in {KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_ADJUSTABLE_LITE}:
-            _LOGGER.debug(
-                "Keeson beds don't support position notifications (variant: %s)", self._variant
-            )
+        if not (self.profile.position_feedback or self.profile.status_poll_ms):
             return
-
         if self.client is None or not self.client.is_connected:
             _LOGGER.warning("Cannot start notifications: not connected")
             return
-
         try:
-            await self.client.start_notify(
-                self._notify_char_uuid,
-                self._on_notification,
-            )
-            _LOGGER.debug("Started notifications for Keeson bed (variant: %s)", self._variant)
+            await self.client.start_notify(self._notify_char_uuid, self._on_notification)
         except BleakError:
             # Adjustable Lite controls never wait for the subscription either.
             _LOGGER.warning("Failed to start notifications")
 
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
-        """Handle incoming BLE notifications (ergomotion and Adjustable Lite)."""
-        _LOGGER.debug("Received notification: %s", data.hex())
+        """Handle Ergomotion position and Adjustable Lite status notifications."""
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
-        if self._is_adjustable_lite:
+        if self.profile.status_poll_ms:
             state = parse_adjustable_lite_status(
-                bytes(data), massage_timer=self._is_adjustable_lite_ksbt03c
+                bytes(data), massage_timer=self.profile.status_timer
             )
             if state is not None:
                 self.forward_controller_state_updates(state)
@@ -1256,176 +606,79 @@ class KeesonController(BedController):
         self._parse_notification(bytes(data))
 
     def _parse_notification(self, data: bytes) -> None:
-        """Parse notification data from the bed (ergomotion variant).
-
-        Data formats based on header byte:
-        - 0xED: 16-byte messages
-        - 0xF0: 19-byte messages
-        - 0xF1: 20-byte messages
-        """
-        if len(data) < 1:
+        """Apply an Ergomotion ``ED``/``F0``/``F1`` status notification."""
+        status = codec.parse_position_status(data)
+        if status is None:
+            _LOGGER.debug("Unknown notification format: %s", data.hex())
             return
-
-        header = data[0]
-
-        if header == 0xED and len(data) >= 16:
-            self._parse_position_message(data, 16)
-        elif header == 0xF0 and len(data) >= 19:
-            self._parse_position_message(data, 19)
-        elif header == 0xF1 and len(data) >= 20:
-            self._parse_position_message(data, 20)
-        else:
-            _LOGGER.debug("Unknown notification format: header=0x%02X len=%d", header, len(data))
-
-    def _parse_position_message(self, data: bytes, msg_len: int) -> None:
-        """Parse position message from ergomotion bed."""
-        # data1 starts at offset 1
-        data1 = data[1:9]
-
-        # Head position: bytes 0-1 (little-endian)
-        head_pos = int.from_bytes(data1[0:2], "little")
-        if head_pos != 0xFFFF:
-            self._head_position = head_pos
-        else:
-            self._head_position = 0
-
-        # Foot position: bytes 2-3 (little-endian)
-        foot_pos = int.from_bytes(data1[2:4], "little")
-        if foot_pos != 0xFFFF:
-            self._foot_position = foot_pos
-        else:
-            self._foot_position = 0
-
-        # Massage levels: bytes 4-5 (0-6 scale)
-        self._head_massage = data1[4] if len(data1) > 4 else 0
-        self._foot_massage = data1[5] if len(data1) > 5 else 0
-
-        # data2 starts at offset 9
-        data2 = data[9:msg_len]
-
-        # Movement status and LED: byte 4
-        if len(data2) > 4:
-            move = data2[4] & 0xF
-            self._head_moving = move != 0xF and (move & 1) > 0
-            self._foot_moving = move != 0xF and (move & 2) > 0
-            self._led_on = (data2[4] & 0x40) > 0
-
-        # Timer: byte 5
-        if len(data2) > 5:
-            timer_val = data2[5]
-            timer_options = ["10", "20", "30"]
-            if 1 <= timer_val <= 3:
-                self._timer_mode = timer_options[timer_val - 1]
-            else:
-                self._timer_mode = None
-
-        self._notify_position_update()
-
-    def _notify_position_update(self) -> None:
-        """Notify callback with position updates.
-
-        Note: Ergomotion positions are 0-100 (percentage), not angles in degrees.
-        We use "back"/"legs" keys to match 2-motor sensor/cover entity expectations.
-        """
-        if self._notify_callback is None:
-            return
-
-        # Notify back (head) position - use "back" key for 2-motor compatibility
-        if self._head_position is not None:
-            self._notify_callback("back", float(self._head_position))
-
-        # Notify legs (foot) position - use "legs" key for 2-motor compatibility
-        if self._foot_position is not None:
-            self._notify_callback("legs", float(self._foot_position))
+        self._head_position = status.head_position
+        self._foot_position = status.foot_position
+        self._head_massage = status.head_massage
+        self._foot_massage = status.foot_massage
+        self._head_moving = status.head_moving
+        self._foot_moving = status.foot_moving
+        self._led_on = status.led_on
+        self._timer_mode = status.timer_minutes
+        if self._notify_callback is not None:
+            # "back"/"legs" keys match the 2-motor sensors; values are percentages.
+            self._notify_callback("back", float(status.head_position))
+            self._notify_callback("legs", float(status.foot_position))
 
     async def stop_notify(self) -> None:
-        """Stop listening for position notifications."""
-        if self._variant not in {KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_ADJUSTABLE_LITE}:
+        """Stop listening for notifications."""
+        if not (self.profile.position_feedback or self.profile.status_poll_ms):
             return
-
         if self.client is None or not self.client.is_connected:
             return
-
         try:
             await self.client.stop_notify(self._notify_char_uuid)
-            _LOGGER.debug("Stopped position notifications")
         except BleakError:
             _LOGGER.debug("Failed to stop notifications")
 
     async def read_positions(self, motor_count: int = 2) -> None:
-        """Read current position data.
+        """Ergomotion reports positions through notifications, not reads."""
 
-        Ergomotion beds report positions via notifications, not direct reads.
-        """
-        pass
-
-    # Position feedback properties (for ergomotion variant)
     @property
     def head_position(self) -> int | None:
-        """Get current head position (0-100)."""
         return self._head_position
 
     @property
     def foot_position(self) -> int | None:
-        """Get current foot position (0-100)."""
         return self._foot_position
 
     @property
     def head_moving(self) -> bool:
-        """Check if head motor is currently moving."""
         return self._head_moving
 
     @property
     def foot_moving(self) -> bool:
-        """Check if foot motor is currently moving."""
         return self._foot_moving
 
     @property
     def head_massage_level(self) -> int:
-        """Get head massage level (0-6)."""
         return self._head_massage
 
     @property
     def foot_massage_level(self) -> int:
-        """Get foot massage level (0-6)."""
         return self._foot_massage
 
     @property
     def led_on(self) -> bool:
-        """Check if LED is on."""
         return self._led_on
 
     def _get_move_command(self) -> int:
-        """Calculate the combined motor movement command."""
+        """Combine the held motors into one key word."""
         command = 0
-        state = self._motor_state
-        if state.get("head") is True:
-            command += KeesonCommands.MOTOR_HEAD_UP
-        elif state.get("head") is False:
-            command += KeesonCommands.MOTOR_HEAD_DOWN
-        if state.get("feet") is True:
-            command += KeesonCommands.MOTOR_FEET_UP
-        elif state.get("feet") is False:
-            command += KeesonCommands.MOTOR_FEET_DOWN
-        if state.get("tilt") is True:
-            command += KeesonCommands.MOTOR_TILT_UP
-        elif state.get("tilt") is False:
-            command += KeesonCommands.MOTOR_TILT_DOWN
-        if state.get("lumbar") is True:
-            command += KeesonCommands.MOTOR_LUMBAR_UP
-        elif state.get("lumbar") is False:
-            command += KeesonCommands.MOTOR_LUMBAR_DOWN
+        for motor, direction in self._motor_state.items():
+            if direction is not None:
+                command += _MOTOR_BITS[motor][0 if direction else 1]
         return command
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        """Return the effective movement cadence for this controller.
+        """Return the profile's hold cadence while the stored cadence is the default.
 
-        Keeson app families use different hold intervals even when their packet
-        payloads share the same 32-bit command values. Translate only the stored
-        generic Keeson default so an explicitly customized cadence remains
-        authoritative. BetterLiving chooses 100 ms for its two-motor screen and
-        200 ms for its three-motor screen; the other app families have a fixed
-        variant-level interval.
+        An explicitly customized cadence stays authoritative. BetterLiving-style
+        Sino and OKIN screens use their three-motor cadence for three motors.
         """
         configured = (
             self._coordinator.motor_pulse_count,
@@ -1433,35 +686,21 @@ class KeesonController(BedController):
         )
         if configured != BED_MOTOR_PULSE_DEFAULTS[BED_TYPE_KEESON]:
             return configured
-
-        if self._betterliving_presets:
-            if self._coordinator.motor_count == 3:
-                return _THREE_MOTOR_BETTERLIVING_PULSES
-            return _APP_MOTOR_PULSE_DEFAULTS[KEESON_VARIANT_SINO]
-
-        if self._variant in {KEESON_VARIANT_OKIN, KEESON_VARIANT_SINO}:
-            if self._coordinator.motor_count == 3:
-                return _THREE_MOTOR_BETTERLIVING_PULSES
-
-        if self._is_ksbt03c:
-            return _ERGOMOTION_SYNC_KSBT03C_PULSES
-
-        return _APP_MOTOR_PULSE_DEFAULTS.get(self._variant, configured)
+        if self.profile.three_motor_hold and self._coordinator.motor_count == 3:
+            return self.profile.three_motor_hold
+        return self.profile.hold or configured
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor and always run the protocol-specific release cleanup."""
+        """Move a motor and always run the profile's release."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
         repeat_count, repeat_delay_ms = self.motor_pulse_settings()
         completed = False
-
         try:
             if command:
-                if self._is_json_variant:
+                if self.profile.carrier == "json":
                     await self._write_json_motion_command(
-                        command,
-                        repeat_count=repeat_count,
-                        repeat_delay_ms=repeat_delay_ms,
+                        command, repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
                     )
                 else:
                     await self.write_command(
@@ -1471,91 +710,49 @@ class KeesonController(BedController):
                     )
             completed = True
         finally:
-            # Release writes use a fresh event so cancellation cannot suppress them.
-            # KSBT03C has no release write; ending the cancellable refresh is its stop.
             self._motor_state = {}
-            if self._is_restonic:
-                # A stop function (no direction) or an interrupted hold releases at once.
-                await self._restonic_release(delay=completed and bool(command))
-            else:
-                await self._release_motion()
+            # A touch-up release is immediate after a stop or an interrupted hold.
+            guarded = self.profile.release.guarded
+            await self._release_motion(delay=(completed and bool(command)) or not guarded)
 
     async def _release_motion(self, *, delay: bool = True) -> None:
-        """Send the protocol-specific motor release sequence.
+        """Send the profile's release steps with a fresh event, so STOP cannot suppress them.
 
-        Direct six-byte KSBT/P2 remotes do not transmit a zero-key frame on
-        release. Ergomotion Sync stops KSBT03C motion solely by cancelling its
-        300 ms repeat timer, which observes the coordinator cancellation event
-        between writes; its ``00 B0`` status queries run independently.
-        Current SFD apps stop the 100 ms key refresh and send status query
-        ``00 B0`` at +300, +600, and +900 ms. Other variants retain their
-        explicit zero frame, whose packet format is specific to that family.
+        An explicit stop (``delay`` False) skips the waits, or sends nothing when
+        the release only polls status. Profiles with no steps stop by ending the
+        cancellable refresh: the app has no release frame, and inventing one
+        would be unsafe.
         """
-        if self._is_adjustable_lite:
-            # Release only cancels the app's 300 ms movement timer; no frame exists.
+        release = self.profile.release
+        if not release.steps:
             return
-
-        if self._is_restonic:
-            await self._restonic_release(delay=delay)
+        if release.guarded:
+            await self._touch_up(delay=delay)
             return
-
+        if not delay and not release.on_stop:
+            return
         cancel_event = asyncio.Event()
+        for wait_ms, step in release.steps:
+            if delay and wait_ms:
+                await asyncio.sleep(wait_ms / 1000)
+            await self.write_command(self._step_frame(step), cancel_event=cancel_event)
 
-        if self._variant == KEESON_VARIANT_PURPLE:
-            await self.write_command(
-                _PURPLE_RELEASE_COMMAND,
-                cancel_event=cancel_event,
-            )
-            return
+    async def _touch_up(self, *, delay: bool) -> None:
+        """Write the touch-up release frame after the app's wait.
 
-        if self._variant == KEESON_VARIANT_SLEEP_HARMONY:
-            if delay:
-                await asyncio.sleep(_SLEEP_HARMONY_RELEASE_DELAY_SECONDS)
-            await self.write_command(
-                self._build_command(0),
-                cancel_event=cancel_event,
-            )
-            return
-
-        if self._variant == KEESON_VARIANT_KSBT:
-            if self._is_ksbt03c:
-                # Timer cessation is the app-proven KSBT03C stop mechanism. No
-                # release frame was found, and inventing one would be unsafe.
-                return
-            if not delay:
-                # Direct P2 motion stops when the held-key refresh ends. The
-                # app's delayed 00 B0 frames are status queries, not STOP.
-                return
-            for _ in range(_KSBT_RELEASE_QUERY_COUNT):
-                await asyncio.sleep(_KSBT_RELEASE_QUERY_DELAY_SECONDS)
-                await self.write_command(
-                    _KSBT_RELEASE_QUERY,
-                    cancel_event=cancel_event,
-                )
-            return
-
-        await self.write_command(
-            self._build_command(0),
-            cancel_event=cancel_event,
-        )
-
-    async def _restonic_release(self, *, delay: bool) -> None:
-        """Write the Restonic BT zero frame after a touch-up.
-
-        An ordinary release waits the app's 100 ms first. A stop, a replacement
-        or an interrupted hold sends it at once, and a STOP arriving during the
-        wait ends it early. The write runs with a fresh event in a shielded task,
-        so cancelling the caller can never suppress or abort it.
+        A STOP during the wait ends it early. The write runs with a fresh event
+        in a shielded task, so cancelling the caller can never suppress or abort it.
         """
+        ((wait_ms, step),) = self.profile.release.steps
         stop_requested = self._coordinator.cancel_command
         interrupted: asyncio.CancelledError | None = None
         if delay and not stop_requested.is_set():
             try:
-                await _wait_unless_cancelled(stop_requested, _RESTONIC_RELEASE_DELAY_SECONDS)
+                await _wait_unless_cancelled(stop_requested, wait_ms / 1000)
             except asyncio.CancelledError as err:
                 interrupted = err
         release = asyncio.create_task(
-            self.write_command(self._build_command(0), cancel_event=asyncio.Event())
+            self.write_command(self._step_frame(step), cancel_event=asyncio.Event())
         )
         try:
             await asyncio.shield(release)
@@ -1566,22 +763,18 @@ class KeesonController(BedController):
             raise interrupted
 
     async def _write_single_shot(self, command: bytes) -> None:
-        """Write a one-shot action and perform any app-specific release."""
+        """Write a one-shot action once, then the profile's tap release if any."""
         completed = False
         try:
-            await self.write_command(command, repeat_count=self._single_shot_count)
+            await self.write_command(command)
             completed = True
         finally:
-            if self._is_restonic:
-                await self._restonic_release(delay=completed)
-            elif self._variant in {
-                KEESON_VARIANT_PURPLE,
-                KEESON_VARIANT_SLEEP_HARMONY,
-            }:
-                await self._release_motion()
+            release = self.profile.release
+            if release.after_tap:
+                await self._release_motion(delay=completed or not release.guarded)
 
     async def _write_held(self, command: bytes, repeat_count: int, repeat_delay_ms: int) -> None:
-        """Refresh a held Restonic BT control, then release it."""
+        """Refresh a held app control, then release it."""
         completed = False
         try:
             await self.write_command(
@@ -1589,83 +782,67 @@ class KeesonController(BedController):
             )
             completed = True
         finally:
-            await self._restonic_release(delay=completed)
+            await self._release_motion(delay=completed)
 
     async def _write_json_motion_command(
-        self,
-        command_value: int,
-        *,
-        repeat_count: int,
-        repeat_delay_ms: int,
+        self, command_value: int, *, repeat_count: int, repeat_delay_ms: int
     ) -> None:
         """Send held-motion JSON commands compatible with all known Juna A00A remotes.
 
-        Quest uses `ctrm=0` for held movement while Rewind/Restore/Relax use
-        `ctrm=1`. Sending both start forms keeps one controller compatible with
+        Quest uses ``ctrm=0`` for held movement while Rewind/Restore/Relax use
+        ``ctrm=1``. Sending both start forms keeps one controller compatible with
         the known Juna/Linx remote families without requiring an extra option.
         """
+        device_id = self._json_device_identifier()
         for index in range(repeat_count):
             cancel_event = self._coordinator.cancel_command
             if cancel_event.is_set():
-                _LOGGER.debug("JSON motion cancelled after %d/%d writes", index, repeat_count)
                 return
-
             for ctrm in (1, 0):
                 await self.write_command(
-                    self._build_json_command(command_value, ctrm=ctrm, km=3, keykt=1),
+                    codec.json_command(command_value, device_id, ctrm=ctrm, km=3, keykt=1),
                     cancel_event=cancel_event,
                 )
-
             if index < repeat_count - 1:
                 await asyncio.sleep(repeat_delay_ms / 1000)
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up."""
         await self._move_motor("head", True)
 
     async def move_head_down(self) -> None:
-        """Move head down."""
         await self._move_motor("head", False)
 
     async def move_head_stop(self) -> None:
-        """Stop head motor."""
         await self._move_motor("head", None)
 
     async def move_back_up(self) -> None:
-        """Move back up (same as head for Keeson)."""
+        """Keeson's head motor moves the back."""
         await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        """Move back down (same as head for Keeson)."""
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up (same as feet for Keeson)."""
+        """Keeson's feet motor moves the legs."""
         await self._move_motor("feet", True)
 
     async def move_legs_down(self) -> None:
-        """Move legs down (same as feet for Keeson)."""
         await self._move_motor("feet", False)
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
         await self._move_motor("feet", None)
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
         await self._move_motor("feet", True)
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
         await self._move_motor("feet", False)
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         await self._move_motor("feet", None)
 
     async def move_back_legs_up(self) -> None:
@@ -1681,381 +858,131 @@ class KeesonController(BedController):
         await self._move_back_legs(None)
 
     async def _move_back_legs(self, direction: bool | None) -> None:
-        if not self._is_restonic_b:
+        if "back_legs_up" not in self.profile.held_controls:
             raise NotImplementedError("Combined head and foot movement needs Restonic BT remote B")
         # The combined literal is exactly the head bit OR the foot bit.
         self._motor_state["feet"] = direction
         await self._move_motor("head", direction)
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
         self._motor_state = {}
         await self._release_motion(delay=False)
 
-    # Tilt motor control
     async def move_tilt_up(self) -> None:
-        """Move tilt up."""
-        await self._move_motor(motor="tilt", direction=True)
+        await self._move_motor("tilt", True)
 
     async def move_tilt_down(self) -> None:
-        """Move tilt down."""
-        await self._move_motor(motor="tilt", direction=False)
+        await self._move_motor("tilt", False)
 
     async def move_tilt_stop(self) -> None:
-        """Stop tilt motor."""
-        await self._move_motor(motor="tilt", direction=None)
+        await self._move_motor("tilt", None)
 
-    # Lumbar motor control
     async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
-        await self._move_motor(motor="lumbar", direction=True)
+        await self._move_motor("lumbar", True)
 
     async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
-        await self._move_motor(motor="lumbar", direction=False)
+        await self._move_motor("lumbar", False)
 
     async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
-        await self._move_motor(motor="lumbar", direction=None)
+        await self._move_motor("lumbar", None)
 
     # Preset methods
+    async def _preset(self, preset: profiles.Preset) -> None:
+        word = self.profile.presets.get(preset)
+        if word is None:
+            _LOGGER.warning("%s preset is not available on %s beds", preset, self._variant)
+            return
+        await self._write_single_shot(self._build_command(word))
+
     async def preset_flat(self) -> None:
-        """Go to flat position."""
-        if self._betterliving_presets:
-            await self._write_single_shot(self._build_command(BetterLivingCommands.PRESET_FLAT))
-        else:
-            await self._write_single_shot(self._build_command(KeesonCommands.PRESET_FLAT))
-
-    async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset.
-
-        Note: Command values vary by protocol variant:
-        - KSBT: Memory 1 (0x2000) = Read button, Memory 2 (0x4000) = TV
-          button, Memory 3 (0x10000) = M button
-        - Sleep Harmony KSBT04C: Memory 1/2/3 labels send Read (0x2000),
-          TV (0x4000), and Snore (0x8000)
-        - BaseI4/I5: Memory 3 (0x8000) is the only confirmed memory preset
-        - Memory 3 (0x8000) on KSBT is actually anti-snore, not memory
-        - BetterLiving: Memory 1 (0x01000008), Memory 2 (0x01000009)
-        - CB1322: Memory 1 (0x00010000), Memory 2 (0x00040000)
-        - Purple Premium: Memory 1 (0x00010000), Memory 2 (0x00004000)
-        - Purple Premium Plus: Memory 1 (0x00010000), Memory 2 (0x00002000),
-          Memory 3 (0x00004000)
-        """
-        if self._is_restonic:
-            raise NotImplementedError("The Restonic BT app has no memory presets")
-
-        if self._betterliving_presets:
-            commands = {
-                1: BetterLivingCommands.PRESET_MEMORY_1,
-                2: BetterLivingCommands.PRESET_MEMORY_2,
-            }
-            if command := commands.get(memory_num):
-                await self._write_single_shot(self._build_command(command))
-            else:
-                _LOGGER.warning(
-                    "BetterLiving memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        if self._cb1322_presets:
-            commands = {
-                1: CB1322Commands.PRESET_MEMORY_1,
-                2: CB1322Commands.PRESET_MEMORY_2,
-            }
-            if command := commands.get(memory_num):
-                await self._write_single_shot(self._build_command(command))
-            else:
-                _LOGGER.warning(
-                    "CB1322 memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        if self._is_adjustable_lite:
-            # Shipped MI/MII/MIII labels, despite the app's internal m/read/tv names.
-            commands = {
-                1: KeesonCommands.PRESET_MEMORY_4,
-                2: KeesonCommands.PRESET_MEMORY_1,
-                3: KeesonCommands.PRESET_MEMORY_2,
-            }
-            if command := commands.get(memory_num):
-                await self._write_single_shot(self._build_command(command))
-            else:
-                _LOGGER.warning(
-                    "Adjustable Lite memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        if self._variant == KEESON_VARIANT_PURPLE:
-            commands = (
-                {
-                    1: KeesonCommands.PRESET_MEMORY_4,
-                    2: KeesonCommands.PRESET_MEMORY_1,
-                    3: KeesonCommands.PRESET_MEMORY_2,
-                }
-                if self._is_purple_plus
-                else {
-                    1: KeesonCommands.PRESET_MEMORY_4,
-                    2: KeesonCommands.PRESET_MEMORY_2,
-                }
-            )
-            if command := commands.get(memory_num):
-                await self._write_single_shot(self._build_command(command))
-            else:
-                _LOGGER.warning(
-                    "Purple memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        if self._variant in {
-            "ksbt",
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            # Sleep Harmony labels Reading/TV/Snore as M1/M2/M3. Direct
-            # and generic KSBT04C instead map their third M button to 0x10000.
-            commands = (
-                {
-                    1: KeesonCommands.PRESET_MEMORY_1,
-                    2: KeesonCommands.PRESET_MEMORY_2,
-                    3: KeesonCommands.PRESET_ANTI_SNORE,
-                }
-                if self._variant == KEESON_VARIANT_SLEEP_HARMONY
-                else {
-                    1: KeesonCommands.PRESET_MEMORY_1,
-                    2: KeesonCommands.PRESET_MEMORY_2,
-                    3: KeesonCommands.PRESET_MEMORY_4,
-                }
-            )
-            if command := commands.get(memory_num):
-                await self._write_single_shot(self._build_command(command))
-            else:
-                _LOGGER.warning(
-                    "KSBT memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        # Warn about variant-specific behavior
-        if self._variant != "base" and memory_num == 3:
-            _LOGGER.warning(
-                "Memory 3 on KSBT/Ergomotion beds triggers anti-snore, not a memory preset. "
-                "Use Memory 1 or Memory 2 instead."
-            )
-        elif self._variant == "base" and memory_num in (1, 2):
-            _LOGGER.debug(
-                "Memory %d may not work on BaseI4/I5 beds. Memory 3 is more reliable.",
-                memory_num,
-            )
-
-        commands = {
-            1: KeesonCommands.PRESET_MEMORY_1,
-            2: KeesonCommands.PRESET_MEMORY_2,
-            3: KeesonCommands.PRESET_MEMORY_3,
-            4: KeesonCommands.PRESET_MEMORY_4,
-        }
-        if command := commands.get(memory_num):
-            await self._write_single_shot(self._build_command(command))
-
-    async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory.
-
-        BetterLiving BED_DEFAULT has dedicated save commands.
-        CB1322 emulates save by sending the recall command repeated 30x at 100ms.
-        Purple's dedicated send-memory flow performs 26 writes, each after a
-        200ms delay (approximately 5.2 seconds total).
-        Other Keeson variants don't support programming.
-        """
-        if self._betterliving_presets:
-            commands = {
-                1: BetterLivingCommands.SAVE_MEMORY_1,
-                2: BetterLivingCommands.SAVE_MEMORY_2,
-            }
-            if command := commands.get(memory_num):
-                await self.write_command(self._build_command(command))
-            else:
-                _LOGGER.warning(
-                    "BetterLiving save memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        if self._variant == KEESON_VARIANT_PURPLE:
-            commands = (
-                {
-                    1: KeesonCommands.PRESET_MEMORY_4,
-                    2: KeesonCommands.PRESET_MEMORY_1,
-                    3: KeesonCommands.PRESET_MEMORY_2,
-                }
-                if self._is_purple_plus
-                else {
-                    1: KeesonCommands.PRESET_MEMORY_4,
-                    2: KeesonCommands.PRESET_MEMORY_2,
-                }
-            )
-            if command := commands.get(memory_num):
-                cancel_event = self._coordinator.cancel_command
-                for _ in range(_PURPLE_MEMORY_PROGRAM_COUNT):
-                    if cancel_event.is_set():
-                        return
-                    await asyncio.sleep(_PURPLE_MEMORY_PROGRAM_DELAY_SECONDS)
-                    await self.write_command(
-                        self._build_command(command),
-                        cancel_event=cancel_event,
-                    )
-            else:
-                _LOGGER.warning(
-                    "Purple save memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        if self._cb1322_presets:
-            commands = {
-                1: CB1322Commands.PRESET_MEMORY_1,
-                2: CB1322Commands.PRESET_MEMORY_2,
-            }
-            if command := commands.get(memory_num):
-                await self.write_command(
-                    self._build_command(command),
-                    repeat_count=30,
-                    repeat_delay_ms=100,
-                )
-            else:
-                _LOGGER.warning(
-                    "CB1322 save memory %d not supported (valid: %s)",
-                    memory_num,
-                    sorted(commands.keys()),
-                )
-            return
-
-        _LOGGER.warning(
-            "Keeson beds don't support programming memory presets (requested: %d)", memory_num
-        )
+        await self._preset("flat")
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position.
-
-        Restonic BT remote A refreshes Zero G while held, so a press holds it for
-        the configured pulse count; remote B taps it once.
-        """
-        if self._variant == KEESON_VARIANT_RESTONIC_A:
-            await self._write_held(
-                self._build_command(KeesonCommands.PRESET_ZERO_G), *self.motor_pulse_settings()
-            )
+        """Restonic BT remote A refreshes Zero G while held; others tap it once."""
+        held = self.profile.held_controls.get("zero_g")
+        if held is not None and held[1]:
+            await self._write_held(self._build_command(held[0]), *self.motor_pulse_settings())
             return
-        if self._betterliving_presets:
-            await self._write_single_shot(self._build_command(BetterLivingCommands.PRESET_ZERO_G))
-        else:
-            await self._write_single_shot(self._build_command(KeesonCommands.PRESET_ZERO_G))
+        await self._preset("zero_g")
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position (KSBT 'Read' button / Memory 1, Lounge on Purple)."""
-        if (
-            not self._is_ksbt
-            and not self._is_json_variant
-            and self._variant != "ergomotion"
-            and (self._variant != KEESON_VARIANT_PURPLE or self._is_purple_plus)
-        ):
-            _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
-            return
-        await self._write_single_shot(self._build_command(KeesonCommands.PRESET_LOUNGE))
+        await self._preset("lounge")
 
     async def preset_tv(self) -> None:
-        """Go to TV position (KSBT/Ergomotion only)."""
-        if self._is_restonic or self._variant in [
-            "base",
-            KEESON_VARIANT_PURPLE,
-            KEESON_VARIANT_ADJUSTABLE_LITE,
-        ]:
-            _LOGGER.warning("TV preset is not available on %s beds", self._variant)
-            return
-        await self._write_single_shot(self._build_command(KeesonCommands.PRESET_TV))
+        await self._preset("tv")
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
-        if self._betterliving_presets:
-            await self._write_single_shot(
-                self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE)
+        await self._preset("anti_snore")
+
+    async def preset_memory(self, memory_num: int) -> None:
+        """Recall a memory slot; words differ per profile (see ``profiles/keeson.py``)."""
+        if not self.profile.memory:
+            raise NotImplementedError("This Keeson app has no memory presets")
+        word = self.profile.memory.get(memory_num)
+        if word is None:
+            _LOGGER.warning(
+                "Memory %d not supported (valid: %s)", memory_num, sorted(self.profile.memory)
             )
             return
-        if not self.supports_preset_anti_snore:
-            _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
+        await self._write_single_shot(self._build_command(word))
+
+    async def program_memory(self, memory_num: int) -> None:
+        """Program a memory slot as the profile's app does."""
+        save = self.profile.memory_save
+        word = save.words.get(memory_num) if save is not None else None
+        if save is None or word is None:
+            _LOGGER.warning("Programming memory %d is not supported on this bed", memory_num)
             return
-        await self._write_single_shot(self._build_command(KeesonCommands.PRESET_ANTI_SNORE))
+        command = self._build_command(word)
+        if not save.wait_first:
+            await self.write_command(
+                command, repeat_count=save.repeats, repeat_delay_ms=save.repeat_ms
+            )
+            return
+        cancel_event = self._coordinator.cancel_command
+        for _ in range(save.repeats):
+            if cancel_event.is_set():
+                return
+            await asyncio.sleep(save.repeat_ms / 1000)
+            await self.write_command(command, cancel_event=cancel_event)
 
     # Light methods
+    def _require_lights(self) -> None:
+        if self.profile.lights is None:
+            raise NotImplementedError(f"Light control is not verified for {self.profile.key}")
+
+    async def _write_light(self, on: bool) -> None:
+        word = SinoCommands.LIGHT_ON if on else SinoCommands.LIGHT_OFF
+        await self.write_command(self._build_command(word))
+        self._led_on = on
+
     async def lights_on(self) -> None:
-        """Turn on safety lights."""
-        if self._variant in {
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            raise NotImplementedError("KSBT04C light control is not yet verified")
-        if self._variant == KEESON_VARIANT_SINO:
-            # ORE variant has discrete on/off commands
-            await self.write_command(
-                self._build_command(SinoCommands.LIGHT_ON), repeat_count=self._single_shot_count
-            )
-            self._led_on = True
+        self._require_lights()
+        if self.profile.lights == "discrete":
+            await self._write_light(True)
         else:
-            # Other variants only have toggle
             await self.lights_toggle()
 
     async def lights_off(self) -> None:
-        """Turn off safety lights."""
-        if self._variant in {
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            raise NotImplementedError("KSBT04C light control is not yet verified")
-        if self._variant == KEESON_VARIANT_SINO:
-            # ORE variant has discrete on/off commands
-            await self.write_command(
-                self._build_command(SinoCommands.LIGHT_OFF), repeat_count=self._single_shot_count
-            )
-            self._led_on = False
+        self._require_lights()
+        if self.profile.lights == "discrete":
+            await self._write_light(False)
         else:
-            # Other variants only have toggle
             await self.lights_toggle()
 
     async def lights_toggle(self) -> None:
-        """Toggle safety lights."""
-        if self._is_restonic and not self._is_restonic_b:
-            raise NotImplementedError("Restonic BT remote A has no light button")
-        if self._variant in {
-            KEESON_VARIANT_KSBT04C,
-            KEESON_VARIANT_SLEEP_HARMONY,
-        }:
-            raise NotImplementedError("KSBT04C light control is not yet verified")
-        if self._variant == KEESON_VARIANT_SINO:
-            # ORE doesn't have a toggle command; emulate it with tracked state.
-            command = SinoCommands.LIGHT_OFF if self._led_on else SinoCommands.LIGHT_ON
-            await self.write_command(
-                self._build_command(command), repeat_count=self._single_shot_count
-            )
-            self._led_on = not self._led_on
+        """Toggle the lights; discrete-light profiles emulate it with tracked state."""
+        self._require_lights()
+        if self.profile.lights == "discrete":
+            await self._write_light(not self._led_on)
         else:
-            await self._write_single_shot(
-                self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS)
-            )
+            await self._write_single_shot(self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS))
 
     # Restonic BT app controls
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         """Remote B's ZZZ button, labelled as the app labels it."""
-        if not self._is_restonic_b:
+        if "zzz" not in self.profile.held_controls:
             return ()
         return (
             ControllerButtonSpec(
@@ -2069,24 +996,24 @@ class KeesonController(BedController):
 
     async def restonic_zzz(self) -> None:
         """Tap remote B's ZZZ button (0x8000); its physical effect is unproven."""
-        if not self._is_restonic_b:
+        control = self.profile.held_controls.get("zzz")
+        if control is None:
             raise NotImplementedError("Only Restonic BT remote B has the ZZZ button")
-        await self._write_single_shot(self._build_command(RESTONIC_B_CONTROLS["zzz"][0]))
+        await self._write_single_shot(self._build_command(control[0]))
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
         """Every control on the selected Restonic BT remote can be held."""
-        return tuple(self._restonic_controls)
+        return tuple(self.profile.held_controls)
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
-        """Hold one Restonic BT control, then release it as the app's touch-up does.
+        """Hold one app control, then release it as the app's touch-up does.
 
-        Repeating controls write at once and every 100 ms while held; one-shot
-        controls write once on touch-down. Release writes one zero frame 100 ms
-        after the hold ends.
+        Repeating controls write at once and at the hold interval while held;
+        one-shot controls write once on touch-down.
         """
         try:
-            value, repeats = self._restonic_controls[control]
+            value, repeats = self.profile.held_controls[control]
         except KeyError as err:
             raise ValueError(f"Unsupported Restonic BT control: {control}") from err
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
@@ -2094,164 +1021,130 @@ class KeesonController(BedController):
         cancel_event = self._coordinator.cancel_command
         if cancel_event.is_set():
             return
-        writes = -(-duration_ms // _RESTONIC_REPEAT_MS) if repeats else 1
+        interval_ms = self.profile.hold[1] if self.profile.hold else 100
+        writes = -(-duration_ms // interval_ms) if repeats else 1
         completed = False
         try:
             await self.write_command(
                 self._build_command(value),
                 repeat_count=writes,
-                repeat_delay_ms=_RESTONIC_REPEAT_MS,
+                repeat_delay_ms=interval_ms,
                 cancel_event=cancel_event,
             )
             await _wait_unless_cancelled(
-                cancel_event, (duration_ms - (writes - 1) * _RESTONIC_REPEAT_MS) / 1000
+                cancel_event, (duration_ms - (writes - 1) * interval_ms) / 1000
             )
             completed = True
         finally:
-            await self._restonic_release(delay=completed)
+            await self._release_motion(delay=completed)
 
-    # Massage methods
+    # Massage: Keeson step keys, or Sino's absolute levels tracked here.
+    async def _sino_levels(self, *, head: int | None = None, foot: int | None = None) -> None:
+        """Track, then write, absolute zone levels."""
+        if head is not None:
+            self._head_massage = head
+        if foot is not None:
+            self._foot_massage = foot
+        await self._write_sino_levels(head, foot)
+
+    async def _write_sino_levels(self, head: int | None, foot: int | None) -> None:
+        if head is not None:
+            await self.write_command(
+                self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + head)
+            )
+        if foot is not None:
+            await self.write_command(
+                self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + foot)
+            )
+
+    async def _step(self, word: int) -> None:
+        await self._write_single_shot(self._build_command(word))
+
+    @property
+    def _absolute_massage(self) -> bool:
+        return self.profile.massage == "absolute"
+
     async def massage_toggle(self) -> None:
-        """Toggle massage."""
-        if self._variant == KEESON_VARIANT_SINO:
-            if self._head_massage > 0 or self._foot_massage > 0:
-                await self.massage_off()
-            else:
-                self._head_massage = 1
-                self._foot_massage = 1
-                await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + 1),
-                    repeat_count=self._single_shot_count,
-                )
-                await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + 1),
-                    repeat_count=self._single_shot_count,
-                )
+        if not self._absolute_massage:
+            await self._step(KeesonCommands.MASSAGE_STEP)
+        elif self._head_massage > 0 or self._foot_massage > 0:
+            await self.massage_off()
         else:
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_STEP))
+            await self._sino_levels(head=1, foot=1)
 
     async def massage_off(self) -> None:
-        """Turn off all massage."""
-        if self._variant == KEESON_VARIANT_SINO:
-            # Dynasty-family apps stop massage by setting both zones to intensity 0.
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE),
-                repeat_count=self._single_shot_count,
-            )
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE),
-                repeat_count=self._single_shot_count,
-            )
-            self._head_massage = 0
-            self._foot_massage = 0
-        elif self._variant == KEESON_VARIANT_SLEEP_HARMONY:
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_ALL_STOP))
+        if self._absolute_massage:
+            # Dynasty-family apps stop massage by setting both zones to zero.
+            await self._write_sino_levels(0, 0)
+            self._head_massage = self._foot_massage = 0
+        elif self.profile.massage_off is not None:
+            await self._step(self.profile.massage_off)
         else:
-            # Standard Keeson doesn't have a dedicated off command
             await super().massage_off()
 
     async def massage_head_up(self) -> None:
-        """Increase head massage intensity."""
-        if self._variant == KEESON_VARIANT_SINO:
-            self._head_massage = min(10, self._head_massage + 1)
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage),
-                repeat_count=self._single_shot_count,
-            )
+        if self._absolute_massage:
+            await self._sino_levels(head=min(10, self._head_massage + 1))
         else:
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_HEAD_UP))
+            await self._step(KeesonCommands.MASSAGE_HEAD_UP)
 
     async def massage_head_down(self) -> None:
-        """Decrease head massage intensity."""
-        if self._variant == KEESON_VARIANT_SINO:
-            self._head_massage = max(0, self._head_massage - 1)
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage),
-                repeat_count=self._single_shot_count,
-            )
+        if self._absolute_massage:
+            await self._sino_levels(head=max(0, self._head_massage - 1))
         else:
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN))
+            await self._step(KeesonCommands.MASSAGE_HEAD_DOWN)
 
     async def massage_foot_up(self) -> None:
-        """Increase foot massage intensity."""
-        if self._variant == KEESON_VARIANT_SINO:
-            self._foot_massage = min(10, self._foot_massage + 1)
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage),
-                repeat_count=self._single_shot_count,
-            )
+        if self._absolute_massage:
+            await self._sino_levels(foot=min(10, self._foot_massage + 1))
         else:
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_FOOT_UP))
+            await self._step(KeesonCommands.MASSAGE_FOOT_UP)
 
     async def massage_foot_down(self) -> None:
-        """Decrease foot massage intensity."""
-        if self._variant == KEESON_VARIANT_SINO:
-            self._foot_massage = max(0, self._foot_massage - 1)
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage),
-                repeat_count=self._single_shot_count,
-            )
+        if self._absolute_massage:
+            await self._sino_levels(foot=max(0, self._foot_massage - 1))
         else:
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN))
+            await self._step(KeesonCommands.MASSAGE_FOOT_DOWN)
 
     async def massage_intensity_up(self) -> None:
-        """Increase all massage intensity."""
-        if self._variant == KEESON_VARIANT_SINO:
-            self._head_massage = min(10, self._head_massage + 1)
-            self._foot_massage = min(10, self._foot_massage + 1)
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage),
-                repeat_count=self._single_shot_count,
-            )
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage),
-                repeat_count=self._single_shot_count,
+        if self._absolute_massage:
+            await self._sino_levels(
+                head=min(10, self._head_massage + 1), foot=min(10, self._foot_massage + 1)
             )
         else:
-            # Standard Keeson: step both zones up
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_HEAD_UP))
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_FOOT_UP))
+            await self._step(KeesonCommands.MASSAGE_HEAD_UP)
+            await self._step(KeesonCommands.MASSAGE_FOOT_UP)
 
     async def massage_intensity_down(self) -> None:
-        """Decrease all massage intensity."""
-        if self._variant == KEESON_VARIANT_SINO:
-            self._head_massage = max(0, self._head_massage - 1)
-            self._foot_massage = max(0, self._foot_massage - 1)
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage),
-                repeat_count=self._single_shot_count,
-            )
-            await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage),
-                repeat_count=self._single_shot_count,
+        if self._absolute_massage:
+            await self._sino_levels(
+                head=max(0, self._head_massage - 1), foot=max(0, self._foot_massage - 1)
             )
         else:
-            # Standard Keeson: step both zones down
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN))
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN))
+            await self._step(KeesonCommands.MASSAGE_HEAD_DOWN)
+            await self._step(KeesonCommands.MASSAGE_FOOT_DOWN)
 
     async def massage_mode_step(self) -> None:
-        """Step the profile-specific massage timer or mode."""
-        if self._variant == KEESON_VARIANT_SINO:
+        """Step the Keeson massage timer, or Sino's wave pattern 1..10."""
+        if self._absolute_massage:
             self._wave_massage = (self._wave_massage % 10) + 1
             await self.write_command(
-                self._build_command(SinoCommands.MASSAGE_HEAD_WAVE_BASE + self._wave_massage),
-                repeat_count=self._single_shot_count,
+                self._build_command(SinoCommands.MASSAGE_HEAD_WAVE_BASE + self._wave_massage)
             )
         else:
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_TIMER_STEP))
+            await self._step(KeesonCommands.MASSAGE_TIMER_STEP)
 
     async def massage_wave_next(self) -> None:
         """Select the next BaseI4/I5 massage wave pattern."""
         if not self.supports_massage_wave_direction_control:
             raise NotImplementedError("Massage wave direction is only verified for base variant")
-        await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_WAVE_STEP))
+        await self._step(KeesonCommands.MASSAGE_WAVE_STEP)
 
     async def massage_wave_previous(self) -> None:
         """Select the previous BaseI4/I5 massage wave pattern."""
         if not self.supports_massage_wave_direction_control:
             raise NotImplementedError("Massage wave direction is only verified for base variant")
-        await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_WAVE_PREVIOUS))
+        await self._step(KeesonCommands.MASSAGE_WAVE_PREVIOUS)
 
     async def set_massage_intensity_preset(self, level: int) -> None:
         """Select a hardware-confirmed BaseI4/I5 massage intensity."""
@@ -2266,45 +1159,21 @@ class KeesonController(BedController):
             command = commands[level]
         except KeyError as err:
             raise ValueError(f"Unsupported massage intensity preset: {level}") from err
-        await self._write_single_shot(self._build_command(command))
+        await self._step(command)
 
     async def massage_head_toggle(self) -> None:
-        """Toggle head massage zone on/off."""
-        if self._variant == KEESON_VARIANT_SINO:
-            if self._head_massage > 0:
-                self._head_massage = 0
-                await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE),
-                    repeat_count=self._single_shot_count,
-                )
-            else:
-                self._head_massage = 1
-                await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + 1),
-                    repeat_count=self._single_shot_count,
-                )
+        """Toggle the head zone (Sino) or step its intensity, wrapping to off."""
+        if self._absolute_massage:
+            await self._sino_levels(head=0 if self._head_massage > 0 else 1)
         else:
-            # Standard Keeson: step through head massage intensity (wraps max→0)
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_HEAD_UP))
+            await self._step(KeesonCommands.MASSAGE_HEAD_UP)
 
     async def massage_foot_toggle(self) -> None:
-        """Toggle foot massage zone on/off."""
-        if self._variant == KEESON_VARIANT_SINO:
-            if self._foot_massage > 0:
-                self._foot_massage = 0
-                await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE),
-                    repeat_count=self._single_shot_count,
-                )
-            else:
-                self._foot_massage = 1
-                await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + 1),
-                    repeat_count=self._single_shot_count,
-                )
+        """Toggle the foot zone (Sino) or step its intensity, wrapping to off."""
+        if self._absolute_massage:
+            await self._sino_levels(foot=0 if self._foot_massage > 0 else 1)
         else:
-            # Standard Keeson: step through foot massage intensity (wraps max→0)
-            await self._write_single_shot(self._build_command(KeesonCommands.MASSAGE_FOOT_UP))
+            await self._step(KeesonCommands.MASSAGE_FOOT_UP)
 
     async def sound_toggle(self) -> None:
         """Raise until KSBT04C sound control is verified from captured traffic."""
@@ -2327,13 +1196,7 @@ class KeesonController(BedController):
         raise NotImplementedError("KSBT04C therapy mode control is not yet verified")
 
     def get_massage_state(self) -> dict[str, Any]:
-        """Return current massage state from BLE notification feedback.
-
-        Only populated for ergomotion variant which has state notifications.
-
-        Returns:
-            dict with head_intensity, foot_intensity, timer_mode
-        """
+        """Return massage state from Ergomotion notifications or Sino tracking."""
         return {
             "head_intensity": self._head_massage,
             "foot_intensity": self._foot_massage,

@@ -441,7 +441,7 @@ async def test_factory_auto_detects_keeson_sino_variant_for_okin_ble_signature()
 
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_SINO
-    assert getattr(controller, "_betterliving_presets", None) is True
+    assert getattr(getattr(controller, "profile", None), "key", None) == "betterliving"
 
 
 async def test_factory_auto_detects_keeson_json_variant_for_a00a_service() -> None:
@@ -489,8 +489,8 @@ async def test_factory_keeps_keeson_json_variant_when_fallback_uuids_are_also_pr
 
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_JSON
-    assert getattr(controller, "_betterliving_presets", None) is False
-    assert getattr(controller, "_cb1322_presets", None) is False
+    assert getattr(getattr(controller, "profile", None), "key", None) != "betterliving"
+    assert getattr(getattr(controller, "profile", None), "key", None) != "cb1322"
 
 
 async def test_factory_auto_detects_keeson_sino_for_okin_ble_name_single_uuid() -> None:
@@ -514,7 +514,7 @@ async def test_factory_auto_detects_keeson_sino_for_okin_ble_name_single_uuid() 
 
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_SINO
-    assert getattr(controller, "_betterliving_presets", None) is True
+    assert getattr(getattr(controller, "profile", None), "key", None) == "betterliving"
 
 
 async def test_factory_auto_detects_cb1322_variant() -> None:
@@ -540,7 +540,7 @@ async def test_factory_auto_detects_cb1322_variant() -> None:
 
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_OKIN
-    assert getattr(controller, "_cb1322_presets", None) is True
+    assert getattr(getattr(controller, "profile", None), "key", None) == "cb1322"
 
 
 async def test_factory_auto_detects_cb1322_dewertokin_manufacturer() -> None:
@@ -566,7 +566,7 @@ async def test_factory_auto_detects_cb1322_dewertokin_manufacturer() -> None:
 
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_OKIN
-    assert getattr(controller, "_cb1322_presets", None) is True
+    assert getattr(getattr(controller, "profile", None), "key", None) == "cb1322"
 
 
 async def test_factory_enables_coolbase_dewert_okin_profile() -> None:
@@ -607,48 +607,27 @@ async def test_factory_enables_coolbase_dewert_okin_profile_for_btcb_name() -> N
 
 
 async def test_betterliving_preset_commands() -> None:
-    """BetterLiving presets should use BetterLivingCommands values."""
-    from custom_components.adjustable_bed.beds.keeson import (
-        BetterLivingCommands,
-        KeesonController,
-    )
+    """BetterLiving presets use the BED_DEFAULT words on the big-endian E5 frame."""
+    from custom_components.adjustable_bed.beds.keeson import KeesonController
+    from custom_components.adjustable_bed.profiles.keeson import BETTERLIVING
 
-    coordinator = _FactoryCoordinator()
-    controller = KeesonController(coordinator, variant="sino", betterliving_presets=True)
+    controller = KeesonController(_FactoryCoordinator(), variant="sino", betterliving_presets=True)
 
-    # Verify flat preset builds the right command value
-    cmd = controller._build_command(BetterLivingCommands.PRESET_FLAT)
-    # E5 FE 16 + big-endian 0x01000002 + checksum
-    assert cmd[0] == 0xE5
-    assert cmd[1] == 0xFE
-    assert cmd[2] == 0x16
-    # Big-endian 0x01000002 = [0x01, 0x00, 0x00, 0x02]
-    assert cmd[3:7] == bytes([0x01, 0x00, 0x00, 0x02])
-
-    # Verify memory slot count
+    assert controller.profile is BETTERLIVING
+    assert controller._build_command(BETTERLIVING.presets["flat"]).hex() == "e5fe160100000203"
     assert controller.memory_slot_count == 2
     assert controller.supports_memory_programming is True
 
 
 async def test_cb1322_preset_commands() -> None:
-    """CB1322 presets should use CB1322Commands values with OKIN (little-endian) format."""
-    from custom_components.adjustable_bed.beds.keeson import (
-        CB1322Commands,
-        KeesonController,
-    )
+    """CB1322 memory words use the little-endian OKIN (E6) frame."""
+    from custom_components.adjustable_bed.beds.keeson import KeesonController
+    from custom_components.adjustable_bed.profiles.keeson import CB1322
 
-    coordinator = _FactoryCoordinator()
-    controller = KeesonController(coordinator, variant="okin", cb1322_presets=True)
+    controller = KeesonController(_FactoryCoordinator(), variant="okin", cb1322_presets=True)
 
-    # Verify memory 1 builds with OKIN prefix and little-endian
-    cmd = controller._build_command(CB1322Commands.PRESET_MEMORY_1)
-    # E6 FE 16 + little-endian 0x00010000 = [0x00, 0x00, 0x01, 0x00] + checksum
-    assert cmd[0] == 0xE6
-    assert cmd[1] == 0xFE
-    assert cmd[2] == 0x16
-    assert cmd[3:7] == bytes([0x00, 0x00, 0x01, 0x00])
-
-    # Verify memory slot count
+    assert controller.profile is CB1322
+    assert controller._build_command(CB1322.memory[1]).hex() == "e6fe160000010004"
     assert controller.memory_slot_count == 2
     assert controller.supports_memory_programming is True
 

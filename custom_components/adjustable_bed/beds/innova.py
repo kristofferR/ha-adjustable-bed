@@ -11,9 +11,10 @@ the bed, and 16/19-byte FFE4 notifications drive the lamp and timer icons.
 The app scans without any name or service rule, so the profile is explicit
 only. The user picks the 2M/3M/4M screen with the motor count.
 
-Timing: held keys write at 0 ms and then every 100 ms; ``buttonUp`` cancels the
-refresh and, 100 ms later, writes the zero key. Every single-shot write is
-preceded by a 100 ms sleep in ``sendSingleMessage``.
+Frames, timing, presets and memory are the ``INNOVA`` profile
+(``profiles/keeson.py``): held keys write at 0 ms and then every 100 ms;
+``buttonUp`` cancels the refresh and, 100 ms later, writes the zero key. Every
+single-shot write is preceded by a 100 ms sleep in ``sendSingleMessage``.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from typing import Any, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..codec import keeson as codec
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -42,18 +44,11 @@ from .keeson import KeesonCommands, KeesonController, _wait_unless_cancelled
 
 _LOGGER = logging.getLogger(__name__)
 
-# sendSingleMessage sleeps 100 ms on the caller before each single write,
-# including the zero key that buttonUp sends after cancelling a hold.
-SINGLE_SEND_DELAY_S: Final = 0.1
-HOLD_INTERVAL_MS: Final = 100
-ZERO_KEY: Final = 0x00000000
-
 COMBINED_UP: Final = 0x00000005  # 2M back and foot together.
 COMBINED_DOWN: Final = 0x0000000A
 MASSAGE_LEVEL: Final = 0x00000100
 MASSAGE_TIMER: Final = 0x00000200
 RENAME_MAX_UNITS: Final = 14
-RENAME_FRAME_LENGTH: Final = 18
 
 STATE_LIGHT: Final = "innova_light"
 STATE_MASSAGE_TIMER: Final = "innova_massage_timer"
@@ -91,12 +86,6 @@ HELD_CONTROLS: Final = tuple(
 )
 
 
-def innova_frame(key: int) -> bytes:
-    """``E5 FE 16 || low32(key) little-endian || ~sum`` (buildBluetoothPackage)."""
-    body = bytes((0xE5, 0xFE, 0x16)) + (key & 0xFFFFFFFF).to_bytes(4, "little")
-    return body + bytes(((~sum(body)) & 0xFF,))
-
-
 def _java_trim(name: str) -> str:
     """Mirror ``String.trim()``: strip leading/trailing chars <= U+0020."""
     start, end = 0, len(name)
@@ -126,16 +115,10 @@ def innova_rename_frame(name: str) -> bytes:
 
     The app copies ``String.length()`` bytes (UTF-16 units) from
     ``getBytes()`` (UTF-8 on Android), so multibyte names are truncated
-    exactly as the app truncates them. Byte 16 stays zero; byte 17 is the
-    complemented sum of bytes 0..16.
+    exactly as the app truncates them.
     """
     trimmed = validate_innova_name(name)
-    frame = bytearray(RENAME_FRAME_LENGTH)
-    frame[0:2] = b"\xef\x02"
-    raw = trimmed.encode("utf-8")[: _utf16_units(trimmed)]
-    frame[2 : 2 + len(raw)] = raw
-    frame[17] = (~sum(frame[:17])) & 0xFF
-    return bytes(frame)
+    return codec.rename(trimmed.encode("utf-8")[: _utf16_units(trimmed)])
 
 
 def parse_innova_status(data: bytes) -> dict[str, Any] | None:
@@ -230,10 +213,12 @@ class InnovaController(KeesonController):
     def stale_motor_entity_keys(self) -> frozenset[str]:
         return frozenset({"tilt", "lumbar", "waist", "back_legs"})
 
-    # ------------------------------------------------------------- transport
-    def _build_command(self, command_value: int) -> bytes:
-        return innova_frame(command_value)
+    @property
+    def _hold_interval_ms(self) -> int:
+        assert self.profile.refresh_ms is not None
+        return self.profile.refresh_ms
 
+    # ------------------------------------------------------------- transport
     def _resolve_roles(self) -> tuple[BleakGATTCharacteristic, BleakGATTCharacteristic]:
         """Return the app's write and notify roles, resolved once per connection.
 
@@ -291,11 +276,11 @@ class InnovaController(KeesonController):
     async def _send_singles(self, *keys: int) -> None:
         """``sendSingleMessage``: sleep 100 ms, then write once, per key."""
         for key in keys:
-            await asyncio.sleep(SINGLE_SEND_DELAY_S)
+            await asyncio.sleep(self.profile.tap_wait_ms / 1000)
             await self.write_command(self._build_command(key))
 
     async def _write_single_shot(self, command: bytes) -> None:
-        await asyncio.sleep(SINGLE_SEND_DELAY_S)
+        await asyncio.sleep(self.profile.tap_wait_ms / 1000)
         await self.write_command(command)
 
     async def _release(self, *, delay: bool) -> None:
@@ -307,15 +292,16 @@ class InnovaController(KeesonController):
         finishes, however often the caller is cancelled. The cancellation is
         re-raised afterwards, unless the write failed: that error wins.
         """
+        ((wait_ms, step),) = self.profile.release.steps
         stop_requested = self._coordinator.cancel_command
         interrupted: asyncio.CancelledError | None = None
         if delay and not stop_requested.is_set():
             try:
-                await _wait_unless_cancelled(stop_requested, SINGLE_SEND_DELAY_S)
+                await _wait_unless_cancelled(stop_requested, wait_ms / 1000)
             except asyncio.CancelledError as err:
                 interrupted = err
         release = asyncio.create_task(
-            self.write_command(self._build_command(ZERO_KEY), cancel_event=asyncio.Event())
+            self.write_command(self._step_frame(step), cancel_event=asyncio.Event())
         )
         # asyncio.wait never cancels the task, so keep waiting for the write
         # through any number of cancellations of this caller.
@@ -345,7 +331,7 @@ class InnovaController(KeesonController):
             await self.write_command(
                 self._build_command(key),
                 repeat_count=repeat_count,
-                repeat_delay_ms=HOLD_INTERVAL_MS,
+                repeat_delay_ms=self._hold_interval_ms,
             )
             completed = True
         finally:
@@ -392,46 +378,24 @@ class InnovaController(KeesonController):
             raise ValueError("Hold duration must be 100..60000 milliseconds")
         if self._coordinator.cancel_command.is_set():
             return
-        await self._hold(controls[control], repeat_count=-(-duration_ms // HOLD_INTERVAL_MS))
+        await self._hold(controls[control], repeat_count=-(-duration_ms // self._hold_interval_ms))
 
     # ---------------------------------------------------------------- presets
-    @property
-    def supports_preset_lounge(self) -> bool:
-        return False
-
-    @property
-    def supports_preset_tv(self) -> bool:
-        return False
-
-    @property
-    def supports_preset_anti_snore(self) -> bool:
-        return False
-
-    @property
-    def memory_slot_count(self) -> int:
-        return 2
-
     @property
     def memory_slot_names(self) -> tuple[str | None, ...]:
         return ("Memory A", "Memory B")
 
-    @property
-    def supports_memory_programming(self) -> bool:
-        return False
-
     async def preset_flat(self) -> None:
-        await self._send_singles(KeesonCommands.PRESET_FLAT)
+        await self._send_singles(self.profile.presets["flat"])
 
     async def preset_zero_g(self) -> None:
-        await self._send_singles(KeesonCommands.PRESET_ZERO_G)
+        await self._send_singles(self.profile.presets["zero_g"])
 
     async def preset_memory(self, memory_num: int) -> None:
         """Memory A/B stream while held; a press holds for one motor burst."""
-        if memory_num not in (1, 2):
+        if memory_num not in self.profile.memory:
             raise ValueError("INNOVA has Memory A (1) and Memory B (2) only")
-        await self._hold(
-            KeesonCommands.PRESET_MEMORY_1 if memory_num == 1 else KeesonCommands.PRESET_MEMORY_2
-        )
+        await self._hold(self.profile.memory[memory_num])
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("The INNOVA app has no memory programming command")

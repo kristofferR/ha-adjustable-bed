@@ -42,6 +42,8 @@ from ..const import (
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
 )
+from ..profiles import keeson as profiles
+from ..profiles.keeson import KeesonProfile
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -77,8 +79,7 @@ ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
     ),
 }
 
-# Action words (MainActivity key codes).
-STOP: Final = 0x00000000
+# Action words (MainActivity key codes); frames and timing are the profiles.
 BACK_UP: Final = 0x00000001
 BACK_DOWN: Final = 0x00000002
 FOOT_UP: Final = 0x00000004
@@ -103,11 +104,6 @@ MASSAGE_LEVEL_MAX: Final = 3
 MASSAGE_DEFAULT_LEVEL: Final = 1
 MASSAGE_TIMER: Final = {"10": 0x10000030, "20": 0x10000031, "30": 0x10000032}
 
-# sendSingleMessage sleeps 100 ms before every single write; holds repeat 100 ms
-# after each write.
-SINGLE_SEND_DELAY_S: Final = 0.1
-HOLD_INTERVAL_MS: Final = 100
-
 STATE_LEVEL: Final = {zone: f"ore_comfort_massage_{zone}_level" for zone in MASSAGE_BASE}
 STATE_TIMER: Final = "ore_comfort_massage_timer"
 
@@ -128,18 +124,13 @@ LAYOUTS: Final[dict[int, tuple[_Axis, ...]]] = {
 _LAYOUT_NAMES: Final = {2: "bedding2 (2M)", 3: "bedding3 (3M)", 4: "bedding4 (4M)"}
 
 
-def build_frame(word: int) -> bytes:
-    """Encode an action word exactly as MainActivity.buildBluetoothPackage does."""
-    body = bytes((0xE5, 0xFE, 0x16)) + (word & 0xFFFFFFFF).to_bytes(4, "big")
-    return body + bytes(((~sum(body)) & 0xFF,))
-
-
 class OreComfortBedController(BedController):
     """Controller for the artifact-verified ORE comfort-bed app profiles."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
         super().__init__(coordinator)
         self._app = ORE_COMFORT_BED_APPS[app]
+        self.profile: KeesonProfile = profiles.PROFILES[app]
         motor_count = coordinator.motor_count
         self._motor_count = motor_count if motor_count in LAYOUTS else 2
         self._axes = {key: (up, down) for key, _tk, up, down in LAYOUTS[self._motor_count]}
@@ -203,24 +194,29 @@ class OreComfortBedController(BedController):
             characteristic=characteristic,
         )
 
+    def _frame(self, word: int) -> bytes:
+        return profiles.encode(self.profile, word)
+
     async def _send_single(self, word: int) -> None:
         """sendSingleMessage: sleep 100 ms, then write the frame once."""
-        await asyncio.sleep(SINGLE_SEND_DELAY_S)
-        await self.write_command(build_frame(word))
+        await asyncio.sleep(self.profile.tap_wait_ms / 1000)
+        await self.write_command(self._frame(word))
 
     async def _send_release(self) -> None:
         """buttonUp: the zero word after 100 ms, never suppressed by cancellation."""
+        ((wait_ms, word),) = self.profile.release.steps
+        assert isinstance(word, int)
         try:
-            await asyncio.sleep(SINGLE_SEND_DELAY_S)
+            await asyncio.sleep(wait_ms / 1000)
         finally:
-            await self.write_command(build_frame(STOP), cancel_event=asyncio.Event())
+            await self.write_command(self._frame(word), cancel_event=asyncio.Event())
 
     async def _hold(self, word: int) -> None:
         """Repeat a held key every 100 ms, then release with the zero word."""
         repeat_count, repeat_delay_ms = self.motor_pulse_settings()
         try:
             await self.write_command(
-                build_frame(word), repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
+                self._frame(word), repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
             )
         finally:
             await self._send_release()
@@ -235,7 +231,8 @@ class OreComfortBedController(BedController):
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """The configured hold length at the app's fixed 100 ms refresh."""
-        return self._coordinator.motor_pulse_count, HOLD_INTERVAL_MS
+        assert self.profile.refresh_ms is not None
+        return self._coordinator.motor_pulse_count, self.profile.refresh_ms
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """The app enables FFE4 locally only: it writes no CCCD and parses nothing."""

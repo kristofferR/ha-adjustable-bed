@@ -22,7 +22,6 @@ from custom_components.adjustable_bed.beds.ore_comfort_bed import (
     STATE_LEVEL,
     STATE_TIMER,
     OreComfortBedController,
-    build_frame,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -44,6 +43,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.keeson import PROFILES, encode
 
 APPS = (
     KEESON_VARIANT_MAXCOIL_UNA,
@@ -214,11 +214,9 @@ def _written(client: MagicMock) -> list[str]:
 
 
 def test_builder_reproduces_every_report_vector() -> None:
-    for word, frame in REPORT_VECTORS.items():
-        assert build_frame(word).hex() == frame
-        assert sum(build_frame(word)) & 0xFF == 0xFF
-    # Java long shifts then byte casts keep only the low 32 bits.
-    assert build_frame(0x1_0000_0001).hex() == "e5fe160000000105"
+    for app in APPS:
+        for word, frame in REPORT_VECTORS.items():
+            assert encode(PROFILES[app], word).hex() == frame
 
 
 @pytest.mark.parametrize("variant", APPS)

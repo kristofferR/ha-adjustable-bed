@@ -18,7 +18,9 @@ from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
+from custom_components.adjustable_bed.profiles.keeson import KeesonProfile
 from tests.jiecang_vectors import FROZEN_FRAMES as JIECANG_VECTORS
+from tests.keeson_vectors import FROZEN_FRAMES as KEESON_VECTORS
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
     _FactoryCoordinator,
@@ -26,7 +28,10 @@ from tests.test_controller_contract import (
 )
 
 # Codec families: profile class -> frozen vectors by profile key.
-CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {JiecangProfile: JIECANG_VECTORS}
+CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
+    JiecangProfile: JIECANG_VECTORS,
+    KeesonProfile: KEESON_VECTORS,
+}
 
 # App choices of codec-backed bed types: bed type -> (config key, choices).
 APP_ROUTES: dict[str, tuple[str, tuple[str, ...]]] = {
@@ -53,7 +58,6 @@ UNMIGRATED: dict[str, str] = {
     "dewertokin": "#745 O1 Okin N-frame",
     "doublesleep": "#745 O1 Okin N-frame",
     "ergo_slim": "#745 K1 Keeson E5/E6",
-    "ergomotion": "#745 K1 Keeson E5/E6",
     "ergomotion_app": "#745 K1 Keeson E5/E6",
     "eshine": "standalone: own wire format",
     "fsm_relax": "#745 L1 Limoss DD",
@@ -66,7 +70,6 @@ UNMIGRATED: dict[str, str] = {
     "isleep": "standalone: Kaidi mesh frames",
     "jensen": "standalone: own wire format",
     "kaidi": "standalone: Kaidi mesh frames",
-    "keeson": "#745 K1 Keeson E5/E6",
     "leggett_gen2": "standalone: own wire format",
     "leggett_lp_legacy": "standalone: own wire format",
     "leggett_okin": "#745 O1 Okin N-frame",
@@ -93,7 +96,6 @@ UNMIGRATED: dict[str, str] = {
     "okin_cb35": "#745 O2 Okin 5A",
     "okin_cst": "#745 O1 Okin N-frame",
     "okin_dot": "#745 O1 Okin N-frame",
-    "okin_ffe": "#745 K1 Keeson E5/E6",
     "okin_handle": "#745 O1 Okin N-frame",
     "okin_nordic": "#745 O2 Okin 5A",
     "okin_ore": "standalone: own wire format",
@@ -116,7 +118,6 @@ UNMIGRATED: dict[str, str] = {
     "sbi": "#745 K1 Keeson E5/E6",
     "scott_living": "#745 K1 Keeson E5/E6",
     "serenity": "#745 O1 Okin N-frame",
-    "serta": "#745 K1 Keeson E5/E6",
     "serta_mp_remote": "#745 K1 Keeson E5/E6",
     "simmons": "#745 O1 Okin N-frame",
     "sleep_number": "standalone: own wire format",

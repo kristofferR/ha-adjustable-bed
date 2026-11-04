@@ -33,7 +33,6 @@ from custom_components.adjustable_bed.beds.keeson_okin_apps import (
     OkinAppKeesonController,
     heal_movement_key,
     java_uuid_order,
-    okin_app_frame,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -53,6 +52,12 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.keeson import (
+    HEAL_EVERY_NIGHT,
+    OKIN_SEATING,
+    SIMON_LI,
+    encode,
+)
 from tests.app_state_helpers import stored_app_state
 
 Action = Callable[[OkinAppKeesonController], Awaitable[None]]
@@ -238,16 +243,14 @@ def _service(uuid: str, *chars: _Char) -> SimpleNamespace:
 
 
 def test_builder_matches_the_report_vectors():
-    # Simon V13-V16 and OKIN-Seating VEC07-VEC09: big-endian low 32 bits.
-    assert okin_app_frame(0x01020304).hex() == "e5fe1601020304fc"
-    assert okin_app_frame(-1).hex() == "e5fe16ffffffff0a"
-    assert okin_app_frame(4294967297).hex() == "e5fe160000000105"
-    assert okin_app_frame(2164227840).hex() == "e5fe1680ff7f0008"
-    assert okin_app_frame(305419896).hex() == "e5fe1612345678f2"
-    assert okin_app_frame(4600387192).hex() == "e5fe1612345678f2"
+    # Simon V13-V16 and OKIN-Seating VEC07-VEC09: big-endian words.
+    for profile in (SIMON_LI, OKIN_SEATING, HEAL_EVERY_NIGHT):
+        assert encode(profile, 0x01020304).hex() == "e5fe1601020304fc"
+        assert encode(profile, 0xFFFFFFFF).hex() == "e5fe16ffffffff0a"
+        assert encode(profile, 0x80FF7F00).hex() == "e5fe1680ff7f0008"
+        assert encode(profile, 0x12345678).hex() == "e5fe1612345678f2"
     for key, frame in HEAL_CONSTANTS.items():
-        assert okin_app_frame(key).hex() == frame
-        assert sum(okin_app_frame(key)) % 256 == 0xFF
+        assert encode(HEAL_EVERY_NIGHT, key).hex() == frame
 
 
 @pytest.mark.parametrize(("action", "frame"), SIMON_VECTORS)

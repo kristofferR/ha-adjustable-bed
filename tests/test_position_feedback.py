@@ -222,16 +222,14 @@ async def test_ergomotion_seek_uses_notifications_and_stops_if_they_expire(
     controller = KeesonController(coordinator, variant=KEESON_VARIANT_ERGOMOTION)
     coordinator._controller = controller
     controller._notify_callback = coordinator._handle_position_update
-    controller._head_position = 20
-    controller._notify_position_update()
+    controller._parse_notification(bytes.fromhex("ed1400") + bytes(13))
     coordinator._position_data_updated_monotonic["back"] -= 0.5
 
     async def move(_controller):
         if lose_feedback == "expired":
             coordinator._position_data_updated_monotonic["back"] -= POSITION_FEEDBACK_TIMEOUT + 1
         elif not lose_feedback:
-            controller._head_position = 40
-            controller._notify_position_update()
+            controller._parse_notification(bytes.fromhex("ed2800") + bytes(13))
 
     up, down, stop = AsyncMock(side_effect=move), AsyncMock(), AsyncMock()
     with patch("custom_components.adjustable_bed.position_seek.asyncio.sleep", new=AsyncMock()):
