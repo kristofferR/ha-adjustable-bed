@@ -28,7 +28,10 @@ from custom_components.adjustable_bed import (  # noqa: E402
     hjbed_catalog,
 )
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames  # noqa: E402
+from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames  # noqa: E402
+from custom_components.adjustable_bed.beds import hjbed as hjbed_bed  # noqa: E402
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames  # noqa: E402
+from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed  # noqa: E402
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label  # noqa: E402
 from custom_components.adjustable_bed.beds.jiecang_app import LIGHT_TIMEOUTS  # noqa: E402
 from custom_components.adjustable_bed.codec import jiecang as jiecang_codec  # noqa: E402
@@ -976,6 +979,118 @@ def render_hjbed_commands() -> str:
     return _block(*parts)
 
 
+def _ms(seconds: float) -> str:
+    return f"{round(seconds * 1000)} ms"
+
+
+def render_richmat_catalog_timing() -> str:
+    return _block(
+        _table(
+            ("Profile", "Operation", "Timing"),
+            (
+                (
+                    "RMControl",
+                    "Write queue, including release",
+                    f"at least {rmcontrol_bed.WRITE_SPACING_MS} ms apart",
+                ),
+                (
+                    "RMControl",
+                    "Sustain press",
+                    f"entry pulse count at {rmcontrol_bed.WRITE_SPACING_MS} ms, then STOP",
+                ),
+                ("RMControl", "Short and long press", "one write"),
+                ("Richmat MH", "Version query after subscribing", _ms(mh_frames.INIT_DELAY_S)),
+                (
+                    "Richmat MH",
+                    "Initialization tasks",
+                    f"{_ms(mh_frames.INIT_TASK_SLEEP_S)} apart, the first {_ms(mh_frames.INIT_DELAY_S)} after the version query",
+                ),
+                ("Richmat MH", "STOP after a release or a single tap", _ms(mh_frames.STOP_DELAY_S)),
+                (
+                    "Richmat MH",
+                    "VER1 angle target",
+                    f"{_ms(mh_frames.ANGLE_SEND_DELAY_S)} after the slider release",
+                ),
+                (
+                    "Richmat MH",
+                    "Alarm frames",
+                    f"{_ms(mh_frames.ALARM_TASK_SLEEP_S)} apart ({_ms(mh_frames.MULTI_ALARM_SLEEP_S)} for three-slot save/delete)",
+                ),
+                ("Richmat MH", "Aroma frames", f"{_ms(mh_frames.AROMA_TASK_SLEEP_S)} apart"),
+                ("HJBed", "Sustained refresh", f"every {hjbed_bed.TICK_MS} ms from the first tick"),
+                ("HJBed", "Write spacing", f"at least {hjbed_bed.TICK_MS} ms between attempts"),
+                ("HJBed", "Menu probes at connect", f"{_ms(hjbed_bed.MENU_PROBE_S)} apart"),
+                ("HJBed", "BJRN preset save", f"waits {hjbed_bed.BJRN_SAVE_WAIT_S} s"),
+            ),
+        )
+    )
+
+
+def render_rmcontrol_startup() -> str:
+    def action(name: str) -> str:
+        code = 0 if name == "ExitLimit" else 1
+        framed = rmcontrol_frames.build_action(code, action="deviceFunctionItem" + name)
+        nordic = rmcontrol_frames.build_action(
+            code, nordic=True, action="deviceFunctionItem" + name
+        )
+        return f"{_hex(framed)} (Nordic {_hex(nordic)})"
+
+    return _block(
+        _table(
+            ("Step", "Sent when", "Frames"),
+            (
+                ("Exit limit", "always", action("ExitLimit")),
+                (
+                    "Time sync",
+                    "the product has an alarm catalog",
+                    "extended `08 02 01` then `08 03 01`",
+                ),
+                (
+                    "Sleep-advertisement query",
+                    "a BLE sleep product",
+                    "extended `06 03 00`: `00`",
+                ),
+                ("Check clock", "always", action("CheckClock")),
+                ("Check light", "always", action("CheckLight")),
+            ),
+        )
+    )
+
+
+def render_hjbed_startup() -> str:
+    probe = hjbed_bed.MENU_PROBE_S
+    return _block(
+        _table(
+            ("Step", "When", "Framed", "Single-code"),
+            (
+                (
+                    "Exit limit",
+                    "first",
+                    _hex(hjbed_frames.function("deviceFunctionItemExitLimit", 0, 0, False)),
+                    _hex(hjbed_frames.function("deviceFunctionItemExitLimit", 0, 0, True)),
+                ),
+                ("Time sync", "next, two frames", "extended `08 02 01` then `08 03 01`", "same"),
+                (
+                    "Control mode query",
+                    "blue, green and orange; green and orange only in the Motion layout",
+                    _hex(hjbed_frames.control_mode()),
+                    "same",
+                ),
+                *(
+                    (
+                        f"{name} menu probe",
+                        f"+{_ms(probe * tick)}",
+                        _hex(hjbed_frames.function(f"deviceFunctionItemCheck{name}", 1, 0, False)),
+                        _hex(hjbed_frames.function(f"deviceFunctionItemCheck{name}", 1, 0, True)),
+                    )
+                    for tick, name in enumerate(("Clock", "Light", "Music"), start=1)
+                ),
+            ),
+        ),
+        "Probe offsets count from the start of the menu request, after the exit frame.",
+    )
+
+
 # (guide, block name) -> renderer
 BLOCKS: dict[tuple[str, str], Callable[[], str]] = {
     ("docs/beds/jiecang.md", "jiecang-profiles"): render_jiecang_profiles,
@@ -997,6 +1112,9 @@ BLOCKS: dict[tuple[str, str], Callable[[], str]] = {
     (_RICHMAT_GUIDE, "richmat-mh-setup"): render_richmat_mh_setup,
     (_RICHMAT_GUIDE, "richmat-mh-fixed"): render_richmat_mh_fixed,
     (_RICHMAT_GUIDE, "hjbed-commands"): render_hjbed_commands,
+    (_RICHMAT_GUIDE, "richmat-catalog-timing"): render_richmat_catalog_timing,
+    (_RICHMAT_GUIDE, "rmcontrol-startup"): render_rmcontrol_startup,
+    (_RICHMAT_GUIDE, "hjbed-startup"): render_hjbed_startup,
 }
 
 

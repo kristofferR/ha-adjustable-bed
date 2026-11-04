@@ -54,6 +54,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 # Integration readiness budget, not an on-wire protocol interval.
 _CAPABILITY_TIMEOUT = 5.0
+# The app's serialized queue: writes, sustain repeats and release at least this far apart.
+WRITE_SPACING_MS = 100
 _PREFIX = "deviceFunctionItem"
 _LOCAL_ACTIONS = frozenset(
     _PREFIX + name
@@ -194,7 +196,7 @@ class RmcontrolController(RichmatController):
             if cancel is not None and cancel.is_set():
                 return
             if self._last_write_at is not None:
-                remaining = max(0.0, 0.1 - (loop.time() - self._last_write_at))
+                remaining = max(0.0, WRITE_SPACING_MS / 1000 - (loop.time() - self._last_write_at))
                 if remaining:
                     await asyncio.sleep(remaining)
             if cancel is not None and cancel.is_set():
@@ -279,7 +281,7 @@ class RmcontrolController(RichmatController):
             await self.write_command(
                 packet,
                 repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=100,
+                repeat_delay_ms=WRITE_SPACING_MS,
             )
         except BaseException:
             movement_failed = True

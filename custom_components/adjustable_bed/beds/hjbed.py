@@ -47,6 +47,12 @@ if TYPE_CHECKING:
 
     from ..coordinator import AdjustableBedCoordinator
 
+# The app's refresh tick and minimum write spacing, menu-probe spacing and BJRN save wait.
+TICK_MS = 100
+TICK_S = 0.1
+MENU_PROBE_S = 0.3
+BJRN_SAVE_WAIT_S = 3
+
 # Order is the artifact's enum table. Selection iterates the returned services.
 GATT = {
     codec.TRANSPORTS[key].service_uuid: (
@@ -339,7 +345,7 @@ class HJBedController(BedController):
                 start=1,
             ):
                 await asyncio.sleep(
-                    max(0, menu_start + tick * 0.3 - asyncio.get_running_loop().time())
+                    max(0, menu_start + tick * MENU_PROBE_S - asyncio.get_running_loop().time())
                 )
                 await self._send(function(enum, 1, 0, single), session)
 
@@ -382,7 +388,7 @@ class HJBedController(BedController):
         if deadline is not None and monotonic() - deadline > 1e-9:
             return False
         if self._last_write is not None:
-            await asyncio.sleep(max(0, self._last_write + 0.1 - monotonic()))
+            await asyncio.sleep(max(0, self._last_write + TICK_S - monotonic()))
         async with self._ble_lock:
             if cancel is not None and cancel.is_set():
                 return False
@@ -397,7 +403,7 @@ class HJBedController(BedController):
                 characteristic_handle=session.write.handle,
                 response=response,
                 repeat_count=1,
-                repeat_delay_ms=100,
+                repeat_delay_ms=TICK_MS,
                 command_origin="hjbed",
                 controller_class=type(self).__name__,
             )
@@ -465,20 +471,22 @@ class HJBedController(BedController):
 
         try:
             if save and self.product.label == "BJRN":
-                if not await self._delay(3, cancel):
+                if not await self._delay(BJRN_SAVE_WAIT_S, cancel):
                     return
             if sustain:
                 duration = (
-                    hold_ms if hold_ms is not None else self._coordinator.motor_pulse_count * 100
+                    hold_ms
+                    if hold_ms is not None
+                    else self._coordinator.motor_pulse_count * TICK_MS
                 )
                 start = monotonic()
                 deadline = start + duration / 1000
                 # A finite pulse needs one serialized pacing slot per side
                 # after its last nominal tick. Explicit holds end at duration.
-                write_deadline = deadline + (len(sides) * 0.1 if hold_ms is None else 0)
+                write_deadline = deadline + (len(sides) * TICK_S if hold_ms is None else 0)
                 tick = 1
-                while tick * 100 <= duration:
-                    if not await self._delay(max(0, start + tick * 0.1 - monotonic()), cancel):
+                while tick * TICK_MS <= duration:
+                    if not await self._delay(max(0, start + tick * TICK_S - monotonic()), cancel):
                         break
                     for side in sides:
                         if not await self._send(
@@ -490,7 +498,7 @@ class HJBedController(BedController):
                         ):
                             break
                     # Periodic ticks do not inherit write latency or drain stale refreshes.
-                    tick = max(tick + 1, int((monotonic() - start + 1e-9) / 0.1) + 1)
+                    tick = max(tick + 1, int((monotonic() - start + 1e-9) / TICK_S) + 1)
                 else:
                     remaining = deadline - monotonic()
                     if remaining > 0:
