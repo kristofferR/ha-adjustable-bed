@@ -32,7 +32,7 @@ not package names or sibling assumptions. Registration adds `avanti_bases`, a
 searchable app choice, per-side motor layout ownership, fixed-field hiding and
 an explicit profile-review choice. Existing sibling behavior is unchanged.
 
-[Setup, command table and entities](../../beds/ore-comfort-bed.md) describe the
+[Setup, command table and entities](../../beds/keeson.md#ore-comfort-bed-profiles) describe the
 profile. HA uses explicit Save and Stop actions instead of the phone's long
 press and second-tap gesture state, and semantic massage levels 0-3 instead of
 40 slider ticks with repeated encodings. These preserve every reachable BLE

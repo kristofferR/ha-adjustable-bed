@@ -38,7 +38,7 @@ Users can find the app in setup and the actuator guide; motor count selects
 2M/3M/4M. The profile owns massage and makes motor count a per-side setting so
 shared pair edits cannot silently change another receiver's layout. Offline pair
 capabilities remain available. No controller behavior was changed for siblings.
-See the [user-facing protocol and setup guide](../../beds/ore-comfort-bed.md).
+See the [user-facing protocol and setup guide](../../beds/keeson.md#ore-comfort-bed-profiles).
 
 ## Coverage and counts
 

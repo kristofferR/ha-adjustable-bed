@@ -34,7 +34,7 @@ advertisement identifies the model. See the [Glideaway guide](beds/glideaway-mot
 
 **OKIN ORE:** The **Okin ORE (legacy A5 5A)** entry preserves existing legacy
 configurations. The accepted Glideaway Motion app uses a separate protocol. Beds controlled with the current Dynasty Bases or INNOVA apps use
-the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/ore-comfort-bed.md)
+the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/keeson.md#ore-comfort-bed-profiles)
 or [INNOVA](beds/keeson.md#innova-profile) profile instead. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
 Bluetooth Service Discovery Server UUID, so it cannot identify an ORE bed by itself.
 UUID-only automatic discovery is disabled to avoid detecting unrelated devices such
@@ -449,7 +449,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 |--------------|---------------------------|
 | Sleepy's Elite app | [Explicit app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile): select the app's control-box selector independently for each physical receiver. The existing BOX15, BOX24 and BOX25 profiles remain available. |
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/doublesleep.md): select the saved app model independently of the advertisement-selected P1/P2/P3 driver. Keep each physical receiver's settings separate. Sensor sides do not select motor halves. |
-| Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/ore-comfort-bed.md), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
+| Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/keeson.md#ore-comfort-bed-profiles), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
 | Richmat | [RMControl](beds/rmcontrol.md): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md): app and model. |
 | Leggett & Platt | [Prodigy / U Series](beds/leggett-okin.md): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |

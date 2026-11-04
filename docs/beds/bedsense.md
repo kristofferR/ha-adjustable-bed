@@ -7,7 +7,7 @@
 Select **BedSense app (com.fenmenbielei.bedsense)** during manual setup for
 beds controlled by Android BedSense 1.8 (18). This is separate from
 **Bedsense Bases** (`com.ore.bedsense`), which has its own
-[profile](ore-comfort-bed.md). The implementation is artifact-proven; physical
+[profile](keeson.md#ore-comfort-bed-profiles). The implementation is artifact-proven; physical
 hardware is unverified.
 
 ## Known Models
@@ -23,7 +23,7 @@ BEDSENSE-350, Resten Hi-Low and the app's Default layout.
 | ✅ | [BedSense](https://play.google.com/store/apps/details?id=com.fenmenbielei.bedsense) 1.8 (18) | `com.fenmenbielei.bedsense` |
 
 Bedsense Bases (`com.ore.bedsense`) is a different app; see its
-[profile](ore-comfort-bed.md).
+[profile](keeson.md#ore-comfort-bed-profiles).
 
 ## Features
 

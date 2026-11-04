@@ -6,7 +6,7 @@ comparison accounts for **126 discovery items: 50 IMPLEMENTED, 48
 ALREADY_IMPLEMENTED, 28 EXCLUDED**. Hardware is unverified (STATIC VERIFIED /
 HARDWARE UNVERIFIED).
 
-The public contracts are the [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](../../beds/ore-comfort-bed.md)
+The public contracts are the [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](../../beds/keeson.md#ore-comfort-bed-profiles)
 and the [INNOVA profile](../../beds/keeson.md#innova-profile). The reconciliation found the two
 apps materially different in packets, framing, timing, parsing and capabilities, so they use
 separate controllers. Bedsense Bases' accepted report is byte-identical to the ORE comfort-bed
