@@ -352,6 +352,9 @@ class _MergedStream:
                                 except Exception:
                                     _LOGGER.exception("Stream member timing observer failed")
                     await self._write_tick(driver, members, context)
+                    # Fixed rate from each write's start, so a slow link does not
+                    # stretch the refresh period past a watchdog. A write that
+                    # overruns its slot is followed at once, never by a burst.
                     next_tick = started + driver.stream_tick_s
                 if self.membership_changed:
                     continue

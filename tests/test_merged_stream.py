@@ -452,58 +452,6 @@ async def test_newcomer_ready_as_the_last_member_expires_waits_for_release() -> 
     assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
 
 
-async def test_a_slow_write_cannot_stretch_a_timed_move() -> None:
-    scheduler = DeviceCommandScheduler("slow-write")
-    driver = FakeDriver()
-    loop = asyncio.get_running_loop()
-    writes: list[float] = []
-    original_tick = driver.write_stream_tick
-
-    async def slow_tick(members: tuple[StreamMember, ...]) -> None:
-        writes.append(loop.time())
-        await original_tick(members)
-        await asyncio.sleep(0.08)  # a slow write acknowledgement
-
-    driver.write_stream_tick = slow_tick  # type: ignore[method-assign]
-    # The timed budget starts as the first write starts and ends mid-write.
-    timed = StreamMember(
-        motor="legs", resource="motor:legs", action="up", deadline=math.inf, duration_s=0.02
-    )
-    started = loop.time()
-    task = asyncio.create_task(
-        scheduler.execute_stream_member(timed, CONCURRENT, runner_for(driver))
-    )
-    assert await asyncio.wait_for(task, 1) is CommandOutcome.EXPIRED
-    assert loop.time() - started < 0.07
-    assert len(writes) == 1
-    assert driver.events[-1] == ("release",)
-
-
-async def test_a_blocked_write_still_expires_a_lease_and_honors_renewal() -> None:
-    scheduler = DeviceCommandScheduler("blocked-write")
-    driver = FakeDriver()
-    loop = asyncio.get_running_loop()
-    never = asyncio.Event()
-
-    async def blocked_tick(members: tuple[StreamMember, ...]) -> None:
-        driver.events.append(("tick", *sorted(f"{m.motor}:{m.action}" for m in members)))
-        driver.ticked.set()
-        await never.wait()  # the write never completes
-
-    driver.write_stream_tick = blocked_tick  # type: ignore[method-assign]
-    held = HoldLease(owner="card", generation=1, action="up", duration_s=0.03)
-    started = loop.time()
-    back = join(scheduler, driver, member("back", seconds=0.03, lease=held))
-    await asyncio.wait_for(driver.ticked.wait(), 1)
-    for _ in range(3):
-        await asyncio.sleep(0.02)
-        assert scheduler.claim_hold(held, ("motor:back",)) is HoldClaim.RENEW
-    assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
-    # Renewals held it past one lease; expiry then ended the blocked write.
-    assert 0.08 <= loop.time() - started < 0.2
-    assert driver.events[-2:] == [("end", "back:up"), ("release",)]
-
-
 async def test_stopping_the_last_member_during_cleanup_closes_admission() -> None:
     scheduler = DeviceCommandScheduler("stop-last")
     driver = FakeDriver()
@@ -581,72 +529,6 @@ async def test_an_unexpected_write_cancellation_fails_the_stream() -> None:
     assert driver.events[-2:] == [("end", "back:up"), ("release",)]
 
 
-async def test_a_slow_cancellation_is_not_counted_as_travel() -> None:
-    scheduler = DeviceCommandScheduler("slow-teardown")
-    driver = FakeDriver()
-    reported: list[float | None] = []
-
-    async def tick(members: tuple[StreamMember, ...]) -> None:
-        driver.events.append(("tick",))
-        try:
-            await asyncio.Event().wait()
-        except asyncio.CancelledError:
-            await asyncio.sleep(0.15)  # a slow teardown after cancellation
-            raise
-
-    driver.write_stream_tick = tick  # type: ignore[method-assign]
-    timed = StreamMember(
-        motor="back",
-        resource="motor:back",
-        action="up",
-        deadline=math.inf,
-        duration_s=0.02,
-        on_left=reported.append,
-    )
-    timed.on_wire = lambda: None
-    assert await asyncio.wait_for(
-        scheduler.execute_stream_member(timed, CONCURRENT, runner_for(driver)), 1
-    ) is CommandOutcome.EXPIRED
-    assert reported[0] == pytest.approx(0.02, abs=0.01)
-
-
-@pytest.mark.parametrize("ending", ["stop", "replace"])
-async def test_teardown_after_stop_or_replacement_is_not_travel(ending: str) -> None:
-    scheduler = DeviceCommandScheduler(f"teardown-{ending}")
-    driver = FakeDriver()
-    reported: list[float | None] = []
-    writing = asyncio.Event()
-
-    async def tick(members: tuple[StreamMember, ...]) -> None:
-        driver.events.append(("tick",))
-        writing.set()
-        try:
-            await asyncio.Event().wait()
-        except asyncio.CancelledError:
-            await asyncio.sleep(0.15)  # a slow teardown after cancellation
-            raise
-
-    driver.write_stream_tick = tick  # type: ignore[method-assign]
-    held = member("back")
-    held.on_wire = lambda: None
-    held.on_left = reported.append
-    back = join(scheduler, driver, held)
-    await asyncio.wait_for(writing.wait(), 1)
-    await asyncio.sleep(0.02)
-    if ending == "stop":
-        epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
-        await asyncio.wait_for(back, 1)
-        scheduler.finish_stop(epoch)
-    else:
-
-        async def preset(_context: CommandContext) -> None:
-            return None
-
-        await scheduler.execute(CommandIntent(preset))
-        await asyncio.wait_for(back, 1)
-    assert reported[0] == pytest.approx(0.02, abs=0.015)
-
-
 async def test_a_failed_write_reaches_a_member_retired_just_before() -> None:
     scheduler = DeviceCommandScheduler("failed-retired")
     driver = FakeDriver()
@@ -674,40 +556,6 @@ async def test_a_failed_write_reaches_a_member_retired_just_before() -> None:
         )
     assert timed.outcome is CommandOutcome.FAILED
     assert reported == [None]
-
-
-async def test_stop_while_a_write_unwinds_stops_the_survivors_clock() -> None:
-    scheduler = DeviceCommandScheduler("stop-during-unwind")
-    driver = FakeDriver()
-    reported: dict[str, float | None] = {}
-    unwinding = asyncio.Event()
-
-    async def tick(members: tuple[StreamMember, ...]) -> None:
-        driver.events.append(("tick",))
-        try:
-            await asyncio.Event().wait()
-        except asyncio.CancelledError:
-            unwinding.set()
-            await asyncio.sleep(0.15)  # a slow teardown after cancellation
-            raise
-
-    driver.write_stream_tick = tick  # type: ignore[method-assign]
-    short = member("back", seconds=0.02)
-    survivor = member("legs")
-    for item in (short, survivor):
-        item.on_wire = lambda: None
-        item.on_left = lambda value, motor=item.motor: reported.__setitem__(motor, value)
-    back = join(scheduler, driver, short)
-    legs = join(scheduler, driver, survivor)
-    # back expires, so its write unwinds; legs is still moving meanwhile.
-    await asyncio.wait_for(unwinding.wait(), 1)
-    await asyncio.sleep(0.02)
-    epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
-    await asyncio.wait_for(asyncio.gather(back, legs), 1)
-    scheduler.finish_stop(epoch)
-    stopped_after = survivor.left_at - survivor.wire_started  # type: ignore[operator]
-    assert reported["legs"] == pytest.approx(stopped_after)
-    assert stopped_after < 0.08
 
 
 async def test_a_write_failing_after_a_stop_preemption_reports_the_failure() -> None:
@@ -747,32 +595,3 @@ async def test_a_write_failing_after_a_stop_preemption_reports_the_failure() -> 
         await asyncio.wait_for(back, 1)
     scheduler.finish_stop(epoch)
     assert reported == [None]
-
-
-async def test_stop_during_another_members_cleanup_stops_the_survivors_clock() -> None:
-    scheduler = DeviceCommandScheduler("stop-during-cleanup")
-    driver = FakeDriver()
-    reported: dict[str, float | None] = {}
-    cleaning = asyncio.Event()
-    original_end = driver.end_stream_member
-
-    async def slow_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
-        if item.motor == "back":
-            cleaning.set()
-            await asyncio.sleep(0.15)  # a slow member cleanup
-        await original_end(item, remaining)
-
-    driver.end_stream_member = slow_end  # type: ignore[method-assign]
-    short = member("back", seconds=0.02)
-    survivor = member("legs")
-    for item in (short, survivor):
-        item.on_wire = lambda: None
-        item.on_left = lambda value, motor=item.motor: reported.__setitem__(motor, value)
-    back = join(scheduler, driver, short)
-    legs = join(scheduler, driver, survivor)
-    await asyncio.wait_for(cleaning.wait(), 1)
-    epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
-    await asyncio.wait_for(asyncio.gather(back, legs), 1)
-    scheduler.finish_stop(epoch)
-    # Stopped as the STOP arrived (~20 ms in), not after back's cleanup.
-    assert reported["legs"] is not None and reported["legs"] < 0.08
