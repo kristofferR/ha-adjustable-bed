@@ -31,6 +31,7 @@ from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
+from .position_estimate import track_motor_command
 from .profiles.logicdata import ALL_AXES as LOGICDATA_AXES
 
 if TYPE_CHECKING:
@@ -481,20 +482,32 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             if hold is not None:
                 control = hold.up_control if direction == "open" else hold.down_control
 
+                duration_ms = (
+                    SLEEPYS_ELITE_NATIVE_ACTION_MS
+                    if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+                    else 1000
+                )
+
+                async def held(controller: BedController) -> None:
+                    await controller.hold_control(control, duration_ms)
+
+                # Only the hold is timed; its start and release delays are not travel.
+                tracked_hold = track_motor_command(
+                    self.hass,
+                    self.entity_description.key,
+                    "up" if direction == "open" else "down",
+                    held,
+                )
+
                 async def bounded_movement(controller: BedController) -> None:
-                    duration_ms = (
-                        SLEEPYS_ELITE_NATIVE_ACTION_MS
-                        if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
-                        else 1000
-                    )
                     controller.validate_hold_control(control, duration_ms)
                     if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
-                        await controller.hold_control(control, duration_ms)
+                        await tracked_hold(controller)
                         return
                     await controller.prepare_for_movement()
                     if hold.start_delay_ms:
                         await asyncio.sleep(hold.start_delay_ms / 1000)
-                    await controller.hold_control(control, duration_ms)
+                    await tracked_hold(controller)
                     if hold.release_delay_ms:
                         await asyncio.sleep(hold.release_delay_ms / 1000)
 
@@ -502,14 +515,16 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                     bounded_movement,
                     resource=self._motor_resource,
                 )
-            elif direction == "open":
-                await self._coordinator.async_execute_controller_command(
-                    self.entity_description.open_fn,
-                    resource=self._motor_resource,
-                )
             else:
                 await self._coordinator.async_execute_controller_command(
-                    self.entity_description.close_fn,
+                    track_motor_command(
+                        self.hass,
+                        self.entity_description.key,
+                        "up" if direction == "open" else "down",
+                        self.entity_description.open_fn
+                        if direction == "open"
+                        else self.entity_description.close_fn,
+                    ),
                     resource=self._motor_resource,
                 )
             _LOGGER.debug(

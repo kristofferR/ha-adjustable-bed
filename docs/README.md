@@ -13,6 +13,7 @@ These guides describe `main`. The integration requires **Home Assistant
 | [Connection guide](CONNECTION_GUIDE.md) | Discovery, adapters, proxies and Bluetooth bonds |
 | [Configuration](CONFIGURATION.md) | Options, choosing your remote, combined beds and restoring standalone controls |
 | [Actions and automations](SERVICES.md) | Memory, movement, side targeting and specialized actions |
+| [Estimated positions](ESTIMATED_POSITIONS.md) | Calibrated travel-time estimates and saved positions for beds without position feedback |
 | [Wake-up automation](WAKE_UP.md) | Importable scheduled raise or memory recall, with optional lighting |
 | [Apple Home and Siri](HOMEKIT.md) | Importable control blueprint, HomeKit scenes and Siri Shortcuts |
 | [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and upgrade problems |
@@ -75,6 +76,7 @@ dependencies from Home Assistant's own manifests.
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer/rollback |
 | [Protocol codecs and app profiles](design/protocol-codecs.md) | Codec, profile and controller layers; vector harness |
+| [Bluetooth discovery hints](design/discovery-hints.md) | Per-family hints, the generated manifest matchers and detection's first pass |
 | [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence matrix and design |
 | [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
