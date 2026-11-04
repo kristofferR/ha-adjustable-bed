@@ -1,28 +1,22 @@
-"""Opt-in, model-gated controller for the frozen Malouf/Lucid app profiles."""
+"""Opt-in, model-gated controller for the Malouf Base and Lucid Base app profiles.
+
+Frames come from ``codec/malouf.py``; models, command tables, per-transport
+timing and app gates from ``profiles/malouf.py``. See ``docs/beds/malouf.md``.
+"""
 
 from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ..malouf_app_protocol import (
-    ALARM_TYPES,
-    APP_MODEL_OPTIONS,
-    MALOUF_APP_MODELS,
-    OKIN_COMMANDS,
-    RICHMAT_COMMANDS,
-    SELECTOR_ACTIONS,
-    TRANSPORTS,
-    alarm_frame,
-    clock_frame,
-    command_frame,
-    parse_notification,
-)
+from ..codec import malouf as codec
+from ..codec.malouf import TRANSPORTS, TransportKey
+from ..profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -63,7 +57,7 @@ class MaloufAppController(BedController):
         primary: bool = True,
     ) -> None:
         super().__init__(coordinator)
-        if app_profile not in APP_MODEL_OPTIONS:
+        if app_profile not in APP_PROFILES:
             raise ValueError("App profile must be malouf or lucid")
         if model not in MALOUF_APP_MODELS:
             raise ValueError(f"Unknown Malouf/Lucid model: {model}")
@@ -72,17 +66,18 @@ class MaloufAppController(BedController):
         if not isinstance(primary, bool):
             raise ValueError("Primary role must be a boolean")
         self.app_profile = app_profile
+        self.profile = APP_PROFILES[app_profile]
         self.model = model
-        self._profile = MALOUF_APP_MODELS[model]
-        self._configured_transport = transport
-        self._transport: str | None = None if transport == "auto" else transport
+        self._model = MALOUF_APP_MODELS[model]
+        self._configured_transport: TransportKey | Literal["auto"] = transport
+        self._transport: TransportKey | None = None if transport == "auto" else transport
         self._primary = primary
         self._notify_uuid: str | None = None
         self._massage_remaining: int | None = None
         self._light_status: int | None = None
 
     @property
-    def transport(self) -> str | None:
+    def transport(self) -> TransportKey | None:
         """Return the coherent transport selected for this connection."""
         return self._transport
 
@@ -104,20 +99,16 @@ class MaloufAppController(BedController):
             raise ValueError("Malouf/Lucid app transport has not been discovered")
         return TRANSPORTS[self._transport].command_characteristic
 
-    def _name_family(self) -> str:
-        name = self._coordinator.observed_ble_device_name
-        if name is None:
-            return "okin"
-        if "X1RM" in name or "QRRM" in name:
-            return "richmat"
-        if "OKIN" in name or "Smartbed" in name:
-            return "okin"
-        raise ValueError(
-            "Device name does not identify a Malouf/Lucid app transport; select one explicitly"
-        )
+    def _name_family(self) -> codec.Family:
+        family = self.profile.family(self._coordinator.observed_ble_device_name)
+        if family is None:
+            raise ValueError(
+                "Device name does not identify a Malouf/Lucid app transport; select one explicitly"
+            )
+        return family
 
     @property
-    def _family(self) -> str | None:
+    def _family(self) -> codec.Family | None:
         if self._transport is not None:
             return TRANSPORTS[self._transport].family
         try:
@@ -125,19 +116,19 @@ class MaloufAppController(BedController):
         except ValueError:
             return None
 
-    def _resolve_transport(self) -> str:
+    def _resolve_transport(self) -> TransportKey:
         client = self.client
         if client is None or not client.is_connected or not client.services:
             raise ConnectionError("Malouf/Lucid app transport requires discovered GATT services")
         services = {service.uuid.lower(): service for service in client.services}
 
-        def has_command_service(key: str) -> bool:
+        def has_command_service(key: TransportKey) -> bool:
             spec = TRANSPORTS[key]
             return spec.command_service in services
 
         if self._configured_transport == "auto":
             family = self._name_family()
-            candidates = [
+            candidates: list[TransportKey] = [
                 key
                 for key, spec in TRANSPORTS.items()
                 if spec.family == family and has_command_service(key)
@@ -193,37 +184,33 @@ class MaloufAppController(BedController):
             wall_clock_pacing=True,
         )
 
-    def _frames(self, action: str) -> tuple[bytes, ...]:
+    @property
+    def _route(self) -> Route:
+        return self.profile.routes[self._resolve_transport()]
+
+    def _frame(self, action: str) -> bytes:
         transport = self._resolve_transport()
-        commands = RICHMAT_COMMANDS if self._family == "richmat" else OKIN_COMMANDS
+        commands = self.profile.richmat if self._family == "richmat" else self.profile.okin
         if action not in commands:
             raise ValueError(f"Action {action} is unavailable on {transport}")
         # Native paired sides name physical devices, not P1 primary/secondary
         # roles. The configured role remains authoritative on bound children.
-        selector = int(not self._primary) if action in SELECTOR_ACTIONS else 0
-        return (command_frame(transport, commands[action], selector=selector),)
+        selector = int(not self._primary) if action in self.profile.selector_actions else 0
+        return codec.command(transport, commands[action], selector=selector)
 
     async def _action(self, action: str) -> None:
-        for frame in self._frames(action):
-            await self.write_command(frame)
-        if self._transport == "okin_new" and action in {
-            "light",
-            "massage_head",
-            "massage_foot",
-            "massage_wave",
-            "massage_timer_step",
-        }:
-            await self.write_command(b"\x00\xb0")
+        await self.write_command(self._frame(action))
+        if self._route.status_query and action in self.profile.status_actions:
+            await self.write_command(codec.STATUS_QUERY)
 
     async def _send_stop(self) -> None:
-        for frame in self._frames("stop"):
-            await self.write_command(frame, cancel_event=asyncio.Event())
+        await self.write_command(self._frame("stop"), cancel_event=asyncio.Event())
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        return self._coordinator.motor_pulse_count, 150
+        return self._coordinator.motor_pulse_count, self.profile.hold_ms
 
     async def _motion(self, action: str, duration_ms: int | None = None) -> None:
-        frames = self._frames(action)
+        frame = self._frame(action)
         count, delay = self.motor_pulse_settings()
         if duration_ms is not None:
             if duration_ms <= 0:
@@ -235,10 +222,7 @@ class MaloufAppController(BedController):
             try:
                 async with deadline:
                     try:
-                        for frame in frames:
-                            await self.write_command(
-                                frame, repeat_count=count, repeat_delay_ms=delay
-                            )
+                        await self.write_command(frame, repeat_count=count, repeat_delay_ms=delay)
                     except TimeoutError:
                         controller_timed_out = True
                         raise
@@ -246,7 +230,7 @@ class MaloufAppController(BedController):
                 if controller_timed_out or not deadline.expired():
                     raise
         finally:
-            # The app releases 150 ms after its hold loop is cancelled.
+            # The app releases after its hold loop is cancelled.
             # The HA movement ceiling does not interrupt the release lane.
             stop_task = asyncio.create_task(self._release_motion())
             try:
@@ -256,36 +240,33 @@ class MaloufAppController(BedController):
                 raise
 
     async def _release_motion(self) -> None:
-        await asyncio.sleep(0.15)
+        await asyncio.sleep(self.profile.release_ms / 1000)
         await self._send_stop()
 
     async def _preset(self, action: str) -> None:
-        frames = self._frames(action)
-        transport = self._transport
-        count = 3 if transport in {"okin_legacy", "okin_custom"} else 1
-        stop = transport in {"richmat_single", "okin_custom", "okin_new"}
+        frame = self._frame(action)
+        recall = self._route.recall
         try:
-            for frame in frames:
-                await self.write_command(frame, repeat_count=count, repeat_delay_ms=0)
+            await self.write_command(frame, repeat_count=recall.repeats, repeat_delay_ms=0)
         finally:
-            if stop:
+            if recall.stop:
                 await self._send_stop()
 
     def _require_manual(self, axis: str) -> None:
-        if axis not in self._profile.manual:
+        if axis not in self._model.manual:
             raise ValueError(f"Model {self.model} has no {axis} control")
 
     def _require_function(self, function: str) -> None:
-        if function not in self._profile.functions:
+        if function not in self._model.functions:
             raise ValueError(f"Model {self.model} has no {function} control")
 
     def _has_preset(self, preset: str) -> bool:
-        if preset not in self._profile.presets:
+        if preset not in self._model.presets:
             return False
         # Lucid's persisted Good Life Oz-labelled presets are passed through
         # literally. They match Richmat, but not its Okin string switch.
         return not (
-            self.app_profile == "lucid"
+            self.profile.literal_oz_presets
             and self.model.startswith("GoodLife")
             and self._family == "okin"
             and preset in {"zero_g", "anti_snore"}
@@ -408,7 +389,7 @@ class MaloufAppController(BedController):
                 max_angle=45,
             ),
         ]
-        if "tilt" in self._profile.manual:
+        if "tilt" in self._model.manual:
             specs.append(
                 MotorControlSpec(
                     "tilt",
@@ -418,7 +399,7 @@ class MaloufAppController(BedController):
                     lambda ctrl: ctrl.stop_all(),
                 )
             )
-        if "lumbar" in self._profile.manual:
+        if "lumbar" in self._model.manual:
             specs.append(
                 MotorControlSpec(
                     "lumbar",
@@ -428,7 +409,7 @@ class MaloufAppController(BedController):
                     lambda ctrl: ctrl.stop_all(),
                 )
             )
-        if "tilt_head" in self._profile.manual and self._family == "richmat":
+        if "tilt_head" in self._model.manual and self._family == "richmat":
             specs.append(
                 MotorControlSpec(
                     "malouf_tilt_head",
@@ -438,7 +419,7 @@ class MaloufAppController(BedController):
                     lambda ctrl: ctrl.stop_all(),
                 )
             )
-        if "full_tilt" in self._profile.manual and self._family == "richmat":
+        if "full_tilt" in self._model.manual and self._family == "richmat":
             specs.append(
                 MotorControlSpec(
                     "malouf_full_tilt",
@@ -459,17 +440,17 @@ class MaloufAppController(BedController):
 
     @property
     def has_tilt_support(self) -> bool:
-        return "tilt" in self._profile.manual
+        return "tilt" in self._model.manual
 
     @property
     def has_lumbar_support(self) -> bool:
-        return "lumbar" in self._profile.manual
+        return "lumbar" in self._model.manual
 
     @property
     def supports_simultaneous_movement(self) -> bool:
         # Good Life's All label produces allUp/allDown, not dualUp/dualDown.
         # Only the Richmat string switch accepts those literal commands.
-        return "dual" in self._profile.manual and not (
+        return "dual" in self._model.manual and not (
             self.model.startswith("GoodLife") and self._family != "richmat"
         )
 
@@ -534,7 +515,7 @@ class MaloufAppController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        if self.app_profile == "lucid" and self.model == "Premium" and self._family == "okin":
+        if self._has_read:
             return (ControllerButtonSpec("malouf_read", "Read", _app_callback("read")),)
         if self._has_oz_memory_editor:
             return (
@@ -544,18 +525,18 @@ class MaloufAppController(BedController):
             )
         return ()
 
+    @property
+    def _has_read(self) -> bool:
+        return self.model in self.profile.read_models and self._family == "okin"
+
     async def preset_read(self) -> None:
-        if not (self.app_profile == "lucid" and self.model == "Premium" and self._family == "okin"):
+        if not self._has_read:
             raise ValueError("Read has no writable endpoint for this app/model/transport")
         await self._preset("lounge")
 
     @property
     def _has_oz_memory_editor(self) -> bool:
-        return self.app_profile == "lucid" and self.model in {
-            "GoodLifeBase",
-            "GoodLifePremierBase",
-            "GoodLifeProBase",
-        }
+        return self.model in self.profile.oz_editor_models
 
     async def save_oz_memory_position(self) -> None:
         """Save slot 2 via Lucid's reachable Oz-preset long-hold editor."""
@@ -565,7 +546,7 @@ class MaloufAppController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        return self._profile.memory_slots
+        return self._model.memory_slots
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -590,23 +571,21 @@ class MaloufAppController(BedController):
     async def _save_memory(self, memory_num: int) -> None:
         """Deliver a validated standard save or the explicit Lucid editor save."""
         transport = self._resolve_transport()
-        if self._family == "richmat":
+        if (save := self.profile.routes[transport].save) is None:
             await self._action(f"save_{memory_num}")
             return
-        command = 0x80040000 if memory_num == 2 else 0x10000
-        name = self._coordinator.observed_ble_device_name
-        if memory_num == 1 and name is not None and "smartbed238" in name.lower():
-            command = 0x80010000
-        count, delay = (55, 100) if transport == "okin_new" else (85, 150)
-        await asyncio.sleep(delay / 1000)
+        word = self.profile.save_words.word(memory_num, self._coordinator.observed_ble_device_name)
+        await asyncio.sleep(save.interval_ms / 1000)
         # The app's terminal "stopCommand" is unknown and emits no frame.
         await self.write_command(
-            command_frame(transport, command), repeat_count=count, repeat_delay_ms=delay
+            codec.command(transport, word),
+            repeat_count=save.repeats,
+            repeat_delay_ms=save.interval_ms,
         )
 
     @property
     def supports_lights(self) -> bool:
-        return "light" in self._profile.functions
+        return "light" in self._model.functions
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -641,7 +620,7 @@ class MaloufAppController(BedController):
 
     @property
     def supports_massage(self) -> bool:
-        return "massage" in self._profile.functions
+        return "massage" in self._model.functions
 
     @property
     def auto_enable_massage(self) -> bool:
@@ -659,22 +638,25 @@ class MaloufAppController(BedController):
 
     @property
     def supports_head_massage_toggle_control(self) -> bool:
-        return "massage_head" in self._profile.functions
+        return "massage_head" in self._model.functions
 
     @property
     def supports_foot_massage_toggle_control(self) -> bool:
-        return "massage_foot" in self._profile.functions
+        return "massage_foot" in self._model.functions
 
     @property
     def supports_massage_mode_step_control(self) -> bool:
-        return "massage_wave" in self._profile.functions
+        return "massage_wave" in self._model.functions
 
     @property
     def supports_massage_timer(self) -> bool:
         return (
             self.supports_massage
             and self._family == "richmat"
-            and (self.app_profile == "malouf" or "massage_timer_set" in self._profile.functions)
+            and (
+                not self.profile.timer_panel_by_model
+                or "massage_timer_set" in self._model.functions
+            )
         )
 
     @property
@@ -710,7 +692,7 @@ class MaloufAppController(BedController):
 
     @property
     def supports_clock_alarm(self) -> bool:
-        return "alarm" in self._profile.functions and self._family == "okin"
+        return "alarm" in self._model.functions and self._family == "okin"
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -733,8 +715,8 @@ class MaloufAppController(BedController):
         if not self.supports_clock_sync:
             raise ValueError("This app transport has no clock")
         await self.write_command(
-            clock_frame(transport, dt_util.now()),
-            repeat_count=1 if transport == "okin_new" else 3,
+            codec.clock(transport, dt_util.now()),
+            repeat_count=self.profile.routes[transport].settings_repeats,
             repeat_delay_ms=0,
         )
 
@@ -758,24 +740,26 @@ class MaloufAppController(BedController):
             raise ValueError("Invalid alarm time")
         if any(isinstance(day, bool) or not 0 <= day <= 6 for day in weekdays):
             raise ValueError("Alarm weekdays must use Monday=0 through Sunday=6")
-        if preset not in ALARM_TYPES:
+        if preset not in codec.ALARM_TYPES:
             raise ValueError("Alarm preset must be one of the six app alarm choices")
         if enabled and preset.startswith("memory_"):
             self._validate_memory(int(preset.removeprefix("memory_")))
         if not enabled:
-            frame = alarm_frame(transport, 0, 0, 0, 0)
+            frame = codec.alarm(transport, 0, 0, 0, 0)
         else:
             now = dt_util.now()
             repeats = 1 | sum(2 << day for day in set(weekdays))
             if not weekdays:
                 day = now if (now.hour, now.minute) < (hour, minute) else now + timedelta(days=1)
                 repeats = 2 << day.weekday()
-            frame = alarm_frame(transport, hour, minute, ALARM_TYPES[preset], repeats)
+            frame = codec.alarm(transport, hour, minute, codec.ALARM_TYPES[preset], repeats)
             # The only app time-sync producer is immediately before setting
             # an active alarm. Do not inject time writes on BLE connection.
             await self.sync_clock()
         await self.write_command(
-            frame, repeat_count=1 if transport == "okin_new" else 3, repeat_delay_ms=0
+            frame,
+            repeat_count=self.profile.routes[transport].settings_repeats,
+            repeat_delay_ms=0,
         )
 
     @property
@@ -822,7 +806,7 @@ class MaloufAppController(BedController):
         self.forward_raw_notification(sender.uuid, bytes(data))
         if self._transport is None:
             return
-        state = parse_notification(self._transport, bytes(data))
+        state = codec.parse_notification(self._transport, bytes(data))
         if state is None:
             return
         updates: dict[str, int | bool] = {}

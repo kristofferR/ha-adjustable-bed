@@ -255,9 +255,10 @@ explicitly excluded under X1 below.
 explicit `app_profile` is `prodigy2l`, `prodigy2`, `prodigy4`, or `useries`;
 the compatibility default is `prodigy4`. The profile describes the actual app
 control surface. The independent R0/R1 selector still comes from GATT.
-`leggett_app_protocol.py` contains the profile table and missing timer builders;
-`beds/leggett_okin.py` owns transport, lifecycle and feedback. `services.py`
-exposes native timers and bounded held controls through the coordinator.
+`profiles/okin_nframe.py` contains the profile table (`LEGGETT_PROFILES`) and the
+timer builders, over `codec/okin_nframe.py`; `beds/leggett_okin.py` owns
+transport, lifecycle and feedback. `services.py` exposes native timers and
+bounded held controls through the coordinator.
 
 | Profile | Actuators | Favorite surface | Additional profile gates |
 | --- | --- | --- | --- |

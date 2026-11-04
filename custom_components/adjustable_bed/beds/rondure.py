@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import keeson as codec
 from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
@@ -146,9 +147,9 @@ class RondureController(BedController):
         """Build the eight-byte E5 frame for Both, or the nine-byte E6 frame for side A or B."""
         variant = self._variant_for_side(side)
         if variant == RONDURE_VARIANT_BOTH:
-            return keeson_profiles.encode(self.profile, command)
-        selected = "side_a" if variant == RONDURE_VARIANT_SIDE_A else "side_b"
-        return keeson_profiles.encode(self.profile, command, side=selected)
+            return keeson_profiles.encode(self.profile, command & 0xFFFFFFFF)
+        selector = self.profile.split_sides["side_a" if variant == RONDURE_VARIANT_SIDE_A else "side_b"]
+        return codec.frame(command & 0xFFFFFFFF, header=0xE6, side=selector)
 
     async def write_command(
         self,

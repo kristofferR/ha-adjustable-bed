@@ -141,7 +141,7 @@ class ScottLivingController(BedController):
 
     def _build_command(self, key: int) -> bytes:
         """Build a nine-byte E6 frame through the Keeson codec (side byte ``01``)."""
-        return keeson_profiles.encode(self.profile, key)
+        return keeson_profiles.encode(self.profile, key & 0xFFFFFFFF)
 
     async def write_command(
         self,

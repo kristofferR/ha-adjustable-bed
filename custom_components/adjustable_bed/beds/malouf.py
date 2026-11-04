@@ -5,7 +5,8 @@ decompile of Lucid Base v1.3.3 (com.lucid.bedbase, shared
 com.malouf.adjustablebasebluetooth library) on 2026-07-10.
 
 Malouf beds use two distinct protocols:
-- NEW_OKIN: 8-byte commands via Nordic UART, advertises unique service UUID
+- NEW_OKIN: 8-byte ``05 02`` frames via Nordic UART, advertises unique service UUID.
+  It is the ``NEW_OKIN`` profile over the Malouf codec (``codec/malouf.py``).
 - LEGACY_OKIN: 9-byte commands with checksum via FFE5 service
 
 Both protocols share the same command values but differ in encoding.
@@ -19,6 +20,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import malouf as malouf_codec
 from ..const import (
     MALOUF_LAYOUT_AUTO,
     MALOUF_LAYOUT_FOUR_MOTOR,
@@ -28,9 +30,9 @@ from ..const import (
     MALOUF_LAYOUT_TWO_MOTOR,
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
     MALOUF_MEMORY_SLOTS_AUTO,
-    MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
 )
 from ..profiles import keeson as keeson_profiles
+from ..profiles.malouf import NEW_OKIN
 from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
@@ -205,25 +207,25 @@ def _save_memory_command(memory_num: int, device_name: str | None) -> int | None
 
 
 class MaloufNewOkinController(BedController):
-    """Controller for Malouf beds using NEW_OKIN protocol.
+    """Malouf NEW_OKIN route: ``05 02`` key-word frames over Nordic UART.
 
-    Protocol characteristics:
-    - Advertised service: 01000001-0000-1000-8000-00805f9b34fb (unique identifier)
-    - Command service: Nordic UART (6e400001-b5a3-f393-e0a9-e50e24dcca9e)
-    - Write characteristic: 6e400002-b5a3-f393-e0a9-e50e24dcca9e
-    - Command format: 8 bytes, no checksum
-      [0x05, 0x02, (cmd>>24)&0xFF, (cmd>>16)&0xFF, (cmd>>8)&0xFF, cmd&0xFF, 0x00, 0x00]
+    The bed advertises service 01000001-0000-1000-8000-00805f9b34fb. Frames come
+    from ``codec/malouf.py``; words, recall and save timing from the ``NEW_OKIN``
+    profile in ``profiles/malouf.py``. See ``docs/beds/malouf.md``.
     """
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Malouf NEW_OKIN controller."""
         super().__init__(coordinator)
-        _LOGGER.debug("MaloufNewOkinController initialized")
+        self.profile = NEW_OKIN
 
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
-        return MALOUF_NEW_OKIN_WRITE_CHAR_UUID
+        return malouf_codec.TRANSPORTS[self.profile.transport].command_characteristic
+
+    def _frame(self, action: str) -> bytes:
+        return malouf_codec.command(self.profile.transport, self.profile.words[action])
 
     # Capability properties
     @property
@@ -299,252 +301,182 @@ class MaloufNewOkinController(BedController):
         active = {spec.key for spec in self.motor_control_specs}
         return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
 
-    def _build_command(self, command_value: int) -> bytes:
-        """Build an 8-byte NEW_OKIN command.
+    async def _send_stop(self) -> None:
+        await self.write_command(self._frame("stop"), cancel_event=asyncio.Event())
 
-        Format: [0x05, 0x02, (cmd>>24)&0xFF, (cmd>>16)&0xFF, (cmd>>8)&0xFF, cmd&0xFF, 0x00, 0x00]
-        """
-        return bytes(
-            [
-                0x05,
-                0x02,
-                (command_value >> 24) & 0xFF,
-                (command_value >> 16) & 0xFF,
-                (command_value >> 8) & 0xFF,
-                command_value & 0xFF,
-                0x00,
-                0x00,
-            ]
-        )
-
-    async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Execute a movement command and always send STOP at the end."""
-        command = self._build_command(command_value)
+    async def _move_with_stop(self, command: bytes) -> None:
+        """Repeat a movement frame at the pulse settings, then always send STOP."""
         try:
-            pulse_count = self._coordinator.motor_pulse_count
-            pulse_delay = self._coordinator.motor_pulse_delay_ms
+            pulse_count, pulse_delay = self.motor_pulse_settings()
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
         finally:
             try:
-                await self.write_command(
-                    self._build_command(MaloufCommands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
+                await self._send_stop()
             except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
+    async def _move(self, action: str) -> None:
+        await self._move_with_stop(self._frame(action))
+
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up."""
-        await self._move_with_stop(MaloufCommands.HEAD_UP)
+        await self._move("head_up")
 
     async def move_head_down(self) -> None:
-        """Move head down."""
-        await self._move_with_stop(MaloufCommands.HEAD_DOWN)
+        await self._move("head_down")
 
     async def move_head_stop(self) -> None:
-        """Stop head movement."""
-        await self.write_command(
-            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
-        )
+        await self._send_stop()
 
     async def move_back_up(self) -> None:
-        """Move back up (same as head)."""
         await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        """Move back down (same as head)."""
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        """Stop back movement."""
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up (same as feet)."""
         await self.move_feet_up()
 
     async def move_legs_down(self) -> None:
-        """Move legs down (same as feet)."""
         await self.move_feet_down()
 
     async def move_legs_stop(self) -> None:
-        """Stop legs movement."""
         await self.move_feet_stop()
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
-        await self._move_with_stop(MaloufCommands.FOOT_UP)
+        await self._move("foot_up")
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
-        await self._move_with_stop(MaloufCommands.FOOT_DOWN)
+        await self._move("foot_down")
 
     async def move_feet_stop(self) -> None:
-        """Stop feet movement."""
-        await self.write_command(
-            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
-        )
+        await self._send_stop()
 
-    # Lumbar control
     async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
-        await self._move_with_stop(MaloufCommands.LUMBAR_UP)
+        await self._move("lumbar_up")
 
     async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
-        await self._move_with_stop(MaloufCommands.LUMBAR_DOWN)
+        await self._move("lumbar_down")
 
     async def move_lumbar_stop(self) -> None:
-        """Stop lumbar movement."""
-        await self.write_command(
-            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
-        )
+        await self._send_stop()
 
-    # Tilt control
     async def move_tilt_up(self) -> None:
-        """Move tilt up."""
-        await self._move_with_stop(MaloufCommands.HEAD_TILT_UP)
+        await self._move("tilt_up")
 
     async def move_tilt_down(self) -> None:
-        """Move tilt down."""
-        await self._move_with_stop(MaloufCommands.HEAD_TILT_DOWN)
+        await self._move("tilt_down")
 
     async def move_tilt_stop(self) -> None:
-        """Stop tilt movement."""
-        await self.write_command(
-            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
-        )
+        await self._send_stop()
 
-    # Bed height (Hi-Lo) control
     async def move_bed_height_up(self) -> None:
         """Raise entire bed by lifting both head and foot columns."""
-        await self._move_with_stop(MaloufCommands.BED_HEIGHT_UP)
+        await self._move("bed_height_up")
 
     async def move_bed_height_down(self) -> None:
         """Lower entire bed by dropping both head and foot columns."""
-        await self._move_with_stop(MaloufCommands.BED_HEIGHT_DOWN)
+        await self._move("bed_height_down")
 
     async def move_bed_height_stop(self) -> None:
-        """Stop Hi-Lo movement."""
-        await self.write_command(
-            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
-        )
+        await self._send_stop()
 
     async def stop_all(self) -> None:
-        """Stop all movement."""
-        await self.write_command(
-            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
-        )
+        await self._send_stop()
 
     # Preset methods
-    async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command followed by STOP."""
-        await self.write_command(self._build_command(command_value))
+    async def _send_preset(self, action: str) -> None:
+        """Send a preset frame as the profile's recall, then STOP."""
+        recall = self.profile.recall
+        await self.write_command(self._frame(action), repeat_count=recall.repeats)
         try:
-            await self.write_command(
-                self._build_command(MaloufCommands.STOP),
-                cancel_event=asyncio.Event(),
-            )
+            await self._send_stop()
         except BleakError, ConnectionError:
             _LOGGER.debug("Failed to send STOP after preset", exc_info=True)
 
     async def preset_flat(self) -> None:
-        """Go to flat position."""
-        await self._send_preset(MaloufCommands.ALL_FLAT)
+        await self._send_preset("flat")
 
     async def preset_zero_g(self) -> None:
-        """Go to zero-G position."""
-        await self._send_preset(MaloufCommands.ZERO_G)
+        await self._send_preset("zero_g")
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
-        await self._send_preset(MaloufCommands.ANTI_SNORE)
+        await self._send_preset("anti_snore")
 
     async def preset_tv(self) -> None:
-        """Go to TV/reading position."""
-        await self._send_preset(MaloufCommands.TV_READ)
+        await self._send_preset("tv")
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position."""
-        await self._send_preset(MaloufCommands.LOUNGE)
+        await self._send_preset("lounge")
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
             _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
             return
-        commands = {
-            1: MaloufCommands.MEMORY_1,
-            2: MaloufCommands.MEMORY_2,
-        }
-        if command := commands.get(memory_num):
-            await self._send_preset(command)
-        else:
+        if (action := f"memory_{memory_num}") not in self.profile.words:
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            return
+        await self._send_preset(action)
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program memory using the official app's 55 x 100 ms hold sequence."""
+        """Program memory with the official app's hold-to-save stream."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
             _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
             return
-        command_value = _save_memory_command(memory_num, self._coordinator.ble_device_name)
-        if command_value is None:
+        if memory_num not in self.profile.save_words.slots:
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
             return
-        # The APK schedules the first write after one interval, then performs
-        # exactly 55 acknowledged writes. Its final "stopCommand" string is not
-        # recognized by the dispatcher, so no STOP packet is actually emitted.
-        await asyncio.sleep(0.1)
+        word = self.profile.save_words.word(memory_num, self._coordinator.ble_device_name)
+        save = self.profile.save
+        # The APK schedules the first write after one interval. Its final
+        # "stopCommand" string is not recognized by the dispatcher, so no STOP
+        # packet is actually emitted.
+        await asyncio.sleep(save.interval_ms / 1000)
         await self.write_command(
-            self._build_command(command_value), repeat_count=55, repeat_delay_ms=100
+            malouf_codec.command(self.profile.transport, word),
+            repeat_count=save.repeats,
+            repeat_delay_ms=save.interval_ms,
         )
 
-    # Light control
+    # Light control (toggle only)
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
-        await self.write_command(self._build_command(MaloufCommands.LIGHT_SWITCH))
+        await self.write_command(self._frame("light"))
 
     async def lights_on(self) -> None:
-        """Turn on lights (toggle only)."""
         await self.lights_toggle()
 
     async def lights_off(self) -> None:
-        """Turn off lights (toggle only)."""
         await self.lights_toggle()
 
     # Massage control
     async def massage_head_toggle(self) -> None:
-        """Increase head massage intensity."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_HEAD))
+        await self.write_command(self._frame("massage_head"))
 
     async def massage_foot_toggle(self) -> None:
-        """Increase foot massage intensity."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_FOOT))
+        await self.write_command(self._frame("massage_foot"))
 
     async def massage_head_up(self) -> None:
-        """Increase head massage intensity."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_HEAD))
+        await self.write_command(self._frame("massage_head"))
 
     async def massage_head_down(self) -> None:
-        """Decrease head massage intensity."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_HEAD_MINUS))
+        await self.write_command(self._frame("massage_head_minus"))
 
     async def massage_foot_up(self) -> None:
-        """Increase foot massage intensity."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_FOOT))
+        await self.write_command(self._frame("massage_foot"))
 
     async def massage_foot_down(self) -> None:
-        """Decrease foot massage intensity."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_FOOT_MINUS))
+        await self.write_command(self._frame("massage_foot_minus"))
 
     async def massage_off(self) -> None:
-        """Turn off massage."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_OFF))
+        await self.write_command(self._frame("massage_off"))
 
     async def massage_toggle(self) -> None:
-        """Toggle massage timer."""
-        await self.write_command(self._build_command(MaloufCommands.MASSAGE_TIMER))
+        """Step the massage timer."""
+        await self.write_command(self._frame("massage_timer_step"))
 
 
 class MaloufLegacyOkinController(BedController):
@@ -644,7 +576,7 @@ class MaloufLegacyOkinController(BedController):
 
     def _build_command(self, command_value: int) -> bytes:
         """Build a nine-byte E6 frame through the Keeson codec (side byte ``00``)."""
-        return keeson_profiles.encode(self.profile, command_value)
+        return keeson_profiles.encode(self.profile, command_value & 0xFFFFFFFF)
 
     async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""

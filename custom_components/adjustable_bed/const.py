@@ -645,12 +645,14 @@ BED_TYPE_QPLUS_APP: Final = 'qplus_app'
 BED_TYPE_SERTA_MP_REMOTE: Final = 'serta_mp_remote'
 BED_TYPE_OMAZZ_ADJUSTO_III: Final = 'omazz_adjusto_iii'
 BED_TYPE_ERGOMOTION_APP: Final = 'ergomotion_app'
+BED_TYPE_ERGOMOTION_4: Final = "ergomotion_4"
 BED_TYPE_ROW_CONTROL: Final = 'row_control'
 BED_TYPE_ERGO_SLIM: Final = 'ergo_slim'
 BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
     BED_TYPE_HJBED,
@@ -805,6 +807,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_ERGOMOTION_4,
         *CLUSTER033_BED_TYPES,
         BED_TYPE_BEDSENSE,
         BED_TYPE_FURNIMOVE,
@@ -2970,6 +2973,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_ERGOMOTION_4,
         BED_TYPE_DOUBLESLEEP,
         # The app exposes raw motor-index/desk reports, without a proven
         # mapping to HA's generic head/back/legs/feet angle entities.

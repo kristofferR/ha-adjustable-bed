@@ -36,7 +36,9 @@ from .command_scheduler import (
     command_resources,
 )
 from .const import (
+    BED_TYPE_ERGOMOTION,
     BED_TYPE_GMMOTOR,
+    BED_TYPE_KEESON,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -1860,6 +1862,9 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         return dict(self._single_position_data)
 
     def _sync_position_state(self) -> None:
+        if self._single_inner.bed_type in {BED_TYPE_KEESON, BED_TYPE_ERGOMOTION}:
+            # Legacy P1 feedback cannot identify which half reported a position.
+            return
         positions = self._single_inner.position_data
         if self._single_inner.bed_type == BED_TYPE_SLEEP_NUMBER:
             prefix = f"{self._single_side}_"

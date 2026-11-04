@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..codec import keeson as codec
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -240,9 +241,9 @@ class SBIController(BedController):
         """Build the eight-byte E5 frame for Both, or the nine-byte E6 frame for side A or B."""
         variant = self._variant_for_side(side)
         if variant == SBI_VARIANT_BOTH:
-            return keeson_profiles.encode(self.profile, command_value)
-        selected = "side_a" if variant == SBI_VARIANT_SIDE_A else "side_b"
-        return keeson_profiles.encode(self.profile, command_value, side=selected)
+            return keeson_profiles.encode(self.profile, command_value & 0xFFFFFFFF)
+        selector = self.profile.split_sides["side_a" if variant == SBI_VARIANT_SIDE_A else "side_b"]
+        return codec.frame(command_value & 0xFFFFFFFF, header=0xE6, side=selector)
 
     async def write_command(
         self,
