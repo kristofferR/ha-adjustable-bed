@@ -149,3 +149,9 @@ def test_a_profile_cleans_its_answers_before_checking_them():
     assert staged[const.CONF_LP_LEGACY_MODEL] == "A2RM"
     assert staged[const.CONF_LP_LEGACY_WRITE_UUID] == "11111111-2222-3333-4444-555555555555"
     assert legacy.validate is not None and legacy.validate(staged) == {}
+
+
+def test_an_unanswered_required_question_stays_required():
+    legacy = SETUP_PROFILES[const.BED_TYPE_LEGGETT_LP_LEGACY]
+    write = legacy.questions[2]
+    assert write.default_for(legacy.staged({}, {})) is REQUIRED

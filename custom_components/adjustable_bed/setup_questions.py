@@ -418,9 +418,12 @@ def _uuid_text(value: object) -> str:
 
 def _lp_legacy_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
     data = {**previous, **answers}
-    data[CONF_LP_LEGACY_MODEL] = str(data.get(CONF_LP_LEGACY_MODEL, "")).strip().upper()
+    # Only answered fields are cleaned, so an unanswered one stays required.
+    if CONF_LP_LEGACY_MODEL in data:
+        data[CONF_LP_LEGACY_MODEL] = str(data[CONF_LP_LEGACY_MODEL]).strip().upper()
     for key in (CONF_LP_LEGACY_WRITE_UUID, CONF_LP_LEGACY_READ_UUID):
-        data[key] = _uuid_text(data.get(key))
+        if key in data:
+            data[key] = _uuid_text(data[key])
     return data
 
 
