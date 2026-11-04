@@ -8,9 +8,10 @@ capability-gated RGB lighting, the bed alarm and wake executor, and rename.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
-from typing import TYPE_CHECKING, Final
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from homeassistant.util import dt as dt_util
 
@@ -35,6 +36,7 @@ from .base import BedController
 from .jiecang import JiecangProfileController
 
 if TYPE_CHECKING:
+    from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..codec.jiecang import MassageZone
@@ -709,3 +711,29 @@ class JiecangAppController(JiecangProfileController):
         await self.write_command(codec.massage_stop(), cancel_event=asyncio.Event())
         self._massage = dict.fromkeys(self._massage, 0)
         self._publish_state()
+
+
+def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
+    """Raise ConnectionError unless the link exposes the selected app's GATT roles.
+
+    A guided change checks a candidate link with the controller's own transport
+    selection, so the check is exactly what the runtime will require.
+    """
+    from ..const import (
+        CONF_JIECANG_APP_LAYOUT,
+        CONF_JIECANG_APP_PROFILE,
+        CONF_JIECANG_APP_TRANSPORT,
+    )
+
+    link = cast("AdjustableBedCoordinator", SimpleNamespace(client=client, controller_state={}))
+    profile = data[CONF_JIECANG_APP_PROFILE]
+    layout = data[CONF_JIECANG_APP_LAYOUT]
+    transport = data.get(CONF_JIECANG_APP_TRANSPORT, "auto")
+    controller: JiecangProfileController
+    if profile == COMFORT_MOTION.key:
+        from .comfort_motion import ComfortMotionController
+
+        controller = ComfortMotionController(link, layout=layout, transport=transport)
+    else:
+        controller = JiecangAppController(link, profile=profile, layout=layout, transport=transport)
+    controller._select_transport()  # noqa: SLF001 - the controller's own selection

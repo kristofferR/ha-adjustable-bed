@@ -279,9 +279,19 @@ async def _answer_route(hass: HomeAssistant, result, variant: str = VARIANT_AUTO
     )
 
 
+async def _keep_family_route(hass: HomeAssistant, result: Any) -> Any:
+    """Answer a discovered Jiecang bed's app question by keeping its detected route."""
+    if result.get("step_id") != "jiecang_family":
+        return result
+    return await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+
+
 async def _advance_progress(hass: HomeAssistant, result: Any) -> Any:
     """Drive pairing and background work through to the next stable form."""
     for _ in range(20):
+        # A discovered Jiecang bed first asks for its app; the generic setup
+        # tests keep the detected route.
+        result = await _keep_family_route(hass, result)
         result = await _complete_setup_pairing(hass, result)
         if result["type"] != FlowResultType.SHOW_PROGRESS:
             return result
@@ -4899,6 +4909,7 @@ async def test_setup_shows_a_progress_view_before_the_result(
         progress = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
+        progress = await _keep_family_route(hass, progress)
         assert progress["type"] == FlowResultType.SHOW_PROGRESS
         assert progress["step_id"] == "setup_progress"
         # The view names the bed and the Bluetooth action under way.
@@ -5118,6 +5129,7 @@ async def test_abandoning_the_flow_mid_probe_leaves_no_connected_client(
         progress = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
+        progress = await _keep_family_route(hass, progress)
         assert progress["type"] == FlowResultType.SHOW_PROGRESS
 
         # Abort only once the worker is genuinely holding an open client.

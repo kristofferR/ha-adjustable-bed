@@ -23,7 +23,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import logging
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib import import_module
@@ -42,10 +42,20 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.translation import async_get_translations
 
 from .const import (
+    BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_JIECANG,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
+    CONF_JIECANG_APP_LAYOUT,
+    CONF_JIECANG_APP_PROFILE,
+    CONF_JIECANG_APP_TRANSPORT,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_VMAT_REMOTE,
+    CONF_VMATBASIC_PROFILE,
     DOMAIN,
     PAIR_SIDES,
 )
@@ -64,18 +74,35 @@ class ManagedFamily:
     # Also the config-flow step that asks the family's app question.
     key: str
     bed_types: frozenset[str]
-    # The family has exact endpoint or bond requirements, so a staged change
-    # must pass a connection check before it can be confirmed.
-    requires_check: bool
+    # The app and layout settings Configure must not change on its own.
+    route_keys: tuple[str, ...]
+    # Whether a staged route has exact endpoint or bond requirements, so the
+    # change must pass a connection check before it can be confirmed.
+    requires_check: Callable[[Mapping[str, Any]], bool]
 
 
 VIBRADORM_FAMILY: Final = ManagedFamily(
     key="vibradorm",
     bed_types=frozenset({BED_TYPE_VIBRADORM, BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}),
-    requires_check=True,
+    route_keys=(
+        CONF_VIBRADORM_APP_PROFILE,
+        CONF_VIBRADORM_CONTROL_TYPE,
+        CONF_VIBRADORM_VMAT_REMOTE,
+        CONF_VMATBASIC_PROFILE,
+    ),
+    requires_check=lambda _data: True,
 )
 
-MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (VIBRADORM_FAMILY,)
+# The app controllers need their app's exact GATT roles; the legacy Jiecang and
+# Lierda routes fall back to a generic write role and have nothing to check.
+JIECANG_FAMILY: Final = ManagedFamily(
+    key="jiecang_family",
+    bed_types=frozenset({BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION, BED_TYPE_JIECANG_APP}),
+    route_keys=(CONF_JIECANG_APP_PROFILE, CONF_JIECANG_APP_LAYOUT, CONF_JIECANG_APP_TRANSPORT),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP,
+)
+
+MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (VIBRADORM_FAMILY, JIECANG_FAMILY)
 
 
 def managed_family(entry_data: Mapping[str, Any]) -> ManagedFamily | None:
