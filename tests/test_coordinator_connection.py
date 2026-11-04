@@ -1291,7 +1291,7 @@ class TestCoordinatorConnection:
         controller.read_positions = AsyncMock()
         coordinator._controller = controller
 
-        with patch("custom_components.adjustable_bed.coordinator._INITIAL_POSITION_READ_RETRY_DELAY", 0):
+        with patch("custom_components.adjustable_bed.coordinator_positions._INITIAL_POSITION_READ_RETRY_DELAY", 0):
             await coordinator.async_read_initial_positions()
 
         controller.read_positions.assert_awaited_once()
@@ -1458,7 +1458,7 @@ class TestCoordinatorConnection:
 
         with (
             patch(
-                "custom_components.adjustable_bed.coordinator._INITIAL_POSITION_READ_TOTAL_TIMEOUT",
+                "custom_components.adjustable_bed.coordinator_positions._INITIAL_POSITION_READ_TOTAL_TIMEOUT",
                 0.01,
             ),
             patch.object(

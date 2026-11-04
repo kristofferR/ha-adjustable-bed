@@ -11,10 +11,16 @@ from custom_components.adjustable_bed import (
     coordinator,
     coordinator_bonds,
     coordinator_connection,
+    coordinator_positions,
 )
 
 # coordinator.py and the modules holding the rest of AdjustableBedCoordinator.
-COORDINATOR_MODULES = (coordinator, coordinator_bonds, coordinator_connection)
+COORDINATOR_MODULES = (
+    coordinator,
+    coordinator_bonds,
+    coordinator_connection,
+    coordinator_positions,
+)
 
 
 @contextmanager

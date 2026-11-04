@@ -126,7 +126,7 @@ async def test_seek_prepares_before_starting_position_read_budget(coordinator):
     coordinator.controller.prepare_for_position_read = AsyncMock(side_effect=prepare)
     coordinator.controller.read_positions = AsyncMock(side_effect=read)
     move = AsyncMock()
-    with patch("custom_components.adjustable_bed.coordinator.POSITION_FEEDBACK_TIMEOUT", 0.01):
+    with patch("custom_components.adjustable_bed.coordinator_positions.POSITION_FEEDBACK_TIMEOUT", 0.01):
         await coordinator.async_seek_position("back", 40, move, move, move)
     coordinator.controller.prepare_for_position_read.assert_awaited_once()
     coordinator.controller.read_positions.assert_awaited_once()
