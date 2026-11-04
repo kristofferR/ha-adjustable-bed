@@ -302,7 +302,9 @@ class _MergedStream:
         stopped_at = asyncio.get_running_loop().time()
         for member in self.members.values():
             if member.left_at is None:
-                member.left_at = stopped_at
+                # A member whose deadline passed while the streamer was busy
+                # stopped moving at that deadline.
+                member.left_at = min(stopped_at, member.deadline)
 
     async def _clock_on_stop(self, cancel_event: asyncio.Event) -> None:
         # STOP or replacement stops every member's travel at once, whatever

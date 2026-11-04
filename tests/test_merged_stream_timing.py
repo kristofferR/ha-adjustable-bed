@@ -252,3 +252,26 @@ async def test_a_stop_cannot_cut_off_an_expiring_members_cleanup(clock: Any) -> 
     assert ends == [(20, "end back"), (320, "end back"), (320, "end legs")]
     assert wire.frames[-1] == (320, "release")
     assert travel == {"back": 0.02, "legs": 0.1}
+
+
+@pytest.mark.parametrize("ending", ["stop", "replace"])
+async def test_a_deadline_passed_during_cleanup_bounds_travel_at_stop(
+    clock: Any, ending: str
+) -> None:
+    scheduler, wire, travel = DeviceCommandScheduler(f"late-{ending}"), Wire(clock), {}
+    wire.cleanup = {"back": (0.0, 0.3)}
+    back = join(scheduler, wire, timed("back", 0.02, travel))
+    legs = join(scheduler, wire, held("legs", clock, travel, seconds=0.05))
+    await asyncio.sleep(0.1)  # legs' deadline passed during back's cleanup
+    if ending == "stop":
+        epoch = scheduler.request_stop(ALL_COMMAND_RESOURCES)
+        await asyncio.gather(back, legs)
+        scheduler.finish_stop(epoch)
+    else:
+
+        async def preset(_context: CommandContext) -> None:
+            return None
+
+        await scheduler.execute(CommandIntent(preset))
+        await asyncio.gather(back, legs)
+    assert travel == {"back": 0.02, "legs": 0.05}
