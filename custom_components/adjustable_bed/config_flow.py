@@ -1065,6 +1065,8 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
     **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
     **dict.fromkeys(LEGGETT_FAMILY.bed_types, "leggett_family"),
+    # Declared questions only: the layout is BedSense's own question.
+    BED_TYPE_BEDSENSE: "profile_questions",
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_DOUBLESLEEP: "doublesleep",

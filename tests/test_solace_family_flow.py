@@ -108,3 +108,21 @@ async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_c
     result = await manager.async_configure(result["flow_id"], {"choice": "keep"})
     assert result["reason"] == "migration_kept"
     assert {k: v for k, v in entry.data.items() if k in before} == before
+
+
+async def test_bedsense_chosen_directly_asks_its_layout(hass, enable_custom_integrations):
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": "user"}
+    with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+        result = await flow.async_step_manual_entry(
+            {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_BEDSENSE}
+        )
+        while result["step_id"] == "disconnect_after_command":
+            result = await flow.async_step_disconnect_after_command({})
+        assert result["step_id"] == "profile_questions"
+        result = await flow.async_step_profile_questions(
+            {const.CONF_PROTOCOL_VARIANT: "bedsense_7"}
+        )
+    assert result["type"] == "create_entry"
+    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_BEDSENSE
+    assert result["data"][const.CONF_PROTOCOL_VARIANT] == "bedsense_7"

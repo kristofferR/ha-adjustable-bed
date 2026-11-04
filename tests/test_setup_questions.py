@@ -117,3 +117,13 @@ async def test_whole_number_answers_are_coerced_from_select_text(hass):
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_profile_questions({const.CONF_MOTOR_COUNT: "3"})
     assert finish.call_args.args[0][const.CONF_MOTOR_COUNT] == 3
+
+
+def test_every_profile_with_questions_has_a_setup_step_that_asks_them():
+    """A declared question hides its generic field, so some step must ask it."""
+    from custom_components.adjustable_bed.config_flow import _APP_SETUP_STEPS
+    from custom_components.adjustable_bed.profile_id import profile_route
+
+    for key, profile in SETUP_PROFILES.items():
+        if profile.questions:
+            assert profile_route(key).bed_type in _APP_SETUP_STEPS, key
