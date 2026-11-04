@@ -161,11 +161,14 @@ class RichmatProfileController(BedController):
 
     async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Pulse a movement code at the entry's pulse settings, then always STOP."""
+        delay_ms = self._coordinator.motor_pulse_delay_ms
         try:
             await self.write_command(
                 self._build_command(command_byte),
-                repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                # A leased hold (#483) refreshes until its lease ends.
+                repeat_count=self.leased_hold_refreshes(delay_ms)
+                or self._coordinator.motor_pulse_count,
+                repeat_delay_ms=delay_ms,
             )
         finally:
             await self._release()

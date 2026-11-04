@@ -194,6 +194,8 @@ class ComfortEnhancementsController(BedController):
             raise ValueError(f"The {self.layout} layout has no {axis} control")
         try:
             count, delay = self.motor_pulse_settings()
+            # A leased hold (#483) refreshes until its lease ends.
+            count = self.leased_hold_refreshes(delay) or count
             await self.write_command(control_frame(self._axes[axis][0 if up else 1]), count, delay)
         finally:
             await self._release(delay=not self._coordinator.cancel_command.is_set())

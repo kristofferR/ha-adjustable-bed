@@ -103,7 +103,12 @@ from .paired_coordinator import (
 )
 from .paired_devices import side_identifier
 from .pairing import is_paired, iter_children, pair_member_addresses
-from .position_estimate import invalidate_on_command, track_held_control, track_motor_command
+from .position_estimate import (
+    invalidate_on_command,
+    track_held_control,
+    track_motor_command,
+    track_stream_member,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerMotorHoldSpec, SideBoundController
@@ -2383,8 +2388,42 @@ async def _async_timed_move(
         await _release_preflighted(preflighted)
         raise
 
+    # #516: merge into one stream only on a standalone bed whose controller
+    # declares this motor concurrent. Paired topologies run each side inside a
+    # prepared reservation, where a streamer cannot start, so they stay serial.
+    physical = [
+        target for coordinator, side in targets for target in _command_targets(coordinator, side)
+    ]
+    streamed = not any(
+        isinstance(coordinator, PairedBedCoordinator) for coordinator, _ in targets
+    ) and all(
+        not isinstance(target, SingleAddressSideCoordinator)
+        and (resources := target.stream_resources()) is not None
+        and plans[_plan_key(target)][3] in resources
+        for target in physical
+    )
+
     async def move(target: BedChild) -> None:
         command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
+        if streamed:
+            assert not isinstance(target, SingleAddressSideCoordinator)
+            # Timed from the member's first write to its retirement, like the
+            # serial move's own span; a renewal never starts a new move.
+            tracker = track_stream_member(
+                getattr(target, "hass", None), target.capability_controller, motor, direction
+            )
+            await target.async_execute_stream_member(
+                motor=motor,
+                resource=resource,
+                action=direction,
+                duration_s=lease.duration_s if lease is not None else duration_ms / 1000,
+                ceiling_s=duration_ms / 1000 if lease is not None else None,
+                lease=lease,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+                on_wire=tracker.started if tracker is not None else None,
+                on_left=tracker.finished if tracker is not None else None,
+            )
+            return
         if lease is not None:
             await target.async_execute_controller_command(
                 command,
