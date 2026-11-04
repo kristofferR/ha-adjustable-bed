@@ -56,17 +56,17 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
             CONF_PREFERRED_ADAPTER: "auto",
         }
     )
+    # The app question comes first; the family row keeps nothing to keep.
+    assert result["step_id"] == "jiecang_family"
+    options = result["data_schema"].schema["choice"].config["options"]
+    assert "keep" not in options and "dreamask" in options
+    result = await flow.async_step_jiecang_family({"choice": "dreamask"})
     assert result["step_id"] == "jiecang_app"
     schema = result["data_schema"]
     assert schema is not None
     with pytest.raises(vol.Invalid, match="required key"):
         schema({})
-    values = result["data_schema"](
-        {
-            CONF_JIECANG_APP_PROFILE: "dreamask",
-            CONF_JIECANG_APP_LAYOUT: "split_after_bilateral",
-        }
-    )
+    values = schema({CONF_JIECANG_APP_LAYOUT: "split_after_bilateral"})
     with patch.object(
         flow,
         "_finish_with_verify",
@@ -120,6 +120,7 @@ async def test_options_keep_app_layout_and_transport(hass):
     defaults = {marker.schema: marker.default() for marker in result["data_schema"].schema}
     assert defaults[CONF_JIECANG_APP_LAYOUT] == "standard_4_bilateral"
     assert defaults[CONF_HAS_LIGHT] is False
+    # Layout and transport change through the guided change, never Configure.
     result = await flow.async_step_settings(
         {
             CONF_JIECANG_APP_PROFILE: "dreamotion",
@@ -128,12 +129,24 @@ async def test_options_keep_app_layout_and_transport(hass):
             CONF_HAS_LIGHT: True,
         }
     )
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
+    assert entry.data[CONF_JIECANG_APP_LAYOUT] == "standard_4_bilateral"
+    # A preference still saves in Configure.
+    result = await flow.async_step_settings(
+        {
+            CONF_JIECANG_APP_PROFILE: "dreamotion",
+            CONF_JIECANG_APP_LAYOUT: "standard_4_bilateral",
+            CONF_JIECANG_APP_TRANSPORT: "g3",
+            CONF_HAS_LIGHT: True,
+        }
+    )
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_JIECANG_APP_LAYOUT] == "standard_3_hi_low"
-    assert entry.data[CONF_JIECANG_APP_TRANSPORT] == "g2"
+    assert entry.data[CONF_JIECANG_APP_LAYOUT] == "standard_4_bilateral"
+    assert entry.data[CONF_JIECANG_APP_TRANSPORT] == "g3"
+    assert entry.data[CONF_HAS_LIGHT] is True
 
 
-async def test_options_switch_from_legacy_requires_explicit_app_selection(hass):
+async def test_options_switch_from_legacy_uses_the_guided_change(hass):
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_JIECANG, CONF_MOTOR_COUNT: 2}
     )
@@ -143,10 +156,7 @@ async def test_options_switch_from_legacy_requires_explicit_app_selection(hass):
     flow.hass = hass
     result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_JIECANG_APP})
     assert result["type"] == FlowResultType.FORM
-    schema = result["data_schema"]
-    assert schema is not None
-    with pytest.raises(vol.Invalid, match="required key"):
-        schema({})
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_JIECANG
 
 

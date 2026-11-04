@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIN_ORE,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_SLEEPYS_BOX25,
@@ -175,17 +176,19 @@ async def test_offline_entry_gets_the_review_before_connecting(hass: HomeAssista
 
 
 async def test_keep_dismisses_the_review_for_good(hass: HomeAssistant) -> None:
-    entry = _entry(hass, BED_TYPE_KEESON, variant=KEESON_VARIANT_KSBT)
+    entry = _entry(hass, BED_TYPE_OKIN_ORE, variant=None)
     async_refresh_profile_review_issue(hass, entry)
     flow, form = await _open(hass, entry)
-    assert _offered(form) == ["keeson:adjustable_lite", "keep"]
+    apps = ["keeson:dynasty_bases", "keeson:innova"]
+    assert sorted(_offered(form)[:-1]) == apps and _offered(form)[-1] == "keep"
+    mark = entry.data[CONF_PROFILE_REVIEW_PENDING]
     before = {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING}
 
     result = await flow.async_step_init({"choice": "keep"})
 
     assert result["type"] == "create_entry"
     kept = entry.data[CONF_PROFILE_REVIEW_KEPT]
-    assert kept == {"route": "keeson:ksbt", "apps": ["keeson:adjustable_lite"]}
+    assert kept == {"route": mark, "apps": apps}
     assert {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_KEPT} == before
     async_refresh_profile_review_issue(hass, entry)
     assert _issue(hass, entry) is None
@@ -244,7 +247,7 @@ async def test_keep_for_another_route_never_asks(hass: HomeAssistant) -> None:
 async def test_switch_applies_the_app_through_the_options_flow(
     hass: HomeAssistant, enable_custom_integrations: None
 ) -> None:
-    entry = _entry(hass, BED_TYPE_KEESON)
+    entry = _entry(hass, BED_TYPE_OKIN_ORE, variant=None)
     entry_id = entry.entry_id
     entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
     async_refresh_profile_review_issue(hass, entry)
@@ -319,7 +322,11 @@ async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -
 
     issue = _issue(hass, entry)
     assert issue is not None and issue.translation_key == "app_profile_review"
-    assert _offered(form) == [BED_TYPE_COOLBASE, "keeson:adjustable_lite", "keep"]
+    # Keeson changes run through its guided change, which the review lists.
+    assert form["step_id"] == "managed"
+    assert form["description_placeholders"]["apps"] == (
+        "- Cool Base (BaseI5 with fan)\n- Adjustable Lite app (Keeson)"
+    )
 
     entry = _entry(hass, BED_TYPE_KEESON, variant="purple", **{CONF_ADDRESS: "AA:BB:CC:DD:EE:33"})
     with patch(_HISTORY, return_value=_advertisement("Bed base-i5", KEESON_BASE_SERVICE_UUID)):
@@ -334,11 +341,18 @@ async def test_switching_to_a_route_with_its_own_apps_does_not_ask_again(
 ) -> None:
     """Cool Base lists Restonic apps, but the user already answered the review."""
     entry = _entry(hass, BED_TYPE_KEESON, variant="purple")
+    manager = hass.config_entries.flow
     with patch(_HISTORY, return_value=_advertisement("Bed base-i5", KEESON_BASE_SERVICE_UUID)):
         async_refresh_profile_review_issue(hass, entry)
         flow, _form = await _open(hass, entry)
-        result = await flow.async_step_init({"choice": BED_TYPE_COOLBASE})
-        assert result["type"] == "create_entry"
+        # The review hands a Keeson bed to its guided change.
+        handoff = await flow.async_step_init({"choice": "configure"})
+        assert handoff["reason"] == "migration_setup_started"
+        flow_id = handoff["next_flow"][1]
+        result = await manager.async_configure(flow_id, {"choice": "coolbase"})
+        assert result["step_id"] == "migration_confirm"
+        result = await manager.async_configure(flow_id, {"confirm": True})
+        assert result["reason"] == "reconfigure_successful"
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_COOLBASE
         async_refresh_profile_review_issue(hass, entry)
 
@@ -400,15 +414,14 @@ def _paired(hass: HomeAssistant, mode: str) -> MockConfigEntry:
     data: dict[str, Any] = {
         CONF_PAIR_ID: "pair_review",
         CONF_PAIR_MODE: mode,
-        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_BED_TYPE: BED_TYPE_OKIN_ORE,
         CONF_PAIR_CHILDREN: [
-            {CONF_SIDE: side, CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_KEESON,
-             CONF_PROTOCOL_VARIANT: KEESON_VARIANT_KSBT, CONF_MOTOR_COUNT: 2}
+            {CONF_SIDE: side, CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_OKIN_ORE,
+             CONF_MOTOR_COUNT: 2}
             for side, address in ((SIDE_LEFT, ADDRESS), (SIDE_RIGHT, second))
         ],
     }
     data[CONF_PROFILE_REVIEW_PENDING] = profile_review_mark(data)
-    assert data[CONF_PROFILE_REVIEW_PENDING] == "keeson:ksbt|keeson:ksbt"
     entry = MockConfigEntry(domain=DOMAIN, title="Pair", data=data, version=4, minor_version=3)
     entry.add_to_hass(hass)
     return entry
@@ -425,7 +438,9 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
 
     assert form["step_id"] == "unpair"
     assert form["data_schema"].schema["choice"].config["options"] == ["split", "keep"]
-    assert form["description_placeholders"]["apps"] == "- Adjustable Lite app (Keeson)"
+    assert form["description_placeholders"]["apps"] == (
+        "- Dynasty Bases app (Keeson)\n- INNOVA app (Keeson)"
+    )
     result = await flow.async_step_unpair({"choice": "split"})
     assert result["type"] == "abort"
     assert result["reason"] == "profile_review_open"
@@ -452,7 +467,8 @@ def test_every_offered_app_is_a_selectable_profile() -> None:
     )
 
     assert BED_TYPE_VIBRADORM in selectable
-    assert offered - {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC} <= selectable
+    # The family steps reach these: Vibradorm's apps and Restonic BT's remote B.
+    assert offered - {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC, "keeson:restonic_b"} <= selectable
     # FurniMove's own repairs cover the routes its handsets used.
     assert not any(choice.startswith(BED_TYPE_FURNIMOVE) for choice in offered)
     # Why a paired bed is split first: no offered app keeps paired controls.

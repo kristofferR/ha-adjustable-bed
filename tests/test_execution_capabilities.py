@@ -92,6 +92,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Rows sort by identity, so parallel declarations merge cleanly.
     # Keeson cluster033 apps and Ergomotion 4.0 (#483) stream a held key.
     **{
         f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
@@ -106,13 +107,17 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "BedSenseProfile:bedsense": {"hold": ("bedsense",)},
     # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
     "JiecangProfile:dreamask": {"hold": ("dreamask",)},
-    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
     "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
     # Keeson E5/E6 (#483): the K1 profiles that stream a held key.
     **{f"KeesonProfile:{key}": {"hold": keys} for key, keys in KEESON_STREAM.items()},
+    # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
+    # cadence is the entry's pulse settings, not the app's.
+    "LimossProfile:fsm_relax": {"hold": ("fsm",)},
+    "LimossProfile:limoss_remote": {"hold": ("limoss",)},
     "LogicdataProfile:phone": {"hold": ("ld-phone",)},
-    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
     "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
+    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
     # Malouf / Lucid (#483, row023).
     "MaloufAppProfile:lucid": {"hold": ("lucid", "row023")},
     "MaloufAppProfile:malouf": {"hold": ("malouf", "row023")},
@@ -120,9 +125,24 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
     # the 5A keys those profiles send, so only ELEVATE declares.
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
-    # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
-    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
+    # Okin N-frame (#483): each app streams a held key until release. Nectar
+    # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
+    "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
+    "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
+    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
+    "OkinNFrameProfile:cst_aviada": {"hold": ("aviada",)},
+    "OkinNFrameProfile:cst_bob": {"hold": ("bob",)},
+    "OkinNFrameProfile:cst_carefree": {"hold": ("carefree",)},
+    "OkinNFrameProfile:cst_clarity": {"hold": ("iiclarity",)},
+    "OkinNFrameProfile:cst_contempo": {"hold": ("contempo",)},
+    "OkinNFrameProfile:cst_mf900": {"hold": ("mf900",)},
+    "OkinNFrameProfile:cst_nectar_move": {"hold": ("nectar", "row042")},
+    "OkinNFrameProfile:cst_resident": {"hold": ("resident",)},
+    "OkinNFrameProfile:cst_sanctuary": {"hold": ("sanctuary",)},
+    "OkinNFrameProfile:cst_support": {"hold": ("support",)},
+    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
+    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
     "OkinNFrameProfile:prodigy4": {
         "hold": ("p4", "leggett-disp", "#483c"),
         # CU170 watchdog onset measured on hardware: 217-218 ms.
@@ -130,14 +150,23 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         # Normal keys combine by OR; release removes one key (#516).
         "concurrent": ("p4", "#516c"),
     },
+    "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    "OkinNFrameProfile:serenity": {"hold": ("serenity",)},
+    "OkinNFrameProfile:simmons_okin": {"hold": ("simmons",)},
+    "OkinNFrameProfile:simmons_smartbed": {"hold": ("simmons",)},
+    "OkinNFrameProfile:starcode_abm5_4": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box1220": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box15": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box25": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:starcode_abm5_4_box3633": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:tranquil": {"hold": ("tranquil",)},
     "OkinNFrameProfile:useries": {
         "hold": ("useries", "leggett-disp"),
         # The output thread's accumulator ORs keys; ACTION_UP removes one.
         "concurrent": ("useries",),
     },
-    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
-    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
-    "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    "OkinNFrameProfile:zseries_z230": {"hold": ("glory",)},
+    "OkinNFrameProfile:zseries_z280": {"hold": ("glory",)},
     # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
     "RichmatProfile:hjbed": {"hold": ("row121",)},
     "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
@@ -150,10 +179,6 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "RichmatProfile:richmat_prefix55": {"hold": ("rmc2",)},
     "RichmatProfile:richmat_prefixaa": {"hold": ("rmc2",)},
     "RichmatProfile:richmat_wilinke": {"hold": ("rmc2",)},
-    # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
-    # cadence is the entry's pulse settings, not the app's.
-    "LimossProfile:limoss_remote": {"hold": ("limoss",)},
-    "LimossProfile:fsm_relax": {"hold": ("fsm",)},
     # Latched Solace routes. S4-Y and unidentified entries have no report, and
     # Motion Bed has no route a lease could renew.
     "SolaceProfile:common": {"hold": ("homekobo", "dianqi")},
@@ -161,10 +186,13 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SolaceProfile:home_k2": {"hold": ("homekobo",)},
     "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
     "SolaceProfile:woosa": {"hold": ("woosa",)},
-    # Standalone controllers with stream evidence. The generic ``vibradorm``
-    # route keeps finite pulses; ``svane`` and ``leggett_lp_legacy`` are not
-    # declared yet (see the design note).
+    # Standalone controllers. Stream holds need stream evidence; latched holds
+    # (#821) a latched row. The generic ``vibradorm`` route keeps finite pulses
+    # and ``leggett_lp_legacy`` is not declared yet (see the design note). Svane
+    # Remote declares hold and composition on its controller (#516), and Sleepy's
+    # BOX25 declares on the controller for both dialects.
     "eshine": {"hold": ("eshine",)},
+    "eshine_okin": {"hold": ("eshine-okin",)},
     "furnimove": {"hold": ("fm157",)},
     "isleep": {"hold": ("kaidi",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
@@ -175,27 +203,46 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "octo": {"hold": ("octo",)},
     "remacro": {"hold": ("brick", "jewmes", "slumber", "row050")},  # latched
     "reverie": {"hold": ("reverie", "row041")},  # latched
+    "sleepys_box25": {"hold": ("sleepy",)},
     "sleepys_elite_app": {"hold": ("sleepy",)},
     "starcode_m1x12": {"hold": ("m1x12",)},
     "starcode_m5x5": {"hold": ("abm5_5",)},
+    "svane": {"hold": ("svane", "svane-guide"), "concurrent": ("svane", "svane-guide")},
     "timotion_ahf": {"hold": ("ahf",)},
     "vibradorm_app": {"hold": ("diamant", "werkmeister", "vmat")},
     "vmatbasic": {"hold": ("vmatbasic",)},
 }
 
-# Source site -> the EVIDENCE identities it declares. A site is
-# "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
-# enumeration cannot reach every variant, layout or product, so every place
-# that can declare a capability must be listed and reviewed here.
-_LEGGETT_STREAM = ("OkinNFrameProfile:prodigy2l", "OkinNFrameProfile:prodigy2")
+_ABM = tuple(identity for identity in EVIDENCE if identity.startswith("OkinNFrameProfile:starcode"))
+# Okin CST and the OKIN Bedding apps (Serenity, Tranquil, Z-Series) share ``_cst``.
+_CST = tuple(
+    identity
+    for identity in EVIDENCE
+    if identity.startswith("OkinNFrameProfile:cst_")
+    or identity.removeprefix("OkinNFrameProfile:")
+    in ("serenity", "tranquil", "zseries_z230", "zseries_z280")
+)
 _CUSTOMATIC = (
     "OkinNFrameProfile:clarity",
     "OkinNFrameProfile:jeromes",
     "OkinNFrameProfile:remedy",
 )
+_LEGGETT_STREAM = ("OkinNFrameProfile:prodigy2", "OkinNFrameProfile:prodigy2l")
+_LUMBAR = (
+    "OkinNFrameProfile:adjustable_lumbar_okin",
+    "OkinNFrameProfile:adjustable_lumbar_star",
+)
+_SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbed")
+
+# Source site -> the EVIDENCE identities it declares. A site is
+# "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
+# enumeration cannot reach every variant, layout or product, so every place
+# that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/eshine.py:<module>.EshineController": ("eshine",),
     "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
+    "beds/eshine_okin.py:<module>.EshineOkinController": ("eshine_okin",),
+    "beds/eshine_okin.py:<module>.EshineOkinController.execution": ("eshine_okin",),
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
     "beds/isleep.py:<module>.IsleepController": ("isleep",),
@@ -221,10 +268,13 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "beds/sleepys_app.py:<module>.SleepysEliteAppController": ("sleepys_elite_app",),
     "beds/sleepys_app.py:<module>.SleepysEliteAppController.execution": ("sleepys_elite_app",),
+    "beds/sleepys_box25.py:<module>.SleepysBox25Controller": ("sleepys_box25",),
     "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller": ("starcode_m1x12",),
     "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller.execution": ("starcode_m1x12",),
     "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller": ("starcode_m5x5",),
     "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller.execution": ("starcode_m5x5",),
+    "beds/svane.py:<module>.SVANE_EXECUTION": ("svane",),
+    "beds/svane.py:<module>.SvaneController": ("svane",),
     "beds/timotion_ahf.py:<module>.TiMOTIONAhfController": ("timotion_ahf",),
     "beds/timotion_ahf.py:<module>.TiMOTIONAhfController.execution": ("timotion_ahf",),
     "beds/vibradorm_app.py:<module>.VibradormAppController": ("vibradorm_app",),
@@ -240,8 +290,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         "SolaceProfile:woosa",
     ),
     "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
-    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
     "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
+    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
     **{
         f"profiles/keeson.py:<module>.{key.upper()}": (f"KeesonProfile:{key}",)
         for key in KEESON_STREAM
@@ -254,23 +304,29 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/keeson.py:<module>.ergomotion_4_profile": tuple(
         f"AppProfile:ergomotion_4@{style}" for style in sorted(ERGOMOTION_4_STYLES)
     ),
+    "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
+    "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
     "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
-    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
     "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
+    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
     "profiles/malouf.py:<module>.LUCID": ("MaloufAppProfile:lucid",),
     "profiles/malouf.py:<module>.MALOUF": ("MaloufAppProfile:malouf",),
     "profiles/malouf.py:<module>.NEW_OKIN": ("MaloufRouteProfile:malouf_new_okin",),
     "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
-    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
+    "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.USERIES_EXECUTION": ("OkinNFrameProfile:useries",),
+    "profiles/okin_nframe.py:<module>._abm": _ABM,
+    "profiles/okin_nframe.py:<module>._cst": _CST,
+    "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._leggett": (
         *_LEGGETT_STREAM,
         "OkinNFrameProfile:prodigy4",
         "OkinNFrameProfile:useries",
     ),
-    "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
-    "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
+    "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
     "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
     "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
     "profiles/richmat.py:<module>.RICHMAT": tuple(
@@ -281,8 +337,6 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         f"RichmatProfile:richmat_mh_{app}"
         for app in ("best_mattress", "blvd_home", "harmony", "idealbed", "revive")
     ),
-    "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
-    "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

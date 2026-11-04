@@ -1627,6 +1627,16 @@ async def _async_timed_move(
         command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
         if streamed:
             assert not isinstance(target, SingleAddressSideCoordinator)
+            svane_admission = svane_admissions.get(_plan_key(target))
+            if svane_admission is not None and svane_admission.released(
+                "head" if motor == "back" else "feet"
+            ):
+                # svane_release_axis arrived during preflight: admit no motion,
+                # and give the link preflight opened its normal idle disconnect.
+                if target.is_connected:
+                    with contextlib.suppress(Exception):
+                        await target.async_ensure_connected(reset_timer=True)
+                return
             # Timed from the member's first write to its retirement, like the
             # serial move's own span; a renewal never starts a new move.
             tracker = track_stream_member(
@@ -2129,6 +2139,14 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
             controllers.append(controller)
     for controller in controllers:
         controller.request_svane_axis_release(call.data[ATTR_MOTOR])
+    # A streamed timed move (#516) on that axis ends alone; the other keeps going.
+    from .coordinator import AdjustableBedCoordinator
+
+    resource = "motor:back" if call.data[ATTR_MOTOR] == "head" else "motor:legs"
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            if isinstance(target, AdjustableBedCoordinator):
+                target.stop_stream_member(resource)
 
 
 async def handle_configure_alarm_schedule(call: ServiceCall) -> None:

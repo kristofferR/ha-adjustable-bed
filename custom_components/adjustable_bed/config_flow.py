@@ -96,11 +96,16 @@ from .bond_verification import (
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
+    BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ERGOMOTION_4,
+    BED_TYPE_ERGOMOTION_APP,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
@@ -109,8 +114,10 @@ from .const import (
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
+    BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
+    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -132,6 +139,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
@@ -266,6 +274,22 @@ from .const import (
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_AMERICANSTAR,
+    KEESON_VARIANT_AVANTI_BASES,
+    KEESON_VARIANT_BASE,
+    KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_DYNASTY_BASES,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_JSON,
+    KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
+    KEESON_VARIANT_SIMON_LI,
+    KEESON_VARIANT_SLEEP_HARMONY,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
@@ -289,6 +313,7 @@ from .const import (
     OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
     OKIN_DOT_FURNIMOVE_VARIANTS,
+    ORE_COMFORT_BED_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
@@ -381,6 +406,11 @@ from .pairing_candidates import (
 from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profile_id import with_profile_ids
 from .profile_migration import (
+    JIECANG_FAMILY,
+    KEESON_FAMILY,
+    MANAGED_FAMILIES,
+    OKIN_FAMILY,
+    SOLACE_FAMILY,
     VIBRADORM_FAMILY,
     ManagedFamily,
     MigrationSnapshot,
@@ -822,6 +852,11 @@ def _setup_routes(bed_type: str | None) -> dict[str, str]:
     """
     if bed_type is None or bed_type in _APP_SETUP_STEPS:
         return {}
+    return _labelled_routes(bed_type)
+
+
+def _labelled_routes(bed_type: str) -> dict[str, str]:
+    """Return a bed type's labelled routes, with the automatic one first."""
     variants = get_variants_for_bed_type(bed_type) or {}
     excluded = _SETUP_ROUTE_EXCLUSIONS.get(bed_type, frozenset())
     routes = {
@@ -875,10 +910,19 @@ def _bed_type_selector(
 ) -> _SearchableSelect:
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
-    if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC):
-        # Keep the saved route when the single family row is left unchanged.
+    family_row = (
+        BED_TYPE_VIBRADORM
+        if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
+        else BED_TYPE_JIECANG_APP
+        if default in (BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION) and not show_saved_id
+        else BED_TYPE_FURNIMOVE
+        if default in OKIN_FAMILY.bed_types - {BED_TYPE_FURNIMOVE} and not show_saved_id
+        else None
+    )
+    if family_row is not None and default is not None:
+        # The family row keeps the route it was drawn for; its step offers Keep.
         for option in options:
-            if option["value"] == BED_TYPE_VIBRADORM:
+            if option["value"] == family_row:
                 option["value"] = default
     if (
         default is not None
@@ -887,8 +931,13 @@ def _bed_type_selector(
     ):
         # Legacy aliases (e.g. dewertokin) and app types without an automatic
         # variant are not listed, but stay selectable for an existing choice.
-        bed_type, _variant = resolve_bed_type_choice(default)
-        label = bed_type_label(bed_type)
+        bed_type, variant = resolve_bed_type_choice(default)
+        # A hidden app row keeps its own label, never its bed type's.
+        label = (
+            APP_VARIANT_CHOICES[bed_type, variant]
+            if variant is not None
+            else bed_type_label(bed_type)
+        )
         if show_saved_id and label != bed_type:
             # Configure names the saved ID beside its friendly label.
             label = f"{label} (saved as {bed_type})"
@@ -1004,7 +1053,10 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
     BED_TYPE_VIBRADORM: "vibradorm",
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
-    BED_TYPE_JIECANG_APP: "jiecang_app",
+    **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
+    **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
+    **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
+    **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_DOUBLESLEEP: "doublesleep",
@@ -2097,6 +2149,169 @@ def _add_jiecang_app_schema_fields(
     ] = bool
 
 
+# The Okin family's own routes, by the answer that selects each.
+_OKIN_ROUTES: Final[dict[str, str]] = {
+    "furnimove": BED_TYPE_FURNIMOVE,
+    "okin_uuid": BED_TYPE_OKIN_UUID,
+    "okin_dot": BED_TYPE_OKIN_DOT,
+    "okin_rf_eco_bt": BED_TYPE_OKIN_RF_ECO_BT,
+}
+# English labels; strings.json translates the same keys.
+_OKIN_ROUTE_LABELS: Final[dict[str, str]] = {
+    "furnimove": "FurniMove / OKIN Smart Remote app",
+    "okin_uuid": "No app: Okimat or OKIN handset code (requires pairing)",
+    "okin_dot": "No app: DOT remote (RF34 or RF6707)",
+    "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
+}
+_OKIN_KEEP_LABEL: Final = "I don't know: keep the detected controls"
+
+
+def _route_and_motors_schema(
+    data: Mapping[str, Any], routes: Mapping[str, str], motor_counts: list[int]
+) -> vol.Schema:
+    """Ask a labelled route and the motor count, defaulting to the staged ones."""
+    variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+    motor_count = data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_PROTOCOL_VARIANT,
+                default=variant if variant in routes else next(iter(routes)),
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=[
+                        SelectOptionDict(value=key, label=label) for key, label in routes.items()
+                    ],
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_MOTOR_COUNT,
+                default=motor_count if motor_count in motor_counts else motor_counts[0],
+            ): vol.All(vol.Coerce(int), vol.In(motor_counts)),
+        }
+    )
+
+
+# The Keeson question's answers that expand into one exact app or route each.
+_KEESON_GROUPS: Final[dict[str, tuple[tuple[str, str | None], ...]]] = {
+    "ergomotion_apps": (
+        (BED_TYPE_ERGOMOTION_APP, None),
+        (BED_TYPE_ERGOMOTION_4, None),
+        (BED_TYPE_SERTA_MP_REMOTE, None),
+    ),
+    "ore_apps": (
+        (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES),
+        (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR),
+        (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES),
+        (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA),
+        (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA),
+        (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES),
+    ),
+    "okin_seating_apps": (
+        (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE),
+        (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI),
+        (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT),
+        (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING),
+    ),
+    "purple_base_json": (
+        (BED_TYPE_KEESON, KEESON_VARIANT_PURPLE),
+        (BED_TYPE_KEESON, KEESON_VARIANT_BASE),
+        (BED_TYPE_KEESON, KEESON_VARIANT_JSON),
+    ),
+}
+# The apps whose 2M, 3M or 4M screen sets the motor count (keeson.md).
+_KEESON_SCREEN_APPS: Final = ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA}
+_KEESON_RESTONIC: Final = frozenset({KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B})
+
+
+# The Keeson question's answers, in the order the form lists them.
+_KEESON_CHOICES: Final = (
+    "sleep_harmony",
+    "restonic",
+    "ergomotion_apps",
+    "ore_apps",
+    "okin_seating_apps",
+    "purple_base_json",
+    "coolbase",
+    "other_route",
+    "keep",
+)
+
+
+def _keeson_route_label(bed_type: str, variant: str | None) -> str:
+    """Label one exact Keeson answer: its app row, or its bed type or route."""
+    if variant is None:
+        return bed_type_label(bed_type)
+    if (bed_type, variant) in APP_VARIANT_CHOICES:
+        return APP_VARIANT_CHOICES[bed_type, variant]
+    return (get_variants_for_bed_type(bed_type) or {}).get(variant, variant)
+
+
+def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | None) -> None:
+    """Give a newly chosen route the defaults Configure gives a bed-type change."""
+    data[CONF_BED_TYPE] = bed_type
+    variants = get_variants_for_bed_type(bed_type)
+    if variant is None and variants:
+        variant = (
+            VARIANT_AUTO
+            if is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO)
+            else next(iter(variants))
+        )
+    if variant is None:
+        data.pop(CONF_PROTOCOL_VARIANT, None)
+    else:
+        data[CONF_PROTOCOL_VARIANT] = variant
+    route_variant = variant or VARIANT_AUTO
+    motor_counts = _motor_count_options(bed_type, route_variant)
+    if data.get(CONF_MOTOR_COUNT) not in motor_counts:
+        data[CONF_MOTOR_COUNT] = motor_counts[0]
+    pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, route_variant)
+    data[CONF_MOTOR_PULSE_COUNT] = pulse_count
+    data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+    data[CONF_DISABLE_ANGLE_SENSING] = not bed_type_has_position_feedback(bed_type, route_variant)
+
+
+_JIECANG_LEGACY_ROUTES: Final[dict[str, str]] = {
+    "legacy_jiecang": BED_TYPE_JIECANG,
+    "legacy_lierda": BED_TYPE_COMFORT_MOTION,
+}
+
+
+def _jiecang_app_setup_schema(data: Mapping[str, Any]) -> dict[vol.Marker, Any]:
+    """Offer only the chosen app's layouts, with its transports kept under Advanced."""
+    from .profiles.jiecang import APP_PROFILES
+
+    profile = APP_PROFILES[data[CONF_JIECANG_APP_PROFILE]]
+    layouts = {key: JIECANG_APP_LAYOUTS[key] for key in profile.layouts}
+    transports = {
+        key: JIECANG_APP_TRANSPORTS[key] for key in ("auto", *profile.transports)
+    }
+    layout = data.get(CONF_JIECANG_APP_LAYOUT)
+    transport = data.get(CONF_JIECANG_APP_TRANSPORT, "auto")
+    return {
+        vol.Required(
+            CONF_JIECANG_APP_LAYOUT, default=layout if layout in layouts else vol.UNDEFINED
+        ): vol.In(layouts),
+        vol.Optional(
+            CONF_HAS_LIGHT,
+            default=data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
+        ): bool,
+        vol.Optional("advanced"): section(
+            vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_JIECANG_APP_TRANSPORT,
+                        default=transport if transport in transports else "auto",
+                    ): vol.In(transports)
+                }
+            ),
+            {"collapsed": True},
+        ),
+    }
+
+
 def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
     """Require explicit app and layout selection without inferring hardware."""
     from .profiles.jiecang import APP_PROFILES, COMFORT_MOTION
@@ -2358,7 +2573,12 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
     BED_TYPE_SLEEPYS_ELITE_APP: _add_sleepys_elite_schema_field,
 }
 # Bed types whose own app settings only a setup step or Configure can collect.
-APP_SETTINGS_BED_TYPES: Final = frozenset(_APP_SETUP_STEPS) | frozenset(_OPTIONS_APP_FIELDS)
+# A family step asks which app runs the bed; it collects no app settings itself.
+APP_SETTINGS_BED_TYPES: Final = frozenset(
+    bed_type
+    for bed_type, step in _APP_SETUP_STEPS.items()
+    if step not in ("jiecang_family", "okin_family", "keeson_family", "solace_family")
+) | frozenset(_OPTIONS_APP_FIELDS)
 
 
 def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:
@@ -2793,12 +3013,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     @property
     def _migration_requires_check(self) -> bool:
-        return self._migration_family is not None and self._migration_family.requires_check
+        staged = self._pending_entry if self._pending_entry is not None else self._manual_data
+        return self._migration_family is not None and self._migration_family.requires_check(
+            staged or {}
+        )
 
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the migrating family's exact endpoint check on the candidate link."""
         if self._migration_family is VIBRADORM_FAMILY:
             _validate_vibradorm_setup_roles(client, data)
+        elif self._migration_family is JIECANG_FAMILY:
+            from .beds.jiecang_app import require_app_transport
+
+            require_app_transport(client, data)
+        elif self._migration_family is OKIN_FAMILY and data[CONF_BED_TYPE] in OKIN_FAMILY.bed_types:
+            from .controller_factory import require_okin_route_endpoint
+
+            require_okin_route_endpoint(client, data[CONF_BED_TYPE])
 
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
@@ -2982,22 +3213,480 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="furnimove", data_schema=vol.Schema(schema), errors=errors
         )
 
+    async def async_step_jiecang_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app or remote controls the bed; never infer it from the bed's name."""
+        assert self._manual_data is not None
+        if self._jiecang_incoming is None:
+            self._jiecang_incoming = self._manual_data.get(CONF_BED_TYPE)
+        incoming = self._jiecang_incoming
+        # Keep saves the route detection or the saved setup chose; the family
+        # row alone chose no route to keep.
+        can_keep = self._migration is not None or incoming in _JIECANG_LEGACY_ROUTES.values()
+        choices = [*JIECANG_APP_PROFILES, *_JIECANG_LEGACY_ROUTES, *(["keep"] if can_keep else [])]
+        choice = (user_input or {}).get("choice")
+        if choice in choices:
+            data = self._manual_data
+            if choice == "keep":
+                if self._migration is not None:
+                    return await self.async_step_migration_keep()
+                return await self._async_finish_family_route()
+            same_app = (
+                data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP
+                and data.get(CONF_JIECANG_APP_PROFILE) == choice
+            )
+            if not same_app:
+                for key in JIECANG_FAMILY.route_keys:
+                    data.pop(key, None)
+            self._migration_verified = False
+            if choice in _JIECANG_LEGACY_ROUTES:
+                data[CONF_BED_TYPE] = _JIECANG_LEGACY_ROUTES[choice]
+                if incoming == BED_TYPE_JIECANG_APP:
+                    # The apps set the layout and cadence themselves, so the
+                    # saved motor count means nothing here: ask the route's own.
+                    return await self.async_step_jiecang_legacy()
+                return await self._async_finish_family_route()
+            data[CONF_BED_TYPE] = BED_TYPE_JIECANG_APP
+            data[CONF_JIECANG_APP_PROFILE] = choice
+            return await self.async_step_jiecang_app()
+        return self.async_show_form(
+            step_id="jiecang_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=choices,
+                            translation_key="jiecang_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
+        )
+
+    async def async_step_jiecang_legacy(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the motor count a legacy remote route needs, with its own cadence."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        bed_type = data[CONF_BED_TYPE]
+        if user_input is not None:
+            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
+            pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, VARIANT_AUTO)
+            data[CONF_MOTOR_PULSE_COUNT] = pulse_count
+            data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
+            data[CONF_MOTOR_PULSE_USER_SET] = False
+            return await self._async_finish_family_route()
+        return self.async_show_form(
+            step_id="jiecang_legacy",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.All(
+                        vol.Coerce(int), vol.In(_motor_count_options(bed_type))
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(bed_type)},
+        )
+
+    async def _async_finish_family_route(self) -> ConfigFlowResult:
+        """Continue a route chosen in a family step the way the generic forms would."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
+            return await (
+                self.async_step_bluetooth_pairing()
+                if self._vibradorm_app_bluetooth_pairing
+                else self.async_step_manual_pairing()
+            )
+        return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
+
+    async def async_step_okin_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app or remote controls an Okin receiver; its GATT cannot tell."""
+        from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
+        from .profile_review import choice_label, related_app_choices
+
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._okin_incoming is None:
+            self._okin_incoming = (
+                data[CONF_BED_TYPE],
+                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+            )
+        incoming, incoming_variant = self._okin_incoming
+        # The apps the app review suggests for this route stay one answer away.
+        apps = related_app_choices(incoming, incoming_variant)
+        # A FurniMove row or gateway chose no handset, so there is nothing to keep.
+        can_keep = self._migration is not None or incoming != BED_TYPE_FURNIMOVE
+        choice = (user_input or {}).get("choice")
+        if choice == "keep" and can_keep:
+            if self._migration is not None:
+                return await self.async_step_migration_keep()
+            return await self._async_finish_family_route()
+        if choice in _OKIN_ROUTES or choice in apps:
+            bed_type, variant = (
+                (_OKIN_ROUTES[choice], None)
+                if choice in _OKIN_ROUTES
+                else resolve_bed_type_choice(choice)
+            )
+            if incoming == BED_TYPE_OKIMAT and bed_type == BED_TYPE_OKIN_UUID:
+                # The same route under its saved ID; never rewrite the ID.
+                bed_type = BED_TYPE_OKIMAT
+            self._migration_verified = False
+            if bed_type != data[CONF_BED_TYPE]:
+                for key in (*OKIN_FAMILY.route_keys, CONF_STAIRCASE_LAYOUT_CONFIRMED):
+                    data.pop(key, None)
+                _apply_route_defaults(data, bed_type, variant)
+            if bed_type == BED_TYPE_FURNIMOVE:
+                return await self.async_step_furnimove()
+            if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
+                return await self.async_step_okin_remote()
+            if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+                # Choosing the staircase is the explicit confirmation its repair asks for.
+                data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
+                data[CONF_MOTOR_COUNT] = 1
+            return await self._async_finish_family_route()
+        options = [
+            *(
+                SelectOptionDict(value=key, label=label)
+                for key, label in _OKIN_ROUTE_LABELS.items()
+            ),
+            *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
+            *([SelectOptionDict(value="keep", label=_OKIN_KEEP_LABEL)] if can_keep else []),
+        ]
+        return self.async_show_form(
+            step_id="okin_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            translation_key="okin_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
+        )
+
+    async def async_step_okin_remote(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the handset or remote code, which picks the motors and buttons."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        bed_type = data[CONF_BED_TYPE]
+        routes = _labelled_routes(bed_type)
+        motor_counts = _motor_count_options(bed_type)
+        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
+            data[CONF_PROTOCOL_VARIANT] = user_input[CONF_PROTOCOL_VARIANT]
+            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
+            return await self._async_finish_family_route()
+        return self.async_show_form(
+            step_id="okin_remote",
+            data_schema=_route_and_motors_schema(data, routes, motor_counts),
+            description_placeholders={"current": bed_type_label(bed_type)},
+        )
+
+    async def async_step_keeson_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app or remote runs a Keeson bed; shared names cannot tell."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._keeson_incoming is None:
+            self._keeson_incoming = (
+                data[CONF_BED_TYPE],
+                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+            )
+            incoming, variant = self._keeson_incoming
+            if self._migration is None and (incoming, variant) in APP_VARIANT_CHOICES:
+                # An app row already answered the question.
+                return await self._async_continue_keeson_route()
+        incoming, _variant = self._keeson_incoming
+        choice = (user_input or {}).get("choice")
+        if choice == "keep":
+            if self._migration is not None:
+                return await self.async_step_migration_keep()
+            return await self._async_finish_family_route()
+        if choice in _KEESON_GROUPS:
+            self._keeson_group = choice
+            return await self.async_step_keeson_app()
+        if choice == "restonic":
+            return await self.async_step_keeson_restonic()
+        if choice == "other_route":
+            self._select_family_route(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
+            return await self.async_step_keeson_route()
+        if choice in ("sleep_harmony", "coolbase"):
+            self._select_family_route(
+                *(
+                    (BED_TYPE_KEESON, KEESON_VARIANT_SLEEP_HARMONY)
+                    if choice == "sleep_harmony"
+                    else (BED_TYPE_COOLBASE, None)
+                )
+            )
+            return await self._async_finish_family_route()
+        return self.async_show_form(
+            step_id="keeson_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=list(_KEESON_CHOICES),
+                            translation_key="keeson_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
+        )
+
+    def _select_family_route(self, bed_type: str, variant: str | None) -> None:
+        """Stage one family route, with Configure's defaults when it changes."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        self._migration_verified = False
+        if (bed_type, variant) != (data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
+            _apply_route_defaults(data, bed_type, variant)
+
+    async def _async_continue_keeson_route(self) -> ConfigFlowResult:
+        """Ask what the staged route still needs, then finish it."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        bed_type = data[CONF_BED_TYPE]
+        variant = data.get(CONF_PROTOCOL_VARIANT)
+        if bed_type in _APP_SETUP_STEPS and bed_type not in KEESON_FAMILY.bed_types:
+            # Its own app step owns the layout.
+            return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
+        if variant in _KEESON_RESTONIC:
+            return await self.async_step_keeson_restonic()
+        if variant in _KEESON_SCREEN_APPS:
+            return await self.async_step_keeson_screen()
+        return await self._async_finish_family_route()
+
+    async def async_step_keeson_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Expand a grouped answer into its exact app or route."""
+        assert self._keeson_group is not None
+        # Purple, Base and JSON are plain routes, not app rows, so key every
+        # answer by its own bed type and variant.
+        routes = {
+            f"{bed_type}:{variant}" if variant else bed_type: (bed_type, variant)
+            for bed_type, variant in _KEESON_GROUPS[self._keeson_group]
+        }
+        choice = (user_input or {}).get("choice")
+        if choice in routes:
+            self._select_family_route(*routes[choice])
+            return await self._async_continue_keeson_route()
+        return self.async_show_form(
+            step_id="keeson_app",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                SelectOptionDict(value=key, label=_keeson_route_label(*route))
+                                for key, route in routes.items()
+                            ],
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_keeson_restonic(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask the remote style chosen in the Restonic BT app's settings."""
+        assert self._manual_data is not None
+        style = (user_input or {}).get(CONF_PROTOCOL_VARIANT)
+        if style in _KEESON_RESTONIC:
+            self._select_family_route(BED_TYPE_KEESON, style)
+            return await self._async_finish_family_route()
+        current = self._manual_data.get(CONF_PROTOCOL_VARIANT)
+        return self.async_show_form(
+            step_id="keeson_restonic",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_PROTOCOL_VARIANT,
+                        default=current if current in _KEESON_RESTONIC else KEESON_VARIANT_RESTONIC_A,
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=sorted(_KEESON_RESTONIC),
+                            translation_key="keeson_restonic_style",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_keeson_screen(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask the app's 2M, 3M or 4M screen, which sets the motor count."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        if user_input is not None and str(user_input.get(CONF_MOTOR_COUNT)) in ("2", "3", "4"):
+            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
+            return await self._async_finish_family_route()
+        current = str(data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT))
+        return self.async_show_form(
+            step_id="keeson_screen",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_MOTOR_COUNT, default=current if current in ("2", "3", "4") else "2"
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=["2", "3", "4"],
+                            translation_key="keeson_screen",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={
+                "app": _keeson_route_label(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
+            },
+        )
+
+    async def async_step_keeson_route(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect an older Keeson remote route and the motor count."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        routes = _labelled_routes(BED_TYPE_KEESON)
+        motor_counts = _motor_count_options(BED_TYPE_KEESON)
+        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
+            self._select_family_route(BED_TYPE_KEESON, user_input[CONF_PROTOCOL_VARIANT])
+            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
+            return await self._async_finish_family_route()
+        return self.async_show_form(
+            step_id="keeson_route",
+            data_schema=_route_and_motors_schema(data, routes, motor_counts),
+        )
+
+    async def async_step_solace_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app runs a QMS-named bed; several apps share those names."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._solace_incoming is None:
+            self._solace_incoming = (
+                data[CONF_BED_TYPE],
+                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+            )
+            if self._migration is None and self._solace_incoming[1] == SOLACE_VARIANT_WOOSA:
+                # The Woosa Sleep row already answered the question.
+                return await self.async_step_solace_woosa()
+        incoming, _variant = self._solace_incoming
+        choice = (user_input or {}).get("choice")
+        if choice == "keep":
+            if self._migration is not None:
+                return await self.async_step_migration_keep()
+            return await self._async_finish_family_route()
+        if choice == "name_route":
+            self._select_family_route(BED_TYPE_SOLACE, VARIANT_AUTO)
+            return await self._async_finish_family_route()
+        if choice == "woosa":
+            return await self.async_step_solace_woosa()
+        if choice == "motion_bed":
+            self._select_family_route(BED_TYPE_MOTION_BED, None)
+            return await self.async_step_motion_bed()
+        if choice == "bedsense":
+            self._select_family_route(BED_TYPE_BEDSENSE, None)
+            return await self.async_step_solace_bedsense()
+        return self.async_show_form(
+            step_id="solace_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=["name_route", "woosa", "motion_bed", "bedsense", "keep"],
+                            translation_key="solace_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
+        )
+
+    async def async_step_solace_woosa(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Say what Woosa Sleep controls differ before choosing it."""
+        if user_input is not None:
+            self._select_family_route(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA)
+            return await self._async_finish_family_route()
+        return self.async_show_form(step_id="solace_woosa", data_schema=vol.Schema({}))
+
+    async def async_step_solace_bedsense(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the BedSense layout, which owns its motion controls."""
+        assert self._manual_data is not None
+        routes = _labelled_routes(BED_TYPE_BEDSENSE)
+        layout = (user_input or {}).get(CONF_PROTOCOL_VARIANT)
+        if layout in routes:
+            self._select_family_route(BED_TYPE_BEDSENSE, layout)
+            return await self._async_finish_family_route()
+        return self.async_show_form(
+            step_id="solace_bedsense",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                SelectOptionDict(value=key, label=label)
+                                for key, label in routes.items()
+                            ],
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+        )
+
     async def async_step_jiecang_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Collect the explicit app profile and physical controls for any setup path."""
+        """Collect the chosen app's physical layout, light and transport."""
         assert self._manual_data is not None
-        errors = _jiecang_app_errors(user_input) if user_input is not None else {}
-        if user_input is not None and not errors:
-            self._manual_data.update(user_input)
-            self._manual_data[CONF_DISABLE_ANGLE_SENSING] = True
-            return await self._finish_with_verify(
-                self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
+        data = self._manual_data
+        submitted = dict(user_input or {})
+        submitted.update(submitted.pop("advanced", None) or {})
+        if user_input is not None:
+            # An untouched Advanced section keeps the automatic transport.
+            submitted.setdefault(
+                CONF_JIECANG_APP_TRANSPORT, data.get(CONF_JIECANG_APP_TRANSPORT, "auto")
             )
-        schema: dict[vol.Marker, Any] = {}
-        _add_jiecang_app_schema_fields(schema, user_input)
+        candidate = {**data, **submitted}
+        errors = _jiecang_app_errors(candidate) if user_input is not None else {}
+        if user_input is not None and not errors:
+            data.update(submitted)
+            data[CONF_DISABLE_ANGLE_SENSING] = True
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
         return self.async_show_form(
-            step_id="jiecang_app", data_schema=vol.Schema(schema), errors=errors
+            step_id="jiecang_app",
+            data_schema=vol.Schema(_jiecang_app_setup_schema(candidate)),
+            errors=errors,
+            description_placeholders={
+                "app": JIECANG_APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""), "")
+            },
         )
 
     async def async_step_vmatbasic(
@@ -3388,6 +4077,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._migration_family: ManagedFamily | None = None
         self._migration_verified = False
         self._migration_endpoints_checked = False
+        # The route a Jiecang family step started from.
+        self._jiecang_incoming: str | None = None
+        self._okin_incoming: tuple[str, str] | None = None
+        self._keeson_incoming: tuple[str, str] | None = None
+        self._keeson_group: str | None = None
+        self._solace_incoming: tuple[str, str] | None = None
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -8934,36 +9629,40 @@ class AdjustableBedOptionsFlow(
 
         if user_input is not None:
             # HA's select control uses string values; keep persisted counts numeric.
-            family = _VIBRADORM_FAMILY_TYPES
+            # A managed family changes app or layout only through the guided change.
             original_type = self.config_entry.data.get(CONF_BED_TYPE)
             selected_type = user_input.get(CONF_BED_TYPE, original_type)
-            profile_keys = (
-                CONF_VIBRADORM_APP_PROFILE,
-                CONF_VIBRADORM_CONTROL_TYPE,
-                CONF_VIBRADORM_VMAT_REMOTE,
-                CONF_VMATBASIC_PROFILE,
+            family = next(
+                (family for family in MANAGED_FAMILIES if original_type in family.bed_types),
+                None,
             )
             original_profile = {**self.config_entry.data, **self.config_entry.options}
             if original_type == BED_TYPE_VIBRADORM_APP:
                 original_profile = _vibradorm_app_data(original_profile, {})
             elif original_type == BED_TYPE_VMATBASIC:
                 original_profile = _vmatbasic_data(original_profile, {})
+            # The form shows an unsaved variant as the route the entry runs.
+            if isinstance(original_type, str):
+                original_profile.setdefault(
+                    CONF_PROTOCOL_VARIANT,
+                    self._variant_for_bed_type(original_type, original_profile),
+                )
             if (
                 not separate_address_pair
-                and original_type in family
-                and selected_type in family
+                and family is not None
+                and selected_type in family.bed_types
                 and (
                     selected_type != original_type
                     or any(
                         key in user_input and user_input[key] != original_profile.get(key)
-                        for key in profile_keys
+                        for key in family.route_keys
                     )
                 )
             ):
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={"base": "vibradorm_reconfigure_required"},
+                    errors={"base": "migration_reconfigure_required"},
                 )
             if CONF_MOTOR_COUNT in user_input:
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
@@ -9016,6 +9715,13 @@ class AdjustableBedOptionsFlow(
                     requested_bed_type,
                     self._pending_data,
                 )
+                chosen_variant = user_input.get(CONF_PROTOCOL_VARIANT)
+                if (
+                    isinstance(chosen_variant, str)
+                    and (requested_bed_type, chosen_variant) in APP_VARIANT_CHOICES
+                ):
+                    # The user picked that app's own entry; its variant is the route.
+                    requested_variant = chosen_variant
                 if get_variants_for_bed_type(requested_bed_type):
                     self._pending_data[CONF_PROTOCOL_VARIANT] = requested_variant
                     self._pending_changed_data[CONF_PROTOCOL_VARIANT] = requested_variant

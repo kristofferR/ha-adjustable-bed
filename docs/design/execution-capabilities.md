@@ -14,23 +14,24 @@ guides, the frozen vectors and the issues with their comments.
 ## Summary
 
 Totals count matrix rows: one per bed type, or per route or app profile where
-the evidence differs. There are 107 rows covering all 111 `SUPPORTED_BED_TYPES`.
+the evidence differs. There are 109 rows covering all 113 `SUPPORTED_BED_TYPES`.
 
 | Capability | Supported | Unsupported | Blocked |
 | --- | ---: | ---: | ---: |
-| #483 hold until release | 73 (64 stream, 3 stream without a release frame, 6 latched) | 2 | 32 |
-| #516 concurrent motors | 5 | 68 | 34 |
-| #591 native motor speed | 0 | 75 | 32 |
+| #483 hold until release | 75 (66 stream, 3 stream without a release frame, 6 latched) | 2 | 32 |
+| #516 concurrent motors | 5 | 68 | 36 |
+| #591 native motor speed | 0 | 75 | 34 |
 
 Rolled up by bed type (a bed type counts as supported when any route is, and as
-blocked when no route is supported and any route is blocked): hold 74 supported
+blocked when no route is supported and any route is blocked): hold 76 supported
 (4 of them also have a blocked route), 6 unsupported, 31 blocked; concurrent 6
-supported (2 of them also have a blocked route), 70 unsupported, 35 blocked;
-speed 0 supported, 76 unsupported, 35 blocked.
+supported (2 of them also have a blocked route), 70 unsupported, 37 blocked;
+speed 0 supported, 76 unsupported, 37 blocked.
 
 - **#516 candidates:** the Prodigy CE and U Series profiles of `leggett_okin`
   and `leggett_platt`, `customatic_clarity`, `customatic_jeromes`, `customatic_remedy`, and `svane`
-  (Svane Remote route).
+  (both Svane Remote routes: P1 and the `JMC`-named P2 route, which this
+  matrix once listed with the Jensen app).
 - **#483:** almost every accepted app streams a held key at a fixed cadence until
   release. The capability is real and broad. The open questions are the
   surface and the dead-man bound, not the evidence.
@@ -69,8 +70,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 |---|---|---|---|---|---|
 | **Okin N-frame (O1)** | | | | | |
 | `leggett_okin`, `leggett_platt` (Prodigy CE, U Series) | S stream | S | U | p4, useries, leggett-disp, #368, #516c, #483c | held keys OR into one word, release removes one key; four zero frames; CU170 watchdog measured on hardware |
-| `leggett_okin`, `leggett_platt` (Prodigy 2) | S stream | B | U | p2, leggett-disp | report: multiple active keys are ORed, but per-key release while another key stays held is not stated |
-| `leggett_okin`, `leggett_platt` (Prodigy 2L) | S stream | B | U | p2l, leggett-disp | report does not state whether held keys compose |
+| `leggett_okin`, `leggett_platt` (Prodigy 2) | S stream | B | U | p2, leggett-disp | blocked by evidence (rechecked): the report says multiple active keys are ORed, but its only release is the zero word; per-key release while another key stays held is not stated |
+| `leggett_okin`, `leggett_platt` (Prodigy 2L) | S stream | B | U | p2l, leggett-disp | blocked by evidence (rechecked): the report never states that held keys compose, and its release sets key zero |
 | `leggett_platt` (`okin`) | S stream (no release frame) | U | U | universal | okin six-byte key route: refresh ends the hold, no per-axis or global STOP |
 | `customatic_clarity` | S stream | S | U | clarity, row028 | shared OR mask; partial release keeps the reduced mask |
 | `customatic_jeromes` | S stream | S | U | jeromes, row028 | same |
@@ -150,8 +151,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release; hold declared |
 | `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP; not declared: its covers are not `timed_move` motors and it has no held controls, so no route a lease could renew |
 | **Distinct protocols** | | | | | |
-| `svane` (Svane Remote) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP; hold not declared yet: its held route runs under its own admission, which leases do not reach, and #516 reworks it |
-| `jensen`, `svane` (`svane_remote_jmc`) | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control; hold declared on `jensen` only (see the `svane` row) |
+| `svane` (Svane Remote: `auto` P1 and `svane_remote_jmc` P2) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP. The app selects P2 when the device name contains `JMC`; hold and concurrent declared on both routes, whose timed moves run on the merged stream |
+| `jensen` | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control; hold declared |
 | `svane` (`jensen_linon`) | S stream | U | U | jensen, jensen-disp | 800 ms refresh; STOP to head then foot; combined motion alternates as one control; not declared with the rest of `svane` |
 | `linak` (all routes) | S stream | U | U | linak-iot, linak-lp, linak-mem, linak-guide | two-section moves are fixed opcodes; one bed-wide release; speed is reported, not commanded; hold declared |
 | `octo` (standard) | S stream | U | U | octo | 100 ms delayed global STOP; hold declared on the standard controller only |
@@ -170,6 +171,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
+| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | B | B | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. #516 and #591 not assessed yet |
+| `goodvibe` | S stream | B | B | goodvibe | sustained controls refresh every 100 ms, then release `6e`; not declared, because its held buttons also carry short, long and short-and-long gestures a controller-wide hold would change. #516 and #591 not assessed yet |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | B | B | B | moto | report BLOCKED |
 | `sleep_number` | B | B | B | sleepiq | report PARTIAL |
@@ -239,10 +242,27 @@ needs a fresh frame within the watchdog. For Customatic and Svane, a dropped
 link leaves the last command to the firmware. That stays deferred validation
 for beta users, as #516 allows.
 
-Prodigy 2 and Prodigy 2L stay blocked: the Prodigy 2 report says multiple active
-keys are ORed but does not state per-key release, and the Prodigy 2L report does
-not state whether held keys compose. A bounded recheck of each accepted report's
-release path would settle both without new analysis.
+Prodigy 2 and Prodigy 2L stay blocked by evidence. A recheck of both accepted
+reports (`ANALYSIS.md` and `analysis.json`, no new analysis) found no per-key
+release and, for Prodigy 2L, no composition:
+
+- **Prodigy 2** (`p2`) proves composition but not per-key release. Its timing
+  section says "Held/touch commands are scheduled every 100 ms. Multiple active
+  keys are ORed." Its only release is the zero word: "BLE normal release
+  schedules four zero attempts at 100 ms, subject to backpressure, then idles.
+  [...] There is no distinct STOP opcode." Nothing says that releasing one key
+  keeps another held key in the frame.
+- **Prodigy 2L** (`p2l`) proves neither. Its session sequence says "For normal
+  held controls, release/cancel sets key zero. Because the preceding
+  `runNormal` nonzero branch cleared `sentZero`, the loop schedules four
+  explicit zero attempts", and `analysis.json` (`release_behavior.normal`)
+  repeats "Key zero then schedules four normal-zero attempts". The report has
+  no statement that held keys combine.
+
+Prodigy CE and U Series are the only Leggett Okin profiles with evidence for
+both composition and per-key release, so they are the only ones declared
+concurrent (#516). Only new evidence for Prodigy 2 or Prodigy 2L can change
+their disposition.
 
 Notable `unsupported` evidence: the Rize, Glory, Serenity, Tranquil and Nectar
 apps send only recognized masks, so motor chords are never OR'd (Nectar states
@@ -467,6 +487,16 @@ PRs 3, 4 and each PR in 5 own disjoint files and run in parallel after 2. PRs 2
 and 6 share the scheduler, so they run in sequence. PR 7 follows 3 because they
 share the Okin N-frame files.
 
+## Open items
+
+- **Per-control hold declarations.** `ExecutionCapabilities.hold` is declared
+  per controller, and the card offers a lease on every button whose spec holds.
+  Good Vibe Sleep's sustained controls stream every 100 ms until release, but
+  the same controller's held buttons also carry short, long and short-and-long
+  gestures whose app semantics a lease would change. Supporting it needs lease
+  admission and hold metadata scoped to the controls whose effective gesture is
+  a sustained press, including the app's memory mode.
+
 ## Observations (not fixed here)
 
 1. #483 says only `linak` and `motosleep` declare `auto_stops_on_idle`. Now
@@ -520,9 +550,11 @@ Report workspaces are machine-local under
 | dynasty | `com.ore.Dynasty` | 1.0.2 | COMPLETE | `com.ore.Dynasty-1.0.2-2026-10-02-queue-903926b6-20261002-056-001/report/` |
 | enh | `com.okin.enhancements` | 1.0.3 | COMPLETE | `com.okin.enhancements-1.0.3-2026-11-03-bulk101-188-001/report/` |
 | eshine | `com.richmat.eshinesleep` | 1.0.1 | COMPLETE | `com.richmat.eshinesleep-1.0.1-2026-11-03-bulk101-188-001/report/` |
+| eshine-okin | `com.okin.eshine` | 1.1.8 | COMPLETE | `com.okin.eshine-1.1.8-2026-11-03-bulk101-188-001/work/report-repair-sol-002/` |
 | floyd | `com.kaidi_test4.floyd` | 1.0.7 | PARTIAL | `com.kaidi_test4.floyd-1.0.7-2026-11-03-bulk101-188-001/report/` |
 | fsm | `com.limoss.fsmrelax` | 1.9 | COMPLETE | `com.limoss.fsmrelax-1.9-2026-09-30-extra-four-075-001/report/` |
 | glide | `com.ore.bedding.glideawaymontion` | 1.0.3 | COMPLETE | `com.ore.bedding.glideawaymontion-1.0.3-2026-11-03-bulk061-001/report/` |
+| goodvibe | `com.richmat.goodvibesleep` | 2.0.1 | COMPLETE | `com.richmat.goodvibesleep-2.0.1-2026-11-03-bulk101-188-001/work/report-repair-sol-003/` |
 | glory | `com.okin.bedding.glory` | 1.0.4 | COMPLETE | `com.okin.bedding.glory-1.0.4-2026-10-01-queue-e0bb6807-20261001-052-002/report/` |
 | gm | `com.desarketing.gmmotor` | 4.6.6 | PARTIAL | `com.desarketing.gmmotor-4.6.6-2026-11-03-bulk101-188-001/report/` |
 | harmony | `com.richmat.harmony` | 1.0.0 | COMPLETE | `com.richmat.harmony-1.0.0-2026-10-02-queue-e0bb6807-20261001-055-006/report/` |

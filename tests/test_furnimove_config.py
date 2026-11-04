@@ -88,7 +88,7 @@ async def test_shipped_offline_layout_creates_both_axes_without_a_bond_gate(hass
     assert result["data"][CONF_DISABLE_ANGLE_SENSING] is True
 
 
-async def test_options_change_from_stair_requires_a_handset_then_derives_layout(hass):
+async def test_options_change_from_stair_uses_the_guided_change(hass):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_OKIN_RF_ECO_BT,
         CONF_MOTOR_COUNT: 1,
@@ -97,15 +97,11 @@ async def test_options_change_from_stair_requires_a_handset_then_derives_layout(
     flow = AdjustableBedOptionsFlow(entry)
     flow.hass = hass
     flow.handler = entry.entry_id
-    rebuilt = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_FURNIMOVE}, step_id="settings")
-    assert rebuilt["type"] == "form"
     saved = await flow._async_options_form({
         CONF_BED_TYPE: BED_TYPE_FURNIMOVE, CONF_FURNIMOVE_REMOTE: "00000",
     }, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_FURNIMOVE_REMOTE] == "00000"
-    assert entry.data[CONF_MOTOR_COUNT] == 2
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_FURNIMOVE
+    assert saved["errors"] == {"base": "migration_reconfigure_required"}
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_RF_ECO_BT
     assert _motor_count_options(BED_TYPE_OKIN_RF_ECO_BT) == [1]
 
 
@@ -146,7 +142,7 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
     assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(_setup_routes(BED_TYPE_OKIN_DOT))
 
 
-async def test_furnimove_options_can_correct_90167_to_the_app_82417(hass):
+async def test_furnimove_handset_corrections_use_the_guided_change(hass):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE,
         CONF_FURNIMOVE_REMOTE: "90167", CONF_HAS_MASSAGE: True,
@@ -158,10 +154,8 @@ async def test_furnimove_options_can_correct_90167_to_the_app_82417(hass):
     saved = await flow._async_options_form({
         CONF_BED_TYPE: BED_TYPE_FURNIMOVE, CONF_FURNIMOVE_REMOTE: "82417",
     }, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_FURNIMOVE_REMOTE] == "82417"
-    assert entry.data[CONF_HAS_MASSAGE] is False
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+    assert saved["errors"] == {"base": "migration_reconfigure_required"}
+    assert entry.data[CONF_FURNIMOVE_REMOTE] == "90167"
 
 
 async def test_furnimove_setup_probe_waits_for_live_services(hass, mock_bleak_client):

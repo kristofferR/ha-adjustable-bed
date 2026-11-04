@@ -60,7 +60,7 @@ from ..const import (
     OKIN_CST_VARIANT_SANCTUARY,
     OKIN_CST_VARIANT_SUPPORT,
 )
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
 
 WriteMode = Literal["response", "no_response", "characteristic"]
 Envelope = Literal["plain", "gateway_detected", "revision_selector", "keeson_e6"]
@@ -523,6 +523,7 @@ def _simmons(key: str, name: str, *, okin: bool) -> OkinNFrameProfile:
         # Every control, held or tapped, ends with two STOPs 100 and 400 ms
         # after its release.
         hold=Hold(repeat_ms=SIMMONS_REFRESH_MS, releases=2, release_after_ms=100, release_ms=300),
+        execution=STREAM_HOLD,
         recall=Tap(releases=2),
         memory_slots=1,
         tap=Tap(releases=2),
@@ -703,6 +704,7 @@ def _abm(
         long_keys=MappingProxyType(dict(long_keys)),
         # BOX15 and BOX1220 move and stop with their own frames.
         hold=Hold(repeat_ms=STARCODE_ABM5_4_REFRESH_MS, releases=1 if "stop" in keys else 0),
+        execution=STREAM_HOLD,
         memory_slots=1,
     )
 
@@ -1053,6 +1055,7 @@ def _cst(
         memory_slots=len(product.memory_slots),
         product=product,
         hold=hold,
+        execution=STREAM_HOLD,
         recall=recall,
         tap=tap,
     )
@@ -1345,6 +1348,7 @@ def _lumbar(key: str, name: str, *, response: bool) -> OkinNFrameProfile:
         keys=ADJUSTABLE_LUMBAR_KEYS,
         # Every release is a STOP at once and another 300 ms later.
         hold=Hold(repeat_ms=ADJUSTABLE_LUMBAR_REFRESH_MS, releases=2, release_ms=300),
+        execution=STREAM_HOLD,
         recall=Tap(releases=2),
         tap=Tap(releases=2),
     )

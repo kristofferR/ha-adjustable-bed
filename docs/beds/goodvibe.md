@@ -31,6 +31,7 @@
 | Sleep sensors | ✅ Independent type 1/type 2 sessions, live values and direct BLE reports |
 | Paired sides | ✅ Only sides listed by the selected product |
 | Firmware / Wi-Fi / Cloud | ❌ Outside the integration's direct BLE bed boundary |
+| Hold until release | ❌ Not offered yet: held buttons mix sustained, short, long and short-and-long gestures, and a renewable hold would change the non-sustained ones |
 
 ## Protocol Details
 
