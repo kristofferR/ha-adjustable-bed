@@ -324,7 +324,7 @@ controller-specific choices are documented here:
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Explicit control-box selector for each physical bed |
 | [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
-| [Okin CST](beds/okin-cst.md) | Rize and Support product profiles; Auto retains MF900 behavior |
+| [Okin CST](beds/okin-nframe.md#okin-cst) | Rize and Support product profiles; Auto retains MF900 behavior |
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Auto, StarCode, Legacy CB25 |
 | [SBI](beds/sbi.md#protocol-variants) / [Rondure](beds/rondure.md#side-selection-split-king) | Both, Side A, Side B |
 | [OKIN CB24](beds/okin-nframe.md#cb24-preset-safety) | Legacy/CBNew and specific SmartBed profiles |
@@ -458,7 +458,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout, transport and local light/massage presence. Comfort Motion supports three layouts and G1/G2 only. Layouts, transports and default timing per profile are in the [generated profile tables](beds/jiecang.md#choosing-a-profile). |
 | LOGICDATA | [MOTIONrelax](beds/jiecang.md#motionrelax-phone-and-tablet): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed): bed layout and series, or [separate air pump](beds/logicdata-sleep-smart.md). |
 | Malouf / Lucid | [Base apps](beds/malouf-app.md): app, exact model, transport and primary/secondary role. |
-| Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family), [Z-Series](beds/customatic-z-series.md), [Serenity](beds/serenity.md), [Tranquil](beds/tranquil.md): select the matching app and model. |
+| Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family), [Z-Series](beds/okin-nframe.md#customatic-z-series), [Serenity](beds/okin-nframe.md#jordans-serenity), [Tranquil](beds/okin-nframe.md#jordans-tranquil): select the matching app and model. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
 | Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | [Exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |

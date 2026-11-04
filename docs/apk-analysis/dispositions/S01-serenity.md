@@ -27,7 +27,7 @@ Valid exclusions cover dead clock/alarm/query/adjustment builders, unattached le
 
 **169 discovery/evidence rows: 114 IMPLEMENTED, 2 ALREADY_IMPLEMENTED, 53 EXCLUDED.** Every in-scope item has exact current code/test references and an independently checked disposition. Counts include structural negative/dead closure facts, not only independent reachable BLE operations. Every exclusion is listed below.
 
-Existing exact serializer proof: [custom_components/adjustable_bed/beds/okin_protocol.py:53 (build_cst_command)](../../../custom_components/adjustable_bed/beds/okin_protocol.py#L53); [tests/test_cluster_011_convergence.py:234 (test_frozen_cluster_vectors_build_exact_frames)](../../../tests/test_cluster_011_convergence.py#L234). Five existing literal-vector cases independently pass. A shared serializer does not prove equivalent Serenity capabilities, timing, parser or routes.
+Existing exact serializer proof: [custom_components/adjustable_bed/codec/okin_nframe.py:74 (frame96)](../../../custom_components/adjustable_bed/codec/okin_nframe.py#L74); [tests/test_cluster_011_convergence.py:234 (test_frozen_cluster_vectors_build_exact_frames)](../../../tests/test_cluster_011_convergence.py#L234). Five existing literal-vector cases independently pass. A shared serializer does not prove equivalent Serenity capabilities, timing, parser or routes.
 
 ## Current proof catalog
 
@@ -51,7 +51,7 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | C14 | [custom_components/adjustable_bed/beds/okin_cst.py:309 (supports_preset_anti_snore)](../../../custom_components/adjustable_bed/beds/okin_cst.py#L309) |
 | C15 | [custom_components/adjustable_bed/beds/okin_cst.py:313 (supports_preset_lounge)](../../../custom_components/adjustable_bed/beds/okin_cst.py#L313) |
 | C16 | [custom_components/adjustable_bed/beds/okin_cst.py:305 (supports_preset_zero_g)](../../../custom_components/adjustable_bed/beds/okin_cst.py#L305) |
-| C17 | [custom_components/adjustable_bed/beds/okin_protocol.py:53 (build_cst_command)](../../../custom_components/adjustable_bed/beds/okin_protocol.py#L53) |
+| C17 | [custom_components/adjustable_bed/codec/okin_nframe.py:74 (frame96)](../../../custom_components/adjustable_bed/codec/okin_nframe.py#L74) |
 | C18 | [custom_components/adjustable_bed/beds/serenity.py:46 (_ACTIONS)](../../../custom_components/adjustable_bed/beds/serenity.py#L46) |
 | C19 | [custom_components/adjustable_bed/beds/serenity.py:79 (_SAVE_CODES)](../../../custom_components/adjustable_bed/beds/serenity.py#L79) |
 | C20 | [custom_components/adjustable_bed/beds/serenity.py:80 (_SAVE_HOLD_MS)](../../../custom_components/adjustable_bed/beds/serenity.py#L80) |
