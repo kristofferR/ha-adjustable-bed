@@ -73,3 +73,34 @@ async def test_jiecang_bed_types_match_the_factory() -> None:
             )
             assert isinstance(controller, JiecangProfileController), bed_type
             assert controller.profile is profiles[key], (key, bed_type)
+
+
+def test_limoss_guide_frames_are_frozen_vectors() -> None:
+    """Every spelled ten-byte frame and plaintext block in the guide is a frozen vector."""
+    from custom_components.adjustable_bed.codec.limoss import decrypt
+    from tests.limoss_vectors import WIRE_FRAMES
+
+    wires = {wire for rows in WIRE_FRAMES.values() for _, _, wire in rows}
+    plains = {decrypt(bytes.fromhex(wire)[1:9]).hex() for wire in wires}
+    text = (ROOT / "docs" / "beds" / "limoss.md").read_text(encoding="utf-8")
+    frames = re.findall(r"`(DD(?: [0-9A-F]{2}){9})`", text)
+    blocks = re.findall(r"`(AA(?: [0-9A-F]{2}){7})`", text)
+    assert frames and blocks
+    unknown = sorted(
+        spelled
+        for spelled in frames + blocks
+        if spelled.replace(" ", "").lower() not in wires | plains
+    )
+    assert not unknown, f"Frames no profile was frozen sending: {unknown}"
+
+
+async def test_limoss_bed_types_match_the_factory() -> None:
+    """The profile summary's bed types are the ones the factory builds each profile for."""
+    from custom_components.adjustable_bed.profiles.limoss import PROFILES
+    from tests.test_controller_contract import _create_controller_for_bed_type
+
+    bed_types = _load_generator().LIMOSS_BED_TYPES
+    assert bed_types.keys() == PROFILES.keys()
+    for key, bed_type in bed_types.items():
+        controller = await _create_controller_for_bed_type(bed_type)
+        assert getattr(controller, "profile", None) is PROFILES[key], (key, bed_type)

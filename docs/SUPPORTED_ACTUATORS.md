@@ -37,7 +37,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md) and [V-MAT Basic](beds/vmatbasic.md) remote-specific controls |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
-| [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss-remote.md) and [FSM Relax](beds/fsm_relax.md) bed/chair layouts and local memories |
+| [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss.md#limoss-remote) and [FSM Relax](beds/limoss.md#fsm-relax) bed/chair layouts and local memories |
 | [Motion Bed app](beds/motion_bed.md) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
 | [Cool Base](beds/coolbase.md) | Keeson BaseI5 with fan control |
 | [Scott Living](beds/scott-living.md) | 9-byte protocol |
