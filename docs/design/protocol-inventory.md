@@ -46,7 +46,7 @@ classifies how members relate once framed alike:
 | --- | --- | ---: | ---: | ---: | --- |
 | **J1 Jiecang F1** | `F1 F1 op len payload sum8(op..payload) 7E` | 1055 / 1055 | 151 / 151 | 4 (+ 3 more app profiles) | Same framing, different command sets and payloads, per profile |
 | **K1 Keeson E5/E6** | `E5 FE ...` (8 bytes) or `E6 FE ...` (8 or 9 bytes), last byte `~sum8(all previous)` | 1751 / 1751 | 1 / 18 | 23 | Same framing, different command sets; core classes below |
-| **O1 Okin N-frame** | `N 02 <N-byte command word>`, so length is `N+2` | 2027 / 2057 | 3 / 42 | 22 | Same framing, command word width 32/40/48/64/96 bit (48 bit only on `adjustamattress:P4_L6`); different command sets |
+| **O1 Okin N-frame** | `N 02 <N-byte command word>`, so length is `N+2` | 2026 / 2056 | 3 / 42 | 22 | Same framing, command word width 32/40/48/64/96 bit (48 bit only on `adjustamattress:P4_L6`); different command sets |
 | **O2 Okin 5A** | `5A .. .. .. .. .. A5`, 7 bytes | 273 / 279 | 0 / 2 | 6 | Core classes below: `nectar` = `okin_7byte` = `box25_star`, `mattressfirm` = `okin_nordic`, `okin_cb35` differs; both `star_elevate` scenarios capture STOP only |
 | **R1 Richmat 6E** | `6E xx xx xx sum8`, 5 bytes | 532 / 534 | 87 / 109 | 9 (+ gmmotor partial) | Same framing, per-model byte tables |
 | **L1 Limoss DD** | `DD ...`, 10 bytes, last byte `sum8(previous)` | 62 / 62 | 5 / 5 | 3 (`limoss_remote` partial: handshake and STOP frames only) | Same framing, different command sets |

@@ -516,10 +516,16 @@ async def _run_command(
 
 @contextlib.contextmanager
 def deterministic_randomness() -> Iterator[None]:
-    """Seed ``random`` and replace ``secrets`` so nonces and session ids repeat."""
+    """Seed ``random``, replace ``secrets`` and reset app-global counters per scenario.
+
+    Nonces, session ids and process-wide sequence numbers then repeat, whatever
+    ran earlier in the process.
+    """
     import random
     import secrets
     from unittest.mock import patch
+
+    from custom_components.adjustable_bed.beds.limoss_remote_protocol import APP_SEQUENCE
 
     rng = random.Random(0)
     random.seed(0)
@@ -527,6 +533,7 @@ def deterministic_randomness() -> Iterator[None]:
         patch.object(secrets, "randbits", rng.getrandbits),
         patch.object(secrets, "token_bytes", lambda n=32: rng.randbytes(n)),
         patch.object(secrets, "token_hex", lambda n=32: rng.randbytes(n).hex()),
+        patch.object(APP_SEQUENCE, "value", 0),
     ):
         yield
 
