@@ -124,3 +124,22 @@ def test_pairlink_company_key_reaches_host_matcher_without_claiming_protocol() -
     assert DOMAIN in matcher.match_domains(info)
     # A generic SDK manufacturer record does not establish a bed protocol.
     assert detect_bed_type_detailed(info).bed_type is None
+
+
+def test_eshine_uart_advertisements_reach_discovery_without_product_inference() -> None:
+    from custom_components.adjustable_bed.beds.eshine_okin_protocol import SERVICE_UUID
+    from custom_components.adjustable_bed.const import BED_TYPE_ESHINE_OKIN, DOMAIN
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from tests.test_detection import _make_service_info
+
+    manifest_path = Path(__file__).parents[1] / "custom_components/adjustable_bed/manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    matcher = IntegrationMatcher([{"domain": DOMAIN, **entry} for entry in manifest["bluetooth"]])
+    matcher.async_setup()
+    for name in ("Smartbed", "prefix Smartbed suffix"):
+        info = _make_service_info(name=name, service_uuids=[SERVICE_UUID])
+        info.connectable = True
+        assert DOMAIN in matcher.match_domains(info)
+        detected = detect_bed_type_detailed(info)
+        assert BED_TYPE_ESHINE_OKIN in [detected.bed_type, *(detected.ambiguous_types or ())]
+        assert not any("eshine_e" in signal for signal in detected.signals)

@@ -46,6 +46,17 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Rows sort by identity, so parallel declarations merge cleanly.
+    # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
+    "JiecangProfile:dreamask": {"hold": ("dreamask",)},
+    "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
+    # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
+    # cadence is the entry's pulse settings, not the app's.
+    "LimossProfile:fsm_relax": {"hold": ("fsm",)},
+    "LimossProfile:limoss_remote": {"hold": ("limoss",)},
+    "LogicdataProfile:phone": {"hold": ("ld-phone",)},
+    "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
+    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
     # Okin N-frame (#483): each app streams a held key until release. Nectar
     # Move is the Nectar app's CST route.
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
@@ -116,9 +127,15 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
-    "beds/sleepys_box25.py:<module>.BOX25_EXECUTION": ("sleepys_box25",),
     "beds/sleepys_box25.py:<module>.SleepysBox25Controller": ("sleepys_box25",),
-    "profiles/okin_nframe.py:<module>.APP_STREAM_HOLD": (*_ABM, *_CST, *_LUMBAR, *_SIMMONS),
+    "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
+    "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
+    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
+    "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
+    "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
+    "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
+    "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
+    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,

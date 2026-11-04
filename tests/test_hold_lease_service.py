@@ -398,3 +398,45 @@ async def test_a_renewed_hold_is_one_estimated_movement(runtime, action, ending)
         assert back.percent == pytest.approx(ended[0] / 20.0 * 100.0)
     finally:
         await pe.async_unload_position_estimates(hass, coordinator.entry.entry_id)
+
+
+async def test_expiry_lets_a_delayed_release_finish(runtime) -> None:
+    """A lease ending is a normal end: the controller's delayed release still runs.
+
+    The coordinator used to cancel the operation task on expiry, which cut off
+    a release the controller sends after a wait. Expiry is driven through the
+    scheduler's own expiry path, and the release wait by an event, so no real
+    timer decides the outcome.
+    """
+    from custom_components.adjustable_bed.command_scheduler import HoldLease
+
+    _hass, coordinator = runtime
+    controller = _install(coordinator, STREAM)
+    started = asyncio.Event()
+    release_due = asyncio.Event()
+
+    async def hold_then_release_later(ctrl) -> None:
+        try:
+            ctrl.frames.append("up")
+            started.set()
+            await coordinator.cancel_command.wait()
+        finally:
+            # The app's release follows the last frame after a delay.
+            await release_due.wait()
+            ctrl.frames.append("release")
+
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=30)
+    hold = asyncio.create_task(
+        coordinator.async_execute_controller_command(
+            hold_then_release_later, resource="motor:back", lease=held
+        )
+    )
+    await asyncio.wait_for(started.wait(), 2)
+    # The lease timer's own path: expire the record, which sets the cancel event.
+    coordinator._command_scheduler.end_holds(CommandOutcome.EXPIRED)
+    for _ in range(10):
+        await asyncio.sleep(0)
+    release_due.set()
+    await asyncio.wait_for(hold, 2)
+    assert controller.frames == ["up", "release"]
+    assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED

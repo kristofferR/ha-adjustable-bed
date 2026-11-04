@@ -315,9 +315,9 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in defaults
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()):
         await flow.async_step_vibradorm_app(defaults)
-    flow._vibradorm_verified = True
-    flow._create_selected_app_entry(title="Bed", data=flow._manual_data)
-    finished = await flow.async_step_vibradorm_confirm({"confirm": True})
+    flow._migration_verified = True
+    await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
+    finished = await flow.async_step_migration_confirm({"confirm": True})
     assert finished["type"] == FlowResultType.ABORT
     assert entry.data[const.CONF_VIBRADORM_APP_PROFILE] == app
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in entry.data
@@ -651,7 +651,7 @@ async def test_selected_vmat_entry_discards_previous_app_selection_intent(hass, 
         const.CONF_VIBRADORM_APP_PROFILE: "vmat",
         const.CONF_VIBRADORM_RESTORED: restored,
     }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
-    result = flow._create_selected_app_entry(title="VMAT", data=data)
+    result = await flow._async_create_selected_app_entry(title="VMAT", data=data)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     restored_old = get_vibradorm_app_session_intent(
         hass, address, app_profile="caresse", control_type=5,

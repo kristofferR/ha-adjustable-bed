@@ -561,3 +561,44 @@ async def test_shutdown_records_active_intent_outcome() -> None:
     record = scheduler.recent_records[-1]
     assert record.outcome is CommandOutcome.SHUTDOWN
     assert record.invalidated_stop_epoch == 1
+
+
+async def test_repeated_scoped_cancellation_keeps_distinct_generation_and_latest_reason() -> None:
+    scheduler = DeviceCommandScheduler("scoped-cancellation-identity")
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def held(_context) -> None:
+        entered.set()
+        await finish.wait()
+
+    async def instant(_context) -> None:
+        pass
+
+    right = command_resources("side:right:*")
+    handle = await scheduler.enqueue(CommandIntent(held, resources=right))
+    await entered.wait()
+    other = await scheduler.enqueue(
+        CommandIntent(instant, resources=command_resources("side:left:*"))
+    )
+    assert handle.context.cancel_generation == 0
+    assert not handle.context.cancel_event.is_set()
+
+    await scheduler.enqueue(CommandIntent(instant, resources=right))
+    assert handle.context.cancel_generation == 1
+    assert handle.context.cancel_reason is CommandOutcome.REPLACED
+    epoch = scheduler.request_stop(right)
+    assert handle.context.cancel_generation == 2
+    assert handle.context.cancel_reason is CommandOutcome.STOPPED
+
+    cancelled = asyncio.create_task(scheduler.cancel(handle, CommandOutcome.CALLER_CANCELLED))
+    await asyncio.sleep(0)
+    assert handle.context.cancel_generation == 3
+    assert handle.context.cancel_reason is CommandOutcome.CALLER_CANCELLED
+    assert handle.context.cancel_event.is_set()
+    assert other.context.cancel_generation == 0
+    assert not other.context.cancel_event.is_set()
+    finish.set()
+    await asyncio.wait_for(cancelled, 1)
+    scheduler.finish_stop(epoch)
+    await asyncio.wait_for(other.future, 1)
+    await scheduler.async_shutdown()

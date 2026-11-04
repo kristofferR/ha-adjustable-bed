@@ -194,9 +194,9 @@ async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, o
         with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()):
             await step(defaults)
         assert entry.data == old
-        flow._vibradorm_verified = True
-        flow._create_selected_app_entry(title="Bed", data=flow._manual_data)
-        finished = await flow.async_step_vibradorm_confirm({"confirm": True})
+        flow._migration_verified = True
+        await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
+        finished = await flow.async_step_migration_confirm({"confirm": True})
         assert finished["type"] == FlowResultType.ABORT
         updated = entry.data
     else:
@@ -790,9 +790,9 @@ async def test_guided_retained_setup_persists_literal_remote_and_independent_fea
         })
     pairing.assert_awaited_once()
     assert entry.data[const.CONF_VIBRADORM_CONTROL_TYPE] == "2"
-    flow._vibradorm_verified = True
-    flow._create_selected_app_entry(title="Bed", data=flow._manual_data)
-    result = await flow.async_step_vibradorm_confirm({"confirm": True})
+    flow._migration_verified = True
+    await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
+    result = await flow.async_step_migration_confirm({"confirm": True})
     assert result["type"] == FlowResultType.ABORT
     assert entry.data[const.CONF_VIBRADORM_CONTROL_TYPE] == control
     assert entry.data[const.CONF_VIBRADORM_RGB] is True
