@@ -96,7 +96,7 @@ sensor/report consumers and explicit safety/product exclusions.
 [Solace, Woosa Sleep, BedSense and Motion Bed](beds/ff_frame.md) share the FFFF frame codec
 guide, with the [MotionFlex ledger](beds/solace-disposition.md).
 
-[Ergomotion 4.0 setup and protocol](beds/ergomotion-4.md), including the
+[Ergomotion 4.0 setup and protocol](beds/keeson.md#ergomotion-40), including the
 [issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
 and opt-in P1 split-side controls.
 

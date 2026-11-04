@@ -52,6 +52,10 @@ To adjust settings after setup:
 
 ![Configuration options location](https://github.com/user-attachments/assets/8d6dc2b9-7df2-48dc-9ea5-61aaadce6c63)
 
+Beds that support [estimated positions](ESTIMATED_POSITIONS.md) also show
+**Estimated positions** in this menu, or one entry per side on a paired bed. It
+enables and calibrates travel-time estimates for beds without position feedback.
+
 ### Changing the app or layout of an existing bed
 
 Some families have a guided change: Configure shows **Change app or layout**
@@ -496,7 +500,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | [Exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |
-| AdjustaMattress | [Choose the app, BLE model and product layout](beds/adjustamattress.md). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
+| AdjustaMattress | [Choose the app, BLE model and product layout](beds/keeson.md#adjustamattress). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | AdjustableM5X4 / M5X5 | [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
@@ -506,7 +510,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |
 | Legacy OKIN CB24 | [Single-address controls](#single-address-left--right-controls): both sides, Side A / Left, or Side B / Right. |
 | Keeson app family | [Tempur Curve, Q-Plus Adjustable Remote, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU](beds/keeson.md#cluster033-app-family): the exact app and the layout it shows; Q-Plus also has a Both/Side A/Side B selector. |
-| Ergomotion 4.0 | [Exact product, or another catalog product by name and feature keys](beds/ergomotion-4.md#home-assistant-setup). |
+| Ergomotion 4.0 | [Exact product, or another catalog product by name and feature keys](beds/keeson.md#ergomotion-40-home-assistant-setup). |
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it fixes the layout and movement refresh. |
 | Eshine | [Explicit app profile](beds/eshine.md#home-assistant-setup) with a fixed head, feet, lumbar, pillow, massage and light layout. |
 | Kaidi | [ISleep](beds/isleep.md#home-assistant-setup): product, room ID and actuator descriptor. [Floyd Home](beds/floyd.md#home-assistant-setup): product 139. |
@@ -650,7 +654,7 @@ Routing remains protocol-native:
   side frames. Their position feedback cannot identify a side, so side-control
   mode disables it. See
   [Keeson Base](beds/keeson.md#base-basei4i5) and
-  [Ergomotion 4.0](beds/ergomotion-4.md#home-assistant-setup).
+  [Ergomotion 4.0](beds/keeson.md#ergomotion-40-home-assistant-setup).
 - Kaidi `seat_1_2` binds Seat 1 to Left and Seat 2 to Right; Both retains its
   dual-command behavior. Other Kaidi variants cannot enable this surface.
 - Sleep Number BAM/MCR already exposes side-specific controls in its standalone
