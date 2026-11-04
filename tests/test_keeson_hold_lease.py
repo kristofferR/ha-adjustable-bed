@@ -126,3 +126,19 @@ async def test_adjustamattress_okin_models_stay_finite() -> None:
         assert controller.execution.hold is None
 
     await leased_hold("adjustamattress:P4_L6", execution, end_after_s=0, end="expire")
+
+
+async def test_simon_li_memory_keys_refuse_a_lease() -> None:
+    """Holding a Simon Li memory key past 2100 ms saves it, so no lease may hold one."""
+    refused: list[str] = []
+
+    async def hold_memory(controller: Any) -> None:
+        try:
+            await controller.hold_control("memory_1", HOLD_CEILING_MS)
+        except ValueError as err:
+            refused.append(str(err))
+
+    wire = await leased_hold("keeson:simon_li", hold_memory, end_after_s=1, end="expire")
+    assert refused
+    assert not wire.held
+    assert not wire.after
