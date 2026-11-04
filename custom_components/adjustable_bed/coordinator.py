@@ -76,6 +76,8 @@ from .command_scheduler import (
     CommandKind,
     CommandOutcome,
     DeviceCommandScheduler,
+    HoldClaim,
+    HoldLease,
     command_resources,
     current_command_context,
 )
@@ -4980,6 +4982,10 @@ class AdjustableBedCoordinator:
             )
             return
 
+        # A held motion never resumes on a later link: end it and its
+        # reservations now. Renewals for the ended generation are refused.
+        self._command_scheduler.end_holds(CommandOutcome.DISCONNECTED)
+
         # Store disconnect timestamp for binary sensor
         self._cancel_diagnostic_polling()
         self._last_disconnected = datetime.now(UTC)
@@ -6537,8 +6543,14 @@ class AdjustableBedCoordinator:
         kind: CommandKind = CommandKind.COMMAND,
         read_positions_after_operation: bool = True,
         expected_stop_epoch: int | None = None,
+        lease: HoldLease | None = None,
     ) -> None:
-        """Execute an opaque controller command through the device scheduler."""
+        """Execute an opaque controller command through the device scheduler.
+
+        With a ``lease`` the command is a ``CommandKind.HOLD``: a renewal of
+        the live hold of that generation returns at once, and the hold ends at
+        the lease deadline through its cancel event (#483).
+        """
 
         async def operation() -> None:
             await self._async_execute_controller_operation(
@@ -6563,6 +6575,43 @@ class AdjustableBedCoordinator:
             group_id=group_id,
             controller_command=command_fn,
             expected_stop_epoch=expected_stop_epoch,
+            lease=lease,
+        )
+
+    def claim_hold_lease(
+        self,
+        lease: HoldLease,
+        *,
+        resource: str | None = None,
+        resources: Collection[str] | None = None,
+        reserve: bool = True,
+    ) -> HoldClaim:
+        """Renew, reserve or refuse a hold lease on the command's resources."""
+        return self._command_scheduler.claim_hold(
+            lease, self._hold_resources(resource, resources), reserve=reserve
+        )
+
+    def release_hold_claim(
+        self,
+        lease: HoldLease,
+        *,
+        resource: str | None = None,
+        resources: Collection[str] | None = None,
+    ) -> None:
+        """End a hold reservation that never reached admission."""
+        self._command_scheduler.release_hold_claim(
+            lease, self._hold_resources(resource, resources)
+        )
+
+    def _hold_resources(
+        self, resource: str | None, resources: Collection[str] | None
+    ) -> frozenset[str]:
+        if resource is not None and resources is not None:
+            raise ValueError("Pass resource or resources, not both")
+        return self._protocol_command_resources(
+            command_resources(*resources)
+            if resources is not None
+            else command_resources(resource or "*")
         )
 
     async def _async_schedule_command_operation(
@@ -6578,6 +6627,7 @@ class AdjustableBedCoordinator:
         group_id: str | None = None,
         controller_command: Callable[[BedController], Awaitable[None]] | None = None,
         expected_stop_epoch: int | None = None,
+        lease: HoldLease | None = None,
     ) -> None:
         """Schedule an operation, or run inline inside this scheduler's reservation."""
         if (
@@ -6587,6 +6637,10 @@ class AdjustableBedCoordinator:
             return
         context = current_command_context()
         if context is not None and context.scheduler_token is self._command_scheduler.token:
+            if lease is not None and not self._command_scheduler.bind_hold_inline(
+                context, lease, self._hold_resources(resource, resources)
+            ):
+                return
             previous_pulse_count = context.pulse_count
             previous_pulse_delay_ms = context.pulse_delay_ms
             if pulse_count is not None:
@@ -6631,6 +6685,7 @@ class AdjustableBedCoordinator:
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
             expected_stop_epoch=expected_stop_epoch,
+            lease=lease,
         )
         await self._command_scheduler.execute(
             intent, expected_stop_epoch=expected_stop_epoch
@@ -6648,6 +6703,7 @@ class AdjustableBedCoordinator:
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
         expected_stop_epoch: int | None = None,
+        lease: HoldLease | None = None,
     ) -> CommandIntent:
         """Build one device intent while preserving legacy cancellation signals."""
         if resource is not None and resources is not None:
@@ -6673,12 +6729,13 @@ class AdjustableBedCoordinator:
         return CommandIntent(
             scheduled,
             resources=self._protocol_command_resources(command_scope),
-            kind=kind,
+            kind=CommandKind.HOLD if lease is not None else kind,
             replacement_key=(resource or "*") if resources is None else None,
             cancel_running=cancel_running,
             group_id=group_id,
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
+            lease=lease,
         )
 
     async def async_prepare_command_operation(

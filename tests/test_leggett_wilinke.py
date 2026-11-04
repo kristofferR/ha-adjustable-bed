@@ -125,6 +125,27 @@ class TestLeggettWilinkeController:
             LEGGETT_RICHMAT_CHAR_UUID, command, response=True
         )
 
+    async def test_write_command_records_a_command_trace(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_wilinke_config_entry,
+        mock_coordinator_connected,  # noqa: ARG002
+    ):
+        """The L&P write loop bypasses the shared helper but still reaches support bundles."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
+        await coordinator.async_connect()
+
+        command = coordinator.controller._build_command(0x6E)
+        with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
+            await coordinator.controller.write_command(command, repeat_count=3, repeat_delay_ms=50)
+
+        (trace,) = coordinator.command_trace
+        assert trace["payload"]["hex"] == command.hex()
+        assert trace["characteristic_uuid"] == LEGGETT_RICHMAT_CHAR_UUID
+        assert trace["write_mode"] == "with_response"
+        assert (trace["repeat_count"], trace["repeat_delay_ms"]) == (3, 50)
+        assert trace["controller_class"] == "LeggettWilinkeController"
+
     async def test_write_command_not_connected(
         self,
         hass: HomeAssistant,

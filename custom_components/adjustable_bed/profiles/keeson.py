@@ -6,7 +6,8 @@ Sleep Harmony base-i5, the Adjustable Lite KSBT03C remote, and the BetterLiving
 and CB1322 auto-detected tables). The ``ergomotion``, ``serta`` and ``okin_ffe``
 bed types are aliases of the variant profiles of the same name. The cluster033
 app bed types (Tempur Curve, Q-Plus, Serta MP Remote and the other
-``APP_LAYOUTS`` apps) are ``AppProfile`` layouts, driven by ``beds/cluster033.py``.
+``APP_LAYOUTS`` apps) are ``AppProfile`` layouts, driven by ``beds/cluster033.py``;
+Ergomotion 4.0 is one too, with its product catalog in ``ergomotion4_profiles.py``.
 
 App profiles take their words and timing from their accepted APK Protocol Audit
 reports; the other routes keep the frames and timing of the pre-v5 controller.
@@ -23,6 +24,7 @@ from typing import Final, Literal
 from ..alarm_table import AlarmTableScheduleSpec
 from ..codec import keeson as codec
 from ..codec.keeson import ByteOrder, Carrier, Side, TransportKey
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Preset = Literal["flat", "zero_g", "lounge", "tv", "anti_snore"]
 Massage = Literal["step", "absolute", "zone_steps", "none"]
@@ -109,6 +111,8 @@ _EMPTY: Final[Mapping[int, int]] = MappingProxyType({})
 @dataclass(frozen=True, kw_only=True)
 class KeesonProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     carrier: Carrier = "k1"
     header: int = 0xE5
     order: ByteOrder = "little"
@@ -551,6 +555,8 @@ class AppProfile:
 
     key: str
     """The app's bed type; it names the frozen vectors and the app's caller rules."""
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     app: str
     layout: str
     actions: tuple[AppAction, ...]
@@ -1043,6 +1049,25 @@ _MX_KEYS: Final = frozenset(
         0x40000000,
     }
 )
+
+
+# Ergomotion 4.0 (com.sfd.hump 3.7). Its product catalog
+# (``ergomotion4_profiles.py``) supplies the actions, so the layout only names
+# the selected product's style.
+ERGOMOTION_4: Final = "ergomotion_4"
+
+
+def ergomotion_4_profile(style: str) -> AppProfile:
+    """The Ergomotion 4.0 app profile for one catalog product style."""
+    return AppProfile(
+        key=ERGOMOTION_4,
+        app="Ergomotion 4.0",
+        layout=style,
+        actions=(),
+        alarm=AlarmTableScheduleSpec(128, 3),
+        shutdown_count=1,
+        shutdown_delay_ms=0,
+    )
 
 
 def app_profile(app: str, layout: str | None = None) -> AppProfile:

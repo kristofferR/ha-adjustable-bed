@@ -1546,6 +1546,13 @@ STOP, `2A 00 00 02 01 01 <code>` for massage and a discrete
 `AA 00 00 04 01 05 00 <on> 00 00 00 00` light switch. Both families set an exact
 massage level with `03 03 <zone> <level> <selector>`.
 
+> [!WARNING]
+> On the CBNew variants, overall massage intensity up and down still send the
+> legacy [CB24 keys](#cb24-keys), and the exact massage level sends the legacy
+> `03 03` frame. Every other CBNew control uses CBNew packets. No accepted report
+> covers this app (the SmartBed 2.4.2 analysis is PARTIAL), so whether CBNew
+> receivers accept these frames is unproven.
+
 #### Timing
 
 Motors refresh at the entry's pulse settings, then one STOP. Presets and memory

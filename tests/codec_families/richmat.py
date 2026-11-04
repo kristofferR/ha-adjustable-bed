@@ -54,7 +54,6 @@ FAMILY = CodecFamily(
             "richmat_revive",
         }
     ),
-    pending={"gmmotor": "#745 R1 Richmat 6E: frames use codec/richmat.py, catalog session stays"},
     guide=CodecGuide(
         path="docs/beds/richmat.md",
         spelled=_spelled,

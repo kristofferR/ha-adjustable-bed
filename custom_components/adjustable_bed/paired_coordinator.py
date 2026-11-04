@@ -29,7 +29,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
 from .beds.base import BedController, SideBoundController
-from .command_scheduler import CommandHandle, CommandKind, command_resources
+from .command_scheduler import (
+    CommandHandle,
+    CommandKind,
+    HoldClaim,
+    HoldLease,
+    command_resources,
+)
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_GMMOTOR,
@@ -267,8 +273,13 @@ class PairedBedCoordinator:
         resources: Collection[str] | None = None,
         expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
         expected_stop_epochs: Mapping[str, int] | None = None,
+        lease: HoldLease | None = None,
     ) -> None:
-        """Run ``command_fn`` on the targeted side(s) with the both-failure contract."""
+        """Run ``command_fn`` on the targeted side(s) with the both-failure contract.
+
+        A ``lease`` gives each physical side its own hold with that owner and
+        generation, so one renewal renews both.
+        """
         if resource is not None and resources is not None:
             raise ValueError("Pass resource or resources, not both")
         targets_by_child = {
@@ -282,7 +293,17 @@ class PairedBedCoordinator:
                 if expected_stop_epochs is not None
                 else None
             )
-            if expected_stop_epoch is None:
+            if lease is not None:
+                await child.async_execute_controller_command(
+                    command_fn,
+                    cancel_running=cancel_running,
+                    skip_disconnect=skip_disconnect,
+                    resource=resource,
+                    resources=resources,
+                    expected_stop_epoch=expected_stop_epoch,
+                    lease=lease,
+                )
+            elif expected_stop_epoch is None:
                 await child.async_execute_controller_command(
                     command_fn,
                     cancel_running=cancel_running,
@@ -811,6 +832,7 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         kind: CommandKind = CommandKind.COMMAND,
         read_positions_after_operation: bool = True,
         expected_stop_epoch: int | None = None,
+        lease: HoldLease | None = None,
     ) -> None:
         side_feedback = self._single_inner.bed_type == BED_TYPE_SLEEP_NUMBER
 
@@ -839,8 +861,34 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
             read_positions_after_operation=read_positions_after_operation,
             expected_stop_epoch=expected_stop_epoch,
             resources=self._scoped_command_resources(resource, resources),
+            lease=lease,
         )
         self._sync_position_state()
+
+    def claim_hold_lease(
+        self,
+        lease: HoldLease,
+        *,
+        resource: str | None = None,
+        resources: Collection[str] | None = None,
+        reserve: bool = True,
+    ) -> HoldClaim:
+        """Claim a hold lease on this logical side's resources."""
+        return self._single_inner.claim_hold_lease(
+            lease, resources=self._scoped_command_resources(resource, resources), reserve=reserve
+        )
+
+    def release_hold_claim(
+        self,
+        lease: HoldLease,
+        *,
+        resource: str | None = None,
+        resources: Collection[str] | None = None,
+    ) -> None:
+        """End this logical side's unadmitted hold reservation."""
+        self._single_inner.release_hold_claim(
+            lease, resources=self._scoped_command_resources(resource, resources)
+        )
 
     async def async_execute_command_group(
         self,

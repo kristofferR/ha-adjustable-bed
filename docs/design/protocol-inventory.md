@@ -698,31 +698,90 @@ routes cover the rest). Remote-code tables (`richmat_remote`), cluster033
 product layouts, Okimat remote codes beyond the default and Casper/AdjustaMattress
 product sets are sampled, not exhaustive.
 
-## Observations (not fixed here)
+## Observations and dispositions
 
-- `JiecangController` defines the 4-motor and split-bed literals (`HEAD_UP_ALT`,
-  `WAIST_*`, `BACK_RIGHT_*`) but its motor methods never emit them, so a 3 or
-  4-motor Jiecang bed cannot use head/lumbar/neck through the legacy route. The
-  `jiecang_app` profile layouts do.
-- `logicdata_app` sends 11 pulses per movement where `jiecang_app` sends 10 at the
-  same interval. Probably per-app, to be proven from the frozen reports before any
-  change.
-- `simmons` emits two wire families from one controller (E6 and `05 02`); `sleepys_box25` splits O1 (legacy route) and O2 (star route) across two controller classes.
+Observations from this inventory and from the v5 refactor PRs (#760 to #777),
+triaged against the accepted reports. **Resolved** items are done or fixed by
+the PR they name; **Matches the app** items are intended; **Stays** items need
+evidence the accepted reports do not hold, and say where they are recorded.
+
+### Resolved
+
+- Legacy Jiecang STOP: before the #744 pilot, a STOP during a move released at
+  the next 57 ms refresh slot. The pilot releases at once.
+- BedSense, Solace/Woosa and Motion Bed share one frame: one codec and one guide
+  ([FF frame](../beds/ff_frame.md)) since #763.
+- `malouf_app` and `malouf_new_okin` send the same motor and STOP frames: one
+  codec since #768.
+- Starcode M1X12 and M5X5 legacy-dialect `05 02` frames are built by the O1 codec
+  since #770.
+- Ergomotion 4.0's duplicate side and `p2` encoders delegate to the K1 codec.
+- Restonic's touch-up release write can be cancelled by a second cancellation of
+  its caller, where INNOVA's waits through any number. #785 makes Restonic wait too.
+- Jiecang family writes and L&P MlRM writes bypass support-bundle command traces.
+  #786 records them.
+
+### Matches the app
+
+- `logicdata_app` sends one more movement frame than the pulse count (11 at the
+  default). The MOTIONrelax 1.0.6 and 1.0.4 apps and Sleep Smart 1.0.0 send one
+  final movement frame on touch-up (`doRepeat(true)`), then the release. Dream
+  Motion and Dream Motion HD do the same. ERGOBALANCE (Dreamask) suppresses that
+  frame, and the Comfort Motion profile sends none, so those two send 10.
+- `simmons` emits two wire families from one controller (E6 and `05 02`), chosen
+  by the name rule; see [SIMMONS](../beds/okin-nframe.md#simmons).
+  `sleepys_box25` splits O1 (legacy route) and O2 (star route) across two
+  controller classes.
+
+### Stays
+
+- The legacy Jiecang route sends back and legs frames only. No accepted report,
+  issue or capture shows a legacy bed accepting the 4-motor or split frames, and
+  smartbed-mqtt has no Jiecang code. The [legacy route](../beds/jiecang.md#legacy-route)
+  points 3 and 4-motor beds to the app profiles.
+- MOTIONrelax beds detected as `jiecang` or `comfort_motion` get the legacy
+  route's family, timing, memory and transport, which differ from the apps
+  ([details](../beds/jiecang.md#motionrelax-beds-on-this-route)). The fix
+  belongs to the guided setup work in #676.
+- `furnimove` (handsets without massage), `comfort_enhancements:mc3` and
+  `sleepys_elite_app` (non-BOX25 selectors) report `supports_massage` false, but
+  their override-detected massage button flags stay true. With Massage enabled
+  in options, those buttons appear; pressing them raises, except FurniMove's
+  massage off, which writes nothing. The wire snapshot
+  lists them as `gaps`. Hiding them changes the entity set, so it needs a
+  decision first.
+- Direct calls to controls a profile does not expose still send a word its app
+  never sends. Capability flags hide their entities:
+  Keeson methods inherited by Adjustable Lite, Restonic, Simon Li, OKIN-Seating
+  and Heal Every Night (#762); `preset_tv` on Serta, OKIN FFE, CB1322, Sino and
+  BetterLiving, and Purple Premium `lights_toggle` (#762); Okimat keys on
+  `OkinRfEcoBtController` (#764); common CST words on CST products (#774).
+- `okin_7byte` (Nectar) massage off sends `5A`, the Nordic and CB35 toggle key;
+  no accepted report covers the 5A keys ([5A guide](../beds/okin-5a.md)).
+- CBNew `massage_intensity_up`/`_down` and exact massage levels send legacy
+  frames; the SmartBed 2.4.2 analysis is PARTIAL
+  ([CB24](../beds/okin-nframe.md#okin-smartbed-cb24)).
+- Richmat legacy-RGB "Always On" sends `6E 0B 00 00 79` where the other families
+  send `FF FF`; no accepted report covers the legacy-RGB family
+  ([Richmat lights](../beds/richmat.md#lights)).
+- BedTech's `)`/`*` codes drive the pillow entity while the BedTech 7.1.3 table
+  calls them `bothHeads`; the [BedTech](../beds/richmat.md#bedtech) warning stands.
+- The legacy `limoss` route resends one counter value per held move and decodes
+  positions unsigned; both audited Limoss apps differ. The route has no accepted
+  report of its own.
+- `SvaneController` releases a two-axis hold by iterating a set of roles, so the
+  axis released first varies between processes, and `LeggettOkinController.stop_notify`
+  unsubscribes in set order. The Svane app releases each axis on its own pointer,
+  so no artifact fixes an order. The snapshot pins both with `PYTHONHASHSEED=0`.
+- App controllers with a forced side (INNOVA, Simon Li, OKIN-Seating, Heal Every
+  Night) raise instead of ignoring it. Pairing never offers them single-address
+  sides, so this is unreachable and the safer raise stays.
 - `keeson` has four controller classes behind one bed type; the `OreComfortBed`,
-  `OkinAppKeeson` and `Innova` routes also have their own README rows.
-- BedSense, Solace/Woosa and Motion Bed share one frame; three controllers and
-  three guides describe it.
-- Frozen report workspaces for `com.dewertokin.okinsmartcomfort`,
-  `com.intretech.app.suta`, and `com.fullpower.applications.horizon` carry no
-  `report/analysis.json` at the top level, so no status is listed for them.
-- `SvaneController` releases a two-axis hold (`hold_head_up_feet_down`,
-  `hold_head_down_feet_up`) by iterating a set of roles, so which axis gets its
-  release frame first changes between Python processes. The snapshot pins it by
-  running with `PYTHONHASHSEED=0`.
-- Starcode M1X12 and M5X5 send Okin `05 02` 40-bit frames for motion and presets,
-  with the same motor and STOP frames as the `okin_cb24` class.
-- `malouf_app` and `malouf_new_okin` send the same motor and STOP frames.
-- `furnimove`, `comfort_enhancements:mc3` and `sleepys_elite_app` declare massage
-  controls their default handset or product rejects.
-- Before the #744 pilot, a STOP during a legacy Jiecang move released at the next
-  57 ms refresh slot (342 ms for a STOP at 300 ms); the pilot releases at once.
+  `OkinAppKeeson` and `Innova` routes also have their own README rows. README rows
+  stay hand-written until the guides carry brand metadata (#769).
+- Report workspaces for `com.dewertokin.okinsmartcomfort` 2.0.1 and
+  `com.intretech.app.suta` 1.0.3 have an empty `report/`, and
+  `com.fullpower.applications.horizon` has only addendum reports, so no status is
+  listed for them.
+- This inventory is point-in-time: some rows still name modules that later PRs
+  replaced (for example `leggett_app_protocol.py`).

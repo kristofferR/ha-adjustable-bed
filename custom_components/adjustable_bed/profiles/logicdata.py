@@ -14,6 +14,7 @@ from typing import Final, Literal
 
 from ..codec import jiecang as codec
 from ..codec.jiecang import BILATERAL, SHORT_RELEASE, STANDARD, Axis, MassageZone, Preset
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from .jiecang import NameRule, Schedule
 
 AppKey = Literal["phone", "tablet", "sleep_smart"]
@@ -62,6 +63,8 @@ QUERY_MASSAGE: Final = codec.query(b"\x08\x00")
 @dataclass(frozen=True, kw_only=True)
 class LogicdataProfile:
     key: AppKey
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     session: Session
     """Selects the controller's startup, name-role and clock-answer state machine."""
     layouts: dict[Layout, tuple[Axis, ...]]
