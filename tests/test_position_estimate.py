@@ -577,3 +577,38 @@ async def test_stream_members_end_at_their_own_cleanup(hass: HomeAssistant, cloc
     # Back: 4 s of motion plus the 0.5 s release; legs' lost cleanup is unknown.
     assert bed.motors["back"].percent == pytest.approx(4.5 / 20.0 * 100)
     assert bed.motors["legs"].state is EstimateState.UNKNOWN
+
+
+async def test_stream_newcomer_starts_with_the_reduced_frame_and_survives_stop(
+    hass: HomeAssistant, clock: Clock
+) -> None:
+    """A replacement carried by a cleanup frame is timed, and STOP keeps tracking."""
+    from custom_components.adjustable_bed.command_scheduler import StreamMember
+
+    manager = await calibrated(hass)
+    bed = manager.beds[LEFT]
+    ctrl = controller(hass, LEFT)
+    ctrl.stream_tick_s = 0.1
+    ctrl.write_stream_tick = AsyncMock()
+    ctrl.end_stream_member = AsyncMock()
+    ctrl.release_stream = AsyncMock()
+    stream = pe.track_stream(hass, ctrl)
+    up = StreamMember(motor="back", resource="motor:back", action="up", deadline=0.0)
+    down = StreamMember(motor="back", resource="motor:back", action="down", deadline=0.0)
+
+    await stream.write_stream_tick((up,))
+    clock.now += 4.0
+    # ``down`` replaced ``up``; the reduced frame already carries it.
+    await stream.end_stream_member(up, (down,))
+    clock.now += 1.0
+    # STOP cancels the next tick before it is written.
+    ctrl.write_stream_tick.side_effect = asyncio.CancelledError
+    with pytest.raises(asyncio.CancelledError):
+        await stream.write_stream_tick((down,))
+    assert bed.tracking(["back"])
+    await stream.end_stream_member(down, ())
+    await stream.release_stream()
+
+    # 4 s up (20 %) then 1 s down (10 %).
+    assert bed.motors["back"].percent == pytest.approx(10.0)
+    assert bed.motors["back"].moves_since_reference == 2
