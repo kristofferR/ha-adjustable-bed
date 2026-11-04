@@ -3,6 +3,8 @@
 Every value here comes from the accepted row049 clean-room report. The app
 chooses the packet format from the Bluetooth name and, independently, the GATT
 destination from the discovered services. Hardware acceptance is unverified.
+Control masks and timing are the ``SIMMONS_PROFILES`` data: SmartBed names send
+40-bit Okin N-frames, OKIN names the same masks in a Keeson E6 frame.
 """
 
 from __future__ import annotations
@@ -11,6 +13,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Final, Literal
+
+from ..codec import keeson, okin_nframe
+from ..profiles.okin_nframe import SIMMONS_PROFILES
 
 Protocol = Literal["okin", "smartbed"]
 AlarmMode = Literal["custom_mode", "flat", "anti_snore"]
@@ -25,25 +30,6 @@ FFE9_WRITE: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
 FFE0_SERVICE: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 FFE4_NOTIFY: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 
-# 32-bit control masks shared by both packet formats.
-MASKS: Final[dict[str, int]] = {
-    "head_up": 0x1,
-    "head_down": 0x2,
-    "legs_up": 0x4,
-    "legs_down": 0x8,
-    "flat": 0x08000000,
-    "zero_g": 0x1000,
-    "tv": 0x4000,
-    "anti_snore": 0x8000,
-    "memory": 0x10000,
-    "light": 0x20000,
-    "stop": 0,
-    # Inclined-bed layout. Physical roles are unverified; middle reuses the
-    # zero-gravity mask.
-    "inclined_left": 0x10,
-    "inclined_middle": 0x1000,
-    "inclined_right": 0x20,
-}
 # The inclined builders never check the protocol: they always emit the
 # SmartBed frame, even when the OKIN response write mode is selected.
 INCLINED_ACTIONS: Final = frozenset({"inclined_left", "inclined_middle", "inclined_right"})
@@ -80,11 +66,11 @@ def checked(values: list[int]) -> bytes:
 
 
 def control_frame(protocol: Protocol, action: str) -> bytes:
-    """Return the control frame for an app action."""
-    mask = MASKS[action]
+    """Return the control frame for an app action; ``stop`` is the zero word."""
+    word = 0 if action == "stop" else SIMMONS_PROFILES["smartbed"].keys[action]
     if protocol == "okin" and action not in INCLINED_ACTIONS:
-        return checked([0xE6, 0xFE, 0x16, *mask.to_bytes(4, "little"), 0x00])
-    return bytes((0x05, 0x02)) + mask.to_bytes(4, "big") + b"\x00"
+        return keeson.frame(word, header=0xE6, side=0)
+    return okin_nframe.frame40(word)
 
 
 def clock_frame(protocol: Protocol, now: datetime) -> bytes:
@@ -100,7 +86,7 @@ def query_frames(protocol: Protocol) -> tuple[bytes, ...]:
     """Return one manager query: both records (OKIN) or slot 1 then slot 2."""
     if protocol == "okin":
         return (checked([0xE1, 0x80, 0x03]),)
-    return (bytes((0x00, 0xC0)), bytes((0x00, 0xD0)))
+    return (okin_nframe.request(0xC0), okin_nframe.request(0xD0))
 
 
 def alarm_type(protocol: Protocol, mode: str) -> int:

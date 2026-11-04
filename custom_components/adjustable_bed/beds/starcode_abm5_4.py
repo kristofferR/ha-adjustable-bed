@@ -13,6 +13,7 @@ from bleak.exc import BleakError
 
 from ..command_scheduler import copy_context_without_command
 from ..const import CONF_BLE_DEVICE_NAME
+from ..profiles.okin_nframe import STARCODE_ABM5_4_PROFILES, OkinNFrameProfile
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -101,6 +102,11 @@ async def _brightness(controller: BedController, value: float) -> None:
 
 class StarcodeAbm5_4Controller(BedController):
     """C builds/parses, D selects roles/write mode, U consumes state/releases."""
+
+    @property
+    def profile(self) -> OkinNFrameProfile | None:
+        """The command selector's key profile; ``None`` for BOX25_STAR's StarCode."""
+        return STARCODE_ABM5_4_PROFILES.get(self.command_selector)
 
     def __init__(
         self,

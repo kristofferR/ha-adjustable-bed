@@ -12,6 +12,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Literal
 
+from .codec import okin_nframe
+from .profiles.okin_nframe import DOUBLESLEEP
+
 type Json = None | bool | int | float | str | Sequence[Json] | Mapping[str, Json]
 type Protocol = Literal["p1", "p2", "p3"]
 SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
@@ -48,46 +51,21 @@ SAVE = {14: 20, 15: 21, 16: 22, 17: 23, 18: 24, 19: 25}
 DEAD = frozenset((0, 6, 7, 30, 33, 34, 39, 42, 43, 44, 45, 46, 61, 65, 70))
 OTA = frozenset((74, 75, 76))
 CHILD_BLOCKED = frozenset((*range(2, 20), 26, *range(28, 50), 58))
+# P1 key frames are 40-bit Okin N-frames of the ``DOUBLESLEEP`` profile's words;
+# these are its other static frames. Index 27 is the app's 3-byte all-stop.
 P1_STATIC = {
-    1: "05020000000000",
-    2: "05020000000100",
-    3: "05020000000200",
-    4: "05020000000400",
-    5: "05020000000800",
-    8: "05020000004000",
-    9: "05020000008000",
-    10: "05020000001000",
-    11: "05020000002000",
-    12: "05024000000000",
-    13: "05028000000000",
-    14: "05020001000000",
-    15: "05020004000000",
-    16: "05020000800000",
-    17: "05020000200000",
-    18: "05020000400000",
-    19: "05020000100000",
-    26: "05020800000000",
     27: "050200",
-    28: "05020000010000",
-    29: "05020000010000",
-    31: "05020000020000",
-    35: "05020000080000",
-    36: "05020080000000",
-    37: "05020000040000",
-    38: "05021000000000",
-    40: "05021000000000",
-    41: "05020400000000",
     48: "07050000000000000000",
     50: "00b0",
     52: "00c0",
     53: "00b0",
-    58: "05020002000000",
     59: "01b201",
     60: "01b200",
     63: "020b000001",
     64: "01b301",
     66: "01b102",
-}
+} | {int(index): okin_nframe.frame40(word).hex() for index, word in DOUBLESLEEP.keys.items()}
+
 P2_STATIC = {
     1: "aa000001010400000000",
     2: "aa000001010401000000",

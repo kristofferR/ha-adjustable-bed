@@ -1,4 +1,4 @@
-"""Every 32-bit Okin N-frame profile's frozen frames pass through the shared codec."""
+"""Every Okin N-frame profile's frozen frames pass through the shared codec."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ from custom_components.adjustable_bed.beds.okin_uuid import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
 )
+from custom_components.adjustable_bed.beds.simmons_protocol import INCLINED_ACTIONS
+from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
 from tests.okin_nframe_vectors import FIELD_FRAMES, FROZEN_FRAMES, GATEWAY_FRAMES, SETUP_FRAMES
@@ -22,16 +24,32 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         profiles.RF_ECO_BT,
         *profiles.CUSTOMATIC_PROFILES.values(),
         *profiles.LEGGETT_PROFILES.values(),
+        profiles.OKIN_DOT,
+        profiles.OKIN_CB24,
+        *profiles.SIMMONS_PROFILES.values(),
+        profiles.DOUBLESLEEP,
+        profiles.SLEEPYS_BOX25_LEGACY,
+        *profiles.STARCODE_ABM5_4_PROFILES.values(),
     )
 }
-# Routes without a report: their census must equal the pre-v5 frames.
-LEGACY = {"okimat", "dewertokin", "okin_rf_eco_bt"}
+# Routes without a report on disk: their census must equal the pre-v5 frames.
+LEGACY = {
+    "okimat",
+    "dewertokin",
+    "okin_rf_eco_bt",
+    "okin_dot",
+    "okin_cb24",
+    "sleepys_box25",
+    *(p.key for p in profiles.STARCODE_ABM5_4_PROFILES.values()),
+}
 
 
-def _remote_words() -> set[int]:
-    """Every key word an Okimat handset table can send."""
+def _remote_words(*, dot: bool = False) -> set[int]:
+    """Every key word an Okimat (or only the DOT) handset table can send."""
     words: set[int] = set()
     for remote in OKIN_UUID_REMOTES.values():
+        if dot and not remote.dot:
+            continue
         for item in fields(remote):
             value = getattr(remote, item.name)
             if item.name == "quiet_sleep" and remote.anti_snore is not None:
@@ -51,12 +69,23 @@ def _census(profile: profiles.OkinNFrameProfile) -> set[str]:
     Held motors and Customatic memory chords send the sum of their keys; those
     composite words are the same frame of a different word and are not listed.
     """
-    words = set(profile.keys.values()) if profile.keys else _remote_words()
+    words = set(profile.keys.values()) or _remote_words(dot=profile.key == "okin_dot")
     if profile.hold.releases or profile.recall and profile.recall.releases:
         words.add(0)
-    frames = {codec.frame(word).hex() for word in words}
+    if profile.width == 5:
+        frames = {codec.frame40(word, s).hex() for word in words for s in profile.selectors}
+    else:
+        frames = {codec.frame(word).hex() for word in words}
+    frames |= {codec.frame(word, 8).hex() for word in profile.long_keys.values()}
     if profile.envelope == "revision_selector":
         frames |= {codec.gateway_frame(word).hex() for word in words}
+    if profile.envelope == "keeson_e6":
+        # Only the inclined keys keep the plain frame on this route.
+        plain = {profile.keys[action] for action in INCLINED_ACTIONS}
+        wrapped = {0} | {w for a, w in profile.keys.items() if a not in INCLINED_ACTIONS}
+        frames = {codec.frame40(word).hex() for word in plain} | {
+            keeson.frame(word, header=0xE6, side=0).hex() for word in wrapped
+        }
     return frames
 
 
@@ -72,6 +101,9 @@ def test_frozen_frame_round_trips_through_codec(profile, literal):
     data = bytes.fromhex(literal)
     if data[:3] == codec.GATEWAY_HEADER:
         assert codec.gateway_frame(int.from_bytes(data[3:7], "big")) == data
+    elif data[:3] == b"\xe6\xfe\x16":
+        word = int.from_bytes(data[3:7], "little")
+        assert keeson.frame(word, header=0xE6, side=data[7]) == data
     else:
         assert codec.frame(int.from_bytes(data[2:], "big"), data[0]) == data
 
@@ -111,6 +143,13 @@ def test_prodigy_sleep_timer_is_a_frozen_plain_frame(key, minutes, action, frame
     assert plain
     assert codec.frame(word).hex() == frame
     assert frame in FROZEN_FRAMES[key]
+
+
+def test_40_bit_frames_carry_the_key_then_the_selector():
+    assert codec.frame40(0x08000000, 0xAA).hex() == "050208000000aa"
+    for key, selector in ((1 << 32, 0), (-1, 0), (True, 0), (1, 0x100)):
+        with pytest.raises(ValueError):
+            codec.frame40(key, selector)
 
 
 def test_frame_widths_and_word_ranges():
