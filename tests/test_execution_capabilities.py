@@ -7,11 +7,15 @@ declaration without a row fails here, so adding a capability needs a reviewed
 evidence row, and a row whose declaration is gone fails too.
 
 Profiles are identified as ``"<ProfileClass>:<key>"``; standalone controllers
-by bed type.
+by bed type. Runtime checks cover every bed type and app route; a source scan
+also requires each place that declares a capability to be listed in
+``DECLARATION_SITES``, so variants, layouts and runtime-built profiles cannot
+declare one unreviewed.
 """
 
 from __future__ import annotations
 
+import ast
 import re
 import sys
 from collections.abc import Iterator, Mapping
@@ -40,6 +44,14 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {}
+
+# Source site -> the EVIDENCE identities it declares. A site is
+# "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
+# enumeration cannot reach every variant, layout or product, so every place
+# that can declare a capability must be listed and reviewed here.
+DECLARATION_SITES: dict[str, tuple[str, ...]] = {}
+
+PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 
 
 def _design_evidence_keys() -> frozenset[str]:
@@ -160,6 +172,88 @@ async def test_evidence_rows_match_live_declarations() -> None:
     assert {identity for identity in EVIDENCE if ":" in identity} <= set(await _declarations())
     assert {identity for identity in EVIDENCE if ":" not in identity} <= set(
         SUPPORTED_BED_TYPES
+    )
+
+
+def _declaration_sites(root: Path = PACKAGE) -> set[str]:
+    """Every source site that constructs, passes, assigns or overrides a declaration."""
+    sites: set[str] = set()
+    for path in sorted(root.rglob("*.py")):
+        relative = path.relative_to(root).as_posix()
+        if relative == "execution.py":
+            continue
+        tree = ast.parse(path.read_text(), filename=relative)
+        for scope, node in _walk_scoped(tree, "<module>"):
+            if isinstance(node, ast.Call):
+                name = node.func.attr if isinstance(node.func, ast.Attribute) else (
+                    node.func.id if isinstance(node.func, ast.Name) else ""
+                )
+                if name == "ExecutionCapabilities" and (node.args or node.keywords):
+                    sites.add(f"{relative}:{scope}")
+                if any(keyword.arg == "execution" for keyword in node.keywords):
+                    sites.add(f"{relative}:{scope}")
+                if name == "replace" and "execution" in ast.unparse(node).lower():
+                    sites.add(f"{relative}:{scope}")
+            elif (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and node.name == "execution"
+                and relative != "beds/base.py"
+            ):
+                sites.add(f"{relative}:{scope}")
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)) and relative != "beds/base.py":
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                empty_default = (
+                    isinstance(node.value, ast.Name) and node.value.id == "NO_EXECUTION_CAPABILITIES"
+                )
+                if not empty_default and any(
+                    (isinstance(t, ast.Name) and t.id == "execution")
+                    or (isinstance(t, ast.Attribute) and t.attr in ("execution", "_execution"))
+                    for t in targets
+                ):
+                    sites.add(f"{relative}:{scope}")
+    return sites
+
+
+def _walk_scoped(node: ast.AST, scope: str) -> Iterator[tuple[str, ast.AST]]:
+    for child in ast.iter_child_nodes(node):
+        yield scope, child
+        name = (
+            child.name
+            if isinstance(child, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+            else None
+        )
+        if name is None and isinstance(child, (ast.Assign, ast.AnnAssign)) and scope == "<module>":
+            target = child.targets[0] if isinstance(child, ast.Assign) else child.target
+            name = target.id if isinstance(target, ast.Name) else None
+        yield from _walk_scoped(child, f"{scope}.{name}" if name else scope)
+
+
+def test_every_declaration_site_is_reviewed() -> None:
+    """No variant, layout or runtime profile can declare a capability unlisted."""
+    assert _declaration_sites() == set(DECLARATION_SITES), (
+        "list each new execution declaration site in DECLARATION_SITES with its evidence"
+    )
+    for site, identities in DECLARATION_SITES.items():
+        assert identities, site
+        assert set(identities) <= set(EVIDENCE), (site, set(identities) - set(EVIDENCE))
+
+
+def test_site_guard_finds_declarations(tmp_path: Path) -> None:
+    """The guard recognizes each way of declaring, so it cannot pass vacuously."""
+    samples = {
+        "built.py": "def make():\n    return ExecutionCapabilities(hold='stream')\n",
+        "passed.py": "PROFILE = Profile(key='x', execution=STREAM)\n",
+        "replaced.py": "MX = replace(BASE, execution=STREAM)\n",
+        "override.py": (
+            "class C:\n    @property\n    def execution(self):\n        return STREAM\n"
+        ),
+        "assigned.py": "class P:\n    execution: ExecutionCapabilities = STREAM\n",
+        "empty.py": "class P:\n    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES\n",
+    }
+    for name, source in samples.items():
+        (tmp_path / name).write_text(source)
+    assert {site.split(":", 1)[0] for site in _declaration_sites(tmp_path)} == (
+        set(samples) - {"empty.py"}
     )
 
 
