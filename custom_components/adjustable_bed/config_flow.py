@@ -4587,6 +4587,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         _show_profile_fields(schema_dict, defaults_bed_type, form_variant)
         if (advanced := _route_section(defaults_bed_type, form_variant)) is not None:
             schema_dict[vol.Optional("advanced")] = advanced
+        if errors:
+            # A refused route is asked again on the next submission.
+            self._route_chosen = None
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
@@ -5384,6 +5387,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         _show_profile_fields(schema_dict, defaults_bed_type, preselected_protocol_variant)
         if (advanced := _route_section(defaults_bed_type, preselected_protocol_variant)) is not None:
             schema_dict[vol.Optional("advanced")] = advanced
+        if errors:
+            # A refused route is asked again on the next submission.
+            self._route_chosen = None
         return self.async_show_form(
             step_id="manual_config",
             data_schema=vol.Schema(schema_dict),
@@ -5646,6 +5652,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if (advanced := _route_section(preselected_bed_type, preselected_protocol_variant)) is not None:
             schema_dict[vol.Optional("advanced")] = advanced
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
+        if errors:
+            # A refused route is asked again on the next submission.
+            self._route_chosen = None
         return self.async_show_form(
             step_id="manual_entry",
             data_schema=vol.Schema(schema_dict),

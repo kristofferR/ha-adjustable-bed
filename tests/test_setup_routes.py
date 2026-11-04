@@ -234,3 +234,19 @@ async def test_route_is_collected_before_route_dependent_validation(
     assert not result.get("errors"), result.get("errors")
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][const.CONF_PROTOCOL_VARIANT] == model
+
+
+async def test_a_refused_route_is_asked_again(hass, enable_custom_integrations):
+    result = await _manual_entry(hass)
+    choice = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT_HARMONY}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], choice)
+    assert result["step_id"] == "route"
+    # Auto needs a Bluetooth name this manual entry does not have.
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: "auto"}}
+    )
+    assert result["step_id"] == "manual_entry"
+    assert result["errors"]["base"] == "richmat_mh_no_name"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], choice)
+    assert result["step_id"] == "route"
+    hass.config_entries.flow.async_abort(result["flow_id"])
