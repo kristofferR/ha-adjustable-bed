@@ -44,13 +44,24 @@ APP_ROUTES = {
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
 # Declaration -> declared field -> evidence keys from the design document.
-EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {}
+EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Malouf / Lucid (row023), including the Keeson-framed legacy OKIN route.
+    "MaloufAppProfile:malouf": {"hold": ("malouf", "row023")},
+    "MaloufAppProfile:lucid": {"hold": ("lucid", "row023")},
+    "MaloufRouteProfile:malouf_new_okin": {"hold": ("lucid", "malouf", "row023")},
+    "KeesonProfile:malouf_legacy_okin": {"hold": ("malouf", "row023")},
+}
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
-DECLARATION_SITES: dict[str, tuple[str, ...]] = {}
+DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/malouf.py:<module>.MALOUF": ("MaloufAppProfile:malouf",),
+    "profiles/malouf.py:<module>.LUCID": ("MaloufAppProfile:lucid",),
+    "profiles/malouf.py:<module>.NEW_OKIN": ("MaloufRouteProfile:malouf_new_okin",),
+    "profiles/keeson.py:<module>.MALOUF_LEGACY_OKIN": ("KeesonProfile:malouf_legacy_okin",),
+}
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent"})

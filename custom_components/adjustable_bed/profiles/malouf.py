@@ -15,7 +15,7 @@ from dataclasses import dataclass, replace
 from typing import Final
 
 from ..codec.malouf import Family, TransportKey
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
 
 
 @dataclass(frozen=True, slots=True)
@@ -236,6 +236,7 @@ _STATUS_ACTIONS: Final = frozenset(
 
 MALOUF: Final = MaloufAppProfile(
     key="malouf",
+    execution=STREAM_HOLD,
     models=(
         "E450",
         "E455",
@@ -284,6 +285,7 @@ MALOUF: Final = MaloufAppProfile(
 LUCID: Final = replace(
     MALOUF,
     key="lucid",
+    execution=STREAM_HOLD,
     models=("L300", "L600", "Premium"),
     read_models=frozenset({"Premium"}),
     oz_editor_models=frozenset({"GoodLifeBase", "GoodLifePremierBase", "GoodLifeProBase"}),
@@ -311,6 +313,7 @@ class MaloufRouteProfile:
 
 NEW_OKIN: Final = MaloufRouteProfile(
     key="malouf_new_okin",
+    execution=STREAM_HOLD,
     transport="okin_new",
     # The app's word table without its combined and wave keys, plus the Hi-Lo
     # columns together and three words the shared SDK defines but no app screen sends.

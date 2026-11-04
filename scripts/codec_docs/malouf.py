@@ -74,6 +74,10 @@ _MALOUF_FUNCTIONS = {
 }
 
 
+
+def _lease(profile: malouf_profiles.MaloufAppProfile | malouf_profiles.MaloufRouteProfile) -> str:
+    return "renewable lease" if profile.execution.hold == "stream" else "no"
+
 def _malouf_profiles() -> dict[
     str, malouf_profiles.MaloufAppProfile | malouf_profiles.MaloufRouteProfile
 ]:
@@ -89,7 +93,7 @@ def render_malouf_profiles() -> str:
     apps = malouf_profiles.APP_PROFILES
     count, delay = get_motor_pulse_defaults(BED_TYPE_MALOUF_NEW_OKIN)
     summary = _table(
-        ("Profile", "Bed type", "Transports", "Held movement", "Release"),
+        ("Profile", "Bed type", "Transports", "Held movement", "Release", "Hold until release"),
         (
             (
                 _MALOUF_NAMES[new.key],
@@ -97,6 +101,7 @@ def render_malouf_profiles() -> str:
                 _MALOUF_TRANSPORT_NAMES[new.transport],
                 f"motor pulse settings (default {count} × {delay} ms)",
                 "STOP at once",
+                _lease(new),
             ),
             *(
                 (
@@ -105,6 +110,7 @@ def render_malouf_profiles() -> str:
                     ", ".join(_MALOUF_TRANSPORT_NAMES[t] for t in profile.routes),
                     f"pulse count × {profile.hold_ms} ms",
                     f"STOP {profile.release_ms} ms after release",
+                    _lease(profile),
                 )
                 for key, profile in apps.items()
             ),

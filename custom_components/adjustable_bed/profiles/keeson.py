@@ -24,7 +24,7 @@ from typing import Final, Literal
 from ..alarm_table import AlarmTableScheduleSpec
 from ..codec import keeson as codec
 from ..codec.keeson import ByteOrder, Carrier, Side, TransportKey
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
 
 Preset = Literal["flat", "zero_g", "lounge", "tv", "anti_snore"]
 Massage = Literal["step", "absolute", "zone_steps", "none"]
@@ -471,7 +471,7 @@ MAXCOIL_UNA: Final = replace(_ORE, key="maxcoil_una")
 # nine-byte E6 frame. Only the frame is profile data here.
 _E6: Final = KeesonProfile(key="e6", header=0xE6, side=0, hold=None)
 GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion")  # row068
-MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin")
+MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin", execution=STREAM_HOLD)
 SLEEPYS_BOX15: Final = replace(_E6, key="sleepys_box15")
 SCOTT_LIVING: Final = replace(_E6, key="scott_living", side=1)
 # AdjustaMattress (row067): model P1 sends E6 frames, P2 big-endian E5 frames.
