@@ -26,6 +26,7 @@ import pytest
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.ergomotion4_profiles import PRODUCTS as ERGOMOTION_4_PRODUCTS
 from custom_components.adjustable_bed.execution import (
     NO_EXECUTION_CAPABILITIES,
     ExecutionCapabilities,
@@ -44,12 +45,67 @@ APP_ROUTES = {
 }
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
+# Keeson E5/E6 (K1) profiles with stream evidence, by profile key. The base,
+# OKIN, Sino, KSBT CR, OKIN FFE, Sleepy's Box15, Rondure and Scott Living routes
+# are blocked and declare nothing.
+KEESON_STREAM: dict[str, tuple[str, ...]] = {
+    "ergomotion": ("sfdergo",),
+    "serta": ("serta330",),
+    "restonic_a": ("restonic",),
+    "restonic_b": ("restonic",),
+    "innova": ("sfm",),
+    "bedsense_bases": ("sfmc2",),
+    "avanti_bases": ("avanti",),
+    "dynasty_bases": ("dynasty",),
+    "maxcoil_una": ("maxcoil",),
+    "americanstar": ("americanstar",),
+    "simon_li": ("simon",),
+    "heal_every_night": ("heal",),
+    "okin_seating": ("minghua",),
+    "adjustable_lite": ("adjlite",),
+    "adjustable_lite_ksbt03c": ("adjlite",),
+    "ksbt": ("hump",),
+    "ksbt03c": ("mancini",),
+    "sbi": ("costco",),
+    "coolbase": ("coolbase",),
+    "bf": ("bf",),
+    "cherish": ("cherish",),
+    "comfort_enhancements": ("enh",),
+    "glideaway_motion": ("glide",),
+    "adjustamattress": ("row067",),
+    "adjustamattress_p2": ("row067",),
+}
+# Keeson cluster033 app layouts, and Ergomotion 4.0 per catalog product style.
+KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
+    "tempur_curve": ("tempur",),
+    "qplus_app": ("costco",),
+    "serta_mp_remote": ("serta330",),
+    "omazz_adjusto_iii": ("omazz",),
+    "ergomotion_app": ("sfdergo",),
+    "row_control": ("row",),
+    "ergo_slim": ("slim",),
+    "tempur_au": ("tempur_au",),
+}
+ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUCTS.values())
+
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Keeson cluster033 apps and Ergomotion 4.0 (#483) stream a held key.
+    **{
+        f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
+        for app, layouts in keeson_profiles.APP_LAYOUTS.items()
+        for layout in layouts
+    },
+    **{
+        f"AppProfile:ergomotion_4@{style}": {"hold": ("hump", "issue558")}
+        for style in ERGOMOTION_4_STYLES
+    },
     # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
     "JiecangProfile:dreamask": {"hold": ("dreamask",)},
     "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
     "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    # Keeson E5/E6 (#483): the K1 profiles that stream a held key.
+    **{f"KeesonProfile:{key}": {"hold": keys} for key, keys in KEESON_STREAM.items()},
     "LogicdataProfile:phone": {"hold": ("ld-phone",)},
     "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
     "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
@@ -92,6 +148,18 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
     "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
     "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
+    **{
+        f"profiles/keeson.py:<module>.{key.upper()}": (f"KeesonProfile:{key}",)
+        for key in KEESON_STREAM
+    },
+    "profiles/keeson.py:<module>.app_profile": tuple(
+        f"AppProfile:{app}@{layout}"
+        for app, layouts in keeson_profiles.APP_LAYOUTS.items()
+        for layout in layouts
+    ),
+    "profiles/keeson.py:<module>.ergomotion_4_profile": tuple(
+        f"AppProfile:ergomotion_4@{style}" for style in sorted(ERGOMOTION_4_STYLES)
+    ),
     "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
     "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
     "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
@@ -155,6 +223,7 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         for app, layouts in keeson_profiles.APP_LAYOUTS.items()
         for layout in layouts
     )
+    profiles.extend(keeson_profiles.ergomotion_4_profile(style) for style in ERGOMOTION_4_STYLES)
     for bed_type, (config_key, choices) in APP_ROUTES.items():
         for choice in choices:
             coordinator = _FactoryCoordinator()

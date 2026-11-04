@@ -211,9 +211,12 @@ class GlideawayMotionController(BedController):
     async def _move_axis(self, axis: str, up: bool) -> None:
         if axis not in LAYOUTS[self.model]:
             raise ValueError(f"{self.model} has no {axis} control")
-        await self._hold(
-            AXES[axis][0 if up else 1], self._coordinator.motor_pulse_count * HOLD_INTERVAL
+        # A leased hold (#483) refreshes until its lease ends.
+        refreshes = (
+            self.leased_hold_refreshes(round(HOLD_INTERVAL * 1000))
+            or self._coordinator.motor_pulse_count
         )
+        await self._hold(AXES[axis][0 if up else 1], refreshes * HOLD_INTERVAL)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:

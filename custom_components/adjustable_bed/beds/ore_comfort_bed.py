@@ -214,6 +214,8 @@ class OreComfortBedController(BedController):
     async def _hold(self, word: int) -> None:
         """Repeat a held key every 100 ms, then release with the zero word."""
         repeat_count, repeat_delay_ms = self.motor_pulse_settings()
+        # A leased hold (#483) refreshes until its lease ends.
+        repeat_count = self.leased_hold_refreshes(repeat_delay_ms) or repeat_count
         try:
             await self.write_command(
                 self._frame(word), repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
