@@ -2013,7 +2013,7 @@ class TestBluetoothDiscoveryFlow:
         option_values = [selector(option["value"]) for option in selector.config["options"]]
 
         assert selector(bed_type_marker.default()) == BED_TYPE_OKIMAT
-        assert option_values[0] == BED_TYPE_OKIMAT
+        # The Okin family row keeps the saved alias it was drawn for.
         assert option_values.count(BED_TYPE_OKIMAT) == 1
 
     async def test_bluetooth_confirm_diagnostic_bed_type_creates_entry(

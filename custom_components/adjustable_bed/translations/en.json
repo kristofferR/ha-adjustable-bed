@@ -815,6 +815,21 @@
           "choice": "App or remote"
         }
       },
+      "okin_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. An Okin receiver's name, label and Bluetooth services don't identify the app or its layout, so you don't need an RF remote to answer. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
+        }
+      },
+      "okin_remote": {
+        "title": "Remote code and motors",
+        "description": "Choose the code of the remote that controls this bed (**{current}**), and how many motors the bed has. The code picks the buttons and presets. Keep Auto-detect if you don't know it.",
+        "data": {
+          "protocol_variant": "Remote code",
+          "motor_count": "Number of motors"
+        }
+      },
       "jiecang_legacy": {
         "title": "Motors on this bed",
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
@@ -8650,7 +8665,7 @@
           },
           "handset": {
             "title": "Select the FurniMove handset",
-            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically. Handset codes listed under Okin UUID are not offered here; a full bed with one of those keeps its current configuration and uses that code in the Okin UUID options.",
+            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically. Handset codes listed under Okin UUID are not offered here; a full bed with one of those keeps its current configuration, then uses Reconfigure to choose that Okimat or OKIN handset code.",
             "data": {
               "furnimove_remote": "Handset layout"
             }
@@ -9003,6 +9018,15 @@
         "legacy_jiecang": "No app: Glide or Comfort Motion remote (legacy Jiecang controls)",
         "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
         "keep": "I don't know: keep the current controls"
+      }
+    },
+    "okin_family_choice": {
+      "options": {
+        "furnimove": "FurniMove / OKIN Smart Remote app",
+        "okin_uuid": "No app: Okimat or OKIN handset code (requires pairing)",
+        "okin_dot": "No app: DOT remote (RF34 or RF6707)",
+        "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
+        "keep": "I don't know: keep the detected controls"
       }
     }
   }
