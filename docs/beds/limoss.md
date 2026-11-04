@@ -757,6 +757,11 @@ bodies.
   validation for real users after a beta or release. They do not defer any
   statically proven control or memory operation.
 
+### Profile id
+
+FSM Relax has one [profile id](../design/profile-id.md#aliases), `fsm_relax`. The light and massage flags
+are settings of that profile, not separate routes.
+
 ### Analysis provenance
 
 - Limoss Remote 7.1.8: artifact-set hash

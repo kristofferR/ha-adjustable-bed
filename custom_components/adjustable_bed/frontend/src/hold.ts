@@ -4,9 +4,75 @@
 // the card owns the event wiring and the service calls, this owns the rules
 // about who holds what and when a hold ends. Nearly every defect found while
 // building press-and-hold lived in these rules rather than in the wiring.
-import type { HomeAssistant, MotorEntity } from "./types";
+import type { HoldLeaseRoute, HomeAssistant, MotorEntity } from "./types";
 
 export type Direction = "up" | "down";
+
+// A renewable hold (#483) is renewed every 250 ms with a 750 ms lease, so the
+// bed stops on its own after two lost renewals.
+export const HOLD_LEASE_RENEW_MS = 250;
+export const HOLD_LEASE_MS = 750;
+
+// One press: the card instance that holds, and a new, higher generation.
+export interface HoldLeaseCall {
+  owner: string;
+  generation: number;
+}
+
+// The renewable hold an entity's controller declares, or undefined. On a
+// paired parent the backend advertises it only when both sides agree.
+export function holdLeaseRoute(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+  deviceId = hass?.entities[entityId]?.device_id,
+): HoldLeaseRoute | undefined {
+  const attributes = hass?.states[entityId]?.attributes;
+  const mode = attributes?.hold_lease_mode;
+  if ((mode !== "stream" && mode !== "latched") || !deviceId) return undefined;
+  const motor = attributes?.hold_lease_motor;
+  const side = attributes?.bed_side;
+  return {
+    deviceId,
+    ...(typeof motor === "string" && motor ? { motor } : {}),
+    ...(side === "left" || side === "right" || side === "both" ? { side } : {}),
+  };
+}
+
+// Whether a press in this direction can lease a hold instead of repeating
+// finite pulses: a held control, the timed route, or the advertised motor.
+export function hasHoldLease(motor: MotorEntity, direction: Direction): boolean {
+  if (!motor.holdLease) return false;
+  if (motor.heldControls?.[direction] ?? motor.heldControl) return !!motor.deviceId;
+  return !!(motor.timedMove ?? motor.holdLease.motor);
+}
+
+// Starts or renews this press's hold. The starting call lasts as long as the
+// hold; a renewal returns at once.
+export function movementLease(
+  hass: HomeAssistant | undefined,
+  motor: MotorEntity,
+  direction: Direction,
+  lease: HoldLeaseCall,
+): Promise<unknown> | undefined {
+  if (!hasHoldLease(motor, direction) || !motor.holdLease) return undefined;
+  if (motor.heldControls?.[direction] ?? motor.heldControl) {
+    return movementHold(hass, motor, direction, lease);
+  }
+  const route = motor.timedMove ?? {
+    deviceId: motor.holdLease.deviceId,
+    motor: motor.holdLease.motor,
+    side: motor.holdLease.side,
+  };
+  return hass?.callService("adjustable_bed", "timed_move", {
+    device_id: route.deviceId,
+    ...(route.side ? { side: route.side } : {}),
+    motor: route.motor,
+    direction,
+    duration_ms: HOLD_LEASE_MS,
+    hold_owner: lease.owner,
+    hold_generation: lease.generation,
+  });
+}
 
 // Resolve controller-owned gesture release on the same device and side.
 export function heldReleaseButton(hass: HomeAssistant | undefined, entityId: string): string | undefined {
@@ -40,8 +106,10 @@ export function heldButtonMotor(
   ) return undefined;
   const releaseButton = heldReleaseButton(hass, entityId);
   if (typeof attributes?.hold_release_button_key === "string" && !releaseButton) return undefined;
+  const holdLease = holdLeaseRoute(hass, entityId, deviceId);
   return {
     ...(releaseButton ? { releaseButton } : {}),
+    ...(holdLease ? { holdLease } : {}),
     key: entityId,
     up: entityId,
     deviceId,
@@ -76,11 +144,13 @@ export function movementPulse(
 }
 
 // Controller-declared refresh holds use the shared bounded service. The
-// release entity remains the owner of STOP and side routing.
+// release entity remains the owner of STOP and side routing. A lease makes the
+// call one renewable hold instead of a 60-second window.
 export function movementHold(
   hass: HomeAssistant | undefined,
   motor: MotorEntity,
   direction: Direction,
+  lease?: HoldLeaseCall,
 ): Promise<unknown> | undefined {
   const spec = motor.heldControls?.[direction] ?? motor.heldControl;
   if (!spec || !motor.deviceId) return undefined;
@@ -88,7 +158,8 @@ export function movementHold(
   const serviceData: Record<string, unknown> = {
     device_id: [motor.deviceId],
     control: spec.control,
-    duration: 60,
+    duration: lease ? HOLD_LEASE_MS / 1000 : 60,
+    ...(lease ? { hold_owner: lease.owner, hold_generation: lease.generation } : {}),
   };
   if (side === "left" || side === "right" || side === "both") {
     serviceData.side = side;
@@ -137,6 +208,9 @@ export interface HoldActions {
   // Resolving is what paces the repeat loop; rejecting stops it.
   pulse: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
   holdControl?: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
+  // Starts or renews a renewable hold for a motor with hasHoldLease(). Without
+  // it every motor keeps its finite pulses or held-control window.
+  lease?: (motor: MotorEntity, dir: Direction, lease: HoldLeaseCall) => Promise<unknown> | undefined;
   // Stops a cover-backed motor, which is the only kind with its own stop. The
   // bed stop identifies the compact target retained when the hold began.
   stopCover: (coverEntityId: string, stopEntityId?: string) => void;
@@ -372,6 +446,10 @@ export class MotorHold {
   private _generation = 0;
   private _repeatBlocked = false;
   private _startTimer?: ReturnType<typeof setTimeout>;
+  private _renewTimer?: ReturnType<typeof setTimeout>;
+  // Names this card instance to the hold service; a press's generation is the
+  // hold generation, which only ever increases.
+  private readonly _leaseOwner = `card-${Math.random().toString(36).slice(2, 12)}`;
   private _started = false;
   private _releaseButton?: string;
   private _heldControl?: MotorEntity["heldControl"];
@@ -428,16 +506,18 @@ export class MotorHold {
     const generation = ++this._generation;
     this._heldControl = motor.heldControls?.[dir] ?? motor.heldControl;
     this._releaseButton = motor.releaseButton;
+    const leased = this.actions.lease !== undefined && hasHoldLease(motor, dir);
     if (this._heldControl) {
       const delay = this._heldControl.startDelayMs;
-      if (delay <= 0) this._startHeldControl(this._motor, dir, generation);
+      if (delay <= 0) this._startHeldControl(this._motor, dir, generation, leased);
       else this._startTimer = this.timers.setTimeout(
-        () => this._startHeldControl(this._motor ?? motor, dir, generation), delay,
+        () => this._startHeldControl(this._motor ?? motor, dir, generation, leased), delay,
       );
       return;
     }
     this._started = true;
-    void this._repeat(this._motor, dir, generation);
+    if (leased) this._leaseHold(this._motor, dir, generation);
+    else void this._repeat(this._motor, dir, generation);
   }
 
   private _targetScope(target: HoldTarget | undefined): string[] {
@@ -462,11 +542,43 @@ export class MotorHold {
     motor: MotorEntity,
     dir: Direction,
     generation: number,
+    leased: boolean,
   ): void {
     this._startTimer = undefined;
     if (generation !== this._generation || this._motorId !== motorIdentity(motor)) return;
     this._started = true;
-    void this._holdControl(motor, dir, generation);
+    if (leased) this._leaseHold(motor, dir, generation);
+    else void this._holdControl(motor, dir, generation);
+  }
+
+  // One leased call holds the motor; renewals keep it moving until release.
+  // Release, STOP, unmount and focus loss reset the hold, which stops the
+  // renewals, so the bed also stops within one lease if its STOP is lost.
+  private _leaseHold(motor: MotorEntity, dir: Direction, generation: number): void {
+    const lease = { owner: this._leaseOwner, generation };
+    // The starting call settles when the hold ends: the lease expired, a STOP
+    // or replacement ended it, or the bed refused it. A refused renewal means
+    // the same. Stop renewing, but keep the press so its release still sends
+    // STOP, as a refused pulse does.
+    let live = true;
+    const ended = (): void => {
+      live = false;
+      if (generation === this._generation && this._renewTimer !== undefined) {
+        this.timers.clearTimeout(this._renewTimer);
+        this._renewTimer = undefined;
+      }
+    };
+    const starting = this.actions.lease?.(motor, dir, lease);
+    if (!starting) return;
+    void starting.then(ended, ended);
+    const renew = (): void => {
+      this._renewTimer = undefined;
+      // A side Stop of a Both hold blocks repeats but keeps the release owner.
+      if (!live || generation !== this._generation || this._repeatBlocked) return;
+      void this.actions.lease?.(motor, dir, lease)?.catch(ended);
+      this._renewTimer = this.timers.setTimeout(renew, HOLD_LEASE_RENEW_MS);
+    };
+    this._renewTimer = this.timers.setTimeout(renew, HOLD_LEASE_RENEW_MS);
   }
 
   private async _holdControl(
@@ -901,6 +1013,8 @@ export class MotorHold {
   private _reset(): void {
     if (this._startTimer !== undefined) this.timers.clearTimeout(this._startTimer);
     this._startTimer = undefined;
+    if (this._renewTimer !== undefined) this.timers.clearTimeout(this._renewTimer);
+    this._renewTimer = undefined;
     this._key = null;
     this._motor = null;
     this._scopeStops = [];

@@ -148,6 +148,8 @@ No two Richmat bed types send identical bytes. The
 `model_bfrm` in Best Mattress and in Blvd Home. Each app keeps its own catalog,
 so the model stays a choice in both [Richmat MH apps](#richmat-mh-apps).
 
+The two routes also keep separate [profile ids](../design/profile-id.md#aliases).
+
 ## Wire codec
 
 `codec/richmat.py` holds the transports, framing, checksum and every command

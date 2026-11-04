@@ -257,3 +257,30 @@ async def test_an_undeclared_profile_refuses_a_lease_before_writing(bed: Bed) ->
     ):
         await _hold(bed, 9)
     assert bed.writes == []
+
+
+async def test_a_renewed_hold_is_one_tracked_movement(bed: Bed) -> None:
+    """Renewals extend the running command, so position estimates see one move."""
+    from custom_components.adjustable_bed import services
+
+    runs: list[str] = []
+    track = services.track_held_control
+
+    def spy(hass, control, command):
+        tracked = track(hass, control, command)
+
+        async def run(controller) -> None:
+            runs.append(control)
+            await tracked(controller)
+
+        return run
+
+    with patch.object(services, "track_held_control", spy):
+        start = asyncio.create_task(_hold(bed, 6))
+        await _started(bed)
+        for _ in range(3):
+            await asyncio.sleep(0.2)
+            await asyncio.wait_for(_hold(bed, 6), 1)
+        await asyncio.wait_for(start, 3)
+    assert len(runs) == 1
+    assert bed.bodies()[-5:] == [STOP] * 5

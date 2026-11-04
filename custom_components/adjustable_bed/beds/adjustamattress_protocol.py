@@ -1,7 +1,8 @@
 """AdjustaMattress 1.6.0 packet and notification contracts (APK audit row067).
 
 Model numbers identify this artifact's enums, not a shared UUID protocol family.
-See docs/beds/adjustamattress.md for the safety dispositions and provenance.
+See the AdjustaMattress section of docs/beds/keeson.md for the safety dispositions
+and provenance.
 """
 
 from __future__ import annotations

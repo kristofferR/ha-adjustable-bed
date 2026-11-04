@@ -88,6 +88,7 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
+    TIMED_MOVE_MOTOR_OPTIONS,
     bed_type_has_position_feedback,
     resolve_explicit_bed_type,
 )
@@ -301,27 +302,6 @@ POSITION_MOTOR_OPTIONS = (
     "right_legs",
 )
 
-TIMED_MOVE_MOTOR_OPTIONS = (
-    "tv_lift",
-    "back",
-    "right_back",
-    "legs",
-    "head",
-    "feet",
-    "tilt",
-    "pillow",
-    "lumbar",
-    "bed_height",
-    "stair",
-    "m1x12_part_1",
-    "m1x12_part_2",
-    "m1x12_part_4",
-    "m1x12_part_8",
-    "m1x12_part_16",
-    "elevate_actuator_1",
-    "elevate_actuator_2",
-    "elevate_both",
-)
 LEGGETT_HELD_CONTROLS = (
     "flat",
     "snore",
@@ -3599,13 +3579,16 @@ async def _hold_limoss_remote(
         if lease is not None and controller.execution.hold is None:
             raise ValueError("This profile does not support renewable holds")
 
-    await _execute_limoss_remote(
-        call,
-        validate,
-        lambda ctrl: ctrl.hold_control(control, duration_ms),
-        targets=targets,
-        lease=lease,
-    )
+    async def hold(controller: BedController | SideBoundController) -> None:
+        await controller.hold_control(control, duration_ms)
+
+    # One tracked movement per hold: renewals extend the running command.
+    tracked = track_held_control(call.hass, control, hold)
+
+    async def execute(controller: LimossRemoteController | SideBoundController) -> None:
+        await tracked(cast("BedController", controller))
+
+    await _execute_limoss_remote(call, validate, execute, targets=targets, lease=lease)
 
 
 def _limoss_remote_controller(

@@ -376,6 +376,7 @@ from .pairing_candidates import (
     build_pair_selection_schema,
     selected_pair_ids,
 )
+from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
 from .setup_operation import (
@@ -2280,9 +2281,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # v4 introduces the paired-bed schema (Dual Bed 4.0). The v3->v4 migration is
     # a strict no-op for non-paired entries; see async_migrate_entry. Minor
     # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
-    # version 3 marks older entries for the one-time app profile review.
-    VERSION = 4
-    MINOR_VERSION = 3
+    # version 3 marks older entries for the one-time app profile review. v5
+    # stores the profile id each entry runs (profile_id.py); setup derives it
+    # for new entries.
+    VERSION = 5
+    MINOR_VERSION = 1
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -7705,7 +7708,9 @@ def _validate_pairlink_option_values(
     return errors
 
 
-class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEntry):
+class AdjustableBedOptionsFlow(
+    EstimatedPositionsFlowMixin, BluetoothOperationMixin, OptionsFlowWithConfigEntry
+):
     """Handle Adjustable Bed options."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
@@ -7973,6 +7978,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             product_type=data.get(CONF_PRODUCT_TYPE),
         ):
             menu_options.append("pair_sides")
+        menu_options.extend(self.estimate_menu_options())
         if data.get(CONF_ADDRESS) or (
             data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS and bool(iter_children(data))
         ):
