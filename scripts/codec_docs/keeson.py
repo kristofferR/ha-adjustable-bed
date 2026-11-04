@@ -57,7 +57,6 @@ _KEESON_NAMES: dict[str, str] = {
     "malouf_legacy_okin": "Malouf legacy OKIN",
     "sleepys_box15": "Sleepy's BOX15",
     "scott_living": "Scott Living",
-    "simmons_okin": "SIMMONS (OKIN names)",
     "adjustamattress": "AdjustaMattress P1",
     "adjustamattress_p2": "AdjustaMattress P2",
 }
@@ -67,7 +66,6 @@ _KEESON_E6: dict[str, tuple[str, str]] = {
     "malouf_legacy_okin": ("`malouf_legacy_okin`", "[Malouf](malouf.md)"),
     "sleepys_box15": ("`sleepys_box15`", "[Sleepy's](sleepys.md)"),
     "scott_living": ("`scott_living`", "[Scott Living](#scott-living)"),
-    "simmons_okin": ("`simmons`, `okin` names", "[SIMMONS](simmons.md)"),
     "adjustamattress": ("`adjustamattress`, model P1", "[AdjustaMattress](adjustamattress.md)"),
     "adjustamattress_p2": ("`adjustamattress`, model P2", "[AdjustaMattress](adjustamattress.md)"),
 }

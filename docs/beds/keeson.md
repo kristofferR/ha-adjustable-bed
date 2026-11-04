@@ -149,7 +149,6 @@ are generated from the profile data.
 | Malouf legacy OKIN | bed type `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
 | Sleepy's BOX15 | bed type `sleepys_box15` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
 | Scott Living | bed type `scott_living` | K1 `E6`, little-endian, side `01` | app controller | app controller | app controller |
-| SIMMONS (OKIN names) | bed type `simmons`, `okin` names | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
 | AdjustaMattress P1 | bed type `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller |
 | AdjustaMattress P2 | bed type `adjustamattress`, model P2 | K1 `E5`, big-endian | app controller | app controller | app controller |
 
@@ -197,8 +196,8 @@ profiles](#e6-controller-profiles) keep their timing in their controllers.
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
 AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, Glideaway Motion, Heal
 Every Night, INNOVA, Malouf legacy OKIN, MaxCoil Una, OKIN-Seating, Scott Living,
-SIMMONS (OKIN names), Simon Li, Sleepy's BOX15 keep their key tables with their
-app controllers; see their sections.
+Simon Li, Sleepy's BOX15 keep their key tables with their app controllers; see
+their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -301,7 +300,7 @@ family's codec exists.
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
 | P2 7-byte, checksum end | `04 02` + big-endian word + checksum | `04 02 00 00 00 01 F8` | KSBT04C, Sleep Harmony (KSBT04C) |
-| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, SIMMONS (OKIN names), AdjustaMattress P1 |
+| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 |
 | P2 7-byte, `00` end | `04 02` + big-endian word + `00` | `04 02 00 00 00 01 00` | Purple Premium Plus |
 | K1 `E6`, little-endian, side `01` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 01 03` | Scott Living |
 | K1 `E6`, little-endian, Left side `02` | `E6 FE 16` + word + side + checksum | `E6 FE 16 01 00 00 00 02 02` | Base (BaseI4/I5), Ergomotion |
@@ -440,8 +439,8 @@ unsafe.
 `tests/keeson_vectors.py` lists each profile's frozen single-frame literals:
 the test vectors of the accepted Adjustable Lite, Restonic BT, INNOVA, Simon Li,
 Heal Every Night, OKIN-Seating, MaxCoil Una, Dynasty Bases, Bedsense Bases,
-Avanti Bases and AMERICANSTAR reports, every codec frame the cluster033, Glideaway Motion,
-AdjustaMattress and SIMMONS reports spell (plus the pre-v5 frame of any key a report lists without spelling it), and
+Avanti Bases and AMERICANSTAR reports, every codec frame the cluster033, Glideaway Motion
+and AdjustaMattress reports spell (plus the pre-v5 frame of any key a report lists without spelling it), and
 for every other route (which has no report) every frame the pre-v5 controller
 could send.
 `tests/test_keeson_vectors.py` checks that every literal round-trips through the
@@ -1875,7 +1874,6 @@ share a guide with frames of other families and keep it.
 | Malouf legacy OKIN | `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Malouf](malouf.md) |
 | Sleepy's BOX15 | `sleepys_box15` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [Sleepy's](sleepys.md) |
 | Scott Living | `scott_living` | K1 `E6`, little-endian, side `01` | `E6 FE 16 01 00 00 00 01 03` | `E6 FE 16 00 00 00 00 01 04` | [Scott Living](#scott-living) |
-| SIMMONS (OKIN names) | `simmons`, `okin` names | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [SIMMONS](simmons.md) |
 | AdjustaMattress P1 | `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | [AdjustaMattress](adjustamattress.md) |
 | AdjustaMattress P2 | `adjustamattress`, model P2 | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | [AdjustaMattress](adjustamattress.md) |
 <!-- /generated -->
@@ -2070,7 +2068,7 @@ Movement repeats at the configured pulse count and delay (default 10 × 100 ms)
 and always ends with the zero frame. Presets, light and massage are single
 frames. Memory 3 and TV share one word.
 
-### Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 and P2, SIMMONS OKIN
+### Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 and P2
 
 These routes build their E6 (AdjustaMattress P2: big-endian E5) frames through
 this codec and keep the rest of their guides:
@@ -2081,9 +2079,9 @@ this codec and keep the rest of their guides:
   first byte, the preset bytes its second and fourth.
 - [AdjustaMattress](adjustamattress.md) (`adjustamattress`): models P1 (E6) and
   P2 (big-endian E5). Models P3 and P4 send Okin N-frames.
-- [SIMMONS](simmons.md) (`simmons`): names starting `okin` use E6 frames, the
-  `E7 80 01` clock and the `E1 80 03 9B` alarm query; the bed type stays with the
-  Okin N-frame family, whose `05 02` frames its other names use.
+
+[SIMMONS](okin-nframe.md#simmons) names starting `okin` also send the E6 frame
+through `codec.frame`; that bed type is a profile of the Okin N-frame family.
 
 ## Notes
 

@@ -12,7 +12,7 @@ accepted report spells, from ``tests/fixtures/cluster033/vectors.json``, that th
 codec encodes. Their alarm tables (``alarm_table.py``) are checked against the same
 fixture in ``tests/test_cluster033.py``. Where a report lists a key in its action
 table without spelling the frame, the frame the pre-v5 controller sent is added.
-The E6 controllers (Glideaway Motion, AdjustaMattress, SIMMONS OKIN) do the same
+The E6 controllers (Glideaway Motion, AdjustaMattress) do the same
 with their reports; Malouf legacy OKIN, Sleepy's BOX15 and Scott Living have no
 report and keep their pre-v5 frames.
 """
@@ -1434,26 +1434,6 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e6fe162000000001e4",
             "e6fe164000000001c4",
             "e6fe16800000000184",
-        }
-    ),
-    # com.okin.simmons 1.12.9 (row049): report vectors, OKIN format
-    "simmons_okin": frozenset(
-        {
-            "e180039b",
-            "e6fe16000000000005",
-            "e6fe160000000800fd",
-            "e6fe16000001000004",
-            "e6fe16000002000003",
-            "e6fe160010000000f5",
-            "e6fe160040000000c5",
-            "e6fe16008000000085",
-            "e6fe16010000000004",
-            "e6fe16020000000003",
-            "e6fe16040000000001",
-            "e6fe160800000000fd",
-            "e780012c0901071e2d0f",
-            "e780017e0901071e2dbd",
-            "e780019c0901071e2d9f",
         }
     ),
     # com.okin.adjustamattress 1.6.0 (row067), model P1: tests/fixtures/adjustamattress vectors

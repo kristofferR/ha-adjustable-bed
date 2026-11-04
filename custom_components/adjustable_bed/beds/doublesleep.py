@@ -14,6 +14,7 @@ from homeassistant.util import dt as dt_util
 from .. import doublesleep_protocol as p
 from ..app_session import app_session
 from ..doublesleep_state import Notifications, Report, report_records
+from ..profiles.okin_nframe import DOUBLESLEEP
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -68,7 +69,13 @@ def motor(index: int) -> MotorCommandCallable:
     return execute
 
 
+# Binary-driver motors and held controls refresh on the app's 300 ms timer.
+_REFRESH_S = (DOUBLESLEEP.hold.repeat_ms or 0) / 1000
+
+
 class DoubleSleepController(BedController):
+    profile = DOUBLESLEEP
+
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
@@ -718,7 +725,7 @@ class DoubleSleepController(BedController):
                 await self.execute(index)
                 delay = min(
                     end - asyncio.get_running_loop().time(),
-                    0.3 - (asyncio.get_running_loop().time() - started),
+                    _REFRESH_S - (asyncio.get_running_loop().time() - started),
                 )
                 if delay > 0:
                     with suppress(TimeoutError):
@@ -842,7 +849,7 @@ class DoubleSleepController(BedController):
                 await self.execute(index)
                 if tick + 1 < count:
                     try:
-                        await asyncio.wait_for(self._coordinator.cancel_command.wait(), 0.3)
+                        await asyncio.wait_for(self._coordinator.cancel_command.wait(), _REFRESH_S)
                     except TimeoutError:
                         pass
         finally:

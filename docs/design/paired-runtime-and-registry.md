@@ -1,7 +1,32 @@
 # Paired runtimes and registry ownership
 
-Ref #525 and #523. These boundaries preserve the existing pairing model and
-command behavior; topology strategies and same-device concurrency remain separate work.
+Ref #525, #523 and #524. These boundaries preserve the existing pairing model and
+command behavior; same-device concurrency remains separate work (#516).
+
+## Topology strategies
+
+`PairedBedCoordinator` is the public facade. It resolves the side, captures
+pair ownership, preempts overlapping work, and hands the command to one strategy
+in `paired_topology.py`. Each strategy owns target admission, locking,
+prepare/commit, connection switching and its STOP fan-out:
+
+| Strategy | Pair | Behavior |
+| --- | --- | --- |
+| `ConcurrentTwoLinkTopology` | Two addresses, concurrent or automatic mode | One lane per side. Linked groups reserve every scheduler before any side starts and stop every started side on failure. Automatic mode adopts sequential switching after proven adapter-slot exhaustion. |
+| `SequentialTwoLinkTopology` | Two addresses, sequential mode | One link lane. Each side connects, runs and disconnects before the next; STOP reaches only connected or ready local sides. |
+| `SingleLinkSideAwareTopology` | One address | One lane per logical side. A native Both is one physical operation; otherwise the side frames run in turn and STOP cancels the shared scheduler once. |
+
+A two-link pair holds both two-link strategies, and the current connection mode
+selects one. `PairAdmission` holds the cancellation generations and the active
+group for all strategies of a pair, so a command queued before automatic
+fallback reroutes to the sequential strategy with the STOP ownership it
+captured. Child coordinators keep their BLE clients, schedulers,
+authentication, disconnect timers and protocol controllers.
+
+`test_paired_topology_trace.py` records every GATT write, link change, call into
+a physical coordinator and caller outcome under a virtual clock, for every
+strategy (automatic mode included). Its fixture was recorded before the
+extraction, so routing changes must reproduce it exactly.
 
 ## Entity runtimes
 

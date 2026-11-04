@@ -465,8 +465,6 @@ GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion")  # row068
 MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin")
 SLEEPYS_BOX15: Final = replace(_E6, key="sleepys_box15")
 SCOTT_LIVING: Final = replace(_E6, key="scott_living", side=1)
-# SIMMONS (row049) sends these frames when the name starts with "okin".
-SIMMONS_OKIN: Final = replace(_E6, key="simmons_okin")
 # AdjustaMattress (row067): model P1 sends E6 frames, P2 big-endian E5 frames.
 ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress")
 ADJUSTAMATTRESS_P2: Final = KeesonProfile(key="adjustamattress_p2", order="big", hold=None)
@@ -507,7 +505,6 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         MALOUF_LEGACY_OKIN,
         SLEEPYS_BOX15,
         SCOTT_LIVING,
-        SIMMONS_OKIN,
         ADJUSTAMATTRESS,
         ADJUSTAMATTRESS_P2,
     )

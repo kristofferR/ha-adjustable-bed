@@ -395,7 +395,9 @@ The 10/20/30 minute timer maps to values 1/2/3:
 #### Legacy CB25 Runtime Dialect
 
 When `2A29` is missing, unreadable, empty, or does not contain `star`, Auto mode
-uses the legacy packet builders recovered from the same reachable BOX25 class:
+uses the legacy packet builders recovered from the same reachable BOX25 class.
+They are Okin N-frames; the generated key table is in the
+[Sleepy's legacy CB25 profile](okin-nframe.md#sleepys-legacy-cb25):
 
 ```text
 normal:   05 02 [32-bit key, big-endian] 00

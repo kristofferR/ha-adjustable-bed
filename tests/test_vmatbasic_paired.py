@@ -101,23 +101,23 @@ async def test_sequential_link_is_rejected_before_either_move(hass):
 async def test_queued_link_rejects_mode_change_before_sequential_admission(hass):
     pair, left, right = await make_pair(hass)
     entered = asyncio.Event()
-    acquire = pair._pair_group_lock.acquire
+    acquire = pair._lanes.group_lock.acquire
 
     async def mark_entry() -> bool:
         entered.set()
         return await acquire()
 
     sequential = AsyncMock()
-    await pair._pair_group_lock.acquire()
+    await pair._lanes.group_lock.acquire()
     task = None
     try:
-        with patch.object(pair._pair_group_lock, "acquire", mark_entry), patch.object(
-            pair, "_run_both_sequential", sequential
+        with patch.object(pair._lanes.group_lock, "acquire", mark_entry), patch.object(
+            pair._sequential, "_run_cycle", sequential
         ):
             task = asyncio.create_task(hold(pair))
             await entered.wait()
             pair._connection_mode = const.PAIR_CONNECTION_MODE_SEQUENTIAL
-            pair._pair_group_lock.release()
+            pair._lanes.group_lock.release()
             with pytest.raises(ValueError, match="concurrent"):
                 await task
             sequential.assert_not_awaited()
@@ -127,8 +127,8 @@ async def test_queued_link_rejects_mode_change_before_sequential_admission(hass)
         assert written(left.controller)[-1][1] == b"\xff"
         assert written(right.controller) == []
     finally:
-        if pair._pair_group_lock.locked():
-            pair._pair_group_lock.release()
+        if pair._lanes.group_lock.locked():
+            pair._lanes.group_lock.release()
         if task is not None and not task.done():
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
