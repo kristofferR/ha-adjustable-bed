@@ -1,7 +1,9 @@
 """Frozen F1 frames per Jiecang profile, the vectors the codec must reproduce.
 
 App profiles list every single-frame literal in the test vectors of their
-accepted APK Protocol Audit report. The legacy route has no accepted report;
+accepted APK Protocol Audit report, plus fixed frames the report lists only
+among its protocol commands (the Dreamask and Dreamotion automatic-light
+toggle). The legacy route has no accepted report;
 its vectors are the frames the pre-v5 controller sent.
 """
 
@@ -199,6 +201,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "f1f1240101267e",
             "f1f124020000267e",
             "f1f1280200002a7e",
+            "f1f1290200002b7e",
             "f1f12a0200002c7e",
             "f1f12b0200002d7e",
             "f1f12c0200002e7e",
@@ -303,6 +306,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "f1f1240101267e",
             "f1f124020000267e",
             "f1f1280200002a7e",
+            "f1f1290200002b7e",
             "f1f12a0200002c7e",
             "f1f12b0200002d7e",
             "f1f12c0200002e7e",

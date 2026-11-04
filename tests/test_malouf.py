@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.malouf import (
     MaloufCommands,
     _save_memory_command,
 )
+from custom_components.adjustable_bed.codec import malouf as malouf_codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -30,6 +31,10 @@ from custom_components.adjustable_bed.const import (
     MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+
+def _new_okin_frame(word: int) -> bytes:
+    return malouf_codec.command("okin_new", word)
 
 
 @pytest.fixture
@@ -163,60 +168,6 @@ class TestMaloufNewOkinController:
         assert coordinator.name == "Malouf Test Bed"
         assert coordinator.ble_device_name == "Test Bed"
 
-    async def test_build_command_format(
-        self,
-        hass: HomeAssistant,
-        mock_malouf_new_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test NEW_OKIN command format is 8 bytes."""
-        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
-        await coordinator.async_connect()
-
-        command = coordinator.controller._build_command(MaloufCommands.HEAD_UP)
-
-        # Format: [0x05, 0x02, (cmd>>24)&0xFF, (cmd>>16)&0xFF, (cmd>>8)&0xFF, cmd&0xFF, 0x00, 0x00]
-        assert len(command) == 8
-        assert command[0] == 0x05
-        assert command[1] == 0x02
-        assert command[-2:] == b"\x00\x00"
-
-    async def test_build_command_encodes_value(
-        self,
-        hass: HomeAssistant,
-        mock_malouf_new_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test command value is correctly encoded in big-endian."""
-        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
-        await coordinator.async_connect()
-
-        # Test with HEAD_UP (0x01)
-        command = coordinator.controller._build_command(MaloufCommands.HEAD_UP)
-        assert command[5] == 0x01  # Lowest byte
-        assert command[4] == 0x00
-        assert command[3] == 0x00
-        assert command[2] == 0x00
-
-    async def test_build_command_large_value(
-        self,
-        hass: HomeAssistant,
-        mock_malouf_new_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test encoding of larger command values."""
-        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
-        await coordinator.async_connect()
-
-        # Test with ALL_FLAT (0x8000000)
-        command = coordinator.controller._build_command(MaloufCommands.ALL_FLAT)
-        # 0x8000000 = 0x08, 0x00, 0x00, 0x00 in big-endian
-        assert command[2] == 0x08
-        assert command[3] == 0x00
-        assert command[4] == 0x00
-        assert command[5] == 0x00
-
-
 class TestMaloufLegacyOkinController:
     """Test Malouf LEGACY_OKIN controller."""
 
@@ -307,11 +258,11 @@ class TestMaloufNewOkinMovement:
         calls = mock_bleak_client.write_gatt_char.call_args_list
         # First call should be HEAD_UP
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(MaloufCommands.HEAD_UP)
+        expected = _new_okin_frame(MaloufCommands.HEAD_UP)
         assert first_command == expected
         # Last call should be STOP
         last_command = calls[-1][0][1]
-        stop_cmd = coordinator.controller._build_command(MaloufCommands.STOP)
+        stop_cmd = _new_okin_frame(MaloufCommands.STOP)
         assert last_command == stop_cmd
 
     async def test_move_feet_down(
@@ -329,7 +280,7 @@ class TestMaloufNewOkinMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(MaloufCommands.FOOT_DOWN)
+        expected = _new_okin_frame(MaloufCommands.FOOT_DOWN)
         assert first_command == expected
 
     async def test_stop_all(
@@ -347,7 +298,7 @@ class TestMaloufNewOkinMovement:
 
         mock_bleak_client.write_gatt_char.assert_called_with(
             MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
-            coordinator.controller._build_command(MaloufCommands.STOP),
+            _new_okin_frame(MaloufCommands.STOP),
             response=True,
         )
 
@@ -366,7 +317,7 @@ class TestMaloufNewOkinMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(MaloufCommands.BED_HEIGHT_UP)
+        expected = _new_okin_frame(MaloufCommands.BED_HEIGHT_UP)
         assert first_command == expected
 
     async def test_move_bed_height_down_uses_combined_columns(
@@ -384,7 +335,7 @@ class TestMaloufNewOkinMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(MaloufCommands.BED_HEIGHT_DOWN)
+        expected = _new_okin_frame(MaloufCommands.BED_HEIGHT_DOWN)
         assert first_command == expected
 
 
@@ -406,8 +357,8 @@ class TestMaloufNewOkinPresets:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         sent_commands = [call.args[1] for call in calls]
-        expected_preset = coordinator.controller._build_command(MaloufCommands.ALL_FLAT)
-        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        expected_preset = _new_okin_frame(MaloufCommands.ALL_FLAT)
+        expected_stop = _new_okin_frame(MaloufCommands.STOP)
         assert expected_preset in sent_commands
         assert sent_commands[-1] == expected_stop
 
@@ -426,8 +377,8 @@ class TestMaloufNewOkinPresets:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         sent_commands = [call.args[1] for call in calls]
-        expected_preset = coordinator.controller._build_command(MaloufCommands.ZERO_G)
-        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        expected_preset = _new_okin_frame(MaloufCommands.ZERO_G)
+        expected_stop = _new_okin_frame(MaloufCommands.STOP)
         assert expected_preset in sent_commands
         assert sent_commands[-1] == expected_stop
 
@@ -446,8 +397,8 @@ class TestMaloufNewOkinPresets:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         sent_commands = [call.args[1] for call in calls]
-        expected_preset = coordinator.controller._build_command(MaloufCommands.MEMORY_1)
-        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        expected_preset = _new_okin_frame(MaloufCommands.MEMORY_1)
+        expected_stop = _new_okin_frame(MaloufCommands.STOP)
         assert expected_preset in sent_commands
         assert sent_commands[-1] == expected_stop
 
@@ -473,8 +424,8 @@ class TestMaloufNewOkinPresets:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         sent_commands = [call.args[1] for call in calls]
-        expected_preset = coordinator.controller._build_command(MaloufCommands.MEMORY_2)
-        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        expected_preset = _new_okin_frame(MaloufCommands.MEMORY_2)
+        expected_stop = _new_okin_frame(MaloufCommands.STOP)
         assert expected_preset in sent_commands
         assert sent_commands[-1] == expected_stop
 
@@ -500,7 +451,7 @@ class TestMaloufMemoryProgramming:
         ):
             await coordinator.controller.program_memory(1)
 
-        expected = coordinator.controller._build_command(MaloufCommands.MEMORY_1)
+        expected = _new_okin_frame(MaloufCommands.MEMORY_1)
         assert [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list] == [
             expected
         ] * 55
@@ -555,7 +506,7 @@ class TestMaloufMemoryProgramming:
 
         mock_write.assert_called_once()
         save_call = mock_write.call_args
-        assert save_call.args[0] == controller._build_command(MaloufCommands.SAVE_MEMORY_1)
+        assert save_call.args[0] == _new_okin_frame(MaloufCommands.SAVE_MEMORY_1)
         assert save_call.kwargs["repeat_count"] == 55
         assert save_call.kwargs["repeat_delay_ms"] == 100
 
@@ -750,9 +701,7 @@ class TestMaloufCapabilities:
 
         assert [spec.key for spec in coordinator.controller.motor_control_specs] == expected
 
-    @pytest.mark.parametrize(
-        "bed_type", [BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN]
-    )
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN])
     async def test_auto_four_motor_layout_does_not_infer_hilo_from_protocol(
         self,
         hass: HomeAssistant,
@@ -799,7 +748,7 @@ class TestMaloufLumbarAndTilt:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(MaloufCommands.LUMBAR_UP)
+        expected = _new_okin_frame(MaloufCommands.LUMBAR_UP)
         assert first_command == expected
 
     async def test_move_tilt_up(
@@ -817,7 +766,7 @@ class TestMaloufLumbarAndTilt:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(MaloufCommands.HEAD_TILT_UP)
+        expected = _new_okin_frame(MaloufCommands.HEAD_TILT_UP)
         assert first_command == expected
 
 
@@ -877,7 +826,7 @@ class TestMaloufMassage:
 
         await coordinator.controller.massage_off()
 
-        expected = coordinator.controller._build_command(MaloufCommands.MASSAGE_OFF)
+        expected = _new_okin_frame(MaloufCommands.MASSAGE_OFF)
         mock_bleak_client.write_gatt_char.assert_called_with(
             MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
         )
@@ -895,7 +844,7 @@ class TestMaloufMassage:
 
         await coordinator.controller.massage_head_up()
 
-        expected = coordinator.controller._build_command(MaloufCommands.MASSAGE_HEAD)
+        expected = _new_okin_frame(MaloufCommands.MASSAGE_HEAD)
         mock_bleak_client.write_gatt_char.assert_called_with(
             MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
         )
@@ -913,7 +862,7 @@ class TestMaloufMassage:
 
         await coordinator.controller.massage_head_down()
 
-        expected = coordinator.controller._build_command(MaloufCommands.MASSAGE_HEAD_MINUS)
+        expected = _new_okin_frame(MaloufCommands.MASSAGE_HEAD_MINUS)
         mock_bleak_client.write_gatt_char.assert_called_with(
             MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
         )
@@ -935,7 +884,7 @@ class TestMaloufLights:
 
         await coordinator.controller.lights_toggle()
 
-        expected = coordinator.controller._build_command(MaloufCommands.LIGHT_SWITCH)
+        expected = _new_okin_frame(MaloufCommands.LIGHT_SWITCH)
         mock_bleak_client.write_gatt_char.assert_called_with(
             MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
         )
@@ -953,7 +902,7 @@ class TestMaloufLights:
 
         await coordinator.controller.lights_on()
 
-        expected = coordinator.controller._build_command(MaloufCommands.LIGHT_SWITCH)
+        expected = _new_okin_frame(MaloufCommands.LIGHT_SWITCH)
         mock_bleak_client.write_gatt_char.assert_called_with(
             MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
         )

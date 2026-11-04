@@ -19,7 +19,7 @@ same checksum.
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
@@ -41,6 +41,7 @@ from ..const import (
 TransportKey = Literal["base", "ksbt", "json"]
 ByteOrder = Literal["little", "big"]
 Carrier = Literal["k1", "p2", "p2_side", "p2_padded", "p2_checked", "json"]
+Side = Literal["left", "right"]
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,16 @@ def frame(
     if side is not None:
         body += bytes((side,))
     return checked(body)
+
+
+# Side selectors of a split receiver that serves both halves on one address
+# (com.sfd.hump 3.7 P1). The eight-byte E5 frame drives both halves.
+SIDE_SELECTORS: Final[Mapping[Side, int]] = {"left": 0x02, "right": 0x01}
+
+
+def side_frame(word: int, side: Side) -> bytes:
+    """Encode the nine-byte little-endian E6 frame that drives one half."""
+    return frame(word, header=0xE6, side=SIDE_SELECTORS[side])
 
 
 def p2(word: int, carrier: Carrier = "p2") -> bytes:

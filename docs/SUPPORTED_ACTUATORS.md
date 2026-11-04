@@ -26,7 +26,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Serta](beds/keeson.md#serta) | Keeson Serta profile: Flat, Zero-G, memory slots, massage steps, lights |
 | [Mattress Firm 900](beds/okin-5a.md#mattress-firm-900--iflex) | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
 | [Nectar](beds/okin-5a.md#nectar) | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
-| [Malouf/Lucid](beds/malouf.md) | Model-dependent motor layout, memory, massage and lights; [Malouf Base / Lucid Base](beds/malouf-app.md) model and transport selection |
+| [Malouf/Lucid](beds/malouf.md) | Model-dependent motor layout, memory, massage and lights; [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) model and transport selection |
 | [BedTech](beds/richmat.md#bedtech) | 5 presets, 4 massage modes; the app's dual-base frames are documented, not sent |
 | [Sleep Number](beds/sleep_number.md) | Fuzion and BAM/MCR: capability-dependent position, firmness, presets, lighting and thermal controls |
 | [Sleepy's Elite](beds/sleepys.md) | BOX15/24/25 variants, presets, BOX25 position sliders including lumbar |
