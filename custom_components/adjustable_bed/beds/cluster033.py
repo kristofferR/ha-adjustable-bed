@@ -221,7 +221,7 @@ class AppController(BedController):
                 move("head_down"),
                 lambda c: c.stop_all(),
                 hold=ControllerMotorHoldSpec(
-                    "head_up", "head_down", 0, _CARD_RELEASE_DELAY_MS
+                    "head_up", "head_down", 0, _CARD_RELEASE_DELAY_MS, stop_scope="side"
                 ),
             ),
             MotorControlSpec(
@@ -231,7 +231,7 @@ class AppController(BedController):
                 move("foot_down"),
                 lambda c: c.stop_all(),
                 hold=ControllerMotorHoldSpec(
-                    "foot_up", "foot_down", 0, _CARD_RELEASE_DELAY_MS
+                    "foot_up", "foot_down", 0, _CARD_RELEASE_DELAY_MS, stop_scope="side"
                 ),
             ),
         )

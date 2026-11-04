@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .beds.base import ControllerMotorHoldSpec
 from .const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
     BEDS_WITH_PERCENTAGE_POSITIONS,
@@ -373,21 +375,21 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         return super().available and (octo is None or octo.normal_controls_available)
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose declared held controls for the shared card."""
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose bounded hold metadata to the existing card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         hold = self.entity_description.hold
         if hold is not None:
             attributes.update(
-                {
-                    "held_control_up": hold.up_control,
-                    **({"hold_release_button_key": hold.release_button_key} if hold.release_button_key is not None else {}),
-                    "held_control_down": hold.down_control,
-                    "hold_start_delay_ms": hold.start_delay_ms,
-                    "hold_release_delay_ms": hold.release_delay_ms,
-                }
+                held_control_up=hold.up_control,
+                held_control_down=hold.down_control,
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+                held_stop_scope=hold.stop_scope,
             )
-        return attributes or None
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
+        return attributes
 
     @property
     def _position_key(self) -> str:
@@ -478,27 +480,38 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
             )
             hold = self.entity_description.hold
-            if hold is not None and self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+            if hold is not None:
                 control = hold.up_control if direction == "open" else hold.down_control
 
-                async def finite_app_move(controller: BedController) -> None:
-                    await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
+                async def bounded_movement(controller: BedController) -> None:
+                    duration_ms = (
+                        SLEEPYS_ELITE_NATIVE_ACTION_MS
+                        if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+                        else 1000
+                    )
+                    controller.validate_hold_control(control, duration_ms)
+                    if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                        await controller.hold_control(control, duration_ms)
+                        return
+                    await controller.prepare_for_movement()
+                    if hold.start_delay_ms:
+                        await asyncio.sleep(hold.start_delay_ms / 1000)
+                    await controller.hold_control(control, duration_ms)
+                    if hold.release_delay_ms:
+                        await asyncio.sleep(hold.release_delay_ms / 1000)
 
-                move_fn = finite_app_move
-            else:
-                move_fn = (
-                    self.entity_description.open_fn
-                    if direction == "open"
-                    else self.entity_description.close_fn
-                )
-            if direction == "open":
                 await self._coordinator.async_execute_controller_command(
-                    move_fn,
+                    bounded_movement,
+                    resource=self._motor_resource,
+                )
+            elif direction == "open":
+                await self._coordinator.async_execute_controller_command(
+                    self.entity_description.open_fn,
                     resource=self._motor_resource,
                 )
             else:
                 await self._coordinator.async_execute_controller_command(
-                    move_fn,
+                    self.entity_description.close_fn,
                     resource=self._motor_resource,
                 )
             _LOGGER.debug(

@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
@@ -93,6 +94,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
+    REVERIE_PAIRLINK_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -419,6 +421,21 @@ class TestDetectBedTypeByServiceUUID:
             service_uuids=[REVERIE_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_REVERIE
+
+    def test_detect_reverie_pairlink_by_uuid_and_display_name(self):
+        """Pairlink app devices are findable by their dedicated service UUID."""
+        service_info = _make_service_info(
+            name="R510L",
+            service_uuids=[REVERIE_PAIRLINK_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_REVERIE_PAIRLINK
+        assert result.confidence == 1.0
+        assert "uuid:reverie_pairlink" in result.signals
+        assert (
+            BED_TYPE_DISPLAY_NAMES[BED_TYPE_REVERIE_PAIRLINK]
+            == "Reverie Pairlink (R510L / Harmoniq)"
+        )
 
     def test_detect_octo_star2_by_uuid(self):
         """Test Octo Star2 detection by unique service UUID."""

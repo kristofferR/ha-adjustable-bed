@@ -35,6 +35,7 @@ globalThis.KeyboardEvent = class {
   }
 
   preventDefault() {}
+  stopPropagation() {}
 };
 
 const { AdjustableBedCard } = await import("./adjustable-bed-card.ts");
@@ -147,6 +148,7 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
     bed_side: side,
     ...(coverHoldMetadata
       ? {
+          held_stop_scope: "side",
           held_control_up: "opaqueUp",
           held_control_down: "opaqueDown",
           hold_start_delay_ms: 0,

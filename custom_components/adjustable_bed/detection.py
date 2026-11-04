@@ -83,6 +83,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_BEST_MATTRESS,
     BED_TYPE_RICHMAT_BLVD_HOME,
@@ -203,6 +204,7 @@ from .const import (
     REMACRO_VARIANT_JEROMES,
     REMACRO_VARIANT_THE_BRICK,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
+    REVERIE_PAIRLINK_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
@@ -645,6 +647,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie (Protocol 108)",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
+    BED_TYPE_REVERIE_PAIRLINK: "Reverie Pairlink (R510L / Harmoniq)",
     BED_TYPE_RICHMAT: "Richmat / RMControl app",
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
     BED_TYPE_REMACRO: "Slumberland app (Remacro)",
@@ -1983,6 +1986,19 @@ def _detect_bed_type_detailed(
                 BED_TYPE_FURNIMOVE,
             ],
             requires_characteristic_check=True,
+        )
+
+    # Pairlink has its own private service UUID. Manufacturer prefixes are only
+    # used to refine its model after the protocol has been identified.
+    if REVERIE_PAIRLINK_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:reverie_pairlink")
+        _LOGGER.info(
+            "Detected Reverie Pairlink bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_REVERIE_PAIRLINK, confidence=1.0, signals=signals
         )
 
     # Check for Reverie Nightstand (Protocol 110) - more specific UUID

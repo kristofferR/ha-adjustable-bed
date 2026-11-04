@@ -1,22 +1,19 @@
 """Elapsed service limits and cleanup, independent of any bed's wire protocol."""
 
 import asyncio
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak.exc import BleakError
 
+from custom_components.adjustable_bed.beds.base import MotorControlSpec
 from custom_components.adjustable_bed.services import _timed_move_plan
 
 
 async def build_movement(move, stop, *, duration_ms=50):
     controller = MagicMock(prepare_for_movement=AsyncMock())
     controller.motor_control_specs = (
-        SimpleNamespace(
-            key="back", position_key="back", scheduler_resource=None,
-            open_fn=move, close_fn=move, stop_fn=stop,
-        ),
+        MotorControlSpec("back", "back", move, move, stop, position_key="back"),
     )
     controller.motor_pulse_settings.return_value = (10, 100)
     controller.timed_move_repeat_count.return_value = 10

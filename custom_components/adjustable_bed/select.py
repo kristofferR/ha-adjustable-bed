@@ -392,7 +392,8 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
             controller = self._coordinator.capability_controller
             specs = controller.controller_select_specs if controller is not None else ()
             live = next(
-                (spec for spec in specs if spec.key == self._spec.key), None
+                (spec for spec in specs if spec.key == self._spec.key),
+                None,
             )
             if live is None or live.local_select_fn is None or option not in live.options:
                 raise ServiceValidationError("Controller no longer supports this local option")

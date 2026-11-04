@@ -1073,7 +1073,6 @@ def _combined_motor_buttons_for(
     each direction so a combined card hold never assumes cross-side support.
     """
     specs_by_key: dict[str, MotorControlSpec] = {}
-    side_specs_by_key: dict[str, list[MotorControlSpec]] = {}
     common: set[str] | None = None
     for child in eligible:
         controller = child.capability_controller
@@ -1090,41 +1089,21 @@ def _combined_motor_buttons_for(
             specs_by_key = side_specs
         keys = set(side_specs)
         common = keys if common is None else (common & keys)
-        for key in keys:
-            side_specs_by_key.setdefault(key, []).append(side_specs[key])
 
     entities: list[ButtonEntity] = []
     for key in sorted(common or set()):
         spec = specs_by_key.get(key)
         if spec is None:
             continue
-        side_specs = side_specs_by_key[key]
         for direction in ("up", "down"):
             entities.append(
                 PairedBedCombinedMotorButton(
                     coordinator,
                     spec,
                     direction,
-                    hold_compatible=_combined_motor_hold_is_compatible(side_specs, direction),
                 )
             )
     return entities
-
-
-def _combined_motor_hold_is_compatible(specs: Sequence[MotorControlSpec], direction: str) -> bool:
-    """Whether all sides declare the same control and timing for one direction."""
-    if not specs or any(spec.hold is None for spec in specs):
-        return False
-    first = specs[0].hold
-    assert first is not None
-    first_control = first.up_control if direction == "up" else first.down_control
-    return all(
-        spec.hold is not None
-        and (spec.hold.up_control if direction == "up" else spec.hold.down_control) == first_control
-        and spec.hold.start_delay_ms == first.start_delay_ms
-        and spec.hold.release_delay_ms == first.release_delay_ms
-        for spec in specs[1:]
-    )
 
 
 def _async_migrate_massage_intensity_button_unique_ids(
@@ -1386,6 +1365,8 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
     async def async_press(self) -> None:
@@ -1520,17 +1501,17 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose declared held-control metadata to the native card."""
+        """Expose the declared held control to the bounded card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
-        if self._spec.hold is not None:
+        hold = self._spec.hold
+        if hold is not None:
             attributes.update(
-                {
-                    "held_control": self._spec.hold.control,
-                    **({"hold_release_button_key": self._spec.hold.release_button_key} if self._spec.hold.release_button_key is not None else {}),
-                    "hold_start_delay_ms": self._spec.hold.start_delay_ms,
-                    "hold_release_delay_ms": self._spec.hold.release_delay_ms,
-                }
+                held_control=hold.control,
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
             )
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
 
@@ -1640,6 +1621,41 @@ class PairedBedCombinedButton(ButtonEntity):
             resource=_button_resource(description.key),
         )
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose a bounded Both timed move when both sides own that motor."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        action = self.entity_description.key
+        motor = next(
+            (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),
+            None,
+        )
+        if motor is None:
+            return attributes
+        candidates = ("back", "head") if motor == "head" else ("legs", "feet")
+        common = next(
+            (
+                candidate
+                for candidate in candidates
+                if _paired_motor_available(self._coordinator, candidate)
+            ),
+            None,
+        )
+        if common is not None:
+            hold = _paired_motor_hold_spec(self._coordinator, common)
+            direction = "up" if action.endswith("_up") else "down"
+            if hold is not None:
+                attributes.update(
+                    paired_hold_motor=common,
+                    paired_hold_side=SIDE_BOTH,
+                    held_control=(hold.up_control if direction == "up" else hold.down_control),
+                    hold_start_delay_ms=hold.start_delay_ms,
+                    hold_release_delay_ms=hold.release_delay_ms,
+                )
+                if hold.release_button_key is not None:
+                    attributes["hold_release_button_key"] = hold.release_button_key
+        return attributes
+
 
 class PairedBedCombinedMotorButton(ButtonEntity):
     """A 'move both sides' up/down motion button on the paired parent device.
@@ -1655,8 +1671,6 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         coordinator: PairedBedCoordinator,
         spec: MotorControlSpec,
         direction: str,
-        *,
-        hold_compatible: bool = True,
     ) -> None:
         """Initialize the combined motor button (``direction`` is up/down).
 
@@ -1667,7 +1681,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._coordinator = coordinator
         self._direction = direction
         self._motor_key = spec.key
-        self._hold: ControllerMotorHoldSpec | None = spec.hold if hold_compatible else None
+        self._hold_spec = spec.hold
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
@@ -1696,27 +1710,9 @@ class PairedBedCombinedMotorButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Advertise compatible held-control metadata and the timed Octo action."""
-        attributes = dict(self._attr_extra_state_attributes or {})
-        hold_is_routable = isinstance(
-            self._coordinator, SingleAddressPairedCoordinator
-        ) or (
-            len(self._coordinator.children) == 2
-            and self._coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
-        )
-        if self._hold is not None and hold_is_routable:
-            attributes.update(
-                {
-                    "held_control": (
-                        self._hold.up_control
-                        if self._direction == "up"
-                        else self._hold.down_control
-                    ),
-                    "hold_start_delay_ms": self._hold.start_delay_ms,
-                    "hold_release_delay_ms": self._hold.release_delay_ms,
-                }
-            )
-        # Sequential pairs fall back to the finite timed Both action.
+        """Advertise this common motor through the bounded paired action."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = _paired_motor_hold_spec(self._coordinator, self._motor_key, self._direction)
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
             and len(self._coordinator.children) == 2
@@ -1725,7 +1721,24 @@ class PairedBedCombinedMotorButton(ButtonEntity):
                 child.bed_type == BED_TYPE_OCTO for child in self._coordinator.children.values()
             )
         ):
-            attributes["paired_hold_motor"] = self._motor_key
+            # OCTO already supports bounded pulses without a declared hold/release contract.
+            attributes.update(paired_hold_motor=self._motor_key, paired_hold_side=SIDE_BOTH)
+        if hold is not None:
+            attributes.update(
+                **(
+                    {
+                        "paired_hold_motor": self._motor_key,
+                        "paired_hold_side": SIDE_BOTH,
+                    }
+                    if self._motor_key in {"back", "legs"}
+                    else {}
+                ),
+                held_control=(hold.up_control if self._direction == "up" else hold.down_control),
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+            )
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
     @property
@@ -1735,30 +1748,84 @@ class PairedBedCombinedMotorButton(ButtonEntity):
 
     async def async_press(self) -> None:
         """Move this motor on both sides."""
-        if (
-            self._hold is not None
-            and all(
-                child.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
-                for child in self._coordinator.children.values()
-            )
+        if self._hold_spec is not None and all(
+            child.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+            for child in self._coordinator.children.values()
         ):
             control = (
-                self._hold.up_control
-                if self._direction == "up"
-                else self._hold.down_control
+                self._hold_spec.up_control if self._direction == "up" else self._hold_spec.down_control
             )
 
             async def finite_app_move(controller: BedController) -> None:
-                await controller.hold_control(
-                    control, SLEEPYS_ELITE_NATIVE_ACTION_MS
-                )
+                await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
 
-            move_fn = finite_app_move
-        else:
-            move_fn = self._move_fn
+            await self._coordinator.async_execute_controller_command(
+                finite_app_move, side=SIDE_BOTH, cancel_running=True, resource=self._resource
+            )
+            return
+        if self._hold_spec is not None:
+            # Sequential/incompatible pairs omit card hold metadata. Their
+            # ordinary button press must still finish each receiver's hold and
+            # release, using current per-target validation and admission.
+            from .services import _async_timed_move
+
+            await _async_timed_move(
+                [(self._coordinator, SIDE_BOTH)],
+                self._motor_key,
+                self._direction,
+                1000,
+            )
+            return
+        move_fn = self._move_fn
         await self._coordinator.async_execute_controller_command(
             move_fn,
             side=SIDE_BOTH,
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:
+    """Require an exact current motor capability on every physical side."""
+    return bool(coordinator.children) and all(
+        (controller := child.capability_controller) is not None
+        and any(spec.key == motor for spec in controller.motor_control_specs)
+        for child in coordinator.children.values()
+    )
+
+
+def _paired_motor_hold_spec(
+    coordinator: PairedBedCoordinator,
+    motor: str,
+    direction: str | None = None,
+) -> ControllerMotorHoldSpec | None:
+    """Return a Both hold contract only when every live side can match it."""
+    if (
+        coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+        or len(coordinator.children) != 2
+    ):
+        return None
+
+    common: ControllerMotorHoldSpec | None = None
+    for child in coordinator.children.values():
+        controller = child.capability_controller
+        if controller is None:
+            return None
+        spec = next(
+            (candidate for candidate in controller.motor_control_specs if candidate.key == motor),
+            None,
+        )
+        if spec is None or spec.hold is None:
+            return None
+        if common is None:
+            common = spec.hold
+        elif (
+            (spec.hold.up_control != common.up_control and direction != "down")
+            or (spec.hold.down_control != common.down_control and direction != "up")
+            or spec.hold.start_delay_ms != common.start_delay_ms
+            or spec.hold.release_delay_ms != common.release_delay_ms
+            or spec.hold.stop_scope != common.stop_scope
+            or spec.hold.release_button_key != common.release_button_key
+        ):
+            return None
+    return common

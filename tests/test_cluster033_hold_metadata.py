@@ -65,13 +65,16 @@ def test_source_owned_specs_project_flat_metadata_and_keep_side(app, layout):
     for spec in ctrl.motor_control_specs:
         cover = AdjustableBedCover(runtime, _build_cover_description(spec))
         up, down = ("head_up", "head_down") if spec.key == "back" else ("foot_up", "foot_down")
-        assert cover.entity_description.hold == ControllerMotorHoldSpec(up, down, 0, delay)
+        assert cover.entity_description.hold == ControllerMotorHoldSpec(
+            up, down, 0, delay, stop_scope="side"
+        )
         assert cover.extra_state_attributes == {
             "bed_side": "left",
             "held_control_up": up,
             "held_control_down": down,
             "hold_start_delay_ms": 0,
             "hold_release_delay_ms": delay,
+            "held_stop_scope": "side",
         }
 
 
@@ -86,14 +89,19 @@ def test_serta_local_angle_hold_metadata_is_distinct_from_remote_motor_keys():
     assert next(s for s in ctrl.motor_control_specs if s.key == "back").hold.up_control == "head_up"
 
 
-async def test_mixed_layout_parent_shares_hold_metadata_and_keeps_finite_press():
+async def test_mixed_layout_parent_shares_hold_metadata_and_keeps_finite_press(monkeypatch):
     left = AppController(coordinator(), app_profile("qplus_app", "M2"))
     right = AppController(coordinator(), app_profile("qplus_app", "MX"))
     parent = MagicMock(
         pair_id="pair", device_info={}, children=PAIR_CHILDREN, connection_mode="concurrent"
     )
     parent.async_execute_controller_command = AsyncMock()
-    runtimes = [SimpleNamespace(capability_controller=ctrl) for ctrl in (left, right)]
+    runtimes = [
+        SimpleNamespace(capability_controller=ctrl, bed_type="qplus_app") for ctrl in (left, right)
+    ]
+    parent.children = dict(zip(("left", "right"), runtimes, strict=True))
+    timed_move = AsyncMock()
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
     buttons = _combined_motor_buttons_for(parent, runtimes)
     assert len(buttons) == 4
     for button in buttons:
@@ -101,8 +109,9 @@ async def test_mixed_layout_parent_shares_hold_metadata_and_keeps_finite_press()
         # MX query release, so the combined hold stays protocol-correct.
         assert button.extra_state_attributes["hold_release_delay_ms"] == 0
         await button.async_press()
-        kwargs = parent.async_execute_controller_command.await_args.kwargs
-        assert kwargs["side"] == "both" and kwargs["cancel_running"] is True
+        timed_move.assert_awaited_with(
+            [(parent, "both")], button._motor_key, button._direction, 1000
+        )
     assert (
         _combined_motor_buttons_for(
             parent, [runtimes[0], SimpleNamespace(capability_controller=None)]
@@ -126,18 +135,23 @@ def test_parent_hold_intersection_is_direction_specific_and_requires_all_sides()
                     supports_motor_control=True,
                     has_discrete_motor_control=False,
                     motor_control_specs=(spec,),
-                )
+                ),
+                bed_type="tempur_curve",
             )
             for spec in specs
         ]
 
-    buttons = _combined_motor_buttons_for(parent, sides((left, right)))
+    runtimes = sides((left, right))
+    parent.children = dict(zip(("left", "right"), runtimes, strict=True))
+    buttons = _combined_motor_buttons_for(parent, runtimes)
     up = next(b for b in buttons if b._direction == "up")
     down = next(b for b in buttons if b._direction == "down")
     assert "held_control" not in up.extra_state_attributes
     assert down.extra_state_attributes["held_control"] == "head_down"
     assert down.extra_state_attributes["hold_release_delay_ms"] == 0
-    buttons = _combined_motor_buttons_for(parent, sides((left, replace(left, hold=None))))
+    runtimes = sides((left, replace(left, hold=None)))
+    parent.children = dict(zip(("left", "right"), runtimes, strict=True))
+    buttons = _combined_motor_buttons_for(parent, runtimes)
     assert len(buttons) == 2
     assert all("held_control" not in b.extra_state_attributes for b in buttons)
 
@@ -176,4 +190,4 @@ def test_legacy_entity_without_base_attribute_dictionary_does_not_break_projecti
     cover = AdjustableBedCover(
         runtime, replace(_build_cover_description(ctrl.motor_control_specs[0]), hold=None)
     )
-    assert cover.extra_state_attributes is None
+    assert not cover.extra_state_attributes

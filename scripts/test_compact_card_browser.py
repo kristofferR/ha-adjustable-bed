@@ -208,6 +208,58 @@ async def main():
         release_calls = await page.evaluate("calls.map(c=>c.entity_id)")
         assert release_calls == ["button.right_stop"], release_calls
 
+        # Switching to the other side and stopping it must preserve an
+        # independent keyboard hold. Its later keyup still releases the exact
+        # cover captured when the right-side control started.
+        await page.evaluate(
+            "async ()=>{calls=[];await configure({layout:'full',default_target:'right',show_motors:true})}"
+        )
+        await card.get_by_role("button", name="Right", exact=True).click()
+        right_up = card.get_by_role("button", name="Up", exact=True).first
+        await right_up.focus()
+        await page.keyboard.down("Space")
+        await card.get_by_role("button", name="Left", exact=True).click()
+        await card.locator(".stop-all").click()
+        assert await page.evaluate(
+            "calls.some(c=>c.entity_id==='button.left_stop') && !calls.some(c=>c.entity_id==='cover.right_back' && c.service==='stop_cover')"
+        )
+        await page.keyboard.up("Space")
+        assert await page.evaluate(
+            "calls.some(c=>c.entity_id==='cover.right_back' && c.service==='stop_cover')"
+        )
+
+        # A left STOP that overlaps a pending Both pulse cancels further pulses
+        # and releases the remaining right side only after that pulse settles.
+        await page.evaluate("""async ()=>{
+          calls=[];
+          hass={...hass,callService:(domain,service,data)=>{
+            calls.push({domain,service,...data});
+            if(data.entity_id==='button.pair_back_up')
+              return new Promise(resolve=>{window.finishPairPulse=resolve});
+            return Promise.resolve();
+          }};
+          card.hass=hass;
+          await configure({layout:'full',default_target:'both',show_motors:true});
+        }""")
+        await card.get_by_role("button", name="Both", exact=True).click()
+        pair_up = card.get_by_role("button", name="Up", exact=True).first
+        await pair_up.focus()
+        await page.keyboard.down("Space")
+        assert await page.evaluate(
+            "calls.some(c=>c.entity_id==='button.pair_back_up')"
+        )
+        await card.get_by_role("button", name="Left", exact=True).click()
+        await card.locator(".stop-all").click()
+        assert await page.evaluate(
+            "calls.map(c=>c.entity_id).filter(id=>id.endsWith('_stop'))"
+        ) == ["button.left_stop"]
+        await page.keyboard.up("Space")
+        await page.evaluate("async ()=>{finishPairPulse();await new Promise(r=>setTimeout(r,0))}")
+        assert await page.evaluate(
+            "calls.map(c=>c.entity_id).filter(id=>id.endsWith('_stop'))"
+        ) == ["button.left_stop", "button.right_stop"]
+        await page.evaluate("async ()=>{hass=stopTestHass;card.hass=hass;await configure()} ")
+
         # Side-scoped assistive activation also remains stoppable after a tab change.
         await page.evaluate("calls=[]")
         await card.get_by_role("button", name="Up", exact=True).first.evaluate("el=>el.click()")

@@ -5,17 +5,20 @@
 // they are regression tests rather than illustrative examples.
 import { expect, test } from "bun:test";
 import {
+  activateWithoutPointer,
+  type Direction,
+  type HoldActions,
+  MotorHold,
+  movementPulse,
+  registerHoldFocusLoss,
+  stopCardMotorHold,
   attachHoldLifecycle,
   heldButtonMotor,
   holdTargetForEntity,
   pairedPeerStopEntityIds,
-  type Direction,
-  type HoldActions,
   type HoldTimers,
   type HoldLifecycleTarget,
-  MotorHold,
   movementHold,
-  movementPulse,
   stopFromCard,
 } from "./hold";
 import { bedEntitiesForDevice } from "./discovery";
@@ -33,6 +36,25 @@ interface Recorder {
   // Lets a test decide when the in-flight pulse resolves, which is the whole
   // point: a hold ends while a pulse is still running.
   release: () => void;
+}
+
+class FakeEventTarget {
+  private readonly listeners = new Map<string, Set<EventListener>>();
+
+  addEventListener(type: string, listener: EventListener): void {
+    const listeners = this.listeners.get(type) ?? new Set<EventListener>();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: EventListener): void {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  dispatch(type: string): void {
+    const event = new Event(type);
+    this.listeners.get(type)?.forEach((listener) => listener(event));
+  }
 }
 
 // Pulses never resolve on their own: a test drives them with release(). In
@@ -203,7 +225,7 @@ for (const scheme of ["single-address", "two-address", "standalone"] as const) {
     const events: string[] = [];
     const hold = new MotorHold(heldActions(events));
     hold.start(motor!, "up", 1, "button.general_stop");
-    hold.end(motor!, 1);
+    hold.endFromPointer(motor!, 1, true, "button.general_stop");
     expect(events).toEqual(["start:button.memory:up", "stop:button.release"]);
     delete hass.entities["button.release"];
     expect(heldButtonMotor(hass, entityId)).toBeUndefined();
@@ -218,7 +240,7 @@ test("eligible Both holds use the parent timed action and retain combined Stop",
     return new Promise<void>((resolve) => { finish = resolve; });
   } } as HomeAssistant;
   const motor: MotorEntity = { key: "back", up: "button.pair_back_up",
-    timedMove: { deviceId: "pair", motor: "back" } };
+    timedMove: { deviceId: "pair", side: "both", motor: "back" } };
   const rec = recorder();
   const hold = new MotorHold({ ...rec.actions, pulse: (m, dir) => movementPulse(hass, m, dir) });
   hold.start(motor, "up", 1, "button.pair_stop");
@@ -242,6 +264,20 @@ test("ordinary covers, buttons and unsupported directions keep their finite acti
     ["cover", "close_cover", { entity_id: "cover.legs" }],
     ["button", "press", { entity_id: "button.head_up" }],
   ]);
+});
+
+test("assistive click uses the controller bounded hold route", async () => {
+  const calls: unknown[] = [];
+  const hass = { callService: async (...args: unknown[]) => { calls.push(args); } } as HomeAssistant;
+  activateWithoutPointer(hass, {
+    key: "back",
+    cover: "cover.back",
+    timedMove: { deviceId: "bed", motor: "back" },
+  }, "up");
+  await tick();
+  expect(calls).toEqual([["adjustable_bed", "timed_move", {
+    device_id: "bed", motor: "back", direction: "up", duration_ms: 1000,
+  }]]);
 });
 
 test("a hold repeats until it is released", async () => {
@@ -351,13 +387,16 @@ test("a non-primary button release is ignored", async () => {
   await tick();
 });
 
-test("keyboard holds have no owning pointer, so any release ends them", async () => {
+test("keyboard hold ignores pointer release and ends on its keyboard release", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
 
   hold.start(buttonMotor, "up", null);
   await tick();
   hold.endFromPointer(buttonMotor, 99, true);
+
+  expect(hold.heldKey).toBe("head");
+  hold.endKeyboard();
 
   expect(hold.heldKey).toBeNull();
   rec.release();
@@ -377,6 +416,21 @@ test("a cover-backed hold stops the cover and preserves its retained bed target"
   expect(rec.stoppedCovers).toEqual(["cover.legs"]);
   expect(rec.stoppedCoverTargets).toEqual(["button.left_stop"]);
   expect(rec.bedStops).toBe(0);
+});
+
+test("release keeps the start-time cover and STOP after render metadata changes", async () => {
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+
+  hold.start(coverMotor, "down", 1, "button.left_stop");
+  await tick();
+  hold.end({ key: "legs", up: "button.changed_up" }, "button.left_stop");
+  rec.release();
+  await tick();
+
+  expect(rec.stoppedCovers).toEqual(["cover.legs"]);
+  expect(rec.stoppedCoverTargets).toEqual(["button.left_stop"]);
+  expect(rec.stoppedBeds).toEqual([]);
 });
 
 test("stopAll ends a hold on a different motor", async () => {
@@ -526,22 +580,166 @@ test("releasing a hold stops the side the motor belongs to", async () => {
   expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
 });
 
-test("a side's stop button stops that side, not the held one", async () => {
+test("an unrelated side STOP preserves the held side and its later release", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
 
   hold.start(buttonMotor, "up", 1, "button.left_stop");
   await tick();
-  // The pressed button carries its own stop, which wins: it is the bed the
-  // user actually asked to stop.
-  hold.stopAll("button.right_stop");
+  hold.stopAll("button.right_stop", ["button.right_stop"]);
 
   expect(rec.stoppedBeds).toEqual(["button.right_stop"]);
-  expect(hold.heldKey).toBe(buttonMotor.key);
+  expect(hold.heldKey).toBe("head");
 
   hold.end(buttonMotor);
+  rec.release();
+  await tick();
   expect(rec.stoppedBeds).toEqual(["button.right_stop", "button.left_stop"]);
+});
+
+test("a side STOP releases the remaining side after an overlapping Both pulse", async () => {
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+
+  hold.start(
+    buttonMotor,
+    "up",
+    1,
+    "button.pair_stop",
+    ["button.pair_stop", "button.left_stop", "button.right_stop"],
+    ["button.left_stop", "button.right_stop"],
+  );
+  await tick();
+  stopCardMotorHold(hold, "button.left_stop", ["button.left_stop"]);
+
+  expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
   expect(hold.heldKey).toBeNull();
+  rec.release();
+  await tick();
+  expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
+});
+
+test("deferred Both cleanup preserves a newer hold on its remaining side", async () => {
+  const stopped: string[] = [];
+  const releases: Array<() => void> = [];
+  const hold = new MotorHold({
+    pulse: () => new Promise<void>((resolve) => releases.push(resolve)),
+    stopCover: () => undefined,
+    stopBed: (target) => { if (target) stopped.push(target); },
+  });
+  const both: MotorEntity = { key: "both", up: "button.pair_up" };
+  const right: MotorEntity = { key: "right", up: "button.right_up" };
+
+  hold.start(
+    both,
+    "up",
+    1,
+    "button.pair_stop",
+    ["button.pair_stop", "button.left_stop", "button.right_stop"],
+    ["button.left_stop", "button.right_stop"],
+  );
+  await tick();
+  stopCardMotorHold(hold, "button.left_stop", ["button.left_stop"]);
+
+  hold.start(right, "up", 2, "button.right_stop");
+  await tick();
+  releases[0]!();
+  await tick();
+
+  expect(stopped).toEqual(["button.left_stop"]);
+  expect(hold.heldKey).toBe("right");
+
+  hold.end(right);
+  releases[1]!();
+  await tick();
+  expect(stopped).toEqual(["button.left_stop", "button.right_stop"]);
+});
+
+test("deferred Both cleanup stays stale after a newer remaining-side hold ends", async () => {
+  const stopped: string[] = [];
+  const releases: Array<() => void> = [];
+  const hold = new MotorHold({
+    pulse: () => new Promise<void>((resolve) => releases.push(resolve)),
+    stopCover: () => undefined,
+    stopBed: (target) => { if (target) stopped.push(target); },
+  });
+  const both: MotorEntity = { key: "both", up: "button.pair_up" };
+  const right: MotorEntity = { key: "right", up: "button.right_up" };
+
+  hold.start(
+    both,
+    "up",
+    1,
+    "button.pair_stop",
+    ["button.pair_stop", "button.left_stop", "button.right_stop"],
+    ["button.left_stop", "button.right_stop"],
+  );
+  await tick();
+  stopCardMotorHold(hold, "button.left_stop", ["button.left_stop"]);
+
+  hold.start(right, "up", 2, "button.right_stop");
+  await tick();
+  hold.end(right);
+  releases[0]!();
+  await tick();
+
+  expect(stopped).toEqual(["button.left_stop", "button.right_stop"]);
+  releases[1]!();
+  await tick();
+});
+
+test("focus loss releases the exact captured hold target", async () => {
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  hold.start(buttonMotor, "up", 1, "button.left_stop");
+  await tick();
+
+  hold.releaseOnFocusLoss();
+  rec.release();
+  await tick();
+
+  expect(hold.heldKey).toBeNull();
+  expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+});
+
+test("card focus and hidden-document handlers release once and unregister", async () => {
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const windowTarget = new FakeEventTarget();
+  const documentTarget = new FakeEventTarget();
+  let hidden = false;
+  const unregister = registerHoldFocusLoss(
+    windowTarget,
+    documentTarget,
+    () => hidden,
+    () => hold.releaseOnFocusLoss(),
+  );
+
+  hold.start(buttonMotor, "up", 1, "button.left_stop");
+  await tick();
+  windowTarget.dispatch("blur");
+  expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+  rec.release();
+  await tick();
+
+  hold.start(buttonMotor, "down", 2, "button.right_stop");
+  await tick();
+  documentTarget.dispatch("visibilitychange");
+  expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+  hidden = true;
+  documentTarget.dispatch("visibilitychange");
+  expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
+  rec.release();
+  await tick();
+
+  unregister();
+  hold.start(buttonMotor, "up", 3, "button.left_stop");
+  await tick();
+  windowTarget.dispatch("blur");
+  expect(hold.heldKey).toBe("head");
+  hold.end(buttonMotor);
+  rec.release();
+  await tick();
 });
 
 function pairedStopHass(): HomeAssistant {
@@ -1098,6 +1296,7 @@ for (const phase of ["active", "pending-release"] as const) {
       leftHeldCover,
       holdTargetForEntity(hass, "cover.left_back"),
       "side",
+      undefined,
       pairedPeerStopEntityIds(hass, "cover.left_back"),
     );
     timers.advance(100);
@@ -1139,6 +1338,7 @@ for (const phase of ["active", "pending-release"] as const) {
       leftHeldCover,
       holdTargetForEntity(hass, "cover.left_back"),
       "side",
+      undefined,
       pairedPeerStopEntityIds(hass, "cover.left_back"),
     );
     timers.advance(100);
@@ -1158,6 +1358,7 @@ test("a Both cover stop leaves the peer Stops to the combined cover", () => {
     { ...leftHeldCover, cover: "cover.both_back" },
     holdTargetForEntity(hass, "cover.both_back"),
     "side",
+    undefined,
     pairedPeerStopEntityIds(hass, "cover.both_back"),
   );
 
@@ -1177,11 +1378,42 @@ test("a one-side cover stop before a held Both operation starts leaves the peer 
     leftHeldCover,
     holdTargetForEntity(hass, "cover.left_back"),
     "side",
+    undefined,
     pairedPeerStopEntityIds(hass, "cover.left_back"),
   );
   timers.advance(200);
 
   expect(events).toEqual([]);
+});
+
+test("a cover stop discards stale Both cleanup while preserving the newer peer release", () => {
+  const hass = twoAddressCoverHass();
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const right = { ...leftHeldCover, key: "right-back", cover: "cover.right_back" };
+  hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  hold.end(bothHeld);
+  hold.start(right, "up", 2, "button.right_stop", holdTargetForEntity(hass, "cover.right_back"));
+  hold.end(right);
+  hold.stopCover(leftHeldCover, holdTargetForEntity(hass, "cover.left_back"), "side",
+    "button.left_stop", pairedPeerStopEntityIds(hass, "cover.left_back"));
+  expect(events).toEqual(["start:both-back:up", "start:right-back:up"]);
+  timers.advance(100);
+  expect(events).toEqual([
+    "start:both-back:up", "start:right-back:up", "cover-stop:cover.right_back:button.right_stop",
+  ]);
+});
+
+test("captured Both STOP scope cleans up its peer without live target metadata", () => {
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  hold.start(bothHeld, "up", 1, "button.parent_stop",
+    ["button.parent_stop", "button.left_stop", "button.right_stop"],
+    ["button.left_stop", "button.right_stop"]);
+  hold.stopCover(leftHeldCover, undefined, "side", "button.left_stop");
+  expect(hold.heldKey).toBeNull();
+  expect(events).toEqual(["start:both-back:up", "stop:button.right_stop"]);
 });
 
 test("a child Stop leaves the peer alone before a held Both operation starts", () => {
@@ -1222,6 +1454,29 @@ test("a peer owned by a newer hold keeps moving after the stale Both release is 
     "stop:button.left_stop",
   ]);
   hold.abandon();
+});
+
+test("a newer side-less peer release fences the old Both cleanup after graph loss", () => {
+  const hass = twoAddressHass();
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const right: MotorEntity = {
+    key: "right-back",
+    up: "button.right_back_up",
+    heldControl: { control: "back_up", startDelayMs: 0, releaseDelayMs: 100 },
+  };
+  hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
+  hold.end(bothHeld);
+  hass.devices = {};
+  hold.start(right, "up", 2, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
+  hold.end(right);
+  stopFromCard(hold, hass, "button.left_stop");
+  expect(events).toEqual(["start:both-back:up", "start:right-back:up", "stop:button.left_stop"]);
+  timers.advance(100);
+  expect(events).toEqual([
+    "start:both-back:up", "start:right-back:up", "stop:button.left_stop", "stop:button.right_stop",
+  ]);
 });
 
 test("abandon reports the entities it stopped", () => {

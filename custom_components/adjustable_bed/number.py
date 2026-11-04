@@ -1006,6 +1006,17 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
             self._unregister_callback()
         await super().async_will_remove_from_hass()
 
+    @property
+    def available(self) -> bool:
+        """Keep legacy wave automation unavailable off its current source side."""
+        controller = self._coordinator.capability_controller
+        zone_available = (
+            getattr(controller, "legacy_massage_wave_available", True)
+            if self.entity_description.massage_zone == "wave"
+            else True
+        )
+        return super().available and zone_available is not False
+
     @callback
     def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
         self.async_write_ha_state()

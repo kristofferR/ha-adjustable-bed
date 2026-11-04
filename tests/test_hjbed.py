@@ -143,6 +143,7 @@ def test_profile_surfaces(coordinator, profile):
     )
     # Every declared hold must execute an actual selected detail, including sofa travel.
     for spec in c.motor_control_specs:
+        assert spec.hold.stop_scope == "side"
         assert spec.hold.up_control in c.held_control_options
         assert spec.hold.down_control in c.held_control_options
     for spec in c.controller_button_specs:

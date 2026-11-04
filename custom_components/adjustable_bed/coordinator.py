@@ -120,6 +120,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
@@ -157,6 +158,7 @@ from .const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_PIN,
+    CONF_PAIRLINK_ROLE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -206,6 +208,7 @@ from .const import (
     OFFLINE_CAPABILITY_SAFE_VARIANTS,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_VARIANT_NECTAR_MOVE,
+    PAIRLINK_ROLE_PERIPHERAL,
     POSITION_FEEDBACK_TIMEOUT,
     POSITION_MODE_ACCURACY,
     REVERIE_BACK_MAX_ANGLE,
@@ -246,7 +249,10 @@ from .detection import (
 )
 from .diagnostic_payloads import new_connection_attempt_details
 from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
-from .pairing import inheritable_child_fields, octo_snapshot_from_descriptor
+from .pairing import (
+    filter_child_options,
+    octo_snapshot_from_descriptor,
+)
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -270,6 +276,7 @@ from .vibradorm_app_state import (
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
+    from .beds.reverie_pairlink_runtime import PairlinkRuntime
     from .beds.starcode_abm5_4_profiles import RetainedAppState
 
 T = TypeVar("T")
@@ -349,13 +356,13 @@ class ChildEntryView:
         if self._parent.options:
             return {
                 **self._child_data,
-                **inheritable_child_fields(self._parent.options),
+                **filter_child_options(self._child_data, self._parent.options),
             }
         return self._child_data
 
     @property
     def options(self) -> Mapping[str, Any]:
-        return inheritable_child_fields(self._parent.options)
+        return filter_child_options(self._child_data, self._parent.options)
 
     def persist_data(
         self,
@@ -506,6 +513,7 @@ class AdjustableBedCoordinator:
         self._client: BleakClient | None = None
         self._vmat_unready_client: BleakClient | None = None
         self._controller: BedController | None = None
+        self._pairlink_runtime: PairlinkRuntime | None = None
         # A client-free controller minted from config purely to read this bed's
         # CAPABILITIES (which entities to expose) when no live controller exists.
         # Paired children prime this before platform setup so an offline side
@@ -3545,6 +3553,14 @@ class AdjustableBedCoordinator:
                 self._address,
             )
             return False
+        if (
+            self._bed_type == BED_TYPE_REVERIE_PAIRLINK
+            and self.entry.options.get(
+                CONF_PAIRLINK_ROLE, self.entry.data.get(CONF_PAIRLINK_ROLE)
+            ) == PAIRLINK_ROLE_PERIPHERAL
+        ):
+            controller = self._controller
+            return bool(controller is not None and controller.disconnected_transport_ready)
         try:
             if self._bed_type == BED_TYPE_SLEEP_NUMBER and (
                 self._client is None or not self._client.is_connected or self._controller is None
@@ -3637,6 +3653,7 @@ class AdjustableBedCoordinator:
         # pending until authentication has actually been exercised on that proxy.
         unverified_stale_gatt_source: str | None = None
         stale_gatt_pairing_reserved = False
+        pairlink_transport_failed = False
         while True:
             # The cleared proxy's fresh handles still failed authentication, so
             # its bond really is gone and pairing is now justified.
@@ -3676,6 +3693,7 @@ class AdjustableBedCoordinator:
             attempt_index = attempt
             attempt += 1
             attempt_number = attempt_index + 1
+            pairlink_transport_failed = False
             attempt_start = time.monotonic()
             attempt_details = new_connection_attempt_details(
                 attempt_number, self._preferred_adapter
@@ -4157,6 +4175,7 @@ class AdjustableBedCoordinator:
                         else:
                             raise
                     except (BleakError, TimeoutError, OSError) as pair_err:
+                        pairlink_transport_failed = self._client is None or not self._client.is_connected
                         # If pairing was requested and the connection failed,
                         # a BLE bond may already exist from a previous session;
                         # re-pairing on top of an existing bond causes auth
@@ -4865,6 +4884,16 @@ class AdjustableBedCoordinator:
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
 
+        if (
+            pairlink_transport_failed
+            and self._bed_type == BED_TYPE_REVERIE_PAIRLINK
+            and self._pairlink_runtime is not None
+        ):
+            # HA owns retries. Only an exhausted actual central connect failure
+            # projects the source library's status6, never discovery absence.
+            self._pairlink_runtime._on_central_library_status(
+                6, source_mac=self._address
+            )
         reason = connection_reachability(self.hass, self._address)
         if reason:
             _LOGGER.warning("Bluetooth reachability for %s: %s", self._address, reason)
@@ -5453,9 +5482,22 @@ class AdjustableBedCoordinator:
                 await self._command_scheduler.async_shutdown()
             finally:
                 try:
-                    await self.async_disconnect()
+                    try:
+                        runtime = self._pairlink_runtime
+                        if runtime is not None:
+                            runtime.begin_exit()
+                            if runtime._sdk_exit_callback is not None:
+                                await runtime._sdk_exit_callback()
+                    finally:
+                        await self.async_disconnect()
                 finally:
-                    await self._app_state_store.async_save()
+                    runtime = self._pairlink_runtime
+                    self._pairlink_runtime = None
+                    try:
+                        if runtime is not None:
+                            await runtime.async_shutdown()
+                    finally:
+                        await self._app_state_store.async_save()
 
     async def async_disconnect(
         self,
@@ -5503,7 +5545,9 @@ class AdjustableBedCoordinator:
         async with self._lock:
             return await self._async_disconnect_locked(reason)
 
-    async def async_release_for_pairing_transfer(self) -> bool:
+    async def async_release_for_pairing_transfer(
+        self, *, expected_pairlink_runtime: PairlinkRuntime | None = None,
+    ) -> bool:
         """Release this standalone link for takeover by a paired entry.
 
         Pairing-window-only receivers must be checked after any command or
@@ -5511,6 +5555,11 @@ class AdjustableBedCoordinator:
         Holding both lanes through teardown keeps that check atomic.
         """
         async with self._command_lock, self._lock:
+            if (
+                expected_pairlink_runtime is not None
+                and self._pairlink_runtime is not expected_pairlink_runtime
+            ):
+                raise ConnectionError("Pairlink source runtime changed before transfer")
             controller = self._controller
             if (
                 self.is_connected
@@ -5520,7 +5569,26 @@ class AdjustableBedCoordinator:
                 raise PairingOnlyConnectionActiveError
             self._pairing_transfer_active = True
             try:
-                released = await self._async_disconnect_locked("absorbed_by_pair")
+                runtime = self._pairlink_runtime
+                if (
+                    self._bed_type == BED_TYPE_REVERIE_PAIRLINK
+                    and controller is not None
+                    and controller.requires_disconnected_transport is True
+                ):
+                    if runtime is None or not runtime.is_peripheral_role_active:
+                        raise ConnectionError("Local source runtime is unavailable for transfer")
+                    controller.on_disconnect()
+                    try:
+                        await runtime.async_shutdown()
+                    finally:
+                        self._pairlink_runtime = None
+                        self._controller = None
+                        self._offline_controller = None
+                        self._last_disconnected = datetime.now(UTC)
+                        self._notify_connection_state_change(False)
+                    released = True
+                else:
+                    released = await self._async_disconnect_locked("absorbed_by_pair")
             except asyncio.CancelledError:
                 try:
                     await self._async_restore_cancelled_pairing_release()
@@ -5672,6 +5740,7 @@ class AdjustableBedCoordinator:
             with contextlib.suppress(asyncio.CancelledError):
                 await self._controller_state_refresh_task
             self._controller_state_refresh_task = None
+        controller = self._controller
         if self._client is not None:
             # Intentional disconnects (manual, idle timeout, disconnect-after-command)
             # are routine for non-persistent beds; keep them at DEBUG so normal use
@@ -5684,16 +5753,16 @@ class AdjustableBedCoordinator:
             client = self._client
             try:
                 # Stop keep-alive and notifications before disconnecting
-                if self._controller is not None:
+                if controller is not None:
                     # Stop Octo keep-alive if running
-                    if hasattr(self._controller, "stop_keepalive"):
+                    if hasattr(controller, "stop_keepalive"):
                         try:
                             # Cast to Any to avoid mypy error about BedController not having stop_keepalive
-                            await cast(Any, self._controller).stop_keepalive()
+                            await cast(Any, controller).stop_keepalive()
                         except Exception as err:
                             _LOGGER.debug("Error stopping keep-alive: %s", err)
                     try:
-                        await self._controller.stop_notify()
+                        await controller.stop_notify()
                     except Exception as err:
                         _LOGGER.debug("Error stopping notifications: %s", err)
                 connect_lock = async_get_connect_lock(self.hass, self._address)
@@ -5714,6 +5783,11 @@ class AdjustableBedCoordinator:
                 self._client = client
                 _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
                 return False
+            # Some Bleak backends do not emit the disconnect callback for an
+            # intentional close. Preserve the same physical-session invalidation
+            # by notifying the controller when the callback did not already own it.
+            if controller is not None and self._controller is controller:
+                controller.on_disconnect()
             self._client = None
             self._controller = None
             if self._vmat_unready_client is client:
@@ -5978,6 +6052,13 @@ class AdjustableBedCoordinator:
         """Immediately stop any running command and send stop to bed."""
         _LOGGER.info("Stop requested - cancelling current command")
 
+        if self._bed_type in STARCODE_GROUP_BED_TYPES:
+            from .starcode_accessory_group import cancel_group_operations
+
+            # Fence public STOP before the wire wait; retained cleanup has its
+            # own scope and must not invalidate the replacing individual move.
+            cancel_group_operations(self.hass, self.entry.entry_id)
+
         # Invalidate active and queued movement before awaiting the wire lane.
         # The epoch check prevents a queued command from starting after STOP.
         self._cancel_counter += 1
@@ -6005,36 +6086,58 @@ class AdjustableBedCoordinator:
         # then waits for any cancelled controller cleanup to release the wire lock.
         async with self._command_lock:
             self._cancel_disconnect_timer()
+            if getattr(self, "_pairing_transfer_active", False) is True:
+                raise ConnectionError("Bed ownership is being transferred")
+            controller = self._controller
+            disconnected_transport = controller is not None and (
+                controller.requires_disconnected_transport is True
+            )
             try:
-                if not await self.async_ensure_connected(reset_timer=False):
-                    _LOGGER.error("Cannot send stop: not connected to bed")
-                    raise ConnectionError("Not connected to bed")
+                if disconnected_transport:
+                    assert controller is not None
+                    if controller.disconnected_transport_ready is not True:
+                        raise ConnectionError(
+                            "Selected disconnected transport is not ready for STOP"
+                        )
+                else:
+                    if not await self.async_ensure_connected(reset_timer=False):
+                        _LOGGER.error("Cannot send stop: not connected to bed")
+                        raise ConnectionError("Not connected to bed")
 
-                if self._controller is None:
-                    _LOGGER.error("Cannot send stop: no controller available")
-                    raise RuntimeError("No controller available")
+                    # Connecting can rebuild the controller from the selected
+                    # path. STOP must use that live instance, not the offline
+                    # discovery-time controller captured before the connect.
+                    controller = self._controller
+                    if controller is None or controller.requires_disconnected_transport is True:
+                        raise ConnectionError(
+                            "Selected controller changed transport during STOP preparation"
+                        )
 
-                try:
-                    await self._async_refresh_controller_auth()
-                except BleakError as err:
-                    _LOGGER.warning(
-                        "Auth refresh failed before stop command on %s: %s",
-                        self._address,
-                        err,
-                    )
-                except Exception as err:
-                    _LOGGER.warning(
-                        "Unexpected auth refresh failure before stop command on %s: %s",
-                        self._address,
-                        err,
-                        exc_info=True,
-                    )
+                    try:
+                        await self._async_refresh_controller_auth()
+                    except BleakError as err:
+                        _LOGGER.warning(
+                            "Auth refresh failed before stop command on %s: %s",
+                            self._address,
+                            err,
+                        )
+                    except Exception as err:
+                        _LOGGER.warning(
+                            "Unexpected auth refresh failure before stop command on %s: %s",
+                            self._address,
+                            err,
+                            exc_info=True,
+                        )
 
                 # Use controller's stop_all method which knows the correct protocol
-                await self._controller.stop_all()
+                await controller.stop_all()
                 _LOGGER.info("Stop command sent")
             finally:
-                if self._client is not None and self._client.is_connected:
+                if (
+                    not disconnected_transport
+                    and self._client is not None
+                    and self._client.is_connected
+                ):
                     # Release promptly after the short burst handoff.
                     if self._disconnect_after_operation_enabled():
                         _LOGGER.debug(
@@ -6047,16 +6150,35 @@ class AdjustableBedCoordinator:
                         self._reset_disconnect_timer()
 
     async def _async_prepare_controller_operation(self, operation_name: str) -> BedController:
-        """Ensure the controller is connected and authenticated before use."""
+        """Prepare the selected transport before any controller operation."""
+        if getattr(self, "_pairing_transfer_active", False) is True:
+            raise ConnectionError("Bed ownership is being transferred")
+        controller = self._controller
+        if controller is not None and controller.requires_disconnected_transport is True:
+            if controller.disconnected_transport_ready is not True:
+                _LOGGER.error(
+                    "Cannot execute %s: selected disconnected transport is not ready",
+                    operation_name,
+                )
+                raise ConnectionError("Selected disconnected transport is not ready")
+            return controller
+
         if not await self.async_ensure_connected(reset_timer=False):
             _LOGGER.error("Cannot execute %s: not connected to bed", operation_name)
             raise ConnectionError("Not connected to bed")
 
+        # async_ensure_connected may resolve a different usable path and
+        # replace the offline controller. Return only the controller bound to
+        # the connection that was actually established.
         controller = self._controller
-        if controller is None:
-            _LOGGER.error("Cannot execute %s: no controller available", operation_name)
-            raise RuntimeError("No controller available")
-
+        if controller is None or controller.requires_disconnected_transport is True:
+            _LOGGER.error(
+                "Cannot execute %s: current central controller is unavailable after connect",
+                operation_name,
+            )
+            raise ConnectionError(
+                f"Selected controller changed transport during {operation_name} preparation"
+            )
         await self._async_refresh_controller_auth()
         if self._bed_type == BED_TYPE_OCTO:
             from .octo_runtime import octo_controller
@@ -6074,8 +6196,12 @@ class AdjustableBedCoordinator:
         scheduler_managed: bool,
         skip_disconnect: bool,
         operation_name: str,
+        disconnected_transport: bool = False,
     ) -> None:
         """Handle disconnect timer reset or disconnect after an operation completes."""
+        if disconnected_transport:
+            return
+
         if self._bed_type == BED_TYPE_LINAK and not self._command_scheduler.has_pending:
             # A cold Linak link can defer its actuator mask and timer channel
             # until the first command. Persist the now-resolved snapshot after
@@ -6205,6 +6331,11 @@ class AdjustableBedCoordinator:
                 and "*" in command_context.resources
             )
             cancel_event = self.cancel_command
+            controller_before_prepare = self._controller
+            disconnected_transport = (
+                controller_before_prepare is not None
+                and controller_before_prepare.requires_disconnected_transport is True
+            )
             if not preserve_idle_deadline:
                 self._cancel_disconnect_timer()
 
@@ -6238,10 +6369,25 @@ class AdjustableBedCoordinator:
                     # A live diagnostic read must not wait on connect/auth work
                     # that could reopen a link after the idle deadline expires.
                     controller = self._controller
-                    if controller is None or not self.is_connected:
+                    if controller is None:
+                        raise ConnectionError("Diagnostic query requires a live receiver")
+                    disconnected_transport = (
+                        controller.requires_disconnected_transport is True
+                    )
+                    if disconnected_transport:
+                        if controller.disconnected_transport_ready is not True:
+                            raise ConnectionError(
+                                "Selected disconnected transport is not ready"
+                            )
+                    elif not self.is_connected:
                         raise ConnectionError("Diagnostic query requires a live receiver")
                 else:
                     controller = await self._async_prepare_controller_operation(operation_name)
+                    # Capture the role chosen during preparation. It remains the
+                    # owner of operation cleanup even if readiness changes later.
+                    disconnected_transport = (
+                        controller.requires_disconnected_transport is True
+                    )
                 cancelled_during_preparation = cancel_event.is_set() or (
                     (not scheduler_managed or legacy_exclusive)
                     and self._cancel_counter > entry_cancel_count
@@ -6347,6 +6493,7 @@ class AdjustableBedCoordinator:
                         scheduler_managed=scheduler_managed,
                         skip_disconnect=skip_disconnect,
                         operation_name=operation_name,
+                        disconnected_transport=disconnected_transport,
                     )
 
     async def async_execute_controller_command(
@@ -6429,7 +6576,17 @@ class AdjustableBedCoordinator:
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
             from .starcode_accessory_group import prepare_individual_command
 
-            await prepare_individual_command(self, controller_command)
+            settled_group = await prepare_individual_command(self, controller_command)
+            if settled_group and expected_stop_epoch is not None:
+                # The group helper rejects public STOP during its await. Its
+                # own settled cleanup STOPs precede this individual admission.
+                expected_stop_epoch = self._command_scheduler.stop_epoch
+
+        if (
+            expected_stop_epoch is not None
+            and self._command_scheduler.stop_epoch != expected_stop_epoch
+        ):
+            return
 
         if (
             expected_stop_epoch is not None
@@ -6448,7 +6605,9 @@ class AdjustableBedCoordinator:
             group_id=group_id,
             expected_stop_epoch=expected_stop_epoch,
         )
-        await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
+        await self._command_scheduler.execute(
+            intent, expected_stop_epoch=expected_stop_epoch
+        )
 
     def _build_command_intent(
         self,
@@ -6472,7 +6631,8 @@ class AdjustableBedCoordinator:
             else command_resources(resource or "*")
         )
         if cancel_running and (
-            expected_stop_epoch is None or self._command_scheduler.stop_epoch == expected_stop_epoch
+            expected_stop_epoch is None
+            or self._command_scheduler.stop_epoch == expected_stop_epoch
         ):
             # Keep preemptible non-scheduler work (queries and legacy direct
             # writes) responsive. Scheduler-owned operations use their private
@@ -6902,6 +7062,25 @@ class AdjustableBedCoordinator:
                 callback_fn(self._position_data)
             except Exception as err:
                 _LOGGER.warning("Position callback error: %s", err)
+
+    @callback
+    def clear_position_feedback(self, positions: Collection[str]) -> None:
+        """Invalidate only axes whose physical source generation has ended."""
+        changed = False
+        for position in positions:
+            if position not in self._position_data:
+                continue
+            self._position_data.pop(position, None)
+            self._position_data_generation.pop(position, None)
+            self._position_data_updated_monotonic.pop(position, None)
+            changed = True
+        if not changed:
+            return
+        for callback_fn in list(self._position_callbacks):
+            try:
+                callback_fn(self._position_data)
+            except Exception as err:
+                _LOGGER.warning("Position callback error during invalidation: %s", err)
 
     def register_position_callback(
         self, callback_fn: Callable[[dict[str, float]], None]
@@ -7346,21 +7525,22 @@ class AdjustableBedCoordinator:
                 return
 
             try:
-                if not await self.async_ensure_connected(reset_timer=False):
-                    _LOGGER.error("Cannot seek position: not connected to bed")
-                    raise NotConnectedError("Not connected to bed")
-
-                if self._controller is None:
-                    _LOGGER.error("Cannot seek position: no controller available")
-                    raise NoControllerError("No controller available")
-
                 # Pin the controller for the whole seek. A disconnect callback can
                 # clear self._controller while we await below, and every step of the
                 # seek -- including the STOP in the finally block -- must keep acting
                 # on the controller we validated rather than dereferencing None.
                 controller = self._controller
-
-                await self._async_refresh_controller_auth()
+                if controller is not None and controller.requires_disconnected_transport is True:
+                    controller = await self._async_prepare_controller_operation("position seek")
+                else:
+                    if not await self.async_ensure_connected(reset_timer=False):
+                        _LOGGER.error("Cannot seek position: not connected to bed")
+                        raise NotConnectedError("Not connected to bed")
+                    if self._controller is None:
+                        _LOGGER.error("Cannot seek position: no controller available")
+                        raise NoControllerError("No controller available")
+                    controller = self._controller
+                    await self._async_refresh_controller_auth()
 
                 supports_direct_position_control = controller.supports_direct_position_control
 

@@ -755,6 +755,10 @@ async def test_sequential_both_button_is_finite_and_drops_stale_hold_metadata(
         connection_mode=PAIR_CONNECTION_MODE_SEQUENTIAL,
     )
     spec = next(spec for spec in left_controller.motor_control_specs if spec.key == "head")
+    from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
+
+    cover = AdjustableBedCover(left, _build_cover_description(spec))
+    assert cover.extra_state_attributes["held_stop_scope"] == "side"
     button = PairedBedCombinedMotorButton(pair, spec, "up")
 
     pair._connection_mode = PAIR_CONNECTION_MODE_CONCURRENT

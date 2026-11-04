@@ -627,7 +627,12 @@ class HJBedController(BedController):
                     partial(_action, detail=down.object),
                     lambda c: c.stop_all(),
                     hold=ControllerMotorHoldSpec(
-                        "hjbed_" + axis + "_up", "hjbed_" + axis + "_down", 0, 0, "hjbed_release"
+                        "hjbed_" + axis + "_up",
+                        "hjbed_" + axis + "_down",
+                        0,
+                        0,
+                        "hjbed_release",
+                        stop_scope="side",
                     ),
                 )
             )

@@ -331,13 +331,24 @@ class PairedBedCoordinator:
         """Run ``command_fn`` on the targeted side(s) with the both-failure contract."""
         if resource is not None and resources is not None:
             raise ValueError("Pass resource or resources, not both")
+        targets_by_child = {
+            id(child): target_side for target_side, child in self._targets_for(side)
+        }
 
         async def op(child: BedChild) -> None:
-            if resource is None and resources is None:
+            target_side = targets_by_child[id(child)]
+            expected_stop_epoch = (
+                expected_stop_epochs.get(target_side)
+                if expected_stop_epochs is not None
+                else None
+            )
+            if expected_stop_epoch is None:
                 await child.async_execute_controller_command(
                     command_fn,
                     cancel_running=cancel_running,
                     skip_disconnect=skip_disconnect,
+                    resource=resource,
+                    resources=resources,
                 )
             else:
                 await child.async_execute_controller_command(
@@ -346,6 +357,7 @@ class PairedBedCoordinator:
                     skip_disconnect=skip_disconnect,
                     resource=resource,
                     resources=resources,
+                    expected_stop_epoch=expected_stop_epoch,
                 )
 
         await self._run(
@@ -389,6 +401,8 @@ class PairedBedCoordinator:
         cancel_running: bool = True,
         resource: str | None = None,
         resources: Collection[str] | None = None,
+        expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
+        expected_stop_epochs: Mapping[str, int] | None = None,
     ) -> None:
         """Run a child-specific operation with the paired failure contract."""
         if resource is not None and resources is not None:
@@ -400,6 +414,8 @@ class PairedBedCoordinator:
             cancel_running=cancel_running,
             resource=resource,
             resources=resources,
+            expected_pair_generations=expected_pair_generations,
+            expected_stop_epochs=expected_stop_epochs,
         )
 
     async def _run(
@@ -726,6 +742,10 @@ class PairedBedCoordinator:
         expected_stop_epochs: Mapping[str, int] | None = None,
     ) -> None:
         """Prepare every physical scheduler, then commit the linked command."""
+        if self._pair_admission_was_cancelled(
+            targets, resources, entry_cancel, expected_stop_epochs
+        ):
+            return
         if not all(
             callable(getattr(child, "async_prepare_command_operation", None))
             for _, child in targets
@@ -872,7 +892,11 @@ class PairedBedCoordinator:
                             revalidation_errors[side] = err
                 if revalidation_errors:
                     raise PairedSideError(action, revalidation_errors)
-                if revalidation_invalidated:
+                if revalidation_invalidated or self._pair_admission_was_cancelled(
+                    targets, resources, entry_cancel, expected_stop_epochs
+                ):
+                    for child, handle in prepared.values():
+                        await child.async_abort_prepared_command(handle)
                     return
 
                 if self._linked_readiness_required(targets):
@@ -881,6 +905,12 @@ class PairedBedCoordinator:
                     # receiver connects. Recheck before releasing either side.
                     for child, handle in prepared.values():
                         await child.async_wait_prepared_command(handle)
+                    if self._pair_admission_was_cancelled(
+                        targets, resources, entry_cancel, expected_stop_epochs
+                    ):
+                        for child, handle in prepared.values():
+                            await child.async_abort_prepared_command(handle)
+                        return
 
                 if self._pair_admission_was_cancelled(
                     targets, resources, entry_cancel, expected_stop_epochs
@@ -1081,6 +1111,17 @@ class PairedBedCoordinator:
                 # connecting this side (the earlier side already disconnected).
                 break
 
+            selected_controller = child.controller or child.capability_controller
+            local_role = bool(
+                selected_controller is not None
+                and getattr(selected_controller, "requires_disconnected_transport", False)
+            )
+            if local_role and not self._ready_disconnected_transport(child):
+                errors[side] = ConnectionError(
+                    f"{side} local transport is selected but not ready"
+                )
+                break
+
             # One-link guard: release any OTHER side that is still connected (it
             # may have been connected out-of-band, e.g. a per-side diagnostic
             # Connect button) before opening this link, so we never hold two.
@@ -1091,7 +1132,7 @@ class PairedBedCoordinator:
                 break
 
             try:
-                connected = await child.async_connect()
+                connected = True if local_role else await child.async_connect()
             except Exception as err:  # noqa: BLE001 - CancelledError must propagate
                 errors[side] = err
                 break
@@ -1106,7 +1147,7 @@ class PairedBedCoordinator:
             # yet), so re-check now and bail (releasing the link) instead of
             # starting a motor command after the STOP was accepted.
             if cycle_cancelled():
-                if not await self._safe_disconnect(side, child):
+                if not local_role and not await self._safe_disconnect(side, child):
                     # The post-cancel release raised — surface it; the one-link
                     # guard may have failed.
                     errors[side] = HomeAssistantError(
@@ -1120,7 +1161,8 @@ class PairedBedCoordinator:
                 await op(child)
             except asyncio.CancelledError:
                 # Release this side (halts it) before propagating the cancellation.
-                await self._safe_disconnect(side, child)
+                if not local_role:
+                    await self._safe_disconnect(side, child)
                 raise
             except Exception as err:  # noqa: BLE001
                 op_error = err
@@ -1128,7 +1170,7 @@ class PairedBedCoordinator:
             # Disconnecting is BOTH the one-link guard and the halt for this side,
             # so a disconnect failure is fatal: abort rather than connect the next
             # side onto a possibly-still-live/moving link.
-            disconnected = await self._safe_disconnect(side, child)
+            disconnected = local_role or await self._safe_disconnect(side, child)
             if op_error is not None or not disconnected:
                 if op_error is not None and not disconnected:
                     # Both failed: the command erred AND the release that should
@@ -1218,13 +1260,16 @@ class PairedBedCoordinator:
         Returns the per-side errors (if any). Always attempts every side — a STOP
         failure on one must never prevent stopping another.
 
-        In sequential mode only a side that is still CONNECTED is stopped: a
-        disconnected side already halted when its link dropped (dead-man model),
+        In sequential mode connected central receivers and ready local transports
+        are stopped. A disconnected central side already halted on link drop,
         and stopping it would reconnect it (async_stop_command ensures a link),
         momentarily creating the two-link state the sequential profile avoids.
         """
         if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
-            targets = [(side, child) for side, child in targets if child.is_connected]
+            targets = [
+                (side, child) for side, child in targets
+                if child.is_connected or self._ready_disconnected_transport(child)
+            ]
         with self._hold_command_connections(targets):
             results = await asyncio.gather(
                 *(child.async_stop_command() for _, child in targets),
@@ -1249,7 +1294,11 @@ class PairedBedCoordinator:
 
     # ------------------------------------------------------------------ lifecycle
     async def async_connect(self) -> bool:
-        """Connect the children; succeed if *at least one* connects (half-available)."""
+        """Connect children that are ready for ordinary control."""
+        return await self._async_connect_children()
+
+    async def _async_connect_children(self, *, started_local_sides: Collection[str] = ()) -> bool:
+        """Connect children, retaining local servers explicitly started by setup."""
         items = list(self._children.items())
         if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
             # Explicit sequential mode holds one link at a time, so don't keep either
@@ -1258,6 +1307,21 @@ class PairedBedCoordinator:
             # then release it; commands reconnect the targeted side on demand.
             any_connected = False
             for side, child in items:
+                selected_controller = child.controller or child.capability_controller
+                if (
+                    selected_controller is not None
+                    and getattr(selected_controller, "requires_disconnected_transport", False)
+                ):
+                    if (
+                        side not in started_local_sides
+                        and not self._ready_disconnected_transport(child)
+                    ):
+                        raise ConnectionError(
+                            f"{side} local transport is selected but not ready"
+                        )
+                    child.cache_capability_controller()
+                    any_connected = True
+                    continue
                 if not await self._release_other_sides(child):
                     break
                 try:
@@ -1290,8 +1354,17 @@ class PairedBedCoordinator:
         attempt_cursors = {
             side: self._connection_attempt_cursor(child) for side, child in items
         }
-        async def connect_and_cache(child: BedChild) -> bool:
-            connected = await child.async_connect()
+        async def connect_and_cache(side: str, child: BedChild) -> bool:
+            selected_controller = child.controller or child.capability_controller
+            if (
+                selected_controller is not None
+                and getattr(selected_controller, "requires_disconnected_transport", False)
+            ):
+                # Startup owns a registered local server before any peer joins.
+                # Command admission still requires authenticated readiness.
+                connected = side in started_local_sides or self._ready_disconnected_transport(child)
+            else:
+                connected = await child.async_connect()
             if connected:
                 # Cache as soon as this side completes. The other side may take
                 # longer than this receiver's idle disconnect grace period.
@@ -1299,7 +1372,7 @@ class PairedBedCoordinator:
             return connected
 
         results = await asyncio.gather(
-            *(connect_and_cache(child) for _, child in items), return_exceptions=True
+            *(connect_and_cache(side, child) for side, child in items), return_exceptions=True
         )
         results_by_side = {
             side: result
@@ -1354,8 +1427,18 @@ class PairedBedCoordinator:
                         return True
                 self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
                 self._on_child_connection_change(self.is_connected)
-            return await self.async_connect()
+            return await self._async_connect_children(started_local_sides=started_local_sides)
         return any(result is True for result in results)
+
+    @staticmethod
+    def _ready_disconnected_transport(child: BedChild) -> bool:
+        """Recognize an explicitly selected, already-ready non-Bleak role."""
+        controller = child.controller or child.capability_controller
+        return bool(
+            controller is not None
+            and getattr(controller, "requires_disconnected_transport", False)
+            and controller.disconnected_transport_ready
+        )
 
     @staticmethod
     def _connection_attempts(child: BedChild) -> tuple[Mapping[str, object], ...]:
@@ -1568,8 +1651,23 @@ class PairedBedCoordinator:
         for unsub in self._child_unsubs:
             unsub()
         self._child_unsubs.clear()
+        local_children: list[BedChild] = []
+        central_children: list[BedChild] = []
+        for child in self._children.values():
+            controller = child.controller or child.capability_controller
+            if controller is not None and controller.requires_disconnected_transport:
+                local_children.append(child)
+            else:
+                central_children.append(child)
+        # Setup starts local servers in side order; unwind their adapter/profile
+        # ownership in reverse, including when a later child's startup fails.
+        for child in reversed(local_children):
+            try:
+                await child.async_shutdown()
+            except Exception:
+                _LOGGER.exception("Could not shut down paired local transport")
         await asyncio.gather(
-            *(child.async_shutdown() for child in self._children.values()),
+            *(child.async_shutdown() for child in central_children),
             return_exceptions=True,
         )
 
@@ -1860,7 +1958,19 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         )
 
     async def async_execute_controller_command(
-        self, command_fn: CommandFn, **kwargs: Any
+        self,
+        command_fn: CommandFn,
+        cancel_running: bool = True,
+        skip_disconnect: bool = False,
+        *,
+        resource: str | None = None,
+        resources: Collection[str] | None = None,
+        pulse_count: int | None = None,
+        pulse_delay_ms: int | None = None,
+        group_id: str | None = None,
+        kind: CommandKind = CommandKind.COMMAND,
+        read_positions_after_operation: bool = True,
+        expected_stop_epoch: int | None = None,
     ) -> None:
         side_feedback = self._single_inner.bed_type == BED_TYPE_SLEEP_NUMBER
 
@@ -1877,14 +1987,18 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
                 await self._single_inner._async_read_positions(side_controller)
 
         if side_feedback:
-            kwargs["read_positions_after_operation"] = False
-
-        resource = kwargs.pop("resource", None)
-        resources = kwargs.pop("resources", None)
+            read_positions_after_operation = False
         await self._single_inner.async_execute_controller_command(
             bound,
+            cancel_running=cancel_running,
+            skip_disconnect=skip_disconnect,
+            pulse_count=pulse_count,
+            pulse_delay_ms=pulse_delay_ms,
+            group_id=group_id,
+            kind=kind,
+            read_positions_after_operation=read_positions_after_operation,
+            expected_stop_epoch=expected_stop_epoch,
             resources=self._scoped_command_resources(resource, resources),
-            **kwargs,
         )
         self._sync_position_state()
 
@@ -2069,6 +2183,8 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
     ) -> None:
         """Serialize non-native both over the one physical command lock."""
         del cancel_running
+        if not self._expected_stop_epochs_match(targets, expected_stop_epochs):
+            return
         try:
             if self._single_native_both and len({child for _, child in targets}) == 1:
                 if self._pair_admission_was_cancelled(

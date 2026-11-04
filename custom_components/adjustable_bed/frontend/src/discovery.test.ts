@@ -57,12 +57,22 @@ test("paired hold routing comes from backend metadata, not translated motor name
   const hass = hassWith([entry("button.pair_head_up", "head_up", "pair")]);
   hass.states["button.pair_head_up"] = {
     entity_id: "button.pair_head_up", state: "unknown", last_changed: "", last_updated: "",
-    attributes: { paired_hold_motor: "back" },
+    attributes: { paired_hold_motor: "back", paired_hold_side: "both" },
   };
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove)
-    .toEqual({ deviceId: "pair", motor: "back" });
+    .toEqual({ deviceId: "pair", motor: "back", side: "both" });
   delete hass.states["button.pair_head_up"].attributes.paired_hold_motor;
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove).toBeUndefined();
+});
+
+test("standalone held motor metadata selects the bounded timed action", () => {
+  const hass = hassWith([entry("button.back_up", "back_up")]);
+  hass.states["button.back_up"] = {
+    entity_id: "button.back_up", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "back_up", hold_start_delay_ms: 250, hold_release_delay_ms: 100 },
+  };
+  expect(bedEntitiesForDevice(hass, "dev1").motors[0].timedMove)
+    .toEqual({ deviceId: "dev1", motor: "back" });
 });
 
 test("cover hold metadata stays attached to the selected raw Part motor", () => {
@@ -72,6 +82,7 @@ test("cover hold metadata stays attached to the selected raw Part motor", () => 
     attributes: {
       held_control_up: "part_1_up",
       held_control_down: "part_1_down",
+      held_stop_scope: "side",
       hold_start_delay_ms: 100,
       hold_release_delay_ms: 100,
     },
@@ -80,6 +91,7 @@ test("cover hold metadata stays attached to the selected raw Part motor", () => 
   expect(bedEntitiesForDevice(hass, "m1x12").motors).toEqual([{
     key: "starcode_m1x12_part_1",
     cover: "cover.part_1",
+    coverStopScope: "side",
     holdEntityId: "cover.part_1",
     deviceId: "m1x12",
     heldControls: {
@@ -181,6 +193,7 @@ test("M1X12 telemetry and controls stay in side-owned existing card rows", () =>
   Object.assign(hass.states["cover.part_1_left"].attributes, {
     held_control_up: "part_1_up",
     held_control_down: "part_1_down",
+    held_stop_scope: "side",
     hold_start_delay_ms: 100,
     hold_release_delay_ms: 100,
   });
@@ -189,6 +202,7 @@ test("M1X12 telemetry and controls stay in side-owned existing card rows", () =>
   expect(left.motors).toEqual([{
     key: "starcode_m1x12_part_1",
     cover: "cover.part_1_left",
+    coverStopScope: "side",
     holdEntityId: "cover.part_1_left",
     deviceId: "m1-side",
     heldControls: {
@@ -231,7 +245,7 @@ test("Octo backend motor and dynamic memory metadata is retained for the card", 
     entity_id: "cover.octo_back", state: "closed", last_changed: "", last_updated: "",
     attributes: {
       held_control_up: "back_up", held_control_down: "back_down",
-      hold_start_delay_ms: 100, hold_release_delay_ms: 100,
+      held_stop_scope: "side", hold_start_delay_ms: 100, hold_release_delay_ms: 100,
     },
   };
   hass.states["button.octo_memory_9"] = {
@@ -395,6 +409,44 @@ test("INNOVA massage level and memory-page timer buttons join the massage sectio
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.massage.buttons).toEqual(["button.innova_level", "button.innova_timer_hold"]);
   expect(bed.massage.timer).toBe("sensor.innova_timer");
+});
+
+test("Sleepy's timer select remains in massage alongside Pairlink selectors", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("select.sleepys_timer", "sleepys_app_massage_timer_code"),
+    entry("sensor.sleepys_timer", "sleepys_app_massage_timer_code"),
+    entry("select.pairlink_mode", "reverie_pairlink_massage_mode"),
+    entry("select.pairlink_rhythm", "reverie_pairlink_massage_rhythm"),
+  ]), "dev1");
+  expect(bed.massage.selects).toEqual([
+    "select.sleepys_timer", "select.pairlink_mode", "select.pairlink_rhythm",
+  ]);
+  expect(bed.massage.states).toEqual(["sensor.sleepys_timer"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("Pairlink massage controls and state join the massage section", () => {
+  const hass = hassWith([
+    entry("sensor.pairlink_timer_state", "reverie_pairlink_massage_timer"),
+    entry("sensor.pairlink_mode_state", "reverie_pairlink_massage_mode"),
+    entry("number.pairlink_timer", "reverie_pairlink_massage_timer"),
+    entry("select.pairlink_mode", "reverie_pairlink_massage_mode"),
+    entry("select.pairlink_rhythm", "reverie_pairlink_massage_rhythm"),
+    entry("binary_sensor.pairlink_low_battery", "reverie_pairlink_low_battery"),
+  ]);
+
+  const bed = bedEntitiesForDevice(hass, "dev1");
+
+  expect(bed.massage.timer).toBe("number.pairlink_timer");
+  expect(bed.massage.states).toEqual([
+    "sensor.pairlink_timer_state",
+    "sensor.pairlink_mode_state",
+  ]);
+  expect(bed.massage.selects).toEqual([
+    "select.pairlink_mode",
+    "select.pairlink_rhythm",
+  ]);
+  expect(bed.utility).toEqual(["binary_sensor.pairlink_low_battery"]);
 });
 
 test("exact app controls separate floor, bounded mood and massage surfaces", () => {
@@ -1270,7 +1322,7 @@ test("flat cover and combined-button holds project native ownership and directio
   ]);
   hass.states["cover.left_back"] = {
     entity_id: "cover.left_back", state: "open", last_changed: "", last_updated: "",
-    attributes: { held_control_up: "head_up", held_control_down: "head_down", hold_start_delay_ms: 0, hold_release_delay_ms: 300 },
+    attributes: { held_control_up: "head_up", held_control_down: "head_down", held_stop_scope: "side", hold_start_delay_ms: 0, hold_release_delay_ms: 300 },
   };
   hass.states["button.pair_down"] = {
     entity_id: "button.pair_down", state: "unknown", last_changed: "", last_updated: "",
@@ -1450,10 +1502,12 @@ test("SleepEase exposes held motors, massage, lights, sensors and the local chil
   hass.states["cover.head"] = {
     entity_id: "cover.head", state: "open", last_changed: "", last_updated: "",
     attributes: { held_control_up: "doublesleep_2", held_control_down: "doublesleep_3",
+                  held_stop_scope: "side",
                   hold_start_delay_ms: 0, hold_release_delay_ms: 0 },
   };
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.motors[0].heldControls?.up.control).toBe("doublesleep_2");
+  expect(bed.motors[0].coverStopScope).toBe("side");
   expect(bed.presets).toEqual(["button.flat"]);
   expect(bed.massage.buttons).toEqual(["button.massage"]);
   expect(bed.massage.states).toEqual(["sensor.mode"]);

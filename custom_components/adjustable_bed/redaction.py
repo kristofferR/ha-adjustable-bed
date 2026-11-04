@@ -11,6 +11,8 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_JENSEN_PIN,
     CONF_OCTO_PIN,
+    CONF_PAIRLINK_PASSWORD_HEX,
+    CONF_PAIRLINK_PASSWORD_TEXT,
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 
@@ -18,6 +20,8 @@ from .const import (
 _CREDENTIAL_KEYS = {
     CONF_JENSEN_PIN,
     CONF_OCTO_PIN,
+    CONF_PAIRLINK_PASSWORD_HEX,
+    CONF_PAIRLINK_PASSWORD_TEXT,
     "octo_pin_confirmation",
     "authcode",
     "authtoken",

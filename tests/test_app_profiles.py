@@ -19,13 +19,22 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
+    BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
+    CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_PAIRLINK_HOME_ID,
+    CONF_PAIRLINK_HOST_SOURCE,
+    CONF_PAIRLINK_PASSWORD_HEX,
+    CONF_PAIRLINK_PASSWORD_TEXT,
+    CONF_PAIRLINK_ROLE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_STARCODE_LIFT_ENTRIES,
@@ -89,6 +98,29 @@ def test_a_sides_own_setting_is_refused() -> None:
     assert refusal == (CONF_MOTOR_COUNT, "Heal Every Night")
     fsm = per_side_profile(BED_TYPE_FSM_RELAX, None)
     assert fsm is not None and CONF_PRODUCT_TYPE in fsm.keys
+
+
+def test_reverie_protocol_models_and_pairlink_credentials_are_side_owned() -> None:
+    for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
+        profile = per_side_profile(bed_type, None)
+        assert profile is not None
+        assert {
+            CONF_PROTOCOL_VARIANT,
+            CONF_MOTOR_COUNT,
+            CONF_HAS_MASSAGE,
+            CONF_DISABLE_ANGLE_SENSING,
+        } <= profile.keys
+
+    pairlink = per_side_profile(BED_TYPE_REVERIE_PAIRLINK, None)
+    assert pairlink is not None
+    assert {
+        CONF_PROTOCOL_VARIANT,
+        CONF_PAIRLINK_ROLE,
+        CONF_PAIRLINK_HOST_SOURCE,
+        CONF_PAIRLINK_HOME_ID,
+        CONF_PAIRLINK_PASSWORD_TEXT,
+        CONF_PAIRLINK_PASSWORD_HEX,
+    } <= pairlink.keys
 
 
 async def test_options_redraw_when_a_variant_needs_hidden_fields(hass: HomeAssistant) -> None:

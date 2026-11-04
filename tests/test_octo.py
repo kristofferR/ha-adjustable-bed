@@ -1270,6 +1270,7 @@ class TestOctoPinAuth:
             coordinator,
             _build_cover_description(controller.motor_control_specs[0]),
         )
+        assert cover.extra_state_attributes["held_stop_scope"] == "side"
         preset = AdjustableBedButton(
             coordinator,
             next(

@@ -68,11 +68,17 @@ class KeyEvent extends Event {
 }
 async function withKeyboard(run: () => Promise<void> | void) {
   const previous = Object.getOwnPropertyDescriptor(globalThis, "KeyboardEvent");
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  if (typeof window === "undefined" || typeof window.removeEventListener !== "function") {
+    Object.defineProperty(globalThis, "window", { configurable: true, value: new EventTarget() });
+  }
   Object.defineProperty(globalThis, "KeyboardEvent", { configurable: true, value: KeyEvent });
   try { await run(); }
   finally {
     if (previous) Object.defineProperty(globalThis, "KeyboardEvent", previous);
     else Reflect.deleteProperty(globalThis, "KeyboardEvent");
+    if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
+    else Reflect.deleteProperty(globalThis, "window");
   }
 }
 test.each(["Enter", " "])("real utility tile retains right STOP for %p keyboard hold", async (key) => {
@@ -133,6 +139,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
     for (const motor of ["back", "legs"]) add(`cover.${side}_${motor}`, side, motor, {
       held_control_up: motor === "back" ? "head_up" : "foot_up",
       held_control_down: motor === "back" ? "head_down" : "foot_down",
+      held_stop_scope: "side",
       hold_start_delay_ms: 0, hold_release_delay_ms: 0,
     });
     // Source-owned opaque MX and Serta local-target actions use utility tiles.
@@ -142,7 +149,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
   const hass: HomeAssistant = { entities, states, devices, themes: {}, language: "en", locale: { language: "en" },
     callService: (domain, service, data = {}) => {
       calls.push({ domain, service, data });
-      if (service === "hold_control" || service === "open_cover" || data.entity_id === "button.finite_both") {
+      if (service === "hold_control" || service === "timed_move" || service === "open_cover" || data.entity_id === "button.finite_both") {
         return new Promise<void>((resolve) => finishes.push(resolve));
       }
       return new Promise<void>((resolve) => stopFinishes.push(resolve));
