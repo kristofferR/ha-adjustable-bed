@@ -70,8 +70,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 |---|---|---|---|---|---|
 | **Okin N-frame (O1)** | | | | | |
 | `leggett_okin`, `leggett_platt` (Prodigy CE, U Series) | S stream | S | U | p4, useries, leggett-disp, #368, #516c, #483c | held keys OR into one word, release removes one key; four zero frames; CU170 watchdog measured on hardware |
-| `leggett_okin`, `leggett_platt` (Prodigy 2) | S stream | B | U | p2, leggett-disp | report: multiple active keys are ORed, but per-key release while another key stays held is not stated |
-| `leggett_okin`, `leggett_platt` (Prodigy 2L) | S stream | B | U | p2l, leggett-disp | report does not state whether held keys compose |
+| `leggett_okin`, `leggett_platt` (Prodigy 2) | S stream | B | U | p2, leggett-disp | blocked by evidence (rechecked): the report says multiple active keys are ORed, but its only release is the zero word; per-key release while another key stays held is not stated |
+| `leggett_okin`, `leggett_platt` (Prodigy 2L) | S stream | B | U | p2l, leggett-disp | blocked by evidence (rechecked): the report never states that held keys compose, and its release sets key zero |
 | `leggett_platt` (`okin`) | S stream (no release frame) | U | U | universal | okin six-byte key route: refresh ends the hold, no per-axis or global STOP |
 | `customatic_clarity` | S stream | S | U | clarity, row028 | shared OR mask; partial release keeps the reduced mask |
 | `customatic_jeromes` | S stream | S | U | jeromes, row028 | same |
@@ -242,10 +242,27 @@ needs a fresh frame within the watchdog. For Customatic and Svane, a dropped
 link leaves the last command to the firmware. That stays deferred validation
 for beta users, as #516 allows.
 
-Prodigy 2 and Prodigy 2L stay blocked: the Prodigy 2 report says multiple active
-keys are ORed but does not state per-key release, and the Prodigy 2L report does
-not state whether held keys compose. A bounded recheck of each accepted report's
-release path would settle both without new analysis.
+Prodigy 2 and Prodigy 2L stay blocked by evidence. A recheck of both accepted
+reports (`ANALYSIS.md` and `analysis.json`, no new analysis) found no per-key
+release and, for Prodigy 2L, no composition:
+
+- **Prodigy 2** (`p2`) proves composition but not per-key release. Its timing
+  section says "Held/touch commands are scheduled every 100 ms. Multiple active
+  keys are ORed." Its only release is the zero word: "BLE normal release
+  schedules four zero attempts at 100 ms, subject to backpressure, then idles.
+  [...] There is no distinct STOP opcode." Nothing says that releasing one key
+  keeps another held key in the frame.
+- **Prodigy 2L** (`p2l`) proves neither. Its session sequence says "For normal
+  held controls, release/cancel sets key zero. Because the preceding
+  `runNormal` nonzero branch cleared `sentZero`, the loop schedules four
+  explicit zero attempts", and `analysis.json` (`release_behavior.normal`)
+  repeats "Key zero then schedules four normal-zero attempts". The report has
+  no statement that held keys combine.
+
+Prodigy CE and U Series are the only Leggett Okin profiles with evidence for
+both composition and per-key release, so they are the only ones declared
+concurrent (#516). Only new evidence for Prodigy 2 or Prodigy 2L can change
+their disposition.
 
 Notable `unsupported` evidence: the Rize, Glory, Serenity, Tranquil and Nectar
 apps send only recognized masks, so motor chords are never OR'd (Nectar states
