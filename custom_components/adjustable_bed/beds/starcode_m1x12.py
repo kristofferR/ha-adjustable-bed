@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..execution import ExecutionCapabilities
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -193,6 +194,11 @@ class StarcodeM1X12Controller(BedController):
         self._pending_notifications: list[bytes] = []
         self._progress_queue: list[tuple[int, int]] = []
         self._progress_generation = 0
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 100 ms, then sends STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def client(self) -> BleakClient | None:

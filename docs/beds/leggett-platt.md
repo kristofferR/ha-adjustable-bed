@@ -36,6 +36,7 @@
 | Zero-G | ❌ | ✅ | ✅ | ✅ |
 | TV Preset | ❌ | ❌ | ✅ | ❌ |
 | Lounge Preset | ❌ | ❌ | ✅ | ❌ |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 200 ms refresh, then STOP) | ❌ | ❌ | ❌ |
 
 ## Detection
 

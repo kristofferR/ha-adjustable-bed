@@ -48,6 +48,21 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
     # the 5A keys those profiles send, so only ELEVATE declares.
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
+    # Standalone controllers with stream evidence. The generic ``vibradorm``
+    # route keeps finite pulses; ``svane`` and ``leggett_lp_legacy`` are not
+    # declared yet (see the design note).
+    "eshine": {"hold": ('eshine',)},
+    "furnimove": {"hold": ('fm157',)},
+    "jensen": {"hold": ('jensen', 'jensen-disp')},
+    "leggett_gen2": {"hold": ('universal',)},
+    "linak": {"hold": ('linak-iot', 'linak-lp', 'linak-mem', 'linak-guide')},
+    "octo": {"hold": ('octo',)},
+    "sleepys_elite_app": {"hold": ('sleepy',)},
+    "starcode_m1x12": {"hold": ('m1x12',)},
+    "starcode_m5x5": {"hold": ('abm5_5',)},
+    "timotion_ahf": {"hold": ('ahf',)},
+    "vibradorm_app": {"hold": ('diamant', 'werkmeister', 'vmat')},
+    "vmatbasic": {"hold": ('vmatbasic',)},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
@@ -56,6 +71,30 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
+    "beds/eshine.py:<module>.EshineController": ("eshine",),
+    "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
+    "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
+    "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
+    "beds/jensen.py:<module>.JensenController": ("jensen",),
+    "beds/jensen.py:<module>.JensenController.execution": ("jensen",),
+    "beds/leggett_gen2.py:<module>.LeggettGen2Controller": ("leggett_gen2",),
+    "beds/leggett_gen2.py:<module>.LeggettGen2Controller.execution": ("leggett_gen2",),
+    "beds/linak.py:<module>.LinakController": ("linak",),
+    "beds/linak.py:<module>.LinakController.execution": ("linak",),
+    "beds/octo.py:<module>.OctoController": ("octo",),
+    "beds/octo.py:<module>.OctoController.execution": ("octo",),
+    "beds/sleepys_app.py:<module>.SleepysEliteAppController": ("sleepys_elite_app",),
+    "beds/sleepys_app.py:<module>.SleepysEliteAppController.execution": ("sleepys_elite_app",),
+    "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller": ("starcode_m1x12",),
+    "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller.execution": ("starcode_m1x12",),
+    "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller": ("starcode_m5x5",),
+    "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller.execution": ("starcode_m5x5",),
+    "beds/timotion_ahf.py:<module>.TiMOTIONAhfController": ("timotion_ahf",),
+    "beds/timotion_ahf.py:<module>.TiMOTIONAhfController.execution": ("timotion_ahf",),
+    "beds/vibradorm_app.py:<module>.VibradormAppController": ("vibradorm_app",),
+    "beds/vibradorm_app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
+    "beds/vmatbasic.py:<module>.VMatBasicController": ("vmatbasic",),
+    "beds/vmatbasic.py:<module>.VMatBasicController.execution": ("vmatbasic",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

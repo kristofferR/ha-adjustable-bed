@@ -35,6 +35,7 @@ current behavior until the user reconfigures them.
 | Lights | ✅ On/off/cycle, model-gated light modes 0/1, brightness 1–6 |
 | Alarm, EQ, USB, sonic and kneading state | ⚠️ Read-only |
 | ELEVATE lifts | ✅ Up to two explicitly configured M1X12 ELEVATE entries |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) |
 
 ## Protocol Details
 

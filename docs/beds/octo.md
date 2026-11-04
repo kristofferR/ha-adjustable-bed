@@ -79,6 +79,7 @@ checked; see [Analysis provenance](#analysis-provenance).
 | PIN Authentication | ✅ (Standard variant only; PIN enrollment action) |
 | Receiver reset | ✅ (confirmed, destructive action) |
 | Massage, battery, alarm, motor status | ❌ (not exposed by this app protocol) |
+| Hold until release | ✅ Standard ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 350 ms refresh, then STOP); ❌ Star2 |
 
 ## Protocol Details
 

@@ -32,6 +32,7 @@ lamp codes.
 | Under-bed Lights | ✅ (toggle semantics; no discrete on/off packets) |
 | Massage | ❌ (setup does not offer massage for this route) |
 | Status diagnostics | ✅ (readiness, raw lock mask, lamp display code) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then three neutral frames) |
 
 ## Protocol Details
 

@@ -33,6 +33,7 @@
 | Massage | ✅ (remotes 12/13: automatic/individual modes, zones, waves, speed) |
 | Named presets / Flat | ❌ (All Down is movement, not a timed flat preset) |
 | Battery, firmware update, calibration | ❌ (not proven) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`, through the Vibradorm app profile) |
 
 ## Protocol Details
 

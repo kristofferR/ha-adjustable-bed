@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Final
 
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -100,6 +101,11 @@ class EshineController(BedController):
         self._notifying = False
         self._stream = NotificationStream()
         self._observed: dict[str, dict[str, Value]] = {}
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 100 ms, then sends STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:

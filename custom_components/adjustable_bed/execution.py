@@ -68,6 +68,15 @@ class ExecutionCapabilities:
 NO_EXECUTION_CAPABILITIES: Final = ExecutionCapabilities()
 
 
+def leased_hold_ms(press_ms: int) -> int:
+    """How long one press holds: ``press_ms``, or the hold ceiling under a lease.
+
+    A renewable hold (#483) runs until its lease ends, never past the ceiling.
+    """
+    context = current_command_context()
+    return MAX_HOLD_MS if context is not None and context.lease is not None else press_ms
+
+
 def leased_pulses(refresh_ms: int) -> tuple[int, int] | None:
     """Pulse count and delay that refresh a renewable hold at the app's ``refresh_ms``.
 

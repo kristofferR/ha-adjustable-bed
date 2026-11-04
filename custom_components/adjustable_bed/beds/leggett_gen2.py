@@ -39,6 +39,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from ..const import LEGGETT_GEN2_READ_CHAR_UUID, LEGGETT_GEN2_WRITE_CHAR_UUID
+from ..execution import ExecutionCapabilities, leased_pulses
 from .base import BedController
 from .leggett_gen2_profiles import (
     Gen2Capabilities,
@@ -191,6 +192,11 @@ class LeggettGen2Controller(BedController):
             product_id,
             self._caps,
         )
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 200 ms, then sends its STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -364,7 +370,8 @@ class LeggettGen2Controller(BedController):
     ) -> None:
         """Execute a movement command and always send a stop at the end."""
         try:
-            await self.write_command(command, repeat_count=25, repeat_delay_ms=200)
+            count, delay = leased_pulses(200) or (25, 200)
+            await self.write_command(command, repeat_count=count, repeat_delay_ms=delay)
         finally:
             try:
                 await self.write_command(stop_command, cancel_event=asyncio.Event())

@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from ..codec import keeson as codec
+from ..execution import ExecutionCapabilities
 from ..furnimove_profiles import FurniMoveAction, get_furnimove_profile
 from .base import (
     POSITION_AXIS_COMMANDS,
@@ -192,6 +193,11 @@ class FurniMoveController(BedController):
             program = retained.get("furnimove_massage_program")
             if type(program) is int and 0 <= program <= 4:
                 self._state["furnimove_massage_program"] = program
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 100 ms until release (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:
