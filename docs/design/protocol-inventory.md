@@ -16,14 +16,14 @@ guard test (see [How the proof was produced](#how-the-proof-was-produced)).
 
 | Metric | Value |
 | --- | ---: |
-| Supported bed types (`SUPPORTED_BED_TYPES`) | 109 |
-| Modules in `beds/` | 119 files |
-| Capture scenarios (bed types + variant and app-profile routes) | 249 |
+| Supported bed types (`SUPPORTED_BED_TYPES`) | 110 |
+| Modules in `beds/` | 131 files |
+| Capture scenarios (bed types + variant and app-profile routes) | 250 |
 | Scenarios with captured commands | 223 |
-| Scenarios recorded as coverage gaps | 26 |
-| Write runs in the committed snapshot | 8,202 |
+| Scenarios recorded as coverage gaps | 27 |
+| Write runs in the committed snapshot | 8,186 |
 
-Seven wire formats cover 70 of the 109 bed types (71 counting the partial Richmat
+Seven wire formats cover 70 of the 110 bed types (71 counting the partial Richmat
 6E frames of GM Control), including LOGICDATA MOTIONrelax/Sleep Smart in the
 Jiecang family and the Richmat MH apps in the Richmat family. The remaining bed
 types are distinct protocols, sensors/remotes, or coverage gaps. See the next section.
@@ -197,7 +197,7 @@ virtual time). Protocol values are hardware specific and must stay per profile.
 
 | Axis | Observed range | Examples |
 | --- | --- | --- |
-| Movement refresh | 10 x 100 ms default; 25 x 50 ms; 10 x 120/150/200/300 ms; 11 x 100 ms; 20 x 500 ms; 25 x 200 ms; 4 x 300 ms; 3 x 400 ms | `jiecang`, `rondure` 25 x 50; `customatic` 120; `malouf_app` 150; `bf`/`cherish`/`comfort_enhancements`/`adjustamattress` 200; `simmons`/`doublesleep`/`glideaway_motion` 300; `reverie` 20 x 500; `leggett_gen2` 25 x 200; `logicdata_app` 11 x 100 |
+| Movement refresh | 10 x 100 ms default; 25 x 50 ms; 10 x 120/150/200/300 ms; 11 x 100 ms; 25 x 200 ms; 4 x 300 ms; 3 x 400 ms | `jiecang`, `rondure` 25 x 50; `customatic` 120; `malouf_app` 150; `bf`/`cherish`/`comfort_enhancements`/`adjustamattress` 200; `simmons`/`doublesleep`/`glideaway_motion` 300; `leggett_gen2` 25 x 200; `logicdata_app` 11 x 100 |
 | Release schedule | none; one STOP; two STOPs at 100 ms; four at 100 ms; five at 30 ms; two at 300 ms | none: `furnimove`, `okin_rf_eco_bt`, `octo:star2`, `keeson:adjustable_lite`; DreamAsk 10 x 100 then the long `4E 02 00 00` release twice; Dreamotion 10 x 100, one more press, the short `4E 00` release, then the long one; DreamHD the same without the long release; Comfort Motion app and legacy: short release only (presets: DreamAsk/Dreamotion press plus long release, DreamHD and Comfort Motion press plus short release, legacy 3 x 100 press with no release); `okin_cst` family and `suta` 2 x 100; `leggett_okin` 4 x 100; `motosleep` 5 x 30 |
 | Write mode | response true or false, per protocol and per route | `okin_cb24` false, `okin_cst` true, Richmat MH false, `richmat` true, `adjustable_lumbar` follows the variant (okin true, star false) |
 | Hold-only or gesture actions | presets as single press, as repeated hold, or as press plus release | LOGICDATA Sleep Smart presets 10 x 200 ms; DreamHD press then short release; `jiecang` 3 x 100 ms with no release; `bedsense`/`solace`/`remacro` presets are one frame with no STOP (their motion calls send a frame plus STOP) |
@@ -290,8 +290,9 @@ built in the controller module. Lines count the controller plus its helper modul
 | `omazz_adjusto_iii` | `OmazzAdjustoIIIController` (`omazz_adjusto_iii`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
 | `qplus_app` | `QPlusAppController` (`sbi`, 1744) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | `test_sbi.py` |
 | `remacro` | `RemacroController` (`remacro`, 1252) | `remacro_protocol.py` | D distinct | jeromes, the_brick | `test_remacro.py` |
-| `reverie` | `ReverieController` (`reverie`, 570) | inline | D distinct |  | `test_reverie.py` |
-| `reverie_nightstand` | `ReverieNightstandController` (`reverie_nightstand`, 488) | inline | D distinct |  | `test_reverie_nightstand.py` |
+| `reverie` | `ReverieController` (`reverie`, 1138) | inline | D distinct |  | `test_reverie.py` |
+| `reverie_nightstand` | `ReverieNightstandController` (`reverie_nightstand`, 1634) | inline | D distinct |  | `test_reverie_nightstand.py` |
+| `reverie_pairlink` | `ReveriePairlinkController` (`reverie_pairlink`, 2881) | `reverie_pairlink_profile.py`, `reverie_pairlink_protocol.py`, `reverie_pairlink_runtime.py`, `reverie_pairlink_sdk*.py`, `reverie_pairlink_transport.py` | not captured (gap) |  | `test_reverie_pairlink*.py` |
 | `richmat` | `RichmatController` (`richmat`, 1112) | inline | R1 Richmat 6E | nordic, prefix55, prefixaa, wilinke | `test_richmat.py` |
 | `richmat_best_mattress` | `RichmatMhController` (`richmat_mh`, 5014) | `richmat_mh_protocol.py` | R1 Richmat 6E | model_bfrm, model_vsrm | `test_richmat_mh.py` |
 | `richmat_blvd_home` | `RichmatMhController` (`richmat_mh`, 5014) | `richmat_mh_protocol.py` | R1 Richmat 6E | model_bfrm, model_eorm | `test_richmat_mh.py` |
@@ -413,6 +414,7 @@ No report content is copied here.
 | `remacro` | `remacro_led_level`, `remacro_model` | com.cheers.brick/jewmes/slumber (C) |
 | `reverie` |  | com.reverie.reverie 3.3.3.8 C |
 | `reverie_nightstand` |  | none |
+| `reverie_pairlink` | `pairlink_role`, `pairlink_host_source`, `pairlink_home_id`, `pairlink_password_text`, `pairlink_password_hex` | none |
 | `richmat` |  | com.richmat.rmcontrol2 21.3.7 C and others |
 | `richmat_best_mattress` | `ble_device_name` | com.richmat.best_mattress 1.1.1 C |
 | `richmat_blvd_home` | `ble_device_name` | com.richmat.blvd_home 1.0.1 C |
@@ -501,7 +503,7 @@ needs more than one PR gets its own sub-issue.
 - [ ] **5. S1 FFFF** (`solace`/`woosa`, `bedsense`, `motion_bed`): identify the trailer algorithm first (not done here).
 - [ ] **6. O2 Okin 5A** (`okin_7byte`/`nectar`, `okin_nordic`/`mattressfirm`, `okin_cb35`, `star_elevate`, `sleepys_box25` star) and O3 (`malouf_*`).
 - [ ] **7. L1 Limoss DD** (`limoss`, `limoss_remote`, `fsm_relax`): three controllers, low user count; `limoss_remote` needs a replying session to capture.
-- [ ] **8. Standalone with a recorded reason** (no shared frame): `linak`, `octo`, `sleep_number` and `_mcr`, `reverie` and `_nightstand`, `vibradorm` family, `kaidi`/`isleep`/`floyd`, `svane`/`jensen`, `sleeptracker`, GM Control, Casper, `suta`, `sleepstar`, `timotion_ahf`, `motosleep`, `remacro`, `eshine`, `okin_ore`/`sleepys_box24`, `leggett_gen2`/`lp_legacy`, `logicdata`, `logicdata_air_pump`, `sleepys_elite_app`, Starcode M5X5/M1X12.
+- [ ] **8. Standalone with a recorded reason** (no shared frame): `linak`, `octo`, `sleep_number` and `_mcr`, `reverie`, `_nightstand` and `_pairlink`, `vibradorm` family, `kaidi`/`isleep`/`floyd`, `svane`/`jensen`, `sleeptracker`, GM Control, Casper, `suta`, `sleepstar`, `timotion_ahf`, `motosleep`, `remacro`, `eshine`, `okin_ore`/`sleepys_box24`, `leggett_gen2`/`lp_legacy`, `logicdata`, `logicdata_air_pump`, `sleepys_elite_app`, Starcode M5X5/M1X12.
 
 Families 2 and 3 likely carry most of the line-count reduction; families 0 and 1
 carry the smallest regression surface.
@@ -540,6 +542,7 @@ byte equality of motor and STOP commands.
 | `sleep_number`, `sleep_number_mcr`, `limoss_remote` | need a live authenticated session or handshake replies (the connect hooks time out) |
 | `sleeptracker`, `sleepys_elite_app`, `starcode_m1x12`, `starcode_m5x5` | exact multi-service GATT or product tables the derived layout does not satisfy |
 | `svane`, `svane:svane_remote_jmc` | raw axis reads needed before most commands |
+| `reverie_pairlink` | needs its Pairlink runtime, which the stub coordinator does not provide |
 | `leggett_lp_legacy` | no write came from the logical command set |
 | `richmat_*` Richmat MH bed types in their `auto` form | covered through the `model_*` routes instead |
 
