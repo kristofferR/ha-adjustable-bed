@@ -226,10 +226,14 @@ class _MergedStream:
         self.membership_changed = True
         self.wake.set()
 
-    def abandon(self, outcome: CommandOutcome) -> None:
-        """Resolve members of a stream that never wrote anything."""
-        for member in (*self.members.values(), *self.ending):
+    def abandon(self, outcome: CommandOutcome, error: BaseException | None = None) -> None:
+        """Resolve every member still waiting, with the stream's failure if any."""
+        for member in (*self.members.values(), *self.ending, *self.awaiting_release):
+            if member.done.is_set():
+                continue
             member.outcome = member.outcome or outcome
+            if error is not None and member.error is None:
+                member.error = error
             self.scheduler._end_member_lease(member)
             member.done.set()
         self.members.clear()
@@ -239,10 +243,17 @@ class _MergedStream:
     async def run(self, context: CommandContext, runner: StreamRunner) -> None:
         try:
             await runner(lambda driver: self._stream(context, driver))
-        finally:
-            # Covers a runner that failed before the body ran.
-            reason = context.cancel_reason or CommandOutcome.FAILED
-            self.abandon(reason)
+        except asyncio.CancelledError:
+            self.abandon(context.cancel_reason or CommandOutcome.CALLER_CANCELLED)
+            raise
+        except BaseException as err:
+            # A connection, tick or release failure reaches every member it ended.
+            self.abandon(CommandOutcome.FAILED, err)
+            raise
+        else:
+            # A runner that returned without running the body (preempted while
+            # waiting for the link) ends its members as cancelled.
+            self.abandon(context.cancel_reason or CommandOutcome.STOPPED)
 
     async def _stream(self, context: CommandContext, driver: StreamDriver) -> None:
         loop = asyncio.get_running_loop()
@@ -250,11 +261,16 @@ class _MergedStream:
         failure: BaseException | None = None
         try:
             while True:
-                now = loop.time()
-                for member in tuple(self.members.values()):
-                    if member.deadline <= now:
-                        self.retire(member, CommandOutcome.EXPIRED)
-                await self._clean_up(driver)
+                # Cleanup awaits the wire, so recheck deadlines until none is
+                # overdue: an expired member must never reach another tick.
+                while True:
+                    now = loop.time()
+                    for member in tuple(self.members.values()):
+                        if member.deadline <= now:
+                            self.retire(member, CommandOutcome.EXPIRED)
+                    if not self.ending:
+                        break
+                    await self._clean_up(driver)
                 if not self.members or context.cancel_event.is_set():
                     break
                 self.wake.clear()
@@ -290,6 +306,8 @@ class _MergedStream:
             )
             for member in tuple(self.members.values()):
                 self.retire(member, outcome)
+                if outcome is CommandOutcome.FAILED and failure is not None:
+                    member.error = failure
             try:
                 await self._clean_up(driver)
             finally:
@@ -307,19 +325,25 @@ class _MergedStream:
                         member.done.set()
 
     async def _clean_up(self, driver: StreamDriver) -> None:
+        """Run every ending member's cleanup, then raise the first failure."""
+        first_error: BaseException | None = None
         while self.ending:
             member = self.ending.popleft()
             try:
                 await driver.end_stream_member(member, tuple(self.members.values()))
-            except BaseException as err:
+            except asyncio.CancelledError:
+                self.ending.appendleft(member)
+                raise
+            except Exception as err:
                 member.error = err
                 member.outcome = CommandOutcome.FAILED
-                raise
-            finally:
-                if self.members:
-                    member.done.set()
-                else:
-                    self.awaiting_release.append(member)
+                first_error = first_error or err
+            if self.members:
+                member.done.set()
+            else:
+                self.awaiting_release.append(member)
+        if first_error is not None:
+            raise first_error
 
 
 async def _first_set(*events: asyncio.Event) -> None:
@@ -463,6 +487,11 @@ def command_resources(*resources: str) -> frozenset[str]:
     """Normalize a resource declaration, defaulting to the whole command link."""
     normalized = frozenset(resource for resource in resources if resource)
     return normalized or ALL_COMMAND_RESOURCES
+
+
+def _consume_failure(future: asyncio.Future[None]) -> None:
+    if not future.cancelled():
+        future.exception()
 
 
 def _clamp(deadline: float, ceiling: float | None) -> float:
@@ -713,6 +742,8 @@ class DeviceCommandScheduler:
                 )
                 handle.stream = stream
                 stream.handle = handle
+                # Members carry the failure; nobody awaits the streamer itself.
+                handle.future.add_done_callback(_consume_failure)
                 stream.join(member)
                 self._admit_locked(handle)
             else:

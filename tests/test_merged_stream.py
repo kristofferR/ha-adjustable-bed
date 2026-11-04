@@ -181,7 +181,10 @@ async def test_member_cleanup_failure_ends_the_stream_and_releases() -> None:
     legs = join(scheduler, driver, member("legs"))
     with pytest.raises(RuntimeError, match="cleanup failed"):
         await asyncio.wait_for(back, 1)
-    assert await asyncio.wait_for(legs, 1) is CommandOutcome.FAILED
+    # The failure ended legs too, and its caller sees it.
+    with pytest.raises(RuntimeError, match="cleanup failed"):
+        await asyncio.wait_for(legs, 1)
+    assert ("end", "legs:up") in driver.events
     assert driver.events[-1] == ("release",)
     assert scheduler.recent_records[-1].outcome is CommandOutcome.FAILED
 
@@ -235,3 +238,66 @@ async def test_disconnect_ends_the_stream_without_replay() -> None:
     await asyncio.sleep(0.03)
     assert len(driver.ticks()) == ticks
     assert driver.events[-1] == ("release",)
+
+
+async def test_tick_failure_reaches_every_member() -> None:
+    scheduler = DeviceCommandScheduler("tick-failure")
+    driver = FakeDriver()
+    back = join(scheduler, driver, member("back"))
+    legs = join(scheduler, driver, member("legs"))
+    await settle(driver)
+
+    async def broken(_members: tuple[StreamMember, ...]) -> None:
+        raise ConnectionError("link lost")
+
+    driver.write_stream_tick = broken  # type: ignore[method-assign]
+    for task in (back, legs):
+        with pytest.raises(ConnectionError, match="link lost"):
+            await asyncio.wait_for(task, 1)
+    assert driver.events[-1] == ("release",)
+    assert scheduler.recent_records[-1].outcome is CommandOutcome.FAILED
+
+
+async def test_stop_runs_every_member_cleanup_despite_a_failure() -> None:
+    scheduler = DeviceCommandScheduler("drain")
+    driver = FakeDriver(fail_end="back")
+    back = join(scheduler, driver, member("back"))
+    legs = join(scheduler, driver, member("legs"))
+    await settle(driver)
+    scheduler.finish_stop(scheduler.request_stop(ALL_COMMAND_RESOURCES))
+    with pytest.raises(RuntimeError, match="cleanup failed"):
+        await asyncio.wait_for(back, 1)
+    await asyncio.gather(legs, return_exceptions=True)
+    assert ("end", "legs:up") in driver.events
+    assert driver.events[-1] == ("release",)
+
+
+async def test_slow_cleanup_never_lets_an_expired_member_tick() -> None:
+    scheduler = DeviceCommandScheduler("slow-cleanup")
+    driver = FakeDriver()
+    original_end = driver.end_stream_member
+
+    async def slow_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
+        if item.motor == "back":
+            await asyncio.sleep(0.05)  # legs expires meanwhile
+        await original_end(item, remaining)
+
+    driver.end_stream_member = slow_end  # type: ignore[method-assign]
+    back = join(scheduler, driver, member("back", seconds=0.02))
+    legs = join(scheduler, driver, member("legs", seconds=0.04))
+    await asyncio.wait_for(asyncio.gather(back, legs), 1)
+    back_end = driver.events.index(("end", "back:up", "legs"))
+    assert not any(event[0] == "tick" for event in driver.events[back_end:])
+
+
+async def test_overdue_stream_lease_is_not_renewed() -> None:
+    import time
+
+    scheduler = DeviceCommandScheduler("overdue-member")
+    driver = FakeDriver()
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=0.02)
+    back = join(scheduler, driver, member("back", lease=held))
+    await settle(driver, 1)
+    time.sleep(0.04)  # block the loop past the deadline before the streamer wakes
+    assert scheduler.claim_hold(held, ("motor:back",)) is HoldClaim.STALE
+    assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
