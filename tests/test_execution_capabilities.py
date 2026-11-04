@@ -53,6 +53,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {}
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {}
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
+CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent"})
+# Family profiles have their own ``hold`` timing field, so only these names
+# identify a replace() of a declaration.
+DISTINCT_FIELDS = frozenset({"execution", "sustain_ms", "concurrent"})
 
 
 def _design_evidence_keys() -> frozenset[str]:
@@ -199,6 +203,9 @@ def _declaration_sites(root: Path = PACKAGE) -> dict[str, set[str]]:
             continue
         tree = ast.parse(path.read_text(), filename=relative)
         for scope, node in _walk_scoped(tree, "<module>"):
+            if _names_field_by_string(node):
+                # A field named by string (a ``**{...}`` key, setattr) is unreadable.
+                sites.setdefault(f"{relative}:{scope}", set()).add("**")
             if isinstance(node, ast.Call):
                 name = node.func.attr if isinstance(node.func, ast.Attribute) else (
                     node.func.id if isinstance(node.func, ast.Name) else ""
@@ -211,8 +218,18 @@ def _declaration_sites(root: Path = PACKAGE) -> dict[str, set[str]]:
                         fields.add("**")
                 if any(keyword.arg == "execution" for keyword in node.keywords):
                     sites.setdefault(site, set())
-                if name == "replace" and "execution" in ast.unparse(node).lower():
-                    sites.setdefault(site, set())
+                source = ast.unparse(node)
+                if name in ("replace", "__replace__") and (
+                    "execution" in source.lower()
+                    or any(keyword.arg in DISTINCT_FIELDS for keyword in node.keywords)
+                ):
+                    # replace() can add a field to a reviewed declaration.
+                    fields = sites.setdefault(site, set())
+                    fields.update(
+                        keyword.arg if keyword.arg is not None else "**"
+                        for keyword in node.keywords
+                        if keyword.arg is None or keyword.arg in CAPABILITY_FIELDS
+                    )
             elif (
                 isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                 and node.name == "execution"
@@ -231,6 +248,21 @@ def _declaration_sites(root: Path = PACKAGE) -> dict[str, set[str]]:
                 ):
                     sites.setdefault(f"{relative}:{scope}", set())
     return sites
+
+
+def _names_field_by_string(node: ast.AST) -> bool:
+    if isinstance(node, ast.Dict):
+        return any(
+            isinstance(key, ast.Constant) and key.value in DISTINCT_FIELDS for key in node.keys
+        )
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "setattr"
+        and len(node.args) > 1
+        and isinstance(node.args[1], ast.Constant)
+        and node.args[1].value in DISTINCT_FIELDS
+    )
 
 
 def _walk_scoped(node: ast.AST, scope: str) -> Iterator[tuple[str, ast.AST]]:
@@ -279,12 +311,24 @@ def test_site_guard_finds_declarations(tmp_path: Path) -> None:
         "    return ExecutionCapabilities(hold='stream', concurrent=AXES if mx else frozenset())\n"
     )
     samples["spread.py"] = "X = ExecutionCapabilities(**FIELDS)\n"
+    samples["variant.py"] = (
+        "class V:\n    @property\n    def execution(self):\n"
+        "        return replace(ExecutionCapabilities(hold='stream'),"
+        " concurrent=AXES if self.v else frozenset())\n"
+    )
+    samples["copied.py"] = "X = replace(BASE_EXECUTION, **CHANGES)\n"
+    samples["keyed.py"] = "CHANGES = {'concurrent': AXES}\n"
+    samples["setattr.py"] = "def f(p):\n    setattr(p, 'execution', STREAM)\n"
     for name, source in samples.items():
         (tmp_path / name).write_text(source)
     sites = _declaration_sites(tmp_path)
     assert {site.split(":", 1)[0] for site in sites} == set(samples) - {"empty.py"}
     assert sites["conditional.py:<module>.make"] == {"hold", "concurrent"}
     assert sites["spread.py:<module>.X"] == {"**"}
+    assert sites["variant.py:<module>.V.execution"] == {"hold", "concurrent"}
+    assert sites["copied.py:<module>.X"] == {"**"}
+    assert sites["keyed.py:<module>.CHANGES"] == {"**"}
+    assert sites["setattr.py:<module>.f"] == {"**"}
 
 
 def test_default_declares_nothing() -> None:
