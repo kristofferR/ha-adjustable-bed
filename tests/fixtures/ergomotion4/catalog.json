@@ -1,0 +1,905 @@
+[
+  {
+    "id": "CAT001",
+    "name": "20th Anniversary",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "massage_key": [
+        "m1",
+        "m2"
+      ],
+      "rgb": false,
+      "light": true,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3",
+        "o4"
+      ]
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C041",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C041",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ]
+  },
+  {
+    "id": "CAT002",
+    "name": "4180",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "model_key": [
+        "o2",
+        "o3"
+      ],
+      "massage_key": [
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m7",
+        "m8"
+      ],
+      "light": true,
+      "rgb": false
+    },
+    "initial_command_ids": [
+      "C013",
+      "C014",
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C033",
+      "C034",
+      "C037",
+      "C041",
+      "C042",
+      "C044",
+      "C045",
+      "C047",
+      "C048"
+    ],
+    "light_on_command_ids": [
+      "C013",
+      "C014",
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C033",
+      "C034",
+      "C037",
+      "C041",
+      "C042",
+      "C044",
+      "C045",
+      "C047",
+      "C048"
+    ]
+  },
+  {
+    "id": "CAT003",
+    "name": "4184",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "light": false,
+      "model_key": [],
+      "massage_key": [],
+      "rgb": false
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035"
+    ]
+  },
+  {
+    "id": "CAT004",
+    "name": "4193",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "rgb": false,
+      "massage_key": [],
+      "model_key": [
+        "o1",
+        "o3"
+      ],
+      "light": true
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C043",
+      "C045"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C043",
+      "C045"
+    ]
+  },
+  {
+    "id": "CAT005",
+    "name": "4194RGB",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "light": true,
+      "model_key": [
+        "o2"
+      ],
+      "massage_key": [
+        "m9"
+      ],
+      "rgb": true
+    },
+    "initial_command_ids": [
+      "C004",
+      "C005",
+      "C020",
+      "C021",
+      "C033",
+      "C034",
+      "C037",
+      "C044",
+      "C047",
+      "C048"
+    ],
+    "light_on_command_ids": [
+      "C004",
+      "C005",
+      "C020",
+      "C021",
+      "C027",
+      "C028",
+      "C029",
+      "C033",
+      "C034",
+      "C037",
+      "C044",
+      "C047",
+      "C048"
+    ]
+  },
+  {
+    "id": "CAT006",
+    "name": "828",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "massage_key": [
+        "m1",
+        "m2",
+        "m5",
+        "m6"
+      ],
+      "model_key": [
+        "o1",
+        "o2",
+        "o3",
+        "o4"
+      ],
+      "light": true,
+      "rgb": false
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C038",
+      "C040",
+      "C041",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C038",
+      "C040",
+      "C041",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ]
+  },
+  {
+    "id": "CAT007",
+    "name": "Aeroflex-4308",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "model_key": [
+        "o1",
+        "o2"
+      ],
+      "light": false,
+      "massage_key": [
+        "m8"
+      ],
+      "rgb": false
+    },
+    "initial_command_ids": [
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C033",
+      "C034",
+      "C043",
+      "C044",
+      "C047",
+      "C048"
+    ],
+    "light_on_command_ids": [
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C033",
+      "C034",
+      "C043",
+      "C044",
+      "C047",
+      "C048"
+    ]
+  },
+  {
+    "id": "CAT008",
+    "name": "Aeroflex-5623",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "massage_key": [
+        "m6",
+        "m8"
+      ],
+      "rgb": false,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3",
+        "o4"
+      ],
+      "light": false
+    },
+    "initial_command_ids": [
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C033",
+      "C034",
+      "C039",
+      "C043",
+      "C044",
+      "C045",
+      "C046",
+      "C047",
+      "C048"
+    ],
+    "light_on_command_ids": [
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C033",
+      "C034",
+      "C039",
+      "C043",
+      "C044",
+      "C045",
+      "C046",
+      "C047",
+      "C048"
+    ]
+  },
+  {
+    "id": "CAT009",
+    "name": "Chaide 4166",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "rgb": false,
+      "model_key": [
+        "o1",
+        "o3",
+        "o4"
+      ],
+      "light": false,
+      "massage_key": [
+        "m1",
+        "m5",
+        "m6"
+      ]
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C038",
+      "C040",
+      "C042",
+      "C043",
+      "C045",
+      "C046"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C038",
+      "C040",
+      "C042",
+      "C043",
+      "C045",
+      "C046"
+    ]
+  },
+  {
+    "id": "CAT010",
+    "name": "EZI MAID",
+    "route_variant": "V19",
+    "protocol": "P2",
+    "runtime_keys": {
+      "model_key": [],
+      "light": false,
+      "rgb": false,
+      "massage_key": []
+    },
+    "initial_command_ids": [
+      "C255",
+      "C256"
+    ],
+    "light_on_command_ids": [
+      "C255",
+      "C256"
+    ]
+  },
+  {
+    "id": "CAT011",
+    "name": "ErgoBalance Pro-4168+",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "massage_key": [
+        "m1",
+        "m3",
+        "m4"
+      ],
+      "rgb": false,
+      "light": true,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3",
+        "o4"
+      ]
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C030",
+      "C035",
+      "C037",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C030",
+      "C035",
+      "C037",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ]
+  },
+  {
+    "id": "CAT012",
+    "name": "ErgoBalance-4168",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "light": false,
+      "rgb": false,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "massage_key": []
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C043",
+      "C044",
+      "C045"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C043",
+      "C044",
+      "C045"
+    ]
+  },
+  {
+    "id": "CAT013",
+    "name": "ErgoBalance100 ",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "massage_key": [],
+      "model_key": [
+        "k1",
+        "k3"
+      ],
+      "rgb": false,
+      "light": false
+    },
+    "initial_command_ids": [
+      "C012",
+      "C018",
+      "C032"
+    ],
+    "light_on_command_ids": [
+      "C012",
+      "C018",
+      "C032"
+    ]
+  },
+  {
+    "id": "CAT014",
+    "name": "ErgoBasic-4087",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "massage_key": [],
+      "rgb": false,
+      "light": false,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3"
+      ]
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C043",
+      "C044",
+      "C045"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C043",
+      "C044",
+      "C045"
+    ]
+  },
+  {
+    "id": "CAT015",
+    "name": "ErgoDuetto-4367/4364",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "rgb": false,
+      "light": true,
+      "massage_key": [
+        "m10"
+      ],
+      "model_key": [
+        "o1"
+      ]
+    },
+    "initial_command_ids": [
+      "C002",
+      "C007",
+      "C010",
+      "C011",
+      "C016",
+      "C017",
+      "C031",
+      "C036",
+      "C037",
+      "C043"
+    ],
+    "light_on_command_ids": [
+      "C002",
+      "C007",
+      "C010",
+      "C011",
+      "C016",
+      "C017",
+      "C031",
+      "C036",
+      "C037",
+      "C043"
+    ]
+  },
+  {
+    "id": "CAT016",
+    "name": "Ergocomfort 5680/568H",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "rgb": false,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3",
+        "o4"
+      ],
+      "massage_key": [
+        "m1",
+        "m3",
+        "m4"
+      ],
+      "light": true
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C030",
+      "C035",
+      "C037",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C030",
+      "C035",
+      "C037",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046"
+    ]
+  },
+  {
+    "id": "CAT017",
+    "name": "Flex3 Massage",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "massage_key": [
+        "m1",
+        "m5",
+        "m6"
+      ],
+      "light": true,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "rgb": false
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C038",
+      "C040",
+      "C042",
+      "C043",
+      "C044",
+      "C045"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C038",
+      "C040",
+      "C042",
+      "C043",
+      "C044",
+      "C045"
+    ]
+  },
+  {
+    "id": "CAT018",
+    "name": "Ortobom 3350",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "light": true,
+      "model_key": [
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "massage_key": [
+        "m1",
+        "m5",
+        "m6"
+      ],
+      "rgb": false
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C038",
+      "C040",
+      "C042",
+      "C043",
+      "C044",
+      "C045"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C037",
+      "C038",
+      "C040",
+      "C042",
+      "C043",
+      "C044",
+      "C045"
+    ]
+  },
+  {
+    "id": "CAT019",
+    "name": "Rosen 4165",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "light": false,
+      "massage_key": [],
+      "model_key": [],
+      "rgb": false
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035"
+    ]
+  },
+  {
+    "id": "CAT020",
+    "name": "SIMONS SA 3410S",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "rgb": false,
+      "model_key": [
+        "o3",
+        "o4"
+      ],
+      "massage_key": [
+        "m1",
+        "m2",
+        "m5",
+        "m6"
+      ],
+      "light": false
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C038",
+      "C040",
+      "C041",
+      "C042",
+      "C045",
+      "C046"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C038",
+      "C040",
+      "C041",
+      "C042",
+      "C045",
+      "C046"
+    ]
+  },
+  {
+    "id": "CAT021",
+    "name": "SMART TEC-4193",
+    "route_variant": "V01",
+    "protocol": "P2",
+    "runtime_keys": {
+      "model_key": [
+        "o1",
+        "o2"
+      ],
+      "rgb": false,
+      "massage_key": [],
+      "light": false
+    },
+    "initial_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C043",
+      "C044"
+    ],
+    "light_on_command_ids": [
+      "C001",
+      "C006",
+      "C009",
+      "C015",
+      "C030",
+      "C035",
+      "C043",
+      "C044"
+    ]
+  }
+]

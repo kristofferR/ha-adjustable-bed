@@ -19,7 +19,7 @@ from types import MappingProxyType
 from typing import Final, Literal
 
 from ..codec import keeson as codec
-from ..codec.keeson import ByteOrder, Carrier, TransportKey
+from ..codec.keeson import ByteOrder, Carrier, Side, TransportKey
 
 Preset = Literal["flat", "zero_g", "lounge", "tv", "anti_snore"]
 Massage = Literal["step", "absolute", "zone_steps", "none"]
@@ -111,6 +111,8 @@ class KeesonProfile:
     order: ByteOrder = "little"
     side: int | None = None
     """Side byte of the nine-byte K1 frame."""
+    single_side: bool = False
+    """Left/Right side frames (``codec.side_frame``) are proven for this route."""
     transport: TransportKey = "base"
     notify: TransportKey = "base"
     fixed_write: bool = False
@@ -170,8 +172,11 @@ _KSBT_MEMORY: Final[Mapping[int, int]] = {
     3: K.PRESET_MEMORY_4,
 }
 
+# Ergomotion 4.0 3.7 (com.sfd.hump) proves the P1 Left/Right frames that BASE and
+# ERGOMOTION send for a split base on one address; the auto-detected tables do not.
 BASE: Final = KeesonProfile(
     key="base",
+    single_side=True,
     hold=(3, 400),
     presets={**_BASE_PRESETS},
     memory=_GENERIC_MEMORY,
@@ -180,6 +185,7 @@ BASE: Final = KeesonProfile(
 )
 ERGOMOTION: Final = KeesonProfile(
     key="ergomotion",
+    single_side=True,
     hold=(10, 100),
     presets=_KSBT_PRESETS,
     memory=_GENERIC_MEMORY,
@@ -520,8 +526,17 @@ def resolve(
     return PROFILES.get(variant, BASE)
 
 
-def encode(profile: KeesonProfile, word: int, device_id: str = "unknown") -> bytes:
-    """Encode one word in the profile's carrier; JSON zero words release (``ctrm`` 0)."""
+def encode(
+    profile: KeesonProfile, word: int, device_id: str = "unknown", *, side: Side | None = None
+) -> bytes:
+    """Encode one word in the profile's carrier; JSON zero words release (``ctrm`` 0).
+
+    ``side`` selects one half of a split base and needs a ``single_side`` profile.
+    """
+    if side is not None:
+        if not profile.single_side:
+            raise ValueError("This Keeson profile has no proven single-side frame")
+        return codec.side_frame(word, side)
     if profile.carrier == "k1":
         return codec.frame(word, header=profile.header, order=profile.order, side=profile.side)
     if profile.carrier == "json":
