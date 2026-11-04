@@ -51,6 +51,7 @@ from .reverie_pairlink_protocol import (
     PAIRLINK_NOTIFY_UUID,
     PAIRLINK_SERVICE_UUID,
     PAIRLINK_WRITE_UUID,
+    GattWriter,
     a7_payload,
     build_user_frame,
     comfort_payloads,
@@ -118,6 +119,22 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 PairlinkMeshEventCallback = Callable[[int, bytes | None, bool], None]
+
+
+class _TracedCentralWriter:
+    """Record each fragment ``send_central_frame`` writes, then write it."""
+
+    def __init__(self, controller: BedController, client: GattWriter) -> None:
+        self._controller = controller
+        self._client = client
+
+    async def write_gatt_char(
+        self, char_specifier: str, data: bytes, response: bool | None = None
+    ) -> None:
+        self._controller._record_command_trace(
+            char_specifier, data, response=bool(response), command_origin="pairlink"
+        )
+        await self._client.write_gatt_char(char_specifier, data, response=response)
 
 
 class ReveriePairlinkController(BedController):
@@ -240,6 +257,14 @@ class ReveriePairlinkController(BedController):
     def control_characteristic_uuid(self) -> str:
         """Return the accepted primary central write UUID."""
         return self._write_uuid
+
+    def _format_command_trace_payload(self, command: bytes) -> dict[str, object]:
+        """Never trace Pairlink frames: they are keyed by the home ID and password."""
+        return {"hex": "**REDACTED**", "length": len(command), "ascii_preview": None}
+
+    def _central_writer(self, client: GattWriter) -> GattWriter:
+        """Wrap ``client`` so each central fragment reaches the command trace."""
+        return _TracedCentralWriter(self, client)
 
     @property
     def requires_disconnected_transport(self) -> bool:
@@ -666,7 +691,7 @@ class ReveriePairlinkController(BedController):
                 self._resolve_gatt_endpoints()
                 async with self._ble_lock:
                     await send_central_frame(
-                        client,
+                        self._central_writer(client),
                         effect.payload,
                         characteristic=self._write_uuid,
                         att_mtu=client.mtu_size,
@@ -1864,7 +1889,7 @@ class ReveriePairlinkController(BedController):
                 if not self._runtime.joined or not current_client.is_connected:
                     return
                 await send_central_frame(
-                    current_client,
+                    self._central_writer(current_client),
                     b"\x01\x1a",
                     characteristic=self._write_uuid,
                     att_mtu=current_client.mtu_size,
@@ -2122,7 +2147,7 @@ class ReveriePairlinkController(BedController):
                     if client is None or not client.is_connected:
                         raise ConnectionError("Pairlink central link ended before the write")
                     await send_central_frame(
-                        client,
+                        self._central_writer(client),
                         outbound,
                         characteristic=self._write_uuid,
                         att_mtu=snapshot.mtu,

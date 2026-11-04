@@ -46,6 +46,7 @@ testing status.
 | Design note | Contents |
 |-------------|----------|
 | [Protocol codecs and app profiles](design/protocol-codecs.md) | The codec, profile and controller layers, family registration and the vector harness |
+| [Bluetooth discovery hints](design/discovery-hints.md) | Per-family hints, the generated manifest matchers and detection's first pass |
 | [Protocol inventory](design/protocol-inventory.md) | Every bed type's wire format, proven by encoding, and its byte-identical aliases |
 | [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence and design |
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |

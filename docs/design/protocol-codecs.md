@@ -64,6 +64,9 @@ a shared registry.
   stale blocks, one marked region per block, spelled frames are frozen vectors,
   and `bed_types()` matches the factory. Checks only one family needs go in
   `tests/test_codec_docs_<family>.py`.
+- **Discovery:** `custom_components/adjustable_bed/discovery_hints/<family>.py`
+  declares `HINTS`, from which the manifest's Bluetooth matchers are generated
+  (see [discovery hints](discovery-hints.md)).
 
 Profile keys are scoped to their profile class. Two families may use the same
 key (Jiecang and Limoss both call their pre-v5 route `legacy`); every lookup,

@@ -120,6 +120,11 @@ class Okin7ByteController(BedController):
             _LOGGER.debug("Sending wake frames before first command")
             try:
                 for frame in profile.wake:
+                    self._record_command_trace(
+                        self.control_characteristic_uuid,
+                        frame,
+                        response=profile.wake_with_response,
+                    )
                     async with self._ble_lock:
                         await self.client.write_gatt_char(
                             self.control_characteristic_uuid,
