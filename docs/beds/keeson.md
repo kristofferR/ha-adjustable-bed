@@ -653,17 +653,35 @@ themselves are sent once before any profile-specific release.
 
 ## Split-Bed Support (Member's Mark)
 
-Member's Mark beds support independent control of left and right sides using a 9-byte packet:
+The explicit **BaseI4/BaseI5** and **Ergomotion** Keeson variants, and the
+Ergomotion bed type, offer **Configure → Enable side controls** for a P1
+receiver that reaches both halves through one Bluetooth address. This creates
+native Left and Right child devices and retains the parent's Both controls.
+Auto is not eligible because it may resolve to P2 or JSON at connection time.
 
-```
-[0xE6, 0xFE, 0x16, cmd_lo, cmd_mid_lo, cmd_mid_hi, cmd_hi, side, checksum]
-```
+The side frame is proven by Ergomotion 4.0 3.7; its use on Member's Mark
+hardware remains unverified. Choose it only for a receiver with compatible P1
+side addressing. It does not change existing standalone frames, pulse timings,
+profiles or entity identities. Two separately advertising receivers use the
+existing two-address combined-bed workflow.
 
-| Side Byte | Meaning |
-|-----------|---------|
-| `0x00` | Default |
-| `0x01` | Side A (Right) |
-| `0x02` | Side B (Left) |
+| Target | Packet | Side byte |
+|--------|--------|-----------|
+| Both | `E5 FE 16 command_le32 checksum` (8 bytes) | none |
+| Left | `E6 FE 16 command_le32 02 checksum` (9 bytes) | `02` |
+| Right | `E6 FE 16 command_le32 01 checksum` (9 bytes) | `01` |
+
+Checksum is the complemented low-byte sum of all preceding bytes. Every P1
+command, including release/STOP, retains the selected side. The older A/B
+aliases in this guide corresponded to `01`/`02`; they do not establish physical
+A/B orientation. Android 3.7's A/B settings strings actually produce selector
+`00` because its builder expects Left/Right. HA uses the proven Left/Right
+branches. Physical half mapping awaits real-user validation after beta/release.
+
+For the complete app-specific products, commands, notifications, alarms and RGB,
+select the separate [Ergomotion 4.0 app profile](ergomotion-4.md). P2 products
+have no side selector. Its parser reports timer/light/RGB, without inferred
+positions; the existing legacy Ergomotion percentage entities remain unchanged.
 
 ## Device Detection
 

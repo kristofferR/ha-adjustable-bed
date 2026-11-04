@@ -158,6 +158,7 @@ from .const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_PIN,
+    CONF_PAIR_MODE,
     CONF_PAIRLINK_ROLE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
@@ -208,6 +209,7 @@ from .const import (
     OFFLINE_CAPABILITY_SAFE_VARIANTS,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_VARIANT_NECTAR_MOVE,
+    PAIR_MODE_SINGLE_ADDRESS,
     PAIRLINK_ROLE_PERIPHERAL,
     POSITION_FEEDBACK_TIMEOUT,
     POSITION_MODE_ACCURACY,
@@ -251,6 +253,7 @@ from .diagnostic_payloads import new_connection_attempt_details
 from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 from .pairing import (
     filter_child_options,
+    is_paired,
     octo_snapshot_from_descriptor,
 )
 from .position_seek import (
@@ -449,6 +452,14 @@ class AdjustableBedCoordinator:
         self._disable_angle_sensing: bool = entry.data.get(
             CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
         )
+        # Legacy P1 positions have no side ownership. Keep the stored preference
+        # for restoring standalone controls, but never seek using shared feedback.
+        if (
+            is_paired(entry.data)
+            and entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+            and self._bed_type in {BED_TYPE_KEESON, BED_TYPE_ERGOMOTION}
+        ):
+            self._disable_angle_sensing = True
         self._passive_position_reconciliation_enabled: bool = bool(
             entry.data.get(
                 CONF_PASSIVE_POSITION_RECONCILIATION,
@@ -993,6 +1004,11 @@ class AdjustableBedCoordinator:
             corrected_bed_type in BEDS_WITH_POSITION_FEEDBACK
             and angle_sensing_defaulted
             and self._disable_angle_sensing
+            and not (
+                is_paired(entry_data)
+                and entry_data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+                and corrected_bed_type in {BED_TYPE_KEESON, BED_TYPE_ERGOMOTION}
+            )
         ):
             self._disable_angle_sensing = False
             entry_data[CONF_DISABLE_ANGLE_SENSING] = False

@@ -1,0 +1,458 @@
+[
+  {
+    "id": "seekbar-C383-4194RGB-1.0-25",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 1.0,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a00020000018701e900"
+  },
+  {
+    "id": "seekbar-C383-4194RGB-1.0-100",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 1.0,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a0002000001ff210a00"
+  },
+  {
+    "id": "seekbar-C383-4194RGB-0.6-25",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 0.6,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a000200000151008b00"
+  },
+  {
+    "id": "seekbar-C383-4194RGB-0.6-100",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 0.6,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a000200000199130600"
+  },
+  {
+    "id": "seekbar-C383-M16-1.0-25",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 1.0,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a00020000018701e900"
+  },
+  {
+    "id": "seekbar-C383-M16-1.0-100",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 1.0,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a0002000001ff210a00"
+  },
+  {
+    "id": "seekbar-C383-M16-0.6-25",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 0.6,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a000200000151008b00"
+  },
+  {
+    "id": "seekbar-C383-M16-0.6-100",
+    "inputs": {
+      "command_id": "C383",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 0.6,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a000200000199130600"
+  },
+  {
+    "id": "seekbar-C384-4194RGB-1.0-25",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 1.0,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a00020000018701e900"
+  },
+  {
+    "id": "seekbar-C384-4194RGB-1.0-100",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 1.0,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a0002000001ff210a00"
+  },
+  {
+    "id": "seekbar-C384-4194RGB-0.6-25",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 0.6,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a000200000151008b00"
+  },
+  {
+    "id": "seekbar-C384-4194RGB-0.6-100",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 0.6,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a000200000199130600"
+  },
+  {
+    "id": "seekbar-C384-M16-1.0-25",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 1.0,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a00020000018701e900"
+  },
+  {
+    "id": "seekbar-C384-M16-1.0-100",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 1.0,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a0002000001ff210a00"
+  },
+  {
+    "id": "seekbar-C384-M16-0.6-25",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 0.6,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a000200000151008b00"
+  },
+  {
+    "id": "seekbar-C384-M16-0.6-100",
+    "inputs": {
+      "command_id": "C384",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 0.6,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a000200000199130600"
+  },
+  {
+    "id": "seekbar-C385-4194RGB-1.0-25",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 1.0,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "0a02000000000101bb78fe1600"
+  },
+  {
+    "id": "seekbar-C385-4194RGB-1.0-100",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 1.0,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "0a02000000000101bb00def500"
+  },
+  {
+    "id": "seekbar-C385-4194RGB-0.6-25",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 0.6,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "0a02000000000101bbaeff7400"
+  },
+  {
+    "id": "seekbar-C385-4194RGB-0.6-100",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 0.6,
+      "selected_name": "4194RGB",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "0a02000000000101bb66ecf900"
+  },
+  {
+    "id": "seekbar-C385-M16-1.0-25",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 1.0,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a00020000018701e900"
+  },
+  {
+    "id": "seekbar-C385-M16-1.0-100",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 1.0,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a0002000001ff210a00"
+  },
+  {
+    "id": "seekbar-C385-M16-0.6-25",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 25,
+      "light_level": 0.6,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        135,
+        1,
+        233
+      ]
+    },
+    "expected_bytes": "090a000200000151008b00"
+  },
+  {
+    "id": "seekbar-C385-M16-0.6-100",
+    "inputs": {
+      "command_id": "C385",
+      "bitmap_width": 456,
+      "bitmap_height": 44,
+      "resource_density_case": "raw xxhdpi raster, no framework density rescaling",
+      "progress": 100,
+      "light_level": 0.6,
+      "selected_name": "M16",
+      "from_user": true,
+      "rgb": [
+        255,
+        33,
+        10
+      ]
+    },
+    "expected_bytes": "090a000200000199130600"
+  }
+]

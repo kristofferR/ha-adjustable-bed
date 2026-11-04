@@ -354,6 +354,7 @@ from .discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
 )
+from .ergomotion4_profiles import PRODUCT_CHOICES as ERGOMOTION4_CHOICES
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from .octo_auth import OctoPinStatus, async_verify_octo_pin
@@ -870,7 +871,7 @@ def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
 
 
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
-    **dict.fromkeys(CLUSTER033_BED_TYPES, "cluster033_app"),
+    **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
     BED_TYPE_VIBRADORM: "vibradorm",
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
     BED_TYPE_JIECANG_APP: "jiecang_app",
@@ -2154,6 +2155,26 @@ _PROBE_ADVERTISEMENT_WAIT_SECONDS = 10.0
 
 def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
     bed_type = data[CONF_BED_TYPE]
+    if bed_type == "ergomotion_4":
+        from .beds.ergomotion4 import (
+            CONF_MASSAGE_KEYS,
+            CONF_MODEL_KEYS,
+            CONF_PRODUCT_NAME,
+            CONF_RGB,
+            MASSAGE_KEYS,
+            MODEL_KEYS,
+        )
+        schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, "H"))] = vol.In(ERGOMOTION4_CHOICES)
+        # Custom catalog fields stay visible so switching the product takes one
+        # submission. They apply only to Other catalog product.
+        for key, choices in ((CONF_MODEL_KEYS, MODEL_KEYS), (CONF_MASSAGE_KEYS, MASSAGE_KEYS)):
+            schema[vol.Optional(key, default=data.get(key, []))] = SelectSelector(
+                SelectSelectorConfig(options=list(choices), multiple=True, mode=SelectSelectorMode.DROPDOWN)
+            )
+        schema[vol.Optional(CONF_PRODUCT_NAME, default=data.get(CONF_PRODUCT_NAME, "Custom"))] = str
+        schema[vol.Optional(CONF_HAS_LIGHT, default=data.get(CONF_HAS_LIGHT, False))] = bool
+        schema[vol.Optional(CONF_RGB, default=data.get(CONF_RGB, False))] = bool
+        return
     schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, DEFAULT_LAYOUTS[bed_type]))] = vol.In(APP_LAYOUTS[bed_type])
     if bed_type == "qplus_app":
         schema[vol.Required(CONF_PROTOCOL_VARIANT, default=data.get(CONF_PROTOCOL_VARIANT, "both"))] = vol.In(("both", "side_a", "side_b"))
@@ -2167,9 +2188,19 @@ def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[s
 
 def _normalize_cluster033_data(data: dict[str, Any]) -> None:
     bed_type = data[CONF_BED_TYPE]
-    layout = data.get(CONF_PRODUCT_TYPE, DEFAULT_LAYOUTS[bed_type])
-    if layout not in APP_LAYOUTS[bed_type]:
+    choices = ERGOMOTION4_CHOICES if bed_type == "ergomotion_4" else APP_LAYOUTS[bed_type]
+    layout = data.get(CONF_PRODUCT_TYPE, "H" if bed_type == "ergomotion_4" else DEFAULT_LAYOUTS[bed_type])
+    if layout not in choices:
         raise ValueError("Choose the selected app's layout")
+    if bed_type == "ergomotion_4" and layout == "custom":
+        from .beds.ergomotion4 import (
+            CONF_MASSAGE_KEYS,
+            CONF_MODEL_KEYS,
+            CONF_PRODUCT_NAME,
+            CONF_RGB,
+            custom_product,
+        )
+        custom_product(data.get(CONF_PRODUCT_NAME, "Custom"), tuple(data.get(CONF_MODEL_KEYS, ())), tuple(data.get(CONF_MASSAGE_KEYS, ())), data.get(CONF_HAS_LIGHT, False), data.get(CONF_RGB, False))
     data[CONF_PRODUCT_TYPE] = layout
     data[CONF_MOTOR_COUNT] = 2
     data[CONF_HAS_MASSAGE] = False  # Exact app-labelled controls own their entities.
@@ -2179,7 +2210,7 @@ def _normalize_cluster033_data(data: dict[str, Any]) -> None:
 
 # Options fields of app profiles whose adder needs only the current data.
 _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]] = {
-    **dict.fromkeys(CLUSTER033_BED_TYPES, _add_cluster033_schema_fields),
+    **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, _add_cluster033_schema_fields),
     BED_TYPE_FURNIMOVE: _add_furnimove_schema_field,
     BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
     BED_TYPE_JIECANG_APP: _add_jiecang_app_schema_fields,
@@ -2760,7 +2791,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors["base"] = "cluster033_layout"
             else:
                 self._manual_data = data
-                return await self._finish_with_verify(data, data.get(CONF_NAME, APP_NAMES[data[CONF_BED_TYPE]]))
+                return await self._finish_with_verify(data, data.get(CONF_NAME, APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")))
         schema: dict[vol.Marker, Any] = {}
         _add_cluster033_schema_fields(schema, data)
         return self.async_show_form(step_id="cluster033_app", data_schema=vol.Schema(schema), errors=errors)
@@ -7804,7 +7835,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type != BED_TYPE_LIMOSS_REMOTE:
             data.pop(CONF_LIMOSS_REMOTE_THEME, None)
             # Per-MAC local memories remain durable when changing protocol.
-        if bed_type not in HAS_LIGHT_DEFAULTS:
+        if bed_type not in HAS_LIGHT_DEFAULTS and bed_type != "ergomotion_4":
             data.pop(CONF_HAS_LIGHT, None)
         if bed_type not in CHAIR_AND_BED_APP_BED_TYPES:
             for key in CONF_REVERSE_MOTORS:
@@ -8946,7 +8977,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         if key in app_data
                     }
                 )
-            if bed_type in CLUSTER033_BED_TYPES and not separate_address_pair:
+            if bed_type in CLUSTER033_BED_TYPES | {"ergomotion_4"} and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 try:
                     _normalize_cluster033_data(app_data)

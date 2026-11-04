@@ -188,6 +188,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     """Create a controller through the factory for the given bed type."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == const.BED_TYPE_ERGOMOTION_4:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     if bed_type in const.CLUSTER033_BED_TYPES:
         from custom_components.adjustable_bed.cluster033_profiles import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
@@ -380,6 +382,8 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
     coordinator = _FactoryCoordinator()
     if bed_type == const.BED_TYPE_ISLEEP:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
+    if bed_type == const.BED_TYPE_ERGOMOTION_4:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     controller = await _create_from_registry(coordinator, bed_type)
 
     assert isinstance(controller, BedController)
