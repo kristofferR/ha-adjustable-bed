@@ -12,14 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
-from .command_scheduler import current_command_context
-
 HoldMode = Literal["stream", "latched"]
 HOLD_MODES: Final[frozenset[str]] = frozenset({"stream", "latched"})
-MAX_HOLD_MS: Final = 30_000
-"""Longest one renewable hold runs in total, however often it is renewed."""
-LATCHED_MAX_HOLD_MS: Final = 10_000
-"""Ceiling of a latched hold, whose bed keeps moving until STOP arrives."""
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -58,7 +52,7 @@ class ExecutionCapabilities:
         """Longest one renewable hold may run; None when no hold is declared."""
         if self.hold is None:
             return None
-        return LATCHED_MAX_HOLD_MS if self.hold == "latched" else MAX_HOLD_MS
+        return LATCHED_HOLD_CEILING_MS if self.hold == "latched" else HOLD_CEILING_MS
 
     @property
     def declared(self) -> frozenset[str]:
@@ -75,24 +69,10 @@ class ExecutionCapabilities:
 
 
 NO_EXECUTION_CAPABILITIES: Final = ExecutionCapabilities()
+STREAM_HOLD: Final = ExecutionCapabilities(hold="stream")
+"""The app refreshes a held frame until release, then sends its release frames."""
 
-
-def leased_hold_ms(press_ms: int, ceiling_ms: int = MAX_HOLD_MS) -> int:
-    """How long one press holds: ``press_ms``, or the hold ceiling under a lease.
-
-    A renewable hold (#483) runs until its lease ends, never past the ceiling.
-    """
-    context = current_command_context()
-    return ceiling_ms if context is not None and context.lease is not None else press_ms
-
-
-def leased_pulses(refresh_ms: int) -> tuple[int, int] | None:
-    """Pulse count and delay that refresh a renewable hold at the app's ``refresh_ms``.
-
-    Returns None outside a renewable hold (#483), so finite moves keep their
-    own pulses. The lease ends the hold; the count only spans the ceiling.
-    """
-    context = current_command_context()
-    if context is None or context.lease is None:
-        return None
-    return MAX_HOLD_MS // refresh_ms + 1, refresh_ms
+HOLD_CEILING_MS: Final = 30_000
+"""The longest one renewable hold streams, however often its lease is renewed."""
+LATCHED_HOLD_CEILING_MS: Final = 10_000
+"""Ceiling of a latched hold, whose bed keeps moving until STOP arrives."""

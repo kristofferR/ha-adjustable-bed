@@ -39,7 +39,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from ..const import LEGGETT_GEN2_READ_CHAR_UUID, LEGGETT_GEN2_WRITE_CHAR_UUID
-from ..execution import ExecutionCapabilities, leased_pulses
+from ..execution import ExecutionCapabilities
 from .base import BedController
 from .leggett_gen2_profiles import (
     Gen2Capabilities,
@@ -370,8 +370,8 @@ class LeggettGen2Controller(BedController):
     ) -> None:
         """Execute a movement command and always send a stop at the end."""
         try:
-            count, delay = leased_pulses(200) or (25, 200)
-            await self.write_command(command, repeat_count=count, repeat_delay_ms=delay)
+            count = self.leased_hold_refreshes(200) or 25
+            await self.write_command(command, repeat_count=count, repeat_delay_ms=200)
         finally:
             try:
                 await self.write_command(stop_command, cancel_event=asyncio.Event())

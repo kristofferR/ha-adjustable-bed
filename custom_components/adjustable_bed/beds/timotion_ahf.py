@@ -24,7 +24,7 @@ from ..const import (
     TIMOTION_AHF_SERVICE_UUID,
     TIMOTION_AHF_WRITE_CHAR_UUID,
 )
-from ..execution import ExecutionCapabilities, leased_pulses
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -374,9 +374,10 @@ class TiMOTIONAhfController(BedController):
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """A renewable hold refreshes at the app's interval; finite pulses keep the entry's."""
-        return leased_pulses(round(_CONTROL_REPEAT_DELAY_SECONDS * 1000)) or (
-            super().motor_pulse_settings()
-        )
+        refresh = round(_CONTROL_REPEAT_DELAY_SECONDS * 1000)
+        if (count := self.leased_hold_refreshes(refresh)) is not None:
+            return count, refresh
+        return super().motor_pulse_settings()
 
     def _monotonic(self) -> float:
         """Return the event-loop clock used to bound a held action."""

@@ -143,7 +143,9 @@ class EshineController(BedController):
         )
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        return self._coordinator.motor_pulse_count, REFRESH_MS
+        # A renewable hold (#483) refreshes until its lease ends.
+        count = self.leased_hold_refreshes(REFRESH_MS) or self._coordinator.motor_pulse_count
+        return count, REFRESH_MS
 
     @property
     def held_control_options(self) -> tuple[str, ...]:

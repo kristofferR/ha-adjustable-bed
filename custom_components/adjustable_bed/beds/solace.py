@@ -18,7 +18,6 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import ff_frame as codec
 from ..const import SOLACE_CHAR_UUID
-from ..execution import LATCHED_MAX_HOLD_MS, leased_hold_ms
 from ..profiles.ff_frame import (
     SolaceCommands,
     SolaceProfile,
@@ -437,9 +436,7 @@ class SolaceController(BedController):
             try:
                 await asyncio.wait_for(
                     self._coordinator.cancel_command.wait(),
-                    timeout=leased_hold_ms(
-                        round(self._MOVEMENT_SAFETY_TIMEOUT * 1000), LATCHED_MAX_HOLD_MS
-                    )
+                    timeout=self.leased_hold_ms(round(self._MOVEMENT_SAFETY_TIMEOUT * 1000))
                     / 1000,
                 )
             except TimeoutError:

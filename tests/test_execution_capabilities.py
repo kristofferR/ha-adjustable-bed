@@ -47,6 +47,13 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Latched (FFFF frame): one start, STOP at release.
     "BedSenseProfile:bedsense": {"hold": ("bedsense",)},
+    # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
+    "JiecangProfile:dreamask": {"hold": ("dreamask",)},
+    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
+    "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    "LogicdataProfile:phone": {"hold": ("ld-phone",)},
+    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
+    "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
     # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
     # the 5A keys those profiles send, so only ELEVATE declares.
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
@@ -62,6 +69,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
     "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
+    # cadence is the entry's pulse settings, not the app's.
+    "LimossProfile:limoss_remote": {"hold": ("limoss",)},
+    "LimossProfile:fsm_relax": {"hold": ("fsm",)},
     # Latched Solace routes. S4-Y and unidentified entries have no report, and
     # Motion Bed has no route a lease could renew.
     "SolaceProfile:common": {"hold": ("homekobo", "dianqi")},
@@ -146,12 +157,20 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         "SolaceProfile:motion_flex",
         "SolaceProfile:woosa",
     ),
+    "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
+    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
+    "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
+    "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
+    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
+    "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
     "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
+    "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

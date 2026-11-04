@@ -51,6 +51,7 @@ so a service UUID cannot say which app's layout or release behavior applies
 | Feature | Legacy route | Comfort Motion | ERGOBALANCE / Dream Motion | Dream Motion HD |
 |---------|--------------|----------------|----------------------------|-----------------|
 | Motor Control | ✅ (back and legs) | ✅ (movement and release; 2/3/4-motor layouts; the two-motor layout also exposes combined back/legs) | ✅ (determined by the selected layout) | ✅ (determined by the selected layout) |
+| Hold Until Release | ❌ (finite pulses) | ❌ (finite pulses; report PARTIAL) | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
 | Position Feedback | ❌ | ❌ (no motor angle, percentage or movement completion) | ❌ (actuator-status packets are not motor position feedback; no position sliders or angle sensors) | ❌ (same) |
 | Presets | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore; Yoga when the bed reports it | ✅ same |
 | Memory Presets | ✅ (3 slots, recall and program) | ✅ (two recalls, two saves) | ✅ (2 slots, separate recall and save) | ✅ (2 slots, different payload) |
@@ -66,6 +67,7 @@ The LOGICDATA app profiles:
 | Feature | MOTIONrelax phone / tablet | Sleep Smart (bed) |
 |---------|----------------------------|-------------------|
 | Motor Control | ✅ (per layout) | ✅ Back, legs, both |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
 | Position Feedback | ❌ (neither app reports motor positions) | ❌ |
 | Presets | ✅ P1: Flat, Zero-G, Anti-Snore. P2: Flat | ✅ Flat, Zero Gravity, Anti-Snore (hold-only) |
 | Memory Presets | ✅ (2 slots, recall and save, both families) | ✅ (1 slot) |
@@ -114,13 +116,13 @@ The tables below come from the profile data.
 
 Release offsets count from the last hold frame.
 
-| Profile | Hold refresh | Repeats | Final frame | Release after hold | Explicit stop |
-|---|---|---|---|---|---|
-| Legacy route | 50 ms (after each write) | 25 | no | +0 ms short release | +0 ms short release |
-| Comfort Motion | 100 ms (after each write) | motor pulse count | no | +100 ms short release | +0 ms short release |
-| ERGOBALANCE (Dreamask) | 100 ms (fixed rate) | motor pulse count | no | +50 ms long release, +150 ms long release | +0 ms long release, +100 ms long release |
-| Dream Motion | 100 ms (fixed rate) | motor pulse count | yes | +100 ms short release, +800 ms long release | +0 ms short release, +700 ms long release |
-| Dream Motion HD | 100 ms (fixed rate) | motor pulse count | yes | +100 ms short release | +0 ms short release |
+| Profile | Hold refresh | Repeats | Hold until release | Final frame | Release after hold | Explicit stop |
+|---|---|---|---|---|---|---|
+| Legacy route | 50 ms (after each write) | 25 | no | no | +0 ms short release | +0 ms short release |
+| Comfort Motion | 100 ms (after each write) | motor pulse count | no | no | +100 ms short release | +0 ms short release |
+| ERGOBALANCE (Dreamask) | 100 ms (fixed rate) | motor pulse count | renewable lease | no | +50 ms long release, +150 ms long release | +0 ms long release, +100 ms long release |
+| Dream Motion | 100 ms (fixed rate) | motor pulse count | renewable lease | yes | +100 ms short release, +800 ms long release | +0 ms short release, +700 ms long release |
+| Dream Motion HD | 100 ms (fixed rate) | motor pulse count | renewable lease | yes | +100 ms short release | +0 ms short release |
 
 ### One-shot timing
 
@@ -454,6 +456,12 @@ not motor position feedback, and no motor positions are decoded.
   [Hold and release timing](#hold-and-release-timing)). The schedule always runs
   with a fresh event, so a cancelled action still releases the motors.
 - An explicit STOP sends the same release frames with the first at offset 0.
+- With a [renewable hold](../SERVICES.md#renewable-holds), ERGOBALANCE, Dream
+  Motion and Dream Motion HD refresh the motion frame at their own interval
+  until the lease ends or a STOP arrives, as the apps do while a button is held,
+  up to the 30 s ceiling. Lease expiry runs the release schedule above. A leased
+  hold never sends the final frame, so motion never restarts after it ends. The
+  legacy route and Comfort Motion keep finite pulses.
 - A stop during a hold ends the refresh immediately, then runs the release
   schedule from its first offset. The coordinator's STOP then sends the explicit
   stop schedule.
@@ -999,6 +1007,11 @@ configurations retain their previous behavior.
 
 #### Timing
 
+Every LOGICDATA profile supports a
+[renewable hold](../SERVICES.md#renewable-holds): movement refreshes at the
+movement interval until the lease ends or a STOP arrives, up to the 30 s
+ceiling, then sends the touch release. A leased hold sends no final frame.
+
 The tables below come from the profile data.
 
 <!-- generated:logicdata-profiles -->
@@ -1014,11 +1027,11 @@ The tables below come from the profile data.
 
 **LOGICDATA timing**
 
-| Profile | Movement refresh | Touch release | Held presets (P1 / P2) | Hold refresh | Memory save | Light | Massage mode | Massage query |
-|---|---|---|---|---|---|---|---|---|
-| Phone app | 100 ms, final frame | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | none |
-| Tablet app | 100 ms, final frame | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | none | none |
-| Sleep Smart Air Mattress app (bed) | 100 ms, final frame | +100 ms short release | flat, zero_g, anti_snore, memory_1 / flat, zero_g, anti_snore, memory_1 (buttons hold) | flat 200 ms, zero_g 200 ms, anti_snore 200 ms, memory_1 200 ms | +0 ms, no payload | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | +100 ms, +250 ms, +450 ms |
+| Profile | Movement refresh | Hold until release | Touch release | Held presets (P1 / P2) | Hold refresh | Memory save | Light | Massage mode | Massage query |
+|---|---|---|---|---|---|---|---|---|---|
+| Phone app | 100 ms, final frame | renewable lease | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | none |
+| Tablet app | 100 ms, final frame | renewable lease | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | none | none |
+| Sleep Smart Air Mattress app (bed) | 100 ms, final frame | renewable lease | +100 ms short release | flat, zero_g, anti_snore, memory_1 / flat, zero_g, anti_snore, memory_1 (buttons hold) | flat 200 ms, zero_g 200 ms, anti_snore 200 ms, memory_1 200 ms | +0 ms, no payload | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | +100 ms, +250 ms, +450 ms |
 
 **LOGICDATA startup**
 
