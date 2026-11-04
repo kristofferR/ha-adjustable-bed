@@ -71,8 +71,8 @@
         "custom_components/adjustable_bed/coordinator_connection.py::async_ensure_connected"
       ],
       "tests": [
-        "tests/test_coordinator.py:425",
-        "tests/test_coordinator.py:508"
+        "tests/test_coordinator_connection.py:337",
+        "tests/test_coordinator_connection.py:420"
       ]
     },
     "parser": {
