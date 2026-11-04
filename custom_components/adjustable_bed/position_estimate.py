@@ -41,7 +41,6 @@ from .const import DOMAIN, SIDE_BOTH
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .command_scheduler import StreamDriver, StreamMember
 
 type MotorCommand = Callable[[BedController], Coroutine[Any, Any, None]]
 
@@ -803,113 +802,6 @@ def track_held_control(
         await command(controller)
 
     return tracked
-
-
-class _TrackedStream:
-    """Time each merged-stream member (#516) as a serialized move is timed.
-
-    A member's move starts with the first frame that carries it: a composed
-    tick, or the reduced frame another member's cleanup writes for the members
-    that remain. It ends when its own cleanup has been written: the next frame
-    without it, or, for the last members out, the profile release. Members
-    ending at different moments therefore get their own durations. As in
-    ``_run_tracked``, a cancelled write still knows its stop time; only a
-    failed write or cleanup leaves a motor's position unknown.
-    """
-
-    def __init__(self, driver: BedController) -> None:
-        self._driver = driver
-        self._moves: dict[StreamMember, tuple[BedEstimate, int, float]] = {}
-        self._awaiting_release: list[StreamMember] = []
-
-    @property
-    def stream_tick_s(self) -> float:
-        return self._driver.stream_tick_s
-
-    def _begin(self, members: tuple[StreamMember, ...]) -> list[StreamMember]:
-        """Start timing the members not yet moving; return those it started."""
-        started = _clock()
-        begun: list[StreamMember] = []
-        for member in members:
-            if member in self._moves:
-                continue
-            bed = _bed_for_controller(self._driver)
-            if bed is None or not bed.motors:
-                return begun
-            motors = _estimated_motors(self._driver, member.motor)
-            if motors is None:
-                bed.invalidate(EstimateReason.UNTRACKED_MOVE)
-                continue
-            selected = tuple(motor for motor in motors if motor in bed.motors)
-            if selected:
-                self._moves[member] = (bed, bed.begin_move(selected), started)
-                begun.append(member)
-        return begun
-
-    def _end(self, member: StreamMember, *, failed: bool = False) -> None:
-        move = self._moves.pop(member, None)
-        if move is not None:
-            bed, token, started = move
-            bed.end_move(token, member.action, None if failed else _clock() - started)
-
-    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
-        self._begin(members)
-        try:
-            await self._driver.write_stream_tick(members)
-        except asyncio.CancelledError:
-            # STOP or shutdown: every member's cleanup still runs and ends it.
-            raise
-        except BaseException:
-            # The stream ends; a failed write leaves every motor's stop unknown.
-            for member in tuple(self._moves):
-                self._end(member, failed=True)
-            raise
-
-    async def end_stream_member(
-        self, member: StreamMember, remaining: tuple[StreamMember, ...]
-    ) -> None:
-        # The reduced frame carries the remaining members, including any that
-        # joined since the last tick.
-        begun = self._begin(remaining)
-        try:
-            await self._driver.end_stream_member(member, remaining)
-        except asyncio.CancelledError:
-            self._finish(member, remaining)
-            raise
-        except BaseException:
-            # Neither the departing member's stop nor a newcomer's start is known.
-            for failed in (member, *begun):
-                self._end(failed, failed=True)
-            raise
-        self._finish(member, remaining)
-
-    def _finish(self, member: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
-        if remaining:
-            self._end(member)
-        elif member in self._moves:
-            self._awaiting_release.append(member)
-
-    async def release_stream(self) -> None:
-        ending, self._awaiting_release = self._awaiting_release, []
-        try:
-            await self._driver.release_stream()
-        except asyncio.CancelledError:
-            for member in ending:
-                self._end(member)
-            raise
-        except BaseException:
-            for member in ending:
-                self._end(member, failed=True)
-            raise
-        for member in ending:
-            self._end(member)
-
-
-def track_stream(hass: HomeAssistant | None, driver: BedController) -> StreamDriver:
-    """Feed merged-stream members to the estimates, like ``track_motor_command``."""
-    if not _estimates_active(hass):
-        return driver
-    return _TrackedStream(driver)
 
 
 def invalidate_on_command(

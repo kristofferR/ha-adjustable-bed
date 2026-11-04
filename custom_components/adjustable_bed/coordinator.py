@@ -261,7 +261,6 @@ from .pairing import (
     octo_snapshot_from_descriptor,
 )
 from .position_estimate import notify_connection_lost as notify_position_estimate_connection_lost
-from .position_estimate import track_stream
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -6689,8 +6688,7 @@ class AdjustableBedCoordinator:
 
         async def runner(body: Callable[[StreamDriver], Awaitable[None]]) -> None:
             async def stream(controller: BedController) -> None:
-                # Each member feeds the position estimates like a serial move.
-                await body(track_stream(self.hass, controller))
+                await body(controller)
 
             await self._async_execute_controller_operation(
                 stream,
