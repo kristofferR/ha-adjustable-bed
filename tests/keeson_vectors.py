@@ -3,7 +3,8 @@
 App profiles list every single-frame literal in the test vectors of their
 accepted APK Protocol Audit report. The other routes have no accepted report;
 their vectors are every frame the pre-v5 controller could send (bed type
-``keeson`` and the ``ergomotion``, ``serta`` and ``okin_ffe`` aliases).
+``keeson`` and the ``ergomotion``, ``serta`` and ``okin_ffe`` aliases), including
+the Base and Ergomotion Left/Right side frames.
 JSON/A00A frames use the device identifier ``Bed``.
 
 The cluster033 apps (``tempur_curve`` ... ``tempur_au``) list every frame their
@@ -44,6 +45,61 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e5fe1620000000e6",
             "e5fe1640000000c6",
             "e5fe168000000086",
+            # Left/Right side frames of the pre-v5 controller (main bb15d70d, #751)
+            "e6fe16000000000104",
+            "e6fe16000000000203",
+            "e6fe16000000010103",
+            "e6fe16000000010202",
+            "e6fe16000000040100",
+            "e6fe160000000402ff",
+            "e6fe160000000801fc",
+            "e6fe160000000802fb",
+            "e6fe160000001001f4",
+            "e6fe160000001002f3",
+            "e6fe16000001000103",
+            "e6fe16000001000202",
+            "e6fe16000002000102",
+            "e6fe16000002000201",
+            "e6fe160000080001fc",
+            "e6fe160000080002fb",
+            "e6fe160000100001f4",
+            "e6fe160000100002f3",
+            "e6fe160000200001e4",
+            "e6fe160000200002e3",
+            "e6fe16000080000184",
+            "e6fe16000080000283",
+            "e6fe16000100000103",
+            "e6fe16000100000202",
+            "e6fe16000200000102",
+            "e6fe16000200000201",
+            "e6fe16000400000100",
+            "e6fe160004000002ff",
+            "e6fe160008000001fc",
+            "e6fe160008000002fb",
+            "e6fe160010000001f4",
+            "e6fe160010000002f3",
+            "e6fe160020000001e4",
+            "e6fe160020000002e3",
+            "e6fe160040000001c4",
+            "e6fe160040000002c3",
+            "e6fe16008000000184",
+            "e6fe16008000000283",
+            "e6fe16010000000103",
+            "e6fe16010000000202",
+            "e6fe16020000000102",
+            "e6fe16020000000201",
+            "e6fe16040000000100",
+            "e6fe160400000002ff",
+            "e6fe160800000001fc",
+            "e6fe160800000002fb",
+            "e6fe161000000001f4",
+            "e6fe161000000002f3",
+            "e6fe162000000001e4",
+            "e6fe162000000002e3",
+            "e6fe164000000001c4",
+            "e6fe164000000002c3",
+            "e6fe16800000000184",
+            "e6fe16800000000283",
         }
     ),
     # pre-v5 KeesonController
@@ -71,6 +127,51 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e5fe1620000000e6",
             "e5fe1640000000c6",
             "e5fe168000000086",
+            # Left/Right side frames of the pre-v5 controller (main bb15d70d, #751)
+            "e6fe16000000000104",
+            "e6fe16000000000203",
+            "e6fe16000000010103",
+            "e6fe16000000010202",
+            "e6fe160000000801fc",
+            "e6fe160000000802fb",
+            "e6fe16000001000103",
+            "e6fe16000001000202",
+            "e6fe16000002000102",
+            "e6fe16000002000201",
+            "e6fe16000080000184",
+            "e6fe16000080000283",
+            "e6fe16000100000103",
+            "e6fe16000100000202",
+            "e6fe16000200000102",
+            "e6fe16000200000201",
+            "e6fe16000400000100",
+            "e6fe160004000002ff",
+            "e6fe160008000001fc",
+            "e6fe160008000002fb",
+            "e6fe160010000001f4",
+            "e6fe160010000002f3",
+            "e6fe160020000001e4",
+            "e6fe160020000002e3",
+            "e6fe160040000001c4",
+            "e6fe160040000002c3",
+            "e6fe16008000000184",
+            "e6fe16008000000283",
+            "e6fe16010000000103",
+            "e6fe16010000000202",
+            "e6fe16020000000102",
+            "e6fe16020000000201",
+            "e6fe16040000000100",
+            "e6fe160400000002ff",
+            "e6fe160800000001fc",
+            "e6fe160800000002fb",
+            "e6fe161000000001f4",
+            "e6fe161000000002f3",
+            "e6fe162000000001e4",
+            "e6fe162000000002e3",
+            "e6fe164000000001c4",
+            "e6fe164000000002c3",
+            "e6fe16800000000184",
+            "e6fe16800000000283",
         }
     ),
     # pre-v5 KeesonController
@@ -1230,4 +1331,13 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "ef0242656400000000000000000000000003",
         }
     ),
+}
+
+# com.sfd.hump 3.7 (Ergomotion 4.0), accepted report
+# com.sfd.hump-3.7-2026-11-03-issue558-20261103-006: P1 test vectors by side.
+# The report's A/B settings vector (selector 00) is excluded: HA sends Left/Right.
+ERGOMOTION_4_P1_SIDE_VECTORS: dict[str | None, tuple[int, str]] = {
+    None: (1, "e5fe160100000005"),
+    "left": (1, "e6fe16010000000202"),
+    "right": (1, "e6fe16010000000103"),
 }

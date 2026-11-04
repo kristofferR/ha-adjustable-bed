@@ -5,8 +5,8 @@ device name or service resolves inside a variant (KSBT03C, Purple Premium Plus,
 Sleep Harmony base-i5, the Adjustable Lite KSBT03C remote, and the BetterLiving
 and CB1322 auto-detected tables). The ``ergomotion``, ``serta`` and ``okin_ffe``
 bed types are aliases of the variant profiles of the same name. The cluster033
-app bed types (Tempur Curve, Q-Plus, Serta MP Remote and the other ``AppKey``
-apps) are ``AppProfile`` layouts, driven by ``beds/cluster033.py``.
+app bed types (Tempur Curve, Q-Plus, Serta MP Remote and the other
+``APP_LAYOUTS`` apps) are ``AppProfile`` layouts, driven by ``beds/cluster033.py``.
 
 App profiles take their words and timing from their accepted APK Protocol Audit
 reports; the other routes keep the frames and timing of the pre-v5 controller.
@@ -22,7 +22,7 @@ from typing import Final, Literal
 
 from ..alarm_table import AlarmTableScheduleSpec
 from ..codec import keeson as codec
-from ..codec.keeson import ByteOrder, Carrier, TransportKey
+from ..codec.keeson import ByteOrder, Carrier, Side, TransportKey
 
 Preset = Literal["flat", "zero_g", "lounge", "tv", "anti_snore"]
 Massage = Literal["step", "absolute", "zone_steps", "none"]
@@ -114,6 +114,8 @@ class KeesonProfile:
     order: ByteOrder = "little"
     side: int | None = None
     """Side byte of the nine-byte K1 frame."""
+    single_side: bool = False
+    """Left/Right side frames (``codec.side_frame``) are proven for this route."""
     transport: TransportKey = "base"
     notify: TransportKey = "base"
     fixed_write: bool = False
@@ -173,8 +175,11 @@ _KSBT_MEMORY: Final[Mapping[int, int]] = {
     3: K.PRESET_MEMORY_4,
 }
 
+# Ergomotion 4.0 3.7 (com.sfd.hump) proves the P1 Left/Right frames that BASE and
+# ERGOMOTION send for a split base on one address; the auto-detected tables do not.
 BASE: Final = KeesonProfile(
     key="base",
+    single_side=True,
     hold=(3, 400),
     presets={**_BASE_PRESETS},
     memory=_GENERIC_MEMORY,
@@ -183,6 +188,7 @@ BASE: Final = KeesonProfile(
 )
 ERGOMOTION: Final = KeesonProfile(
     key="ergomotion",
+    single_side=True,
     hold=(10, 100),
     presets=_KSBT_PRESETS,
     memory=_GENERIC_MEMORY,
@@ -493,16 +499,6 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
 # Omazz, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU apps, chosen by hand with
 # a layout. Each accepted report proves its own key table; repeated masks are
 # separate package receipts, not inferred family equivalence.
-AppKey = Literal[
-    "tempur_curve",
-    "qplus_app",
-    "serta_mp_remote",
-    "omazz_adjusto_iii",
-    "ergomotion_app",
-    "row_control",
-    "ergo_slim",
-    "tempur_au",
-]
 
 
 @dataclass(frozen=True, slots=True)
@@ -517,7 +513,8 @@ class AppAction:
 class AppProfile:
     """One cluster033 app layout over the K1 frame (P2 for Q-Plus MX)."""
 
-    key: AppKey
+    key: str
+    """The app's bed type; it names the frozen vectors and the app's caller rules."""
     app: str
     layout: str
     actions: tuple[AppAction, ...]
@@ -534,7 +531,7 @@ class AppProfile:
     shutdown_delay_ms: int = 400
 
 
-APP_LAYOUTS: Final[dict[AppKey, tuple[str, ...]]] = {
+APP_LAYOUTS: Final[dict[str, tuple[str, ...]]] = {
     "tempur_curve": ("standard",),
     "qplus_app": ("H", "M1", "M2", "M3", "MX"),
     "serta_mp_remote": ("standard",),
@@ -544,7 +541,7 @@ APP_LAYOUTS: Final[dict[AppKey, tuple[str, ...]]] = {
     "ergo_slim": ("A", "B", "C"),
     "tempur_au": ("B1", "B2", "C1", "D1", "E1"),
 }
-DEFAULT_LAYOUTS: Final[dict[AppKey, str]] = {
+DEFAULT_LAYOUTS: Final[dict[str, str]] = {
     "tempur_curve": "standard",
     "qplus_app": "M2",
     "serta_mp_remote": "standard",
@@ -554,7 +551,7 @@ DEFAULT_LAYOUTS: Final[dict[AppKey, str]] = {
     "ergo_slim": "A",
     "tempur_au": "B2",
 }
-APP_NAMES: Final[dict[AppKey, str]] = {
+APP_NAMES: Final[dict[str, str]] = {
     "tempur_curve": "Tempur Curve",
     "qplus_app": "Q-Plus Adjustable Remote",
     "serta_mp_remote": "Serta MP Remote",
@@ -565,7 +562,7 @@ APP_NAMES: Final[dict[AppKey, str]] = {
     "tempur_au": "TEMPUR AU",
 }
 
-_ACTIONS: Final[dict[tuple[AppKey, str], tuple[AppAction, ...]]] = {
+_ACTIONS: Final[dict[tuple[str, str], tuple[AppAction, ...]]] = {
     ("tempur_curve", "standard"): (
         AppAction("head_up", "Head Up", 0x1, "held"),
         AppAction("head_down", "Head Down", 0x2, "held"),
@@ -1012,7 +1009,7 @@ _MX_KEYS: Final = frozenset(
 )
 
 
-def app_profile(app: AppKey, layout: str | None = None) -> AppProfile:
+def app_profile(app: str, layout: str | None = None) -> AppProfile:
     """Validate a manual app/layout choice without advertisement inference."""
     layout = layout or DEFAULT_LAYOUTS[app]
     if layout not in APP_LAYOUTS[app]:
@@ -1090,8 +1087,17 @@ def resolve(
     return PROFILES.get(variant, BASE)
 
 
-def encode(profile: KeesonProfile, word: int, device_id: str = "unknown") -> bytes:
-    """Encode one word in the profile's carrier; JSON zero words release (``ctrm`` 0)."""
+def encode(
+    profile: KeesonProfile, word: int, device_id: str = "unknown", *, side: Side | None = None
+) -> bytes:
+    """Encode one word in the profile's carrier; JSON zero words release (``ctrm`` 0).
+
+    ``side`` selects one half of a split base and needs a ``single_side`` profile.
+    """
+    if side is not None:
+        if not profile.single_side:
+            raise ValueError("This Keeson profile has no proven single-side frame")
+        return codec.side_frame(word, side)
     if profile.carrier == "k1":
         return codec.frame(word, header=profile.header, order=profile.order, side=profile.side)
     if profile.carrier == "json":

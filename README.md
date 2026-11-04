@@ -122,7 +122,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Serta](docs/beds/keeson.md#serta) | Serta Motion Perfect |
 | ✅ [Mattress Firm 900](docs/beds/okin-5a.md#mattress-firm-900--iflex) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/okin-5a.md#nectar) | Nectar |
-| ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf-app.md) |
+| ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf.md#malouf-base--lucid-base-family) |
 | ✅ [BedTech](docs/beds/richmat.md#bedtech) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | 🧪 [BedSense app](docs/beds/ff_frame.md#bedsense) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
@@ -144,6 +144,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [Q-Plus Adjustable Remote app](docs/beds/keeson.md#q-plus-adjustable-remote) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
 | 🧪 [Serta MP Remote app](docs/beds/keeson.md#serta-mp-remote) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
 | 🧪 [Omazz Adjusto III app](docs/beds/keeson.md#omazz-adjusto-iii) | Reachable RemoteB controls and alarm tables; hardware unverified |
+| 🧪 [Ergomotion 4.0](docs/beds/ergomotion-4.md) | Explicit H/M1–M22/M30 layouts and 21 catalog products; P1 Left/Right/Both, RGB, massage and alarms; hardware unverified |
 | 🧪 [Ergomotion app](docs/beds/keeson.md#ergomotion-app) | Explicit B1/B2/C1/D1 app layouts; hardware unverified |
 | 🧪 [ROW Control app](docs/beds/keeson.md#row-control) | Elevate, Lifestyle, Curve, Lifestyle Plus and Zero-G Box; hardware unverified |
 | 🧪 [Ergo Slim app](docs/beds/keeson.md#ergo-slim) | Explicit A/B/C app layouts; hardware unverified |

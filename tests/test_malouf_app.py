@@ -9,15 +9,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.adjustable_bed.beds.malouf_app import MaloufAppController
-from custom_components.adjustable_bed.malouf_app_protocol import (
-    APP_MODEL_OPTIONS,
-    MALOUF_APP_MODELS,
+from custom_components.adjustable_bed.codec.malouf import (
     TRANSPORTS,
-    alarm_frame,
-    clock_frame,
-    command_frame,
+    alarm,
+    clock,
     parse_notification,
 )
+from custom_components.adjustable_bed.profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS
 
 
 def gatt_services(*transports: str) -> list[MagicMock]:
@@ -70,28 +68,6 @@ def written(controller: MaloufAppController) -> list[bytes]:
 
 
 @pytest.mark.parametrize(
-    ("transport", "command", "selector", "expected"),
-    [
-        ("richmat_single", 0x24, 0, "24"),
-        ("richmat_single", 0x6E, 0, "6e"),
-        ("richmat_framed", 0x24, 0, "6e01002493"),
-        ("richmat_framed", 0x24, 1, "6e01012494"),
-        ("richmat_framed", 0x6E, 0, "6e01006edd"),
-        ("okin_legacy", 1, 0, "e6fe16010000000004"),
-        ("okin_legacy", 0x08000000, 0, "e6fe160000000800fd"),
-        ("okin_custom", 1, 0, "04020000000100000000"),
-        ("okin_custom", 0x08000000, 0, "04020800000000000000"),
-        ("okin_new", 1, 0, "0502000000010000"),
-        ("okin_new", 0x08000000, 0, "0502080000000000"),
-    ],
-)
-def test_artifact_command_vectors(
-    transport: str, command: int, selector: int, expected: str
-) -> None:
-    assert command_frame(transport, command, selector=selector).hex() == expected
-
-
-@pytest.mark.parametrize(
     ("transport", "expected_clock", "expected_alarm", "expected_clear"),
     [
         (
@@ -112,9 +88,9 @@ def test_artifact_command_vectors(
 def test_artifact_clock_alarm_vectors(
     transport: str, expected_clock: str, expected_alarm: str, expected_clear: str
 ) -> None:
-    assert clock_frame(transport, datetime(2026, 7, 14, 7, 30, 45)).hex() == expected_clock
-    assert alarm_frame(transport, 7, 30, 13, 0x80).hex() == expected_alarm
-    assert alarm_frame(transport, 0, 0, 0, 0).hex() == expected_clear
+    assert clock(transport, datetime(2026, 7, 14, 7, 30, 45)).hex() == expected_clock
+    assert alarm(transport, 7, 30, 13, 0x80).hex() == expected_alarm
+    assert alarm(transport, 0, 0, 0, 0).hex() == expected_clear
 
 
 @pytest.mark.parametrize(
@@ -251,7 +227,7 @@ async def test_variant_specific_preset_repeats_and_stop(
 )
 def test_only_six_secondary_actions_embed_physical_role(action: str, expected: str) -> None:
     ctrl = make_controller("richmat_framed", primary=False)
-    assert ctrl._frames(action) == (bytes.fromhex(expected),)
+    assert ctrl._frame(action) == bytes.fromhex(expected)
 
 
 async def test_paired_logical_side_does_not_change_configured_role() -> None:
@@ -410,8 +386,8 @@ async def test_profile_specific_preset_terminal_dispositions() -> None:
 
 def test_all_persisted_models_available_but_fresh_lists_are_app_specific() -> None:
     assert len(MALOUF_APP_MODELS) == 16
-    assert len(APP_MODEL_OPTIONS["malouf"]) == 14
-    assert APP_MODEL_OPTIONS["lucid"] == ("L300", "L600", "Premium")
+    assert len(APP_PROFILES["malouf"].models) == 14
+    assert APP_PROFILES["lucid"].models == ("L300", "L600", "Premium")
     assert make_controller("okin_custom", "M550", "lucid").memory_slot_count == 1
 
 

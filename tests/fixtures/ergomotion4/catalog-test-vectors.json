@@ -1,0 +1,813 @@
+[
+  {
+    "id": "catalog-CAT001",
+    "inputs": {
+      "catalog_id": "CAT001",
+      "row_hash": "45748aacf3eb05c6974e7359063dd59493d8c85bfe6aa863c335ae499428b7af",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT002",
+    "inputs": {
+      "catalog_id": "CAT002",
+      "row_hash": "e7838c08cdbbb797e0f38f005f1a0fe6219f3cb6b9bf985ab6c6b1cf806db0a3",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_head_tilt_down",
+      "motion_action": 0,
+      "key": 32
+    },
+    "expected_bytes": "040200000020",
+    "source_command_id": "C013"
+  },
+  {
+    "id": "catalog-CAT003",
+    "inputs": {
+      "catalog_id": "CAT003",
+      "row_hash": "5f73edea42f3e70644e567c90b77054b0523c4294be3eb430d543192927f0c8a",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT004",
+    "inputs": {
+      "catalog_id": "CAT004",
+      "row_hash": "f888ea02b3953ece758fa5926af2c9b18b9727b4ce20892d2a632ecfe0b0d70e",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT005",
+    "inputs": {
+      "catalog_id": "CAT005",
+      "row_hash": "158d8220ccc6c9c03bfaedaf9f67db520f3990caacd06d527521291b7bf8ff9a",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_tilt_down",
+      "motion_action": 0,
+      "key": 160
+    },
+    "expected_bytes": "0402000000a0",
+    "source_command_id": "C004"
+  },
+  {
+    "id": "catalog-rgb-CAT005",
+    "inputs": {
+      "r": 127,
+      "g": 200,
+      "b": 255,
+      "invert": true,
+      "catalog_id": "CAT005"
+    },
+    "expected_bytes": "0a02000000000101bb80370000"
+  },
+  {
+    "id": "catalog-CAT006",
+    "inputs": {
+      "catalog_id": "CAT006",
+      "row_hash": "73c3b7894e7dfc0abaafe9d0345365d987329807ae3837fc4575fc85e60593db",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT007",
+    "inputs": {
+      "catalog_id": "CAT007",
+      "row_hash": "4616ad832d70d721e6741f7d615193ce2c043028ec0c3f71b2971226a48bb4f7",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_waist_down",
+      "motion_action": 0,
+      "key": 128
+    },
+    "expected_bytes": "040200000080",
+    "source_command_id": "C019"
+  },
+  {
+    "id": "catalog-CAT008",
+    "inputs": {
+      "catalog_id": "CAT008",
+      "row_hash": "4e93cba03811db2b2fecfd06c8637a2851d73fdaa75a1827bd3e00235bc326eb",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_waist_down",
+      "motion_action": 0,
+      "key": 128
+    },
+    "expected_bytes": "040200000080",
+    "source_command_id": "C019"
+  },
+  {
+    "id": "catalog-CAT009",
+    "inputs": {
+      "catalog_id": "CAT009",
+      "row_hash": "4dbf79f42ecebe5c880e728dd6c3355d132b99954f8932389cbab36035c712fd",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT010",
+    "inputs": {
+      "catalog_id": "CAT010",
+      "row_hash": "7d4290e529cdcd5fdf682914f13ccacb2a58d58c345180dafb99860f0161fefe",
+      "route": "RemoteM30Fragment",
+      "view": "btn_head_down",
+      "motion_action": 0,
+      "key": 2
+    },
+    "expected_bytes": "040200000002",
+    "source_command_id": "C255"
+  },
+  {
+    "id": "catalog-CAT011",
+    "inputs": {
+      "catalog_id": "CAT011",
+      "row_hash": "3de30df03e85d0559c7f3413808bf20473c44cbaace1a1a913e4c26c5c496cf7",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT012",
+    "inputs": {
+      "catalog_id": "CAT012",
+      "row_hash": "19218eabfc58ea3a5354c893d77b84fb16f37035bbd4c0800e87562825ae5262",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT013",
+    "inputs": {
+      "catalog_id": "CAT013",
+      "row_hash": "adde0b4fdf571cebe06772fb24c6b8f0d3d8ce9a794c0c8c7042f9d161955fd4",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_head_down_simple",
+      "motion_action": 0,
+      "key": 2
+    },
+    "expected_bytes": "040200000002",
+    "source_command_id": "C012"
+  },
+  {
+    "id": "catalog-CAT014",
+    "inputs": {
+      "catalog_id": "CAT014",
+      "row_hash": "e406a1ce6a1225ff0df9f69f9e80178c106a5b2fad189fac0a24414fbbca9d22",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT015",
+    "inputs": {
+      "catalog_id": "CAT015",
+      "row_hash": "d1a4b309ae4dae9d035623ef29355ddb614fcdbc8be2285d72c3fbc66d72b65d",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down_double",
+      "motion_action": 0,
+      "key": 32
+    },
+    "expected_bytes": "040200000020",
+    "source_command_id": "C002"
+  },
+  {
+    "id": "catalog-CAT016",
+    "inputs": {
+      "catalog_id": "CAT016",
+      "row_hash": "9e040ae642160189724ce044453a6c4133a1600f9a91c58b433398c8d38f77a7",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT017",
+    "inputs": {
+      "catalog_id": "CAT017",
+      "row_hash": "b68a40b254570dd44041b904a4910c92e2524bb6d00e9b0a2daefc82220f988d",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT018",
+    "inputs": {
+      "catalog_id": "CAT018",
+      "row_hash": "91d88c1f01ccb4393afc88929a9747a0520e73364dd0dab5d9c1287c312912dd",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT019",
+    "inputs": {
+      "catalog_id": "CAT019",
+      "row_hash": "dba924c825dfc52f25e3041bf5b5b61ed9afb7129aeab2c78b8140b17d115002",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT020",
+    "inputs": {
+      "catalog_id": "CAT020",
+      "row_hash": "9555be83ff1d7a1b20306001693457b2fd751d4febe83300549653223c58321a",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-CAT021",
+    "inputs": {
+      "catalog_id": "CAT021",
+      "row_hash": "3454ab27e1b8ddd89bd55f8d186ee7a86f7db45744eb49b55a639f9fd5f92f8f",
+      "route": "RemoteDefaultFragmentSec",
+      "view": "img_basics_foot_down",
+      "motion_action": 0,
+      "key": 8
+    },
+    "expected_bytes": "040200000008",
+    "source_command_id": "C001"
+  },
+  {
+    "id": "catalog-query-CAT001",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT001",
+    "inputs": {
+      "style": "20th Anniversary",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT002",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT002",
+    "inputs": {
+      "style": "4180",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT003",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT003",
+    "inputs": {
+      "style": "4184",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT004",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT004",
+    "inputs": {
+      "style": "4193",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT005",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT005",
+    "inputs": {
+      "style": "4194RGB",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT006",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT006",
+    "inputs": {
+      "style": "828",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT007",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT007",
+    "inputs": {
+      "style": "Aeroflex-4308",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT008",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT008",
+    "inputs": {
+      "style": "Aeroflex-5623",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT009",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT009",
+    "inputs": {
+      "style": "Chaide 4166",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-init-CAT010",
+    "inputs": {
+      "key": 0,
+      "side": "Both"
+    },
+    "expected_bytes": "e5fe160000000006"
+  },
+  {
+    "id": "catalog-query-CAT010",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT010",
+    "inputs": {
+      "style": "EZI MAID",
+      "dynamic": false,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 11
+    }
+  },
+  {
+    "id": "catalog-query-CAT011",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT011",
+    "inputs": {
+      "style": "ErgoBalance Pro-4168+",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT012",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT012",
+    "inputs": {
+      "style": "ErgoBalance-4168",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT013",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT013",
+    "inputs": {
+      "style": "ErgoBalance100 ",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT014",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT014",
+    "inputs": {
+      "style": "ErgoBasic-4087",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT015",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT015",
+    "inputs": {
+      "style": "ErgoDuetto-4367/4364",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT016",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT016",
+    "inputs": {
+      "style": "Ergocomfort 5680/568H",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT017",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT017",
+    "inputs": {
+      "style": "Flex3 Massage",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT018",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT018",
+    "inputs": {
+      "style": "Ortobom 3350",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT019",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT019",
+    "inputs": {
+      "style": "Rosen 4165",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT020",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT020",
+    "inputs": {
+      "style": "SIMONS SA 3410S",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  },
+  {
+    "id": "catalog-query-CAT021",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "00b0"
+  },
+  {
+    "id": "catalog-notify-CAT021",
+    "inputs": {
+      "style": "SMART TEC-4193",
+      "dynamic": true,
+      "side": "Both"
+    },
+    "expected_bytes": "0000000259000000000000000100020b0c0d00",
+    "expected_state": {
+      "timer": 2,
+      "light": true,
+      "rgb": [
+        11,
+        12,
+        13
+      ]
+    }
+  }
+]

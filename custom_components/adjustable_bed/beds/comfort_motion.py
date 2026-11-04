@@ -14,7 +14,12 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
 
 from ..codec import jiecang as codec
-from ..profiles.jiecang import COMFORT_MOTION, memory_command, preset_command
+from ..profiles.jiecang import (
+    COMFORT_MOTION,
+    light_toggle_command,
+    memory_command,
+    preset_command,
+)
 from .jiecang import JiecangProfileController
 
 if TYPE_CHECKING:
@@ -258,7 +263,7 @@ class ComfortMotionController(JiecangProfileController):
     async def lights_toggle(self) -> None:
         if not self._has_light:
             raise ValueError("Enable the local light option for this bed")
-        await self.write_command(codec.light_toggle())
+        await self.write_command(light_toggle_command(self.profile))
 
     @property
     def supports_light_state_feedback(self) -> bool:

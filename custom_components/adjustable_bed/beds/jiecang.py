@@ -22,6 +22,7 @@ from ..profiles.jiecang import (
     NameRule,
     Schedule,
     Tap,
+    light_toggle_command,
     memory_command,
     motion_command,
     preset_command,
@@ -316,7 +317,7 @@ class JiecangController(JiecangProfileController):
         return True
 
     async def lights_toggle(self) -> None:
-        await self.write_command(codec.light_toggle())
+        await self.write_command(light_toggle_command(self.profile))
 
     async def massage_toggle(self) -> None:
         if self._massage_back_level > 0 or self._massage_leg_level > 0:

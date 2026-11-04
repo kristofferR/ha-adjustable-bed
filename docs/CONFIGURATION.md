@@ -457,7 +457,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout, transport and local light/massage presence. Comfort Motion supports three layouts and G1/G2 only. Layouts, transports and default timing per profile are in the [generated profile tables](beds/jiecang.md#choosing-a-profile). |
 | LOGICDATA | [MOTIONrelax](beds/jiecang.md#motionrelax-phone-and-tablet): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed): bed layout and series, or [separate air pump](beds/logicdata-sleep-smart.md). |
-| Malouf / Lucid | [Base apps](beds/malouf-app.md): app, exact model, transport and primary/secondary role. |
+| Malouf / Lucid | [Base apps](beds/malouf.md#malouf-base--lucid-base-family): app, exact model, transport and primary/secondary role. |
 | Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family), [Z-Series](beds/customatic-z-series.md), [Serenity](beds/serenity.md), [Tranquil](beds/tranquil.md): select the matching app and model. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
 | Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
@@ -991,3 +991,29 @@ requires the selected product's actual side choices. See the
 ### HJBed app
 
 Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. See [HJBed](beds/richmat.md#hjbed) for all current and conditional profiles.
+
+## Ergomotion 4.0 products and split sides
+
+Choose **Ergomotion 4.0 app (explicit product)** and the exact product shown in
+the app. This is separate from the older Ergomotion app's B1/B2/C1/D1 layouts.
+The [product guide](beds/ergomotion-4.md#products) lists all built-in choices and
+the 21 frozen catalog products. Other catalog product accepts that product's
+exact name and ordered feature keys, without connecting to a vendor account.
+Motor pulse count bounds each held action at the app's fixed 100 ms cadence.
+
+For a P1 receiver with one address, **Configure → Enable side controls** adds
+Left/Right child devices and native Both controls. Existing Keeson entries can
+use this after explicitly selecting BaseI4/BaseI5 or Ergomotion; the Ergomotion
+bed type also supports it. Auto and P2/JSON/OEM profiles are ineligible. Revert
+side controls before changing to a profile without a side field. Existing
+standalone profiles and entities retain their behavior.
+
+Legacy Keeson/Ergomotion position feedback cannot identify a side. Side-control
+mode disables position sliders, sensors and position seeking for these profiles;
+movement controls remain available. Restoring standalone controls restores the
+stored position-feedback preference.
+
+HA uses the app builder's Left=`02` and Right=`01` branches. The Android app's
+A/B radio labels do not establish physical orientation and contain a selector
+mismatch. Confirm the halves with the real bed after beta/release. For two
+separately advertising receivers, use the ordinary two-address combined bed.

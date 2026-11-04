@@ -102,7 +102,7 @@ or speaker/audio commands.
 
 ## Malouf Base / Lucid Base Clock and Alarm
 
-The explicit [app profile](beds/malouf-app.md) exposes clock actions only for
+The explicit [app profile](beds/malouf.md#malouf-base--lucid-base-family) exposes clock actions only for
 supported OKIN model/transport combinations. These actions accept `device_id`
 and the ordinary optional `side`. Every target is validated before any write.
 
@@ -358,7 +358,7 @@ still work, with their original name checks.
 ### `sync_clock`
 
 Set each targeted controller's clock to Home Assistant's local time. Supported
-by the [Malouf Base / Lucid Base](beds/malouf-app.md) app profile on its OKIN
+by the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
 transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/simmons.md#alarms-and-clock), and
 [Customatic Z-Series](beds/customatic-z-series.md) controllers whose
 manufacturer string enables the alarm page (see
@@ -609,3 +609,24 @@ the distinct wire builders and raw-data limitations.
 ### HJBed configuration
 
 `adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/richmat.md#hjbed).
+
+## Ergomotion 4.0
+
+The [Ergomotion 4.0 profile](beds/ergomotion-4.md) exposes each selected product's
+named action as a button. Held buttons work with `hold_control` (1–60000 ms);
+the guide's command table lists each control key. Existing device/side targeting
+routes P1 commands and cleanup through the same Left/Right child. A parent
+target defaults to native Both. P2 products do not have a side field.
+
+The existing `rename`, `sync_clock`, `configure_alarm_schedule` and
+`stop_wake_routine` actions also support this profile, including P2 layouts.
+Rename accepts a trimmed 1–16 UTF-16-unit name, with the app's byte-copy rules.
+Weekly/one-time alarm tables each hold three enabled records; both are
+validated before dispatch. One-time targets must be later today and unambiguous
+in the local timezone. These configuration frames have no side field: target
+the physical receiver/parent once when configuring shared state.
+
+RGB requires an eligible product and reported light-on state. Use its light
+toggle button while off. The named high/medium/low buttons preserve 100/60/20%
+channel scaling. Meditation Start/Stop is available only for the guide's exact
+product/name gates; an HA automation can repeat Start for cycle operation.
