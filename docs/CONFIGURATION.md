@@ -63,8 +63,9 @@ with the bed's current setup. Home Assistant cannot open the guided change from
 Configure itself, so start it from the entry's three-dot menu, **Reconfigure**,
 or from the bed's repair. Today this covers the
 [Vibradorm family](beds/vibradorm.md#guided-setup-and-migration), the
-[Jiecang family](beds/jiecang.md#home-assistant-setup) and the
-[Okin family](beds/okin-nframe.md#home-assistant-setup); more families follow.
+[Jiecang family](beds/jiecang.md#home-assistant-setup), the
+[Okin family](beds/okin-nframe.md#home-assistant-setup) and the
+[Keeson family](beds/keeson.md#home-assistant-setup); more families follow.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.

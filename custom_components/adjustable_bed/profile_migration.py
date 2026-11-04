@@ -43,13 +43,18 @@ from homeassistant.helpers.translation import async_get_translations
 
 from .const import (
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COOLBASE,
+    BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_KEESON,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_DOT,
+    BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_SERTA,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -128,10 +133,29 @@ OKIN_FAMILY: Final = ManagedFamily(
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _OKIN_ROUTES,
 )
 
+# The Keeson controllers fall back across their write roles and never refuse a
+# link, so a Keeson route has no endpoint or bond to check; Configure switched
+# these routes unchecked too. The variant picks the app or remote.
+KEESON_FAMILY: Final = ManagedFamily(
+    key="keeson_family",
+    bed_types=frozenset(
+        {
+            BED_TYPE_KEESON,
+            BED_TYPE_ERGOMOTION,
+            BED_TYPE_SERTA,
+            BED_TYPE_OKIN_FFE,
+            BED_TYPE_COOLBASE,
+        }
+    ),
+    route_keys=(CONF_PROTOCOL_VARIANT,),
+    requires_check=lambda _data: False,
+)
+
 MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     VIBRADORM_FAMILY,
     JIECANG_FAMILY,
     OKIN_FAMILY,
+    KEESON_FAMILY,
 )
 
 

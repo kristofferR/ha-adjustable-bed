@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
+    _labelled_routes,
     _route_section,
     _setup_routes,
 )
@@ -39,12 +40,14 @@ async def _manual_entry(hass):
 
 
 def test_routes_are_the_familys_own_and_exclude_its_apps():
-    keeson = _setup_routes(const.BED_TYPE_KEESON)
+    keeson = _labelled_routes(const.BED_TYPE_KEESON)
     # The global list repeated values and omitted KSBT03CR.
     assert const.KEESON_VARIANT_KSBT_CR in keeson
     assert const.KEESON_VARIANT_INNOVA not in keeson
     assert list(keeson)[0] == const.VARIANT_AUTO
     assert len(keeson) == len(set(keeson))
+    # The Keeson question asks for them itself, so the generic forms do not.
+    assert _setup_routes(const.BED_TYPE_KEESON) == {}
     # A bed type with one route, or whose app step asks for its own, has none.
     assert len(_setup_routes(const.BED_TYPE_SOLACE)) == 1
     assert _setup_routes(const.BED_TYPE_DOUBLESLEEP) == {}
@@ -64,26 +67,26 @@ async def test_generic_choice_asks_only_its_own_routes(hass, enable_custom_integ
     result = await _manual_entry(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_KEESON, CONF_NAME: "Bed"},
+        {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_OKIN_CB24, CONF_NAME: "Bed"},
     )
     assert result["step_id"] == "route"
     section = result["data_schema"].schema["advanced"]
     assert section.options == {"collapsed": True}
     options = section.schema.schema[const.CONF_PROTOCOL_VARIANT].config["options"]
-    assert [option["value"] for option in options] == list(_setup_routes(const.BED_TYPE_KEESON))
+    assert [option["value"] for option in options] == list(_setup_routes(const.BED_TYPE_OKIN_CB24))
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: "ksbt_cr"}}
+            result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: "cb27"}}
         )
         if result.get("step_id") == "disconnect_after_command":
             result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"][const.CONF_PROTOCOL_VARIANT] == "ksbt_cr"
+    assert result["data"][const.CONF_PROTOCOL_VARIANT] == "cb27"
 
 
 def test_a_choice_without_an_automatic_route_is_shown_open():
     assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "").options == {"collapsed": False}
-    assert _route_section(const.BED_TYPE_KEESON, "").options == {"collapsed": True}
+    assert _route_section(const.BED_TYPE_OKIN_CB24, "").options == {"collapsed": True}
     assert _route_section(const.BED_TYPE_SOLACE, "") is None
 
 

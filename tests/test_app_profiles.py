@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -44,6 +45,8 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_SINO,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
+    OKIN_CST_VARIANT_SANCTUARY,
     STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
@@ -128,8 +131,8 @@ async def test_options_redraw_when_a_variant_needs_hidden_fields(hass: HomeAssis
         domain=DOMAIN,
         data={
             CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-            CONF_BED_TYPE: BED_TYPE_KEESON,
-            CONF_PROTOCOL_VARIANT: KEESON_VARIANT_INNOVA,
+            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+            CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
             CONF_HAS_MASSAGE: False,
         },
     )
@@ -140,12 +143,12 @@ async def test_options_redraw_when_a_variant_needs_hidden_fields(hass: HomeAssis
 
     form = await flow.async_step_settings()
     assert CONF_HAS_MASSAGE not in {marker.schema for marker in form["data_schema"].schema}
-    redrawn = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO})
+    redrawn = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY})
     assert redrawn["type"] == "form"
     assert CONF_HAS_MASSAGE in {marker.schema for marker in redrawn["data_schema"].schema}
     saved = await flow.async_step_settings({CONF_HAS_MASSAGE: True})
     assert saved["type"] == "create_entry"
-    assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
+    assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_SANCTUARY
     assert entry.data[CONF_HAS_MASSAGE] is True
 
 
@@ -208,6 +211,8 @@ async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(
             CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
         }
     )
+    # These apps' screen sets the motor count before setup finishes.
+    await flow.async_step_keeson_screen({CONF_MOTOR_COUNT: "2"})
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT]) == (
         BED_TYPE_KEESON,
@@ -215,15 +220,16 @@ async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(
     )
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_INNOVA, KEESON_VARIANT_AMERICANSTAR])
 async def test_options_show_the_app_entry_and_let_the_variant_field_decide(
-    hass: HomeAssistant, variant: str,
+    hass: HomeAssistant,
 ) -> None:
+    # Keeson apps change through the guided change; Okin CST's stay in Configure.
+    variant = OKIN_CST_VARIANT_NECTAR_MOVE
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
             CONF_ADDRESS: "AA:BB:CC:DD:EE:03",
-            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
             CONF_PROTOCOL_VARIANT: variant,
         },
     )
@@ -231,20 +237,20 @@ async def test_options_show_the_app_entry_and_let_the_variant_field_decide(
     flow = AdjustableBedOptionsFlow(entry)
     flow.hass = hass
     flow.handler = entry.entry_id
-    choice = bed_type_choice(BED_TYPE_KEESON, variant)
+    choice = bed_type_choice(BED_TYPE_OKIN_CST, variant)
 
     form = await flow.async_step_settings()
     marker = next(m for m in form["data_schema"].schema if m.schema == CONF_BED_TYPE)
     assert form["data_schema"].schema[marker](marker.default()) == choice
     # The selector is unchanged, so the variant field decides.
     result = await flow.async_step_settings(
-        {CONF_BED_TYPE: choice, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO}
+        {CONF_BED_TYPE: choice, CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY}
     )
     if result["type"] == "form":
         result = await flow.async_step_settings({})
     assert result["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_KEESON
-    assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+    assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_SANCTUARY
 
 
 def test_americanstar_profile_owns_massage_and_per_side_layout() -> None:

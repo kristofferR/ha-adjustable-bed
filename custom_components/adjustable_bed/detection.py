@@ -733,6 +733,13 @@ _COMPATIBILITY_LABELS: Final[dict[str, str]] = {
 }
 
 
+# One Restonic BT row: its follow-up asks the remote style the app's settings chose.
+_APP_ROW_LABELS: Final[dict[tuple[str, str], str]] = {
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app (Keeson)",
+}
+_HIDDEN_APP_ROWS: Final = frozenset({(BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B)})
+
+
 def get_bed_type_options() -> list[SelectOptionDict]:
     """Get bed type and app choices sorted alphabetically by label.
 
@@ -745,7 +752,13 @@ def get_bed_type_options() -> list[SelectOptionDict]:
         for bed_type, label in BED_TYPE_DISPLAY_NAMES.items()
         if bed_type not in VARIANT_REQUIRED_BED_TYPES and bed_type not in FAMILY_STEP_ROUTES
     }
-    choices.update({bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()})
+    choices.update(
+        {
+            bed_type_choice(*key): _APP_ROW_LABELS.get(key, label)
+            for key, label in APP_VARIANT_CHOICES.items()
+            if key not in _HIDDEN_APP_ROWS
+        }
+    )
     return [
         SelectOptionDict(value=value, label=label)
         for value, label in sorted(choices.items(), key=lambda item: item[1].lower())

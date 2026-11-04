@@ -4104,13 +4104,13 @@ class TestOptionsFlow:
         assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
         assert entry.data[CONF_MOTOR_COUNT] == 2
 
-    async def test_options_flow_rebuilds_position_fields_for_variant_change(
+    async def test_options_flow_sends_a_keeson_route_change_to_the_guided_change(
         self,
         hass: HomeAssistant,
         enable_custom_integrations,
         mock_coordinator_connected,
     ) -> None:
-        """Changing only the variant rebuilds fields when position support changes."""
+        """A Keeson route picks the app, so Configure refuses to change it alone."""
         del enable_custom_integrations, mock_coordinator_connected
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -4129,38 +4129,17 @@ class TestOptionsFlow:
         await hass.async_block_till_done()
 
         initial = await _open_options_form(hass, entry.entry_id)
-        initial_markers = {marker.schema for marker in initial["data_schema"].schema}
-        assert CONF_DISABLE_ANGLE_SENSING not in initial_markers
-
-        rebuilt = await hass.config_entries.options.async_configure(
+        refused = await hass.config_entries.options.async_configure(
             initial["flow_id"],
             user_input={
                 CONF_BED_TYPE: BED_TYPE_KEESON,
                 CONF_MOTOR_COUNT: 2,
                 CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
-                CONF_DISABLE_DISCOVERY: True,
             },
         )
 
-        rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt["type"] == FlowResultType.FORM
-        assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
-        assert rebuilt_markers[CONF_DISABLE_DISCOVERY].default() is True
-        assert CONF_POSITION_MODE in rebuilt_markers
-
-        saved = await hass.config_entries.options.async_configure(
-            rebuilt["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
-                CONF_DISABLE_DISCOVERY: True,
-            },
-        )
-
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_ERGOMOTION
-        assert await async_is_discovery_disabled(hass) is True
+        assert refused["errors"] == {"base": "migration_reconfigure_required"}
+        assert entry.data[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
 
     @pytest.mark.parametrize(
         ("bed_type", "initial_variant", "requested_variant", "initial_count", "expected_count"),
