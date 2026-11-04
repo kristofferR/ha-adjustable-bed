@@ -41,7 +41,8 @@ FAMILY = CodecFamily(
         }
     ),
     pending={
-        "ergomotion_4": _K1,
+        "ergomotion_4": f"{_K1}: K1, side and P2 frames use codec/keeson.py; its 07 D0 product"
+        " and 09 0A / 0A 02 RGB frames and its product catalog have no codec home yet",
         "furnimove": f"{_K1}: frames use codec/keeson.py, handset catalog profile stays",
     },
     guide=CodecGuide(
