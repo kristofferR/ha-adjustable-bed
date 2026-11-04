@@ -556,7 +556,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2 (LP Control app, LP Comfort Connect)",
     BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base (legacy app)",
-    BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (LP Control app, requires pairing)",
+    BED_TYPE_LEGGETT_OKIN: (
+        "Leggett & Platt Okin (Prodigy CE, Prodigy 2, Prodigy 2L, U Series and LP Control apps, "
+        "requires pairing)"
+    ),
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
     # Brand-specific types
     BED_TYPE_BEDTECH: "BedTech",
@@ -564,7 +567,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_ERGOMOTION_4: "Ergomotion 4.0 app (explicit product)",
     BED_TYPE_JIECANG: "Jiecang (legacy Glide / Comfort Motion)",
-    BED_TYPE_JIECANG_APP: "Jiecang (ERGOBALANCE / Dream Motion / Dream Motion HD / Comfort Motion apps)",
+    BED_TYPE_JIECANG_APP: (
+        "Jiecang: ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps, "
+        "Glide and Lierda remotes"
+    ),
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
     BED_TYPE_KEESON: (
         "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
@@ -685,6 +691,33 @@ def resolve_bed_type_choice(choice: str) -> tuple[str, str | None]:
     return choice, None
 
 
+# Routes reached through their family's one picker row and family step.
+FAMILY_STEP_ROUTES: Final = frozenset(
+    {
+        BED_TYPE_VIBRADORM_APP,
+        BED_TYPE_VMATBASIC,
+        BED_TYPE_JIECANG,
+        BED_TYPE_COMFORT_MOTION,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_OKIN_DOT,
+        BED_TYPE_OKIN_RF_ECO_BT,
+        BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_LEGGETT_WILINKE,
+    }
+)
+# A family row whose picker label names every route behind it; saved entries
+# keep their own route's label.
+_FAMILY_ROW_LABELS: Final[dict[str, str]] = {
+    BED_TYPE_FURNIMOVE: (
+        "Okin: FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes"
+    ),
+    BED_TYPE_LEGGETT_OKIN: (
+        "Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and "
+        "L&P Adjustable Base apps"
+    ),
+}
+
+
 def bed_type_label(bed_type: str | None) -> str:
     """Return the friendly label of a bed type, including saved compatibility IDs.
 
@@ -709,19 +742,32 @@ _COMPATIBILITY_LABELS: Final[dict[str, str]] = {
 }
 
 
+# One Restonic BT row: its follow-up asks the remote style the app's settings chose.
+_APP_ROW_LABELS: Final[dict[tuple[str, str], str]] = {
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app (Keeson)",
+}
+_HIDDEN_APP_ROWS: Final = frozenset({(BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B)})
+
+
 def get_bed_type_options() -> list[SelectOptionDict]:
     """Get bed type and app choices sorted alphabetically by label.
 
     A bed type whose variant has no automatic choice is offered only through
-    its app entries. Vibradorm's app/product profiles share one family wizard.
+    its app entries. The Vibradorm, Jiecang and Okin families each have one row
+    that opens their family step; the routes behind it stay selectable there.
     """
     choices = {
-        bed_type: label
+        bed_type: _FAMILY_ROW_LABELS.get(bed_type, label)
         for bed_type, label in BED_TYPE_DISPLAY_NAMES.items()
-        if bed_type not in VARIANT_REQUIRED_BED_TYPES
-        and bed_type not in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
+        if bed_type not in VARIANT_REQUIRED_BED_TYPES and bed_type not in FAMILY_STEP_ROUTES
     }
-    choices.update({bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()})
+    choices.update(
+        {
+            bed_type_choice(*key): _APP_ROW_LABELS.get(key, label)
+            for key, label in APP_VARIANT_CHOICES.items()
+            if key not in _HIDDEN_APP_ROWS
+        }
+    )
     return [
         SelectOptionDict(value=value, label=label)
         for value, label in sorted(choices.items(), key=lambda item: item[1].lower())

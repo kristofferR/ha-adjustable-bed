@@ -137,7 +137,7 @@ async def test_app_change_in_options_requires_guided_verification(hass):
     flow.hass = hass
     result = await flow.async_step_settings({const.CONF_VIBRADORM_APP_PROFILE: "werkmeister"})
     assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "vibradorm_reconfigure_required"}
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[const.CONF_VIBRADORM_APP_PROFILE] == "caresse"
     assert entry.data[const.CONF_HAS_MASSAGE] is True
     assert entry.data[const.CONF_VIBRADORM_APP_METADATA] == {"model": "old metadata"}
@@ -813,7 +813,7 @@ async def test_options_cannot_silently_reset_app_to_legacy(hass):
     flow.hass = hass
     result = await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM})
     assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "vibradorm_reconfigure_required"}
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM_APP
     assert entry.data[const.CONF_VIBRADORM_APP_METADATA] == {"model": "old profile"}
 

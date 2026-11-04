@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.beds.furnimove import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.furnimove_profiles import FurniMoveAction as Action
+from tests.hold_lease_wire import virtual_clock
 
 
 def char(uuid: str, properties=("write",)):
@@ -198,23 +199,25 @@ async def test_task_cancellation_still_releases() -> None:
 
 
 async def test_memory_program_selected_slot_timer_and_dot_omission() -> None:
-    controller = await fast_controller(characteristics=[char(DOT_WRITE)])
-    controller.profile = replace(
-        controller.profile,
-        actions=(
-            Action("MemoSave", "memory-update", "0x00010000", 400, 200),
-            Action("Arbitrary slot A", "memory", "0x00001000"),
-            Action("Arbitrary slot B", "memory", "0x00002000"),
-            Action("DisobeyStandbyTime", "utility", "0x00000000"),
-        ),
-    )
-    assert controller.memory_slot_names == ("Arbitrary slot A", "Arbitrary slot B")
-    await controller.program_memory(2)
-    assert written(controller) == ["040200010000"] * 3 + ["040200002000"]
-    assert controller._pause.call_args_list == [call(200), call(200), call(0), call(400), call(200)]
-    controller.client.write_gatt_char.reset_mock()
-    await controller.preset_memory(1)
-    assert written(controller) == ["05020000100000"] * 2 + ["05020000000000"]
+    # The controller times pauses on the loop clock; virtual time keeps them exact.
+    with virtual_clock():
+        controller = await fast_controller(characteristics=[char(DOT_WRITE)])
+        controller.profile = replace(
+            controller.profile,
+            actions=(
+                Action("MemoSave", "memory-update", "0x00010000", 400, 200),
+                Action("Arbitrary slot A", "memory", "0x00001000"),
+                Action("Arbitrary slot B", "memory", "0x00002000"),
+                Action("DisobeyStandbyTime", "utility", "0x00000000"),
+            ),
+        )
+        assert controller.memory_slot_names == ("Arbitrary slot A", "Arbitrary slot B")
+        await controller.program_memory(2)
+        assert written(controller) == ["040200010000"] * 3 + ["040200002000"]
+        assert controller._pause.call_args_list == [call(200), call(200), call(0), call(400), call(200)]
+        controller.client.write_gatt_char.reset_mock()
+        await controller.preset_memory(1)
+        assert written(controller) == ["05020000100000"] * 2 + ["05020000000000"]
 
 
 async def test_cancelled_save_never_writes_selected_slot() -> None:
@@ -455,27 +458,29 @@ async def test_factory_queue_null_keys_order_and_target_intensity() -> None:
 
 
 async def test_massage_program_stop_variants_and_local_countdown_no_wire() -> None:
-    controller = await fast_controller("12234", characteristics=[char(DOT_WRITE)])
-    await controller.massage_off()
-    assert written(controller) == ["040200000400"] * 2
-    controller.client.write_gatt_char.reset_mock()
-    controller._pause.reset_mock()
-    await controller.massage_off()
-    assert written(controller) == ["040200000400"] * 2
-    assert controller._pause.call_args_list == [call(150, controller._pause.call_args.args[1])]
-    controller._state["furnimove_massage_intensity"] = 5
-    controller.client.write_gatt_char.reset_mock()
-    await controller.massage_off()
-    assert written(controller) == ["040200000400"]
-    assert controller._pause.call_args.args[0] == 250
-    controller.client.write_gatt_char.reset_mock()
-    await controller.set_furnimove_massage_program(4)
-    assert written(controller)[-2:] == ["040204000000", "040200000000"]
-    controller.client.write_gatt_char.reset_mock()
-    await controller.set_massage_timer(30)
-    assert written(controller) == []
-    assert controller.get_massage_state()["timer"] == 30
-    assert not controller.supports_massage_timer
+    # The controller times pauses on the loop clock; virtual time keeps them exact.
+    with virtual_clock():
+        controller = await fast_controller("12234", characteristics=[char(DOT_WRITE)])
+        await controller.massage_off()
+        assert written(controller) == ["040200000400"] * 2
+        controller.client.write_gatt_char.reset_mock()
+        controller._pause.reset_mock()
+        await controller.massage_off()
+        assert written(controller) == ["040200000400"] * 2
+        assert controller._pause.call_args_list == [call(150, controller._pause.call_args.args[1])]
+        controller._state["furnimove_massage_intensity"] = 5
+        controller.client.write_gatt_char.reset_mock()
+        await controller.massage_off()
+        assert written(controller) == ["040200000400"]
+        assert controller._pause.call_args.args[0] == 250
+        controller.client.write_gatt_char.reset_mock()
+        await controller.set_furnimove_massage_program(4)
+        assert written(controller)[-2:] == ["040204000000", "040200000000"]
+        controller.client.write_gatt_char.reset_mock()
+        await controller.set_massage_timer(30)
+        assert written(controller) == []
+        assert controller.get_massage_state()["timer"] == 30
+        assert not controller.supports_massage_timer
 
 
 @pytest.mark.parametrize(
@@ -585,13 +590,15 @@ async def test_local_state_restore_selects_wire_consumer_without_hardware_claim(
 
 
 async def test_widget_uses_fixed_once_timing_and_dot_false() -> None:
-    controller = await fast_controller(characteristics=[char(DOT_WRITE)])
-    flat_index = next(i for i, row in enumerate(controller.profile.actions) if row.action == "Flat")
-    await controller.async_execute_furnimove_action(flat_index, consumer="widget")
-    assert written(controller) == ["0402000000aa"] * 100 + ["040200000000"]
-    assert controller._pause.call_args_list == [call(200)] * 100
-    with pytest.raises(ValueError):
-        controller.validate_furnimove_action(flat_index, duration_ms=50, consumer="widget")
+    # The controller times pauses on the loop clock; virtual time keeps them exact.
+    with virtual_clock():
+        controller = await fast_controller(characteristics=[char(DOT_WRITE)])
+        flat_index = next(i for i, row in enumerate(controller.profile.actions) if row.action == "Flat")
+        await controller.async_execute_furnimove_action(flat_index, consumer="widget")
+        assert written(controller) == ["0402000000aa"] * 100 + ["040200000000"]
+        assert controller._pause.call_args_list == [call(200)] * 100
+        with pytest.raises(ValueError):
+            controller.validate_furnimove_action(flat_index, duration_ms=50, consumer="widget")
 
 
 async def test_arbitrary_preset_duplicate_labels_and_no_invented_dead_massage() -> None:

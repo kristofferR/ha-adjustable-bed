@@ -53,7 +53,8 @@ def _coordinator(hass: HomeAssistant, route: str) -> AdjustableBedCoordinator:
     "group",
     [
         ("comfort_motion", "jiecang"),
-        ("okimat", "okin_uuid"),
+        # Okin UUID is one answer behind the Okin family row.
+        ("okimat", "furnimove"),
         ("dewertokin", "okin_handle"),
         ("nectar", "okin_7byte"),
         ("mattressfirm", "okin_nordic"),
@@ -98,12 +99,12 @@ async def test_device_manufacturer_differs(
 @pytest.mark.parametrize(
     ("legacy", "offered"),
     [
-        ("okimat", "okin_uuid"),
+        # Okin UUID is one answer behind the Okin family row.
+        ("okimat", "furnimove"),
         ("dewertokin", "okin_handle"),
         ("nectar", "okin_7byte"),
         ("mattressfirm", "okin_nordic"),
         ("leggett_platt", "leggett_okin"),
-        ("leggett_platt", "leggett_gen2"),
     ],
 )
 def test_legacy_bed_types_are_not_offered_in_setup(legacy: str, offered: str) -> None:

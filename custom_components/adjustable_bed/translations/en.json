@@ -453,16 +453,6 @@
           "name": "Name for the combined bed"
         }
       },
-      "leggett_app": {
-        "title": "Leggett app profile",
-        "description": "Choose the app that matches this bed before continuing Bluetooth pairing.",
-        "data": {
-          "leggett_app_profile": "Leggett app profile"
-        },
-        "data_description": {
-          "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged."
-        }
-      },
       "logicdata_app": {
         "title": "Logicdata bed app and layout",
         "description": "Choose the app, command family and physical controls that match this bed. SimplicityFrame entries keep their existing protocol.",
@@ -482,19 +472,26 @@
         }
       },
       "jiecang_app": {
-        "title": "Jiecang app and layout",
-        "description": "Choose the app and physical controls that match this bed. Existing legacy Jiecang entries keep their original protocol.",
+        "title": "{app} layout",
+        "description": "Choose the controls your bed has. Only layouts {app} supports are listed. The app sets the motor count and its own timing, so they aren't asked here.",
         "data": {
-          "jiecang_app_profile": "Bed app",
           "jiecang_app_layout": "Physical actuator layout",
-          "jiecang_app_transport": "BLE transport",
           "has_light": "Enable light controls"
         },
         "data_description": {
-          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
-          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
+          "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
           "has_light": "Expose light controls when this bed has under-bed lighting."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: transport",
+            "data": {
+              "jiecang_app_transport": "BLE transport"
+            },
+            "data_description": {
+              "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only."
+            }
+          }
         }
       },
       "lp_legacy": {
@@ -799,6 +796,96 @@
               "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
             }
           }
+        }
+      },
+      "jiecang_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. The bed's name and Bluetooth services don't identify the app. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
+        }
+      },
+      "okin_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. An Okin receiver's name, label and Bluetooth services don't identify the app or its layout, so you don't need an RF remote to answer. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
+        }
+      },
+      "okin_remote": {
+        "title": "Remote code and motors",
+        "description": "Choose the code of the remote that controls this bed (**{current}**), and how many motors the bed has. The code picks the buttons and presets. Keep Auto-detect if you don't know it.",
+        "data": {
+          "protocol_variant": "Remote code",
+          "motor_count": "Number of motors"
+        }
+      },
+      "keeson_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. Keeson, Ergomotion, Serta and Cool Base beds share names and Bluetooth services, so they don't identify the app. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
+        }
+      },
+      "keeson_app": {
+        "title": "Which app?",
+        "description": "Choose the exact app you use.",
+        "data": {
+          "choice": "App"
+        }
+      },
+      "keeson_restonic": {
+        "title": "Restonic BT remote style",
+        "description": "The Restonic BT app lets you choose a remote style in its settings; A is the app's default. Choose the style your app shows.",
+        "data": {
+          "protocol_variant": "Remote style"
+        }
+      },
+      "keeson_screen": {
+        "title": "Which screen does the app show?",
+        "description": "{app} has a 2M, 3M and 4M screen. Choose the one you use: it sets the number of motors.",
+        "data": {
+          "motor_count": "App screen"
+        }
+      },
+      "keeson_route": {
+        "title": "Remote route and motors",
+        "description": "Choose the route of the remote that controls this bed, and how many motors the bed has. Keep Auto-detect if you don't know it.",
+        "data": {
+          "protocol_variant": "Remote route",
+          "motor_count": "Number of motors"
+        }
+      },
+      "solace_family": {
+        "title": "Which app controls this bed?",
+        "description": "QMS and similar names are shared by several apps, so the name doesn't choose one. Choose the app you use on your phone. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App"
+        }
+      },
+      "solace_woosa": {
+        "title": "Woosa Sleep controls",
+        "description": "Woosa Sleep has its own Favourite memory, massage levels, lights and alarm, and no HomeKobo hip, lumbar or wave controls. Choose it only if you control the bed with the Woosa Sleep app."
+      },
+      "solace_bedsense": {
+        "title": "BedSense layout",
+        "description": "Choose the layout the BedSense app shows, or keep the layout from the bed's Bluetooth name.",
+        "data": {
+          "protocol_variant": "Layout"
+        }
+      },
+      "leggett_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Each Leggett & Platt app has its own layout, and the bed's name doesn't tell them apart. Choose the app you use on your phone, or the remote if you don't use one. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
+        }
+      },
+      "jiecang_legacy": {
+        "title": "Motors on this bed",
+        "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
+        "data": {
+          "motor_count": "Number of motors"
         }
       }
     },
@@ -1330,7 +1417,6 @@
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
-      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
       "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
@@ -1342,7 +1428,8 @@
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
-      "estimate_acknowledge_required": "Confirm that you understand positions are estimated."
+      "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
+      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -8629,7 +8716,7 @@
           },
           "handset": {
             "title": "Select the FurniMove handset",
-            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically. Handset codes listed under Okin UUID are not offered here; a full bed with one of those keeps its current configuration and uses that code in the Okin UUID options.",
+            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically. Handset codes listed under Okin UUID are not offered here; a full bed with one of those keeps its current configuration, then uses Reconfigure to choose that Okimat or OKIN handset code.",
             "data": {
               "furnimove_remote": "Handset layout"
             }
@@ -8971,6 +9058,75 @@
       "options": {
         "split": "I'll split the pair in Configure",
         "keep": "Keep current configuration"
+      }
+    },
+    "jiecang_family_choice": {
+      "options": {
+        "dreamask": "ERGOBALANCE app (Dreamask)",
+        "dreamotion": "Dream Motion app",
+        "dreamhd": "Dream Motion HD app",
+        "comfort_motion": "Comfort Motion app",
+        "legacy_jiecang": "No app: Glide or Comfort Motion remote (legacy Jiecang controls)",
+        "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
+        "keep": "I don't know: keep the current controls"
+      }
+    },
+    "okin_family_choice": {
+      "options": {
+        "furnimove": "FurniMove / OKIN Smart Remote app",
+        "okin_uuid": "No app: Okimat or OKIN handset code (requires pairing)",
+        "okin_dot": "No app: DOT remote (RF34 or RF6707)",
+        "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
+        "keep": "I don't know: keep the detected controls"
+      }
+    },
+    "keeson_family_choice": {
+      "options": {
+        "sleep_harmony": "Sleep Harmony app",
+        "restonic": "Restonic BT app",
+        "ergomotion_apps": "Ergomotion, Ergomotion 4.0 or Serta MP Remote app",
+        "ore_apps": "Avanti, AMERICANSTAR, Bedsense Bases, INNOVA, MaxCoil Una or Dynasty app",
+        "okin_seating_apps": "Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app",
+        "purple_base_json": "Purple Smart Base, Member's Mark or Linx / Juna Sleep",
+        "coolbase": "Cool Base app (with fan)",
+        "other_route": "No app: another Keeson remote route",
+        "keep": "I don't know: keep the detected controls"
+      }
+    },
+    "keeson_restonic_style": {
+      "options": {
+        "restonic_a": "Remote A (6 buttons)",
+        "restonic_b": "Remote B (10 buttons)"
+      }
+    },
+    "keeson_screen": {
+      "options": {
+        "2": "2M: back and feet",
+        "3": "3M: back, feet and head",
+        "4": "4M: back, feet, waist and lumbar"
+      }
+    },
+    "solace_family_choice": {
+      "options": {
+        "name_route": "HomeKobo, Sealy MotionFlex or Sweet Night app",
+        "woosa": "Woosa Sleep app",
+        "motion_bed": "Motion Bed app",
+        "bedsense": "BedSense app",
+        "keep": "I don't know: keep the detected controls"
+      }
+    },
+    "leggett_family_choice": {
+      "options": {
+        "prodigy_ce": "Prodigy CE (Prodigy 4) app: back, feet, pillow and lumbar",
+        "prodigy2": "Prodigy 2 app: back, feet and pillow",
+        "prodigy2l": "Prodigy 2L app: back, feet and lumbar",
+        "useries": "U Series app: back, feet and pillow",
+        "lp_control_okin": "LP Control app with an LP BED receiver",
+        "lp_control_gen2": "LP Control app with an LP Comfort Connect base",
+        "lp_app_mlrm": "L&P Adjustable Base app with an MlRM base",
+        "lp_app_qrrm": "L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2)",
+        "lp_legacy": "L&P Adjustable Base legacy app (2.2.1)",
+        "keep": "I don't know: keep the current controls"
       }
     }
   }

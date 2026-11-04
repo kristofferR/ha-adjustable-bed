@@ -86,12 +86,36 @@ Enable massage and light controls only when fitted.
 Detection suggests the legacy route (see its [Setup](#legacy-route)); the app
 profiles are explicit choices.
 
-1. Select **Jiecang (ERGOBALANCE / Dream Motion / Dream Motion HD / Comfort Motion apps)**.
-2. Choose the exact app profile, then the control layout and transport.
+### Home Assistant setup
 
-Existing legacy Jiecang and Comfort Motion entries keep their original behavior;
-select an app profile in options to use the audited app behavior. Settings belong
-to one physical bed and remain independent across a two-address pair.
+The bed-type list has one **Jiecang: ERGOBALANCE, Dream Motion, Dream Motion HD
+and Comfort Motion apps, Glide and Lierda remotes** choice. Setup then asks which
+app or remote you use; the bed's name and services never decide it.
+
+1. Choose the app on your phone: **ERGOBALANCE app (Dreamask)**, **Dream Motion
+   app**, **Dream Motion HD app** or **Comfort Motion app**. Then choose the layout
+   the app shows and whether the bed has a light. The transport stays **Auto**
+   unless you open **Advanced**.
+2. Without an app, choose the remote's legacy controls: **No app: Glide or Comfort
+   Motion remote** (`jiecang`) or **No app: Comfort Motion / Lierda remote**
+   (`comfort_motion`), then the motor count. See the [legacy route](#legacy-route).
+3. When detection found a legacy bed, **I don't know: keep the current controls**
+   saves the detected legacy route.
+
+For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+The same question appears, with **Keep** leaving the entry as it is. Choosing an
+app checks the bed's Bluetooth services with the app's own transport selection
+before anything is saved; a bed without that app's services keeps its setup.
+Choosing a legacy route needs no check. A review lists the added and removed
+controls before **Apply this change** saves it, with the same entry, address,
+device and unchanged entity IDs.
+
+Existing legacy Jiecang and Comfort Motion entries keep their original behavior
+until you change them. **Configure** keeps routine settings, such as the light,
+massage and connection options; the app, layout, transport and legacy-or-app
+route change only through **Reconfigure**. Settings belong to one physical bed and
+remain independent across a two-address pair.
 
 LOGICDATA beds use their own bed type, `logicdata_app`; detection never selects it
 (see the [LOGICDATA app family](#logicdata-app-family), which has its own
@@ -581,7 +605,7 @@ Select `logicdata_app` for these beds. Guided migration belongs to
 
 #### Setup
 
-1. Select the Jiecang app bed type, then the **Comfort Motion** app profile.
+1. Select the Jiecang bed type, then **Comfort Motion app**.
 2. Choose the physical layout used in the app: back/legs, back/legs/neck, or
    back/legs/neck/lumbar.
 3. Enable massage and light controls only when fitted.

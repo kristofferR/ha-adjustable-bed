@@ -23,7 +23,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import logging
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib import import_module
@@ -42,12 +42,42 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.translation import async_get_translations
 
 from .const import (
+    BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COOLBASE,
+    BED_TYPE_ERGOMOTION,
+    BED_TYPE_FURNIMOVE,
+    BED_TYPE_JIECANG,
+    BED_TYPE_JIECANG_APP,
+    BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_DOT,
+    BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
+    BED_TYPE_SERTA,
+    BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
+    CONF_FURNIMOVE_REMOTE,
+    CONF_JIECANG_APP_LAYOUT,
+    CONF_JIECANG_APP_PROFILE,
+    CONF_JIECANG_APP_TRANSPORT,
+    CONF_LEGGETT_APP_PROFILE,
+    CONF_PROTOCOL_VARIANT,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_VMAT_REMOTE,
+    CONF_VMATBASIC_PROFILE,
     DOMAIN,
     PAIR_SIDES,
+    grants_one_connection_per_pairing_window,
+    requires_pairing,
 )
 from .pairing import effective_child_data, get_child, is_paired
 
@@ -64,18 +94,112 @@ class ManagedFamily:
     # Also the config-flow step that asks the family's app question.
     key: str
     bed_types: frozenset[str]
-    # The family has exact endpoint or bond requirements, so a staged change
-    # must pass a connection check before it can be confirmed.
-    requires_check: bool
+    # The app and layout settings Configure must not change on its own.
+    route_keys: tuple[str, ...]
+    # Whether a staged route has exact endpoint or bond requirements, so the
+    # change must pass a connection check before it can be confirmed.
+    requires_check: Callable[[Mapping[str, Any]], bool]
 
 
 VIBRADORM_FAMILY: Final = ManagedFamily(
     key="vibradorm",
     bed_types=frozenset({BED_TYPE_VIBRADORM, BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}),
-    requires_check=True,
+    route_keys=(
+        CONF_VIBRADORM_APP_PROFILE,
+        CONF_VIBRADORM_CONTROL_TYPE,
+        CONF_VIBRADORM_VMAT_REMOTE,
+        CONF_VMATBASIC_PROFILE,
+    ),
+    requires_check=lambda _data: True,
 )
 
-MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (VIBRADORM_FAMILY,)
+# The app controllers need their app's exact GATT roles; the legacy Jiecang and
+# Lierda routes fall back to a generic write role and have nothing to check.
+JIECANG_FAMILY: Final = ManagedFamily(
+    key="jiecang_family",
+    bed_types=frozenset({BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION, BED_TYPE_JIECANG_APP}),
+    route_keys=(CONF_JIECANG_APP_PROFILE, CONF_JIECANG_APP_LAYOUT, CONF_JIECANG_APP_TRANSPORT),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP,
+)
+
+_OKIN_ROUTES: Final = frozenset(
+    {
+        BED_TYPE_FURNIMOVE,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_DOT,
+        BED_TYPE_OKIN_RF_ECO_BT,
+    }
+)
+# Every Okin route writes an exact command endpoint, and the Okin UUID and
+# RF ECO BT routes also need a bond. The handset or remote code picks the layout.
+# An app the review suggests switches as Configure switched it, unchecked.
+OKIN_FAMILY: Final = ManagedFamily(
+    key="okin_family",
+    bed_types=_OKIN_ROUTES,
+    route_keys=(CONF_FURNIMOVE_REMOTE, CONF_PROTOCOL_VARIANT),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) in _OKIN_ROUTES,
+)
+
+# The Keeson controllers fall back across their write roles and never refuse a
+# link, so a Keeson route has no endpoint or bond to check; Configure switched
+# these routes unchecked too. The variant picks the app or remote.
+KEESON_FAMILY: Final = ManagedFamily(
+    key="keeson_family",
+    bed_types=frozenset(
+        {
+            BED_TYPE_KEESON,
+            BED_TYPE_ERGOMOTION,
+            BED_TYPE_SERTA,
+            BED_TYPE_OKIN_FFE,
+            BED_TYPE_COOLBASE,
+        }
+    ),
+    route_keys=(CONF_PROTOCOL_VARIANT,),
+    requires_check=lambda _data: False,
+)
+
+# Solace name routes and Woosa Sleep share the FFFF frame and controller, which
+# never refuses a link, so a change has nothing to check; Configure switched
+# them unchecked. Motion Bed and BedSense are separate bed types it can reach.
+SOLACE_FAMILY: Final = ManagedFamily(
+    key="solace_family",
+    bed_types=frozenset({BED_TYPE_SOLACE}),
+    route_keys=(CONF_PROTOCOL_VARIANT,),
+    requires_check=lambda _data: False,
+)
+
+# The Okin receiver needs a bond, which the pairing step proves. LP Comfort
+# Connect grants one connection per pairing window, so its first connection
+# after the change bonds, as at setup. The MlRM receiver and the apps on other
+# bed types switch unchecked, as Configure did.
+LEGGETT_FAMILY: Final = ManagedFamily(
+    key="leggett_family",
+    bed_types=frozenset(
+        {
+            BED_TYPE_LEGGETT_PLATT,
+            BED_TYPE_LEGGETT_GEN2,
+            BED_TYPE_LEGGETT_OKIN,
+            BED_TYPE_LEGGETT_WILINKE,
+        }
+    ),
+    route_keys=(CONF_PROTOCOL_VARIANT, CONF_LEGGETT_APP_PROFILE),
+    requires_check=lambda data: requires_pairing(
+        data.get(CONF_BED_TYPE, ""), data.get(CONF_PROTOCOL_VARIANT)
+    )
+    and not grants_one_connection_per_pairing_window(
+        data.get(CONF_BED_TYPE, ""), data.get(CONF_PROTOCOL_VARIANT)
+    ),
+)
+
+MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
+    VIBRADORM_FAMILY,
+    JIECANG_FAMILY,
+    OKIN_FAMILY,
+    KEESON_FAMILY,
+    SOLACE_FAMILY,
+    LEGGETT_FAMILY,
+)
 
 
 def managed_family(entry_data: Mapping[str, Any]) -> ManagedFamily | None:
@@ -334,7 +458,9 @@ async def async_control_changes(
         if (entity_id := registry.async_get_entity_id(current[unique_id][0], DOMAIN, unique_id))
     ]
     return ControlChanges(
-        added=tuple(sorted((target[uid][1] for uid in target.keys() - current.keys()), key=str.lower)),
+        added=tuple(
+            sorted((target[uid][1] for uid in target.keys() - current.keys()), key=str.lower)
+        ),
         removed=tuple(sorted((current[uid][1] for uid in removed_ids), key=str.lower)),
         unchanged=len(current.keys() & target.keys()),
         references=_references(hass, removed_entities),
