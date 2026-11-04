@@ -138,6 +138,14 @@ test("closing the dialog while lowering stops the bed", () => {
   expect(card._estimateDialog).toBeUndefined();
 });
 
+test("removing the card while lowering stops the bed", () => {
+  const { card, ctx, calls } = fixture("unknown");
+  card._estimateDialog = { kind: "reference", ctx, choice: "lower", phase: "lowering" };
+  (card as unknown as { disconnectedCallback(): void }).disconnectedCallback();
+  expect(calls).toEqual([{ service: "stop_all", data: { device_id: "bed" } }]);
+  expect(card._estimateDialog).toBeUndefined();
+});
+
 test("a failed lowering never offers to confirm flat", async () => {
   const { card, ctx } = fixture("unknown");
   card.hass.callService = async () => { throw new Error("not connected"); };

@@ -238,6 +238,9 @@ export class AdjustableBedCard extends LitElement {
     // repeat loop running forever and a cover-backed motor moving with nothing
     // left to stop it.
     this._hold.abandon();
+    // Removing the card fires no dialog close event, so a running lower to flat
+    // would lose its Stop control. Stop it here too.
+    this._closeEstimateDialog();
   }
 
   protected override shouldUpdate(changed: PropertyValues): boolean {
