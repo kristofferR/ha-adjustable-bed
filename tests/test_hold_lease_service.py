@@ -255,3 +255,55 @@ async def test_disconnect_ends_the_hold_and_refuses_renewal(runtime) -> None:
     assert controller.frames[-1] == "stop"
     with pytest.raises(ServiceValidationError, match="has ended"):
         await _timed(hass, 2)
+
+
+async def test_lease_inside_a_prepared_reservation_runs_and_expires(runtime) -> None:
+    """A paired group's side runs its held start inside the reservation."""
+    from custom_components.adjustable_bed.command_scheduler import HoldLease
+
+    _hass, coordinator = runtime
+    controller = _install(coordinator, STREAM)
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=0.06)
+
+    async def side() -> None:
+        await coordinator.async_execute_controller_command(
+            lambda ctrl: ctrl.move_back_up(),
+            resource="motor:back",
+            pulse_count=1000,
+            pulse_delay_ms=20,
+            lease=held,
+        )
+
+    handle = await coordinator.async_prepare_command_operation(
+        side, resource="motor:back", group_id="pair"
+    )
+    await coordinator.async_wait_prepared_command(handle)
+    coordinator.commit_prepared_command(handle)
+    await asyncio.wait_for(coordinator.async_wait_prepared_command_result(handle), 2)
+    assert handle.outcome is CommandOutcome.EXPIRED
+    assert 1 < controller.frames.count("up") < 20
+    assert controller.frames[-1] == "stop"
+
+
+async def test_native_both_claims_once_on_the_executing_side_view() -> None:
+    from unittest.mock import MagicMock
+
+    from custom_components.adjustable_bed.command_scheduler import HoldClaim, HoldLease
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+    from custom_components.adjustable_bed.services import _async_with_hold_lease
+
+    both = MagicMock()
+    both.claim_hold_lease.return_value = HoldClaim.START
+    paired = MagicMock(spec=PairedBedCoordinator)
+    paired._targets_for.return_value = [("left", both), ("right", both)]
+    started = []
+
+    async def start() -> None:
+        started.append(True)
+
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=1)
+    await _async_with_hold_lease([(paired, "both")], held, lambda _t: "motor:back", start)
+    assert started == [True]
+    # One peek and one reservation, both on the view the command executes on.
+    assert both.claim_hold_lease.call_count == 2
+    both.release_hold_claim.assert_called_once()

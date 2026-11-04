@@ -6626,8 +6626,10 @@ class AdjustableBedCoordinator:
             return
         context = current_command_context()
         if context is not None and context.scheduler_token is self._command_scheduler.token:
-            if lease is not None:
-                raise ValueError("A held command cannot run inside another command")
+            if lease is not None and not self._command_scheduler.bind_hold_inline(
+                context, lease, self._hold_resources(resource, resources)
+            ):
+                return
             previous_pulse_count = context.pulse_count
             previous_pulse_delay_ms = context.pulse_delay_ms
             if pulse_count is not None:

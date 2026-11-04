@@ -244,3 +244,51 @@ def test_hold_intents_carry_a_lease() -> None:
         HoldLease(owner="card", generation=-1, action="up", duration_s=1)
     with pytest.raises(ValueError):
         HoldLease(owner="card", generation=1, action="up", duration_s=0)
+
+
+async def test_superseded_running_hold_still_ends_on_disconnect() -> None:
+    scheduler = DeviceCommandScheduler("superseded")
+    fake = FakeHold()
+    task = await start_hold(scheduler, fake, lease(1, duration_s=30))
+    # A newer generation reserved during its preflight replaces the record.
+    assert scheduler.claim_hold(lease(2), BACK) is HoldClaim.START
+    scheduler.end_holds(CommandOutcome.DISCONNECTED)
+    await asyncio.wait_for(task, 1)
+    assert scheduler.recent_records[-1].outcome is CommandOutcome.DISCONNECTED
+
+
+async def test_overdue_lease_is_not_renewed_before_its_timer_runs() -> None:
+    import time
+
+    scheduler = DeviceCommandScheduler("overdue")
+    fake = FakeHold()
+    task = await start_hold(scheduler, fake, lease(duration_s=0.02))
+    time.sleep(0.04)  # block the loop past the deadline; the timer has not run
+    assert scheduler.claim_hold(lease(duration_s=30), BACK) is HoldClaim.STALE
+    await asyncio.wait_for(task, 1)
+    assert scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
+
+
+async def test_held_start_binds_to_a_prepared_reservation() -> None:
+    """Paired groups run each side inside a prepared reservation."""
+    scheduler = DeviceCommandScheduler("prepared")
+    fake = FakeHold()
+
+    async def side(context: CommandContext) -> None:
+        assert scheduler.bind_hold_inline(context, lease(duration_s=0.05), BACK)
+        await fake(context)
+
+    handle = await scheduler.enqueue(
+        CommandIntent(side, resources=BACK, kind=CommandKind.GROUP, group_id="pair"),
+        prepared=True,
+    )
+    await scheduler.wait_ready(handle)
+    scheduler.commit(handle)
+    await fake.started.wait()
+    for _ in range(3):
+        await asyncio.sleep(0.03)
+        assert scheduler.claim_hold(lease(duration_s=0.05), BACK) is HoldClaim.RENEW
+    # Expiry is the normal end of a held member, not a group failure.
+    await asyncio.wait_for(scheduler.wait_prepared_result(handle), 1)
+    assert handle.outcome is CommandOutcome.EXPIRED
+    assert fake.frames[-1] == "release"

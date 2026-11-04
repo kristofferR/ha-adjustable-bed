@@ -2243,7 +2243,14 @@ async def _async_with_hold_lease(
     if len(targets) != 1:
         raise ServiceValidationError("A renewable hold targets one bed at a time")
     coordinator, side = targets[0]
-    physical = [(target, resource_for(target)) for target in _command_targets(coordinator, side)]
+    # Key every claim by the target that executes the command: a native
+    # single-address Both runs once on its combined side view.
+    executing = (
+        list({id(child): child for _, child in coordinator._targets_for(side)}.values())
+        if isinstance(coordinator, PairedBedCoordinator)
+        else _command_targets(coordinator, side)
+    )
+    physical = [(target, resource_for(target)) for target in executing]
     claims = [
         target.claim_hold_lease(lease, resource=resource, reserve=False)
         for target, resource in physical

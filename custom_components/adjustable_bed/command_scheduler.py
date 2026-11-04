@@ -572,7 +572,8 @@ class DeviceCommandScheduler:
         except asyncio.CancelledError:
             await self.cancel(handle, CommandOutcome.CALLER_CANCELLED)
             raise
-        if handle.outcome is not CommandOutcome.COMPLETED:
+        # A lease running out is how a held member normally ends.
+        if handle.outcome not in (CommandOutcome.COMPLETED, CommandOutcome.EXPIRED):
             raise PreparedCommandInvalidated(
                 f"Prepared command {handle.intent.intent_id} was {handle.outcome}"
             )
@@ -692,9 +693,21 @@ class DeviceCommandScheduler:
         """End every hold and reservation now, without replay, for example on disconnect."""
         for record in tuple(self._leases.values()):
             self._expire_record(record, outcome)
+        # A superseded generation can still be running after a newer one
+        # replaced its record; reach it through its handle.
+        for handle in (self._active, *self._queue):
+            if handle is not None and handle.lease_record is not None:
+                self._expire_record(handle.lease_record, outcome)
 
-    @staticmethod
-    def _classify_lease(record: _LeaseRecord | None, lease: HoldLease) -> HoldClaim:
+    def _classify_lease(self, record: _LeaseRecord | None, lease: HoldLease) -> HoldClaim:
+        if (
+            record is not None
+            and not record.ended
+            and record.deadline <= asyncio.get_running_loop().time()
+        ):
+            # The timer callback may not have run yet; a late renewal must
+            # not revive an overdue lease.
+            self._expire_record(record, CommandOutcome.EXPIRED)
         if record is None or lease.generation > record.generation:
             return HoldClaim.START
         if (
@@ -794,6 +807,40 @@ class DeviceCommandScheduler:
             self._end_lease(record)
             self._finish_locked(handle, CommandOutcome.EXPIRED)
         return None
+
+    def bind_hold_inline(
+        self, context: CommandContext, lease: HoldLease, resources: Collection[str]
+    ) -> bool:
+        """Make the running reservation that owns ``context`` the held command.
+
+        Paired groups run each side inside a prepared reservation, so a held
+        start there binds its lease to that reservation instead of queueing a
+        nested command. Returns False when there is nothing to run: the call
+        renewed a live hold, or its reservation already expired.
+        """
+        handle = self._active
+        if handle is None or handle.context is not context:
+            raise ValueError("A held command can only bind to the running reservation")
+        key = (lease.owner, command_resources(*resources))
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, lease)
+        if claim is HoldClaim.STALE:
+            raise StaleHoldLease(
+                f"Hold generation {lease.generation} of {lease.owner!r} has ended"
+            )
+        if claim is HoldClaim.RENEW and record is not None and record.handle is not None:
+            self._set_lease_deadline(record, lease)
+            return False
+        if record is None or claim is HoldClaim.START:
+            record = self._new_lease_record(key, lease)
+        if record.deadline <= asyncio.get_running_loop().time():
+            self._end_lease(record)
+            return False
+        record.handle = handle
+        handle.lease_record = record
+        context.lease = lease
+        context.hold_deadline = record.deadline
+        return True
 
     def _replace_conflicts_locked(self, incoming: CommandHandle) -> bool:
         """Cancel conflicts and report whether the active handle was replaced."""
