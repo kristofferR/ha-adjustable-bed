@@ -42,6 +42,21 @@ import {
   stopCardMotorHold,
 } from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
+import {
+  type MotorEstimate,
+  type SavedPosition,
+  allTracking,
+  bedEstimates,
+  canRecall,
+  estimateAlert,
+  estimateChip,
+  estimateReadout,
+  estimatedAngle,
+  motorEstimate,
+  positionScope,
+  positionsForPane,
+  savedPositions,
+} from "./estimates";
 import { localize } from "./localize";
 import {
   type AdjustableBedCardConfig,
@@ -55,10 +70,32 @@ import {
 // Side-effect import: registers <adjustable-bed-card-editor> in the same bundle.
 import "./editor";
 
+// The estimated beds a pane covers and where its estimate actions go (#601).
+interface EstimateSide {
+  key: string; // "bed", "left" or "right"
+  deviceId: string;
+  label: string;
+  motors: MotorEntity[];
+}
+
+interface EstimateContext {
+  deviceId: string; // service target for this pane
+  side?: "both";
+  paired: boolean;
+  sides: EstimateSide[];
+  savedPositions?: string; // sensor.* saved_positions of the whole bed
+}
+
+type EstimateDialog =
+  | { kind: "reference"; ctx: EstimateContext; choice: string; lowered: boolean }
+  | { kind: "save"; ctx: EstimateContext; name: string; button: boolean }
+  | { kind: "edit"; ctx: EstimateContext; position: SavedPosition; name: string; button: boolean };
+
 interface PairedPane {
   key: string;
   label: string;
   bed: BedEntities;
+  estimate?: EstimateContext;
   graphicTone?: BedGraphicTone;
   stopScope?: string[];
   remainingStopIds?: string[];
@@ -71,6 +108,7 @@ interface PairedPane {
 interface BedGraphicState extends DualBedGraphicSide {
   upperMotor: MotorEntity;
   lowerMotor: MotorEntity;
+  estimated?: boolean;
 }
 
 type ConnectionStatus = "connected" | "connecting" | "idle" | "disconnected";
@@ -94,6 +132,9 @@ export class AdjustableBedCard extends LitElement {
   @state() private _activePairedPane = "both";
   @state() private _synchronizingTo?: SynchronizeSide;
   @state() private _synchronizationFailed = false;
+  @state() private _estimateDialog?: EstimateDialog;
+  // Saved-positions section (by its device) currently in edit mode.
+  @state() private _savedEditFor?: string;
 
   private _watched: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
@@ -207,7 +248,9 @@ export class AdjustableBedCard extends LitElement {
       changed.has("_saveModeFor") ||
       changed.has("_activePairedPane") ||
       changed.has("_synchronizingTo") ||
-      changed.has("_synchronizationFailed")
+      changed.has("_synchronizationFailed") ||
+      changed.has("_estimateDialog") ||
+      changed.has("_savedEditFor")
     )
       return true;
     if (!changed.has("hass") || !this.hass) return true;
@@ -251,10 +294,18 @@ export class AdjustableBedCard extends LitElement {
       }], false);
     }
 
+    const deviceId = this._config.device_id;
+    const estimate: EstimateContext = {
+      deviceId,
+      paired: false,
+      sides: [{ key: "bed", deviceId, label: this._title(), motors: bed.motors }],
+      savedPositions: bed.savedPositions,
+    };
     return html`
       <ha-card>
         ${this._header(bed)}
-        ${this._renderSections(bed)}
+        ${this._renderSections(bed, "theme", undefined, undefined, undefined, estimate)}
+        ${this._estimateDialogTemplate()}
       </ha-card>
     `;
   }
@@ -267,6 +318,7 @@ export class AdjustableBedCard extends LitElement {
     graphicOverride?: typeof nothing | TemplateResult,
     stopScope?: string[],
     remainingStopIds?: string[],
+    estimate?: EstimateContext,
   ): (typeof nothing | TemplateResult)[] {
     const c = this._config!;
     const render: Record<string, () => typeof nothing | TemplateResult> = {
@@ -275,9 +327,11 @@ export class AdjustableBedCard extends LitElement {
           ? (graphicOverride ?? this._graphic(bed, graphicTone))
           : nothing,
       motors: () => (c.show_motors !== false
-        ? this._motors(bed, stopScope, remainingStopIds) : nothing),
+        ? this._motors(bed, stopScope, remainingStopIds, estimate) : nothing),
       firmness: () => (c.show_firmness !== false ? this._firmness(bed) : nothing),
       presets: () => (c.show_presets !== false ? this._presets(bed) : nothing),
+      saved_positions: () =>
+        c.show_saved_positions !== false && estimate ? this._savedPositions(estimate) : nothing,
       memory: () => (c.show_memory !== false ? this._memory(bed) : nothing),
       lighting: () => (c.show_lighting !== false ? this._lighting(bed) : nothing),
       massage: () => (c.show_massage !== false ? this._massage(bed) : nothing),
@@ -309,6 +363,12 @@ export class AdjustableBedCard extends LitElement {
       ...(parentStop ? [parentStop] : []),
       ...childStops,
     ])];
+    const estimateSides: EstimateSide[] = sides.map((side, index) => ({
+      key: this._estimateSideKey(side.bed, index),
+      deviceId: side.key,
+      label: side.label,
+      motors: side.bed.motors,
+    }));
     const pairedPanes: PairedPane[] = [
       {
         key: "both",
@@ -316,10 +376,23 @@ export class AdjustableBedCard extends LitElement {
         bed: parentBed,
         stopScope: bothStopScope,
         remainingStopIds: childStops,
+        estimate: {
+          deviceId: parentId,
+          side: "both",
+          paired: true,
+          sides: estimateSides,
+          savedPositions: parentBed.savedPositions,
+        },
       },
-      ...sides.map((side) => ({
+      ...sides.map((side, index) => ({
         ...side,
         stopScope: side.bed.stop ? [side.bed.stop] : [],
+        estimate: {
+          deviceId: side.key,
+          paired: true,
+          sides: [estimateSides[index]],
+          savedPositions: parentBed.savedPositions,
+        },
       })),
     ];
     this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
@@ -420,6 +493,7 @@ export class AdjustableBedCard extends LitElement {
             combined ? this._pairedOverview(sidePanes) : undefined,
             active.stopScope,
             active.remainingStopIds,
+            active.estimate,
           )}
           ${combined && this._config?.show_lighting !== false
             ? this._combinedLighting(active.bed, sidePanes)
@@ -428,6 +502,7 @@ export class AdjustableBedCard extends LitElement {
             ? this._combinedBluetooth(sidePanes)
             : nothing}
         </div>
+        ${this._estimateDialogTemplate()}
       </ha-card>
     `;
   }
@@ -613,6 +688,7 @@ export class AdjustableBedCard extends LitElement {
     // Save mode is intentionally local to the visible side. Leaving a side
     // cancels it so returning later can never expose a stale destructive mode.
     this._saveModeFor = undefined;
+    this._savedEditFor = undefined;
     this._synchronizationFailed = false;
   }
 
@@ -983,10 +1059,8 @@ export class AdjustableBedCard extends LitElement {
     // Registry entries can outlive a configuration change. Do not draw a flat
     // default graphic from unavailable/unknown entities. Percentage positions
     // cannot be rendered as angles, and every degree value must be numeric.
-    if (
-      withPosition.length === 0 ||
-      withPosition.some((motor) => this._angle(motor) === undefined)
-    )
+    if (withPosition.length === 0) return this._estimatedGraphicState(bed);
+    if (withPosition.some((motor) => this._angle(motor) === undefined))
       return undefined;
     const graphicMotors = selectBedGraphicMotors(withPosition);
     if (!graphicMotors) return undefined;
@@ -1008,6 +1082,7 @@ export class AdjustableBedCard extends LitElement {
     bed: BedEntities,
     stopScope?: string[],
     remainingStopIds?: string[],
+    estimate?: EstimateContext,
   ): typeof nothing | TemplateResult {
     const routedStopScope = stopScope ?? (bed.stop ? [bed.stop] : []);
     const motors = bed.motors.filter((m) => m.cover || m.up || m.down);
@@ -1025,8 +1100,11 @@ export class AdjustableBedCard extends LitElement {
       return nothing;
     const hasRows =
       motors.length > 0 || positionRows.length > 0 || !!bed.synchro || !!bed.controlSide;
+    const estimates = estimate ? this._contextEstimates(estimate) : [];
     return html`
-      ${hasRows ? this._heading("section.position") : nothing}
+      ${estimate && estimates.length ? this._estimateAlertTemplate(estimate, estimates) : nothing}
+      ${hasRows ? this._positionHeading(estimates) : nothing}
+      ${estimate?.side === "both" ? this._estimateOverview(estimate) : nothing}
       ${bed.controlSide ? this._moreInfoRow(bed.controlSide) : nothing}
       ${bed.synchro ? this._toggleRow(bed.synchro) : nothing}
       ${
@@ -1454,6 +1532,371 @@ export class AdjustableBedCard extends LitElement {
     return html`<ha-card><div class="notice">${localize(this.hass, key)}</div></ha-card>`;
   }
 
+  // ---- estimated positions (#601) -------------------------------------------
+
+  private _estimateSideKey(bed: BedEntities, index: number): string {
+    const ids = [bed.estimateRemote, bed.stop, ...bed.motors.flatMap((m) => [m.estimate, m.reference])];
+    for (const id of ids) {
+      const side = id ? this._state(id)?.attributes.bed_side : undefined;
+      if (side === "left" || side === "right") return side;
+    }
+    return index === 0 ? "left" : "right";
+  }
+
+  private _t(key: string, params?: Record<string, string>): string {
+    return localize(this.hass, key, params);
+  }
+
+  private _contextEstimates(ctx: EstimateContext): MotorEstimate[] {
+    return ctx.sides.flatMap((side) => bedEstimates(this.hass, side.motors));
+  }
+
+  private _estimatesByKey(ctx: EstimateContext): Record<string, MotorEstimate[]> {
+    return Object.fromEntries(
+      ctx.sides.map((side) => [side.key, bedEstimates(this.hass, side.motors)]),
+    );
+  }
+
+  private _estimateService(
+    service: string,
+    ctx: EstimateContext,
+    data: Record<string, unknown> = {},
+  ): Promise<unknown> {
+    return (
+      this.hass?.callService(PLATFORM, service, {
+        device_id: ctx.deviceId,
+        ...(ctx.side ? { side: ctx.side } : {}),
+        ...data,
+      }) ?? Promise.resolve()
+    );
+  }
+
+  private _toast(message: string): void {
+    this.dispatchEvent(new CustomEvent("hass-notification", {
+      detail: { message }, bubbles: true, composed: true,
+    }));
+  }
+
+  private _positionHeading(estimates: MotorEstimate[]): TemplateResult {
+    const chip = estimateChip(estimates);
+    if (!chip) return this._heading("section.position");
+    return html`<div class="section-heading heading-row">
+      <span>${this._t("section.position")}</span>
+      <span class="estimate-chip chip-${chip}">${this._t(`estimate.chip_${chip}`)}</span>
+    </div>`;
+  }
+
+  private _estimateValues(estimates: MotorEstimate[]): string {
+    return estimates
+      .map((e) => `${this._motorName({ key: e.motor })} ${Math.round(e.percent ?? 0)}%`)
+      .join(", ");
+  }
+
+  private _estimateAlertTemplate(
+    ctx: EstimateContext,
+    estimates: MotorEstimate[],
+  ): typeof nothing | TemplateResult {
+    const alert = estimateAlert(estimates);
+    if (!alert) return nothing;
+    let text: string;
+    let actions: TemplateResult;
+    const reference = html`<button class="set-btn" @click=${() => this._openReference(ctx)}>
+      ${this._t("estimate.set_reference")}</button>`;
+    if (alert.kind === "calibrate") {
+      text = this._t("estimate.alert_calibrate");
+      actions = html`<button class="set-btn" @click=${this._openSettings}>
+        ${this._t("estimate.calibrate_now")}</button>`;
+    } else if (alert.kind === "unconfirmed") {
+      text = this._t("estimate.alert_unconfirmed", {
+        values: this._estimateValues(alert.estimates),
+      });
+      actions = html`<button class="set-btn" @click=${() =>
+        void this._estimateService("confirm_position_unchanged", ctx).catch(() => undefined)}>
+        ${this._t("estimate.unchanged")}</button>${reference}`;
+    } else {
+      const reasonKey = `estimate.reason_${alert.reason ?? "not_referenced"}`;
+      const reason = this._t(reasonKey);
+      text = this._t("estimate.alert_unknown", {
+        reason: reason === reasonKey ? this._t("estimate.reason_not_referenced") : reason,
+      });
+      actions = reference;
+    }
+    return html`<div class="estimate-alert alert-${alert.kind}" role="status">
+      <ha-icon icon=${alert.kind === "calibrate" ? "mdi:tune-variant" : "mdi:alert-outline"}></ha-icon>
+      <span class="estimate-alert-text">${text}</span>
+      <div class="estimate-alert-actions">${actions}</div>
+    </div>`;
+  }
+
+  // Both tab of a pair: each side's estimate, and a reference action for a side
+  // that is not tracking.
+  private _estimateOverview(ctx: EstimateContext): typeof nothing | TemplateResult {
+    const rows = ctx.sides.flatMap((side) => {
+      const estimates = bedEstimates(this.hass, side.motors);
+      return estimates.length ? [{ side, estimates }] : [];
+    });
+    if (rows.length === 0) return nothing;
+    return html`<div class="estimate-overview">
+      ${rows.map(({ side, estimates }) => html`<div class="estimate-overview-row">
+        <span class="estimate-overview-side">${side.label}</span>
+        ${allTracking(estimates)
+          ? html`<span>${estimates.map((e) => `${this._motorName({ key: e.motor })} ${estimateReadout(e, (k, p) => this._t(k, p))}`).join(" · ")}</span>`
+          : html`<span>${this._t("estimate.unknown")} ·
+              <button class="link-btn" @click=${() => this._openReference({
+                deviceId: side.deviceId, paired: true, sides: [side],
+                savedPositions: ctx.savedPositions,
+              })}>${this._t("estimate.set_reference")}</button></span>`}
+      </div>`)}
+    </div>`;
+  }
+
+  private _savedPositions(ctx: EstimateContext): typeof nothing | TemplateResult {
+    if (!ctx.savedPositions) return nothing;
+    const estimates = this._contextEstimates(ctx);
+    const positions = positionsForPane(
+      savedPositions(this.hass, ctx.savedPositions),
+      ctx.sides.map((side) => side.key),
+    );
+    if (estimates.length === 0 && positions.length === 0) return nothing;
+    const byKey = this._estimatesByKey(ctx);
+    const editing = this._savedEditFor === ctx.deviceId;
+    const canSave = allTracking(estimates);
+    return html`
+      <div class="section-heading heading-row">
+        <span>${this._t("section.saved_positions")}</span>
+        ${positions.length
+          ? html`<button class="set-btn ${editing ? "active" : ""}"
+              @click=${() => { this._savedEditFor = editing ? undefined : ctx.deviceId; }}>
+              <ha-icon icon=${editing ? "mdi:check" : "mdi:pencil-outline"}></ha-icon>
+              <span>${this._t(editing ? "estimate.done" : "estimate.edit")}</span>
+            </button>`
+          : nothing}
+      </div>
+      ${editing ? html`<div class="hint">${this._t("estimate.edit_hint")}</div>` : nothing}
+      <div class="tiles">
+        ${positions.map((position) => {
+          const recallable = canRecall(position, byKey);
+          const scope = ctx.paired ? positionScope(position) : "bed";
+          return html`<button
+            class="tile ${editing ? "save-mode" : ""} ${!editing && !recallable ? "is-disabled" : ""}"
+            ?disabled=${!editing && !recallable}
+            @click=${() => editing ? this._openEdit(ctx, position) : this._recall(ctx, position)}>
+            <ha-icon class="icon" icon=${editing ? "mdi:pencil-outline" : "mdi:bookmark-outline"}></ha-icon>
+            <span class="tile-label">${position.name}</span>
+            ${scope !== "bed" ? html`<span class="tile-sublabel">${this._t(`estimate.scope_${scope}`)}</span>` : nothing}
+          </button>`;
+        })}
+        <button class="tile ${canSave ? "" : "is-disabled"}" ?disabled=${!canSave}
+          @click=${() => { this._estimateDialog = { kind: "save", ctx, name: "", button: true }; }}>
+          <ha-icon class="icon" icon="mdi:bookmark-plus-outline"></ha-icon>
+          <span class="tile-label">${this._t("estimate.save")}</span>
+        </button>
+      </div>
+      <div class="hint estimate-footer">${this._t("estimate.footer")}</div>
+    `;
+  }
+
+  private _recall(ctx: EstimateContext, position: SavedPosition): void {
+    this._hold.abandon();
+    void this._estimateService("recall_position", { ...ctx, side: undefined }, { position: position.id })
+      .then(() => this._toast(this._t("estimate.recalled", { name: position.name })))
+      .catch(() => undefined);
+  }
+
+  private _openReference(ctx: EstimateContext): void {
+    this._estimateDialog = { kind: "reference", ctx, choice: "flat", lowered: false };
+  }
+
+  private _openEdit(ctx: EstimateContext, position: SavedPosition): void {
+    this._estimateDialog = {
+      kind: "edit", ctx, position, name: position.name, button: position.button,
+    };
+  }
+
+  private _openSettings = (): void => {
+    this._hold.abandon();
+    history.pushState(null, "", "/config/integrations/integration/adjustable_bed");
+    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+  };
+
+  private _closeEstimateDialog = (): void => {
+    this._estimateDialog = undefined;
+  };
+
+  protected override updated(changed: PropertyValues): void {
+    super.updated(changed);
+    const dialog = this.renderRoot?.querySelector?.("dialog.estimate-dialog") as
+      | HTMLDialogElement
+      | null
+      | undefined;
+    if (dialog && !dialog.open) dialog.showModal();
+  }
+
+  private _estimateDialogTemplate(): typeof nothing | TemplateResult {
+    const dialog = this._estimateDialog;
+    if (!dialog) return nothing;
+    const body =
+      dialog.kind === "reference"
+        ? this._referenceDialog(dialog)
+        : dialog.kind === "save"
+          ? this._saveDialog(dialog)
+          : this._editDialog(dialog);
+    return html`<dialog class="estimate-dialog" @close=${this._closeEstimateDialog}>
+      ${body}
+    </dialog>`;
+  }
+
+  private _dialogMotors(ctx: EstimateContext): string[] {
+    const motors = this._contextEstimates(ctx)
+      .filter((e) => e.state !== "not_calibrated")
+      .map((e) => e.motor);
+    return [...new Set(motors)];
+  }
+
+  private _referenceDialog(
+    dialog: Extract<EstimateDialog, { kind: "reference" }>,
+  ): TemplateResult {
+    const motors = this._dialogMotors(dialog.ctx);
+    const names = motors.map((m) => this._motorName({ key: m })).join(", ");
+    const choices = [
+      { value: "flat", title: this._t("estimate.ref_flat"), detail: this._t("estimate.ref_flat_detail", { motors: names }) },
+      { value: "lower", title: this._t("estimate.ref_lower"), detail: this._t("estimate.ref_lower_detail") },
+      ...(motors.length > 1 ? motors.map((m) => ({
+        value: `only:${m}`,
+        title: this._t("estimate.ref_only", { motor: this._motorName({ key: m }) }),
+        detail: this._t("estimate.ref_only_detail"),
+      })) : []),
+    ];
+    const lowering = dialog.choice === "lower" && !dialog.lowered;
+    const selected = dialog.choice.startsWith("only:") ? [dialog.choice.slice(5)] : motors;
+    const confirm = (): void => {
+      if (lowering) {
+        this._estimateDialog = { ...dialog, lowered: true };
+        void this._estimateService("lower_to_flat", dialog.ctx).catch(() => undefined);
+        return;
+      }
+      void this._estimateService("set_position_reference", dialog.ctx, { motors: selected })
+        .catch(() => undefined);
+      this._estimateDialog = undefined;
+    };
+    return html`
+      <h2>${this._t("estimate.ref_title")}</h2>
+      <p class="dialog-text">${dialog.lowered ? this._t("estimate.ref_lowering") : this._t("estimate.ref_text")}</p>
+      ${dialog.lowered ? nothing : html`<div class="dialog-choices" role="radiogroup">
+        ${choices.map((choice) => html`<label class="dialog-choice">
+          <input type="radio" name="reference" .checked=${dialog.choice === choice.value}
+            @change=${() => { this._estimateDialog = { ...dialog, choice: choice.value }; }} />
+          <span><strong>${choice.title}</strong><span class="dialog-detail">${choice.detail}</span></span>
+        </label>`)}
+      </div>`}
+      <div class="dialog-actions">
+        <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
+        <button class="dialog-btn primary" @click=${confirm}>
+          ${this._t(lowering ? "estimate.ref_lower_start" : "estimate.ref_confirm")}</button>
+      </div>`;
+  }
+
+  private _estimateList(ctx: EstimateContext): TemplateResult {
+    return html`<div class="dialog-values">
+      ${ctx.sides.flatMap((side) => bedEstimates(this.hass, side.motors).map((e) => html`
+        <div class="dialog-value"><span>${ctx.paired ? `${side.label} ` : ""}${this._motorName({ key: e.motor })}</span>
+          <span>${estimateReadout(e, (k, p) => this._t(k, p))}</span></div>`))}
+    </div>`;
+  }
+
+  private _saveDialog(dialog: Extract<EstimateDialog, { kind: "save" }>): TemplateResult {
+    const name = dialog.name.trim();
+    const save = (): void => {
+      if (!name) return;
+      void this._estimateService("save_position", dialog.ctx, {
+        name, create_button: dialog.button,
+      }).catch(() => undefined);
+      this._estimateDialog = undefined;
+    };
+    return html`
+      <h2>${this._t("estimate.save_title")}</h2>
+      <label class="dialog-field"><span>${this._t("estimate.name")}</span>
+        <input type="text" maxlength="40" .value=${dialog.name}
+          @input=${(e: Event) => { this._estimateDialog = { ...dialog, name: (e.target as HTMLInputElement).value }; }} />
+      </label>
+      ${this._estimateList(dialog.ctx)}
+      <label class="dialog-check">
+        <input type="checkbox" .checked=${dialog.button}
+          @change=${(e: Event) => { this._estimateDialog = { ...dialog, button: (e.target as HTMLInputElement).checked }; }} />
+        <span><strong>${this._t("estimate.create_button")}</strong>
+          <span class="dialog-detail">${this._t("estimate.create_button_detail")}</span></span>
+      </label>
+      <p class="dialog-text">${this._t("estimate.save_note")}</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
+        <button class="dialog-btn primary" ?disabled=${!name} @click=${save}>${this._t("estimate.save_confirm")}</button>
+      </div>`;
+  }
+
+  private _editDialog(dialog: Extract<EstimateDialog, { kind: "edit" }>): TemplateResult {
+    const { position, ctx } = dialog;
+    const byKey = this._estimatesByKey(ctx);
+    const covered = Object.keys(position.beds);
+    const canUpdate = covered.every((key) => allTracking(byKey[key] ?? []));
+    const name = dialog.name.trim();
+    const run = (service: string, data: Record<string, unknown> = {}): void => {
+      void this._estimateService(service, { ...ctx, side: undefined }, {
+        position: position.id, ...data,
+      }).catch(() => undefined);
+      this._estimateDialog = undefined;
+    };
+    const label = (key: string): string =>
+      key === "bed" ? "" : `${this._t(`card.${key}_side`)} `;
+    return html`
+      <h2>${this._t("estimate.edit_title", { name: position.name })}</h2>
+      <label class="dialog-field"><span>${this._t("estimate.name")}</span>
+        <input type="text" maxlength="40" .value=${dialog.name}
+          @input=${(e: Event) => { this._estimateDialog = { ...dialog, name: (e.target as HTMLInputElement).value }; }} />
+      </label>
+      <div class="dialog-values">
+        <div class="dialog-value dialog-value-head"><span></span>
+          <span>${this._t("estimate.saved")}</span><span>${this._t("estimate.now")}</span></div>
+        ${Object.entries(position.beds).flatMap(([key, motors]) =>
+          Object.entries(motors).map(([motor, value]) => {
+            const now = byKey[key]?.find((e) => e.motor === motor);
+            return html`<div class="dialog-value">
+              <span>${label(key)}${this._motorName({ key: motor })}</span>
+              <span>${Math.round(value)}%</span>
+              <span>${now ? estimateReadout(now, (k, p) => this._t(k, p)) : "-"}</span>
+            </div>`;
+          }))}
+      </div>
+      <label class="dialog-check">
+        <input type="checkbox" .checked=${dialog.button}
+          @change=${(e: Event) => { this._estimateDialog = { ...dialog, button: (e.target as HTMLInputElement).checked }; }} />
+        <span><strong>${this._t("estimate.create_button")}</strong>
+          <span class="dialog-detail">${this._t("estimate.create_button_detail")}</span></span>
+      </label>
+      ${canUpdate ? nothing : html`<p class="dialog-text">${this._t("estimate.update_blocked")}</p>`}
+      <div class="dialog-actions">
+        <button class="dialog-btn danger" @click=${() => run("delete_position")}>${this._t("estimate.delete")}</button>
+        <button class="dialog-btn" ?disabled=${!canUpdate} @click=${() => run("update_position")}>${this._t("estimate.update")}</button>
+        <button class="dialog-btn primary" ?disabled=${!name}
+          @click=${() => run("rename_position", { name, create_button: dialog.button })}>${this._t("estimate.save_confirm")}</button>
+      </div>`;
+  }
+
+  private _estimatedGraphicState(bed: BedEntities): BedGraphicState | undefined {
+    const angle = (m: MotorEntity): number | undefined =>
+      estimatedAngle(motorEstimate(this.hass, m));
+    const motors = selectBedGraphicMotors(bed.motors.filter((m) => angle(m) !== undefined));
+    if (!motors) return undefined;
+    const { upper, lower } = motors;
+    return {
+      upperMotor: upper,
+      lowerMotor: lower,
+      upper: { label: this._motorName(upper), angle: angle(upper) },
+      lower: { label: this._motorName(lower), angle: angle(lower) },
+      moving: false,
+      estimated: true,
+    };
+  }
+
   // ---- data helpers -------------------------------------------------------
 
   private _state(entityId: string): HassEntity | undefined {
@@ -1514,6 +1957,8 @@ export class AdjustableBedCard extends LitElement {
       const fallbackUnit = m.angle ? "°" : "%";
       return `${Math.round(value)}${typeof unit === "string" ? unit : fallbackUnit}`;
     }
+    const estimate = motorEstimate(this.hass, m);
+    if (estimate) return estimateReadout(estimate, (key, params) => localize(this.hass, key, params));
     if (m.cover) {
       const pos = this._state(m.cover)?.attributes.current_position;
       return typeof pos === "number" ? `${Math.round(pos)}%` : undefined;
@@ -1535,10 +1980,11 @@ export class AdjustableBedCard extends LitElement {
   private _collectWatched(bed: BedEntities): string[] {
     const ids = new Set<string>();
     for (const m of bed.motors) {
-      [m.cover, m.up, m.down, m.angle, m.position].forEach(
+      [m.cover, m.up, m.down, m.angle, m.position, m.estimate, m.reference].forEach(
         (x) => x && ids.add(x),
       );
     }
+    [bed.estimateRemote, bed.savedPositions].forEach((x) => x && ids.add(x));
     bed.presets.forEach((x) => ids.add(x));
     for (const s of bed.memory) {
       [s.goto, s.save].forEach((x) => x && ids.add(x));
@@ -2041,6 +2487,181 @@ export class AdjustableBedCard extends LitElement {
     }
     .bed-graphic.is-moving {
       opacity: 0.95;
+    }
+    .bed-graphic.is-estimated .bed-surface {
+      fill-opacity: 0.45;
+      stroke: rgb(var(--ab-graphic-rgb));
+      stroke-width: 1.5;
+      stroke-dasharray: 5 4;
+    }
+    .estimate-chip {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.66rem;
+      letter-spacing: 0.06em;
+      background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+      color: var(--primary-color);
+    }
+    .estimate-chip.chip-unconfirmed,
+    .estimate-chip.chip-unknown {
+      background: color-mix(in srgb, var(--warning-color, #ffa600) 18%, transparent);
+      color: var(--warning-color, #ffa600);
+    }
+    .estimate-alert {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 6px 10px;
+      align-items: start;
+      margin: 10px 2px 2px;
+      padding: 10px 12px;
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--warning-color, #ffa600) 12%, transparent);
+      color: var(--primary-text-color);
+      font-size: 0.82rem;
+      --mdc-icon-size: 20px;
+    }
+    .estimate-alert.alert-calibrate {
+      background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    }
+    .estimate-alert > ha-icon {
+      color: var(--warning-color, #ffa600);
+    }
+    .estimate-alert.alert-calibrate > ha-icon {
+      color: var(--primary-color);
+    }
+    .estimate-alert-actions {
+      grid-column: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .estimate-overview {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0 6px 8px;
+      font-size: 0.82rem;
+    }
+    .estimate-overview-row {
+      display: flex;
+      gap: 10px;
+    }
+    .estimate-overview-side {
+      font-weight: 600;
+      min-width: 3.5em;
+    }
+    .link-btn {
+      border: none;
+      background: none;
+      padding: 0;
+      color: var(--primary-color);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .tile-sublabel {
+      font-size: 0.68rem;
+      color: var(--secondary-text-color);
+    }
+    .estimate-dialog {
+      box-sizing: border-box;
+      width: min(92vw, 420px);
+      border: none;
+      border-radius: 16px;
+      padding: 20px;
+      background: var(--card-background-color, var(--primary-background-color));
+      color: var(--primary-text-color);
+      font-size: 0.9rem;
+    }
+    .estimate-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+    }
+    .estimate-dialog h2 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      font-weight: 500;
+    }
+    .dialog-text,
+    .dialog-detail {
+      color: var(--secondary-text-color);
+    }
+    .dialog-detail {
+      display: block;
+      font-size: 0.8rem;
+    }
+    .dialog-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .dialog-choice,
+    .dialog-check {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      cursor: pointer;
+    }
+    .dialog-check {
+      margin: 12px 0 4px;
+    }
+    .dialog-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 8px 0;
+    }
+    .dialog-field input {
+      font: inherit;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--divider-color);
+      background: var(--secondary-background-color);
+      color: var(--primary-text-color);
+    }
+    .dialog-values {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 10px 0;
+    }
+    .dialog-value {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 12px;
+    }
+    .dialog-value-head {
+      color: var(--secondary-text-color);
+      font-size: 0.78rem;
+    }
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .dialog-btn {
+      font: inherit;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--divider-color);
+      background: none;
+      color: var(--primary-color);
+      cursor: pointer;
+    }
+    .dialog-btn.primary {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: var(--text-primary-color, #fff);
+    }
+    .dialog-btn.danger {
+      color: var(--error-color);
+      margin-right: auto;
+    }
+    .dialog-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
     .bed-frame-stop {
       stop-color: var(--secondary-text-color);

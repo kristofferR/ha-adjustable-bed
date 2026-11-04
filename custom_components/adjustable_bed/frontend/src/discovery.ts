@@ -34,6 +34,7 @@ export const SECTION_ORDER = [
   "motors",
   "firmness",
   "presets",
+  "saved_positions",
   "memory",
   "lighting",
   "massage",
@@ -249,6 +250,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key === "saved_positions") { bed.savedPositions = id; break; }
         if (key.startsWith("doublesleep_")) {
           if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
           else if (key === "doublesleep_light") (bed.lights.states ??= []).push(id);
@@ -303,6 +305,10 @@ export function bedEntitiesForDevice(
         break;
 
       case "number":
+        if (key.endsWith("_position_estimated")) {
+          motor(key.slice(0, -"_position_estimated".length)).estimate = id;
+          break;
+        }
         if (key.startsWith("adjustamattress_")) {
           (bed.utilityNumbers ??= []).push(id);
           break;
@@ -351,6 +357,8 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
+        if (key === "estimate_remote_used") { bed.estimateRemote = id; break; }
+        if ((match = key.match(/^set_(.+)_reference$/))) { motor(match[1]).reference = id; break; }
         if (key === "doublesleep_massage_action") { bed.massage.buttons.push(id); break; }
         if (key === "doublesleep_light_action") { (bed.lights.buttons ??= []).push(id); break; }
         if (key === "doublesleep_action") { bed.utility.push(id); break; }
@@ -723,7 +731,8 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.utility.length === 0 &&
     !bed.utilityNumbers?.length &&
     !bed.utilitySelects?.length &&
-    !bed.utilityStates?.length
+    !bed.utilityStates?.length &&
+    !bed.savedPositions
   );
 }
 

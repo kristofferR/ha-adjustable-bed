@@ -14,6 +14,8 @@ export interface BedGraphicOptions {
   upper: BedGraphicPanel; // head end (left)
   lower: BedGraphicPanel; // foot end (right)
   moving: boolean;
+  // A travel-time estimate is drawn dashed and translucent, never like feedback.
+  estimated?: boolean;
 }
 
 export interface DualBedGraphicSide {
@@ -43,12 +45,13 @@ export function renderBedGraphic(
 
   const fmt = (p: BedGraphicPanel): string => {
     if (p.angle === undefined) return "";
-    return `${p.label ? `${p.label} ` : ""}${Math.round(clamp(p.angle))}°`;
+    const value = `${opts.estimated ? "≈ " : ""}${Math.round(clamp(p.angle))}°`;
+    return `${p.label ? `${p.label} ` : ""}${value}`;
   };
 
   return svg`
     <svg
-      class="bed-graphic bed-graphic-${tone} ${opts.moving ? "is-moving" : ""}"
+      class="bed-graphic bed-graphic-${tone} ${opts.moving ? "is-moving" : ""} ${opts.estimated ? "is-estimated" : ""}"
       viewBox="0 -44 300 180"
       role="img"
       aria-hidden="true"

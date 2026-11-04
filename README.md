@@ -269,6 +269,9 @@ controls expose shared capabilities; select a side for its additional features.
 The **Match both to** controls copy the selected side's reported positions to the
 other side when both provide the required feedback. This is a one-time move.
 
+Beds without position feedback can show [estimated positions and saved
+positions](docs/ESTIMATED_POSITIONS.md#in-the-card) once calibrated.
+
 See [paired-bed configuration](docs/CONFIGURATION.md#two-independent-frames)
 and [action targeting](docs/SERVICES.md#targeting-a-bed-or-side) for setup and
 automation behavior.
@@ -368,6 +371,7 @@ show_graphic: true
 show_motors: true
 show_firmness: true
 show_presets: true
+show_saved_positions: true
 show_memory: true
 show_lighting: true
 show_massage: true
