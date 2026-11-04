@@ -28,12 +28,14 @@ from custom_components.adjustable_bed import controller_factory, hjbed_catalog  
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames  # noqa: E402
 from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames  # noqa: E402
 from custom_components.adjustable_bed.beds import cluster033 as cluster033_module  # noqa: E402
+from custom_components.adjustable_bed.beds import glideaway_motion as glideaway_module  # noqa: E402
 from custom_components.adjustable_bed.beds import hjbed as hjbed_bed  # noqa: E402
 from custom_components.adjustable_bed.beds import innova as innova_module  # noqa: E402
 from custom_components.adjustable_bed.beds import keeson_okin_apps as okin_apps_module  # noqa: E402
 from custom_components.adjustable_bed.beds import ore_comfort_bed as ore_module  # noqa: E402
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames  # noqa: E402
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed  # noqa: E402
+from custom_components.adjustable_bed.beds import scott_living as scott_living_module  # noqa: E402
 from custom_components.adjustable_bed.beds import serta_mp_remote as serta_mp_module  # noqa: E402
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label  # noqa: E402
 from custom_components.adjustable_bed.beds.jiecang_app import LIGHT_TIMEOUTS  # noqa: E402
@@ -1012,6 +1014,23 @@ _KEESON_NAMES: dict[str, str] = {
     "bedsense_bases": "Bedsense Bases",
     "dynasty_bases": "Dynasty Bases",
     "maxcoil_una": "MaxCoil Una",
+    "glideaway_motion": "Glideaway Motion",
+    "malouf_legacy_okin": "Malouf legacy OKIN",
+    "sleepys_box15": "Sleepy's BOX15",
+    "scott_living": "Scott Living",
+    "simmons_okin": "SIMMONS (OKIN names)",
+    "adjustamattress": "AdjustaMattress P1",
+    "adjustamattress_p2": "AdjustaMattress P2",
+}
+# Controllers that keep their key tables and timing; their profile is only the frame.
+_KEESON_E6: dict[str, tuple[str, str]] = {
+    "glideaway_motion": ("`glideaway_motion`", "[Glideaway Motion](#glideaway-motion)"),
+    "malouf_legacy_okin": ("`malouf_legacy_okin`", "[Malouf](malouf.md)"),
+    "sleepys_box15": ("`sleepys_box15`", "[Sleepy's](sleepys.md)"),
+    "scott_living": ("`scott_living`", "[Scott Living](#scott-living)"),
+    "simmons_okin": ("`simmons`, `okin` names", "[SIMMONS](simmons.md)"),
+    "adjustamattress": ("`adjustamattress`, model P1", "[AdjustaMattress](adjustamattress.md)"),
+    "adjustamattress_p2": ("`adjustamattress`, model P2", "[AdjustaMattress](adjustamattress.md)"),
 }
 # Profiles chosen inside a variant: (variant, rule). tests/test_codec_docs.py checks them.
 KEESON_SUB_ROUTES: dict[str, tuple[str, str]] = {
@@ -1027,7 +1046,7 @@ KEESON_SUB_ROUTES: dict[str, tuple[str, str]] = {
 }
 # Profiles whose app controller keeps its own key table (see the profile sections).
 _KEESON_APP_TABLES = frozenset(
-    {"innova", "simon_li", "okin_seating", "heal_every_night", *ORE_COMFORT_BED_APPS}
+    {"innova", "simon_li", "okin_seating", "heal_every_night", *ORE_COMFORT_BED_APPS, *_KEESON_E6}
 )
 _CARRIER_LAYOUTS = {
     "k1": "`header FE 16` + word + checksum",
@@ -1058,6 +1077,8 @@ def keeson_aliases() -> dict[str, tuple[str, ...]]:
 
 
 def _route(key: str) -> str:
+    if key in _KEESON_E6:
+        return f"bed type {_KEESON_E6[key][0]}"
     if key in KEESON_SUB_ROUTES:
         variant, rule = KEESON_SUB_ROUTES[key]
         route = f"`keeson` `{variant}`: {rule}"
@@ -1110,6 +1131,8 @@ def _hold(profile: keeson_profiles.KeesonProfile) -> str:
 
 def _keeson_timing_rows() -> Iterable[tuple[str, ...]]:
     for key, profile in keeson_profiles.PROFILES.items():
+        if key in _KEESON_E6:
+            continue  # Timing stays in these controllers; see their sections.
         release = profile.release
         if not release.steps:
             stop = "none"
@@ -1152,7 +1175,9 @@ def render_keeson_profiles() -> str:
                 _kname(key),
                 _route(key),
                 _carrier(profile),
-                profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
+                "app controller"
+                if key in _KEESON_E6
+                else profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
                 "app controller" if key in _KEESON_APP_TABLES else profile.lights or "none",
                 "app controller" if key in _KEESON_APP_TABLES else profile.massage,
             )
@@ -1203,7 +1228,9 @@ def render_keeson_profiles() -> str:
         "### Hold and release timing",
         "A hold writes its frame the given number of times while the stored cadence is "
         "the Keeson default; a customized cadence wins. Release waits count from the "
-        "previous write. An explicit stop sends the release without its waits.",
+        "previous write. An explicit stop sends the release without its waits. The "
+        "[E6 controller profiles](#e6-controller-profiles) keep their timing in their "
+        "controllers.",
         timing,
         "### Presets and memory",
         f"Words, encoded in the profile's frame. {_knames(sorted(_KEESON_APP_TABLES))} "
@@ -1224,7 +1251,11 @@ def render_keeson_transports() -> str:
                     f"`{transport.write_uuid}`",
                     f"`{transport.notify_uuid}`",
                     "<br>".join(f"`{s}` / `{w}`" for s, w in transport.fallbacks) or "none",
-                    _knames(name for name, profile in profiles.items() if profile.transport == key),
+                    _knames(
+                        name
+                        for name, profile in profiles.items()
+                        if profile.transport == key and name not in _KEESON_E6
+                    ),
                 )
                 for key, transport in keeson_codec.TRANSPORTS.items()
             ),
@@ -1555,6 +1586,65 @@ def render_keeson_ore() -> str:
     return _block(
         "#### Motion", motion, "#### Presets and memory", presets, "#### Massage and lights", other
     )
+
+
+def render_keeson_e6() -> str:
+    rows = []
+    for key, (route, guide) in _KEESON_E6.items():
+        profile = keeson_profiles.PROFILES[key]
+        rows.append(
+            (
+                _kname(key),
+                route,
+                _carrier(profile),
+                _kframe(profile, _K.MOTOR_HEAD_UP),
+                _kframe(profile, keeson_codec.RELEASE),
+                guide,
+            )
+        )
+    return _block(
+        _table(("Profile", "Bed type", "Frame", "Head up (`0x1`)", "Zero word", "Guide"), rows)
+    )
+
+
+def render_keeson_glideaway() -> str:
+    gm = glideaway_module
+    profile = keeson_profiles.GLIDEAWAY_MOTION
+    axes = {
+        "back": "Back/head",
+        "feet": "Feet",
+        "both": "Head + feet",
+        "tilt": "Neck tilt",
+        "bed_height": "Bed height",
+    }
+    rows = [
+        (f"{axes[axis]} {direction}", _word(word), _kframe(profile, word))
+        for axis, pair in gm.AXES.items()
+        for direction, word in zip(("up", "down"), pair, strict=True)
+    ]
+    rows += [
+        (name.replace("_", " ").capitalize(), _word(word), _kframe(profile, word))
+        for name, word in gm.PRESETS.items()
+    ]
+    rows.append(("Light toggle (500/600)", _word(gm.LIGHT), _kframe(profile, gm.LIGHT)))
+    rows += [
+        (f"Massage {name.replace('_', ' ')} (500/600)", _word(word), _kframe(profile, word))
+        for name, word in gm.MASSAGE.items()
+    ]
+    rows.append(("Release", _word(keeson_codec.RELEASE), _kframe(profile, keeson_codec.RELEASE)))
+    return _block(_table(("Control", "Word", "Frame"), rows))
+
+
+def render_keeson_scott_living() -> str:
+    table = scott_living_module.ScottLivingCommands
+    profile = keeson_profiles.SCOTT_LIVING
+    words = {name: word for name, word in vars(table).items() if name.isupper()}
+    rows = [
+        (name.replace("_", " ").title(), _word(word), _kframe(profile, word))
+        for name, word in words.items()
+    ]
+    rows.append(("Stop", _word(keeson_codec.RELEASE), _kframe(profile, keeson_codec.RELEASE)))
+    return _block(_table(("Command", "Word", "Frame"), rows))
 
 
 # Keeson cluster033 apps
@@ -3414,6 +3504,9 @@ BLOCKS: dict[tuple[str, str], Callable[[], str]] = {
     ("docs/beds/keeson.md", "keeson-okin-apps"): render_keeson_okin_apps,
     ("docs/beds/keeson.md", "keeson-ore"): render_keeson_ore,
     ("docs/beds/keeson.md", "keeson-apps"): render_keeson_apps,
+    ("docs/beds/keeson.md", "keeson-e6"): render_keeson_e6,
+    ("docs/beds/keeson.md", "keeson-glideaway"): render_keeson_glideaway,
+    ("docs/beds/keeson.md", "keeson-scott-living"): render_keeson_scott_living,
     **{
         ("docs/beds/keeson.md", f"keeson-app-{app.replace('_', '-')}"): (
             lambda app=app: render_keeson_app_controls(app)
