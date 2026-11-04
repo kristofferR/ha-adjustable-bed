@@ -148,6 +148,14 @@ angle sensing is disabled.
 - Music-page commands and the automatic anti-snore trigger use default left, as
   the app does, separately from selected-side catalog actions.
 
+### Home Assistant setup
+
+Choose the explicit **Casper Base app** profile and its PRO/MAX product. Other
+stored-product choices are conditional records from this package, not inferred
+app compatibility. The product owns the motor layout and accessory controls.
+Configure two-address paired sides separately. Sleep sensors and the RCRM handset
+use separate entries.
+
 ## Commands
 
 Opcodes come from `ACTIONS` and `PRODUCTS` in

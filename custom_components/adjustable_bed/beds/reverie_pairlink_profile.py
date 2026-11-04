@@ -6,6 +6,7 @@ import random
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from ..discovery_hints.reverie import PAIRLINK_MANUFACTURER_IDS, PAIRLINK_MANUFACTURER_PREFIX
 from .reverie_pairlink_protocol import (
     PAIRLINK_LOW_POWER_NOTIFY_UUID,
     PAIRLINK_LOW_POWER_SERVICE_UUID,
@@ -23,8 +24,6 @@ from .reverie_pairlink_transport import (
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-PAIRLINK_MANUFACTURER_IDS = frozenset({0xFFFF, 0x05B9})
-PAIRLINK_MANUFACTURER_PREFIX = b"\xc0"
 PAIRLINK_BED_TYPES = {
     144: "R510L",
     145: "Harmoniq Upgrade",

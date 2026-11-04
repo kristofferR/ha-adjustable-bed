@@ -172,6 +172,11 @@ partially completed move.
 
 A direct command being accepted is not confirmation that the target was reached.
 
+Beds without position feedback can opt in to calibrated travel-time estimates
+and saved positions. Their actions (`save_position`, `recall_position`,
+`set_position_reference` and others) are described in
+[Estimated positions](ESTIMATED_POSITIONS.md#actions).
+
 ### Renewable holds
 
 `timed_move` and `hold_control` accept two optional fields, `hold_owner` and
@@ -199,6 +204,15 @@ Nothing is replayed after a reconnect or restart. One hold never streams
 longer than 30 seconds in total, however often it is renewed. A renewable
 hold targets one bed or paired bed per call; on a paired bed both sides must
 declare the same hold mode, and one renewal renews both sides.
+
+The dashboard card uses this for every press on a bed that supports it: one
+call starts the hold, the card renews it every 250 ms with a 750 ms lease, and
+releasing the control stops renewing and sends STOP. Hiding the page or
+removing the card ends the hold the same way; if that STOP is lost, the bed
+still stops when the lease runs out. Entities that can be held this way carry
+a `hold_lease_mode` attribute (`stream` or `latched`), and `hold_lease_motor`
+names the `timed_move` motor where there is one. A combined control on a paired
+bed carries them only when both sides declare the same mode.
 
 ```yaml
 # Repeat every 250 ms while a button is held; send stop_all on release.
@@ -349,8 +363,8 @@ they are not exposed through `hold_control`.
 | [Jordan's Tranquil](beds/okin-nframe.md#reachable-commands-1) | 30 literal app actions | Two-frame release |
 | [Customatic Z-Series](beds/okin-nframe.md#reachable-commands-2) | Literal Z-230 or Z-280 actions | A Z-230 rejects Z-280-only actions and the reverse |
 | [SIMMONS](beds/okin-nframe.md#simmons) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Frame every 300 ms, then STOP at +100 and +400 ms. Holding `memory` for 5 seconds mirrors the app's Custom Mode save; whether the bed stores it is unverified |
-| [AdjustaMattress](beds/adjustamattress.md) | App action identifiers such as `headUp`, `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `flatPosition`, `zeroGravity`, `m1`, `underbedLighting`, `headStrengthAdd`, `timer10`, subject to the selected model/layout | 200 ms refresh; movement/lift starts at +200 ms. STOP at +200 ms after release. Ordinary P3/P4 massage additionally queries at +400/+600 ms. P2 unsafe prior-frame lighting replay is excluded |
-| [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Frame every 100 ms, then STOP immediately and 300 ms later. Whether a save stores the position is unverified |
+| [AdjustaMattress](beds/keeson.md#adjustamattress) | App action identifiers such as `headUp`, `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `flatPosition`, `zeroGravity`, `m1`, `underbedLighting`, `headStrengthAdd`, `timer10`, subject to the selected model/layout | 200 ms refresh; movement/lift starts at +200 ms. STOP at +200 ms after release. Ordinary P3/P4 massage additionally queries at +400/+600 ms. P2 unsafe prior-frame lighting replay is excluded |
+| [Adjustable bed (Lumbar)](beds/okin-nframe.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Frame every 100 ms, then STOP immediately and 300 ms later. Whether a save stores the position is unverified |
 | [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) | Simon Li: `back_up`, `back_down`, `foot_up`, `foot_down`, `lumbar_up`, `lumbar_down`, `home`, `memory_1`, `memory_2`. OKIN-Seating: `back_up`, `back_down`, `foot_up`, `foot_down`, `home`. Heal Every Night: `head_up`, `head_down`, `foot_up`, `foot_down`, plus `tilt_up`, `tilt_down`, `lumbar_up`, `lumbar_down` on Healing 7 and 8 | Key every 100 ms, then the zero frame 10 ms (Simon Li, OKIN-Seating) or 100 ms (Heal Every Night) later. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save |
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` repeat every 100 ms; the others are sent once. One zero frame 100 ms after the hold |
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | Key every 100 ms, then the zero key 100 ms later |
@@ -584,7 +598,7 @@ transport failure may leave one table sent and the other unsent. There is no
 wire rollback. Phone alarm schedulers, local audio, permissions and snooze UI
 storage are outside this BLE action. Normalize any automation's hour/minute
 arithmetic first, reject cross-date results, and preserve its intended weekly
-or one-time dispatch. See each [app guide](CONFIGURATION.md#curve-q-plus-serta-mp-and-sfd-app-profiles)
+or one-time dispatch. See each [app guide](beds/keeson.md#cluster033-app-family)
 for exact weekday-marker, wake-byte, notification and release differences.
 
 ## Comfort Enhancements alarm
@@ -652,7 +666,7 @@ the distinct wire builders and raw-data limitations.
 
 ## Ergomotion 4.0
 
-The [Ergomotion 4.0 profile](beds/ergomotion-4.md) exposes each selected product's
+The [Ergomotion 4.0 profile](beds/keeson.md#ergomotion-40) exposes each selected product's
 named action as a button. Held buttons work with `hold_control` (1–60000 ms);
 the guide's command table lists each control key. Existing device/side targeting
 routes P1 commands and cleanup through the same Left/Right child. A parent

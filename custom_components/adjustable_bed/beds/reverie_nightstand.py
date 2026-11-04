@@ -483,6 +483,13 @@ class ReverieNightstandController(BedController):
             repeat_count,
             repeat_delay_ms,
         )
+        self._record_command_trace(
+            char_uuid,
+            command,
+            response=True,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+        )
 
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
@@ -514,6 +521,7 @@ class ReverieNightstandController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
         if effective_cancel is not None and effective_cancel.is_set():
             return
+        self._record_command_trace(char_uuid, value, response=True)
         async with self._ble_lock:
             if effective_cancel is not None and effective_cancel.is_set():
                 return

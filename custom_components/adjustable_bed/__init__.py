@@ -106,6 +106,12 @@ from .pairing import (
     pair_member_addresses,
     with_updated_child,
 )
+from .position_estimate import (
+    async_remove_position_estimates,
+    async_setup_position_estimates,
+    async_unload_position_estimates,
+)
+from .profile_id import migrate_v5_data, with_profile_ids
 from .profile_recommendations import async_watch_profile_recommendations
 from .profile_review import (
     async_clear_profile_review_issue,
@@ -324,7 +330,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version,
     )
 
-    if entry.version > 4:
+    original_version = (entry.version, entry.minor_version)
+    if entry.version > 5:
         _LOGGER.error(
             "Cannot migrate config entry %s for %s from unsupported future version %s",
             entry.entry_id,
@@ -361,7 +368,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # by the opt-in pairing flow (already at v4) and never reach this branch.
         hass.config_entries.async_update_entry(entry, version=4)
 
-    if entry.minor_version < 2:
+    if entry.version == 4 and entry.minor_version < 2:
         # v4.1 -> v4.2: store values that v4.0.2 kept under aliases or
         # per-app keys under the one name the integration now reads.
         hass.config_entries.async_update_entry(
@@ -371,13 +378,30 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             minor_version=2,
         )
 
-    if entry.minor_version < 3:
+    if entry.version == 4 and entry.minor_version < 3:
         # v4.2 -> v4.3: entries from before the explicit app profiles are asked
         # once whether one fits; later entries chose from the full list.
         data = dict(entry.data)
         if (mark := profile_review_mark(data)) is not None:
             data[CONF_PROFILE_REVIEW_PENDING] = mark
         hass.config_entries.async_update_entry(entry, data=data, minor_version=3)
+
+    if entry.version == 4:
+        # v4 -> v5.1: store the profile id each entry and paired side runs, and a
+        # record of where it came from. The saved bed type, variant and app keys
+        # are not touched. Schema 5 entries cannot load on 4.x; restoring a Home
+        # Assistant backup is the only way back.
+        hass.config_entries.async_update_entry(
+            entry,
+            data=migrate_v5_data(
+                entry.data,
+                entry.options,
+                from_version=original_version[0],
+                from_minor_version=original_version[1],
+            ),
+            version=5,
+            minor_version=1,
+        )
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
@@ -386,6 +410,18 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version,
     )
     return True
+
+
+def _async_sync_profile_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Re-derive the stored profile ids before any coordinator reads them.
+
+    Configure, repairs, pairing and runtime corrections edit the saved bed type,
+    variant or app key; every one of them reaches the coordinator through a
+    setup, so deriving here keeps the stored ids current.
+    """
+    data = with_profile_ids(entry.data, entry.options)
+    if data != dict(entry.data):
+        hass.config_entries.async_update_entry(entry, data=data)
 
 
 def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -523,6 +559,7 @@ async def _async_finish_entry_setup(
 ) -> bool:
     """Store coordinator, forward platforms, and finish setup."""
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    await async_setup_position_estimates(hass, entry.entry_id, [(coordinator.address, None)])
 
     _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -764,6 +801,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     )
 
     _maybe_cache_paired_remacro_models(hass, entry)
+    _async_sync_profile_ids(hass, entry)
     if entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
         return await _async_setup_single_address_paired_entry(hass, entry)
 
@@ -988,6 +1026,12 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         try:
             async_register_children(hass, coordinator)
             entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+            # Each side keeps its own calibration and estimate.
+            await async_setup_position_estimates(
+                hass,
+                entry.entry_id,
+                [(child.address, side) for side, child in coordinator.children.items()],
+            )
             await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
         except (Exception, asyncio.CancelledError):
             hass.data[DOMAIN].pop(entry.entry_id, None)
@@ -1186,6 +1230,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _maybe_cache_kaidi_metadata(hass, entry)
     _async_prepare_remacro_entry(hass, entry)
     _async_clear_stale_octo_pin_issue(hass, entry)
+    _async_sync_profile_ids(hass, entry)
 
     _LOGGER.info(
         "Setting up Adjustable Bed integration for %s (address: %s, type: %s, motors: %s, massage: %s)",
@@ -1763,6 +1808,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
+        # After shutdown settled any movement, so its travel is persisted.
+        await async_unload_position_estimates(hass, entry.entry_id)
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
     return unload_ok
@@ -1771,6 +1818,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up Repairs issues that would otherwise outlive the entry."""
     async_clear_furnimove_layout_issues(hass, entry.entry_id)
+    await async_remove_position_estimates(hass, entry.entry_id)
     async_clear_profile_review_issue(hass, entry.entry_id)
     address = entry.data.get(CONF_ADDRESS)
     if address:
