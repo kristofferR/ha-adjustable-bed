@@ -9,9 +9,6 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jiecang import (
-    JiecangCommands,
-)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG,
     CONF_BED_TYPE,
@@ -81,7 +78,7 @@ class TestJiecangController:
         coordinator = AdjustableBedCoordinator(hass, mock_jiecang_config_entry)
         await coordinator.async_connect()
 
-        command = JiecangCommands.FLAT
+        command = bytes.fromhex("f1f10801010a7e")
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
@@ -99,7 +96,7 @@ class TestJiecangController:
         coordinator = AdjustableBedCoordinator(hass, mock_jiecang_config_entry)
         await coordinator.async_connect()
 
-        command = JiecangCommands.FLAT
+        command = bytes.fromhex("f1f10801010a7e")
         await coordinator.controller.write_command(command, repeat_count=3, repeat_delay_ms=100)
 
         assert mock_bleak_client.write_gatt_char.call_count == 3
@@ -118,7 +115,7 @@ class TestJiecangController:
         mock_bleak_client.is_connected = False
 
         with pytest.raises(ConnectionError):
-            await coordinator.controller.write_command(JiecangCommands.FLAT)
+            await coordinator.controller.write_command(bytes.fromhex("f1f10801010a7e"))
 
 
 class TestJiecangMotorMovement:
@@ -141,10 +138,10 @@ class TestJiecangMotorMovement:
         assert mock_bleak_client.write_gatt_char.call_count >= 2
         # First call should be HEAD_UP
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.HEAD_UP
+        assert first_call[0][1] == bytes.fromhex("f1f1010101037e")
         # Last call should be BUTTON_RELEASE
         last_call = mock_bleak_client.write_gatt_char.call_args_list[-1]
-        assert last_call[0][1] == JiecangCommands.BUTTON_RELEASE
+        assert last_call[0][1] == bytes.fromhex("f1f14e004e7e")
 
     async def test_move_head_down(
         self,
@@ -162,9 +159,9 @@ class TestJiecangMotorMovement:
         # Should send HEAD_DOWN commands followed by BUTTON_RELEASE
         assert mock_bleak_client.write_gatt_char.call_count >= 2
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.HEAD_DOWN
+        assert first_call[0][1] == bytes.fromhex("f1f1020101047e")
         last_call = mock_bleak_client.write_gatt_char.call_args_list[-1]
-        assert last_call[0][1] == JiecangCommands.BUTTON_RELEASE
+        assert last_call[0][1] == bytes.fromhex("f1f14e004e7e")
 
     async def test_move_legs_up(
         self,
@@ -181,7 +178,7 @@ class TestJiecangMotorMovement:
 
         assert mock_bleak_client.write_gatt_char.call_count >= 2
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.LEG_UP
+        assert first_call[0][1] == bytes.fromhex("f1f1030101057e")
 
     async def test_move_legs_down(
         self,
@@ -198,7 +195,7 @@ class TestJiecangMotorMovement:
 
         assert mock_bleak_client.write_gatt_char.call_count >= 2
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.LEG_DOWN
+        assert first_call[0][1] == bytes.fromhex("f1f1040101067e")
 
     async def test_move_feet_up(
         self,
@@ -215,7 +212,7 @@ class TestJiecangMotorMovement:
 
         assert mock_bleak_client.write_gatt_char.call_count >= 2
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.LEG_UP
+        assert first_call[0][1] == bytes.fromhex("f1f1030101057e")
 
     async def test_move_back_up(
         self,
@@ -232,7 +229,7 @@ class TestJiecangMotorMovement:
 
         assert mock_bleak_client.write_gatt_char.call_count >= 2
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.HEAD_UP
+        assert first_call[0][1] == bytes.fromhex("f1f1010101037e")
 
     async def test_stop_all(
         self,
@@ -250,7 +247,7 @@ class TestJiecangMotorMovement:
         # Should send BUTTON_RELEASE
         mock_bleak_client.write_gatt_char.assert_called()
         last_call = mock_bleak_client.write_gatt_char.call_args_list[-1]
-        assert last_call[0][1] == JiecangCommands.BUTTON_RELEASE
+        assert last_call[0][1] == bytes.fromhex("f1f14e004e7e")
 
     async def test_move_head_stop(
         self,
@@ -267,7 +264,7 @@ class TestJiecangMotorMovement:
 
         mock_bleak_client.write_gatt_char.assert_called()
         last_call = mock_bleak_client.write_gatt_char.call_args_list[-1]
-        assert last_call[0][1] == JiecangCommands.BUTTON_RELEASE
+        assert last_call[0][1] == bytes.fromhex("f1f14e004e7e")
 
 
 class TestJiecangPresets:
@@ -288,7 +285,7 @@ class TestJiecangPresets:
 
         # Check first call was FLAT command
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.FLAT
+        assert first_call[0][1] == bytes.fromhex("f1f10801010a7e")
 
     async def test_preset_zero_g(
         self,
@@ -304,13 +301,13 @@ class TestJiecangPresets:
         await coordinator.controller.preset_zero_g()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.ZERO_G
+        assert first_call[0][1] == bytes.fromhex("f1f1070101097e")
 
     @pytest.mark.parametrize(
         "memory_num,expected_command",
         [
-            (1, JiecangCommands.MEMORY_1),
-            (2, JiecangCommands.MEMORY_2),
+            (1, bytes.fromhex("f1f10b01010d7e")),
+            (2, bytes.fromhex("f1f10d01010f7e")),
         ],
     )
     async def test_preset_memory(
@@ -346,7 +343,7 @@ class TestJiecangPresets:
 
         # Memory 3 should send MEMORY_3 command
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.MEMORY_3
+        assert first_call[0][1] == bytes.fromhex("f1f11801011a7e")
 
     async def test_preset_memory_invalid(
         self,
@@ -401,7 +398,7 @@ class TestJiecangProgramMemory:
         # Should send MEMORY_1_SET command
         mock_bleak_client.write_gatt_char.assert_called()
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == JiecangCommands.MEMORY_1_SET
+        assert first_call[0][1] == bytes.fromhex("f1f10a01010c7e")
 
     async def test_program_memory_invalid(
         self,

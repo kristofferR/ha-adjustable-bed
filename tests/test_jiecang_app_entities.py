@@ -549,7 +549,7 @@ async def test_dreamhd_alarm_wake_and_rename_services(
 async def test_dreamhd_all_25_configurations_gate_entities(
     hass, mock_coordinator_connected, app_ble, enable_custom_integrations, layout, massage, light
 ):
-    from custom_components.adjustable_bed.jiecang_app_protocol import layout_axes
+    from custom_components.adjustable_bed.profiles.jiecang import APP_LAYOUT_AXES
 
     entry = _entry(hass, layout, "dreamhd")
     hass.config_entries.async_update_entry(
@@ -563,7 +563,7 @@ async def test_dreamhd_all_25_configurations_gate_entities(
         entity.unique_id.removeprefix(f"{ADDRESS}_")
         for entity in entries
         if entity.domain == "cover"
-    } == set(layout_axes(layout))
+    } == set(APP_LAYOUT_AXES[layout])
     assert ("massage_head_intensity" in keys) == massage
     assert ("massage_foot_intensity" in keys) == massage
     assert ("massage_right_intensity" in keys) == (

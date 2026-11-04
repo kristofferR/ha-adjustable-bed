@@ -3,12 +3,26 @@
 Expected literals come from this package's frozen census, not another app.
 """
 
+from dataclasses import astuple
 from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
 
-from custom_components.adjustable_bed import jiecang_app_protocol as protocol
+from custom_components.adjustable_bed.beds.jiecang_app import DreamHDLightControls
+from custom_components.adjustable_bed.codec import jiecang as codec
+from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
+from custom_components.adjustable_bed.profiles.jiecang import (
+    DREAMHD,
+    automatic_light_on,
+    is_bilateral,
+    massage_command,
+    massage_zones,
+    memory_command,
+    motion_command,
+    preset_command,
+    wake_schedule,
+)
 from tests.test_jiecang_app_controller import make_controller as make_controller
 from tests.test_jiecang_app_controller import packets
 
@@ -20,30 +34,28 @@ def receive(controller, value):
 
 
 def test_complete_reachable_fixed_frame_census():
-    actual = {command.hex() for _, command in protocol.DREAMHD_BOOTSTRAP}
-    for layout in protocol.DREAMHD_LAYOUTS:
-        for axis in protocol.layout_axes(layout):
+    actual = {command.hex() for _, command in DREAMHD.bootstrap}
+    for layout in tuple(DREAMHD.layouts):
+        for axis in DREAMHD.layouts[layout]:
             for up in (False, True):
-                actual.add(protocol.motion_command(layout, axis, up).hex())
+                actual.add(motion_command(DREAMHD, layout, axis, up).hex())
         for preset in ("flat", "zero_g", "anti_snore", "yoga"):
-            actual.add(protocol.preset_command(layout, preset).hex())
-        for zone in protocol.massage_zones(layout):
+            actual.add(preset_command(layout, preset).hex())
+        for zone in massage_zones(layout):
             for level in range(4):
-                actual.add(protocol.massage_command(layout, zone, level).hex())
-        actual.add(protocol.massage_close_command(layout).hex())
-        actual.add(protocol.massage_mode_command(layout).hex())
+                actual.add(massage_command(DREAMHD, layout, zone, level).hex())
+        actual.add(codec.massage_stop(bilateral=is_bilateral(layout)).hex())
+        actual.add(codec.massage_mode(bilateral=is_bilateral(layout)).hex())
     for slot in (1, 2):
         for save in (False, True):
-            actual.add(protocol.memory_command(slot, save, PROFILE).hex())
-    actual.update(
-        (protocol.SHORT_RELEASE.hex(), protocol.AUTOMATIC_LIGHT_TOGGLE.hex(), "f1f10f000f7e")
-    )
+            actual.add(memory_command(DREAMHD, slot, save=save).hex())
+    actual.update((codec.SHORT_RELEASE.hex(), codec.AUTOMATIC_LIGHT_TOGGLE.hex(), "f1f10f000f7e"))
     assert actual == FROZEN_FIXED_FRAMES
     assert len(actual) == 45
 
 
 def test_hd_startup_and_dynamic_vectors():
-    assert [t for t, _ in protocol.DREAMHD_BOOTSTRAP] == [
+    assert [t for t, _ in DREAMHD.bootstrap] == [
         0,
         100,
         1000,
@@ -57,32 +69,24 @@ def test_hd_startup_and_dynamic_vectors():
         1800,
         1900,
     ]
-    assert protocol.rgb_command(255, 0, 0, 100, 1800, True).hex() == "f1f152070000ff64070801cc7e"
+    assert codec.rgb(255, 0, 0, 100, 1800, True).hex() == "f1f152070000ff64070801cc7e"
+    assert codec.clock(datetime(2026, 11, 3, 4, 5, 6)).hex() == "f1f15007380b0302040506ae7e"
     assert (
-        protocol.clock_command(datetime(2026, 11, 3, 4, 5, 6)).hex() == "f1f15007380b0302040506ae7e"
-    )
-    assert (
-        protocol.alarm_command(True, (True,) * 7, 23, 59, "yoga", 3, 2).hex()
-        == "f1f151080101fe173b060302b67e"
+        codec.alarm(True, (True,) * 7, 23, 59, "yoga", 3, 2).hex() == "f1f151080101fe173b060302b67e"
     )
     for seconds in (0, 60, 120, 180, 240, 300, 600, 900, 1200, 1500, 1800):
-        assert (
-            int.from_bytes(protocol.rgb_command(1, 2, 3, 100, seconds, True)[8:10], "big")
-            == seconds
-        )
-    assert protocol.rename_command("Bed room", True, False, PROFILE) == b"Bed room"
+        assert int.from_bytes(codec.rgb(1, 2, 3, 100, seconds, True)[8:10], "big") == seconds
+    assert DREAMHD.name_rule.encode("Bed room") == b"Bed room"
     # Use an actual byte length rather than reproducing Android's odd-nibble failure.
-    assert (
-        protocol.rename_command("A" * 10, False, True, PROFILE) == b"\x01\xfc\x07\x0a" + b"A" * 10
-    )
-    assert (
-        protocol.rename_command("A" * 16, False, True, PROFILE) == b"\x01\xfc\x07\x10" + b"A" * 16
-    )
+    assert codec.g3_name(DREAMHD.name_rule.encode("A" * 10)) == b"\x01\xfc\x07\x0a" + b"A" * 10
+    assert codec.g3_name(DREAMHD.name_rule.encode("A" * 16)) == b"\x01\xfc\x07\x10" + b"A" * 16
 
 
 def test_all_feature_bytes_and_sticky_consumer_orders():
     for value in range(256):
-        update = protocol.parse_notification(bytes((242, 242, 14, 0, value, 0, 0)), PROFILE)
+        update = codec.parse_notification(
+            bytes((242, 242, 14, 0, value, 0, 0)), massage_levels=DREAMHD.massage_levels
+        )
         assert update is not None and update.capabilities is not None
         # Accepted Java helper: third significant bit from MSB when width >= 3.
         width = value.bit_length()
@@ -92,22 +96,26 @@ def test_all_feature_bytes_and_sticky_consumer_orders():
         for has_light in (False, True):
             for suppressed in (False, True):
                 for visibility in (0, 4, 8):
-                    state = protocol.DreamHDLightControls(
-                        visibility, visibility, visibility, suppressed
-                    )
+                    state = DreamHDLightControls(visibility, visibility, visibility, suppressed)
                     state.receive(update, has_light=has_light, split_series=False)
                     if has_light:
                         assert state.picker == (0 if expected else 8)
                         assert state.human == state.container == (0 if expected else 4)
                         assert state.suppressed == (suppressed or not expected)
                     else:
-                        assert state == protocol.DreamHDLightControls(
+                        assert state == DreamHDLightControls(
                             visibility, visibility, visibility, suppressed
                         )
-    positive = protocol.parse_notification(bytes.fromhex("f2f20e00a00000"), PROFILE)
-    negative = protocol.parse_notification(bytes.fromhex("f2f20e00060000"), PROFILE)
-    rgb = protocol.parse_notification(bytes.fromhex("f2f2520733221164012c01517e"), PROFILE)
-    state = protocol.DreamHDLightControls()
+    positive = codec.parse_notification(
+        bytes.fromhex("f2f20e00a00000"), massage_levels=DREAMHD.massage_levels
+    )
+    negative = codec.parse_notification(
+        bytes.fromhex("f2f20e00060000"), massage_levels=DREAMHD.massage_levels
+    )
+    rgb = codec.parse_notification(
+        bytes.fromhex("f2f2520733221164012c01517e"), massage_levels=DREAMHD.massage_levels
+    )
+    state = DreamHDLightControls()
     state.receive(negative, has_light=True, split_series=False)
     state.receive(rgb, has_light=True, split_series=False)
     assert state.picker == 8 and state.suppressed
@@ -118,14 +126,14 @@ def test_all_feature_bytes_and_sticky_consumer_orders():
     state.connected()
     state.receive(rgb, has_light=False, split_series=False)
     assert state.picker == 0 and state.human == 4 and not state.suppressed
-    state.receive(protocol.Notification(reapply_layout=True), has_light=False, split_series=False)
+    state.receive(codec.Notification(reapply_layout=True), has_light=False, split_series=False)
     assert state.picker == 4
 
 
 async def test_hd_controller_commands_and_cancellation(make_controller):
     controller, coordinator, client = make_controller(profile=PROFILE)
     await controller.move_back_up()
-    assert packets(client) == [bytes.fromhex("f1f1010101037e")] * 4 + [protocol.SHORT_RELEASE]
+    assert packets(client) == [bytes.fromhex("f1f1010101037e")] * 4 + [codec.SHORT_RELEASE]
     client.write_gatt_char.reset_mock()
     await controller.preset_memory(2)
     await controller.program_memory(1)
@@ -140,7 +148,7 @@ async def test_hd_controller_commands_and_cancellation(make_controller):
     coordinator.cancel_command.set()
     await controller.move_back_up()
     await controller.preset_flat()
-    assert packets(client) == [protocol.SHORT_RELEASE] * 2
+    assert packets(client) == [codec.SHORT_RELEASE] * 2
 
 
 async def test_hd_split_feedback_alias_and_no_optimistic_intensity(make_controller):
@@ -173,12 +181,12 @@ async def test_hd_light_consumer_and_released_toggles(make_controller):
     await controller.set_automatic_light(True)
     await controller.lights_toggle()
     assert packets(client) == [
-        protocol.AUTOMATIC_LIGHT_TOGGLE,
-        protocol.SHORT_RELEASE,
-        protocol.rgb_command(17, 34, 51, 100, 300, False),
-        protocol.SHORT_RELEASE,
+        codec.AUTOMATIC_LIGHT_TOGGLE,
+        codec.SHORT_RELEASE,
+        codec.rgb(17, 34, 51, 100, 300, False),
+        codec.SHORT_RELEASE,
         bytes.fromhex("f1f10f000f7e"),
-        protocol.SHORT_RELEASE,
+        codec.SHORT_RELEASE,
     ]
 
 
@@ -200,15 +208,13 @@ async def test_hd_transports_bootstrap_and_reconnect(make_controller, transport)
     controller, _, client = make_controller(profile=PROFILE, transports=(transport,))
     controller._capabilities_received.set()
     await controller.start_notify()
-    assert packets(client) == (
-        [] if transport == "g2" else [b for _, b in protocol.DREAMHD_BOOTSTRAP]
-    )
+    assert packets(client) == ([] if transport == "g2" else [b for _, b in DREAMHD.bootstrap])
     assert client.start_notify.await_count == (2 if transport == "g3" else 1)
     receive(controller, "f2f20e00060000")
     receive(controller, "f2f2520733221164012c01517e")
     await controller.stop_notify()
     await controller.start_notify()
-    assert controller._hd_light == protocol.DreamHDLightControls()
+    assert controller._hd_light == DreamHDLightControls()
     assert controller._rgb is None
     assert controller.supports_preset_yoga
 
@@ -220,30 +226,37 @@ def test_hd_never_exposes_unproven_layouts(make_controller, layout):
 
 
 def test_hd_wake_offsets_and_parser_edges():
-    for layout in protocol.DREAMHD_LAYOUTS:
-        schedule = protocol.wake_schedule(layout, "memory_2", 2, 3, profile=PROFILE)
+    for layout in tuple(DREAMHD.layouts):
+        schedule = wake_schedule(DREAMHD, layout, "memory_2", 2, 3)
         assert [t for t, b in schedule if b[2] == 0x14] == [500, 530, 560]
         assert [t for t, b in schedule if b[2] == 0x0D] == [800, 830, 860, 890, 920]
-        assert all(b != protocol.LONG_RELEASE for _, b in schedule)
+        assert all(b != codec.LONG_RELEASE for _, b in schedule)
         assert [t for t, b in schedule if b[2] == 0x22] == (
             [180, 210, 240] if layout in ("standard_3_split_upper", "split_series") else []
         )
     for value in range(256):
-        update = protocol.parse_notification(bytes((242, 242, 83, 0, value, 0, 0)), PROFILE)
-        assert update.automatic_light == (value != 0)
+        update = codec.parse_notification(
+            bytes((242, 242, 83, 0, value, 0, 0)), massage_levels=DREAMHD.massage_levels
+        )
+        assert automatic_light_on(DREAMHD, update.automatic_light) == (value != 0)
     for size in range(7, 14):
         assert (
-            protocol.parse_notification(
-                bytes.fromhex("f2f251080101fe173b060302b67e")[:size], PROFILE
+            codec.parse_notification(
+                bytes.fromhex("f2f251080101fe173b060302b67e")[:size],
+                massage_levels=DREAMHD.massage_levels,
             ).alarm
             is None
         )
     assert (
-        protocol.parse_notification(bytes.fromhex("000006050200030040507e"), PROFILE).massage_legs
+        codec.parse_notification(
+            bytes.fromhex("000006050200030040507e"), massage_levels=DREAMHD.massage_levels
+        ).massage_legs
         == 3
     )
     assert (
-        protocol.parse_notification(bytes.fromhex("f2f251080101feff3b060302b67e"), PROFILE).alarm
+        codec.parse_notification(
+            bytes.fromhex("f2f251080101feff3b060302b67e"), massage_levels=DREAMHD.massage_levels
+        ).alarm
         is None
     )
 
@@ -267,16 +280,15 @@ async def test_hd_wake_cleanup_on_success_cancel_and_failure(make_controller):
         else:
             await controller.execute_wake_routine(preset="flat", head_level=1)
         if outcome == "success":
-            assert packets(client)[-1] == protocol.SHORT_RELEASE
+            assert packets(client)[-1] == codec.SHORT_RELEASE
         else:
-            assert packets(client)[-2:] == [protocol.SHORT_RELEASE, bytes.fromhex("f1f11101081a7e")]
+            assert packets(client)[-2:] == [codec.SHORT_RELEASE, bytes.fromhex("f1f11101081a7e")]
 
 
 def test_hd_discovery_has_no_app_or_name_inference():
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed.beds.jiecang_app import _TRANSPORTS
     from custom_components.adjustable_bed.const import BED_TYPE_JIECANG_APP, JIECANG_APP_PROFILES
     from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 
@@ -284,9 +296,9 @@ def test_hd_discovery_has_no_app_or_name_inference():
         (Path(__file__).parents[1] / "custom_components/adjustable_bed/manifest.json").read_text()
     )
     service_filters = {row.get("service_uuid") for row in manifest["bluetooth"]}
-    assert _TRANSPORTS["g1"][0] in service_filters
-    assert _TRANSPORTS["g3"][0] in service_filters
-    assert _TRANSPORTS["g2"][0] not in service_filters
+    assert astuple(TRANSPORTS["g1"])[0] in service_filters
+    assert astuple(TRANSPORTS["g3"])[0] in service_filters
+    assert astuple(TRANSPORTS["g2"])[0] not in service_filters
     assert JIECANG_APP_PROFILES["dreamhd"] == "Dream Motion HD"
     assert "Dream Motion HD" in BED_TYPE_DISPLAY_NAMES[BED_TYPE_JIECANG_APP]
 
@@ -346,7 +358,7 @@ async def test_hd_cancelled_wake_attempts_massage_stop_even_when_release_fails(m
     async def write(_uuid, command, **_kwargs):
         if command[2] == 0x12:
             coordinator.cancel_command.set()
-        elif command == protocol.SHORT_RELEASE:
+        elif command == codec.SHORT_RELEASE:
             raise RuntimeError("release failed")
 
     client.write_gatt_char.side_effect = write
@@ -354,6 +366,6 @@ async def test_hd_cancelled_wake_attempts_massage_stop_even_when_release_fails(m
         await controller.execute_wake_routine(preset="flat", head_level=1)
     assert packets(client) == [
         bytes.fromhex("f1f1120208021e7e"),
-        protocol.SHORT_RELEASE,
+        codec.SHORT_RELEASE,
         bytes.fromhex("f1f11101081a7e"),
     ]

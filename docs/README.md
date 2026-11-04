@@ -71,6 +71,7 @@ dependencies from Home Assistant's own manifests.
 | [Repository instructions](../AGENTS.md) | Architecture, controller contracts, contribution and release rules |
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer/rollback |
+| [Protocol codecs and app profiles](design/protocol-codecs.md) | Codec, profile and controller layers; vector harness |
 | [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
 | [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |

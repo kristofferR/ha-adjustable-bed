@@ -651,7 +651,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT: "Richmat / RMControl app",
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
     BED_TYPE_REMACRO: "Slumberland app (Remacro)",
-    BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
+    BED_TYPE_COMFORT_MOTION: "Comfort Motion / Lierda (legacy controls)",
     BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
     BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app (bed / chair)",
     BED_TYPE_LOGICDATA: "Logicdata SimplicityFrame (SILVERmotion)",

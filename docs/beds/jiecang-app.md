@@ -116,7 +116,8 @@ not rely on accidentally retained Android settings.
 
 ## Commands
 
-All values are built by `jiecang_app_protocol.py`. The
+All values are built by the Jiecang codec (`codec/jiecang.py`) from the app
+profiles in `profiles/jiecang.py`. The
 [complete cluster disposition](jiecang-app-disposition.md) maps every command group.
 
 ### Motor Control

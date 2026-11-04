@@ -4,7 +4,20 @@ from datetime import datetime
 
 import pytest
 
-from custom_components.adjustable_bed import jiecang_app_protocol as protocol
+from custom_components.adjustable_bed.codec import jiecang as codec
+from custom_components.adjustable_bed.profiles.jiecang import (
+    DREAMASK,
+    DREAMOTION,
+    automatic_light_on,
+    is_bilateral,
+    massage_command,
+    memory_command,
+    motion_command,
+    preset_command,
+    wake_schedule,
+)
+
+LEVELS = DREAMASK.massage_levels
 
 
 @pytest.mark.parametrize(
@@ -21,9 +34,9 @@ from custom_components.adjustable_bed import jiecang_app_protocol as protocol
     ],
 )
 def test_standard_bilateral_and_mixed_motion(axis, up, standard, bilateral):
-    assert protocol.motion_command("split_series", axis, up).hex() == standard
-    assert protocol.motion_command("split_after_bilateral", axis, up).hex() == standard
-    assert protocol.motion_command("standard_4_bilateral", axis, up).hex() == bilateral
+    assert motion_command(DREAMASK, "split_series", axis, up).hex() == standard
+    assert motion_command(DREAMASK, "split_after_bilateral", axis, up).hex() == standard
+    assert motion_command(DREAMASK, "standard_4_bilateral", axis, up).hex() == bilateral
 
 
 @pytest.mark.parametrize(
@@ -47,12 +60,12 @@ def test_standard_bilateral_and_mixed_motion(axis, up, standard, bilateral):
     ],
 )
 def test_auxiliary_and_bilateral_axis_vectors(layout, axis, up, expected):
-    assert protocol.motion_command(layout, axis, up).hex() == expected
+    assert motion_command(DREAMASK, layout, axis, up).hex() == expected
 
 
 def test_unavailable_axis_is_not_inferred_from_motor_count():
     with pytest.raises(ValueError, match="unavailable"):
-        protocol.motion_command("standard_3_lumbar", "head", True)
+        motion_command(DREAMASK, "standard_3_lumbar", "head", True)
 
 
 @pytest.mark.parametrize(
@@ -65,9 +78,9 @@ def test_unavailable_axis_is_not_inferred_from_motor_count():
     ],
 )
 def test_mixed_layout_keeps_bilateral_global_controls(preset, standard, bilateral):
-    assert protocol.preset_command("split_series", preset).hex() == standard
-    assert protocol.preset_command("split_after_bilateral", preset).hex() == bilateral
-    assert protocol.preset_command("standard_4_bilateral", preset).hex() == bilateral
+    assert preset_command("split_series", preset).hex() == standard
+    assert preset_command("split_after_bilateral", preset).hex() == bilateral
+    assert preset_command("standard_4_bilateral", preset).hex() == bilateral
 
 
 @pytest.mark.parametrize(
@@ -80,12 +93,14 @@ def test_mixed_layout_keeps_bilateral_global_controls(preset, standard, bilatera
     ],
 )
 def test_memory_vectors(slot, save, expected):
-    assert protocol.memory_command(slot, save).hex() == expected
+    assert memory_command(DREAMASK, slot, save=save).hex() == expected
 
 
 def test_memory_c_is_not_reachable():
     with pytest.raises(ValueError, match="memory slot"):
-        protocol.memory_command(3)
+        memory_command(DREAMASK, 3)
+    with pytest.raises(ValueError, match="memory slot"):
+        memory_command(DREAMOTION, 3)
 
 
 @pytest.mark.parametrize(
@@ -99,39 +114,42 @@ def test_memory_c_is_not_reachable():
     ],
 )
 def test_maximum_reachable_massage_level(layout, zone, expected):
-    assert protocol.massage_command(layout, zone, 3).hex() == expected
+    assert massage_command(DREAMASK, layout, zone, 3).hex() == expected
 
 
 def test_massage_low_is_wire_two_and_invalid_levels_are_rejected():
-    assert protocol.massage_command("standard_2", "back", 1).hex() == "f1f1120208021e7e"
-    assert protocol.massage_command("standard_2", "back", 0).hex() == "f1f1120208001c7e"
+    assert massage_command(DREAMASK, "standard_2", "back", 1).hex() == "f1f1120208021e7e"
+    assert massage_command(DREAMASK, "standard_2", "back", 0).hex() == "f1f1120208001c7e"
     with pytest.raises(ValueError, match="massage level"):
-        protocol.massage_command("standard_2", "back", 4)
+        massage_command(DREAMASK, "standard_2", "back", 4)
     with pytest.raises(ValueError, match="unavailable"):
-        protocol.massage_command("standard_4_bilateral", "legs", 2)
-    assert protocol.massage_mode_command("standard_2").hex() == "f1f116010a217e"
-    assert protocol.massage_close_command("standard_2").hex() == "f1f11101081a7e"
-    assert protocol.massage_mode_command("split_after_bilateral").hex() == "f1f116020000187e"
-    assert protocol.massage_close_command("split_after_bilateral").hex() == "f1f111020000137e"
+        massage_command(DREAMASK, "standard_4_bilateral", "legs", 2)
+    assert codec.massage_mode(bilateral=is_bilateral("standard_2")).hex() == "f1f116010a217e"
+    assert codec.massage_stop(bilateral=is_bilateral("standard_2")).hex() == "f1f11101081a7e"
+    assert (
+        codec.massage_mode(bilateral=is_bilateral("split_after_bilateral")).hex()
+        == "f1f116020000187e"
+    )
+    assert (
+        codec.massage_stop(bilateral=is_bilateral("split_after_bilateral")).hex()
+        == "f1f111020000137e"
+    )
 
 
 def test_dynamic_and_auxiliary_packet_vectors():
-    assert protocol.rgb_command(17, 34, 51, 100, 300, True).hex() == "f1f1520733221164012c01517e"
+    assert codec.rgb(17, 34, 51, 100, 300, True).hex() == "f1f1520733221164012c01517e"
     assert (
-        protocol.alarm_command(
+        codec.alarm(
             True, (True, False, True, False, True, False, False), 6, 30, "memory_1", 2, 3
         ).hex()
         == "f1f1510801012a061e030203b17e"
     )
-    assert (
-        protocol.clock_command(datetime(2026, 8, 27, 12, 34, 56)).hex()
-        == "f1f1500738081b040c22381c7e"
-    )
-    assert protocol.rename_command("Bed1", True, True) == b"Bed1"
-    assert protocol.rename_command("Bed1", False, True).hex() == "01fc070442656431"
-    assert protocol.LIGHT_TOGGLE.hex() == "f1f10f020000117e"
-    assert protocol.AUTOMATIC_LIGHT_TOGGLE.hex() == "f1f1290200002b7e"
-    assert [data.hex() for _, data in protocol.BOOTSTRAP_SCHEDULE[::2]] == [
+    assert codec.clock(datetime(2026, 8, 27, 12, 34, 56)).hex() == "f1f1500738081b040c22381c7e"
+    assert DREAMASK.name_rule.encode("Bed1") == b"Bed1"
+    assert codec.g3_name(DREAMASK.name_rule.encode("Bed1")).hex() == "01fc070442656431"
+    assert codec.light_toggle(codec.BILATERAL).hex() == "f1f10f020000117e"
+    assert codec.AUTOMATIC_LIGHT_TOGGLE.hex() == "f1f1290200002b7e"
+    assert [data.hex() for _, data in DREAMASK.bootstrap[::2]] == [
         "f1f100024000427e",
         "f1f100020100037e",
         "f1f1000150517e",
@@ -140,7 +158,7 @@ def test_dynamic_and_auxiliary_packet_vectors():
         "f1f1000110117e",
         "f1f100024000427e",
     ]
-    assert [offset for offset, _ in protocol.BOOTSTRAP_SCHEDULE] == [
+    assert [offset for offset, _ in DREAMASK.bootstrap] == [
         0,
         100,
         800,
@@ -161,35 +179,35 @@ def test_dynamic_and_auxiliary_packet_vectors():
 @pytest.mark.parametrize("name", ["", "Bed 1", "Béd", "A" * 21])
 def test_rename_ui_validation(name):
     with pytest.raises(ValueError, match="ASCII"):
-        protocol.rename_command(name, True, False)
+        DREAMASK.name_rule.encode(name)
 
 
 def test_light_ui_limits_not_unreachable_formula_limits():
     with pytest.raises(ValueError, match="brightness"):
-        protocol.rgb_command(0, 0, 0, 101, 0, False)
+        codec.rgb(0, 0, 0, 101, 0, False)
     with pytest.raises(ValueError, match="timeout"):
-        protocol.rgb_command(0, 0, 0, 100, 65535, True)
+        codec.rgb(0, 0, 0, 100, 65536, True)
 
 
 def test_profile_specific_release_schedules():
-    assert [(t, b.hex()) for t, b in protocol.movement_releases("dreamask")] == [
+    assert [(t, b.hex()) for t, b in DREAMASK.hold.releases] == [
         (50, "f1f14e020000507e"),
         (150, "f1f14e020000507e"),
     ]
-    assert [(t, b.hex()) for t, b in protocol.movement_releases("dreamotion")] == [
+    assert [(t, b.hex()) for t, b in DREAMOTION.hold.releases] == [
         (100, "f1f14e004e7e"),
         (800, "f1f14e020000507e"),
     ]
 
 
 def test_split_wake_massage_uses_standard_payload_and_exact_schedules():
-    schedule = protocol.wake_schedule("split_after_bilateral", "flat", 3, 2)
+    schedule = wake_schedule(DREAMASK, "split_after_bilateral", "flat", 3, 2)
     assert [(t, b.hex()) for t, b in schedule if b[2] == 0x22] == [
         (180, "f1f122020804307e"),
         (210, "f1f122020804307e"),
         (240, "f1f122020804307e"),
     ]
-    assert [t for t, b in schedule if b == protocol.SHORT_RELEASE] == [
+    assert [t for t, b in schedule if b == codec.SHORT_RELEASE] == [
         90,
         120,
         150,
@@ -201,37 +219,40 @@ def test_split_wake_massage_uses_standard_payload_and_exact_schedules():
         650,
     ]
     assert [t for t, b in schedule if b[2] == 0x08] == [800, 830, 860, 890, 920]
-    assert [t for t, b in schedule if b == protocol.LONG_RELEASE] == [1690, 1720]
-    standard = protocol.wake_schedule("standard_4_bilateral", "memory_2", 2, 1)
-    assert [t for t, b in standard if b == protocol.LONG_RELEASE] == [1600, 1690, 1720]
+    assert [t for t, b in schedule if b == codec.LONG_RELEASE] == [1690, 1720]
+    standard = wake_schedule(DREAMASK, "standard_4_bilateral", "memory_2", 2, 1)
+    assert [t for t, b in standard if b == codec.LONG_RELEASE] == [1600, 1690, 1720]
     assert [t for t, b in standard if b[2] == 0x14] == [300, 330, 360]
     with pytest.raises(ValueError, match="Yoga"):
-        protocol.wake_schedule("standard_2", "yoga")
+        wake_schedule(DREAMASK, "standard_2", "yoga")
 
 
 def test_notification_fields_and_partial_alarm():
     def parse(hex_value):
-        return protocol.parse_notification(bytes.fromhex(hex_value))
+        return codec.parse_notification(bytes.fromhex(hex_value), massage_levels=LEVELS)
 
     assert parse("f2f250000000").clock_requested
-    assert parse("f2f20e00070000").capabilities == protocol.Capabilities(True, True)
+    assert parse("f2f20e00070000").capabilities == codec.Capabilities(True, True)
     assert parse("f2f20f00000000").reapply_layout
-    assert parse("f2f25100000000") == protocol.Notification(alarm_visible=True)
+    assert parse("f2f25100000000") == codec.Notification(alarm_visible=True)
     alarm = parse("f2f2510801012a061e030203b17e").alarm
-    assert alarm == protocol.AlarmState(
+    assert alarm == codec.AlarmState(
         True, (True, False, True, False, True, False, False), 6, 30, "memory_1", 2, 3
     )
-    assert parse("f2f25300000000").automatic_light is True
-    assert parse("f2f25300ff0000").automatic_light is False
-    assert parse("f2f2520733221164012c01517e").rgb == protocol.RGBState(17, 34, 51, 100, 300, True)
+    assert parse("f2f25300000000").automatic_light == 0
+    assert parse("f2f25300ff0000").automatic_light == 0xFF
+    for app in (DREAMASK, DREAMOTION):
+        assert automatic_light_on(app, 0) is True
+        assert automatic_light_on(app, 0xFF) is False
+    assert parse("f2f2520733221164012c01517e").rgb == codec.RGBState(17, 34, 51, 100, 300, True)
     # The artifact has no checksum/trailer check, including these valid field values.
-    assert parse("f2f2520733221164012c01ffff").rgb == protocol.RGBState(17, 34, 51, 100, 300, True)
-    assert parse("aaaa06000400030040") == protocol.Notification(
+    assert parse("f2f2520733221164012c01ffff").rgb == codec.RGBState(17, 34, 51, 100, 300, True)
+    assert parse("aaaa06000400030040") == codec.Notification(
         massage_back=4,
         massage_legs=3,
         legacy_light=True,
     )
-    assert parse("123405000000000040") == protocol.Notification(legacy_light=True)
+    assert parse("123405000000000040") == codec.Notification(legacy_light=True)
 
 
 def test_truncated_notifications_never_read_fields_out_of_bounds():
@@ -243,20 +264,25 @@ def test_truncated_notifications_never_read_fields_out_of_bounds():
     ]:
         data = bytes.fromhex(sample)
         for length in range(minimum):
-            assert protocol.parse_notification(data[:length]) is None
-    assert protocol.parse_notification(bytes.fromhex("f2f25207332211ff012c01517e")) is None
+            assert codec.parse_notification(data[:length], massage_levels=LEVELS) is None
+    assert (
+        codec.parse_notification(bytes.fromhex("f2f25207332211ff012c01517e"), massage_levels=LEVELS)
+        is None
+    )
 
 
 @pytest.mark.parametrize("length", range(7, 14))
 def test_partial_alarm_never_overwrites_configuration(length):
     data = bytes.fromhex("f2f2510801012a061e030203b17e")[:length]
-    assert protocol.parse_notification(data) == protocol.Notification(alarm_visible=True)
+    assert codec.parse_notification(data, massage_levels=LEVELS) == codec.Notification(
+        alarm_visible=True
+    )
 
 
 def test_split_alarm_right_is_derived_from_back_not_an_independent_channel():
-    schedule = protocol.wake_schedule("split_series", "flat", 2, 0)
+    schedule = wake_schedule(DREAMASK, "split_series", "flat", 2, 0)
     assert [command.hex() for _, command in schedule if command[2] == 0x22] == [
         "f1f1220208032f7e",
     ] * 3
     with pytest.raises(ValueError, match="match the back"):
-        protocol.wake_schedule("split_series", "flat", 2, 0, 3)
+        wake_schedule(DREAMASK, "split_series", "flat", 2, 0, 3)

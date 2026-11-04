@@ -1968,22 +1968,22 @@ def _add_jiecang_app_schema_fields(
 
 def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
     """Require explicit app and layout selection without inferring hardware."""
+    from .profiles.jiecang import APP_PROFILES, COMFORT_MOTION
+
     errors = {}
     if data.get(CONF_JIECANG_APP_PROFILE) not in JIECANG_APP_PROFILES:
         errors[CONF_JIECANG_APP_PROFILE] = "jiecang_app_required"
     if data.get(CONF_JIECANG_APP_LAYOUT) not in JIECANG_APP_LAYOUTS:
         errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
-    if data.get(CONF_JIECANG_APP_PROFILE) == "dreamhd" and data.get(CONF_JIECANG_APP_LAYOUT) in (
-        "standard_4_bilateral", "split_after_bilateral"
-    ):
-        errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
-    if data.get(CONF_JIECANG_APP_PROFILE) == "comfort_motion":
-        if data.get(CONF_JIECANG_APP_LAYOUT) not in (
-            "standard_2", "standard_3_neck", "standard_4_legacy"
-        ):
-            errors[CONF_JIECANG_APP_LAYOUT] = "comfort_motion_selection"
-        if data.get(CONF_JIECANG_APP_TRANSPORT, "auto") not in ("auto", "g1", "g2"):
-            errors[CONF_JIECANG_APP_TRANSPORT] = "comfort_motion_selection"
+    profile = APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""))
+    if profile is None:
+        return errors
+    # Each app profile declares the layouts and transports it can drive.
+    error = "comfort_motion_selection" if profile is COMFORT_MOTION else "jiecang_app_required"
+    if data.get(CONF_JIECANG_APP_LAYOUT) not in profile.layouts:
+        errors[CONF_JIECANG_APP_LAYOUT] = error
+    if data.get(CONF_JIECANG_APP_TRANSPORT, "auto") not in ("auto", *profile.transports):
+        errors[CONF_JIECANG_APP_TRANSPORT] = error
     return errors
 
 

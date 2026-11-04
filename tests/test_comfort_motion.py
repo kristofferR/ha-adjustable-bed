@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import astuple
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
@@ -13,6 +14,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds import comfort_motion as cm
+from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -31,6 +33,32 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
 )
+from custom_components.adjustable_bed.profiles.jiecang import COMFORT_MOTION
+
+# Frozen Comfort Motion 2.2.1 literals.
+RELEASE = bytes.fromhex("f1f14e004e7e")
+LIGHT = bytes.fromhex("f1f10f000f7e")
+WIRE_LEVELS = (0, 2, 3, 4)
+MASSAGE = {
+    "head": tuple(
+        bytes.fromhex(value)
+        for value in (
+            "f1f1120208001c7e",
+            "f1f1120208021e7e",
+            "f1f1120208031f7e",
+            "f1f112020804207e",
+        )
+    ),
+    "foot": tuple(
+        bytes.fromhex(value)
+        for value in (
+            "f1f1140208001e7e",
+            "f1f114020802207e",
+            "f1f114020803217e",
+            "f1f114020804227e",
+        )
+    ),
+}
 
 ADDRESS = "AA:BB:CC:DD:EE:FF"
 
@@ -38,7 +66,7 @@ ADDRESS = "AA:BB:CC:DD:EE:FF"
 def services(transports=("g1",), properties=("write", "notify")):
     result = []
     for key in transports:
-        service, write, notify, name = cm.TRANSPORTS[key]
+        service, write, notify, name = astuple(TRANSPORTS[key])
         chars = {
             uuid: SimpleNamespace(
                 uuid=uuid,
@@ -113,7 +141,7 @@ def packets(client):
 async def test_motion_vectors_and_release(make_controller, axis, up, expected):
     layout = "standard_2" if axis == "both" else "standard_4_legacy"
     controller, _, client = make_controller(layout)
-    await controller._move(axis, up)
+    await controller._move_axis(axis, up)
     assert packets(client) == [expected, expected, "f1f14e004e7e"]
 
 
@@ -160,7 +188,7 @@ async def test_setup_queries_without_layout_or_massage(make_controller):
     coordinator.has_massage = False
     await controller.start_notify()
     await controller.start_notify()
-    assert [offset for offset, _ in cm.SETUP] == [200, 300, 400, 500, 600, 700]
+    assert [offset for offset, _ in COMFORT_MOTION.bootstrap] == [200, 300, 400, 500, 600, 700]
     assert packets(client) == [
         "f1f1000101027e",
         "f1f1000101027e",
@@ -183,7 +211,7 @@ async def test_all_24_variants_and_temporal_retention(make_controller, transport
     controller, coordinator, client = make_controller(
         physical_layout, (transport,), has_light=light
     )
-    sender = SimpleNamespace(uuid=cm.TRANSPORTS[transport][2])
+    sender = SimpleNamespace(uuid=astuple(TRANSPORTS[transport])[2])
     controller._handle_notification(sender, bytearray([0, 0, 6, 0, 3, 0, 4, 0, 64]))
     specs = controller.motor_control_specs
     for reply in (layout, layout, 1, 0, 255):
@@ -206,17 +234,17 @@ async def test_all_24_variants_and_temporal_retention(make_controller, transport
 @pytest.mark.parametrize("wire", range(256))
 async def test_unsigned_massage_parser_and_steps(make_controller, wire):
     controller, _, client = make_controller()
-    sender = SimpleNamespace(uuid=cm.TRANSPORTS["g1"][2])
+    sender = SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2])
     controller._handle_notification(sender, bytearray([0, 0, 6, 0, wire, 0, wire, 0, 0]))
     await controller.massage_head_up()
     await controller.massage_foot_down()
     expected = []
     if wire in (0, 2, 3):
-        expected.append(cm.MASSAGE["head"][cm.WIRE_LEVELS.index(wire) + 1].hex())
+        expected.append(MASSAGE["head"][WIRE_LEVELS.index(wire) + 1].hex())
     if wire in (2, 3, 4):
-        expected.append(cm.MASSAGE["foot"][cm.WIRE_LEVELS.index(wire) - 1].hex())
+        expected.append(MASSAGE["foot"][WIRE_LEVELS.index(wire) - 1].hex())
     assert packets(client) == expected
-    if wire not in cm.WIRE_LEVELS:
+    if wire not in WIRE_LEVELS:
         assert controller.get_massage_state() == {"head_intensity": None, "foot_intensity": None}
 
 
@@ -235,7 +263,7 @@ async def test_motion_cancellation_releases_with_fresh_event(make_controller, ta
     controller, coordinator, client = make_controller()
 
     async def write(*args, **kwargs):
-        if args[1] != cm.RELEASE:
+        if args[1] != RELEASE:
             coordinator.cancel_command.set()
             if task_cancel:
                 raise asyncio.CancelledError
@@ -259,17 +287,17 @@ async def test_setup_failure_cleans_subscriptions_and_reconnects(make_controller
     client.write_gatt_char.side_effect = None
     await controller.start_notify()
     assert not controller.supports_device_rename
-    assert controller.control_characteristic_uuid == cm.TRANSPORTS["g2"][1]
+    assert controller.control_characteristic_uuid == astuple(TRANSPORTS["g2"])[1]
 
 
 async def test_runtime_properties_and_rename(make_controller):
     controller, _, client = make_controller(transports=("g1", "g2"))
     client.services = services(("g1", "g2"), ("write-without-response", "notify"))
-    await controller.write_command(cm.LIGHT)
+    await controller.write_command(LIGHT)
     assert client.write_gatt_char.await_args.kwargs == {"response": False}
-    assert controller.control_characteristic_uuid == cm.TRANSPORTS["g2"][1]
+    assert controller.control_characteristic_uuid == astuple(TRANSPORTS["g2"])[1]
     await controller.rename_device("Bed_1.2")
-    assert client.write_gatt_char.await_args.args == (cm.TRANSPORTS["g1"][3], b"Bed_1.2")
+    assert client.write_gatt_char.await_args.args == (astuple(TRANSPORTS["g1"])[3], b"Bed_1.2")
     assert client.write_gatt_char.await_args.kwargs == {"response": False}
     for invalid in ("", "A" * 19, "Bed 1", "sengø", "name\n"):
         with pytest.raises(ValueError):
@@ -336,7 +364,7 @@ async def test_profile_setup_and_options_reject_other_layouts(hass, options):
     }
 
 
-@pytest.mark.parametrize("layout", cm.LAYOUT_AXES)
+@pytest.mark.parametrize("layout", COMFORT_MOTION.layouts)
 async def test_real_entities_services_and_serialization(
     hass,
     mock_coordinator_connected,
@@ -353,7 +381,7 @@ async def test_real_entities_services_and_serialization(
     await hass.async_block_till_done()
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
     keys = {(e.domain, e.unique_id.removeprefix(f"{ADDRESS}_")): e.entity_id for e in entities}
-    assert {key for domain, key in keys if domain == "cover"} == set(cm.LAYOUT_AXES[layout])
+    assert {key for domain, key in keys if domain == "cover"} == set(COMFORT_MOTION.layouts[layout])
     assert ("button", "preset_memory_2") in keys and ("button", "preset_memory_3") not in keys
     assert not any(
         "angle" in key or "position" in key
@@ -416,7 +444,7 @@ async def test_real_entities_services_and_serialization(
     assert await hass.config_entries.async_unload(entry.entry_id)
 
 
-@pytest.mark.parametrize("layout", cm.LAYOUT_AXES)
+@pytest.mark.parametrize("layout", COMFORT_MOTION.layouts)
 async def test_profile_setup_accepts_comfort_motion(hass, layout):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
@@ -464,7 +492,7 @@ async def test_wake_task_cancellation_releases(make_controller):
     controller, _, client = make_controller()
 
     async def write(*args, **kwargs):
-        if args[1] != cm.RELEASE:
+        if args[1] != RELEASE:
             raise asyncio.CancelledError
 
     client.write_gatt_char.side_effect = write

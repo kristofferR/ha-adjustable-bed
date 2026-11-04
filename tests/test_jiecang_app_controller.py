@@ -3,13 +3,25 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import astuple
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed import jiecang_app_protocol as protocol
-from custom_components.adjustable_bed.beds.jiecang_app import _TRANSPORTS, JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
+from custom_components.adjustable_bed.codec import jiecang as codec
+from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
+from custom_components.adjustable_bed.profiles.jiecang import (
+    APP_LAYOUT_AXES,
+    APP_PROFILES,
+    DREAMASK,
+    QUERY_LIGHT,
+    motion_command,
+    wake_schedule,
+)
+
+DREAM_APPS = ("dreamask", "dreamotion", "dreamhd")
 
 
 @pytest.fixture
@@ -25,7 +37,7 @@ def make_controller(monkeypatch):
         characteristics = {}
         services = {}
         for transport in transports:
-            service_uuid, write, notify, name = _TRANSPORTS[transport]
+            service_uuid, write, notify, name = astuple(TRANSPORTS[transport])
             members = {
                 uuid: SimpleNamespace(uuid=uuid, properties=["write", "notify"])
                 for uuid in (write, notify, name)
@@ -67,16 +79,16 @@ async def test_held_movement_profile_release_and_final_command(make_controller, 
     controller, _, client = make_controller(profile=profile)
     await controller.move_back_up()
     assert packets(client) == [bytes.fromhex("f1f1010101037e")] * (3 + final) + [
-        command for _, command in protocol.movement_releases(profile)
+        command for _, command in APP_PROFILES[profile].hold.releases
     ]
 
 
-@pytest.mark.parametrize("profile", protocol.APP_PROFILES)
+@pytest.mark.parametrize("profile", DREAM_APPS)
 async def test_cancelled_movement_sends_only_fresh_release(make_controller, profile):
     controller, coordinator, client = make_controller(profile=profile)
     coordinator.cancel_command.set()
     await controller.move_back_up()
-    assert packets(client) == [command for _, command in protocol.movement_releases(profile)]
+    assert packets(client) == [command for _, command in APP_PROFILES[profile].hold.releases]
 
 
 async def test_failed_movement_still_releases(make_controller):
@@ -84,7 +96,7 @@ async def test_failed_movement_still_releases(make_controller):
     client.write_gatt_char.side_effect = [RuntimeError("failed"), None, None]
     with pytest.raises(RuntimeError, match="failed"):
         await controller.move_back_up()
-    assert packets(client)[1:] == [protocol.SHORT_RELEASE, protocol.LONG_RELEASE]
+    assert packets(client)[1:] == [codec.SHORT_RELEASE, codec.LONG_RELEASE]
 
 
 async def test_presets_memory_and_programming_match_reachable_frames(make_controller):
@@ -94,9 +106,9 @@ async def test_presets_memory_and_programming_match_reachable_frames(make_contro
     await controller.program_memory(1)
     assert packets(client) == [
         bytes.fromhex("f1f1080200000a7e"),
-        protocol.LONG_RELEASE,
+        codec.LONG_RELEASE,
         bytes.fromhex("f1f10d0200000f7e"),
-        protocol.LONG_RELEASE,
+        codec.LONG_RELEASE,
         *([bytes.fromhex("f1f10a0200000c7e")] * 3),
     ]
     assert controller.memory_slot_count == 2
@@ -104,20 +116,18 @@ async def test_presets_memory_and_programming_match_reachable_frames(make_contro
         await controller.preset_memory(3)
 
 
-@pytest.mark.parametrize("layout", protocol.LAYOUTS)
+@pytest.mark.parametrize("layout", tuple(APP_LAYOUT_AXES))
 async def test_every_layout_exposes_routable_motor_specs(make_controller, layout):
     controller, coordinator, client = make_controller(layout=layout)
     coordinator.motor_pulse_count = 1
-    assert tuple(spec.key for spec in controller.motor_control_specs) == protocol.layout_axes(
-        layout
-    )
+    assert tuple(spec.key for spec in controller.motor_control_specs) == APP_LAYOUT_AXES[layout]
     for spec in controller.motor_control_specs:
         client.write_gatt_char.reset_mock()
         await spec.open_fn(controller)
-        assert packets(client)[0] == protocol.motion_command(layout, spec.key, True)
+        assert packets(client)[0] == motion_command(DREAMASK, layout, spec.key, True)
         client.write_gatt_char.reset_mock()
         await spec.close_fn(controller)
-        assert packets(client)[0] == protocol.motion_command(layout, spec.key, False)
+        assert packets(client)[0] == motion_command(DREAMASK, layout, spec.key, False)
 
 
 async def test_bilateral_massage_zones_and_alarm_stop_remain_distinct(make_controller):
@@ -129,7 +139,7 @@ async def test_bilateral_massage_zones_and_alarm_stop_remain_distinct(make_contr
     await controller.stop_wake_routine()
     assert packets(client) == [
         bytes.fromhex("f1f122020004287e"),
-        protocol.LONG_RELEASE,
+        codec.LONG_RELEASE,
         bytes.fromhex("f1f111020000137e"),
         bytes.fromhex("f1f11101081a7e"),
     ]
@@ -151,7 +161,7 @@ async def test_alarm_and_split_wake_use_shared_back_right_intensity(make_control
     client.write_gatt_char.reset_mock()
     await controller.execute_wake_routine(preset="memory_1", head_level=2, foot_level=3)
     assert packets(client) == [
-        command for _, command in protocol.wake_schedule("split_after_bilateral", "memory_1", 2, 3)
+        command for _, command in wake_schedule(DREAMASK, "split_after_bilateral", "memory_1", 2, 3)
     ]
     assert bytes.fromhex("f1f1220208032f7e") in packets(client)
     with pytest.raises(ValueError, match="Yoga"):
@@ -163,7 +173,7 @@ async def test_failed_wake_always_releases(make_controller):
     client.write_gatt_char.side_effect = [RuntimeError("write failure"), None]
     with pytest.raises(RuntimeError, match="write failure"):
         await controller.execute_wake_routine(preset="flat", head_level=1)
-    assert packets(client)[-1] == protocol.LONG_RELEASE
+    assert packets(client)[-1] == codec.LONG_RELEASE
 
 
 async def test_absolute_schedule_accounts_for_ble_latency(make_controller):
@@ -199,13 +209,13 @@ async def test_gatt_bootstrap_idempotence_and_state_capabilities(make_controller
     client.start_notify.side_effect = notify
     await controller.async_discover_capabilities()
     await controller.start_notify()
-    assert packets(client) == [command for _, command in protocol.BOOTSTRAP_SCHEDULE]
+    assert packets(client) == [command for _, command in DREAMASK.bootstrap]
     assert client.start_notify.await_count == 1
     assert controller.supports_preset_yoga
     assert controller.supports_light_color_control
     assert controller.default_light_rgb_color == (17, 34, 51)
     await controller.stop_notify()
-    client.stop_notify.assert_awaited_once_with(_TRANSPORTS["g1"][2])
+    client.stop_notify.assert_awaited_once_with(astuple(TRANSPORTS["g1"])[2])
 
 
 async def test_cancelled_bootstrap_does_not_mark_controller_ready(make_controller):
@@ -222,7 +232,7 @@ async def test_cancelled_bootstrap_does_not_mark_controller_ready(make_controlle
 async def test_g2_standalone_is_dreamotion_only_and_has_no_bootstrap(make_controller):
     controller, _, client = make_controller(profile="dreamotion", transports=("g2",))
     await controller.start_notify()
-    assert controller.control_characteristic_uuid == _TRANSPORTS["g2"][1]
+    assert controller.control_characteristic_uuid == astuple(TRANSPORTS["g2"])[1]
     assert not packets(client)
     assert not controller.supports_device_rename
     other, _, _ = make_controller(profile="dreamask", transports=("g2",))
@@ -234,7 +244,7 @@ async def test_g2_copresent_still_bootstraps(make_controller):
     controller, _, client = make_controller(transports=("g1", "g2"), transport="g2")
     controller._capabilities_received.set()
     await controller.start_notify()
-    assert packets(client) == [command for _, command in protocol.BOOTSTRAP_SCHEDULE]
+    assert packets(client) == [command for _, command in DREAMASK.bootstrap]
 
 
 async def test_capability_timeout_does_not_mark_entity_discovery_complete(
@@ -257,10 +267,10 @@ async def test_transport_without_capability_bootstrap_is_complete(make_controlle
 @pytest.mark.parametrize("transport", ["g1", "g2"])
 async def test_missing_g1_name_role_does_not_bootstrap(make_controller, transport):
     controller, _, client = make_controller(transports=("g1", "g2"), transport=transport)
-    service = client.services.get_service(_TRANSPORTS["g1"][0])
+    service = client.services.get_service(astuple(TRANSPORTS["g1"])[0])
     original = service.get_characteristic
     service.get_characteristic = lambda uuid: (
-        None if uuid == _TRANSPORTS["g1"][3] else original(uuid)
+        None if uuid == astuple(TRANSPORTS["g1"])[3] else original(uuid)
     )
     await controller.start_notify()
     assert not packets(client)
@@ -284,7 +294,8 @@ async def test_rename_uses_coherent_selected_transport(make_controller, transpor
     await controller.rename_device("Bed1")
     assert packets(client) == [expected, expected]
     assert all(
-        call.args[0] == _TRANSPORTS[transport][3] for call in client.write_gatt_char.await_args_list
+        call.args[0] == astuple(TRANSPORTS[transport])[3]
+        for call in client.write_gatt_char.await_args_list
     )
     with pytest.raises(ValueError, match="ASCII"):
         await controller.rename_device("Bed 1")
@@ -292,24 +303,24 @@ async def test_rename_uses_coherent_selected_transport(make_controller, transpor
 
 async def test_light_toggle_and_partial_changes_preserve_reported_fields(make_controller):
     controller, _, client = make_controller()
-    sender = SimpleNamespace(uuid=_TRANSPORTS["g1"][2])
+    sender = SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2])
     controller._handle_notification(sender, bytearray.fromhex("f2f20e00070000"))
     controller._handle_notification(sender, bytearray.fromhex("f2f2520733221164012c01517e"))
     await controller.lights_toggle()
     assert packets(client) == [
-        protocol.rgb_command(17, 34, 51, 100, 300, False),
-        protocol.LIGHT_TOGGLE,
-        protocol.SHORT_RELEASE,
-        protocol.LONG_RELEASE,
+        codec.rgb(17, 34, 51, 100, 300, False),
+        codec.light_toggle(codec.BILATERAL),
+        codec.SHORT_RELEASE,
+        codec.LONG_RELEASE,
     ]
     client.write_gatt_char.reset_mock()
     await controller.set_light_color((1, 2, 3))
     await controller.set_light_level(42)
     await controller.set_light_timer("600")
     assert packets(client) == [
-        protocol.rgb_command(1, 2, 3, 100, 300, False),
-        protocol.rgb_command(1, 2, 3, 42, 300, False),
-        protocol.rgb_command(1, 2, 3, 42, 600, False),
+        codec.rgb(1, 2, 3, 100, 300, False),
+        codec.rgb(1, 2, 3, 42, 300, False),
+        codec.rgb(1, 2, 3, 42, 600, False),
     ]
 
 
@@ -323,32 +334,32 @@ async def test_missing_light_state_does_not_invent_settings(make_controller):
         controller._rgb_received.wait = MagicMock(return_value=None)
         with pytest.raises(ValueError, match="No light state"):
             await controller.lights_toggle()
-    assert packets(client) == [protocol.QUERY_LIGHT, protocol.QUERY_LIGHT]
+    assert packets(client) == [QUERY_LIGHT, QUERY_LIGHT]
 
 
 @pytest.mark.parametrize("opcode", [5, 6])
 async def test_legacy_light_status_wins_over_cached_rgb_for_later_writes(make_controller, opcode):
     controller, _, client = make_controller()
-    sender = SimpleNamespace(uuid=_TRANSPORTS["g1"][2])
+    sender = SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2])
     controller._handle_notification(sender, bytearray.fromhex("f2f20e00070000"))
     controller._handle_notification(sender, bytearray.fromhex("f2f2520733221164012c01517e"))
     # A physical remote can turn off the light without sending another RGB reply.
     controller._handle_notification(sender, bytearray((0, 0, opcode, 0, 0, 0, 0, 0, 0)))
     await controller.set_light_color((1, 2, 3))
-    assert packets(client) == [protocol.rgb_command(1, 2, 3, 100, 300, False)]
+    assert packets(client) == [codec.rgb(1, 2, 3, 100, 300, False)]
     client.write_gatt_char.reset_mock()
     await controller.lights_toggle()
     assert packets(client) == [
-        protocol.rgb_command(1, 2, 3, 100, 300, True),
-        protocol.LIGHT_TOGGLE,
-        protocol.SHORT_RELEASE,
-        protocol.LONG_RELEASE,
+        codec.rgb(1, 2, 3, 100, 300, True),
+        codec.light_toggle(codec.BILATERAL),
+        codec.SHORT_RELEASE,
+        codec.LONG_RELEASE,
     ]
 
 
 async def test_auto_light_is_state_guarded_and_idempotent(make_controller):
     controller, coordinator, client = make_controller()
-    sender = SimpleNamespace(uuid=_TRANSPORTS["g1"][2])
+    sender = SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2])
     controller._handle_notification(sender, bytearray.fromhex("f2f20e00070000"))
     with pytest.raises(ValueError, match="Read automatic"):
         await controller.set_automatic_light(True)
@@ -356,7 +367,7 @@ async def test_auto_light_is_state_guarded_and_idempotent(make_controller):
     await controller.set_automatic_light(True)
     assert not packets(client)
     await controller.set_automatic_light(False)
-    assert packets(client) == [protocol.AUTOMATIC_LIGHT_TOGGLE]
+    assert packets(client) == [codec.AUTOMATIC_LIGHT_TOGGLE]
     assert coordinator.handle_controller_state_updates.call_args.args[0]["automatic_light"] is False
 
 
@@ -368,10 +379,18 @@ async def test_clock_reply_uses_coordinator_serialization(make_controller):
 
     coordinator.async_execute_controller_command.side_effect = execute
     controller._handle_notification(
-        SimpleNamespace(uuid=_TRANSPORTS["g1"][2]), bytearray.fromhex("f2f250000000")
+        SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2]), bytearray.fromhex("f2f250000000")
     )
     await controller._clock_task
     assert packets(client)[0][:4] == bytes.fromhex("f1f15007")
     assert coordinator.async_execute_controller_command.call_args.kwargs == {
         "cancel_running": False
     }
+
+
+async def test_light_timeouts_outside_the_app_options_are_never_written(make_controller):
+    """The codec encodes any 16-bit timeout; the apps only offer their fixed options."""
+    controller, _, client = make_controller()
+    with pytest.raises(ValueError, match="timeout"):
+        await controller._write_rgb(codec.RGBState(1, 2, 3, 100, 65535, True))
+    assert packets(client) == []
