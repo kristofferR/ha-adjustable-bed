@@ -308,3 +308,41 @@ async def test_jmc_newcomer_starts_with_a_tick_not_a_cleanup_mask(
     first_feet = next(at for at, frame in writes if carries_feet(frame))
     assert first_feet >= joined + 0.1 - 1e-6
     assert all(frame in {f[2] for f in FROZEN} for _, frame in writes)
+
+
+@pytest.mark.parametrize("runtime", ["jmc"], indirect=True)
+async def test_jmc_interrupted_combined_write_keeps_the_newcomer_moving(
+    hass, runtime  # noqa: F811
+) -> None:
+    """A mask whose write head's expiry interrupts may still reach the bed.
+
+    Feet joins and its first combined mask goes out; head expires during that
+    write. Head's cleanup must keep feet in the mask, not send the P2 STOP,
+    which would stop feet while its budget runs on.
+    """
+    coordinator, controller = runtime
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ),
+        virtual_clock(),
+    ):
+        loop = asyncio.get_running_loop()
+        writes: list[tuple[float, str]] = []
+
+        async def slow(role, payload, **kwargs):
+            writes.append((loop.time(), bytes(payload).hex()))
+            await asyncio.sleep(0.06)
+
+        controller.client.write_gatt_char.side_effect = slow
+        head = asyncio.create_task(_move(hass, "back", 240))
+        await asyncio.sleep(0.22)
+        joined = loop.time()
+        await asyncio.wait_for(_move(hass, "legs", 400), 2)
+        await asyncio.wait_for(head, 2)
+
+    assert (joined, "101100000000") in writes
+    first_stop = next(at for at, frame in writes if frame == "100000000000")
+    # The global STOP comes only when feet's own run ends.
+    assert first_stop >= joined + 0.3

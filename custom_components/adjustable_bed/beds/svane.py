@@ -783,8 +783,10 @@ class SvaneController(BedController):
             fresh = any(m not in self._stream_written for m in members)
             last = self._stream_last[0]
             if fresh or last is None or now >= last + STREAM_TICK_S - _STREAM_SLACK_S:
-                await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
+                # Recorded as the write begins: an interrupted write may still
+                # have reached the bed, so its axes count as moving.
                 self._stream_written.update(members)
+                await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
                 done = loop.time()
                 self._stream_last = (done, done)
             last = self._stream_last[0]
@@ -793,16 +795,16 @@ class SvaneController(BedController):
             return
         head_due, _ = self._stream_due(head_m, feet_m, now)
         if head_m is not None and now >= head_due - _STREAM_SLACK_S:
-            await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
             self._stream_written.add(head_m)
+            await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
             self._stream_last = (loop.time(), self._stream_last[1])
         _, feet_due = self._stream_due(head_m, feet_m, loop.time())
         if feet_m is not None and loop.time() >= feet_due - _STREAM_SLACK_S:
+            self._stream_written.add(feet_m)
             if self.profile == "jmc":
                 await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(None, feet))
             else:
                 await self._start_role(FEET, UP if feet else DOWN, SvaneCommands.MOTOR_MOVE)
-            self._stream_written.add(feet_m)
             self._stream_last = (self._stream_last[0], loop.time())
         self._stream_next_at = min(self._stream_due(head_m, feet_m, loop.time()))
 
