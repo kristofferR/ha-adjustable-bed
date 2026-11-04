@@ -499,7 +499,8 @@ sends the shared STOP frame once.
 A renewable hold (`timed_move` with `hold_owner` and `hold_generation`, see
 [Renewable holds](../SERVICES.md#renewable-holds)) refreshes at the apps' 100 ms
 on both routes, whatever the entry's motor pulse settings, until its lease runs
-out. Then STOP follows. A finite move keeps the entry's pulse settings.
+out. Then STOP follows. A finite move on the default route keeps the entry's
+pulse settings; the M1X12 variant always holds at the 100 ms sender interval.
 
 #### Notifications
 
