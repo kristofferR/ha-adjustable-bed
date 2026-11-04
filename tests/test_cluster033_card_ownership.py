@@ -126,9 +126,12 @@ async def test_registered_partial_both_stop_requires_remaining_side_cleanup(hass
         await asyncio.gather(held, return_exceptions=True)
 
 
-@pytest.mark.parametrize("kind", ["mx", "serta"])
-async def test_registered_source_specific_release_policy_probe(hass, monkeypatch, kind):
-    """Capture actual registered cancellation packets without protocol timers."""
+@pytest.mark.parametrize(("kind", "leased"), [("mx", False), ("serta", False), ("serta", True)])
+async def test_registered_source_specific_release_policy_probe(hass, monkeypatch, kind, leased):
+    """Capture actual registered cancellation packets without protocol timers.
+
+    A renewable hold (#483) of a Serta target control owns its release the same way.
+    """
     from homeassistant.helpers import device_registry as dr
 
     from custom_components.adjustable_bed.beds.serta_mp_remote import (
@@ -172,7 +175,8 @@ async def test_registered_source_specific_release_policy_probe(hass, monkeypatch
             {
                 "device_id": [device.id],
                 "control": "mx_memory1" if kind == "mx" else "head_target_up",
-                "duration": 60,
+                "duration": 30 if leased else 60,
+                **({"hold_owner": "card", "hold_generation": 1} if leased else {}),
             },
             blocking=True,
         )
