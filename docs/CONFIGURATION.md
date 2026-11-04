@@ -315,6 +315,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Clarity app | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app | `customatic_remedy` | 8 | 120 ms |
+| eShine app (E2000 / E3000 / E3100 / E5000) | `eshine_okin` | 10 | 300 ms |
 | FSM Relax app (explicit chair/bed profile) | `fsm_relax` | 10 | 60 ms |
 | Jensen (JMC400, LinON Entry) | `jensen` | 4 | 300 ms |
 | Leggett & Platt WiLinke (MlRM) | `leggett_wilinke` | 10 | 110 ms |
@@ -530,6 +531,8 @@ refuses a change, split the pair, configure each side, then combine them again.
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | HJBed | [The exact app product](beds/richmat.md#hjbed). |
+| Good Vibe Sleep | [The exact product, configuration or remote alias](beds/goodvibe.md#detection--setup); independent RM-/HJ- sleep sensors are separate entries with their own type 1 or type 2 profile. App side selection is local; light duration and supported snore settings are device controls. |
+| eShine E2000 / E3000 / E3100 / E5000 | [The same product selector as the app](beds/eshine-okin.md); E3000/E3100 is one choice, and name or UART matches never choose it. The profile owns its axes, massage/light features and 300 ms refresh. Each side of a two-address pair keeps its own profile; single-address split controls are unavailable. |
 
 ### Octo PIN
 

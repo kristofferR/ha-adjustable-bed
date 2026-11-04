@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -190,6 +191,7 @@ SERVICE_LOGICDATA_RENAME = "logicdata_rename"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
 SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
+SERVICE_ESHINE_SET_ALARM = "eshine_set_alarm"
 SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
@@ -3946,6 +3948,43 @@ async def _execute_zseries_alarm(
         raise
 
 
+async def handle_eshine_set_alarm(call: ServiceCall) -> None:
+    """Configure the explicit com.okin.eshine profile's next-occurrence alarm."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    preset = call.data.get(ATTR_WAKE_MODE, "zero_g")
+    if enabled and alarm_time is None:
+        raise ServiceValidationError("Choose an eShine alarm time")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("eShine alarms use minute precision")
+    targets = _call_targets(call)
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_ESHINE_OKIN:
+                raise ServiceValidationError("Choose an eShine E2000/E3000/E3100/E5000 app bed")
+
+    def validate(controller: BedController | SideBoundController) -> None:
+        if enabled and preset not in controller.clock_alarm_preset_options:
+            raise ServiceValidationError("This eShine profile does not expose the selected alarm action")
+
+    preflighted = await _preflight_capability(
+        targets, "supports_clock_alarm", "eShine alarms", validate=validate,
+    )
+    async def program(controller: BedController | SideBoundController) -> None:
+        if enabled:
+            await controller.sync_clock()
+        await controller.configure_clock_alarm(
+            enabled=enabled, weekdays=(), hour=alarm_time.hour if alarm_time else 0,
+            minute=alarm_time.minute if alarm_time else 0, preset=preset,
+        )
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, program)
+    except (Exception, asyncio.CancelledError):
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_glideaway_set_alarm(call: ServiceCall) -> None:
     """Use the Glideaway app's automatic day selection and exact clock encoding."""
     enabled = call.data[ATTR_ENABLED]
@@ -4790,6 +4829,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .casper_base_services import async_register_casper_base_services
     from .doublesleep_services import async_register_doublesleep_services
     from .gmmotor_services import async_register_gmmotor_services
+    from .goodvibe_services import async_register_goodvibe_services
     from .hjbed_services import async_register_hjbed_services
     from .motion_bed_services import async_register_motion_bed_services
     from .position_estimate_services import async_register_position_estimate_services
@@ -4805,6 +4845,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_richmat_mh_services(hass)
     async_register_position_estimate_services(hass)
     async_register_hjbed_services(hass)
+    async_register_goodvibe_services(hass)
     async_register_rmcontrol_services(hass)
     async_register_sleep_number_services(hass)
     async_register_doublesleep_services(hass)
@@ -5283,6 +5324,16 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_ESHINE_SET_ALARM, handle_eshine_set_alarm,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_TIME): cv.time,
+            vol.Optional(ATTR_WAKE_MODE, default="zero_g"): vol.In(("zero_g", "flat", "massage")),
+            **SIDE_FIELD,
+        }),
     )
     hass.services.async_register(
         DOMAIN, SERVICE_GLIDEAWAY_SET_ALARM, handle_glideaway_set_alarm,

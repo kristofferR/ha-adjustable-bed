@@ -6,6 +6,7 @@ from typing import Final, overload
 
 from . import casper_base_catalog as _casper_base_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
+from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 
 DOMAIN: Final = "adjustable_bed"
@@ -461,6 +462,13 @@ BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 # Bed types - Legacy naming (backwards compatibility)
 # These map to the protocol-based types above
 BED_TYPE_LINAK: Final = "linak"
+BED_TYPE_ESHINE_OKIN: Final = "eshine_okin"  # com.okin.eshine explicit product selection
+ESHINE_OKIN_PROFILES: Final = {
+    "eshine_e2000": "E2000",
+    "eshine_e30003100": "E3000 / E3100",
+    "eshine_e5000": "E5000",
+}
+
 BED_TYPE_ESHINE: Final = "eshine"  # Explicit Eshine E6000 app profile
 BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_SOLACE: Final = "solace"
@@ -498,6 +506,7 @@ CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
+BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
@@ -524,7 +533,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_HJBED, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
+    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -689,6 +698,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
+    BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
@@ -736,6 +746,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
+    BED_TYPE_ESHINE_OKIN,
     # Explicit Richmat MH app profiles
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_RICHMAT_BEST_MATTRESS,
@@ -1908,7 +1919,9 @@ OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
+    BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
     BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
 }
@@ -2809,7 +2822,9 @@ ALL_PROTOCOL_VARIANTS: Final = [
         if variant != VARIANT_AUTO
     ),
     *ZSERIES_VARIANTS,
+    *GOODVIBE_PROFILES,
     *HJBED_PROFILES,
+    *ESHINE_OKIN_PROFILES,
     *GLIDEAWAY_MOTION_MODELS,
 ]
 
@@ -3013,6 +3028,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         # mapping to HA's generic head/back/legs/feet angle entities.
         BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
+        BED_TYPE_GOODVIBE,
         BED_TYPE_HJBED,
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_ISLEEP,
@@ -3032,6 +3048,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_COMFORT_ENHANCEMENTS,
         BED_TYPE_ESHINE,
+        BED_TYPE_ESHINE_OKIN,
         # VER1 angle replies feed the app's arc labels, not the shared angle axes.
         *RICHMAT_MH_BED_TYPES,
         BED_TYPE_CUSTOMATIC_CLARITY,
@@ -3176,6 +3193,8 @@ def disconnect_after_command_default_enabled(
     Only new entries consult this. An existing entry already stores its own
     value, which is left alone.
     """
+    if bed_type == BED_TYPE_GOODVIBE:
+        return protocol_variant not in ("sleep_rm", "sleep_hj")
     if not bed_type:
         return DEFAULT_DISCONNECT_AFTER_COMMAND
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
@@ -3264,6 +3283,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
+    BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement

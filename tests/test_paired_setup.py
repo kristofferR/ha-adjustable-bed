@@ -33,6 +33,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
@@ -82,6 +83,7 @@ from custom_components.adjustable_bed.const import (
     CONF_VIBRADORM_CONTROL_TYPE,
     CONF_VMATBASIC_PROFILE,
     DOMAIN,
+    ESHINE_OKIN_PROFILES,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     LEGGETT_VARIANT_GEN2,
@@ -2575,6 +2577,7 @@ class TestPairBedsConversion:
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
             on_disconnect=MagicMock(),
@@ -2638,6 +2641,7 @@ class TestPairBedsConversion:
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
             on_disconnect=MagicMock(),
@@ -2847,6 +2851,7 @@ class TestPairBedsConversion:
         client.disconnect = AsyncMock(side_effect=stalled_disconnect)
         controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             requires_notification_channel=True,
             stop_notify=AsyncMock(),
@@ -2909,6 +2914,7 @@ class TestPairBedsConversion:
         client.disconnect = AsyncMock(side_effect=stalled_disconnect)
         controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            on_connection_release=MagicMock(),
             invalidate_diagnostics=MagicMock(),
             requires_notification_channel=True,
             stop_notify=AsyncMock(),
@@ -4446,6 +4452,42 @@ class TestOfflineSafeBedTypes:
             assert right.capability_controller.selection.movement == "W4"
             assert left.client is None and right.client is None
             assert left.controller is None and right.controller is None
+
+    @pytest.mark.parametrize("profile", [*ESHINE_OKIN_PROFILES, None, "", "auto", "unKnown", "eshine_e6000"])
+    async def test_eshine_offline_capabilities_require_an_explicit_side_profile(
+        self, hass: HomeAssistant, profile: str | None
+    ) -> None:
+        from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
+        from custom_components.adjustable_bed.const import OFFLINE_CAPABILITY_SAFE_VARIANTS
+
+        assert BED_TYPE_ESHINE_OKIN not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
+        assert OFFLINE_CAPABILITY_SAFE_VARIANTS[BED_TYPE_ESHINE_OKIN] == frozenset(ESHINE_OKIN_PROFILES)
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_ESHINE_OKIN
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_ESHINE_OKIN
+            child.pop("capabilities", None)
+            if child[CONF_SIDE] == SIDE_RIGHT:
+                child[CONF_PROTOCOL_VARIANT] = "eshine_e5000"
+            elif profile is not None:
+                child[CONF_PROTOCOL_VARIANT] = profile
+        entry = MockConfigEntry(domain=DOMAIN, data=data, version=4)
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        for side, child in children.items():
+            with patch.object(child, "async_connect", new_callable=AsyncMock) as connect:
+                await child.async_prime_offline_controller()
+            connect.assert_not_awaited()
+            assert child.client is None and child.controller is None
+            expected = "eshine_e5000" if side == SIDE_RIGHT else profile
+            controller = child.capability_controller
+            if expected in ESHINE_OKIN_PROFILES:
+                assert isinstance(controller, EshineOkinController)
+                assert controller.profile == expected
+                assert controller.has_pillow_support == (expected == "eshine_e5000")
+                assert controller.supports_massage == (expected != "eshine_e2000")
+            else:
+                assert controller is None
 
     async def test_logicdata_auto_transport_caches_discovered_rename_capability(
         self, hass: HomeAssistant

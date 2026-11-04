@@ -3201,6 +3201,36 @@
       },
       "estimate_remote_used": {
         "name": "I used the remote"
+      },
+      "goodvibe_action": {
+        "name": "{action}"
+      },
+      "goodvibe_release": {
+        "name": "Release held control"
+      },
+      "eshine_okin_flat_zero_g": {
+        "name": "Flat + Zero Gravity"
+      },
+      "eshine_okin_query_state": {
+        "name": "Refresh bed state"
+      },
+      "eshine_okin_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "eshine_okin_sync_clock": {
+        "name": "Synchronize bed clock"
+      },
+      "eshine_okin_massage_on": {
+        "name": "Massage on"
+      },
+      "eshine_okin_massage_head_strength": {
+        "name": "Head massage strength"
+      },
+      "eshine_okin_massage_foot_strength": {
+        "name": "Foot massage strength"
+      },
+      "eshine_okin_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "cover": {
@@ -4942,6 +4972,45 @@
       },
       "saved_positions": {
         "name": "Saved positions"
+      },
+      "goodvibe_l_movement": {
+        "name": "Left body movement"
+      },
+      "goodvibe_l_respiration": {
+        "name": "Left respiration"
+      },
+      "goodvibe_r_respiration": {
+        "name": "Right respiration"
+      },
+      "goodvibe_r_heart": {
+        "name": "Right heart rate"
+      },
+      "goodvibe_r_snore": {
+        "name": "Right snoring"
+      },
+      "goodvibe_status": {
+        "name": "Good Vibe Sleep status"
+      },
+      "goodvibe_r_occupancy": {
+        "name": "Right occupancy"
+      },
+      "goodvibe_l_snore": {
+        "name": "Left snoring"
+      },
+      "goodvibe_l_heart": {
+        "name": "Left heart rate"
+      },
+      "goodvibe_r_movement": {
+        "name": "Right body movement"
+      },
+      "goodvibe_l_occupancy": {
+        "name": "Left occupancy"
+      },
+      "eshine_okin_massage": {
+        "name": "Massage state"
+      },
+      "eshine_okin_alarm": {
+        "name": "Alarm state"
       }
     },
     "light": {
@@ -5544,6 +5613,12 @@
       },
       "feet_position_estimated": {
         "name": "Feet position (estimated)"
+      },
+      "goodvibe_snore_count": {
+        "name": "Snore intervention count"
+      },
+      "goodvibe_snore_time": {
+        "name": "Snore intervention time"
       }
     },
     "select": {
@@ -6052,6 +6127,26 @@
       },
       "hjbed_layout_right": {
         "name": "Right HJBed layout"
+      },
+      "goodvibe_side": {
+        "name": "App side",
+        "state": {
+          "0": "Left",
+          "1": "Right",
+          "2": "Both"
+        }
+      },
+      "goodvibe_light_duration": {
+        "name": "Light duration (seconds)"
+      },
+      "goodvibe_massage_timer": {
+        "name": "Massage countdown",
+        "state": {
+          "0": "Off",
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
+        }
       }
     },
     "climate": {
@@ -8187,6 +8282,80 @@
         "motors": {
           "name": "Motors",
           "description": "Estimated motors to include. Leave unset for every estimated motor."
+        }
+      }
+    },
+    "goodvibe": {
+      "name": "Good Vibe Sleep configuration",
+      "description": "Configure the exact selected product or its independent RM-/HJ- sleep sensor. Normal-product alarms accept an action ID from that product's alarm list in the protocol guide.",
+      "fields": {
+        "device_id": {
+          "name": "Bed or sleep sensor"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Exact alarm action ID"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot"
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means no repeat days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero uses the app's always-on value."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "value": {
+          "name": "Snore count or time value"
+        },
+        "part": {
+          "name": "Sleep part",
+          "description": "Set type 1 to 1 or 2; type 2 to 11, 12 or 13. Report queries use 1 or 2."
+        },
+        "date": {
+          "name": "Report date"
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "Day is 1, month is 2."
+        }
+      }
+    },
+    "eshine_set_alarm": {
+      "name": "Set eShine alarm",
+      "description": "Set or disable the next-occurrence local alarm for the E2000/E3000/E3100/E5000 eShine app profile. E2000 supports Zero Gravity and Flat.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "wake_mode": {
+          "name": "Wake action"
         }
       }
     }
