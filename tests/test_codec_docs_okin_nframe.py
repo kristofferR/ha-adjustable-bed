@@ -26,6 +26,8 @@ async def test_every_profile_is_listed_and_built_for_its_bed_types() -> None:
         for bed_type in profile.bed_types:
             coordinator = _FactoryCoordinator()
             coordinator.entry.options = {}
+            # Nectar Move publishes its save-response state on construction.
+            coordinator.handle_controller_state_update = lambda *_a, **_k: None
             coordinator.entry.data[const.CONF_LEGGETT_APP_PROFILE] = profile.key
             if selector := selectors.get(profile.key):
                 coordinator.entry.data[const.CONF_STARCODE_COMMAND_SELECTOR] = selector
