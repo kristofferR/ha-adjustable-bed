@@ -30,7 +30,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [BedTech](beds/richmat.md#bedtech) | 5 presets, 4 massage modes; the app's dual-base frames are documented, not sent |
 | [Sleep Number](beds/sleep_number.md) | Fuzion and BAM/MCR: capability-dependent position, firmness, presets, lighting and thermal controls |
 | [Sleepy's Elite](beds/sleepys.md) | BOX15/24/25 variants, presets, BOX25 position sliders including lumbar |
-| [AdjustableM5X4](beds/starcode-abm5-4.md) / [AdjustableM5X5](beds/starcode-m5x5.md) apps | StarCode Star-name beds: M5X4 command and transport selectors; M5X5 CB25/F23/kneading layouts and up to three [ELEVATE](beds/okin-5a.md#dewertokin-elevate) lift entries |
+| [AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) / [AdjustableM5X5](beds/starcode-m5x5.md) apps | StarCode Star-name beds: M5X4 command and transport selectors; M5X5 CB25/F23/kneading layouts and up to three [ELEVATE](beds/okin-5a.md#dewertokin-elevate) lift entries |
 | [Adjustable Comfort M1X12 app](beds/starcode-m1x12.md) | Explicit CB25/F23/kneading profile, opaque Part selectors with state feedback, and up to two separately configured M1X12 ELEVATE entries |
 | [SleepSpa S9000AI](beds/sleepstar.md) | CB37 sleep monitor, five app-addressable actuators, position feedback, sonic massage, RGB lighting |
 | [Svane](beds/svane.md) | Svane Remote multi-service / JMC400 profiles, opaque software memories, local lamp preference; separate Jensen LinOn |
@@ -48,11 +48,11 @@ validation limits; the feature summaries below depend on the selected controller
 | [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
 | [Customatic](beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C and Remedy apps: back and legs (Remedy adds lumbar), memory page, light toggle |
 | [Customatic Z-Series](beds/customatic-z-series.md), [Jordan's Serenity](beds/serenity.md), [Jordan's Tranquil](beds/tranquil.md) | OKIN CST 14-byte apps: head/foot and selector controls, presets, saved positions, massage; Z-230/Z-280 pages |
-| [SIMMONS](beds/simmons.md) / [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) apps | OKIN apps whose command table follows the Bluetooth name: regular or inclined SIMMONS beds; head, foot and lumbar |
+| [SIMMONS](beds/okin-nframe.md#simmons) / [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) apps | OKIN apps whose command table follows the Bluetooth name: regular or inclined SIMMONS beds; head, foot and lumbar |
 | [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift) | Single stair actuator for Elda BTH / MEGAMAT |
-| [Okin DOT](beds/okin-dot.md) | Handset-specific motor, memory and light controls (RF34/RF6707; new RF1058 setups use FurniMove) |
+| [Okin DOT](beds/okin-nframe.md#okin-dot) | Handset-specific motor, memory and light controls (RF34/RF6707; new RF1058 setups use FurniMove) |
 | [DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate) | Two-actuator lift accessory |
 
 ---
@@ -162,7 +162,7 @@ These beds have their own dedicated integrations:
    - `Limoss*`, `Stawett*` → Limoss
    - `OKIN-BLE*` → requires service/manufacturer data to distinguish [Malouf/Lucid](beds/malouf.md) from other OKIN-family profiles
    - `Rize*` → Often [DewertOkin](beds/okin-nframe.md#dewertokin), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
-   - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/okin-nframe.md#dewertokin); beds using the `com.okin.simmons` app → [SIMMONS app](beds/simmons.md)
+   - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/okin-nframe.md#dewertokin); beds using the `com.okin.simmons` app → [SIMMONS app](beds/okin-nframe.md#simmons)
    - `Star35*` → [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) (Sealy Posturematic)
    - `SILVERmotion*` or Logicdata manufacturer ID → [Logicdata](beds/logicdata.md)
    - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-nframe.md#rf-eco-bt-stair-lift)
