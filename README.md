@@ -5,8 +5,7 @@
 <p align="center">
   <a href="https://github.com/kristofferR/ha-adjustable-bed/releases"><img src="https://img.shields.io/github/v/release/kristofferR/ha-adjustable-bed" alt="GitHub Release"></a>
   <a href="https://github.com/kristofferR/ha-adjustable-bed/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/kristofferR/ha-adjustable-bed/validate.yml?label=validation" alt="Validation"></a>
-  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Default-blue.svg" alt="HACS"></a>
-  <img src="https://img.shields.io/badge/Home%20Assistant-2026.9%2B-blue" alt="Home Assistant 2026.9+">
+  <img src="https://img.shields.io/badge/Home%20Assistant-2026.11%2B-blue" alt="Home Assistant 2026.11+">
   <a href="https://github.com/sponsors/kristofferR"><img src="https://img.shields.io/badge/Sponsor-%E2%99%A1-ec6cb9" alt="Sponsor"></a>
 </p>
 
@@ -16,7 +15,7 @@
 
 ## Quick Start
 
-1. **Install** via [HACS](https://hacs.xyz): Search for "Adjustable Bed" and install
+1. **Install** from the Marketplace: under **Settings → Marketplace**, search for "Adjustable Bed" and install it
 2. **Discover** your bed automatically, or add manually via Settings → Integrations
 3. **Control** your bed from Home Assistant dashboards, automations, and voice assistants!
 
@@ -187,13 +186,13 @@ when choosing manually.
 
 ## Installation
 
-Requires **Home Assistant 2026.9.0 or newer**.
+Requires **Home Assistant 2026.11.0 or newer**.
 
-### HACS (Recommended)
+### Marketplace (Recommended)
 
-1. Open HACS in Home Assistant
-2. Search for "Adjustable Bed"
-3. Install/download the latest stable version
+1. Open **Settings → Marketplace** in Home Assistant
+2. Search for "Adjustable Bed" and open it
+3. Select **Install**, check the version and select **Install** again
 4. Restart Home Assistant
 
 Upgrading from 4.x to v5? Read the [v5 breaking changes](docs/V5_BREAKING_CHANGES.md)
@@ -243,7 +242,7 @@ The integration ships a native Lovelace card, **Adjustable Bed Card**, that
 gives you a complete control panel for your bed — position controls, presets,
 memory, lighting, massage, climate, and connection — all in the Home Assistant
 theme. It registers and loads automatically; you do not need to add a
-HACS/Lovelace resource manually. If Home Assistant was open in your browser
+dashboard resource manually. If Home Assistant was open in your browser
 during an integration update, reload that page once after restarting Home
 Assistant so the browser picks up the updated card module.
 

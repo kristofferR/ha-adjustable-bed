@@ -37,7 +37,7 @@ scenes → Blueprints → Import blueprint** and paste the
 4. Repeat for the other actions and sections you want to control.
 
 The blueprint creates **one script per use**, so back and legs need six scripts.
-It requires HA 2026.9.0+ and an already configured Adjustable Bed integration.
+It requires HA 2026.11.0+ and an already configured Adjustable Bed integration.
 Importing it does not move the bed. Running a saved script performs its action.
 
 | Script name | Blueprint action | Bed section |

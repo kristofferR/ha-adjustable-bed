@@ -4,7 +4,7 @@
 into Home Assistant. Alternatively, open **Settings → Automations & scenes →
 Blueprints → Import blueprint** and paste the
 [blueprint's GitHub URL](https://github.com/kristofferR/ha-adjustable-bed/blob/main/blueprints/automation/adjustable_bed/wake_up.yaml).
-Requires Home Assistant **2026.9.0+** and a configured Adjustable Bed integration.
+Requires Home Assistant **2026.11.0+** and a configured Adjustable Bed integration.
 Importing the blueprint does not move the bed.
 
 1. Create an automation from **Adjustable Bed wake-up**, choose the local wake-up

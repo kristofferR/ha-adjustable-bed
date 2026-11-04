@@ -23,7 +23,7 @@ This guide covers common issues and their solutions when using the Adjustable Be
 
 ## Upgrade and Migration
 
-The integration requires **Home Assistant 2026.9.0+**. If setup fails after
+The integration requires **Home Assistant 2026.11.0+**. If setup fails after
 upgrading, check the HA version before changing Bluetooth settings.
 
 After an integration update, restart Home Assistant and reload the dashboard
@@ -101,7 +101,8 @@ the upgrade is the only way back to 4.x**. There is no downgrade path. The
 [v5 breaking changes](V5_BREAKING_CHANGES.md) page lists what the migration
 stores.
 
-If you install 4.x over v5 anyway:
+If you install a 4.x version over v5 anyway, for example with **Install
+another version** in the Marketplace:
 
 - Every Adjustable Bed entry fails to load. Home Assistant logs `Config entry
   ... for adjustable_bed has version 5 which is higher than the current version
@@ -115,11 +116,14 @@ If you install 4.x over v5 anyway:
 
 To go back:
 
-1. Install the 4.x version you want to run.
-2. Restore the backup you made before upgrading, under **Settings > System >
-   Backups**. Restoring its Home Assistant settings also rolls back every other
+1. Restore the backup you made before upgrading, under **Settings > System >
+   Backups**. Restoring its Home Assistant settings brings back the 4.x
+   integration and its config entries together. It also rolls back every other
    change made since that backup, not only this integration.
-3. Restart Home Assistant and reload the dashboard page.
+2. Restart Home Assistant and reload the dashboard page.
+3. If **Settings > Updates** still offers the v5 beta, open **Adjustable Bed**
+   under **Settings > Marketplace** and choose **Exclude pre-releases** in its
+   three-dots menu.
 
 Report the problem that made you go back in the v5 beta feedback issue, with the
 beta number and, if you still have them, diagnostics or a support bundle from v5.

@@ -27,26 +27,26 @@ what each beta ships.
 
 ## Before You Upgrade
 
-1. Create a full backup under **Settings > System > Backups**. Keep it until
+**v5 requires Home Assistant 2026.11.0 or newer**, where 4.x needs 2026.9.0. v5
+uses that release's native conditional setup fields, repairs that follow their
+entry, migration retry without a restart, and faster Bluetooth wake-up.
+
+1. Update Home Assistant to 2026.11.0 or newer and check that it runs. From
+   2026.11, custom integrations install through the built-in
+   **Marketplace** under **Settings > Marketplace**.
+2. Create a full backup under **Settings > System > Backups**. Keep it until
    you have decided to stay on v5.
-2. Note the integration version you run now, so you can report it if you go
+3. Note the integration version you run now, so you can report it if you go
    back.
-3. Install the `v5.0.0bN` version, by the route your Home Assistant version
-   uses:
-   - **Home Assistant 2026.11 or later** replaces HACS with the built-in
-     [Marketplace](https://www.home-assistant.io/integrations/marketplace/).
-     Under **Settings > Devices & services > Marketplace**, open the Adjustable
-     Bed device, enable its **Pre-release** entity and turn the switch on. The
-     beta then appears under **Settings > Updates**. You can also open
-     **Settings > Marketplace**, choose **Adjustable Bed** and select
-     **Install another version** from the three-dots menu.
-   - **Home Assistant 2026.10 or earlier** still uses HACS. Open **Adjustable
-     Bed**, choose **Redownload** and select the `v5.0.0bN` version. Turn on
-     beta versions for the repository if the beta is not listed.
+4. Under **Settings > Marketplace**, open **Adjustable Bed**. In its three-dots
+   menu, choose **Include pre-releases** and confirm with **Include**. The beta
+   then shows as an update under **Settings > Updates**. To pick one beta
+   instead, choose **Install another version** in the same menu, select the
+   `v5.0.0bN` version (marked **Pre-release**) and select **Update**.
+5. Restart Home Assistant and reload the dashboard page.
 
-   Restart Home Assistant and reload the dashboard page.
-
-The minimum Home Assistant version is unchanged: **2026.9.0**.
+To stop receiving betas, choose **Exclude pre-releases** in the same menu. An
+installed beta stays until a newer stable version is out.
 
 ## Config Entry Migration (Schema 5.1)
 

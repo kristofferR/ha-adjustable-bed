@@ -1,7 +1,7 @@
 # Configuration Guide
 
 Options depend on the selected controller and its reported capabilities; not
-every bed shows every field. The integration requires Home Assistant 2026.9.0 or
+every bed shows every field. The integration requires Home Assistant 2026.11.0 or
 newer.
 
 ## Table of Contents
@@ -118,10 +118,10 @@ refusal of invalid combinations. A passed Bluetooth check proves that the bed
 answered on the expected connection, not which motors, buttons or remote layout
 it has. Needs real-bed reports: after an app or layout change, whether the
 controls Home Assistant shows match the bed's remote and app, and whether each
-one moves what it names. The v5 setup changes from
-[#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676) arrive in
-later betas, and this applies to each as it lands. Report the app and layout you
-chose, with diagnostics, in the v5 beta feedback issue.
+one moves what it names. This applies to each family's v5 setup change from
+[#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676) as it lands.
+Report the app and layout you chose, with diagnostics, in the v5 beta feedback
+issue.
 
 ## Basic Settings
 
