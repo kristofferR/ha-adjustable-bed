@@ -1,7 +1,7 @@
 """Opt-in, model-gated controller for the Malouf Base and Lucid Base app profiles.
 
 Frames come from ``codec/malouf.py``; models, command tables, per-transport
-timing and app gates from ``profiles/malouf.py``. See ``docs/beds/malouf-app.md``.
+timing and app gates from ``profiles/malouf.py``. See ``docs/beds/malouf.md``.
 """
 
 from __future__ import annotations

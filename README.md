@@ -122,7 +122,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Serta](docs/beds/keeson.md#serta) | Serta Motion Perfect |
 | ✅ [Mattress Firm 900](docs/beds/okin-5a.md#mattress-firm-900--iflex) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/okin-5a.md#nectar) | Nectar |
-| ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf-app.md) |
+| ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf.md#malouf-base--lucid-base-family) |
 | ✅ [BedTech](docs/beds/richmat.md#bedtech) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | 🧪 [BedSense app](docs/beds/ff_frame.md#bedsense) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
