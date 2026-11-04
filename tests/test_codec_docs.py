@@ -38,7 +38,8 @@ def test_jiecang_guide_frames_match_the_codec() -> None:
     from custom_components.adjustable_bed.codec.jiecang import frame
 
     text = (ROOT / "docs" / "beds" / "jiecang.md").read_text(encoding="utf-8")
-    frames = re.findall(r"`(F1 F1(?: [0-9A-F]{2})+ 7E)`", text)
+    # Frames appear both spaced (`F1 F1 01 ...`) and compact (`F1F101...`).
+    frames = re.findall(r"`(F1 ?F1(?: ?[0-9A-F]{2})+ ?7E)`", text, re.IGNORECASE)
     assert frames
     for spelled in frames:
         data = bytes.fromhex(spelled.replace(" ", ""))

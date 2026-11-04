@@ -338,7 +338,8 @@ its app's name rule to every target before any write:
 |---------|-----------|
 | [Linak Bed Control](beds/linak.md) | 1–17 UTF-8 bytes. The controller then disconnects so it can advertise the new name |
 | [LOGICDATA app profiles](beds/logicdata-app.md) | Phone and tablet: 1–255 printable ASCII characters. [Sleep Smart](beds/logicdata-sleep-smart.md) beds and pumps: 1–20 letters, digits, ä, ö, ü or ß |
-| [Jiecang app profiles](beds/jiecang.md#dream-app-family) | 1–20 ASCII letters or digits |
+| [ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask) and [Dream Motion](beds/jiecang.md#dream-motion-dreamotion) | 1–20 ASCII letters or digits |
+| [Dream Motion HD](beds/jiecang.md#dream-motion-hd) | 1–20 printable ASCII characters |
 | [Comfort Motion app](beds/jiecang.md#comfort-motion-app) | 1–18 ASCII letters, digits, dots or underscores, discovered G1 name role required |
 | [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, then trimmed and non-empty |
 | [FurniMove](beds/furnimove.md#controls-and-actions) | One physical receiver; a unique name of at most 18 UTF-16 units after trimming |
