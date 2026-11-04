@@ -283,17 +283,26 @@ class InnovaController(KeesonController):
         await asyncio.sleep(self.profile.tap_wait_ms / 1000)
         await self.write_command(command)
 
-    async def _hold(self, key: int, repeat_count: int | None = None) -> None:
-        """Stream a held key every 100 ms, then release with the zero key."""
+    async def _hold(
+        self, key: int, repeat_count: int | None = None, ceiling_ms: int | None = None
+    ) -> None:
+        """Stream a held key every 100 ms, then release with the zero key.
+
+        ``ceiling_ms`` bounds a leased hold's refresh by elapsed time (#483).
+        """
         if repeat_count is None:
             repeat_count, _delay = self._held_cadence()
         completed = False
+        refresh = self.write_command(
+            self._build_command(key),
+            repeat_count=repeat_count,
+            repeat_delay_ms=self._hold_interval_ms,
+        )
         try:
-            await self.write_command(
-                self._build_command(key),
-                repeat_count=repeat_count,
-                repeat_delay_ms=self._hold_interval_ms,
-            )
+            if ceiling_ms is None:
+                await refresh
+            else:
+                await self._refresh_within_ceiling(refresh, ceiling_ms)
             completed = True
         finally:
             self._motor_state = {}
@@ -339,7 +348,11 @@ class InnovaController(KeesonController):
             raise ValueError("Hold duration must be 100..60000 milliseconds")
         if self._coordinator.cancel_command.is_set():
             return
-        await self._hold(controls[control], repeat_count=-(-duration_ms // self._hold_interval_ms))
+        await self._hold(
+            controls[control],
+            repeat_count=-(-duration_ms // self._hold_interval_ms),
+            ceiling_ms=duration_ms,
+        )
 
     # ---------------------------------------------------------------- presets
     @property
