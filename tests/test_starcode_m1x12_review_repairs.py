@@ -829,10 +829,10 @@ async def test_paired_side_stop_during_hold_preflight_drops_only_stale_side(
 
     assert held == []
     assert any(event[0] == "write" for event in clients[released_side].events)
-    assert pair._pair_cancel_counter[released_side] == 1
+    assert pair._admission.cancel_counter[released_side] == 1
     other_side = "right" if released_side == "left" else "left"
     assert not any(event[0] == "write" for event in clients[other_side].events)
-    assert pair._pair_cancel_counter[other_side] == 0
+    assert pair._admission.cancel_counter[other_side] == 0
 
 
 async def _connected_m1x12_pair(
@@ -899,14 +899,14 @@ async def test_parent_hold_stop_during_pair_lane_wait_drops_old_admission(
         monkeypatch.setattr(controller, "hold_control", hold)
 
     entered = asyncio.Event()
-    run_both = pair._run_both_concurrent
+    run_both = pair._lanes._run_linked
 
     async def observe_both(*args: Any, **kwargs: Any) -> None:
         entered.set()
         await run_both(*args, **kwargs)
 
-    monkeypatch.setattr(pair, "_run_both_concurrent", observe_both)
-    await pair._pair_side_locks["left"].acquire()
+    monkeypatch.setattr(pair._lanes, "_run_linked", observe_both)
+    await pair._lanes.side_locks["left"].acquire()
     old = asyncio.create_task(
         hass.services.async_call(
             DOMAIN,
@@ -918,7 +918,7 @@ async def test_parent_hold_stop_during_pair_lane_wait_drops_old_admission(
     newer = None
     try:
         await asyncio.wait_for(entered.wait(), 2)
-        assert pair._pair_side_locks["left"]._waiters
+        assert pair._lanes.side_locks["left"]._waiters
         target = parent if release_target == "both" else children[release_target]
         await hass.services.async_call(
             DOMAIN, "stop_all", {"device_id": [target.id]}, blocking=True
@@ -938,7 +938,7 @@ async def test_parent_hold_stop_during_pair_lane_wait_drops_old_admission(
             )
             await asyncio.wait_for(new_started.wait(), 2)
     finally:
-        pair._pair_side_locks["left"].release()
+        pair._lanes.side_locks["left"].release()
 
     try:
         await asyncio.wait_for(old, 2)
@@ -983,14 +983,14 @@ async def test_parent_hold_stop_while_child_scheduler_lock_waits(
         return handle
 
     monkeypatch.setattr(scheduler, "_new_handle", observe_handle)
-    run_single = pair._run_single_concurrent
+    run_single = pair._lanes._run_single
 
     async def observe_single(action: str, side: str, *args: Any, **kwargs: Any) -> None:
         if side == "right":
             newer_waiting.set()
         await run_single(action, side, *args, **kwargs)
 
-    monkeypatch.setattr(pair, "_run_single_concurrent", observe_single)
+    monkeypatch.setattr(pair._lanes, "_run_single", observe_single)
     await scheduler._lock.acquire()
     old = asyncio.create_task(
         hass.services.async_call(
