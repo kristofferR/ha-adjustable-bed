@@ -76,6 +76,7 @@ dependencies from Home Assistant's own manifests.
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer/rollback |
 | [Protocol codecs and app profiles](design/protocol-codecs.md) | Codec, profile and controller layers; vector harness |
 | [Profile ids and schema 5](design/profile-id.md) | The profile id each entry runs, its migration record and alias decisions |
+| [Bluetooth discovery hints](design/discovery-hints.md) | Per-family hints, the generated manifest matchers and detection's first pass |
 | [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence matrix and design |
 | [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |

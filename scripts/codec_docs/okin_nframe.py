@@ -123,6 +123,8 @@ _OKIN_GROUPS = {
     ),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
+    "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
+    "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
 }
 
 
@@ -223,7 +225,8 @@ def render_okin_nframe_profiles() -> str:
                 + (" (or the handset's hold)" if not profile.keys else ""),
                 _okin_tap(profile.long_press),
                 _okin_tap(profile.tap)
-                if not profile.keys or "light" in profile.keys or "massage_off" in profile.keys
+                if not profile.keys
+                or any(key.startswith(("light", "massage")) for key in profile.keys)
                 else "n/a",
                 _okin_tap(profile.control_mode),
             )
@@ -380,6 +383,12 @@ def render_okin_nframe_keys() -> str:
         "#### OKIN Bedding app keys",
         _okin_key_table(_OKIN_GROUPS["OKIN Bedding apps"], envelope=False),
         "Each app's literal action table, by the app's action names.",
+        "#### Okin 64-Bit keys",
+        _okin_key_table(_OKIN_GROUPS["Okin 64-Bit"], envelope=False),
+        "#### Adjustable bed (Lumbar) keys",
+        _okin_key_table(_OKIN_GROUPS["Adjustable bed (Lumbar)"], envelope=False),
+        "The 25_42_02 and 36_33_04a tables share these words; 35_22_01 sends StarCode "
+        "`5A` frames, listed in its profile.",
     )
 
 

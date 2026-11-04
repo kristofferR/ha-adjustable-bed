@@ -2,7 +2,7 @@
 
 The accepted Android app `com.okin.bedding.adjustablelumbar` 1.2.2 (33), "Adjustable bed(Lumbar)", is a complete 20-APK Flutter XAPK with three reachable command tables. The comparison accounts for **188 discovery items: 112 IMPLEMENTED, 1 ALREADY_IMPLEMENTED, 75 EXCLUDED**, including all 126 command rows. Rows overlap evidence coverage and are not distinct physical features. Hardware is unverified (STATIC VERIFIED / HARDWARE UNVERIFIED).
 
-The public contract is [Adjustable bed (Lumbar) app](../../beds/adjustable-lumbar.md). It is a new explicit profile; the shared Okin 64-Bit, Sleepy's BOX25 and other routes that can reach these receivers keep their separately sourced behavior.
+The public contract is [Adjustable bed (Lumbar) app](../../beds/okin-nframe.md#adjustable-bed-lumbar). It is a new explicit profile; the shared Okin 64-Bit, Sleepy's BOX25 and other routes that can reach these receivers keep their separately sourced behavior.
 
 ## Exact accepted authority
 

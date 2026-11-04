@@ -67,6 +67,8 @@ from custom_components.adjustable_bed.profile_id import (
     with_profile_ids,
 )
 from custom_components.adjustable_bed.validators import VARIANTS_BY_BED_TYPE
+from tests.codec_families import families
+from tests.codec_families._standalone import STANDALONE
 
 ADDRESS = "AA:BB:CC:DD:EE:01"
 WIRE_SNAPSHOT = Path(__file__).resolve().parent.parent / "scripts" / "wire_snapshot.py"
@@ -116,6 +118,11 @@ def test_every_former_route_resolves_to_its_own_round_tripping_id() -> None:
         # Distinct routes never share an id: no alias is merged yet.
         assert seen.setdefault(profile_id, route) == route, profile_id
     assert len(seen) > 1000
+    # The id space covers every codec family bed type and every standalone controller.
+    registered = {*STANDALONE}
+    for family in families().values():
+        registered |= family.bed_types | set(family.pending)
+    assert registered <= {route.bed_type for route in seen.values()}
 
 
 @pytest.mark.parametrize(

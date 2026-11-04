@@ -328,6 +328,9 @@ class FsmRelaxController(BedController):
                 client = self.client
                 if client is None:
                     raise ConnectionError("FSM Relax disconnected")
+                self._record_command_trace(
+                    LIMOSS_CHAR_UUID, packet, response=False, characteristic=role
+                )
                 # Source forces no-response; properties are not a protocol gate.
                 await client.write_gatt_char(role, packet, response=False)
 

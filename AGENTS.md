@@ -237,7 +237,10 @@ A new app is normally a profile plus its vectors, not a new controller.
 
 7. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
 
-8. **Add to `manifest.json`** `bluetooth` array if using different service UUID for discovery
+8. **Declare discovery hints** in `discovery_hints/<family>.py`, then run
+   `scripts/generate_bluetooth_matchers.py` to regenerate the manifest's
+   `bluetooth` list. Never edit that list by hand; CI checks it
+   ([design](docs/design/discovery-hints.md)).
 
 9. **Update `beds/__init__.py`** to export the new controller
 
