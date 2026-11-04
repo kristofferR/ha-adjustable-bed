@@ -143,8 +143,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `jiecang_app` (Comfort Motion), `jiecang`, `comfort_motion` | B | B | B | jcbed | report PARTIAL; legacy route has no report |
 | `logicdata_app` (all profiles) | S stream | U | U | ld-phone, ld-pad, ld-mattress | combined is a fixed key |
 | **Limoss DD (L1)** | | | | | |
-| `limoss`, `limoss_remote` | S stream | U | U | limoss | more than one pressed flag returns before any write or STOP |
-| `fsm_relax` | S stream | U | U | fsm | more than one pressed entry suppresses all writes |
+| `limoss`, `limoss_remote` | S stream | U | U | limoss | more than one pressed flag returns before any write or STOP; hold declared on the Limoss Remote profile only, since the legacy `limoss` route repeats at the entry's pulse settings with one STOP, not the app's schedule |
+| `fsm_relax` | S stream | U | U | fsm | more than one pressed entry suppresses all writes; hold declared |
 | **FFFF frame (S1)** | | | | | |
 | `solace` (both routes) | S latched | U | U | motionflex, homekobo, dianqi, woosa | one start frame, global STOP on release |
 | `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release |

@@ -39,6 +39,7 @@ app profiles are explicit choices.
 | Massage | ✅ (vibration zones 1–6 toggles) | ✅ (held plus/minus controls when selected; no intensity feedback) | ⚠️ (held plus/minus actions in the bed layout; no six-zone toggle or measured state) |
 | Lights | ✅ (toggle) | ✅ (held under-bed light control when selected; no ON/OFF feedback) | ⚠️ (held control in the bed layout; no on/off state, RGB, brightness or timer) |
 | Calibration | ❌ | ✅ (confirmed, memory-capable receivers only) | ✅ (`fsm_relax_calibrate`, confirmation required) |
+| Hold until release | ❌ (finite pulses at the entry's pulse settings) | ✅ (renewable `hold_control`) | ✅ (renewable `hold_control`) |
 | Sync, PIN or bond | ❌ | ❌ | ❌ (no OS bond or pairing step) |
 
 ## Choosing a profile
@@ -481,6 +482,8 @@ generated timing table.
   for the whole hold, then releases. Its frames share the same write lane.
 - A requested duration limits refreshes; cleanup happens outside that deadline.
   The first command error remains the reported error.
+- A renewable hold (`hold_owner` and `hold_generation`) refreshes at the same
+  tick until its lease runs out, then sends the STOP burst. STOP ends it at once.
 
 **Information transaction**
 
@@ -538,6 +541,10 @@ generated timing table.
     control: motor_1_up
     duration: 0.5
   ```
+
+- With `hold_owner` and `hold_generation` the hold renews: each call within the
+  lease extends it, and the STOP burst follows when renewals stop. See
+  [Renewable holds](../SERVICES.md#renewable-holds).
 
 - `limoss_remote_calibrate` requires `confirmed: true`, a duration, and a
   memory-capable receiver. It holds calibration and always attempts its release
@@ -663,6 +670,8 @@ controls immediately; optional version queries cannot revoke them on timeout.
 Held controls, STOP and the recall release use the tick in the generated timing
 table, from one monotonic origin. A recall writes each stored motor once at the
 recall interval, holds for the rest of the gesture, then releases.
+A renewable hold refreshes at that tick until its lease runs out, then sends
+the STOP burst.
 
 - The capability query retries every 1000 ms within a four-second HA setup window.
 - The optional hardware and software queries start 120 ms after the preceding
@@ -709,6 +718,9 @@ recall interval, holds for the rest of the gesture, then releases.
     control: command_12
     duration: 1.2
   ```
+
+- With `hold_owner` and `hold_generation` the hold renews until the calls stop;
+  see [Renewable holds](../SERVICES.md#renewable-holds).
 
 - `adjustable_bed.fsm_relax_calibrate` requires `confirmed: true`. It sends one
   calibration frame with all four reversal flags and never retries. A failed write
