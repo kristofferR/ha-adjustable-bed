@@ -114,6 +114,8 @@ class KeesonProfile:
     order: ByteOrder = "little"
     side: int | None = None
     """Side byte of the nine-byte K1 frame."""
+    split_sides: Mapping[str, int] = MappingProxyType({})
+    """Side bytes of a split bed's A/B selection; a selected side sends the nine-byte E6 frame."""
     transport: TransportKey = "base"
     notify: TransportKey = "base"
     fixed_write: bool = False
@@ -464,6 +466,15 @@ SIMMONS_OKIN: Final = replace(_E6, key="simmons_okin")
 # AdjustaMattress (row067): model P1 sends E6 frames, P2 big-endian E5 frames.
 ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress")
 ADJUSTAMATTRESS_P2: Final = KeesonProfile(key="adjustamattress_p2", order="big", hold=None)
+# Split-bed A/B selection of the SBI/Q-Plus and Rondure apps: Both is the E5 frame.
+_AB_SIDES: Final[Mapping[str, int]] = MappingProxyType({"side_a": 0x01, "side_b": 0x02})
+SBI: Final = KeesonProfile(key="sbi", hold=None, split_sides=_AB_SIDES)
+RONDURE: Final = KeesonProfile(key="rondure", hold=None, split_sides=_AB_SIDES)
+COOLBASE: Final = KeesonProfile(key="coolbase", hold=None)  # com.keeson.coolbase 1.0.0
+# BF and Cherish (beds/bf_cherish.py), Comfort Enhancements: big-endian E5 frames.
+BF: Final = KeesonProfile(key="bf", order="big", hold=None)
+CHERISH: Final = KeesonProfile(key="cherish", order="big", hold=None)
+COMFORT_ENHANCEMENTS: Final = KeesonProfile(key="comfort_enhancements", order="big", hold=None)
 
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
@@ -504,6 +515,12 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         SIMMONS_OKIN,
         ADJUSTAMATTRESS,
         ADJUSTAMATTRESS_P2,
+        SBI,
+        RONDURE,
+        COOLBASE,
+        BF,
+        CHERISH,
+        COMFORT_ENHANCEMENTS,
     )
 }
 
@@ -1109,8 +1126,15 @@ def resolve(
     return PROFILES.get(variant, BASE)
 
 
-def encode(profile: KeesonProfile, word: int, device_id: str = "unknown") -> bytes:
-    """Encode one word in the profile's carrier; JSON zero words release (``ctrm`` 0)."""
+def encode(
+    profile: KeesonProfile, word: int, device_id: str = "unknown", *, side: str | None = None
+) -> bytes:
+    """Encode one word in the profile's carrier; JSON zero words release (``ctrm`` 0).
+
+    ``side`` picks a split-bed side from ``split_sides``; ``None`` keeps the profile's frame.
+    """
+    if side is not None:
+        return codec.frame(word, header=0xE6, order=profile.order, side=profile.split_sides[side])
     if profile.carrier == "k1":
         return codec.frame(word, header=profile.header, order=profile.order, side=profile.side)
     if profile.carrier == "json":

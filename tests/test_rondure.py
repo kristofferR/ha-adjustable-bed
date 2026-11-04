@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.rondure import (
     RondureCommands,
     RondureController,
 )
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RONDURE,
     CONF_BED_TYPE,
@@ -163,23 +164,17 @@ class TestRondureChecksum:
         expected_sum = 0xE5 + 0xFE + 0x16 + 0x01 + 0x00 + 0x00 + 0x00
         expected_checksum = (~expected_sum) & 0xFF
 
-        # Create controller to access checksum method
-        from unittest.mock import MagicMock
-        controller = RondureController(MagicMock(), RONDURE_VARIANT_BOTH)
-        actual_checksum = controller._calculate_checksum(data)
+        actual_checksum = codec.checksum(data)
 
         assert actual_checksum == expected_checksum
 
     def test_checksum_for_stop_command(self):
         """Test checksum calculation for STOP command packet."""
-        from unittest.mock import MagicMock
-        controller = RondureController(MagicMock(), RONDURE_VARIANT_BOTH)
-
         # STOP is all zeros, so cmd bytes are [0, 0, 0, 0]
         # Header: [0xE5, 0xFE, 0x16]
         # Full packet before checksum: [0xE5, 0xFE, 0x16, 0, 0, 0, 0]
         data = bytes([0xE5, 0xFE, 0x16, 0, 0, 0, 0])
-        checksum = controller._calculate_checksum(data)
+        checksum = codec.checksum(data)
 
         # Sum = 0xE5 + 0xFE + 0x16 = 0x1F9
         # ~0x1F9 & 0xFF = ~505 & 0xFF = -506 & 0xFF
@@ -284,7 +279,7 @@ class TestRondurePacketBuilding:
         # Verify checksum
         checksum_byte = packet[-1]
         data_before_checksum = packet[:-1]
-        expected_checksum = controller._calculate_checksum(data_before_checksum)
+        expected_checksum = codec.checksum(data_before_checksum)
 
         assert checksum_byte == expected_checksum
 

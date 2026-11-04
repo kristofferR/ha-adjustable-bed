@@ -14,6 +14,7 @@ import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
+from ..codec import keeson as codec
 from ..furnimove_profiles import FurniMoveAction, get_furnimove_profile
 from .base import (
     POSITION_AXIS_COMMANDS,
@@ -86,29 +87,33 @@ def _java_hex_digit(character: str) -> int:
     return unicodedata.decimal(character, -1)
 
 
+def _keycode_bytes(keycode: str | None) -> list[int]:
+    """HexValueConverter: one byte per pair of UTF-16 units after the first two."""
+    if keycode is None:
+        return []
+    encoded = keycode.encode("utf-16-le", errors="surrogatepass")
+    units = [chr(int.from_bytes(encoded[i : i + 2], "little")) for i in range(0, len(encoded), 2)]
+    return [
+        ((_java_hex_digit(units[index]) << 4) + _java_hex_digit(units[index + 1])) & 255
+        for index in range(2, len(units), 2)
+    ]
+
+
 def build_furnimove_command(keycode: str | None, *, old: bool = False, dot: bool = False) -> bytes:
-    """Literal HexValueConverter behavior, including nullable factory keys."""
-    frame = bytearray(
-        b"\xe5\xfe\x16" + bytes(5)
-        if old
-        else (b"\x05\x02" + bytes(5) if dot else b"\x04\x02" + bytes(4))
-    )
-    offset = 3 if old else 2
-    if keycode is not None:
-        encoded = keycode.encode("utf-16-le", errors="surrogatepass")
-        units = [
-            chr(int.from_bytes(encoded[i : i + 2], "little")) for i in range(0, len(encoded), 2)
-        ]
-        for index in range(2, len(units), 2):
-            frame[offset] = (
-                (_java_hex_digit(units[index]) << 4) + _java_hex_digit(units[index + 1])
-            ) & 255
-            offset += 1
+    """Literal HexValueConverter behavior, including nullable factory keys.
+
+    The gateway (``old``) and dot frames have room for one byte past the key word
+    (the checksum or the trailing zero); a longer keycode overflows the app's array.
+    """
+    data = _keycode_bytes(keycode)
+    if len(data) > (5 if old or dot else 4):
+        raise IndexError("FurniMove keycode overflows its frame")
+    word = int.from_bytes(bytes(data[:4]).ljust(4, b"\x00"), "big")
     if old:
-        frame[7] = ~sum(frame) & 255
-    elif dot:
-        frame[6] = 0
-    return bytes(frame)
+        # A fifth byte lands where the checksum goes, so the app's sum counts it.
+        body = codec.frame(word, order="big")[:7]
+        return body + bytes((codec.checksum(body + bytes(data[4:5])),))
+    return codec.p2(word, "p2_side" if dot else "p2")
 
 
 def combine_furnimove_commands(frames: Sequence[bytes], *, old: bool = False) -> bytes | None:
@@ -120,7 +125,7 @@ def combine_furnimove_commands(frames: Sequence[bytes], *, old: bool = False) ->
         for index in range(len(combined)):
             combined[index] |= frame[index]
     if old and len(frames) >= 2 and len(combined) == 8:
-        combined[7] = ~sum(combined[:7]) & 255
+        combined[7] = codec.checksum(bytes(combined[:7]))
     return bytes(combined)
 
 
@@ -343,7 +348,7 @@ class FurniMoveController(BedController):
                 await asyncio.sleep(0.2)
             await self._read_info(key)
             if index == 2 and self._dot:
-                await self.write_command(b"\x00\xb0")
+                await self.write_command(codec.STATUS_QUERY)
         if not self._dot:
             await asyncio.sleep(0.1)
             await self._read_feedback()
@@ -381,7 +386,7 @@ class FurniMoveController(BedController):
     async def read_positions(self, motor_count: int = 2) -> None:
         # The app exposes state feedback, never position measurements.
         if self._dot:
-            await self.write_command(b"\x00\xb0")
+            await self.write_command(codec.STATUS_QUERY)
         else:
             await self._read_feedback()
 
@@ -499,7 +504,7 @@ class FurniMoveController(BedController):
             elapsed = max(100, int((asyncio.get_running_loop().time() - started) * 1000))
             await self._pause(max(0, 200 - elapsed), fresh)
             if self._dot:
-                await self.write_command(b"\x00\xb0", cancel_event=fresh)
+                await self.write_command(codec.STATUS_QUERY, cancel_event=fresh)
             elif row is not None:
                 await self.write_command(self._frame(row), cancel_event=fresh)
 

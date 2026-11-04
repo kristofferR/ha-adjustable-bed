@@ -22,10 +22,10 @@ from custom_components.adjustable_bed.beds.bf_cherish import (
     BfCherishController,
     alarm_frame,
     control_frame,
-    finish,
     query_frame,
 )
 from custom_components.adjustable_bed.bf_cherish_services import register_services
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BF,
     BED_TYPE_CHERISH,
@@ -375,7 +375,7 @@ async def test_alarm_service_preflight_and_invalid_target_no_write(hass):
 def test_builder_wrap_checksum_idempotence(key):
     packet = control_frame(key)
     assert sum(packet) & 255 == 255
-    assert finish(packet) == packet
+    assert codec.checked(packet[:-1]) == packet
     assert int.from_bytes(packet[3:7], "big") == key & 0xFFFFFFFF
 
 

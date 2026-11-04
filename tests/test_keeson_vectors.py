@@ -3,18 +3,23 @@
 from __future__ import annotations
 
 import inspect
+import json
 import re
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
 
 from custom_components.adjustable_bed.beds import adjustamattress_protocol as adjustamattress
 from custom_components.adjustable_bed.beds import (
+    coolbase,
     glideaway_motion,
     innova,
     keeson_okin_apps,
     malouf,
     ore_comfort_bed,
+    rondure,
+    sbi,
     scott_living,
     sleepys,
 )
@@ -40,8 +45,17 @@ E6_CONTROLLERS = frozenset(
         "simmons_okin",
         "adjustamattress",
         "adjustamattress_p2",
+        "sbi",
+        "rondure",
+        "coolbase",
+        "bf",
+        "cherish",
+        "comfort_enhancements",
     }
 )
+# Their full command plans are captured by the wire snapshot.
+_SNAPSHOT_CENSUS = frozenset({"bf", "cherish", "comfort_enhancements"})
+_SNAPSHOT = Path(__file__).parent / "fixtures" / "wire_snapshot.json"
 APP_REPORTED = frozenset(
     {
         *E6_CONTROLLERS,
@@ -77,6 +91,8 @@ def _decode(data: bytes) -> bytes:
         return data
     if data[:2] == b"\xef\x02":
         return codec.rename(data[2:17].rstrip(b"\x00"))
+    if data[0] in (0xE2, 0xEA, 0xEB) and data[1:3] == b"\xfe\x16":
+        return codec.checked(data[:-1])  # App clock and alarm fields; see each controller.
     if data[:3] == b"\xe5\xfe\x17":
         pulses = int.from_bytes(data[3:5], "little"), int.from_bytes(data[5:7], "little")
         return codec.position_target(*pulses)
@@ -158,8 +174,21 @@ def _words_named(controller: type, table: type) -> set[int]:
     return {getattr(table, name) for name in names}
 
 
+def _snapshot_frames(bed_type: str) -> set[bytes]:
+    """K1 key frames the wire snapshot captures for every route of a bed type."""
+    scenarios = json.loads(_SNAPSHOT.read_text())["scenarios"]
+    return {
+        bytes.fromhex(write[3])
+        for entry in scenarios.values()
+        if entry.get("info", {}).get("bed_type") == bed_type
+        for command in entry.get("commands", {}).values()
+        for write in command.get("writes", ())
+        if isinstance(write[3], str) and write[3][2:6] == "fe16" and write[3][:2] in ("e5", "e6")
+    }
+
+
 def _e6_census(key: str) -> set[bytes]:
-    """Key frames the E6 controllers send from their own tables."""
+    """Key frames the controllers that keep their own tables send."""
     profile = profiles.PROFILES[key]
     words = {codec.RELEASE}
     if key == "glideaway_motion":
@@ -181,6 +210,16 @@ def _e6_census(key: str) -> set[bytes]:
         words |= {b15.ZERO_G_BYTE4 << 8 | b15.ZERO_G_BYTE6 << 24}
     elif key == "scott_living":
         words |= _words_named(scott_living.ScottLivingController, scott_living.ScottLivingCommands)
+    elif key in ("sbi", "rondure"):
+        controller = sbi.SBIController if key == "sbi" else rondure.RondureController
+        table = sbi.SBICommands if key == "sbi" else rondure.RondureCommands
+        words |= _words_named(controller, table)
+        sides = {profiles.encode(profile, word, side=side) for word in words for side in ("side_a", "side_b")}
+        return {profiles.encode(profile, word) for word in words} | sides
+    elif key == "coolbase":
+        words |= _words_named(coolbase.CoolBaseController, coolbase.CoolBaseCommands)
+    elif key in _SNAPSHOT_CENSUS:
+        return _snapshot_frames(key)
     elif key == "simmons_okin":
         frames = {simmons.control_frame("okin", action) for action in simmons.MASKS}
         frames = {frame for frame in frames if frame[0] == profile.header}

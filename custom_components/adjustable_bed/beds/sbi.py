@@ -37,6 +37,7 @@ from ..const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from ..profiles import keeson as keeson_profiles
 from ..profiles.keeson import app_profile
 from .base import BedController
 from .cluster033 import AppController
@@ -141,6 +142,7 @@ class SBIController(BedController):
             variant: Bed variant (both, side_a, side_b)
         """
         super().__init__(coordinator)
+        self.profile = keeson_profiles.SBI
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
         self._variant = variant
@@ -235,36 +237,12 @@ class SBIController(BedController):
         return self._variant
 
     def _build_command(self, command_value: int, side: str | None = None) -> bytes:
-        """Build a command packet from a 32-bit command value.
-
-        Uses 8-byte format for "Both" mode (0xE5 header) or
-        9-byte format for A/B mode (0xE6 header with side selector).
-
-        Format (8-byte): [0xE5, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, checksum]
-        Format (9-byte): [0xE6, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, side, checksum]
-        Checksum: (~sum(bytes 0 to n-1)) & 0xFF
-        """
-        # Extract command bytes (little-endian)
-        cmd0 = command_value & 0xFF
-        cmd1 = (command_value >> 8) & 0xFF
-        cmd2 = (command_value >> 16) & 0xFF
-        cmd3 = (command_value >> 24) & 0xFF
-
+        """Build the eight-byte E5 frame for Both, or the nine-byte E6 frame for side A or B."""
         variant = self._variant_for_side(side)
         if variant == SBI_VARIANT_BOTH:
-            # 8-byte format for dual control
-            header = [0xE5, 0xFE, 0x16]
-            data = header + [cmd0, cmd1, cmd2, cmd3]
-        else:
-            # 9-byte format for single side control
-            header = [0xE6, 0xFE, 0x16]
-            side_byte = 0x01 if variant == SBI_VARIANT_SIDE_A else 0x02
-            data = header + [cmd0, cmd1, cmd2, cmd3, side_byte]
-
-        # Inverted sum checksum
-        checksum = (~sum(data)) & 0xFF
-        data.append(checksum)
-        return bytes(data)
+            return keeson_profiles.encode(self.profile, command_value)
+        selected = "side_a" if variant == SBI_VARIANT_SIDE_A else "side_b"
+        return keeson_profiles.encode(self.profile, command_value, side=selected)
 
     async def write_command(
         self,

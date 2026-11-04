@@ -13,7 +13,8 @@ words an app uses belongs to its profile (``profiles/keeson.py``).
 
 The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
 ``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``EF 02`` rename) end with the
-same checksum.
+same checksum, as do the ``E2``/``EA``/``EB FE 16`` clock and alarm frames whose
+fields the BF, Cherish and Comfort Enhancements controllers fill in.
 """
 
 from __future__ import annotations
