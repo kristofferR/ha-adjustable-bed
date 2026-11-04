@@ -403,3 +403,55 @@ async def test_monitoring_poll_write_failure_keeps_intent_and_retries(hass):
     assert attempts == 2
     c._client.is_connected = False
     await c.async_shutdown()
+
+
+async def test_sleep_sensor_localization_keys_preserve_identity_and_raw_state(hass):
+    import json
+    import re
+    from contextlib import ExitStack
+    from pathlib import Path
+
+    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+
+    c = runtime(hass)
+    obj = c._controller
+    expected = {
+        "goodvibe_L_heart": "61",
+        "goodvibe_L_respiration": "12",
+        "goodvibe_L_occupancy": "On Bed",
+        "goodvibe_L_movement": "--",
+        "goodvibe_L_snore": "Snoring",
+        "goodvibe_R_heart": "72",
+        "goodvibe_R_respiration": "18",
+        "goodvibe_R_occupancy": "On Bed",
+        "goodvibe_R_movement": "Body Move",
+        "goodvibe_R_snore": "--",
+    }
+    specs = [s for s in obj.controller_state_sensor_specs if s.key != "goodvibe_status"]
+    assert {s.key for s in specs} == set(expected)
+    sensors = [AdjustableBedControllerStateSensor(c, spec) for spec in specs]
+    for spec, sensor in zip(specs, sensors, strict=True):
+        assert spec.state_key == spec.key
+        assert sensor.unique_id == f"{c.address}_{spec.key}"
+        assert sensor.translation_key == spec.translation_key == spec.key.lower()
+        assert re.fullmatch(r"[a-z0-9]+(?:[a-z0-9_-]*[a-z0-9])?", spec.translation_key)
+    integration = Path(__file__).parents[1] / "custom_components/adjustable_bed"
+    for path in (integration / "strings.json", integration / "translations/en.json"):
+        translated = json.loads(path.read_text())["entity"]["sensor"]
+        assert all(spec.translation_key in translated for spec in specs)
+        assert not set(expected).intersection(translated)
+    with ExitStack() as stack:
+        writes = [stack.enter_context(patch.object(s, "async_write_ha_state")) for s in sensors]
+        for sensor in sensors:
+            stack.callback(
+                c.register_controller_state_callback(sensor._handle_controller_state_update)
+            )
+        obj.choices.realtime["L"].accept(3, [0, 1, 61, 12, 1])
+        obj.choices.realtime["R"].accept(3, [0, -2, 72, 18, 0])
+        obj._publish()
+        assert {s._spec.state_key: s.native_value for s in sensors} == expected
+        assert all(write.call_count == 1 for write in writes)
+        assert all(key in c.controller_state for key in expected)
+        assert not {key.lower() for key in expected}.intersection(c.controller_state)
+    c._client.is_connected = False
+    await c.async_shutdown()

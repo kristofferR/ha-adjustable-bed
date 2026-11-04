@@ -984,7 +984,7 @@ class GoodVibeController(BedController):
             for side in ("L", "R"):
                 for name in ("heart", "respiration", "occupancy", "movement", "snore"):
                     key = f"goodvibe_{side}_{name}"
-                    specs.append(ControllerStateSensorSpec(key, key, key, "mdi:bed"))
+                    specs.append(ControllerStateSensorSpec(key, key.lower(), key, "mdi:bed"))
         return tuple(specs)
 
     async def stop_all(self) -> None:

@@ -4797,37 +4797,37 @@
       "gmmotor_sleep_state": {
         "name": "GM Control sleep module state"
       },
-      "goodvibe_L_movement": {
+      "goodvibe_l_movement": {
         "name": "Left body movement"
       },
-      "goodvibe_L_respiration": {
+      "goodvibe_l_respiration": {
         "name": "Left respiration"
       },
-      "goodvibe_R_respiration": {
+      "goodvibe_r_respiration": {
         "name": "Right respiration"
       },
-      "goodvibe_R_heart": {
+      "goodvibe_r_heart": {
         "name": "Right heart rate"
       },
-      "goodvibe_R_snore": {
+      "goodvibe_r_snore": {
         "name": "Right snoring"
       },
       "goodvibe_status": {
         "name": "Good Vibe Sleep status"
       },
-      "goodvibe_R_occupancy": {
+      "goodvibe_r_occupancy": {
         "name": "Right occupancy"
       },
-      "goodvibe_L_snore": {
+      "goodvibe_l_snore": {
         "name": "Left snoring"
       },
-      "goodvibe_L_heart": {
+      "goodvibe_l_heart": {
         "name": "Left heart rate"
       },
-      "goodvibe_R_movement": {
+      "goodvibe_r_movement": {
         "name": "Right body movement"
       },
-      "goodvibe_L_occupancy": {
+      "goodvibe_l_occupancy": {
         "name": "Left occupancy"
       }
     },

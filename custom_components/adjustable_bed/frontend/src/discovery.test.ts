@@ -1527,7 +1527,7 @@ test("Good Vibe Sleep exposes app controls, side selection and independent sleep
     entry("select.countdown", "goodvibe_massage_timer"),
     entry("number.snore", "goodvibe_snore_count"),
     entry("sensor.status", "goodvibe_status"),
-    entry("sensor.live", "goodvibe_L_heart"),
+    entry("sensor.live", "goodvibe_l_heart"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.utility).toEqual(["button.app_action", "button.monitor"]);
