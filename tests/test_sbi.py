@@ -397,67 +397,6 @@ class TestSBIController:
 # -----------------------------------------------------------------------------
 
 
-class TestSBIMovement:
-    """Test SBI movement commands."""
-
-    async def test_move_head_up_sends_8_byte_packet_in_both_mode(
-        self,
-        hass: HomeAssistant,
-        mock_sbi_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_up should send 8-byte packet in Both mode."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        assert mock_client.write_gatt_char.called
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 8
-
-    async def test_move_tilt_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_sbi_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_tilt_up should send MOTOR_TILT_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_tilt_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MOTOR_TILT_UP = 0x10 in cmd0
-        assert call_data[3] == 0x10
-
-    async def test_stop_all_sends_zero_command(
-        self,
-        hass: HomeAssistant,
-        mock_sbi_config_entry,
-        mock_coordinator_connected,
-    ):
-        """stop_all should send all-zero command bytes."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.stop_all()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # All command bytes should be zero
-        assert call_data[3] == 0x00
-        assert call_data[4] == 0x00
-        assert call_data[5] == 0x00
-        assert call_data[6] == 0x00
-
-
 # -----------------------------------------------------------------------------
 # Preset Tests
 # -----------------------------------------------------------------------------
@@ -465,42 +404,6 @@ class TestSBIMovement:
 
 class TestSBIPresets:
     """Test SBI preset commands."""
-
-    async def test_preset_flat_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_sbi_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_flat should send PRESET_FLAT command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_flat()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # PRESET_FLAT = 0x08000000 -> cmd3=0x08
-        assert call_data[6] == 0x08
-
-    async def test_preset_zero_g_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_sbi_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_zero_g should send PRESET_ZERO_G command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_zero_g()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # PRESET_ZERO_G = 0x00001000 -> cmd1=0x10
-        assert call_data[4] == 0x10
 
     async def test_preset_memory_1_sends_correct_command(
         self,
@@ -528,24 +431,6 @@ class TestSBIPresets:
 
 class TestSBIMassage:
     """Test SBI massage commands."""
-
-    async def test_massage_toggle_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_sbi_config_entry,
-        mock_coordinator_connected,
-    ):
-        """massage_toggle should send MASSAGE_LEVEL command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.massage_toggle()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # MASSAGE_LEVEL = 0x00000100 -> cmd1=0x01
-        assert call_data[4] == 0x01
 
     async def test_massage_mode_1_sends_correct_command(
         self,

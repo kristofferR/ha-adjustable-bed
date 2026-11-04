@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import copy
 import logging
 import math
 import sys
@@ -102,9 +101,11 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GMMOTOR,
+    BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
@@ -377,6 +378,14 @@ from .pairing_candidates import (
     selected_pair_ids,
 )
 from .position_estimate_flow import EstimatedPositionsFlowMixin
+from .profile_id import with_profile_ids
+from .profile_migration import (
+    VIBRADORM_FAMILY,
+    ManagedFamily,
+    MigrationSnapshot,
+    async_control_changes,
+    managed_family,
+)
 from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
 from .setup_operation import (
@@ -424,7 +433,7 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_HJBED, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -776,17 +785,7 @@ def _apply_bed_type_choice(user_input: dict[str, Any], shown_choice: str | None)
         user_input[CONF_PROTOCOL_VARIANT] = variant
 
 
-_VIBRADORM_FAMILY_TYPES: Final = frozenset(
-    {BED_TYPE_VIBRADORM, BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}
-)
-
-
-def _has_vibradorm_receiver(data: Mapping[str, Any]) -> bool:
-    return data.get(CONF_BED_TYPE) in _VIBRADORM_FAMILY_TYPES or any(
-        effective_child_data(data, side).get(CONF_BED_TYPE) in _VIBRADORM_FAMILY_TYPES
-        for side in PAIR_SIDES
-        if get_child(data, side) is not None
-    )
+_VIBRADORM_FAMILY_TYPES: Final = VIBRADORM_FAMILY.bed_types
 
 
 def _bed_type_selector(
@@ -2463,29 +2462,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Stage an explicit Vibradorm choice without changing the working entry."""
+        """Stage a guided app or layout change without changing the working entry."""
         entry = self._get_reconfigure_entry()
-        if not _has_vibradorm_receiver(entry.data):
+        family = managed_family(entry.data)
+        if family is None:
             return self.async_abort(reason="reconfigure_not_supported")
-        if self._vibradorm_original is None:
-            self._vibradorm_original = (
-                copy.deepcopy(dict(entry.data)),
-                copy.deepcopy(dict(entry.options)),
-            )
-            self._manual_data = copy.deepcopy({**entry.data, **entry.options})
-            self._manual_data.setdefault(CONF_NAME, entry.title)
+        if self._migration is None:
+            self._migration = MigrationSnapshot.of(entry)
+            self._migration_family = family
+            self._manual_data = self._migration.staged(entry.title)
         if is_paired(entry.data):
-            return await self.async_step_vibradorm_unpair(user_input)
-        return await self.async_step_vibradorm(user_input)
+            return await self.async_step_migration_split(user_input)
+        return await getattr(self, f"async_step_{family.key}")(user_input)
 
-    async def async_step_vibradorm_unpair(
+    async def async_step_migration_split(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Split only after explicit consent, using the existing registry transaction."""
         entry = self._get_reconfigure_entry()
         if user_input is not None and user_input.get("confirm"):
-            if not self._vibradorm_entry_unchanged():
-                return self.async_abort(reason="vibradorm_configuration_changed")
+            if not self._migration_unchanged():
+                return self.async_abort(reason="migration_entry_changed")
 
             async def split() -> None:
                 from . import async_unpair_entry
@@ -2493,14 +2490,26 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 try:
                     await async_unpair_entry(self.hass, entry)
                 except Exception:
-                    _LOGGER.exception("Could not split Vibradorm config entry %s", entry.entry_id)
+                    _LOGGER.exception("Could not split config entry %s", entry.entry_id)
 
             self.hass.async_create_task(split(), f"adjustable_bed_unpair_{entry.entry_id}")
-            return self.async_abort(reason="vibradorm_pair_split_started")
+            return self.async_abort(reason="migration_pair_split_started")
         return self.async_show_form(
-            step_id="vibradorm_unpair",
+            step_id="migration_split",
             data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+            description_placeholders={"name": entry.title},
         )
+
+    async def async_step_migration_keep(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Leave the saved entry untouched and record the explicit Keep."""
+        if not self._migration_unchanged():
+            return self.async_abort(reason="migration_entry_changed")
+        from .profile_review import async_keep_current_profile
+
+        async_keep_current_profile(self.hass, self._get_reconfigure_entry())
+        return self.async_abort(reason="migration_kept")
 
     async def async_step_vibradorm(
         self, user_input: dict[str, Any] | None = None
@@ -2512,27 +2521,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             "caresse": "Caresse Diamant",
             "werkmeister": "Werkmeister",
             "vmatbasic": "V-MAT Basic",
-            "legacy": "Keep current setup"
-            if self._vibradorm_original is not None
-            else "Legacy setup",
+            "legacy": "Keep current setup" if self._migration is not None else "Legacy setup",
         }
         choice = (user_input or {}).get("app")
         if choice in choices:
             if choice == "legacy":
-                if self._vibradorm_original is not None:
-                    if not self._vibradorm_entry_unchanged():
-                        return self.async_abort(reason="vibradorm_configuration_changed")
-                    from .profile_review import async_keep_current_profile
-
-                    async_keep_current_profile(self.hass, self._get_reconfigure_entry())
-                    return self.async_abort(reason="vibradorm_legacy_kept")
+                if self._migration is not None:
+                    return await self.async_step_migration_keep()
                 self._manual_data[CONF_BED_TYPE] = BED_TYPE_VIBRADORM
                 return await (
                     self.async_step_bluetooth_pairing()
                     if self._vibradorm_app_bluetooth_pairing
                     else self.async_step_manual_pairing()
                 )
-            self._vibradorm_verified = False
+            self._migration_verified = False
             same_profile = (
                 choice == "vmatbasic" and self._manual_data.get(CONF_BED_TYPE) == BED_TYPE_VMATBASIC
             ) or (
@@ -2566,61 +2568,144 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
 
-    def _vibradorm_entry_unchanged(self) -> bool:
-        entry = self._get_reconfigure_entry()
-        return self._vibradorm_original == (dict(entry.data), dict(entry.options))
+    def _migration_unchanged(self) -> bool:
+        return self._migration is not None and self._migration.matches(
+            self._get_reconfigure_entry()
+        )
+
+    @property
+    def _migration_requires_check(self) -> bool:
+        return self._migration_family is not None and self._migration_family.requires_check
+
+    def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
+        """Run the migrating family's exact endpoint check on the candidate link."""
+        if self._migration_family is VIBRADORM_FAMILY:
+            _validate_vibradorm_setup_roles(client, data)
+
+    def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
+        """Return the probe's strict migration check, or None outside a migration."""
+        if self._migration is None or self._pending_entry is None:
+            return None
+        data = self._pending_entry
+        return lambda client: self._migration_endpoint_check(client, data)
 
     @contextlib.asynccontextmanager
-    async def _vibradorm_transport_operation(self) -> AsyncIterator[None]:
+    async def _migration_transport_operation(self) -> AsyncIterator[None]:
         """Release the old runtime under its normal locks for one validation task."""
-        if self._vibradorm_original is None:
+        if self._migration is None:
             yield
             return
         entry = self._get_reconfigure_entry()
         runtime = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
         if runtime is not None:
-            async with runtime.async_transport_operation("vibradorm_setup"):
+            async with runtime.async_transport_operation("profile_migration"):
                 yield
         else:
             assert self._manual_data is not None
             async with async_get_connect_lock(self.hass, self._manual_data[CONF_ADDRESS]):
                 yield
 
-    async def async_step_vibradorm_confirm(
+    def _migration_selection_label(self, data: Mapping[str, Any]) -> str:
+        if data.get(CONF_BED_TYPE) in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC):
+            return _vibradorm_selection_label(data)
+        from .profile_review import route_label
+
+        return route_label(data)
+
+    async def _async_show_migration_confirm(self) -> ConfigFlowResult:
+        """Review the staged change: added, removed and referenced controls."""
+        assert self._pending_entry is not None
+        entry = self._get_reconfigure_entry()
+        changes = await async_control_changes(self.hass, entry, self._pending_entry)
+
+        async def text(key: str, default: str) -> str:
+            return await _async_translation(
+                self.hass, "config", f"step.migration_confirm.data_description.{key}", default
+            )
+
+        none = await text("summary_none", "None")
+
+        def bullets(items: tuple[str, ...]) -> str:
+            return "\n".join(f"- {item}" for item in items) if items else none
+
+        if changes.known:
+            summary = (
+                await text(
+                    "summary_known",
+                    "**Added:**\n{added}\n\n**Removed:**\n{removed}\n\n"
+                    "**Unchanged:** {unchanged} controls keep their entity IDs.",
+                )
+            ).format(
+                added=bullets(changes.added),
+                removed=bullets(changes.removed),
+                unchanged=changes.unchanged,
+            )
+        else:
+            summary = await text(
+                "summary_unknown",
+                "The new controls are known only after the bed connects. "
+                "Controls the new setup does not support are removed.",
+            )
+        if changes.references:
+            references = await text(
+                "summary_references",
+                "**Automations and scripts that use removed controls:**\n{references}",
+            )
+            summary += "\n\n" + references.format(references=bullets(changes.references))
+        assert self._migration is not None
+        return self.async_show_form(
+            step_id="migration_confirm",
+            data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+            description_placeholders={
+                "name": entry.title,
+                "current": self._migration_selection_label(
+                    {**self._migration.data, **self._migration.options}
+                ),
+                "selection": self._migration_selection_label(self._pending_entry),
+                "summary": summary,
+            },
+        )
+
+    async def async_step_migration_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Commit the verified selection only against the unchanged snapshot."""
-        if not self._vibradorm_verified or self._pending_entry is None:
-            return self.async_abort(reason="vibradorm_verification_required")
-        if not self._vibradorm_entry_unchanged():
-            return self.async_abort(reason="vibradorm_configuration_changed")
-        if user_input is not None and user_input.get("confirm"):
-            entry = self._get_reconfigure_entry()
-            from .const import CONF_PROFILE_REVIEW_PENDING
+        """Commit the staged selection only against the unchanged snapshot."""
+        if self._pending_entry is None or (
+            self._migration_requires_check and not self._migration_verified
+        ):
+            return self.async_abort(reason="migration_verification_required")
+        if not self._migration_unchanged():
+            return self.async_abort(reason="migration_entry_changed")
+        if user_input is None or not user_input.get("confirm"):
+            return await self._async_show_migration_confirm()
+        assert self._migration is not None
+        entry = self._get_reconfigure_entry()
+        from .const import CONF_PROFILE_REVIEW_PENDING
 
-            data = dict(self._pending_entry)
-            data.pop(CONF_PROFILE_REVIEW_PENDING, None)
-            options = dict(entry.options)
-            for key in (
-                *VIBRADORM_APP_CONFIG_KEYS,
-                *VMATBASIC_CONFIG_KEYS,
-                *hidden_generic_fields(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)),
-                CONF_BED_TYPE,
-            ):
-                options.pop(key, None)
-            self._record_selected_app_intent(data)
-            result = self.async_update_and_abort(entry, data=data, options=options)
-            from .profile_review import async_clear_profile_review_issue
+        data = dict(self._pending_entry)
+        data.pop(CONF_PROFILE_REVIEW_PENDING, None)
+        options = dict(entry.options)
+        for key in (
+            *VIBRADORM_APP_CONFIG_KEYS,
+            *VMATBASIC_CONFIG_KEYS,
+            *hidden_generic_fields(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)),
+            CONF_BED_TYPE,
+            CONF_PROTOCOL_VARIANT,
+        ):
+            options.pop(key, None)
+        # The staged copy carries the saved route's profile id; derive the new one.
+        data = with_profile_ids(data, options)
+        if {**data, **options} == {**self._migration.data, **self._migration.options}:
+            # The answer resolves to the saved route: nothing to migrate.
+            return self.async_abort(reason="migration_unchanged")
+        self._record_selected_app_intent(data)
+        result = self.async_update_and_abort(entry, data=data, options=options)
+        from .profile_review import async_clear_profile_review_issue
 
-            async_clear_profile_review_issue(self.hass, entry.entry_id)
-            if entry.state in (ConfigEntryState.SETUP_ERROR, ConfigEntryState.SETUP_RETRY):
-                self.hass.config_entries.async_schedule_reload(entry.entry_id)
-            return result
-        return self.async_show_form(
-            step_id="vibradorm_confirm",
-            data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
-            description_placeholders={"selection": _vibradorm_selection_label(self._pending_entry)},
-        )
+        async_clear_profile_review_issue(self.hass, entry.entry_id)
+        if entry.state in (ConfigEntryState.SETUP_ERROR, ConfigEntryState.SETUP_RETRY):
+            self.hass.config_entries.async_schedule_reload(entry.entry_id)
+        return result
 
     async def async_step_leggett_app(
         self, user_input: dict[str, Any] | None = None
@@ -3080,9 +3165,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._manual_data: dict[str, Any] | None = None
         self._leggett_app_pairing_step = "manual_pairing"
         self._vibradorm_app_bluetooth_pairing = False
-        self._vibradorm_original: tuple[dict[str, Any], dict[str, Any]] | None = None
-        self._vibradorm_verified = False
-        self._vibradorm_roles_checked = False
+        # Guided change of an existing entry (profile_migration).
+        self._migration: MigrationSnapshot | None = None
+        self._migration_family: ManagedFamily | None = None
+        self._migration_verified = False
+        self._migration_endpoints_checked = False
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -5534,6 +5621,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         which transport would own the bond (issue #461).
         """
         assert self._manual_data is not None
+        if (
+            self._migration is not None
+            and user_input is None
+            and self._migration.is_unchanged_by(self._manual_data)
+        ):
+            # A label that resolves to the saved route never migrates anything.
+            return self.async_abort(reason="migration_unchanged")
         address = self._manual_data.get(CONF_ADDRESS, "")
         bed_type = self._manual_data.get(CONF_BED_TYPE)
         variant = self._manual_data.get(CONF_PROTOCOL_VARIANT)
@@ -5858,21 +5952,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
 
     async def _async_pairing_worker(self) -> OperationResult:
-        if self._vibradorm_original is None:
+        if self._migration is None:
             return await self._async_pairing_worker_reserved()
         assert self._manual_data is not None
-        self._vibradorm_roles_checked = False
-        async with self._vibradorm_transport_operation():
+        self._migration_endpoints_checked = False
+        async with self._migration_transport_operation():
             result = await self._async_pairing_worker_reserved()
-        self._vibradorm_verified = (
+        self._migration_verified = (
             result.succeeded
-            and self._vibradorm_roles_checked
+            and self._migration_endpoints_checked
             and async_get_connect_lock(
                 self.hass, self._manual_data[CONF_ADDRESS]
             ).retained_setup_client
             is None
         )
-        if result.succeeded and not self._vibradorm_verified:
+        if result.succeeded and not self._migration_verified:
             return OperationResult(outcome=OperationOutcome.CONNECTION_FAILED)
         return result
 
@@ -6121,11 +6215,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         result = self.operation.result
         if (
-            self._vibradorm_original is not None
+            self._migration is not None
             and self._pairing_result_shown
             and (user_input or {}).get("action") == "keep"
         ):
-            return await self.async_step_vibradorm({"app": "legacy"})
+            return await self.async_step_migration_keep()
         evidence = result.payload if result is not None else None
         succeeded = result is not None and result.succeeded
         native_bond_required = self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
@@ -6134,8 +6228,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             succeeded = succeeded and native_bond_verified
             if user_input is not None and user_input.get("action") != "retry" and not succeeded:
                 user_input = None
-        if self._vibradorm_original is not None:
-            succeeded = succeeded and self._vibradorm_verified
+        if self._migration is not None:
+            succeeded = succeeded and self._migration_verified
             if user_input is not None and user_input.get("action") != "retry" and not succeeded:
                 user_input = None
 
@@ -6183,7 +6277,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data = self._mark_ble_bond_established(entry_data)
                     entry_data[CONF_BLE_BOND_ATTEMPTED_SOURCE] = attempted_source
                 entry_data.pop(CONF_BLE_BOND_CONTEXT, None)
-            return self._create_selected_app_entry(
+            return await self._async_create_selected_app_entry(
                 title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                 data=entry_data,
             )
@@ -6193,7 +6287,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             schema[vol.Required("action", default="retry")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["retry", "keep"]
-                    if self._vibradorm_original is not None
+                    if self._migration is not None
                     else ["retry"]
                     if native_bond_required
                     else ["retry", "finish"],
@@ -6543,10 +6637,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
 
                 native_existing: BondEvidence | None = None
-                if self._vibradorm_original is not None:
+                if self._migration is not None:
                     assert self._manual_data is not None
-                    _validate_vibradorm_setup_roles(client, self._manual_data)
-                    self._vibradorm_roles_checked = True
+                    self._migration_endpoint_check(client, self._manual_data)
+                    self._migration_endpoints_checked = True
                 if vmat_profile:
                     from .vibradorm_vmat_profiles import VMAT_REMOTES
                     from .vibradorm_vmat_setup import validate_vmat_roles
@@ -6707,7 +6801,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         await client.disconnect()
                     except Exception:  # noqa: BLE001 - cleanup must not mask the result
                         if (
-                            (vmat_profile or self._vibradorm_original is not None)
+                            (vmat_profile or self._migration is not None)
                             and client.is_connected
                             and pending_failure is None
                         ):
@@ -6715,7 +6809,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         _LOGGER.debug("Disconnect after pairing %s failed", address, exc_info=True)
                     else:
                         if (
-                            vmat_profile or self._vibradorm_original is not None
+                            vmat_profile or self._migration is not None
                         ) and client.is_connected:
                             if pending_failure is None:
                                 raise ConnectionError("The setup connection did not disconnect")
@@ -6724,13 +6818,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             self.async_track_client(None)
                     finally:
                         if (
-                            vmat_profile or self._vibradorm_original is not None
+                            vmat_profile or self._migration is not None
                         ) and client.is_connected:
                             # Replacement owns its task until terminal cleanup; only
                             # then transfer a surviving native link to flow/HA ownership.
                             self.async_retain_failed_setup_client(client, address)
                         elif (
-                            vmat_profile or self._vibradorm_original is not None
+                            vmat_profile or self._migration is not None
                         ) and track_for_flow_cleanup:
                             self.async_track_client(None)
 
@@ -6748,17 +6842,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         except Exception:  # noqa: BLE001 - absence of scanners must not break setup
             return False
 
-    def _create_selected_app_entry(self, *, title: str, data: dict[str, Any]) -> ConfigFlowResult:
+    async def _async_create_selected_app_entry(
+        self, *, title: str, data: dict[str, Any]
+    ) -> ConfigFlowResult:
         """Retain first-selection intent only in this running Home Assistant session."""
-        if self._vibradorm_original is not None:
-            if not self._vibradorm_verified:
-                return self.async_abort(reason="vibradorm_verification_required")
+        if self._migration is not None:
+            if self._migration_requires_check and not self._migration_verified:
+                return self.async_abort(reason="migration_verification_required")
             self._pending_entry = dict(data)
-            return self.async_show_form(
-                step_id="vibradorm_confirm",
-                data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
-                description_placeholders={"selection": _vibradorm_selection_label(data)},
-            )
+            return await self._async_show_migration_confirm()
         self._record_selected_app_intent(data)
         if data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
             variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
@@ -6835,14 +6927,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
         )
+        if self._migration is not None and self._migration.is_unchanged_by(entry_data):
+            return self.async_abort(reason="migration_unchanged")
+        if self._migration is not None and not self._migration_requires_check:
+            return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (
-            self._vibradorm_original is None
+            self._migration is None
             and not needs_pin_check
             and not self._verification_possible()
         ) or _skips_setup_connection_probe(
             entry_data.get(CONF_BED_TYPE), entry_data.get(CONF_PROTOCOL_VARIANT)
         ):
-            return self._create_selected_app_entry(title=title, data=entry_data)
+            return await self._async_create_selected_app_entry(title=title, data=entry_data)
         self._pending_entry = entry_data
         self._pending_title = title
         self._octo_pin_form_shown = False
@@ -6866,10 +6962,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
 
     async def _async_probe_worker(self) -> OperationResult:
-        async with self._vibradorm_transport_operation():
+        async with self._migration_transport_operation():
             result = await self._async_probe_worker_reserved()
-        if self._vibradorm_original is not None:
-            self._vibradorm_verified = result.succeeded
+        if self._migration is not None:
+            self._migration_verified = result.succeeded
         return result
 
     async def _async_probe_worker_reserved(self) -> OperationResult:
@@ -6899,9 +6995,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             client_tracker=self.async_track_client,
             octo_pin=self._pending_entry.get(CONF_OCTO_PIN, ""),
             starcode_transport_selector=starcode_transport,
-            vibradorm_setup_data=self._pending_entry
-            if self._vibradorm_original is not None
-            else None,
+            migration_check=self._migration_probe_check(),
         )
         if report.starcode_transport_selector is not None:
             self._pending_entry[CONF_STARCODE_TRANSPORT_SELECTOR] = (
@@ -6964,7 +7058,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         client_tracker: Callable[[BleakClient | None], None] | None = None,
         octo_pin: str = "",
         starcode_transport_selector: str | None = None,
-        vibradorm_setup_data: dict[str, Any] | None = None,
+        migration_check: Callable[[BleakClient], None] | None = None,
     ) -> CapabilityReport:
         """Connect once and report device information and Octo PIN acceptance.
 
@@ -7096,8 +7190,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             path_reporter(report.actual_path)
                     _report(SetupAction.DISCOVERING_SERVICES)
                     await discover_services(client, address)
-                    if vibradorm_setup_data is not None:
-                        _validate_vibradorm_setup_roles(client, vibradorm_setup_data)
+                    if migration_check is not None:
+                        migration_check(client)
                     services = list(client.services) if client.services else []
                     report.service_count = len(services)
                     writable = 0
@@ -7130,13 +7224,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         try:
                             await client.disconnect()
                         except Exception:  # noqa: BLE001 - generic probes are best-effort
-                            if vibradorm_setup_data is not None and client.is_connected:
+                            if migration_check is not None and client.is_connected:
                                 raise
                         else:
                             # Only cleared once the link is really closed, so a
                             # cancellation during the disconnect still leaves
                             # the cleanup something to retry.
-                            if vibradorm_setup_data is not None and client.is_connected:
+                            if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
                                 raise ConnectionError(
                                     "The validation connection could not be released"
@@ -7144,10 +7238,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if client_tracker is not None:
                                 client_tracker(None)
                         finally:
-                            if vibradorm_setup_data is not None and client.is_connected:
+                            if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:  # noqa: BLE001 - probe is best-effort
-            if vibradorm_setup_data is not None:
+            if migration_check is not None:
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
             _LOGGER.debug("Capability probe for %s failed: %s", address, err)
@@ -7294,13 +7388,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # this is the step that exists so that nothing blocks.
             report = CapabilityReport(freshness=FreshnessStatus.MISSING)
 
-        if self._vibradorm_original is not None and not self._vibradorm_verified:
+        if self._migration is not None and not self._migration_verified:
             if (
                 user_input is not None
                 and self._verify_form_shown
                 and user_input.get("action") == "keep"
             ):
-                return await self.async_step_vibradorm({"app": "legacy"})
+                return await self.async_step_migration_keep()
             if (
                 user_input is not None
                 and self._verify_form_shown
@@ -7323,7 +7417,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         )
                     }
                 ),
-                errors={"base": "vibradorm_verification_required"},
+                errors={"base": "migration_verification_required"},
                 description_placeholders={
                     "name": self._pending_entry.get(CONF_NAME) or self._pending_entry[CONF_ADDRESS],
                     "capabilities": await self._format_capabilities(report),
@@ -7348,7 +7442,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     data_schema=vol.Schema(schema),
                     errors={CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
                 )
-            return self._create_selected_app_entry(
+            return await self._async_create_selected_app_entry(
                 title=self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
                 data=self._pending_entry,
             )
@@ -7963,8 +8057,8 @@ class AdjustableBedOptionsFlow(
         """
         menu_options = ["settings"]
         data = self.config_entry.data
-        if _has_vibradorm_receiver(data):
-            menu_options.append("vibradorm_setup")
+        if managed_family(data) is not None:
+            menu_options.append("change_app")
         if is_paired(data):
             if data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS:
                 menu_options.extend(["left_settings", "right_settings"])
@@ -7985,13 +8079,22 @@ class AdjustableBedOptionsFlow(
             menu_options.append("remove_bond")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
 
-    async def async_step_vibradorm_setup(
+    async def async_step_change_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Point to HA's managed reconfigure wizard, keeping Configure read-only here."""
+        """Point to the guided reconfigure wizard, keeping Configure read-only here.
+
+        Home Assistant cannot hand an options flow over to a config flow, so the
+        guided change runs from the entry's Reconfigure action and from Repairs.
+        """
         if user_input is not None:
-            return self.async_abort(reason="vibradorm_reconfigure_required")
-        return self.async_show_form(step_id="vibradorm_setup")
+            return self.async_abort(reason="migration_reconfigure_required")
+        from .profile_review import route_label
+
+        return self.async_show_form(
+            step_id="change_app",
+            description_placeholders={"current": route_label(self.config_entry.data)},
+        )
 
     def _async_flow_manager(self) -> Any:
         """Options flows are driven by their own manager, not the config one."""

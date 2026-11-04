@@ -198,6 +198,11 @@ def app_state_store(hass: HomeAssistant, address: str) -> AppStateStore:
     return registry[key]
 
 
+def discard_app_state_store(hass: HomeAssistant, address: str) -> None:
+    """Forget an unsaved address's store object without touching storage."""
+    _registry(hass).pop(address.upper(), None)
+
+
 async def async_remove_app_states(hass: HomeAssistant, addresses: Iterable[str]) -> None:
     """Forget the app state and sessions of beds no config entry owns any more."""
     registry = _registry(hass)

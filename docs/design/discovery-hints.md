@@ -55,4 +55,6 @@ ordered and often needs more than one signal.
 Several detection name rules are wider than the gate: they ignore case, accept
 a pattern inside the name, or have no matcher at all. Such a bed is discovered
 only when it also advertises a matched service UUID or manufacturer record.
+The Good Vibe Sleep scan filter and the eShine `Smartbed` name rule are such
+rules: as hints they would add matchers the manifest has never had.
 Changing what is discovered needs evidence and its own change.

@@ -117,6 +117,7 @@ def render_logicdata_profiles() -> str:
         (
             "Profile",
             "Movement refresh",
+            "Hold until release",
             "Touch release",
             "Held presets (P1 / P2)",
             "Hold refresh",
@@ -129,6 +130,7 @@ def render_logicdata_profiles() -> str:
             (
                 names[key],
                 f"{profile.movement_repeat_ms} ms, final frame",
+                "renewable lease" if profile.execution.hold == "stream" else "no",
                 _schedule(profile.touch_release),
                 " / ".join(
                     ", ".join(profile.held_presets[family]) or "none" for family in ("p1", "p2")

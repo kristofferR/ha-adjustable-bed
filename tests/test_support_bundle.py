@@ -13,6 +13,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed import async_migrate_entry
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.app_state_store import app_state_store
 from custom_components.adjustable_bed.ble_diagnostics import (
@@ -23,8 +24,10 @@ from custom_components.adjustable_bed.ble_diagnostics import (
     ServiceInfo,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LINAK,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -34,8 +37,12 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_ID,
+    CONF_PAIR_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_SIDE,
     DEVICE_INFO_CHARS,
     DOMAIN,
     LINAK_CONTROL_SERVICE_UUID,
@@ -44,10 +51,12 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
+    PAIR_MODE_SEPARATE_ADDRESS,
     SLEEP_NUMBER_AUTH_CHAR_UUID,
     SOLACE_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profile_id import PROFILE_RESOLVER_VERSION
 from custom_components.adjustable_bed.redaction import redact_sleep_number_sessions
 from custom_components.adjustable_bed.support_bundle import (
     _build_evidence_summary,
@@ -1543,7 +1552,8 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "target_address"
-        assert report["metadata"]["report_version"] == "2.5"
+        assert report["metadata"]["report_version"] == "2.6"
+        assert report["profile"] is None
         assert report["integration"]["configured_device"] is False
         assert report["integration"]["kaidi_product_id"] is None
         assert report["integration"]["kaidi_sofa_acu_no"] is None
@@ -1696,7 +1706,7 @@ class TestSupportBundle:
             )
 
         pairing = report["pairing"]
-        assert report["metadata"]["report_version"] == "2.5"
+        assert report["metadata"]["report_version"] == "2.6"
         assert pairing["required"] is True
         assert pairing["connection_gated_by_bond"] is True
         assert pairing["persisted_bond_marker"] is True
@@ -2950,3 +2960,103 @@ class TestSupportBundleLogProbeSafety:
         link.symlink_to(real)
 
         assert _probe_log_file(str(link)) == (True, None, None)
+
+
+def _profile_bundle_report(address: str) -> DiagnosticReport:
+    """Return the smallest capture result a configured bundle accepts."""
+    return DiagnosticReport(
+        metadata={"version": "2.0"},
+        device={"address": address},
+        advertisement=None,
+        advertisements_by_source=[],
+        detection={},
+        gatt_services=[],
+        gatt_summary={},
+        device_information={},
+        notifications=[],
+        notification_summary={},
+        adapter_details={},
+        connection_history={},
+        connection_attempt_details=[],
+        command_trace=[],
+        errors=[],
+    )
+
+
+async def _bundle_for(hass: HomeAssistant, entry: MockConfigEntry, address: str) -> dict:
+    with (
+        patch.object(
+            BLEDiagnosticRunner,
+            "run_diagnostics",
+            new=AsyncMock(return_value=_profile_bundle_report(address)),
+        ),
+        patch(
+            "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+            return_value=[],
+        ),
+    ):
+        return await generate_support_bundle(
+            hass, address=address, capture_duration=0, include_logs=False, entry=entry
+        )
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_bundle_shows_the_schema_5_migration_record(
+    hass: HomeAssistant, mock_config_entry_data: dict
+) -> None:
+    """A migrated entry's bundle keeps the old schema, its saved fields and the new id."""
+    data = {
+        **mock_config_entry_data,
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PROTOCOL_VARIANT: "sino",
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
+    entry.add_to_hass(hass)
+    assert await async_migrate_entry(hass, entry) is True
+
+    report = await _bundle_for(hass, entry, data[CONF_ADDRESS])
+
+    assert report["profile"] == {
+        "schema_version": 5,
+        "schema_minor_version": 1,
+        "profile_id": "keeson:sino",
+        "migration": {
+            "from_version": 4,
+            "from_minor_version": 3,
+            "resolver_version": PROFILE_RESOLVER_VERSION,
+            "profile_id": "keeson:sino",
+            "fields": {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
+        },
+    }
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_paired_bundle_shows_each_side_and_the_one_it_targets(hass: HomeAssistant) -> None:
+    left = {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:0A", CONF_BED_TYPE: BED_TYPE_LINAK}
+    right = {
+        CONF_SIDE: "right",
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:0B",
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PROTOCOL_VARIANT: "sino",
+    }
+    data = {
+        CONF_PAIR_ID: "pair_1",
+        CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        CONF_PAIR_CHILDREN: [left, right],
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
+    entry.add_to_hass(hass)
+    assert await async_migrate_entry(hass, entry) is True
+
+    profile = (await _bundle_for(hass, entry, "aa:bb:cc:dd:ee:0b"))["profile"]
+
+    assert profile["sides"] == {
+        "left": {"profile_id": "linak", "targeted": False},
+        "right": {"profile_id": "keeson:sino", "targeted": True},
+    }
+    assert profile["migration"]["from_version"] == 4
+    assert profile["migration"]["sides"]["right"] == {
+        "profile_id": "keeson:sino",
+        "fields": {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
+    }

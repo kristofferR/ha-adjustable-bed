@@ -131,6 +131,7 @@ physical controller. The support action has no `side` field.
 The support bundle includes:
 - System info (HA version, Python version, platform)
 - Integration configuration and detected bed type
+- The profile id the entry and each paired side run, and the record of the schema 5 migration from 4.x
 - Connection status, BLE adapter/proxy health, and connection attempt details
 - ESPHome proxy firmware, API version, pairing capability, availability, and free BLE connection slots when Home Assistant exposes them
 - Live Bluetooth logs from ESPHome proxies that can see the bed, when their API and firmware logging settings allow capture

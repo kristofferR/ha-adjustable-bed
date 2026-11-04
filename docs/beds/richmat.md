@@ -30,7 +30,7 @@ Brands using Richmat actuators:
 - FLEXX MOTION
 - Likimio
 - Lunio Smart+
-- Good Vibe Sleep
+- [Good Vibe Sleep](goodvibe.md) (dedicated app profiles and independent sleep sensors)
 - Best Mattress Power Base
 - Easy Rest
 - Coaster Sleep
@@ -66,6 +66,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [HARMONY](https://play.google.com/store/apps/details?id=com.richmat.harmony) 1.0.0 | `com.richmat.harmony` | [Richmat MH](#richmat-mh-apps), bed type `richmat_harmony` |
 | ✅ | [Idealbed](https://play.google.com/store/apps/details?id=com.richmat.idealbed) 2.4.2 | `com.richmat.idealbed` | [Richmat MH](#richmat-mh-apps), bed type `richmat_idealbed` |
 | ✅ | [HJBed](https://play.google.com/store/apps/details?id=com.richmat.hjbed) 2.1.2 (code 21200) | `com.richmat.hjbed` | [HJBed](#hjbed) |
+| ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | Own guide, [Good Vibe Sleep](goodvibe.md): its command frames match this codec, but its settings records put `20` before the length byte |
 
 ## Features
 

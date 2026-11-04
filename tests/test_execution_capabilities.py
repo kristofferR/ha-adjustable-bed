@@ -89,7 +89,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
-    # Keeson E5/E6 (#483): the K1 apps and profiles that stream a held key.
+    # Keeson cluster033 apps and Ergomotion 4.0 (#483) stream a held key.
     **{
         f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
         for app, layouts in keeson_profiles.APP_LAYOUTS.items()
@@ -99,7 +99,15 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         f"AppProfile:ergomotion_4@{style}": {"hold": ("hump", "issue558")}
         for style in ERGOMOTION_4_STYLES
     },
+    # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
+    "JiecangProfile:dreamask": {"hold": ("dreamask",)},
+    "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
+    "JiecangProfile:dreamhd": {"hold": ("dreamhd",)},
+    # Keeson E5/E6 (#483): the K1 profiles that stream a held key.
     **{f"KeesonProfile:{key}": {"hold": keys} for key, keys in KEESON_STREAM.items()},
+    "LogicdataProfile:phone": {"hold": ("ld-phone",)},
+    "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
+    "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
     # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
     "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
@@ -112,6 +120,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
     "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
+    # cadence is the entry's pulse settings, not the app's.
+    "LimossProfile:limoss_remote": {"hold": ("limoss",)},
+    "LimossProfile:fsm_relax": {"hold": ("fsm",)},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
@@ -129,6 +141,9 @@ _CUSTOMATIC = (
     "OkinNFrameProfile:remedy",
 )
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
+    "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
+    "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
     **{
         f"profiles/keeson.py:<module>.{key.upper()}": (f"KeesonProfile:{key}",)
         for key in KEESON_STREAM
@@ -141,11 +156,16 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/keeson.py:<module>.ergomotion_4_profile": tuple(
         f"AppProfile:ergomotion_4@{style}" for style in sorted(ERGOMOTION_4_STYLES)
     ),
+    "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
+    "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
+    "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
+    "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
