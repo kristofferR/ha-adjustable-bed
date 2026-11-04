@@ -8,8 +8,6 @@ from custom_components.adjustable_bed.profiles.keeson import AppProfile, KeesonP
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.keeson_vectors import FROZEN_FRAMES
 
-_K1 = "#745 K1 Keeson E5/E6"
-
 FAMILY = CodecFamily(
     # The cluster033 apps: one AppProfile per layout, vectors per app.
     profiles={KeesonProfile: FROZEN_FRAMES, AppProfile: FROZEN_FRAMES},
@@ -38,13 +36,9 @@ FAMILY = CodecFamily(
             "bf",
             "cherish",
             "comfort_enhancements",
+            "ergomotion_4",
         }
     ),
-    pending={
-        "ergomotion_4": f"{_K1}: K1, side and P2 frames use codec/keeson.py; its 07 D0 product"
-        " and 09 0A / 0A 02 RGB frames and its product catalog have no codec home yet",
-        "furnimove": f"{_K1}: frames use codec/keeson.py, handset catalog profile stays",
-    },
     guide=CodecGuide(
         path="docs/beds/keeson.md",
         spelled=spelled_frames(

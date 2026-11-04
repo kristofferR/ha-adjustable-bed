@@ -53,6 +53,10 @@ but ignored by the app-state parser, as in the app.
 
 ### Packet Format
 
+[`codec/keeson.py`](../../custom_components/adjustable_bed/codec/keeson.py)
+builds every frame below as the `ergomotion_4` Keeson app profile; the product
+catalog picks which keys each product sends.
+
 | Route | Format |
 |-------|--------|
 | P1 Both | `E5 FE 16 key_le32 checksum` (8 bytes) |

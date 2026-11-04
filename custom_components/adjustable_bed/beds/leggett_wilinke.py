@@ -45,11 +45,18 @@ class LeggettWilinkeController(RichmatProfileController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """The pre-v5 L&P write loop: no command trace, cancel checked before the lock."""
+        """The pre-v5 L&P write loop: cancel checked before the lock, not inside it."""
         if self.client is None or not self.client.is_connected:
             _LOGGER.error("Cannot write command: BLE client not connected")
             raise ConnectionError("Not connected to bed")
         effective_cancel = cancel_event or self._coordinator.cancel_command
+        self._record_command_trace(
+            self._char_uuid,
+            command,
+            response=True,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+        )
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)

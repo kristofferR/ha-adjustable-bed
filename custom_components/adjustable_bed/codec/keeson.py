@@ -15,6 +15,9 @@ The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
 ``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``EF 02`` rename) end with the
 same checksum, as do the ``E2``/``EA``/``EB FE 16`` clock and alarm frames whose
 fields the BF, Cherish and Comfort Enhancements controllers fill in.
+
+Ergomotion 4.0 (com.sfd.hump 3.7) adds its ``07 D0`` custom massage frames and
+its ``09 0A`` and ``0A 02`` RGB frames, which carry no checksum.
 """
 
 from __future__ import annotations
@@ -151,6 +154,31 @@ def json_command(word: int, device_id: str, *, ctrm: int, km: int, keykt: int) -
 
 # Two-byte status request of the direct P2 remotes; not a STOP.
 STATUS_QUERY: Final = b"\x00\xb0"
+
+
+def custom_massage(program: int) -> bytes:
+    """Encode Ergomotion 4.0's nine-byte ``07 D0`` custom massage frame.
+
+    Programs 999 and 1 to 8 are the app's; any other value sends its all-zero fallback.
+    """
+    if program == 999:
+        return bytes.fromhex("07d004040000100000")
+    if program == 1:
+        return bytes.fromhex("07d002060000090001")
+    if 2 <= program <= 4:
+        return bytes((7, 208, 2, 4, 0, 0, 9, 0, program))
+    if 5 <= program <= 8:
+        return bytes((7, 208, 4, 6, 0, 0, 9, 0, program))
+    return bytes.fromhex("07d000000000000000")
+
+
+def rgb(color: tuple[int, int, int], *, inverted: bool = False) -> bytes:
+    """Encode Ergomotion 4.0's RGB frame: ``09 0A``, or ``0A 02`` with inverted channels."""
+    if inverted:
+        return (
+            b"\x0a\x02\x00\x00\x00\x00\x01\x01\xbb" + bytes((255 - c) & 255 for c in color) + b"\0"
+        )
+    return b"\x09\x0a\x00\x02\x00\x00\x01" + bytes(c & 255 for c in color) + b"\0"
 
 
 def rename(raw_name: bytes) -> bytes:

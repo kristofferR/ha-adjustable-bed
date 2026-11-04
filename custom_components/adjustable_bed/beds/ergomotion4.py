@@ -10,10 +10,9 @@ from collections.abc import Callable
 from time import monotonic
 from typing import TYPE_CHECKING, cast
 
-from ..alarm_table import AlarmTableScheduleSpec
 from ..codec import keeson as codec
 from ..ergomotion4_profiles import ACTIONS, PRODUCTS, Action, Product, Step
-from ..profiles.keeson import AppProfile
+from ..profiles.keeson import ergomotion_4_profile
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -97,26 +96,6 @@ LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS = 2.0
 def p2_frame(key: int) -> bytes:
     """Finite shipped switch, including its zero-key fallback."""
     return codec.p2(key if key in P2_KEYS else codec.RELEASE)
-
-
-def custom_frame(key: int) -> bytes:
-    if key == 999:
-        return bytes.fromhex("07d004040000100000")
-    if key == 1:
-        return bytes.fromhex("07d002060000090001")
-    if 2 <= key <= 4:
-        return bytes((7, 208, 2, 4, 0, 0, 9, 0, key))
-    if 5 <= key <= 8:
-        return bytes((7, 208, 4, 6, 0, 0, 9, 0, key))
-    return bytes.fromhex("07d000000000000000")
-
-
-def rgb_frame(color: tuple[int, int, int], *, inverted: bool = False) -> bytes:
-    if inverted:
-        return (
-            b"\x0a\x02\x00\x00\x00\x00\x01\x01\xbb" + bytes((255 - c) & 255 for c in color) + b"\0"
-        )
-    return b"\x09\x0a\x00\x02\x00\x00\x01" + bytes(c & 255 for c in color) + b"\0"
 
 
 def custom_product(
@@ -246,18 +225,7 @@ class Ergomotion4Controller(AppController):
             "EZI MAID",
         }
         # Reuse the existing transport, rename, clock and validated alarm tables.
-        super().__init__(
-            coordinator,
-            AppProfile(
-                key="ergomotion_4",
-                app="Ergomotion 4.0",
-                layout=self.product.style,
-                actions=(),
-                alarm=AlarmTableScheduleSpec(128, 3),
-                shutdown_count=1,
-                shutdown_delay_ms=0,
-            ),
-        )
+        super().__init__(coordinator, ergomotion_4_profile(self.product.style))
         self._light: bool | None = None
         self._light_state_changed = asyncio.Event()
         self._rgb = (0, 0, 0)
@@ -445,7 +413,7 @@ class Ergomotion4Controller(AppController):
                     if kind == "p1"
                     else p2_frame(value)
                     if kind == "p2"
-                    else custom_frame(value)
+                    else codec.custom_massage(value)
                 )
                 await self.write_command(frame, cancel_event=asyncio.Event() if cleanup else None)
 
@@ -638,7 +606,7 @@ class Ergomotion4Controller(AppController):
 
         factor = struct.unpack("f", struct.pack("f", level / 100))[0]
         scaled = tuple(int(struct.unpack("f", struct.pack("f", c * factor))[0]) for c in color)
-        frame = rgb_frame(
+        frame = codec.rgb(
             cast(tuple[int, int, int], scaled),
             inverted=self._dynamic and "4194" in self.product.style,
         )

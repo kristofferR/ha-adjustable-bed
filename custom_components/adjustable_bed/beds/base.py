@@ -692,6 +692,51 @@ class BedController(ABC):
         """Return a safe diagnostic representation of a command."""
         return format_payload(command)
 
+    def _record_command_trace(
+        self,
+        char_uuid: str,
+        command: bytes,
+        *,
+        response: bool,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 0,
+        command_origin: str | None = None,
+        characteristic: BleakGATTCharacteristic | None = None,
+    ) -> None:
+        """Record a write for support bundles.
+
+        ``_write_gatt_with_retry`` calls this itself. A controller with its own
+        write loop calls it once per run of identical writes; the origin then
+        defaults to the function that called that write method.
+        """
+        payload = self._format_command_trace_payload(command)
+        if payload is None:
+            return
+        if command_origin is None:
+            frame = inspect.currentframe()
+            caller = frame.f_back.f_back if frame and frame.f_back else None
+            command_origin = caller.f_code.co_name if caller else None
+        handle: int | None = getattr(characteristic, "handle", None)
+        client = self.client
+        if characteristic is None and client is not None and client.services:
+            for service in client.services:
+                for discovered in service.characteristics:
+                    if discovered.uuid == char_uuid:
+                        handle = getattr(discovered, "handle", None)
+                        break
+                if handle is not None:
+                    break
+        self._coordinator.record_command_trace(
+            payload=payload,
+            characteristic_uuid=char_uuid,
+            characteristic_handle=handle,
+            response=response,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            command_origin=command_origin,
+            controller_class=type(self).__name__,
+        )
+
     async def _write_gatt_with_retry(
         self,
         char_uuid: str,
@@ -758,32 +803,20 @@ class BedController(ABC):
             wall_clock_pacing,
         )
 
-        characteristic_handle: int | None = characteristic.handle if characteristic else None
-        if characteristic is None and client.services:
-            for service in client.services:
-                for discovered in service.characteristics:
-                    if discovered.uuid == char_uuid:
-                        characteristic_handle = getattr(discovered, "handle", None)
-                        break
-                if characteristic_handle is not None:
-                    break
-
         caller_frame = inspect.currentframe()
         command_origin = None
         if caller_frame is not None and caller_frame.f_back is not None:
             command_origin = caller_frame.f_back.f_code.co_name
 
-        if payload is not None:
-            self._coordinator.record_command_trace(
-                payload=payload,
-                characteristic_uuid=char_uuid,
-                characteristic_handle=characteristic_handle,
-                response=response,
-                repeat_count=repeat_count,
-                repeat_delay_ms=repeat_delay_ms,
-                command_origin=command_origin,
-                controller_class=type(self).__name__,
-            )
+        self._record_command_trace(
+            char_uuid,
+            command,
+            response=response,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            command_origin=command_origin,
+            characteristic=characteristic,
+        )
 
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():

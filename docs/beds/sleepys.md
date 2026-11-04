@@ -406,6 +406,10 @@ position: 03 F0 [zone] [position] 00
 query:    00 B0 (massage/light), 00 D0 (motor position)
 ```
 
+The app builds both queries. The integration sends only `00 D0`: it translates
+the StarCode status query `5A B0 00 A5`, which serves both purposes, to the
+legacy position query, and never sends `00 B0`.
+
 Movement keys are `1/2` head, `4/8` foot, `10/20` lumbar, `40/80` neck,
 and zero for STOP. Preset keys are `08000000` flat, `00004000` TV,
 `00001000` zero-G, `00008000` anti-snore, `00002000` lounge,

@@ -297,6 +297,7 @@ class ComfortMotionController(JiecangProfileController):
         payload = self._name_rule.encode(name)
         if self.client is None or not self.client.is_connected or self._name_uuid is None:
             raise ValueError("Comfort Motion rename requires a discovered writable G1 name role")
+        self._record_command_trace(self._name_uuid, payload, response=self._name_response)
         async with self._ble_lock:
             await self.client.write_gatt_char(
                 self._name_uuid, payload, response=self._name_response
