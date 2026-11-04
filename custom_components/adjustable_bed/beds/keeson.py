@@ -748,8 +748,10 @@ class KeesonController(BedController):
     async def _touch_up(self, *, delay: bool) -> None:
         """Write the touch-up release frame after the app's wait.
 
-        A STOP during the wait ends it early. The write runs with a fresh event
-        in a shielded task, so cancelling the caller can never suppress or abort it.
+        A STOP during the wait ends it early. The write runs on a fresh event in
+        its own task, which is never cancelled and is awaited until it finishes,
+        however often the caller is cancelled. The cancellation is re-raised
+        afterwards, unless the write failed: that error wins.
         """
         ((wait_ms, step),) = self.profile.release.steps
         stop_requested = self._coordinator.cancel_command
@@ -762,13 +764,20 @@ class KeesonController(BedController):
         release = asyncio.create_task(
             self.write_command(self._step_frame(step), cancel_event=asyncio.Event())
         )
-        try:
-            await asyncio.shield(release)
-        except asyncio.CancelledError:
-            await release
-            raise
+        # asyncio.wait never cancels the task, so keep waiting for the write
+        # through any number of cancellations of this caller.
+        while not release.done():
+            try:
+                await asyncio.wait((release,))
+            except asyncio.CancelledError:
+                interrupted = interrupted or asyncio.CancelledError()
         if interrupted is not None:
+            # Like an exception raised in a finally block, the write error wins.
+            failure = None if release.cancelled() else release.exception()
+            if failure is not None:
+                raise failure from interrupted
             raise interrupted
+        release.result()
 
     async def _write_single_shot(self, command: bytes) -> None:
         """Write a one-shot action once, then the profile's tap release if any."""
