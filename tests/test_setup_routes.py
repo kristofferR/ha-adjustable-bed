@@ -209,3 +209,28 @@ def test_app_owned_layout_and_cadence_are_not_asked(bed_type):
     assert {const.CONF_MOTOR_COUNT, const.CONF_MOTOR_PULSE_DELAY_MS} <= hidden
     # The pulse count still bounds each held movement.
     assert const.CONF_MOTOR_PULSE_COUNT not in hidden
+
+
+async def test_route_is_collected_before_route_dependent_validation(
+    hass, enable_custom_integrations
+):
+    """An app model route can be chosen even when its automatic rule cannot run."""
+    result = await _manual_entry(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT_HARMONY},
+    )
+    # No Bluetooth name is known, so the automatic model rule would be refused.
+    assert result["step_id"] == "route"
+    model = next(
+        route for route in _setup_routes(const.BED_TYPE_RICHMAT_HARMONY) if route != "auto"
+    )
+    with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: model}}
+        )
+        while result["type"] is FlowResultType.FORM and result["step_id"] != "manual_entry":
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert not result.get("errors"), result.get("errors")
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][const.CONF_PROTOCOL_VARIANT] == model

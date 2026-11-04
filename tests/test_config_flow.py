@@ -6433,6 +6433,8 @@ async def test_typed_address_setup_previews_the_transport_once_it_is_valid(
             {
                 CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
                 CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                # An explicit route, so the route step does not come first.
+                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
                 CONF_MOTOR_COUNT: 99,
             }
         )

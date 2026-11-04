@@ -4192,6 +4192,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors[CONF_OCTO_PIN] = "invalid_pin"
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+            # Collect the route first: validation below depends on it.
+            if not errors and (
+                route := self._request_route_choice(
+                    user_input, resume_step="bluetooth_confirm", bed_type=selected_bed_type, protocol_variant=protocol_variant
+                )
+            ):
+                return route
 
             motor_count = _normalize_fixed_motor_count(
                 selected_bed_type,
@@ -4255,10 +4262,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else:
                 motor_pulse_delay_ms = pulse_defaults[1]
             if not errors:
-                if route := self._request_route_choice(
-                    user_input, resume_step="bluetooth_confirm", bed_type=selected_bed_type, protocol_variant=protocol_variant
-                ):
-                    return route
                 disconnect_after_command = self._disconnect_after_command_choice(
                     user_input,
                     selected_bed_type,
@@ -5156,6 +5159,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
                 if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
                     protocol_variant = SVANE_VARIANT_JMC
+            # Collect the route first: validation below depends on it.
+            if not errors and (
+                route := self._request_route_choice(
+                    user_input, resume_step="manual_config", bed_type=bed_type, protocol_variant=protocol_variant
+                )
+            ):
+                return route
 
             motor_count = _normalize_fixed_motor_count(
                 bed_type,
@@ -5204,10 +5214,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
 
             if not errors:
-                if route := self._request_route_choice(
-                    user_input, resume_step="manual_config", bed_type=bed_type, protocol_variant=protocol_variant
-                ):
-                    return route
                 disconnect_after_command = self._disconnect_after_command_choice(
                     user_input,
                     bed_type,
@@ -5432,6 +5438,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+                # Collect the route first: validation below depends on it.
+                if not errors and (
+                    route := self._request_route_choice(
+                        user_input, resume_step="manual_entry", bed_type=bed_type, protocol_variant=protocol_variant
+                    )
+                ):
+                    return route
 
                 motor_count = _normalize_fixed_motor_count(
                     bed_type,
@@ -5477,10 +5490,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
 
                 if not errors:
-                    if route := self._request_route_choice(
-                        user_input, resume_step="manual_entry", bed_type=bed_type, protocol_variant=protocol_variant
-                    ):
-                        return route
                     disconnect_after_command = self._disconnect_after_command_choice(
                         user_input,
                         bed_type,
