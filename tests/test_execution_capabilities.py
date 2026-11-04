@@ -57,6 +57,9 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "LogicdataProfile:phone": {"hold": ("ld-phone",)},
     "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
     "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
+    # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
+    # the 5A keys those profiles send, so only ELEVATE declares.
+    "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): each app streams a held key until release. Nectar
     # Move is the Nectar app's CST route.
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
@@ -136,6 +139,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
     "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
     "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
+    "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,

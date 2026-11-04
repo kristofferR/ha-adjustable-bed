@@ -502,7 +502,7 @@ async def test_bluetooth_confirmation_rejects_incompatible_product(
         CONF_PROTOCOL_VARIANT: variant,
         CONF_RMCONTROL_PRODUCT: "A0RM",
     })
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
+    assert result["errors"] == {"base": "invalid_variant_for_bed_type"}
     flow._finish_with_verify.assert_not_awaited()
 
 

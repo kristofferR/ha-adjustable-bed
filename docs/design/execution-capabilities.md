@@ -85,7 +85,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
 | `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination |
 | `starcode_m5x5` | S stream | U | U | abm5_5 | head and foot is a fixed combination |
-| `star_elevate` (both routes) | S stream | U | U | abm5_5, m1x12 | one held action |
+| `star_elevate` (both routes) | S stream | U | U | abm5_5, m1x12 | one held action; hold declared on the Okin 5A ELEVATE profile, refreshed at the apps' 100 ms |
 | `sleepys_box25` (both routes) | S stream | U | U | sleepy | one held action; Sleepy's cluster accepted in #447 |
 | `doublesleep` | B | B | B | dsleep | report PARTIAL |
 | `okin_handle` | B | B | B | none | no accepted report |
@@ -96,8 +96,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `okin_dot` | B | B | B | none | no accepted report |
 | `okin_64bit` | B | B | B | none | no accepted report |
 | **Okin 5A (O2)** | | | | | |
-| `nectar` | S stream | U | U | nectar, row042 | combined motor masks do not produce OR'd commands |
-| `mattressfirm` | S stream | U | U | mf900 | a remaining chord button replaces the stream |
+| `nectar` | S stream | U | U | nectar, row042 | combined motor masks do not produce OR'd commands; not declared, because the report reaches the Okin CST frame and not the 5A keys this bed type sends |
+| `mattressfirm` | S stream | U | U | mf900 | a remaining chord button replaces the stream; not declared, for the same reason |
 | `okin_cb35` | B | B | B | sealy | report PARTIAL |
 | `okin_7byte` | B | B | B | none | no accepted report |
 | `okin_nordic` | B | B | B | none | no accepted report |

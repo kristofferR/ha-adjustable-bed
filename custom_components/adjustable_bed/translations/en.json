@@ -53,7 +53,6 @@
           "has_massage": "Has massage feature",
           "disable_angle_sensing": "Disable angle sensing",
           "preferred_adapter": "Bluetooth adapter",
-          "protocol_variant": "Protocol variant",
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl 21.3.7 product (optional)",
           "rmcontrol_side": "RMControl side",
@@ -86,7 +85,6 @@
           "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "protocol_variant": "Some beds have multiple protocol variants. Auto-detect usually works, but you can override if needed. For beds used with the Woosa Sleep app, select Solace and the woosa variant. Shared QMS-MQ and QMS2 Bluetooth names do not identify the app.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
@@ -109,6 +107,17 @@
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted})."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
         }
       },
       "disconnect_after_command": {
@@ -133,7 +142,6 @@
         "description": "Configure the bed at {address}.{setup_note}\n\n{transport}",
         "data": {
           "bed_type": "Bed type",
-          "protocol_variant": "Protocol variant",
           "name": "Name",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid actuator layout",
@@ -148,7 +156,6 @@
         },
         "data_description": {
           "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
-          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected. For beds used with the Woosa Sleep app, select Solace and the woosa variant. Shared QMS-MQ and QMS2 Bluetooth names do not identify the app.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
           "malouf_memory_slots": "Number of memory buttons on the physical remote.",
@@ -158,6 +165,17 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
         }
       },
       "manual_entry": {
@@ -166,7 +184,6 @@
         "data": {
           "address": "Bluetooth address",
           "bed_type": "Bed type",
-          "protocol_variant": "Protocol variant",
           "name": "Name",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid actuator layout",
@@ -182,7 +199,6 @@
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
           "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
-          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected. For beds used with the Woosa Sleep app, select Solace and the woosa variant. Shared QMS-MQ and QMS2 Bluetooth names do not identify the app.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
           "malouf_memory_slots": "Number of memory buttons on the physical remote.",
@@ -192,6 +208,17 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
         }
       },
       "manual_octo": {
@@ -757,6 +784,21 @@
         "description": "An app belongs to one physical bed. Split the pair, or restore standalone controls for a one-address pair, then open Reconfigure on the bed you want to change.\n\n**Kept** (your current choice on each bed): Bluetooth adapter or proxy, idle disconnect, and disconnect after each command.\n\n**Restored** (from before the beds were combined): bed type, app profile and side settings.\n\nThe combined Left, Right and Both controls are removed. Device and side entity IDs are preserved. Nothing changes until you select the checkbox below.",
         "data": {
           "confirm": "I understand that the combined Left, Right and Both controls are removed"
+        }
+      },
+      "route": {
+        "title": "Receiver route",
+        "description": "**{bed}** supports more than one receiver route. Only routes this bed type supports are listed. Auto-detect, where offered, is right for most beds: change it only if setup with it fails or you know the route.",
+        "sections": {
+          "advanced": {
+            "name": "Advanced: receiver route",
+            "data": {
+              "protocol_variant": "Route"
+            },
+            "data_description": {
+              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
+            }
+          }
         }
       }
     },

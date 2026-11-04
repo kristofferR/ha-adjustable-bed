@@ -30,6 +30,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
     SelectOptionDict,
@@ -94,7 +95,6 @@ from .bond_verification import (
 )
 from .const import (
     ADAPTER_AUTO,
-    ALL_PROTOCOL_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -339,8 +339,9 @@ from .const import (
     supports_passive_position_reconciliation,
 )
 from .detection import (
-    BED_TYPE_DISPLAY_NAMES,
+    APP_VARIANT_CHOICES,
     bed_type_choice,
+    bed_type_label,
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
@@ -785,12 +786,93 @@ def _apply_bed_type_choice(user_input: dict[str, Any], shown_choice: str | None)
         user_input[CONF_PROTOCOL_VARIANT] = variant
 
 
+def _apply_setup_bed_type_choice(
+    user_input: dict[str, Any], default_bed_type: str | None, default_variant: str
+) -> None:
+    """Resolve a fresh setup's bed-type choice into one authoritative route.
+
+    An app entry always sets its own variant. A generic entry starts from the
+    route detection or brand selection suggested for that bed type, else from
+    its automatic route, and the route step may refine it.
+    """
+    choice = user_input.get(CONF_BED_TYPE)
+    if not isinstance(choice, str):
+        return
+    bed_type, variant = resolve_bed_type_choice(choice)
+    user_input[CONF_BED_TYPE] = bed_type
+    if variant is not None:
+        user_input[CONF_PROTOCOL_VARIANT] = variant
+        return
+    if CONF_PROTOCOL_VARIANT in user_input:
+        return
+    if bed_type in (default_bed_type, BED_TYPE_AUTO_DETECT):
+        user_input[CONF_PROTOCOL_VARIANT] = default_variant
+        return
+    routes = _setup_routes(bed_type)
+    user_input[CONF_PROTOCOL_VARIANT] = (
+        VARIANT_AUTO if VARIANT_AUTO in routes or not routes else next(iter(routes))
+    )
+
+
+def _setup_routes(bed_type: str | None) -> dict[str, str]:
+    """Return the labelled routes a generic setup may choose for a bed type.
+
+    App variants are their own bed-type entries, and a bed type whose app
+    step asks for its own variant is left to that step.
+    """
+    if bed_type is None or bed_type in _APP_SETUP_STEPS:
+        return {}
+    variants = get_variants_for_bed_type(bed_type) or {}
+    excluded = _SETUP_ROUTE_EXCLUSIONS.get(bed_type, frozenset())
+    routes = {
+        variant: label
+        for variant, label in variants.items()
+        if (bed_type, variant) not in APP_VARIANT_CHOICES and variant not in excluded
+    }
+    if routes and VARIANT_AUTO not in routes and is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO):
+        # The bed type accepts its automatic route without labelling it.
+        routes = {VARIANT_AUTO: "Auto-detect (recommended)", **routes}
+    return routes
+
+
+# FurniMove's DOT handsets belong to the FurniMove app profile, not a fresh DOT setup.
+_SETUP_ROUTE_EXCLUSIONS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_OKIN_DOT: frozenset(OKIN_DOT_FURNIMOVE_VARIANTS),
+}
+
+
+def _route_section(bed_type: str | None, default: str) -> section | None:
+    """Return a collapsed Advanced section with a bed type's labelled routes."""
+    routes = _setup_routes(bed_type)
+    if len(routes) < 2:
+        return None
+    if default not in routes:
+        default = VARIANT_AUTO if VARIANT_AUTO in routes else next(iter(routes))
+    field = SelectSelector(
+        SelectSelectorConfig(
+            options=[SelectOptionDict(value=key, label=label) for key, label in routes.items()],
+            mode=SelectSelectorMode.DROPDOWN,
+        )
+    )
+    return section(
+        vol.Schema({vol.Required(CONF_PROTOCOL_VARIANT, default=default): field}),
+        {"collapsed": VARIANT_AUTO in routes},
+    )
+
+
+def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
+    """Show a route error on a form that has no route field."""
+    if (error := errors.pop(CONF_PROTOCOL_VARIANT, None)) is not None:
+        errors.setdefault("base", error)
+    return errors
+
+
 _VIBRADORM_FAMILY_TYPES: Final = VIBRADORM_FAMILY.bed_types
 
 
 def _bed_type_selector(
-    default: str | None, *, auto_detect_label: str | None = None
-) -> SelectSelector:
+    default: str | None, *, auto_detect_label: str | None = None, show_saved_id: bool = False
+) -> _SearchableSelect:
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
     if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC):
@@ -806,12 +888,60 @@ def _bed_type_selector(
         # Legacy aliases (e.g. dewertokin) and app types without an automatic
         # variant are not listed, but stay selectable for an existing choice.
         bed_type, _variant = resolve_bed_type_choice(default)
-        options.insert(
-            0, SelectOptionDict(value=default, label=BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type))
-        )
+        label = bed_type_label(bed_type)
+        if show_saved_id and label != bed_type:
+            # Configure names the saved ID beside its friendly label.
+            label = f"{label} (saved as {bed_type})"
+        options.insert(0, SelectOptionDict(value=default, label=label))
     if auto_detect_label is not None:
         options.insert(0, SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_detect_label))
-    return SelectSelector(SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN))
+    return _SearchableSelect(options)
+
+
+class _SearchableSelect(SelectSelector):
+    """A long select users can search by label, showing labels only.
+
+    Home Assistant 2026.9 filters a select only when it allows a custom value,
+    and that picker shows the submitted value as its text. Each option's value
+    is therefore its label; validation maps it back to the choice, and also
+    accepts the choice itself. A custom value is never accepted.
+    """
+
+    def __init__(self, options: list[SelectOptionDict]) -> None:
+        self._choices = {option["label"]: option["value"] for option in options}
+        self._labels = {option["value"]: option["label"] for option in options}
+        super().__init__(
+            SelectSelectorConfig(
+                options=[
+                    SelectOptionDict(value=option["label"], label=option["label"])
+                    for option in options
+                ],
+                mode=SelectSelectorMode.DROPDOWN,
+                custom_value=True,
+            )
+        )
+
+    def shown(self, choice: object) -> object:
+        """Return the value the picker shows for a choice."""
+        return self._labels.get(choice, choice) if isinstance(choice, str) else choice
+
+    def __call__(self, data: Any) -> Any:
+        # Home Assistant's selector typing does not declare __call__.
+        listed: Any = SelectSelector(SelectSelectorConfig(options=[*self._choices, *self._labels]))
+        value = listed(cast(Any, super()).__call__(data))
+        return self._choices.get(value, value)
+
+
+def _bed_type_field(
+    marker: type[vol.Required] | type[vol.Optional],
+    default: str | None,
+    **selector_options: Any,
+) -> tuple[vol.Marker, _SearchableSelect]:
+    """Return the bed-type marker and selector, defaulting to the shown label."""
+    selector = _bed_type_selector(default, **selector_options)
+    if default is None:
+        return marker(CONF_BED_TYPE), selector
+    return marker(CONF_BED_TYPE, default=selector.shown(default)), selector
 
 
 def _hide_owned_generic_fields(
@@ -2376,6 +2506,94 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=self._disconnect_after_command_schema(),
         )
 
+    def _request_route_choice(
+        self,
+        user_input: dict[str, Any],
+        *,
+        resume_step: Literal["bluetooth_confirm", "manual_config", "manual_entry"],
+        bed_type: str | None,
+        protocol_variant: str,
+    ) -> ConfigFlowResult | None:
+        """Ask for the receiver route only when the generic choice leaves several.
+
+        The routes are the bed type's own labelled ones; an app entry, or a bed
+        type with one route, never asks. A choice with an automatic route keeps
+        the list in a collapsed Advanced section.
+        """
+        routes = _setup_routes(bed_type)
+        if (
+            self._route_chosen == (bed_type, protocol_variant)
+            or (bed_type, protocol_variant) in APP_VARIANT_CHOICES
+            or len(routes) < 2
+        ):
+            return None
+        self._pending_route_input = dict(user_input)
+        self._pending_route_resume_step = resume_step
+        self._pending_route_bed_type = bed_type
+        return self._route_form(bed_type, protocol_variant)
+
+    def _route_form(self, bed_type: str | None, default: str) -> ConfigFlowResult:
+        advanced = _route_section(bed_type, default)
+        assert advanced is not None
+        return self.async_show_form(
+            step_id="route",
+            data_schema=vol.Schema({vol.Required("advanced"): advanced}),
+            description_placeholders={"bed": bed_type_label(bed_type)},
+        )
+
+    def _take_route_section(
+        self, user_input: dict[str, Any], section_bed_type: str | None, default: str
+    ) -> None:
+        """Apply the form's Advanced route only to the bed type it was drawn for.
+
+        An untouched section keeps the suggested route. An app entry sets its
+        own route, and another generic bed type gets its own route step, so the
+        section's value is ignored for both.
+        """
+        advanced = user_input.pop("advanced", None)
+        choice = user_input.get(CONF_BED_TYPE)
+        if not isinstance(choice, str):
+            return
+        bed_type, app_variant = resolve_bed_type_choice(choice)
+        if bed_type == BED_TYPE_AUTO_DETECT:
+            bed_type = section_bed_type
+        if app_variant is not None:
+            return
+        if CONF_PROTOCOL_VARIANT in user_input:
+            # A resumed form, or a caller, already chose the route.
+            self._route_chosen = (bed_type, user_input[CONF_PROTOCOL_VARIANT])
+            return
+        routes = _setup_routes(section_bed_type)
+        if len(routes) < 2 or bed_type != section_bed_type:
+            return
+        variant = advanced.get(CONF_PROTOCOL_VARIANT) if isinstance(advanced, Mapping) else None
+        if variant not in routes:
+            variant = default if default in routes else (
+                VARIANT_AUTO if VARIANT_AUTO in routes else next(iter(routes))
+            )
+        user_input[CONF_PROTOCOL_VARIANT] = variant
+        self._route_chosen = (section_bed_type, variant)
+
+    async def async_step_route(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Collect the chosen route, then finish the form that asked for it."""
+        assert self._pending_route_input is not None
+        assert self._pending_route_resume_step is not None
+        routes = _setup_routes(self._pending_route_bed_type)
+        chosen = ((user_input or {}).get("advanced") or {}).get(CONF_PROTOCOL_VARIANT)
+        if user_input is None or chosen not in routes:
+            return self._route_form(
+                self._pending_route_bed_type,
+                self._pending_route_input.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+            )
+        resume_input = self._pending_route_input
+        resume_step = self._pending_route_resume_step
+        resume_input[CONF_PROTOCOL_VARIANT] = chosen
+        self._pending_route_input = None
+        self._pending_route_resume_step = None
+        # Later follow-ups, such as the disconnect choice, resume the same form.
+        self._route_chosen = (self._pending_route_bed_type, chosen)
+        return await getattr(self, f"async_step_{resume_step}")(resume_input)
+
     async def async_step_disconnect_after_command(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -3186,6 +3404,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # retain its validated submission while a bed-specific follow-up asks
         # for an explicit connection-lifetime choice.
         self._pending_disconnect_input: dict[str, Any] | None = None
+        # The route step resumes the generic form that asked for it.
+        self._pending_route_input: dict[str, Any] | None = None
+        self._pending_route_resume_step: (
+            Literal["bluetooth_confirm", "manual_config", "manual_entry"] | None
+        ) = None
+        self._pending_route_bed_type: str | None = None
+        self._route_chosen: tuple[str | None, str] | None = None
         self._pending_disconnect_resume_step: str | None = None
         self._pending_disconnect_default: bool = DEFAULT_DISCONNECT_AFTER_COMMAND
         self._disconnect_choice_confirmed: bool = False
@@ -3791,7 +4016,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Build options for disambiguation - only the relevant 2-4 types
         options: list[SelectOptionDict] = []
         for bed_type in self._disambiguation_types:
-            display_name = BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+            display_name = bed_type_label(bed_type)
             options.append(SelectOptionDict(value=bed_type, label=display_name))
 
         # Add "Show all bed types" fallback option with translated label
@@ -3875,6 +4100,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 suggestions[CONF_BED_TYPE] = bed_type_choice(
                     requested, self._selected_protocol_variant
                 )
+            for marker, validator in schema.schema.items():
+                if marker == CONF_BED_TYPE and isinstance(validator, _SearchableSelect):
+                    if CONF_BED_TYPE in suggestions:
+                        suggestions[CONF_BED_TYPE] = validator.shown(suggestions[CONF_BED_TYPE])
             result["data_schema"] = self.add_suggested_values_to_schema(schema, suggestions)
         return result
 
@@ -3927,7 +4156,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else bed_type_default
         )
         if user_input is not None:
-            _apply_bed_type_choice(user_input, shown_choice)
+            self._take_route_section(user_input, defaults_bed_type, form_variant)
+            _apply_setup_bed_type_choice(user_input, defaults_bed_type, form_variant)
         if rebuilt := await self._async_fit_setup_form(
             user_input, defaults_bed_type, form_variant, "bluetooth_confirm"
         ):
@@ -3964,6 +4194,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors[CONF_OCTO_PIN] = "invalid_pin"
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+            # Collect the route first: validation below depends on it.
+            if not errors and (
+                route := self._request_route_choice(
+                    user_input, resume_step="bluetooth_confirm", bed_type=selected_bed_type, protocol_variant=protocol_variant
+                )
+            ):
+                return route
 
             motor_count = _normalize_fixed_motor_count(
                 selected_bed_type,
@@ -4197,10 +4434,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if self._show_full_bed_type_list
             else None
         )
+        bed_type_marker, bed_type_select = _bed_type_field(
+            vol.Optional, shown_choice, auto_detect_label=auto_label
+        )
         schema_dict: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_BED_TYPE, default=shown_choice): _bed_type_selector(
-                shown_choice, auto_detect_label=auto_label
-            ),
+            bed_type_marker: bed_type_select,
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
             vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
@@ -4218,10 +4456,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
             ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
         }
-
-        schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=form_variant)] = vol.In(
-            ALL_PROTOCOL_VARIANTS
-        )
 
         if bed_type == BED_TYPE_OCTO:
             schema_dict[vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto")] = vol.In(
@@ -4301,9 +4535,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Skip the warning if user already went through disambiguation step
         if self._disambiguated_bed_type:
             # User already chose from disambiguation - show their selection
-            display_name = BED_TYPE_DISPLAY_NAMES.get(
-                self._disambiguated_bed_type, self._disambiguated_bed_type
-            )
+            display_name = bed_type_label(self._disambiguated_bed_type)
             description_placeholders["detection_note"] = f"Selected: {display_name}"
         elif self._show_full_bed_type_list:
             # User asked to see all bed types
@@ -4311,7 +4543,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         elif detection_result.confidence < 0.7 and detection_result.ambiguous_types:
             # Map internal bed type constants to human-readable display names
             display_names = [
-                BED_TYPE_DISPLAY_NAMES.get(t, t) for t in detection_result.ambiguous_types
+                bed_type_label(t) for t in detection_result.ambiguous_types
             ]
             ambiguous_list = ", ".join(display_names)
             description_placeholders["detection_note"] = (
@@ -4355,10 +4587,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
 
         _show_profile_fields(schema_dict, defaults_bed_type, form_variant)
+        if (advanced := _route_section(defaults_bed_type, form_variant)) is not None:
+            schema_dict[vol.Optional("advanced")] = advanced
+        if errors:
+            # A refused route is asked again on the next submission.
+            self._route_chosen = None
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
-            errors=errors,
+            errors=_variant_errors_to_base(errors),
             description_placeholders=description_placeholders,
         )
 
@@ -4894,7 +5131,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else confident_bed_type or BED_TYPE_AUTO_DETECT
         )
         if user_input is not None:
-            _apply_bed_type_choice(user_input, shown_choice)
+            self._take_route_section(user_input, defaults_bed_type, preselected_protocol_variant)
+            _apply_setup_bed_type_choice(
+                user_input, defaults_bed_type, preselected_protocol_variant
+            )
         if rebuilt := await self._async_fit_setup_form(
             user_input, defaults_bed_type, preselected_protocol_variant, "manual_config"
         ):
@@ -4924,6 +5164,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
                 if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
                     protocol_variant = SVANE_VARIANT_JMC
+            # Collect the route first: validation below depends on it.
+            if not errors and (
+                route := self._request_route_choice(
+                    user_input, resume_step="manual_config", bed_type=bed_type, protocol_variant=protocol_variant
+                )
+            ):
+                return route
 
             motor_count = _normalize_fixed_motor_count(
                 bed_type,
@@ -5074,14 +5321,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "Auto-detect (recommended)",
             )
         )
-        schema_dict: dict[vol.Marker, Any] = {
-            vol.Required(CONF_BED_TYPE, default=shown_choice): _bed_type_selector(
-                shown_choice, auto_detect_label=auto_label
-            ),
-            vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
-                ALL_PROTOCOL_VARIANTS
-            ),
-        }
+        bed_type_marker, bed_type_select = _bed_type_field(
+            vol.Required, shown_choice, auto_detect_label=auto_label
+        )
+        schema_dict: dict[vol.Marker, Any] = {bed_type_marker: bed_type_select}
 
         # Determine smart defaults based on the bed type the form will default to:
         # a pre-selected brand, or the high-confidence detection that the
@@ -5144,10 +5387,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_cb24_side_schema_field(schema_dict)
 
         _show_profile_fields(schema_dict, defaults_bed_type, preselected_protocol_variant)
+        if (advanced := _route_section(defaults_bed_type, preselected_protocol_variant)) is not None:
+            schema_dict[vol.Optional("advanced")] = advanced
+        if errors:
+            # A refused route is asked again on the next submission.
+            self._route_chosen = None
         return self.async_show_form(
             step_id="manual_config",
             data_schema=vol.Schema(schema_dict),
-            errors=errors,
+            errors=_variant_errors_to_base(errors),
             description_placeholders={
                 "name": device_name,
                 "address": address,
@@ -5174,7 +5422,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else None
         )
         if user_input is not None:
-            _apply_bed_type_choice(user_input, shown_choice)
+            self._take_route_section(
+                user_input, preselected_bed_type, preselected_protocol_variant
+            )
+            _apply_setup_bed_type_choice(
+                user_input, preselected_bed_type, preselected_protocol_variant
+            )
         if rebuilt := await self._async_fit_setup_form(
             user_input, preselected_bed_type, preselected_protocol_variant, "manual_entry"
         ):
@@ -5193,6 +5446,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+                # Collect the route first: validation below depends on it.
+                if not errors and (
+                    route := self._request_route_choice(
+                        user_input, resume_step="manual_entry", bed_type=bed_type, protocol_variant=protocol_variant
+                    )
+                ):
+                    return route
 
                 motor_count = _normalize_fixed_motor_count(
                     bed_type,
@@ -5338,17 +5598,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         adapters = get_available_adapters(self.hass)
 
         # A bed type picked in the two-tier selection is the editable default.
-        bed_type_marker = (
-            vol.Required(CONF_BED_TYPE, default=shown_choice)
-            if shown_choice is not None
-            else vol.Required(CONF_BED_TYPE)
-        )
+        bed_type_marker, bed_type_select = _bed_type_field(vol.Required, shown_choice)
         schema_dict: dict[vol.Marker, Any] = {
             vol.Required(CONF_ADDRESS): str,
-            bed_type_marker: _bed_type_selector(shown_choice),
-            vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
-                ALL_PROTOCOL_VARIANTS
-            ),
+            bed_type_marker: bed_type_select,
         }
 
         # Determine smart defaults based on preselected bed type and variant
@@ -5398,11 +5651,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if preselected_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
         _show_profile_fields(schema_dict, preselected_bed_type, preselected_protocol_variant)
+        if (advanced := _route_section(preselected_bed_type, preselected_protocol_variant)) is not None:
+            schema_dict[vol.Optional("advanced")] = advanced
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
+        if errors:
+            # A refused route is asked again on the next submission.
+            self._route_chosen = None
         return self.async_show_form(
             step_id="manual_entry",
             data_schema=vol.Schema(schema_dict),
-            errors=errors,
+            errors=_variant_errors_to_base(errors),
             description_placeholders={
                 "transport": (
                     await self._async_transport_note(
@@ -8436,7 +8694,7 @@ class AdjustableBedOptionsFlow(
 
         # Build schema
         schema_dict: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_BED_TYPE, default=shown_choice): _bed_type_selector(shown_choice),
+            **dict([_bed_type_field(vol.Optional, shown_choice, show_saved_id=True)]),
             vol.Optional(
                 CONF_HAS_MASSAGE,
                 default=current_data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
