@@ -108,9 +108,9 @@ keeps finite pulses. The device scheduler owns the lease:
 `serial_opaque` remains the default strategy. A controller whose app is proven
 to hold independent axes together (#516) lists those motors in
 `ExecutionCapabilities.concurrent`. A `timed_move`, renewable or not, on one of
-those motors joins a merged stream instead of a serial command, but only when
-every physical side of the call declares that motor; a one-address side view
-stays serialized.
+those motors joins a merged stream instead of a serial command on a standalone
+bed. Paired beds stay serialized for now: their topologies run each side inside
+a prepared reservation, where a streamer cannot start.
 
 - One streamer per device owns the wire as a single `CommandKind.STREAM`
   intent, so there is still exactly one writer. Each tick the controller

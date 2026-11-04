@@ -2387,13 +2387,15 @@ async def _async_timed_move(
         await _release_preflighted(preflighted)
         raise
 
-    # #516: merge into one stream only when every physical side declares this
-    # motor concurrent (the paired intersection). A one-address side view
-    # keeps its sides serialized.
+    # #516: merge into one stream only on a standalone bed whose controller
+    # declares this motor concurrent. Paired topologies run each side inside a
+    # prepared reservation, where a streamer cannot start, so they stay serial.
     physical = [
         target for coordinator, side in targets for target in _command_targets(coordinator, side)
     ]
-    streamed = all(
+    streamed = not any(
+        isinstance(coordinator, PairedBedCoordinator) for coordinator, _ in targets
+    ) and all(
         not isinstance(target, SingleAddressSideCoordinator)
         and (resources := target.stream_resources()) is not None
         and plans[_plan_key(target)][3] in resources

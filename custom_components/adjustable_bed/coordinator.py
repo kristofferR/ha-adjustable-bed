@@ -6599,6 +6599,10 @@ class AdjustableBedCoordinator:
         resources = self.stream_resources()
         if resources is None:
             raise ValueError("This controller does not declare concurrent motors")
+        context = current_command_context()
+        if context is not None and context.scheduler_token is self._command_scheduler.token:
+            # A streamer queues behind the reservation this call runs in.
+            raise ValueError("A stream member cannot start inside another command")
         loop = asyncio.get_running_loop()
         member = StreamMember(
             motor=motor,
