@@ -14,6 +14,7 @@ from typing import Final, Literal
 
 from ..codec import jiecang as codec
 from ..codec.jiecang import BILATERAL, STANDARD, Axis, MassageZone, Preset, TransportKey, Wake
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Layout = Literal[
     "standard_2",
@@ -70,6 +71,8 @@ class NameRule:
 @dataclass(frozen=True, kw_only=True)
 class JiecangProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     layouts: dict[Layout, tuple[Axis, ...]]
     """Selectable physical layouts. Empty: the motor-count layout of the legacy route."""
     transports: tuple[TransportKey, ...]

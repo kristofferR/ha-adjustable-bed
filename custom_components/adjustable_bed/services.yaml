@@ -416,6 +416,19 @@ timed_move:
               label: Left
             - value: right
               label: Right
+    hold_owner:
+      required: false
+      example: card-1
+      selector:
+        text:
+    hold_generation:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 9007199254740992
+          mode: box
 
 hold_control:
   fields:
@@ -443,6 +456,19 @@ hold_control:
       selector:
         select:
           options: [both, left, right]
+    hold_owner:
+      required: false
+      example: card-1
+      selector:
+        text:
+    hold_generation:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 9007199254740992
+          mode: box
 
 octo_enroll_pin:
   fields:
