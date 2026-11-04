@@ -52,6 +52,8 @@ from .const import (
     CONF_PAIR_MODE,
     CONF_PAIR_SCHEMA_VERSION,
     CONF_PRODUCT_TYPE,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
@@ -93,6 +95,8 @@ class ChildDescriptor(TypedDict, total=False):
     name: str
     bed_type: str
     protocol_variant: str
+    # Schema 5: derived from this side's effective config (profile_id.py).
+    profile_id: str
     kaidi_resolved_variant: str
     preferred_adapter: str
     octo_pin: str
@@ -245,6 +249,9 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         CONF_FSM_RELAX_MEMORY_NAMES, CONF_LIMOSS_REMOTE_THEME,
         # The upgrade review belongs to the entry, not to either side.
         CONF_PROFILE_REVIEW_PENDING,
+        # Each side stores its own profile id; the parent's must never stand in.
+        CONF_PROFILE_ID,
+        CONF_PROFILE_MIGRATION,
         CONF_PAIR_ID,
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,

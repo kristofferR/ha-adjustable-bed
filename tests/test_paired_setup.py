@@ -73,6 +73,8 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MODE,
     CONF_PAIR_SCHEMA_VERSION,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
     CONF_SLEEPYS_ELITE_SELECTOR,
@@ -122,6 +124,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
     decode_pair_selection,
     encode_pair_selection,
 )
+from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_recommendations import _watches
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
@@ -447,6 +450,16 @@ class TestPairedSetup:
         assert entry.data[CONF_PAIR_MODE] == PAIR_MODE_SINGLE_ADDRESS
         paired = hass.data[DOMAIN][entry.entry_id]
         assert isinstance(paired, SingleAddressPairedCoordinator)
+        # Each side reports its own stored profile id, not the shared entry's.
+        from custom_components.adjustable_bed.diagnostics import (
+            async_get_config_entry_diagnostics,
+        )
+
+        diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+        assert {side: data["profile_id"] for side, data in diagnostics["sides"].items()} == {
+            "left": "sbi:side_a",
+            "right": "sbi:side_b",
+        }
         observers = list(_watches(hass).values())
         assert len(observers) == 1
         assert observers[0].side is None
@@ -475,7 +488,11 @@ class TestPairedSetup:
         await async_unpair_entry(hass, entry)
         await hass.async_block_till_done()
 
-        assert entry.data == original_data
+        # Only the schema 5 profile id and migration record were added.
+        restored = dict(entry.data)
+        assert restored.pop(CONF_PROFILE_ID) == resolve_profile_id(original_data)
+        assert restored.pop(CONF_PROFILE_MIGRATION)["from_version"] == 4
+        assert restored == original_data
         assert entry.unique_id == LEFT_ADDR
         assert not is_paired(entry.data)
         rows = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)

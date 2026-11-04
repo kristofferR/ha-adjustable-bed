@@ -181,21 +181,24 @@ Cross-family notes:
 | **Okin OKIN FFE** | bed type `okin_ffe` | `keeson` variant `okin` | Same controller and frames, different pulse defaults: `okin_ffe` 7 x 150 ms, `keeson:okin` 10 x 100 ms |
 
 Byte-identical routes. The groups below produce the same status and the same
-events, timing included, on **every** captured command. Collapsing them needs a
-config-entry migration (or documented alias) in #744/#745:
+events, timing included, on **every** captured command. Sharing bytes is not
+enough to share a profile id (#778): setup fields, capabilities, entities and
+Repairs must match too. None of the groups passes yet, so each route keeps its
+own [profile id](profile-id.md#aliases); `tests/test_profile_id_aliases.py` pins
+the difference that keeps each group apart:
 
-| Group | Controller |
-| --- | --- |
-| `comfort_motion` = `jiecang` | `JiecangController` |
-| `okimat` = `okin_uuid` | `OkinUuidController` |
-| `dewertokin` = `okin_handle` | `OkinHandleController` |
-| `nectar` = `okin_7byte` | `Okin7ByteController` |
-| `mattressfirm` = `okin_nordic` | `OkinNordicController` |
-| `ergomotion` = `keeson:ergomotion`; `serta` = `keeson:serta` | `KeesonController` |
-| `leggett_okin` = `leggett_platt` = `leggett_platt:okin`; `leggett_gen2` = `leggett_platt:gen2` | `LeggettOkinController`, `LeggettGen2Controller` |
-| `keeson:americanstar` = `avanti_bases` = `bedsense_bases` = `dynasty_bases` = `maxcoil_una` | `OreComfortBedController` |
-| `richmat_best_mattress:model_bfrm` = `richmat_blvd_home:model_bfrm` (one model in two apps) | `RichmatMhController` |
-| `fsm_relax` = `fsm_relax:massage_light` (the light and massage flags change nothing the capture reaches, since the capability handshake is not answered) | `FsmRelaxController` |
+| Group | Controller | Profile ids |
+| --- | --- | --- |
+| `comfort_motion` = `jiecang` | `JiecangController` | Separate: profile review Repairs, device manufacturer |
+| `okimat` = `okin_uuid` | `OkinUuidController` | Separate: legacy type not offered in setup, device manufacturer |
+| `dewertokin` = `okin_handle` | `OkinHandleController` | Separate: profile review Repairs, setup, device manufacturer |
+| `nectar` = `okin_7byte` | `Okin7ByteController` | Separate: setup, device manufacturer |
+| `mattressfirm` = `okin_nordic` | `OkinNordicController` | Separate: setup, device manufacturer |
+| `ergomotion` = `keeson:ergomotion`; `serta` = `keeson:serta` | `KeesonController` | Separate: offline entities, device manufacturer |
+| `leggett_okin` = `leggett_platt` = `leggett_platt:okin`; `leggett_gen2` = `leggett_platt:gen2` | `LeggettOkinController`, `LeggettGen2Controller` | Separate: `leggett_platt` is not offered in setup and auto-detects at connect |
+| `keeson:americanstar` = `avanti_bases` = `bedsense_bases` = `dynasty_bases` = `maxcoil_una` | `OreComfortBedController` | Separate: setup fields and labels per app |
+| `richmat_best_mattress:model_bfrm` = `richmat_blvd_home:model_bfrm` (one model in two apps) | `RichmatMhController` | Separate: two apps, two bed types |
+| `fsm_relax` = `fsm_relax:massage_light` (the light and massage flags change nothing the capture reaches, since the capability handshake is not answered) | `FsmRelaxController` | One id, `fsm_relax`: the flags are settings |
 
 Routes equal to their default route: `sbi:both`, `rondure:both`, `keeson:json`,
 `octo:standard`, `linak:bed_control`, `doublesleep:p1`, `okin_cb24:cb24` (and
@@ -206,7 +209,8 @@ Routes equal to their default route: `sbi:both`, `rondure:both`, `keeson:json`,
 `okin_64bit:nordic`, `okin_cst:cst_aviada`/`cst_contempo`/`cst_mf900` and
 `okin_dot:97450`. Other equal route pairs: `okin_cb24:cb27new` = `cb_new`,
 `okin_dot:91983` = `93558`, `bedsense_4` = `bedsense_5`,
-`simmons:simmons_inclined` = `simmons_inclined_smartbed`.
+`simmons:simmons_inclined` = `simmons_inclined_smartbed`. These keep their own profile
+ids too: only `auto` and a missing variant share one.
 
 **Not aliases.** One controller class or one frame, but different bytes or timing
 on some commands, so each stays its own profile. Counts are commands of the full

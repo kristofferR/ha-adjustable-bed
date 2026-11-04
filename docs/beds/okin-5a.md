@@ -110,6 +110,10 @@ existing entries keep their identities; the
 `nectar` and `mattressfirm` are kept for existing entries and are not offered in
 the bed-type list.
 
+Each also keeps its own [profile id](../design/profile-id.md#aliases): besides
+the bed-type list, the device manufacturer differs ("Nectar" and "MattressFirm"
+against "Okin").
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/okin_5a.py`. Profiles
