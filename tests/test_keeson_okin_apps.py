@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from bleak.exc import BleakError
+from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -879,21 +880,15 @@ async def test_heal_settings_survive_a_profile_change_and_end_with_the_entry(
     assert address in sessions
 
     # Changing the profile keeps Heal Every Night's slot for a later change back.
-    form = await hass.config_entries.options.async_init(entry.entry_id)
-    form = await hass.config_entries.options.async_configure(
-        form["flow_id"], user_input={"next_step_id": "settings"}
+    manager = hass.config_entries.flow
+    result = await manager.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    changes = {
-        CONF_BED_TYPE: BED_TYPE_KEESON,
-        CONF_MOTOR_COUNT: 2,
-        CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SIMON_LI,
-    }
-    result = await hass.config_entries.options.async_configure(form["flow_id"], user_input=changes)
-    if result["type"] == FlowResultType.FORM:
-        result = await hass.config_entries.options.async_configure(
-            result["flow_id"], user_input=changes
-        )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
+    result = await manager.async_configure(result["flow_id"], {"choice": "okin_seating_apps"})
+    result = await manager.async_configure(result["flow_id"], {"choice": "keeson:simon_li"})
+    assert result["step_id"] == "migration_confirm"
+    result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    assert result["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SIMON_LI
 

@@ -830,6 +830,42 @@
           "motor_count": "Number of motors"
         }
       },
+      "keeson_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. Keeson, Ergomotion, Serta and Cool Base beds share names and Bluetooth services, so they don't identify the app. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
+        }
+      },
+      "keeson_app": {
+        "title": "Which app?",
+        "description": "Choose the exact app you use.",
+        "data": {
+          "choice": "App"
+        }
+      },
+      "keeson_restonic": {
+        "title": "Restonic BT remote style",
+        "description": "The Restonic BT app lets you choose a remote style in its settings; A is the app's default. Choose the style your app shows.",
+        "data": {
+          "protocol_variant": "Remote style"
+        }
+      },
+      "keeson_screen": {
+        "title": "Which screen does the app show?",
+        "description": "{app} has a 2M, 3M and 4M screen. Choose the one you use: it sets the number of motors.",
+        "data": {
+          "motor_count": "App screen"
+        }
+      },
+      "keeson_route": {
+        "title": "Remote route and motors",
+        "description": "Choose the route of the remote that controls this bed, and how many motors the bed has. Keep Auto-detect if you don't know it.",
+        "data": {
+          "protocol_variant": "Remote route",
+          "motor_count": "Number of motors"
+        }
+      },
       "jiecang_legacy": {
         "title": "Motors on this bed",
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
@@ -9027,6 +9063,32 @@
         "okin_dot": "No app: DOT remote (RF34 or RF6707)",
         "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
         "keep": "I don't know: keep the detected controls"
+      }
+    },
+    "keeson_family_choice": {
+      "options": {
+        "sleep_harmony": "Sleep Harmony app",
+        "restonic": "Restonic BT app",
+        "ergomotion_apps": "Ergomotion, Ergomotion 4.0 or Serta MP Remote app",
+        "ore_apps": "Avanti, AMERICANSTAR, Bedsense Bases, INNOVA, MaxCoil Una or Dynasty app",
+        "okin_seating_apps": "Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app",
+        "purple_base_json": "Purple Smart Base, Member's Mark or Linx / Juna Sleep",
+        "coolbase": "Cool Base app (with fan)",
+        "other_route": "No app: another Keeson remote route",
+        "keep": "I don't know: keep the detected controls"
+      }
+    },
+    "keeson_restonic_style": {
+      "options": {
+        "restonic_a": "Remote A (6 buttons)",
+        "restonic_b": "Remote B (10 buttons)"
+      }
+    },
+    "keeson_screen": {
+      "options": {
+        "2": "2M: back and feet",
+        "3": "3M: back, feet and head",
+        "4": "4M: back, feet, waist and lumbar"
       }
     }
   }
