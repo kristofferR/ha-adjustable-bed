@@ -394,3 +394,19 @@ async def test_a_finite_press_still_ends_on_its_own(hass: HomeAssistant, name: s
     frames = _recorded(controller)
     assert frames[0] == case.held(controller)
     assert frames[-1] == case.release(controller)
+
+
+async def test_gen2_leased_burst_outlasts_its_finite_25_frames(hass: HomeAssistant) -> None:
+    """A finite Gen2 press is 25 frames 200 ms apart; a lease asks for the ceiling."""
+    controller = _gen2(hass)
+    controller.write_command = AsyncMock()  # type: ignore[method-assign]
+    with _leased(controller._coordinator.cancel_command):  # type: ignore[attr-defined]
+        await controller.move_head_up()
+    await controller.move_head_up()
+    leased, finite = (
+        call.kwargs
+        for call in controller.write_command.await_args_list
+        if call.args[0] == LeggettGen2Commands.MOTOR_HEAD_UP
+    )
+    assert leased == {"repeat_count": MAX_HOLD_MS // 200 + 1, "repeat_delay_ms": 200}
+    assert finite == {"repeat_count": 25, "repeat_delay_ms": 200}
