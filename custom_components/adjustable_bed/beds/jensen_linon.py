@@ -29,6 +29,7 @@ from ..const import (
     SVANE_LIGHT_ON_OFF_UUID,
     SVANE_LIGHT_SERVICE_UUID,
 )
+from ..execution import ExecutionCapabilities
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -76,6 +77,11 @@ class JensenLinonController(BedController):
         super().__init__(coordinator)
         # The bed does not report light state, so track what was last sent.
         self._light_on = False
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes a held control every 800 ms, then STOPs head and foot (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     def _get_char_in_service(
         self, service_uuid: str, char_uuid: str
@@ -278,6 +284,9 @@ class JensenLinonController(BedController):
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Keep the configured hold duration at the app's 800 ms cadence."""
+        # A renewable hold (#483) refreshes until its lease ends.
+        if (count := self.leased_hold_refreshes(HOLD_INTERVAL_MS)) is not None:
+            return count, HOLD_INTERVAL_MS
         pulse_count, pulse_delay = super().motor_pulse_settings()
         return _hold_steps(max(0, pulse_count - 1) * pulse_delay), HOLD_INTERVAL_MS
 
@@ -309,7 +318,7 @@ class JensenLinonController(BedController):
                 await self._write_to_service_char(
                     service_uuid, char_uuid, JensenLinonCommands.MOVE, cancel_event=cancel_event
                 )
-                await asyncio.sleep(HOLD_INTERVAL_MS / 1000)
+                await self._hold_interval(cancel_event)
         except BaseException:
             # Release the bed, but let the original error or cancellation propagate.
             try:
@@ -318,6 +327,18 @@ class JensenLinonController(BedController):
                 _LOGGER.debug("Failed to send Jensen LinOn STOP after an interrupted move")
             raise
         await self._send_stop()
+
+    @staticmethod
+    async def _hold_interval(cancel_event: asyncio.Event) -> None:
+        """Wait one 800 ms interval; a cancel (STOP, lease expiry) ends it at once."""
+        sleeper = asyncio.ensure_future(asyncio.sleep(HOLD_INTERVAL_MS / 1000))
+        waiter = asyncio.ensure_future(cancel_event.wait())
+        try:
+            await asyncio.wait((sleeper, waiter), return_when=asyncio.FIRST_COMPLETED)
+        finally:
+            for task in (sleeper, waiter):
+                task.cancel()
+            await asyncio.gather(sleeper, waiter, return_exceptions=True)
 
     async def _move_motor(self, service_uuid: str, char_uuid: str) -> None:
         """Hold one direction characteristic, then STOP."""
