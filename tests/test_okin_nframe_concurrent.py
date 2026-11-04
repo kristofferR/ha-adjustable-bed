@@ -172,9 +172,12 @@ async def test_replacing_one_member_leaves_the_other(make_runtime, clock) -> Non
     assert not head.done()
     await asyncio.wait_for(head, 3)
     motion = _released(frames)
+    # Head's key never drops: every frame until the release carries it.
     assert set(motion) == {HEAD, CHORD}
-    first_chord = motion.index(CHORD)
-    assert HEAD not in motion[first_chord : len(motion) - motion[::-1].index(CHORD)]
+    chords = [index for index, frame in enumerate(motion) if frame == CHORD]
+    # The replaced feet gets its own cleanup (one head-only frame), then the
+    # replacement's first tick brings feet back.
+    assert motion[chords[0] : chords[-1] + 1].count(HEAD) == 1
 
 
 async def test_motor_stop_ends_only_its_member(make_runtime, clock) -> None:
@@ -296,3 +299,50 @@ async def test_slow_writes_keep_the_start_to_start_cadence(make_runtime, clock) 
     assert len(gaps) >= 4
     # Fixed-rate ticks: 100 ms apart, not 100 ms after each 60 ms write.
     assert all(gap == pytest.approx(0.1, abs=1e-6) for gap in gaps)
+
+
+async def test_a_newcomer_starts_with_a_tick_not_a_cleanup_frame(
+    make_runtime, clock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A member joining just before another ends is introduced by a timed tick.
+
+    With slow writes, feet joins while head's tick is on the wire, and head
+    expires before feet's first tick. Head's reduced frame must not start feet
+    early, or feet would move before the stream starts timing it.
+    """
+    monkeypatch.setattr(pe, "_clock", clock.time)
+    hass, coordinator, frames = make_runtime("prodigy4")
+    loop = asyncio.get_running_loop()
+    written: list[tuple[float, str]] = []
+    write = coordinator.client.write_gatt_char
+
+    async def slow(characteristic, payload, **kwargs) -> None:
+        written.append((loop.time(), bytes(payload).hex()))
+        await asyncio.sleep(0.06)
+        await write(characteristic, payload, **kwargs)
+
+    coordinator.client.write_gatt_char = slow
+    entry_id = coordinator.entry.entry_id
+    manager = await pe.async_setup_position_estimates(hass, entry_id, ((ADDRESS, None),))
+    bed = manager.beds[ADDRESS]
+    bed.configure({"head": (10.0, 10.0), "feet": (10.0, 10.0)})
+    bed.set_reference()
+    groups = property(lambda _self: {"head": ("head",), "feet": ("feet",)})
+    try:
+        with patch.object(LeggettOkinController, "estimated_position_motor_groups", groups):
+            head = asyncio.create_task(_move(hass, "head", 140))
+            await asyncio.sleep(0.12)
+            await asyncio.wait_for(_move(hass, "feet", 300), 2)
+            await asyncio.wait_for(head, 2)
+        first_feet = next(at for at, frame in written if frame in (FEET, CHORD))
+        # Head's reduced frame carries no started member: the zero word. The
+        # release that ends feet is the zero burst after feet's frames.
+        release = next(at for at, frame in written if frame == ZERO and at > first_feet)
+        feet_percent = bed.motors["feet"].percent
+        assert feet_percent is not None
+        # Feet moves from its first frame to its release, exactly its 300 ms,
+        # and the estimate records that same span.
+        assert release - first_feet == pytest.approx(0.3)
+        assert feet_percent / 100 * 10.0 == pytest.approx(0.3)
+    finally:
+        await pe.async_unload_position_estimates(hass, entry_id)
