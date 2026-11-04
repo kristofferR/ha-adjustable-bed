@@ -82,7 +82,7 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 | Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
-| Simultaneous movement | ✅ Held motors combine | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Held motors combine |
+| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Held motors combine |
 | Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
 | Other presets | Zero-G, anti-snore / quiet sleep where the handset has them | Zero-G, TV, Quiet Sleep | ❌ | Named memory-page controls | Snore |
@@ -781,7 +781,15 @@ provably complete catalog.
   head/tilt motor when the handset has one and stay a back synonym on 2-motor
   handsets; feet falls back to legs the same way. The configured motor count
   still caps how many axes are shown.
-- Motors held together send the sum of their words in one frame.
+- Motors held together send the sum of their words in one frame. This is
+  integration behavior carried over from
+  [smartbed-mqtt #66](https://github.com/richardhopton/smartbed-mqtt/pull/66),
+  not app evidence: the Okimat route has no accepted app report (its frozen
+  vectors are the pre-v5 controller's frames), and the
+  [FurniMove ledger](../apk-analysis/dispositions/157-furnimove.md) describes
+  only a single held key's refresh (D038), with no combined held keys.
+  FurniMove's two-axis movement is its explicit
+  [`furnimove_move_simultaneously`](furnimove.md) action.
 - Flat, memory recall, zero-gravity and anti-snore stream their key, then STOP.
   Anti-snore falls back to the quiet-sleep key: RF1058 handsets carry the same
   `0x4000` preset as either "Snore" or "QuietSleep".
