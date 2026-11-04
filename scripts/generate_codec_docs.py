@@ -2090,6 +2090,18 @@ _OKIN_KEY_LABELS = {
     "inclined_left": "Inclined Left",
     "inclined_middle": "Inclined Middle",
     "inclined_right": "Inclined Right",
+    "lounge": "Lounge / Reading",
+    "incline": "Incline",
+    "light_on": "Light on",
+    "light_off": "Light off",
+    "wave_1": "Massage wave 1",
+    "wave_2": "Massage wave 2",
+    "wave_3": "Massage wave 3",
+    "massage_timer_step": "Massage timer step",
+    "save_memory_1": "Save memory 1",
+    "save_memory_2": "Save memory 2",
+    "save_memory_3": "Save memory 3",
+    "save_memory_4": "Save memory 4",
 }
 _OKIN_GROUPS = {
     "Okimat": (okin_profiles.OKIMAT,),
@@ -2103,6 +2115,8 @@ _OKIN_GROUPS = {
     "SleepEase": (okin_profiles.DOUBLESLEEP,),
     "Sleepy's legacy CB25": (okin_profiles.SLEEPYS_BOX25_LEGACY,),
     "AdjustableM5X4": tuple({id(p): p for p in okin_profiles.STARCODE_ABM5_4_PROFILES.values()}.values()),
+    "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
+    "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
 }
 
 
@@ -2223,7 +2237,8 @@ def render_okin_nframe_profiles() -> str:
         "AdjustableM5X4 presets and recalls are held keys on its refresh; it streams "
         f"Flat for {okin_profiles.STARCODE_ABM5_4_FLAT_HOLD_MS} ms and saves or resets for "
         f"{okin_profiles.STARCODE_ABM5_4_SAVE_HOLD_MS} ms. SleepEase P1 presets are held "
-        "keys on its refresh too.",
+        "keys on its refresh too. The OKIN Bedding apps hold every action to its own "
+        f"deadline, saves for {okin_profiles.BEDDING_SAVE_HOLD_MS} ms; see their profiles.",
     )
 
 
@@ -2259,7 +2274,7 @@ def _okin_frame(profile: okin_profiles.OkinNFrameProfile, word: int, name: str =
         return _hex(keeson_codec.frame(word, header=0xE6, side=0))
     if profile.width == 5:
         return _hex(okin_codec.frame40(word))
-    return _hex(okin_codec.frame(word))
+    return _hex(okin_codec.frame(word, profile.width))
 
 
 def _okin_key_table(
@@ -2291,7 +2306,12 @@ def _okin_key_table(
                 label = _OKIN_KEY_LABELS.get(name, f"`{name}`")
                 if name.isdigit():
                     label = f"Index {name}"
-                row = [label, f"`0x{word:0{width * 2}X}`"]
+                digits = 2 * (8 if table == "long_keys" else max(width, profiles[0].width))
+                if profiles[0].width == 12:
+                    # The two 32-bit fields; the trailing padding is always zero.
+                    row = [label, f"`{word >> 64:08X} {(word >> 32) & 0xFFFFFFFF:08X}`"]
+                else:
+                    row = [label, f"`0x{word:0{min(digits, 16)}X}`"]
                 if multi:
                     labels = [p.name for p in users]
                     row.append(", ".join(labels) if len(users) < len(profiles) else "all")
@@ -2305,7 +2325,8 @@ def _okin_key_table(
     if any(0 in profile.keys.values() for profile in profiles):
         return _table(tuple(header), rows)
     stop_frames = " or ".join(sorted({_okin_frame(p, 0) for p in profiles}))
-    stop = ["STOP / release", "`0x00000000`", *(["all"] if multi else []), stop_frames]
+    zero = "`00000000 00000000`" if profiles[0].width == 12 else "`0x00000000`"
+    stop = ["STOP / release", zero, *(["all"] if multi else []), stop_frames]
     if envelope:
         stop.append(_hex(okin_codec.gateway_frame(0)))
     return _table(tuple(header), [*rows, tuple(stop)])
@@ -2342,6 +2363,13 @@ def render_okin_nframe_keys() -> str:
         "Keyed by the app's action names. BOX15 and BOX1220 move with their own "
         "frames, so their profiles hold only the shared keys; BOX25_STAR sends "
         "StarCode only.",
+        "#### Okin CST keys",
+        _okin_key_table(_OKIN_GROUPS["Okin CST"], envelope=False),
+        "The word column shows the primary and secondary fields. Each product lists "
+        "the controls it supports; held motors send the OR of their primary words.",
+        "#### OKIN Bedding app keys",
+        _okin_key_table(_OKIN_GROUPS["OKIN Bedding apps"], envelope=False),
+        "Each app's literal action table, by the app's action names.",
     )
 
 

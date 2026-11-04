@@ -179,6 +179,7 @@ def test_okin_nframe_guide_frames_are_frozen_vectors() -> None:
     text = (ROOT / "docs" / "beds" / "okin-nframe.md").read_text(encoding="utf-8")
     frames = re.findall(
         r"`(04 ?02(?: ?[0-9A-F]{2}){4}|05 ?02(?: ?[0-9A-F]{2}){5}|08 ?02(?: ?[0-9A-F]{2}){8}"
+        r"|0C ?02(?: ?[0-9A-F]{2}){12}"
         r"|E5 ?FE ?16(?: ?[0-9A-F]{2}){5}|E6 ?FE ?16(?: ?[0-9A-F]{2}){6})`",
         text,
         re.IGNORECASE,
@@ -209,6 +210,7 @@ async def test_okin_nframe_bed_types_match_the_factory() -> None:
             coordinator = _FactoryCoordinator()
             coordinator.entry.data[CONF_LEGGETT_APP_PROFILE] = profile.key
             coordinator.entry.options = {}
+            coordinator.handle_controller_state_update = lambda *_a, **_k: None
             if selector := abm.get(profile.key):
                 coordinator.entry.data[CONF_STARCODE_COMMAND_SELECTOR] = selector
             if bed_type == "doublesleep":
@@ -217,6 +219,8 @@ async def test_okin_nframe_bed_types_match_the_factory() -> None:
                 "leggett_platt": LEGGETT_VARIANT_OKIN,
                 "simmons": profile.key,
                 "doublesleep": "p1",
+                "okin_cst": profile.key,
+                "customatic_zseries": profile.key.removeprefix("zseries_"),
             }.get(bed_type)
             controller = await create_controller(
                 coordinator, bed_type, variant, _make_connected_client()
