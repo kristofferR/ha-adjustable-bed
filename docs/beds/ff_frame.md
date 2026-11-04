@@ -1008,7 +1008,7 @@ dispositions, including the excluded Wi-Fi provisioning and cloud controls.
 | Profile | Report | Ledger |
 |---------|--------|--------|
 | Solace MotionFlex, HomeKobo, Sweet Night | Accepted APK Protocol Audit reports, cluster 008 | [MotionFlex](solace-disposition.md) |
-| Woosa Sleep | `com.sn.woosa` 1.1.9 (13), artifact-set SHA-256 `21778ac636d9fed83d7809d0dd47521deb2b2e25d24867bf3e2458740c47b217` ([issue #606](https://github.com/kristofferR/ha-adjustable-bed/issues/606)) | [Woosa Sleep](woosa-disposition.md) |
+| Woosa Sleep | `com.sn.woosa` 1.1.9 (13), artifact-set SHA-256 `21778ac636d9fed83d7809d0dd47521deb2b2e25d24867bf3e2458740c47b217`, accepted `REPORT.SHA256` digest `995677ce2204b2f8255b5a47f9b7c597928255d636e2f50ba1aff3cdfcf70851` ([issue #606](https://github.com/kristofferR/ha-adjustable-bed/issues/606)) | [Woosa Sleep](woosa-disposition.md) |
 | BedSense | `com.fenmenbielei.bedsense` 1.8 (18), row108 | [row108](../apk-analysis/dispositions/row108-bedsense.md) |
 | Motion Bed | `com.sn.blackdianqi` 1.24 (34), XAPK SHA-256 `76449cb37440907b6933c5dfb36a1a5ec5b737756f44db5a9629a654f9f3e6a3` | [unit 032](../apk-analysis/dispositions/032-motion-bed.md) |
 
