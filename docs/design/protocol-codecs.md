@@ -1,8 +1,9 @@
 # Protocol codecs and app profiles
 
-Ref #742 and #744. Bed support is split into three layers so that a wire
+Ref #742, #744 and #745. Bed support is split into three layers so that a wire
 format is encoded once, however many apps use it. The Jiecang family is the
-reference implementation; later families follow it (#745).
+reference implementation, described in detail below; the other families follow
+it.
 
 | Layer | Module | Owns |
 | --- | --- | --- |
@@ -12,6 +13,60 @@ reference implementation; later families follow it (#745).
 
 Imports point one way: controllers use profiles and codecs, profiles use the
 codec, and the codec imports neither.
+
+## Codec families
+
+Each codec module's docstring describes its frame; each profile module's
+docstring names its routes and their evidence.
+
+| Family (#745) | Codec | Profiles | Guide | Vectors |
+| --- | --- | --- | --- | --- |
+| J1 Jiecang F1 | `codec/jiecang.py` | `profiles/jiecang.py` | [Jiecang](../beds/jiecang.md) | `tests/jiecang_vectors.py` |
+| J1 LOGICDATA app | `codec/jiecang.py` | `profiles/logicdata.py` | [Jiecang](../beds/jiecang.md#logicdata-app-family) | `tests/logicdata_vectors.py` |
+| K1 Keeson E5/E6 | `codec/keeson.py` | `profiles/keeson.py` | [Keeson](../beds/keeson.md) | `tests/keeson_vectors.py` |
+| O1 Okin N-frame | `codec/okin_nframe.py` | `profiles/okin_nframe.py` | [Okin N-frame](../beds/okin-nframe.md) | `tests/okin_nframe_vectors.py` |
+| O2 Okin 5A | `codec/okin_5a.py` | `profiles/okin_5a.py` | [Okin 5A](../beds/okin-5a.md) | `tests/okin_5a_vectors.py` |
+| R1 Richmat 6E | `codec/richmat.py` | `profiles/richmat.py` | [Richmat](../beds/richmat.md) | `tests/richmat_vectors.py` |
+| S1 FFFF frame | `codec/ff_frame.py` | `profiles/ff_frame.py` | [FFFF frame](../beds/ff_frame.md) | `tests/ff_frame_vectors.py` |
+| L1 Limoss DD | `codec/limoss.py` | `profiles/limoss.py` | [Limoss](../beds/limoss.md) | `tests/limoss_vectors.py` |
+
+Which bed types each family backs, and which are still pending, is in its
+registration module (see [Registering a family](#registering-a-family)).
+
+## Registering a family
+
+A family registers itself in files it owns, so parallel family PRs do not touch
+a shared registry.
+
+- **Contract:** `tests/codec_families/<family>.py` declares
+  `FAMILY = CodecFamily(...)`:
+  - `profiles`: each profile class and its frozen vectors by profile key;
+  - `bed_types`: the bed types whose controller is a profile over this codec;
+  - `app_routes`: for bed types whose profile is an app choice, the config key
+    and its choices;
+  - `pending`: bed types planned for this family, each with its #745 item;
+  - `guide`: the guide path, how to find the frames it spells, the frozen frames
+    they must belong to, and the protocol variant that reaches each profile.
+
+  `tests/codec_families/_standalone.py` lists the bed types that stay
+  standalone, with their reasons. `tests/test_codec_contract.py` discovers the
+  modules and requires every supported bed type exactly once across
+  `bed_types`, `pending` and the standalone list. A `bed_types` entry must build
+  a controller whose `profile` is one of the family's classes with vectors for
+  its key; a pending or standalone one must not. Migrating a bed type moves it
+  from `pending` to `bed_types`.
+- **Docs:** `scripts/codec_docs/<family>.py` exports `BLOCKS`, a list of
+  `(guide, block name, renderer)`, and optionally `bed_types()`, the bed types
+  per profile key that its profile summary lists. Shared helpers are in
+  `scripts/codec_docs/_common.py`. `scripts/generate_codec_docs.py` discovers the
+  modules. `tests/test_codec_docs.py` runs the generic checks for every family:
+  stale blocks, one marked region per block, spelled frames are frozen vectors,
+  and `bed_types()` matches the factory. Checks only one family needs go in
+  `tests/test_codec_docs_<family>.py`.
+
+Profile keys are scoped to their profile class. Two families may use the same
+key (Jiecang and Limoss both call their pre-v5 route `legacy`); every lookup,
+including the contract's, goes through the class first.
 
 ## Jiecang codec
 
@@ -64,8 +119,8 @@ Docs follow the same split. A codec guide ([Jiecang](../beds/jiecang.md)) holds
 the transports, framing, command tables, responses and release behavior once, then
 one section per profile. Tables the profile data already knows sit between
 `<!-- generated:<name> -->` markers and are rewritten by
-`scripts/generate_codec_docs.py`; `tests/test_codec_docs.py` fails when one is
-stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
+`scripts/generate_codec_docs.py` from each family's `scripts/codec_docs/` module;
+`tests/test_codec_docs.py` fails when one is stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
 Discovery ledgers stay separate documents linked from each profile section.
 
 ## Controller glue
@@ -126,9 +181,6 @@ its own codec, with the reason recorded here.
 
 ## Follow-ups
 
-- The LOGICDATA app profiles (`logicdata_app_protocol.py`) encode the same
-  frame, transports, opcodes, alarm, clock and massage frames. They are the
-  first #745 family to move onto this codec.
 - The family write loop bypasses `_write_gatt_with_retry`, so Jiecang writes
   do not appear in support-bundle command traces. That was true before this
   change and needs its own fix.

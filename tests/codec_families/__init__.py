@@ -52,6 +52,7 @@ class CodecFamily:
     - ``app_routes``: codec-backed bed types whose app profile is a choice.
     - ``pending``: bed types planned for this family, each with its #745 item.
       Migrating one moves it from ``pending`` to ``bed_types``.
+    - ``guide``: what the docs tests check in the family's codec guide.
     """
 
     profiles: Mapping[type, Mapping[str, frozenset[str]]]

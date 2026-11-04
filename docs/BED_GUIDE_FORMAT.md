@@ -118,13 +118,16 @@ Features) so the reference check applies, then splits into codec and profile par
   `<!-- /generated -->` and are rewritten by `scripts/generate_codec_docs.py` from
   the codec and profile modules. Do not edit them by hand; edit the code and rerun
   the script. `tests/test_codec_docs.py` fails when a block is stale. To generate
-  a block for a new family, add a renderer and a `BLOCKS` entry to the script.
+  a block, add a renderer and a `BLOCKS` entry to the family's module in
+  `scripts/codec_docs/` (see
+  [Registering a family](design/protocol-codecs.md#registering-a-family)).
 - **Generate every value the code knows**: transports, command tables (built by
   calling the codec's encoders, never as literals), bed types, layouts and
   payloads, timing and startup queries. Prose points to a generated table instead
   of repeating its numbers, so a changed profile cannot leave a stale copy.
 - Every frame spelled out by hand must be one of the family's frozen vectors;
-  the family's docs test checks this.
+  the `guide` of its `tests/codec_families/` module tells the docs test how to
+  find them.
 - Keep hand-written prose for what code cannot express as data: setup flow,
   state machines, notification handling, services and safety behavior.
 
