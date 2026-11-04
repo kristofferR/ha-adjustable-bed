@@ -457,7 +457,7 @@ From app disassembly:
 Sleepy's Elite beds are auto-detected by name plus BLE services:
 
 - Device names starting with `star25` (case-insensitive) plus Nordic UART → BOX25, then `2A29` selects StarCode or legacy packets at connection time
-- `ELEVATE*` plus Nordic UART → the separate [ELEVATE controller](star-elevate.md),
+- `ELEVATE*` plus Nordic UART → the separate [ELEVATE controller](okin-5a.md#dewertokin-elevate),
   never BOX25
 - Device names starting with "star" without Nordic UART are treated as a low-confidence BOX25 match because Octo Star2 uses similar names
 - Device names containing "sleepy" or "mfrm" (case-insensitive):

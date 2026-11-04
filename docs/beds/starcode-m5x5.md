@@ -6,14 +6,14 @@
 
 Select **AdjustableM5X5 app** for the artifact-verified behavior of
 `com.starcode.abm5_5` 1.2.3 (version code 6). The generic BOX25 route retains
-its other app contracts. ELEVATE lifts use the [DewertOkin ELEVATE](star-elevate.md)
+its other app contracts. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate)
 bed type, which joins this app's lift groups.
 
 ## Known Models
 
 - StarCode `STAR25*` beds operated with AdjustableM5X5, in three bed classes:
   CB25, F23 and kneading (see [Detection and setup](#detection-and-setup))
-- [DewertOkin ELEVATE](star-elevate.md) lifts, as members of this app's lift
+- [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts, as members of this app's lift
   groups
 
 ## Apps
@@ -162,7 +162,7 @@ high bytes, for example Head up is `5a 01 03 10 30 00 a5`.
 
 The app's ELEVATE class uses Star low bytes `40/41` for actuator 1, `42/43` for
 actuator 2, `44/45` for both, `46` for one-shot flat, `0f` STOP and `4f`
-interrupt, the same table as the released [ELEVATE](star-elevate.md)
+interrupt, the same table as the released [ELEVATE](okin-5a.md#dewertokin-elevate)
 controller. That bed type now carries these vectors and the group behavior
 below.
 

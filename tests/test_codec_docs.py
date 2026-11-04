@@ -73,3 +73,34 @@ async def test_jiecang_bed_types_match_the_factory() -> None:
             )
             assert isinstance(controller, JiecangProfileController), bed_type
             assert controller.profile is profiles[key], (key, bed_type)
+
+
+def test_okin_5a_guide_frames_are_frozen_vectors() -> None:
+    """Every frame spelled in the Okin 5A guide is one a profile was frozen sending."""
+    from tests.okin_5a_vectors import FROZEN_FRAMES
+
+    frozen = frozenset().union(*FROZEN_FRAMES.values())
+    text = (ROOT / "docs" / "beds" / "okin-5a.md").read_text(encoding="utf-8")
+    frames = re.findall(r"`((?:5A|09)(?: [0-9A-F]{2}){3,6})`", text)
+    assert frames
+    unknown = sorted(
+        {spelled for spelled in frames if spelled.replace(" ", "").lower() not in frozen}
+    )
+    assert not unknown, f"Frames no profile was frozen sending: {unknown}"
+
+
+async def test_okin_5a_bed_types_match_the_factory() -> None:
+    """The Okin 5A profile summary's bed types are the ones the factory builds each profile for."""
+    from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.profiles.okin_5a import PROFILES
+    from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
+
+    bed_types = _load_generator().okin_5a_bed_types()
+    assert bed_types.keys() == PROFILES.keys()
+    for key, types in bed_types.items():
+        assert types, f"{key} has no bed type"
+        for bed_type in types:
+            controller = await create_controller(
+                _FactoryCoordinator(), bed_type, None, _make_connected_client()
+            )
+            assert getattr(controller, "profile", None) is PROFILES[key], (key, bed_type)

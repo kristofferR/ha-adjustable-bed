@@ -18,7 +18,9 @@ from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
+from custom_components.adjustable_bed.profiles.okin_5a import Okin5AProfile
 from tests.jiecang_vectors import FROZEN_FRAMES as JIECANG_VECTORS
+from tests.okin_5a_vectors import FROZEN_FRAMES as OKIN_5A_VECTORS
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
     _FactoryCoordinator,
@@ -26,7 +28,10 @@ from tests.test_controller_contract import (
 )
 
 # Codec families: profile class -> frozen vectors by profile key.
-CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {JiecangProfile: JIECANG_VECTORS}
+CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
+    JiecangProfile: JIECANG_VECTORS,
+    Okin5AProfile: OKIN_5A_VECTORS,
+}
 
 # App choices of codec-backed bed types: bed type -> (config key, choices).
 APP_ROUTES: dict[str, tuple[str, tuple[str, ...]]] = {
@@ -81,21 +86,16 @@ UNMIGRATED: dict[str, str] = {
     "malouf_app": "#745 O2 Okin 5A, Okin-like Malouf frames",
     "malouf_legacy_okin": "#745 K1 Keeson E5/E6",
     "malouf_new_okin": "#745 O2 Okin 5A, Okin-like Malouf frames",
-    "mattressfirm": "#745 O2 Okin 5A",
     "motion_bed": "#745 S1 FFFF",
     "motosleep": "standalone: own wire format",
-    "nectar": "#745 O2 Okin 5A",
     "octo": "standalone: own wire format",
     "okimat": "#745 O1 Okin N-frame",
     "okin_64bit": "#745 O1 Okin N-frame",
-    "okin_7byte": "#745 O2 Okin 5A",
     "okin_cb24": "#745 O1 Okin N-frame",
-    "okin_cb35": "#745 O2 Okin 5A",
     "okin_cst": "#745 O1 Okin N-frame",
     "okin_dot": "#745 O1 Okin N-frame",
     "okin_ffe": "#745 K1 Keeson E5/E6",
     "okin_handle": "#745 O1 Okin N-frame",
-    "okin_nordic": "#745 O2 Okin 5A",
     "okin_ore": "standalone: own wire format",
     "okin_rf_eco_bt": "#745 O1 Okin N-frame",
     "okin_uuid": "#745 O1 Okin N-frame",
@@ -128,7 +128,6 @@ UNMIGRATED: dict[str, str] = {
     "sleepys_box25": "#745 O1 Okin N-frame",
     "sleepys_elite_app": "standalone: own wire format",
     "solace": "#745 S1 FFFF",
-    "star_elevate": "#745 O2 Okin 5A",
     "starcode_abm5_4": "#745 O1 Okin N-frame",
     "starcode_m1x12": "standalone: own wire format",
     "starcode_m5x5": "standalone: own wire format",

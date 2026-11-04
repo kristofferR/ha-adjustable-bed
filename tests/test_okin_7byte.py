@@ -9,11 +9,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_7byte import (
-    OKIN_7BYTE_CONFIG,
-    _cmd,
-)
 from custom_components.adjustable_bed.beds.okin_nordic import OkinNordicController
+from custom_components.adjustable_bed.codec.okin_5a import command as _cmd
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_7BYTE,
     CONF_BED_TYPE,
@@ -59,65 +56,6 @@ def mock_okin_7byte_config_entry(
     )
     entry.add_to_hass(hass)
     return entry
-
-
-# -----------------------------------------------------------------------------
-# Command Constants Tests
-# -----------------------------------------------------------------------------
-
-
-class TestOkin7ByteCommands:
-    """Test Okin 7-byte command building."""
-
-    def test_cmd_produces_7_bytes(self):
-        """_cmd should produce exactly 7 bytes for any input."""
-        for byte_val in [0x00, 0x01, 0x0F, 0x10, 0x58, 0x73]:
-            cmd = _cmd(byte_val)
-            assert len(cmd) == 7, f"_cmd(0x{byte_val:02x}) is not 7 bytes"
-
-    def test_command_header_format(self):
-        """Commands should start with 5A 01 03 10 30."""
-        header = bytes.fromhex("5A01031030")
-        for byte_val in [0x00, 0x0F, 0x10]:
-            cmd = _cmd(byte_val)
-            assert cmd[0:5] == header, f"_cmd(0x{byte_val:02x}) has wrong header"
-
-    def test_command_trailer(self):
-        """Commands should end with A5."""
-        for byte_val in [0x00, 0x0F, 0x10]:
-            cmd = _cmd(byte_val)
-            assert cmd[6] == 0xA5, f"_cmd(0x{byte_val:02x}) doesn't end with A5"
-
-    def test_command_variable_byte(self):
-        """_cmd should place the variable byte at index 5."""
-        assert _cmd(0x00)[5] == 0x00  # HEAD_UP
-        assert _cmd(0x01)[5] == 0x01  # HEAD_DOWN
-        assert _cmd(0x02)[5] == 0x02  # FOOT_UP
-        assert _cmd(0x03)[5] == 0x03  # FOOT_DOWN
-        assert _cmd(0x04)[5] == 0x04  # LUMBAR_UP (7-byte variant)
-        assert _cmd(0x07)[5] == 0x07  # LUMBAR_DOWN
-        assert _cmd(0x0F)[5] == 0x0F  # STOP
-        assert _cmd(0x10)[5] == 0x10  # FLAT
-        assert _cmd(0x11)[5] == 0x11  # LOUNGE (7-byte variant)
-        assert _cmd(0x13)[5] == 0x13  # ZERO_GRAVITY
-        assert _cmd(0x16)[5] == 0x16  # ANTI_SNORE
-        assert _cmd(0x58)[5] == 0x58  # MASSAGE_ON
-        assert _cmd(0x59)[5] == 0x59  # MASSAGE_WAVE
-        assert _cmd(0x5A)[5] == 0x5A  # MASSAGE_OFF
-        assert _cmd(0x73)[5] == 0x73  # LIGHT_ON
-        assert _cmd(0x74)[5] == 0x74  # LIGHT_OFF
-
-    def test_config_lumbar_up_byte(self):
-        """7-byte config should use the verified Nectar lumbar-up byte."""
-        assert OKIN_7BYTE_CONFIG.lumbar_up_byte == 0x04
-
-    def test_config_lounge_byte(self):
-        """7-byte config should use the verified Nectar TV/lounge byte."""
-        assert OKIN_7BYTE_CONFIG.lounge_byte == 0x11
-
-    def test_config_uses_write_without_response(self):
-        """Nectar traffic uses ATT write command / no response."""
-        assert OKIN_7BYTE_CONFIG.write_with_response is False
 
 
 # -----------------------------------------------------------------------------

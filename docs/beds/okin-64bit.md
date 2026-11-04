@@ -94,9 +94,9 @@ Mattress Firm Nordic packets with this protocol.
 
 - [Okimat/Okin](okimat.md) uses the same custom OKIN service UUID on some models,
   but sends 6-byte `0x04 0x02` frames.
-- [Mattress Firm 900](mattressfirm.md) also uses Nordic UART, but sends 7-byte
+- [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) also uses Nordic UART, but sends 7-byte
   `5A 01 ... A5` frames.
-- [Okin CB35](okin-cb35.md) uses Nordic UART with a related 7-byte Star protocol.
+- [Okin CB35](okin-5a.md#sealy-posturematic-cb35) uses Nordic UART with a related 7-byte Star protocol.
 - The [Adjustable bed (Lumbar) app](adjustable-lumbar.md) sends `0x08 0x02` frames on
   both of these services with its own name rule, timing and release STOPs. Select
   that explicit profile for beds controlled with that app; this bed type is unchanged.

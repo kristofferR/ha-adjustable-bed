@@ -6,7 +6,7 @@ All 111 owned commands and 138 inherited command routes are tested by literal ar
 
 Read the [protocol and public controls](../beds/starcode-m5x5.md) for the three bed profiles, ELEVATE lifts, one main plus three physical lifts, timing, state and five deferred real-user validation domains. Every exclusion below has an explicit product, platform, safety or unreachable-code reason. No exclusion depends on missing hardware or convenience.
 
-The app's ELEVATE class (P3) is the same device and frame table as the released [DewertOkin ELEVATE](../beds/star-elevate.md) bed type, so it is implemented there rather than as a fourth app profile. ELEVATE entries join this app's groups as a main or lift, interrupt their peers and are tested against the frozen P3 vectors. The app's refusal of a device without a readable firmware characteristic is not added to that released controller: it sends no frame, and imposing it could disconnect working entries.
+The app's ELEVATE class (P3) is the same device and frame table as the released [DewertOkin ELEVATE](../beds/okin-5a.md#dewertokin-elevate) bed type, so it is implemented there rather than as a fourth app profile. ELEVATE entries join this app's groups as a main or lift, interrupt their peers and are tested against the frozen P3 vectors. The app's refusal of a device without a readable firmware characteristic is not added to that released controller: it sends no frame, and imposing it could disconnect working entries.
 
 ## Complete binding
 

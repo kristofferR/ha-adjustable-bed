@@ -120,8 +120,8 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Svane](docs/beds/svane.md) | Svane Remote, JMC400, Jensen LinOn |
 | ✅ [DewertOkin](docs/beds/dewertokin.md) | Many older Rize models, Simmons, Nectar, Resident, Symphony |
 | ✅ [Serta](docs/beds/serta.md) | Serta Motion Perfect |
-| ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | iFlex / older Nordic UART bases |
-| ✅ [Nectar](docs/beds/nectar.md) | Nectar |
+| ✅ [Mattress Firm 900](docs/beds/okin-5a.md#mattress-firm-900--iflex) | iFlex / older Nordic UART bases |
+| ✅ [Nectar](docs/beds/okin-5a.md#nectar) | Nectar |
 | ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf-app.md) |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
@@ -149,8 +149,8 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [Ergo Slim app](docs/beds/ergo-slim.md) | Explicit A/B/C app layouts; hardware unverified |
 | 🧪 [TEMPUR AU app](docs/beds/tempur-au.md) | Explicit B1/B2/C1/D1/E1 app layouts; hardware unverified |
 | ✅ [LOGICDATA](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame; [MOTIONrelax](docs/beds/logicdata-app.md), [Sleep Smart](docs/beds/logicdata-sleep-smart.md) Vienna / Toronto / Middle Rail and air mattress pump |
-| ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
-| ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
+| ✅ [Okin CB35](docs/beds/okin-5a.md#sealy-posturematic-cb35) | Sealy Posturematic |
+| ✅ [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
 | 🧪 [BF / Cherish](docs/beds/bf-cherish.md) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
 | ✅ [Motion Bed](docs/beds/motion_bed.md) | QMS/SealyMF and TL beds, air and thermal controls |
