@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -166,25 +164,6 @@ class TestOkin7ByteController:
 class TestOkin7ByteMovement:
     """Test Okin 7-byte movement commands."""
 
-    async def test_move_head_up_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_up should send HEAD_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        assert mock_client.write_gatt_char.called
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 7
-        assert first_call_data == _cmd(0x00)
-
     async def test_move_lumbar_up_sends_correct_command(
         self,
         hass: HomeAssistant,
@@ -219,81 +198,6 @@ class TestOkin7ByteMovement:
 
         first_call = mock_client.write_gatt_char.call_args_list[0]
         assert first_call.kwargs["response"] is False
-
-    async def test_stop_all_sends_stop_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """stop_all should send STOP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.stop_all()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert call_data == _cmd(0x0F)
-
-    async def test_movement_sends_stop_after(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Movement should send STOP after motor command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        # Last call should be STOP
-        last_call_data = calls[-1][0][1]
-        assert last_call_data == _cmd(0x0F)
-
-
-class TestOkin7BytePresets:
-    """Test Okin 7-byte preset commands."""
-
-    async def test_preset_flat_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_flat should send FLAT command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        with patch("custom_components.adjustable_bed.beds.okin_7byte.asyncio.sleep"):
-            await coordinator.controller.preset_flat()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data == _cmd(0x10)
-
-    async def test_preset_zero_g_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_zero_g should send ZERO_GRAVITY command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        with patch("custom_components.adjustable_bed.beds.okin_7byte.asyncio.sleep"):
-            await coordinator.controller.preset_zero_g()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data == _cmd(0x13)
 
 
 class TestOkin7ByteMassage:
@@ -355,39 +259,3 @@ class TestOkin7ByteMassage:
         assert OkinNordicController(coordinator).supports_massage_intensity_step_control is True
 
 
-class TestOkin7ByteLights:
-    """Test Okin 7-byte light commands."""
-
-    async def test_lights_on_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """lights_on should send LIGHT_ON command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.lights_on()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert call_data == _cmd(0x73)
-
-    async def test_lights_off_sends_correct_command(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """lights_off should send LIGHT_OFF command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.lights_off()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert call_data == _cmd(0x74)

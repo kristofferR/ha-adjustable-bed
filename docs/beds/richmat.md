@@ -30,7 +30,7 @@ Brands using Richmat actuators:
 - FLEXX MOTION
 - Likimio
 - Lunio Smart+
-- Good Vibe Sleep
+- [Good Vibe Sleep](goodvibe.md) (dedicated app profiles and independent sleep sensors)
 - Best Mattress Power Base
 - Easy Rest
 - Coaster Sleep
@@ -66,6 +66,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [HARMONY](https://play.google.com/store/apps/details?id=com.richmat.harmony) 1.0.0 | `com.richmat.harmony` | [Richmat MH](#richmat-mh-apps), bed type `richmat_harmony` |
 | ✅ | [Idealbed](https://play.google.com/store/apps/details?id=com.richmat.idealbed) 2.4.2 | `com.richmat.idealbed` | [Richmat MH](#richmat-mh-apps), bed type `richmat_idealbed` |
 | ✅ | [HJBed](https://play.google.com/store/apps/details?id=com.richmat.hjbed) 2.1.2 (code 21200) | `com.richmat.hjbed` | [HJBed](#hjbed) |
+| ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | Own guide, [Good Vibe Sleep](goodvibe.md): its command frames match this codec, but its settings records put `20` before the length byte |
 
 ## Features
 
@@ -140,6 +141,15 @@ one write.
 | HJBed | Menu probes at connect | 300 ms apart |
 | HJBed | BJRN preset save | waits 3 s |
 <!-- /generated -->
+
+### Aliases
+
+No two Richmat bed types send identical bytes. The
+[protocol inventory](../design/protocol-inventory.md) found one model identical in two apps:
+`model_bfrm` in Best Mattress and in Blvd Home. Each app keeps its own catalog,
+so the model stays a choice in both [Richmat MH apps](#richmat-mh-apps).
+
+The two routes also keep separate [profile ids](../design/profile-id.md#aliases).
 
 ## Wire codec
 
@@ -944,6 +954,10 @@ after the link is released. Revive Control, Blvd Home and HARMONY switch to the
 VER1 pages on the first initialization reply; Best Mattress and Idealbed switch
 on the version reply.
 
+##### Home Assistant setup
+
+Choose the app your phone uses, for example **Revive Control app (Richmat)**. Shared Richmat names and services never select these profiles. `auto` applies the app's name rule: the first four characters of the raw Bluetooth name, lowercased, select the model. Names starting with `QRRM` (and Idealbed names starting with `Cool Touch`) make the app ask, so choose the model variant (`model_<id>`, labelled as in the app's picker, wizard or manual list). The form reports a name the app cannot resolve. Motor count is fixed; the model's catalog decides the motors, and each control keeps the app's KEEP interval. The variant belongs to each physical bed: split a two-address pair before changing it.
+
 #### Controls
 
 | Surface | Entities | Frames |
@@ -1191,6 +1205,10 @@ Write selection requires `write`. A selected `write-without-response` property
 uses writes without response; otherwise writes use response. Selection retains
 the first eligible write and first notify, while the last matched service decides
 the generic packet mode. HA/Bleak handles MTU negotiation without an arbitrary override.
+
+##### Home Assistant setup
+
+Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. This profile section lists all current and conditional profiles.
 
 #### Controls
 

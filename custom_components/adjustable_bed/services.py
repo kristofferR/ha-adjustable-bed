@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -88,9 +89,11 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
+    TIMED_MOVE_MOTOR_OPTIONS,
     bed_type_has_position_feedback,
     resolve_explicit_bed_type,
 )
+from .execution import HOLD_CEILING_MS
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
     BedChild,
@@ -194,6 +197,7 @@ SERVICE_LOGICDATA_RENAME = "logicdata_rename"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
 SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
+SERVICE_ESHINE_SET_ALARM = "eshine_set_alarm"
 SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
@@ -306,27 +310,6 @@ POSITION_MOTOR_OPTIONS = (
     "right_legs",
 )
 
-TIMED_MOVE_MOTOR_OPTIONS = (
-    "tv_lift",
-    "back",
-    "right_back",
-    "legs",
-    "head",
-    "feet",
-    "tilt",
-    "pillow",
-    "lumbar",
-    "bed_height",
-    "stair",
-    "m1x12_part_1",
-    "m1x12_part_2",
-    "m1x12_part_4",
-    "m1x12_part_8",
-    "m1x12_part_16",
-    "elevate_actuator_1",
-    "elevate_actuator_2",
-    "elevate_both",
-)
 LEGGETT_HELD_CONTROLS = (
     "flat",
     "snore",
@@ -361,7 +344,7 @@ MAX_TIMED_MOVE_DURATION_MS = 30000  # 30 seconds max
 # ceiling also bounds one hold in total: it never streams past it, however
 # often it is renewed.
 MIN_HOLD_LEASE_MS = MIN_TIMED_MOVE_DURATION_MS
-MAX_HOLD_LEASE_MS = MAX_TIMED_MOVE_DURATION_MS
+MAX_HOLD_LEASE_MS = HOLD_CEILING_MS
 HOLD_LEASE_FIELDS = {
     vol.Inclusive(ATTR_HOLD_OWNER, "hold_lease"): vol.All(
         cv.string, vol.Length(min=1, max=64)
@@ -2988,13 +2971,20 @@ async def handle_hold_control(call: ServiceCall) -> None:
     )
     lease = _hold_lease(call, control, duration_ms)
     if lease is not None:
-        if route is not None or control == "floor_hold":
+        if route == "svane" or control == "floor_hold":
             raise ServiceValidationError("This control does not support renewable holds")
+        held = lease
         await _async_with_hold_lease(
             targets,
-            lease,
+            held,
             lambda _target: None,
-            lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=lease),
+            (
+                lambda: _hold_limoss_remote(
+                    call, control, MAX_HOLD_LEASE_MS, targets=targets, lease=held
+                )
+            )
+            if route == "limoss_remote"
+            else lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=held),
         )
         return
     if route == "svane":
@@ -3612,16 +3602,35 @@ def _limoss_boolean(value: object) -> bool:
     return value
 
 
-async def _hold_limoss_remote(call: ServiceCall, control: str, duration_ms: int) -> None:
-    """Hold a rendered literal app action using its five-frame release."""
+async def _hold_limoss_remote(
+    call: ServiceCall,
+    control: str,
+    duration_ms: int,
+    *,
+    targets: list[tuple[BedTarget, str]] | None = None,
+    lease: HoldLease | None = None,
+) -> None:
+    """Hold a rendered literal app action using its five-frame release.
+
+    With a ``lease`` the hold streams until the lease ends (#483).
+    """
 
     def validate(controller: LimossRemoteController | SideBoundController) -> None:
         if control not in controller.held_control_options:
             raise ValueError(f"The selected profile does not support combination '{control}'")
+        if lease is not None and controller.execution.hold is None:
+            raise ValueError("This profile does not support renewable holds")
 
-    await _execute_limoss_remote(
-        call, validate, lambda ctrl: ctrl.hold_control(control, duration_ms)
-    )
+    async def hold(controller: BedController | SideBoundController) -> None:
+        await controller.hold_control(control, duration_ms)
+
+    # One tracked movement per hold: renewals extend the running command.
+    tracked = track_held_control(call.hass, control, hold)
+
+    async def execute(controller: LimossRemoteController | SideBoundController) -> None:
+        await tracked(cast("BedController", controller))
+
+    await _execute_limoss_remote(call, validate, execute, targets=targets, lease=lease)
 
 
 def _limoss_remote_controller(
@@ -3721,6 +3730,7 @@ async def _execute_limoss_remote(
     execute: Callable[[LimossRemoteController | SideBoundController], Coroutine[Any, Any, None]],
     *,
     targets: list[tuple[BedTarget, str]] | None = None,
+    lease: HoldLease | None = None,
 ) -> None:
     targets = _limoss_remote_targets(call) if targets is None else targets
 
@@ -3754,8 +3764,11 @@ async def _execute_limoss_remote(
         try:
             for coordinator, side in targets:
                 before = completed
-                await _execute_sided(coordinator, side, run, cancel_running=True)
-                if completed - before != len(_command_targets(coordinator, side)):
+                await _execute_sided(coordinator, side, run, cancel_running=True, lease=lease)
+                # A renewable hold normally ends by expiry, release or STOP.
+                if lease is None and completed - before != len(
+                    _command_targets(coordinator, side)
+                ):
                     raise ServiceValidationError(
                         "Limoss Remote action was interrupted before completion"
                     )
@@ -3971,6 +3984,43 @@ async def _execute_zseries_alarm(
         await _release_preflighted(preflighted)
         raise ServiceValidationError(str(err)) from err
     except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_eshine_set_alarm(call: ServiceCall) -> None:
+    """Configure the explicit com.okin.eshine profile's next-occurrence alarm."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    preset = call.data.get(ATTR_WAKE_MODE, "zero_g")
+    if enabled and alarm_time is None:
+        raise ServiceValidationError("Choose an eShine alarm time")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("eShine alarms use minute precision")
+    targets = _call_targets(call)
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_ESHINE_OKIN:
+                raise ServiceValidationError("Choose an eShine E2000/E3000/E3100/E5000 app bed")
+
+    def validate(controller: BedController | SideBoundController) -> None:
+        if enabled and preset not in controller.clock_alarm_preset_options:
+            raise ServiceValidationError("This eShine profile does not expose the selected alarm action")
+
+    preflighted = await _preflight_capability(
+        targets, "supports_clock_alarm", "eShine alarms", validate=validate,
+    )
+    async def program(controller: BedController | SideBoundController) -> None:
+        if enabled:
+            await controller.sync_clock()
+        await controller.configure_clock_alarm(
+            enabled=enabled, weekdays=(), hour=alarm_time.hour if alarm_time else 0,
+            minute=alarm_time.minute if alarm_time else 0, preset=preset,
+        )
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, program)
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -4819,6 +4869,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .casper_base_services import async_register_casper_base_services
     from .doublesleep_services import async_register_doublesleep_services
     from .gmmotor_services import async_register_gmmotor_services
+    from .goodvibe_services import async_register_goodvibe_services
     from .hjbed_services import async_register_hjbed_services
     from .motion_bed_services import async_register_motion_bed_services
     from .position_estimate_services import async_register_position_estimate_services
@@ -4834,6 +4885,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_richmat_mh_services(hass)
     async_register_position_estimate_services(hass)
     async_register_hjbed_services(hass)
+    async_register_goodvibe_services(hass)
     async_register_rmcontrol_services(hass)
     async_register_sleep_number_services(hass)
     async_register_doublesleep_services(hass)
@@ -5312,6 +5364,16 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_ESHINE_SET_ALARM, handle_eshine_set_alarm,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_TIME): cv.time,
+            vol.Optional(ATTR_WAKE_MODE, default="zero_g"): vol.In(("zero_g", "flat", "massage")),
+            **SIDE_FIELD,
+        }),
     )
     hass.services.async_register(
         DOMAIN, SERVICE_GLIDEAWAY_SET_ALARM, handle_glideaway_set_alarm,

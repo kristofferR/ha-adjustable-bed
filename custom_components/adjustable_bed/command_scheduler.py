@@ -578,6 +578,13 @@ class CommandContext:
     lease: HoldLease | None = None
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
+    cancel_generation: int = 0
+
+    def request_cancel(self, outcome: CommandOutcome) -> None:
+        """Distinguish repeated cancellations of this exact resource admission."""
+        self.cancel_generation += 1
+        self.cancel_reason = outcome
+        self.cancel_event.set()
 
 
 CommandOperation = Callable[[CommandContext], Awaitable[None]]
@@ -1165,8 +1172,7 @@ class DeviceCommandScheduler:
         self, handle: CommandHandle, outcome: CommandOutcome = CommandOutcome.GROUP_ABORTED
     ) -> None:
         """Invalidate one handle and wait for active cleanup when necessary."""
-        handle.context.cancel_reason = outcome
-        handle.context.cancel_event.set()
+        handle.context.request_cancel(outcome)
         async with self._lock:
             if handle in self._queue:
                 self._queue.remove(handle)
@@ -1294,8 +1300,7 @@ class DeviceCommandScheduler:
         for stream in tuple(self._streams.values()):
             handle = stream.handle
             if handle is not None and not handle.future.done():
-                handle.context.cancel_reason = outcome
-                handle.context.cancel_event.set()
+                handle.context.request_cancel(outcome)
                 if handle in self._queue:
                     self._queue.remove(handle)
                     self._finish_locked(handle, outcome)
@@ -1383,8 +1388,7 @@ class DeviceCommandScheduler:
             return
         if handle is None or handle.future.done():
             return
-        handle.context.cancel_reason = outcome
-        handle.context.cancel_event.set()
+        handle.context.request_cancel(outcome)
         if handle in self._queue:
             self._queue.remove(handle)
             self._finish_locked(handle, outcome)
@@ -1468,15 +1472,13 @@ class DeviceCommandScheduler:
             replaces_active = True
             # A streamer already ending at a STOP keeps that reason for its members.
             if active.stream is None or not active.context.cancel_event.is_set():
-                active.context.cancel_reason = CommandOutcome.REPLACED
-            active.context.cancel_event.set()
+                active.context.request_cancel(CommandOutcome.REPLACED)
 
         for queued in tuple(self._queue):
             if not self._handles_conflict(queued, incoming):
                 continue
             self._queue.remove(queued)
-            queued.context.cancel_reason = CommandOutcome.REPLACED
-            queued.context.cancel_event.set()
+            queued.context.request_cancel(CommandOutcome.REPLACED)
             self._finish_locked(queued, CommandOutcome.REPLACED)
         return replaces_active
 
@@ -1504,8 +1506,7 @@ class DeviceCommandScheduler:
             and _resources_overlap(active.intent.resources, resources)
             and not (spare_streams and active.stream is not None)
         ):
-            active.context.cancel_reason = outcome
-            active.context.cancel_event.set()
+            active.context.request_cancel(outcome)
             active.invalidated_stop_epoch = invalidated_stop_epoch
         for queued in tuple(self._queue):
             if not _resources_overlap(queued.intent.resources, resources) or (
@@ -1513,8 +1514,7 @@ class DeviceCommandScheduler:
             ):
                 continue
             self._queue.remove(queued)
-            queued.context.cancel_reason = outcome
-            queued.context.cancel_event.set()
+            queued.context.request_cancel(outcome)
             self._finish_locked(
                 queued,
                 outcome,
@@ -1586,12 +1586,11 @@ class DeviceCommandScheduler:
                         worker_task is not None and worker_task.cancelling()
                     )
                     if not handle.context.cancel_event.is_set():
-                        handle.context.cancel_reason = (
+                        handle.context.request_cancel(
                             CommandOutcome.SHUTDOWN
                             if worker_cancelled
                             else CommandOutcome.CALLER_CANCELLED
                         )
-                        handle.context.cancel_event.set()
                     self._finish(
                         handle,
                         handle.context.cancel_reason or CommandOutcome.CALLER_CANCELLED,

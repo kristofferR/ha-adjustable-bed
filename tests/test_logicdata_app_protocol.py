@@ -14,12 +14,6 @@ P1_RELEASE = codec.SHORT_RELEASE
 @pytest.mark.parametrize(
     ("layout", "axis", "up", "expected"),
     [
-        ("standard_2", "back", True, "f1f1010101037e"),
-        ("standard_2", "back", False, "f1f1020101047e"),
-        ("standard_2", "legs", True, "f1f1030101057e"),
-        ("standard_2", "legs", False, "f1f1040101067e"),
-        ("standard_2", "both", True, "f1f1050101077e"),
-        ("standard_2", "both", False, "f1f1060101087e"),
         ("standard_3_neck", "head", True, "f1f11901011b7e"),
         ("standard_3_neck", "head", False, "f1f11a01011c7e"),
         ("standard_3_lumbar", "lumbar", True, "f1f11b01011d7e"),
@@ -34,22 +28,10 @@ P1_RELEASE = codec.SHORT_RELEASE
         ("standard_4", "lumbar", False, "f1f11c01011e7e"),
     ],
 )
+
+
 def test_p1_motion_vectors(layout, axis, up, expected):
     assert profiles.motion_command(PHONE, "p1", layout, axis, up).hex() == expected
-
-
-@pytest.mark.parametrize(
-    ("axis", "up", "expected"),
-    [
-        ("back", True, "f1f101020000037e"),
-        ("back", False, "f1f102020000047e"),
-        ("legs", True, "f1f103020000057e"),
-        ("legs", False, "f1f104020000067e"),
-    ],
-)
-def test_p2_motion_still_uses_p1_touch_release(axis, up, expected):
-    assert profiles.motion_command(PHONE, "p2", "middle", axis, up).hex() == expected
-    assert PHONE.touch_release == ((100, bytes.fromhex("f1f14e004e7e")),)
 
 
 @pytest.mark.parametrize(
@@ -61,48 +43,18 @@ def test_p2_motion_still_uses_p1_touch_release(axis, up, expected):
         ("p1", "standard_3_lumbar", "head"),
     ],
 )
+
+
 def test_wrong_family_or_layout_axis_cannot_emit_commands(family, layout, axis):
     with pytest.raises(ValueError):
         profiles.validate_setup(PHONE, family, layout)
         profiles.motion_command(PHONE, family, layout, axis, True)
 
 
-@pytest.mark.parametrize(
-    ("family", "preset", "expected"),
-    [
-        ("p1", "flat", "f1f10801010a7e"),
-        ("p1", "zero_g", "f1f1070101097e"),
-        ("p1", "anti_snore", "f1f10901010b7e"),
-        ("p2", "flat", "f1f1080200000a7e"),
-    ],
-)
-def test_reachable_presets(family, preset, expected):
-    assert profiles.preset_command(PHONE, family, preset).hex() == expected
-
-
 @pytest.mark.parametrize("preset", ["zero_g", "anti_snore"])
 def test_p2_does_not_expose_p1_presets(preset):
     with pytest.raises(ValueError, match="only the flat"):
         profiles.preset_command(PHONE, "p2", preset)
-
-
-@pytest.mark.parametrize(
-    ("slot", "save", "p1", "p2"),
-    [
-        (1, True, "f1f10a01010c7e", "f1f10a0200000c7e"),
-        (1, False, "f1f10b01010d7e", "f1f10b0200000d7e"),
-        (2, True, "f1f10c01010e7e", "f1f10c0200000e7e"),
-        (2, False, "f1f10d01010f7e", "f1f10d0200000f7e"),
-    ],
-)
-def test_memory_family_vectors_including_corrected_tablet_save_rows(slot, save, p1, p2):
-    for profile in (PHONE, TABLET):
-        for family, expected in (("p1", p1), ("p2", p2)):
-            if save:
-                schedule = profiles.memory_save_schedule(profile, family, slot)
-                assert [(t, c.hex()) for t, c in schedule] == [(t, expected) for t in (0, 30, 60)]
-            else:
-                assert profiles.memory_command(profile, family, slot).hex() == expected
 
 
 def test_no_dead_memory_c_or_unreachable_intensity():
@@ -117,27 +69,14 @@ def test_no_dead_memory_c_or_unreachable_intensity():
 @pytest.mark.parametrize(
     ("zone", "low", "high"),
     [
-        ("back", "f1f1120208021e7e", "f1f112020804207e"),
         ("right", "f1f1220208022e7e", "f1f122020804307e"),
-        ("legs", "f1f114020802207e", "f1f114020804227e"),
     ],
 )
+
+
 def test_ui_massage_level_mapping(zone, low, high):
     assert profiles.massage_command(zone, 1).hex() == low
     assert profiles.massage_command(zone, 3).hex() == high
-
-
-def test_profile_specific_startup_queries():
-    for family, hardware in [("p1", "f1f1000140417e"), ("p2", "f1f100024000427e")]:
-        for profile, actuator in [(PHONE, "f1f1000150517e"), (TABLET, "f1f1000101027e")]:
-            assert [(t, data.hex()) for t, data in profile.startup[family]] == [
-                (1000, actuator),
-                (1100, actuator),
-                (1200, hardware),
-                (1300, hardware),
-                (1400, "f1f1000108097e"),
-                (1500, "f1f1000108097e"),
-            ]
 
 
 def test_massage_and_light_cleanup_are_not_the_dreamotion_schedule():

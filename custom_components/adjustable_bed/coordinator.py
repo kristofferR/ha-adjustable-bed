@@ -167,7 +167,7 @@ from .const import (
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
-    CONF_PROTOCOL_VARIANT,
+    CONF_PROFILE_ID,
     CONF_REMACRO_LED_LEVEL,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
@@ -271,6 +271,7 @@ from .position_seek import (
     SeekSample,
     SeekTimeoutError,
 )
+from .profile_id import entry_profile_id, profile_route, resolve_profile_id
 from .unsupported import (
     create_pairing_required_issue,
     delete_pairing_required_issue,
@@ -427,9 +428,13 @@ class AdjustableBedCoordinator:
         self.hass = hass
         self.entry = entry
         self._address: str = entry.data[CONF_ADDRESS].upper()
-        self._bed_type: str = entry.data[CONF_BED_TYPE]
-        self._protocol_variant: str = entry.data.get(
-            CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
+        # The stored profile id is the lookup key; its route is what the
+        # controller factory and every bed-type branch below read.
+        self._profile_id: str = entry_profile_id(entry.data)
+        route = profile_route(self._profile_id)
+        self._bed_type: str = route.bed_type
+        self._protocol_variant: str = (
+            route.variant if route.variant is not None else DEFAULT_PROTOCOL_VARIANT
         )
         self._name: str = entry.data.get(CONF_NAME, "Adjustable Bed")
         # Malouf's APK has one command exception keyed to Smartbed238. Keep the
@@ -992,6 +997,8 @@ class AdjustableBedCoordinator:
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
+        if bed_type_changed:
+            self._profile_id = entry_data[CONF_PROFILE_ID] = resolve_profile_id(entry_data)
         if migrate_leggett_okin_defaults and corrected_defaults is not None:
             entry_data[CONF_MOTOR_PULSE_COUNT] = corrected_defaults[0]
             entry_data[CONF_MOTOR_PULSE_DELAY_MS] = corrected_defaults[1]
@@ -1108,6 +1115,11 @@ class AdjustableBedCoordinator:
         return self._bed_type
 
     @property
+    def profile_id(self) -> str:
+        """Return the profile id this coordinator builds its controller from."""
+        return self._profile_id
+
+    @property
     def motor_count(self) -> int:
         """Return the motor count."""
         return self._motor_count
@@ -1219,7 +1231,7 @@ class AdjustableBedCoordinator:
             return self._controller
         return self._offline_controller
 
-    async def async_prime_offline_controller(self) -> None:
+    async def async_prime_offline_controller(self, *, preview: bool = False) -> None:
         """Best-effort mint of a client-free controller for capability reads.
 
         Construction only — never connects or starts notifications. Failures are
@@ -1227,6 +1239,10 @@ class AdjustableBedCoordinator:
         controller needs a live client (auto-detected Richmat/L&P/Keeson
         variants) raise ConnectionError and are left without an offline
         controller until they connect.
+
+        ``preview`` mints for a staged configuration that is never set up: it
+        lists the controls the configuration declares before connecting, so it
+        skips the runtime safety gate and never reads or writes app state.
         """
         if self._offline_controller is not None or self._controller is not None:
             return
@@ -1294,7 +1310,7 @@ class AdjustableBedCoordinator:
             or (bed_type == BED_TYPE_JENSEN and jensen_snapshot is not None)
             or (bed_type in RICHMAT_MH_BED_TYPES and isinstance(richmat_mh_snapshot, dict))
         )
-        if not mintable:
+        if not mintable and not preview:
             # Only beds whose entity-gating capabilities are fully determined by
             # stored config offline are safe to mint without a live connection.
             # Others auto-detect their variant from live GATT/advertisement, can
@@ -1318,7 +1334,8 @@ class AdjustableBedCoordinator:
                 cb24_bed_selection=self._cb24_bed_selection,
                 capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
-            await self._async_restore_app_state(self._offline_controller)
+            if not preview:
+                await self._async_restore_app_state(self._offline_controller)
             if bed_type in RICHMAT_MH_BED_TYPES and not getattr(
                 self._offline_controller, "has_stored_capabilities", False
             ):
@@ -3241,6 +3258,10 @@ class AdjustableBedCoordinator:
 
     def _auto_reconnect_enabled(self) -> bool:
         """Return True when unexpected disconnects should schedule a reconnect timer."""
+        controller = self.capability_controller
+        if controller is not None and controller.requests_connection_recovery is True:
+            return True
+
         # disconnect_after_command beds intentionally drop the link after each command
         # (and on idle), so an unexpected disconnect is expected behaviour, not a fault.
         # Scheduling a reconnect there causes a storm: some receivers (e.g. Keeson
@@ -5117,6 +5138,18 @@ class AdjustableBedCoordinator:
                 self._address,
                 err,
             )
+        finally:
+            controller = self.capability_controller
+            if (
+                not self._shutting_down
+                and not self._intentional_disconnect
+                and not self.is_connected
+                and controller is not None
+                and controller.requests_connection_recovery is True
+                and self._reconnect_timer is None
+            ):
+                self._reconnect_timer = self.hass.loop.call_later(5.0, self._schedule_auto_reconnect)
+
 
     async def async_read_initial_positions(self) -> None:
         """Read positions to initialize sensors.
@@ -5756,6 +5789,10 @@ class AdjustableBedCoordinator:
                 self.hass, self._address, sxb=self._bed_type == BED_TYPE_GMMOTOR_SLEEP_SXB
             ).live_enabled = False
 
+        # An explicit release ends app intent even if the physical link already dropped.
+        for controller in (self._controller, self._offline_controller):
+            if controller is not None:
+                controller.on_connection_release(reason)
         # Recovery may have launched while this caller waited for the lock.
         self._cancel_auto_reconnect()
         await self._async_cancel_furnimove_bond_request()
@@ -6286,9 +6323,22 @@ class AdjustableBedCoordinator:
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
+            context = current_command_context()
+            # A lease running out is a hold's normal end (#483). Only
+            # controllers whose loop leaves on the event may hold, so let the
+            # operation finish its release schedule instead of cutting it short.
+            lease_ended = (
+                cancel_wait_task in done
+                and context is not None
+                and context.cancel_event is cancel_event
+                and context.cancel_reason is CommandOutcome.EXPIRED
+            )
             for task in pending:
-                task.cancel()
+                if not (lease_ended and task is operation_task):
+                    task.cancel()
             for task in pending:
+                if task is operation_task and lease_ended:
+                    continue
                 try:
                     await task
                 except asyncio.CancelledError:
@@ -6297,7 +6347,7 @@ class AdjustableBedCoordinator:
 
             if cancel_wait_task in done:
                 _LOGGER.debug("Controller %s cancelled during execution", operation_name)
-                if not operation_task.done():
+                if not operation_task.done() and not lease_ended:
                     operation_task.cancel()
                 try:
                     await operation_task

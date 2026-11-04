@@ -14,7 +14,7 @@ from typing import Final, Literal
 
 from ..codec import jiecang as codec
 from ..codec.jiecang import BILATERAL, SHORT_RELEASE, STANDARD, Axis, MassageZone, Preset
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
 from .jiecang import NameRule, Schedule
 
 AppKey = Literal["phone", "tablet", "sleep_smart"]
@@ -160,6 +160,7 @@ _MOTIONRELAX_NAME: Final = NameRule(
 )
 PHONE: Final = LogicdataProfile(
     key="phone",
+    execution=STREAM_HOLD,
     session="motionrelax",
     layouts=MOTIONRELAX_LAYOUTS,
     p2_controls=True,
@@ -190,6 +191,7 @@ PHONE: Final = LogicdataProfile(
 TABLET: Final = replace(
     PHONE,
     key="tablet",
+    execution=STREAM_HOLD,
     massage_mode_releases=(),
     startup=_motionrelax_startup(codec.query(b"\x01")),
     clock_request_length=None,
@@ -202,6 +204,7 @@ _SLEEP_SMART_AXES: Final[tuple[Axis, ...]] = ("back", "legs", "both")
 _SLEEP_SMART_HELD: Final[tuple[HeldPreset, ...]] = ("flat", "zero_g", "anti_snore", "memory_1")
 SLEEP_SMART: Final = LogicdataProfile(
     key="sleep_smart",
+    execution=STREAM_HOLD,
     session="sleep_smart",
     layouts={"standard_2": _SLEEP_SMART_AXES, "split_series": _SLEEP_SMART_AXES},
     p2_controls=False,

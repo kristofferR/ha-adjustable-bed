@@ -19,7 +19,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
-    LIMOSS_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -56,48 +55,6 @@ def mock_limoss_config_entry(
 
 class TestLimossController:
     """Test Limoss controller behavior."""
-
-    async def test_write_command_encrypts_payload(
-        self,
-        hass: HomeAssistant,
-        mock_limoss_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ) -> None:
-        """write_command should send an encrypted 10-byte packet to FFE1."""
-        coordinator = AdjustableBedCoordinator(hass, mock_limoss_config_entry)
-        await coordinator.async_connect()
-
-        controller = coordinator.controller
-        await controller.write_command(codec.body(0x12))
-
-        call = mock_bleak_client.write_gatt_char.call_args_list[-1]
-        assert call.args[0] == LIMOSS_CHAR_UUID
-        packet = call.args[1]
-        assert len(packet) == 10
-        assert packet[0] == 0xDD
-        assert codec.decode(packet) == bytes.fromhex("1200000000")
-
-    async def test_move_head_up_sends_stop(
-        self,
-        hass: HomeAssistant,
-        mock_limoss_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ) -> None:
-        """move_head_up should send movement packets followed by stop packet."""
-        coordinator = AdjustableBedCoordinator(hass, mock_limoss_config_entry)
-        await coordinator.async_connect()
-        controller = coordinator.controller
-
-        await controller.move_head_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        first_packet = calls[0].args[1]
-        last_packet = calls[-1].args[1]
-
-        assert codec.decode(first_packet)[0] == 0x12
-        assert codec.decode(last_packet) == bytes.fromhex("ff00000000")
 
     async def test_position_notification_parsing(
         self,

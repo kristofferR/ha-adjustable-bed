@@ -991,7 +991,8 @@ class TestDetectBedTypeByManufacturerData:
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
         assert "name:smartbed428" in result.signals
         assert "manufacturer_payload:ab0102" in result.signals
-        assert result.ambiguous_types is None
+        # The explicit eShine app hint never replaces this proven receiver match.
+        assert result.ambiguous_types == ["eshine_okin"]
 
     def test_cb24_ab_payload_still_detects_cb24(self):
         """Known CB24AB advertisements must keep the CB24 detection path."""
