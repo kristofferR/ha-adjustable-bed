@@ -35,6 +35,7 @@
 | Zero-G / Anti-Snore / Flat | ✅ (model-gated) | ✅ (model-specific preset route) | ✅ |
 | Composer routines / diagnostics | ✅ (per-address lifecycle) | ✅ (model-gated per-address lifecycle) | ✅ (central or explicit local role) |
 | Local BlueZ peripheral role | Not used | Not used | ✅ (explicit setup; active authenticated subscribed peer required) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ |
 
 Capabilities describe implementation, not hardware confirmation. The selected
 app model remains the source of feature gates.

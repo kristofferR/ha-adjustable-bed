@@ -102,6 +102,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         f"AppProfile:ergomotion_4@{style}": {"hold": ("hump", "issue558")}
         for style in ERGOMOTION_4_STYLES
     },
+    # Latched (FFFF frame): one start, STOP at release.
+    "BedSenseProfile:bedsense": {"hold": ("bedsense",)},
     # Jiecang F1: Comfort Motion (jcbed PARTIAL) and the legacy route stay blocked.
     "JiecangProfile:dreamask": {"hold": ("dreamask",)},
     "JiecangProfile:dreamotion": {"hold": ("dreamotion",)},
@@ -152,15 +154,27 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # cadence is the entry's pulse settings, not the app's.
     "LimossProfile:limoss_remote": {"hold": ("limoss",)},
     "LimossProfile:fsm_relax": {"hold": ("fsm",)},
+    # Latched Solace routes. S4-Y and unidentified entries have no report, and
+    # Motion Bed has no route a lease could renew.
+    "SolaceProfile:common": {"hold": ("homekobo", "dianqi")},
+    "SolaceProfile:home_k1": {"hold": ("homekobo",)},
+    "SolaceProfile:home_k2": {"hold": ("homekobo",)},
+    "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
+    "SolaceProfile:woosa": {"hold": ("woosa",)},
     # Standalone controllers with stream evidence. The generic ``vibradorm``
     # route keeps finite pulses; ``svane`` and ``leggett_lp_legacy`` are not
     # declared yet (see the design note).
     "eshine": {"hold": ("eshine",)},
     "furnimove": {"hold": ("fm157",)},
+    "isleep": {"hold": ("kaidi",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
+    # Latched; Floyd (no report) and dual-seat beds stay finite.
+    "kaidi": {"hold": ("kaidi",)},
     "leggett_gen2": {"hold": ("universal",)},
     "linak": {"hold": ("linak-iot", "linak-lp", "linak-mem", "linak-guide")},
     "octo": {"hold": ("octo",)},
+    "remacro": {"hold": ("brick", "jewmes", "slumber", "row050")},  # latched
+    "reverie": {"hold": ("reverie", "row041")},  # latched
     "sleepys_elite_app": {"hold": ("sleepy",)},
     "starcode_m1x12": {"hold": ("m1x12",)},
     "starcode_m5x5": {"hold": ("abm5_5",)},
@@ -184,14 +198,22 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
+    "beds/isleep.py:<module>.IsleepController": ("isleep",),
+    "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
     "beds/jensen.py:<module>.JensenController": ("jensen",),
     "beds/jensen.py:<module>.JensenController.execution": ("jensen",),
+    "beds/kaidi.py:<module>.KaidiController": ("kaidi",),
+    "beds/kaidi.py:<module>.KaidiController.execution": ("kaidi",),
     "beds/leggett_gen2.py:<module>.LeggettGen2Controller": ("leggett_gen2",),
     "beds/leggett_gen2.py:<module>.LeggettGen2Controller.execution": ("leggett_gen2",),
     "beds/linak.py:<module>.LinakController": ("linak",),
     "beds/linak.py:<module>.LinakController.execution": ("linak",),
     "beds/octo.py:<module>.OctoController": ("octo",),
     "beds/octo.py:<module>.OctoController.execution": ("octo",),
+    "beds/remacro.py:<module>.RemacroController": ("remacro",),
+    "beds/remacro.py:<module>.RemacroController.execution": ("remacro",),
+    "beds/reverie.py:<module>.ReverieController": ("reverie",),
+    "beds/reverie.py:<module>.ReverieController.execution": ("reverie",),
     # RMControl narrows its framing's declaration to sustain-press products.
     "beds/rmcontrol.py:<module>.RmcontrolController": (
         "RichmatProfile:richmat_nordic",
@@ -209,6 +231,14 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/vibradorm_app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
     "beds/vmatbasic.py:<module>.VMatBasicController": ("vmatbasic",),
     "beds/vmatbasic.py:<module>.VMatBasicController.execution": ("vmatbasic",),
+    "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
+    "profiles/ff_frame.py:<module>.SOLACE_PROFILES": (
+        "SolaceProfile:common",
+        "SolaceProfile:home_k1",
+        "SolaceProfile:home_k2",
+        "SolaceProfile:motion_flex",
+        "SolaceProfile:woosa",
+    ),
     "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
     "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
     "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),

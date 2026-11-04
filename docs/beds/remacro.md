@@ -50,6 +50,7 @@ screen, and therefore which codes, apply.
 | Lights | ✅ (on/off switch; LED level and **Save light level** in Slumberland and The Brick) |
 | Control side | ✅ (split models 51, 52) |
 | RGB color, heating, LED modes, tilt, memory 3/4 | ❌ (no reachable app route) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
 ## Protocol Details
 

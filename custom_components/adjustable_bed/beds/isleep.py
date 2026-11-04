@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..const import KAIDI_NOTIFY_CHAR_UUID, KAIDI_WRITE_CHAR_UUID, SIDE_LEFT, SIDE_RIGHT
+from ..execution import ExecutionCapabilities
 from ..isleep_profile import validate_isleep_profile
 from ..kaidi_protocol import format_kaidi_node_address
 from .base import BedController, ControllerButtonSpec, MotorControlSpec
@@ -113,6 +114,11 @@ class IsleepController(BedController):
         self._patterns = [0, 0, 0]
         self._timers = [0, 0, 0]
         self._strengths = [{"head": 0, "foot": 0} for _ in range(3)]
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """One start per press, then a per-axis release (#483)."""
+        return ExecutionCapabilities(hold="latched")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -502,8 +508,12 @@ class IsleepController(BedController):
         try:
             await self._send_opcode(self._opcode(axis + ("_up" if up else "_down"), lane))
             # HA gesture duration, not a hardware refresh interval. No repeated writes.
+            # A renewable hold (#483) waits for its lease, within its ceiling.
             duration = (
-                self._coordinator.motor_pulse_count * self._coordinator.motor_pulse_delay_ms / 1000
+                self.leased_hold_ms(
+                    self._coordinator.motor_pulse_count * self._coordinator.motor_pulse_delay_ms
+                )
+                / 1000
             )
             try:
                 await asyncio.wait_for(self._coordinator.cancel_command.wait(), duration)

@@ -36,6 +36,7 @@
 | Single-address Left/Right | ⚠️ (products 130 and 143 only, when the actuator descriptor is not 2) |
 | Room enrollment | ✅ (explicit action for unprovisioned mode09 beds) |
 | Foreign-room reset (mode07) | ❌ (excluded for safety) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
 ### Product controls
 

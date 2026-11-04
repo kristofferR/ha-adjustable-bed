@@ -146,9 +146,9 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `limoss`, `limoss_remote` | S stream | U | U | limoss | more than one pressed flag returns before any write or STOP; hold declared on the Limoss Remote profile only, since the legacy `limoss` route repeats at the entry's pulse settings with one STOP, not the app's schedule |
 | `fsm_relax` | S stream | U | U | fsm | more than one pressed entry suppresses all writes; hold declared |
 | **FFFF frame (S1)** | | | | | |
-| `solace` (both routes) | S latched | U | U | motionflex, homekobo, dianqi, woosa | one start frame, global STOP on release |
-| `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release |
-| `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP |
+| `solace` (both routes) | S latched | U | U | motionflex, homekobo, dianqi, woosa | one start frame, global STOP on release; hold declared on the five report-backed profiles; Legacy S4-Y and unidentified entries have no report |
+| `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release; hold declared |
+| `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP; not declared: its covers are not `timed_move` motors and it has no held controls, so no route a lease could renew |
 | **Distinct protocols** | | | | | |
 | `svane` (Svane Remote) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP; hold not declared yet: its held route runs under its own admission, which leases do not reach, and #516 reworks it |
 | `jensen`, `svane` (`svane_remote_jmc`) | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control; hold declared on `jensen` only (see the `svane` row) |
@@ -156,12 +156,12 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `linak` (all routes) | S stream | U | U | linak-iot, linak-lp, linak-mem, linak-guide | two-section moves are fixed opcodes; one bed-wide release; speed is reported, not commanded; hold declared |
 | `octo` (standard) | S stream | U | U | octo | 100 ms delayed global STOP; hold declared on the standard controller only |
 | `octo` (`star2`) | B | B | B | none | no accepted artifact; `auto_stops_on_idle` rests on community reverse engineering |
-| `reverie` | S latched | U | U | reverie, row041 | one frame on press, per-axis stop on release; routines serialize |
+| `reverie` | S latched | U | U | reverie, row041 | one frame on press, per-axis stop on release; routines serialize; hold declared |
 | `reverie_pairlink` | B | B | B | reverie, row041 | row041: Pairlink runtime acceptance pending |
 | `reverie_nightstand` | B | B | B | none | no accepted report |
-| `kaidi`, `isleep` | S latched | U | U | kaidi | one start per press, per-axis release; combined is its own opcode |
+| `kaidi`, `isleep` | S latched | U | U | kaidi | one start per press, per-axis release; combined is its own opcode; hold declared, except Floyd (B) and the dual-seat `seat_1_2` variant, which starts seat 2 only after seat 1's repeats |
 | `kaidi` (`floyd`) | B | B | B | floyd | report PARTIAL |
-| `remacro` (all models) | S latched | U | U | brick, jewmes, slumber, row050 | one write on press, paired STOP; rocking speed is massage and unreachable (R075) |
+| `remacro` (all models) | S latched | U | U | brick, jewmes, slumber, row050 | one write on press, paired STOP; rocking speed is massage and unreachable (R075); hold declared |
 | `malouf_app`, `malouf_new_okin` | S stream | U | U | lucid, malouf, row023 | apps do not establish synchronized motion |
 | `leggett_gen2`, `leggett_platt` (`gen2`) | S stream | U | U | universal | per-axis and global STOP exist; no path holds two axes; hold declared |
 | `leggett_lp_legacy` | S stream | U | U | lp | explicit release once; SPEED rows are massage; not declared: it exposes button gestures only, with no `timed_move` or `hold_control` route a lease could renew |
@@ -418,6 +418,16 @@ With A, a vanished client stops a stream bed within the lease plus that bed's
 own behavior. Latched protocols (Reverie, Solace, Kaidi, Remacro, BedSense,
 Motion Bed) keep moving until a STOP arrives. Recommend opting them in only
 after the stream rows ship, with a shorter ceiling.
+
+**Decided: latched holds stop at 10 s.** `ExecutionCapabilities.hold_ceiling_ms`
+is 30 s for `stream` and 10 s for `latched`, and a renewable hold never runs
+past its controller's ceiling, however often it is renewed. A latched bed keeps
+moving after its one start frame, so the ceiling bounds how far it travels when
+a client vanishes and no renewal or STOP arrives; the lease still ends it
+sooner. No accepted report states a travel time or a firmware cutoff for a
+latched row, so no row justifies a different bound. The end of a lease sends
+each protocol's own STOP or release with a fresh event, as every other end of a
+hold does.
 
 ### 3. #516 opt-in list
 

@@ -536,10 +536,10 @@ class BedController(ABC):
             context is None
             or context.lease is None
             or context.cancel_event is not self._coordinator.cancel_command
-            or self.execution.hold is None
+            or (ceiling := self.execution.hold_ceiling_ms) is None
         ):
             return press_ms
-        return HOLD_CEILING_MS
+        return ceiling
 
     @property
     def auto_stops_on_idle(self) -> bool:
