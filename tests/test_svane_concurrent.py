@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.beds.svane import FEET, HEAD, OLD, SvaneCo
 from custom_components.adjustable_bed.command_scheduler import CommandKind
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from tests.hold_lease_wire import virtual_clock
+from tests.service_patches import patch_with_family
 from tests.test_svane import written
 from tests.test_svane_artifact_vectors import ROWS
 from tests.test_svane_light_timed_host import runtime  # noqa: F401
@@ -51,7 +52,8 @@ async def bed(hass, runtime):  # noqa: F811
     # One patch for the whole test: concurrent calls entering and leaving their
     # own patches could restore each other's and leak it into the next test.
     with (
-        patch(
+        patch_with_family(
+            "svane_services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ),
@@ -258,7 +260,7 @@ async def test_release_during_preflight_restores_the_idle_disconnect(bed) -> Non
 
     ensure = AsyncMock(return_value=True)
     with (
-        patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
+        patch_with_family("svane_services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
         patch.object(coordinator, "async_ensure_connected", ensure),
     ):
         await asyncio.wait_for(_move(hass, "back", 300), 2)
@@ -280,7 +282,8 @@ async def test_jmc_newcomer_starts_with_a_tick_not_a_cleanup_mask(
     """
     coordinator, controller = runtime
     with (
-        patch(
+        patch_with_family(
+            "svane_services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ),
@@ -322,7 +325,8 @@ async def test_jmc_interrupted_combined_write_keeps_the_newcomer_moving(
     """
     coordinator, controller = runtime
     with (
-        patch(
+        patch_with_family(
+            "svane_services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ),

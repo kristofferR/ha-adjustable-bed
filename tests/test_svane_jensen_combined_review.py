@@ -2,7 +2,6 @@
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 
@@ -14,6 +13,7 @@ from custom_components.adjustable_bed.const import (
     SVANE_VARIANT_JENSEN_LINON,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from tests.service_patches import patch_with_family
 from tests.test_svane import written
 from tests.test_svane_light_timed_host import runtime as svane_runtime
 
@@ -41,7 +41,7 @@ async def test_registered_timed_move_accepts_factory_resolved_jensen_linon(
     local_asyncio = SimpleNamespace(**vars(asyncio))
     local_asyncio.sleep = yield_hold
     monkeypatch.setattr("custom_components.adjustable_bed.beds.jensen_linon.asyncio", local_asyncio)
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, "timed_move", {
             "device_id": "bed", "motor": motor, "direction": "up", "duration_ms": 200,
@@ -85,7 +85,7 @@ async def test_public_head_release_near_deadline_keeps_delivered_jmc_feet_succes
         await asyncio.sleep(0)
 
     controller._motor_wait = wait
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "bed", "control": control, "duration": .2,

@@ -2,7 +2,6 @@
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
@@ -17,6 +16,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.number import _number_entities_for
 from tests.app_state_helpers import stored_app_state, write_app_state
+from tests.service_patches import patch_with_family
 from tests.test_svane import LIGHT, OLD, OLD_CHAR, SvaneCommands, uuid, written
 from tests.test_svane_light_timed_host import runtime as imported_runtime
 
@@ -38,7 +38,7 @@ def virtual_hold(monkeypatch, controller):
 
 
 async def hold(hass, coordinator):
-    with patch('custom_components.adjustable_bed.services._resolve_sided_targets',
+    with patch_with_family("svane_services", 'custom_components.adjustable_bed.services._resolve_sided_targets',
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, 'hold_control', {
             'device_id': 'bed', 'control': 'light_adjust', 'duration': .201,

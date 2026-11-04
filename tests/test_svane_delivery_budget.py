@@ -2,7 +2,6 @@
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
@@ -10,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from custom_components.adjustable_bed.beds.svane import FEET, HEAD, UP
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.services import async_register_services
+from tests.service_patches import patch_with_family
 from tests.test_svane import written
 from tests.test_svane_services import target
 
@@ -58,7 +58,7 @@ async def test_registered_hold_reports_incomplete_delivery_and_preserves_normal_
     controller.client.write_gatt_char.side_effect = write
     duration = .103 if scenario == "nearby_complete" else .201 if scenario == "previous_feet_delivery" else .101
     control = "feet_up" if "feet_wait" in scenario else "head_up_feet_up"
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         if scenario.endswith("exhausts_budget"):
             with pytest.raises(ServiceValidationError, match="selected feet axis could start"):
