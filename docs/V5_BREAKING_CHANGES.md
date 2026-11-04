@@ -187,7 +187,7 @@ the question, and a saved entry shows its own route's label.
 
 | Family | What setup shows now |
 |--------|----------------------|
-| Jiecang ([#830](https://github.com/kristofferR/ha-adjustable-bed/pull/830)) | One Jiecang row instead of three. The question offers ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD, Comfort Motion, or a remote without an app, which then asks its motor count |
+| Jiecang ([#830](https://github.com/kristofferR/ha-adjustable-bed/pull/830)) | One Jiecang row instead of three. The question offers ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD, Comfort Motion, or a remote without an app, which then asks its motor count. The apps no longer show angle sensing, which they always keep off, and **Configure** no longer shows their layout and transport ([#838](https://github.com/kristofferR/ha-adjustable-bed/pull/838)) |
 | Okin ([#832](https://github.com/kristofferR/ha-adjustable-bed/pull/832)) | The FurniMove row becomes the Okin row; Okin UUID, Okin DOT and RF ECO BT leave the top-level list. The question offers the FurniMove / OKIN Smart Remote app, an Okimat or OKIN handset code, a DOT remote, the RF ECO BT stair lift, and the apps the app review suggests for an Okimat route. You don't need an RF remote to answer |
 | Keeson ([#833](https://github.com/kristofferR/ha-adjustable-bed/pull/833)) | The Keeson, Ergomotion, Serta Motion Perfect, Okin FFE and Cool Base rows ask one question covering the Keeson apps and remote routes. Restonic remote A and B become one Restonic BT row that asks the remote style. The ORE apps and INNOVA ask for the app's 2M, 3M or 4M screen instead of a motor count |
 | Solace ([#836](https://github.com/kristofferR/ha-adjustable-bed/pull/836)) | QMS and similar names ask: HomeKobo, Sealy MotionFlex or Sweet Night; Woosa Sleep; Motion Bed; or BedSense. Woosa Sleep shows a note on its own controls before you choose it |
@@ -361,7 +361,8 @@ they land.
   [#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676): Malouf,
   Jensen and Svane, Limoss, LOGICDATA, Richmat and RMControl, Sleepy's,
   Customatic and Star, Remacro, Reverie and Sleep Number.
-- Setup questions and owned options declared by profiles
+- Setup questions and owned options declared by profiles for the families
+  beyond Jiecang, and a review of which saved config keys are still needed
   ([#779](https://github.com/kristofferR/ha-adjustable-bed/issues/779)).
 
 ## Rollback
