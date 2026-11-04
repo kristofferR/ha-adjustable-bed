@@ -41,6 +41,7 @@ from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .paired_coordinator import PairedBedCoordinator
+from .pairing import get_child
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data
 from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
@@ -89,7 +90,8 @@ async def _async_paired_diagnostics(
             "position_data": getattr(child, "position_data", None),
             "command_timing": child.command_timing,
             "config": dict(child.entry.data),
-            "profile_id": child.entry.data.get(CONF_PROFILE_ID),
+            # From the side's descriptor: a single-address side's entry is the parent.
+            "profile_id": (get_child(entry.data, side) or {}).get(CONF_PROFILE_ID),
             "profile_recommendations": await async_profile_decision_history(hass, child.address),
         }
         if child.bed_type in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}:

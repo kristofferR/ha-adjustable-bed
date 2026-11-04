@@ -994,7 +994,8 @@ class AdjustableBedCoordinator:
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
-        self._profile_id = entry_data[CONF_PROFILE_ID] = resolve_profile_id(entry_data)
+        if bed_type_changed:
+            self._profile_id = entry_data[CONF_PROFILE_ID] = resolve_profile_id(entry_data)
         if migrate_leggett_okin_defaults and corrected_defaults is not None:
             entry_data[CONF_MOTOR_PULSE_COUNT] = corrected_defaults[0]
             entry_data[CONF_MOTOR_PULSE_DELAY_MS] = corrected_defaults[1]
