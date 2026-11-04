@@ -18,11 +18,11 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.cluster033 import AppController
-from custom_components.adjustable_bed.cluster033_profiles import app_profile
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PAIR_ID, DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_devices import child_device_info
+from custom_components.adjustable_bed.profiles.keeson import app_profile
 from custom_components.adjustable_bed.services import async_register_services
 
 from .test_cluster033 import coordinator as mock_transport

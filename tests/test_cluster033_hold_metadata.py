@@ -17,8 +17,8 @@ from custom_components.adjustable_bed.button import (
     ControllerActionButton,
     _combined_motor_buttons_for,
 )
-from custom_components.adjustable_bed.cluster033_profiles import APP_LAYOUTS, app_profile
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
+from custom_components.adjustable_bed.profiles.keeson import APP_LAYOUTS, app_profile
 
 from .test_cluster033 import coordinator
 

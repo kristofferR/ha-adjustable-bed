@@ -1126,7 +1126,7 @@ def default_scenario(bed_type: str) -> Scenario:
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
     if bed_type in const.CLUSTER033_BED_TYPES:
-        from custom_components.adjustable_bed.cluster033_profiles import DEFAULT_LAYOUTS
+        from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
     if bed_type == const.BED_TYPE_ISLEEP:

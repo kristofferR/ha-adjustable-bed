@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..cluster033_profiles import app_profile
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -38,6 +37,7 @@ from ..const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from ..profiles.keeson import app_profile
 from .base import BedController
 from .cluster033 import AppController
 

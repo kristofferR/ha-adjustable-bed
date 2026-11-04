@@ -11,16 +11,16 @@ from custom_components.adjustable_bed.beds.cluster033 import AppController
 from custom_components.adjustable_bed.beds.serta_mp_remote import (
     HEAD_TABLE,
     SertaMPRemoteController,
-    pulse_frame,
 )
 from custom_components.adjustable_bed.button import _combined_motor_buttons_for
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
 
 from .test_cluster033_hold_admission import _connected_pair, _target
 
 ZERO = bytes.fromhex("e5fe160000000006")
-LOCAL = pulse_frame(HEAD_TABLE[1], 0x8000)
+LOCAL = codec.position_target(HEAD_TABLE[1], 0x8000)
 
 
 @pytest.fixture(autouse=True)

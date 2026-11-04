@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import cast
+from datetime import datetime
+from typing import Any, cast
 
 import pytest
 
 from custom_components.adjustable_bed.beds import innova, keeson_okin_apps, ore_comfort_bed
+from custom_components.adjustable_bed.beds.cluster033 import AppController
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import BED_TYPE_KEESON, KEESON_VARIANTS, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -39,10 +41,16 @@ def _decode(data: bytes) -> bytes:
     if data[:3] in (b"\xe5\xfe\x16", b"\xe6\xfe\x16"):
         side = data[7] if len(data) == 9 else None
         return codec.frame(int.from_bytes(data[3:7], "big"), header=data[0], order="big", side=side)
-    if data == codec.STATUS_QUERY:
-        return codec.STATUS_QUERY
+    if data in (codec.STATUS_QUERY, codec.ALARM_DISMISS):
+        return data
     if data[:2] == b"\xef\x02":
-        return codec.rename(data[2:16].rstrip(b"\x00"))
+        return codec.rename(data[2:17].rstrip(b"\x00"))
+    if data[:3] == b"\xe5\xfe\x17":
+        pulses = int.from_bytes(data[3:5], "little"), int.from_bytes(data[5:7], "little")
+        return codec.position_target(*pulses)
+    if data[:3] == b"\xe7\x80\x01":
+        year, month, day, hour, minute, second = data[3:9]
+        return codec.clock(datetime(1900 + year, month + 1, day, hour, minute, second))
     if data[:1] == b"{":
         return data  # JSON text: covered by the census, which builds it through the codec.
     if len(data) == 6:
@@ -148,8 +156,25 @@ def _app_census(profile: KeesonProfile) -> set[bytes]:
     return {profiles.encode(profile, word) for word in words}
 
 
+def _cluster033_census(app: profiles.AppKey) -> set[bytes]:
+    """Fixed frames the cluster033 controller sends for every layout and Q-Plus side."""
+    frames: set[bytes] = set()
+    for layout in profiles.APP_LAYOUTS[app]:
+        profile = profiles.app_profile(app, layout)
+        sides = ("both", "side_a", "side_b") if app == "qplus_app" else ("both",)
+        for side in sides:
+            controller = AppController(cast(Any, object()), profile, side=side)
+            words = (codec.RELEASE, *(action.mask for action in profile.actions))
+            frames |= {controller._frame(word) for word in words}
+        if profile.p2_keys is not None:
+            frames.add(codec.STATUS_QUERY)
+        if profile.shutdown_count:
+            frames.add(codec.ALARM_DISMISS)
+    return frames
+
+
 def test_every_profile_has_vectors() -> None:
-    assert set(FROZEN_FRAMES) == set(profiles.PROFILES)
+    assert set(FROZEN_FRAMES) == set(profiles.PROFILES) | set(profiles.APP_LAYOUTS)
 
 
 @pytest.mark.parametrize(
@@ -173,6 +198,12 @@ def test_profile_sends_only_frozen_frames(key: str) -> None:
     else:
         # Without a report, the pre-v5 controller's frames are the complete vector set.
         assert {f.hex() for f in _keeson_census(profile, exposed=False) ^ frozen} == set()
+
+
+@pytest.mark.parametrize("app", sorted(profiles.APP_LAYOUTS))
+def test_cluster033_app_sends_only_frozen_frames(app: profiles.AppKey) -> None:
+    frozen = {bytes.fromhex(literal) for literal in FROZEN_FRAMES[app]}
+    assert {frame.hex() for frame in _cluster033_census(app) - frozen} == set()
 
 
 def test_k1_frame_layout() -> None:

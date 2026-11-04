@@ -134,8 +134,8 @@ async def test_registered_source_specific_release_policy_probe(hass, monkeypatch
     from custom_components.adjustable_bed.beds.serta_mp_remote import (
         HEAD_TABLE,
         SertaMPRemoteController,
-        pulse_frame,
     )
+    from custom_components.adjustable_bed.codec import keeson as codec
     from custom_components.adjustable_bed.services import async_register_services
 
     from .test_cluster033_hold_admission import _target
@@ -189,7 +189,7 @@ async def test_registered_source_specific_release_policy_probe(hass, monkeypatch
             assert frames[1:] and all(frame == b"\x00\xb0" for frame in frames[1:])
             assert cleanup_delays == [300] * 6  # command-finally and explicit Stop each query only
         else:
-            assert frames == [pulse_frame(HEAD_TABLE[1], 0x8000)]
+            assert frames == [codec.position_target(HEAD_TABLE[1], 0x8000)]
     finally:
         held.cancel()
         await asyncio.gather(held, return_exceptions=True)
@@ -201,7 +201,7 @@ def test_existing_combined_entity_drops_hold_offer_after_live_sequential_transit
     from unittest.mock import MagicMock
 
     from custom_components.adjustable_bed.button import _combined_motor_buttons_for
-    from custom_components.adjustable_bed.cluster033_profiles import app_profile
+    from custom_components.adjustable_bed.profiles.keeson import app_profile
 
     from .test_cluster033 import coordinator
 

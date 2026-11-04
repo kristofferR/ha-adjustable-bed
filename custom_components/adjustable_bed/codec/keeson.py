@@ -10,12 +10,16 @@ Some ``keeson`` routes carry the same key word in other frames, listed as
 carriers below. The ``p2`` frames are the Okin N-frame layout; they live here
 until that family's codec exists (#759). Which carrier, header, byte order and
 words an app uses belongs to its profile (``profiles/keeson.py``).
+
+The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
+``E1 80`` alarm dismissal, ``EF 02`` rename) end with the same checksum.
 """
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Final, Literal
 
 from ..const import (
@@ -82,6 +86,11 @@ def checksum(body: bytes) -> int:
     return ~sum(body) & 0xFF
 
 
+def checked(body: bytes) -> bytes:
+    """Append the checksum to a frame body."""
+    return body + bytes((checksum(body),))
+
+
 def _word(word: int) -> int:
     if not 0 <= word <= 0xFFFFFFFF:
         raise ValueError(f"Key word must be 32-bit, got {word:#x}")
@@ -97,7 +106,7 @@ def frame(
     body = bytes((header, 0xFE, 0x16)) + _word(word).to_bytes(4, order)
     if side is not None:
         body += bytes((side,))
-    return body + bytes((checksum(body),))
+    return checked(body)
 
 
 def p2(word: int, carrier: Carrier = "p2") -> bytes:
@@ -110,7 +119,7 @@ def p2(word: int, carrier: Carrier = "p2") -> bytes:
     if carrier in ("p2_side", "p2_padded"):
         return body + b"\x00"
     if carrier == "p2_checked":
-        return body + bytes((checksum(body),))
+        return checked(body)
     if carrier != "p2":
         raise ValueError(f"{carrier} is not a P2 carrier")
     return body
@@ -131,11 +140,32 @@ STATUS_QUERY: Final = b"\x00\xb0"
 
 
 def rename(raw_name: bytes) -> bytes:
-    """Encode the 18-byte ``EF 02`` rename frame: name padded to 15 bytes, checksum last."""
-    if len(raw_name) > 14:
-        raise ValueError("Rename payload must be at most 14 bytes")
-    body = b"\xef\x02" + raw_name.ljust(15, b"\x00")
-    return body + bytes((checksum(body),))
+    """Encode the 18-byte ``EF 02`` rename frame: name zero-filled to 15 bytes, checksum last.
+
+    Each app limits the name itself; the frame holds at most 15 bytes.
+    """
+    if len(raw_name) > 15:
+        raise ValueError("Rename payload must be at most 15 bytes")
+    return checked(b"\xef\x02" + raw_name.ljust(15, b"\x00"))
+
+
+def position_target(head: int, foot: int) -> bytes:
+    """Encode the ``E5 FE 17`` pulse-target frame: two little-endian 16-bit pulse counts."""
+    return checked(
+        b"\xe5\xfe\x17"
+        + (head & 0xFFFF).to_bytes(2, "little")
+        + (foot & 0xFFFF).to_bytes(2, "little")
+    )
+
+
+def clock(now: datetime) -> bytes:
+    """Encode the ``E7 80 01`` clock frame: year minus 1900, zero-based month, day, time."""
+    fields = ((now.year - 1900) & 0xFF, now.month - 1, now.day, now.hour, now.minute, now.second)
+    return checked(bytes((0xE7, 0x80, 0x01, *fields)))
+
+
+# Dismisses a ringing wake alarm.
+ALARM_DISMISS: Final = checked(b"\xe1\x80\x04")
 
 
 @dataclass(frozen=True)
