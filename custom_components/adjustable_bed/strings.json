@@ -739,7 +739,11 @@
         "title": "Review the change for {name}",
         "description": "**{current}** → **{selection}**\n\n{summary}\n\nThe device, its Bluetooth address and every kept control keep their IDs. Your current setup stays saved and running until you apply this change.\n\nA passed connection check does not prove your bed's physical layout or presets. Test the controls after applying the change.",
         "data": {
-          "confirm": "Apply this change"
+          "confirm": "Apply this change",
+          "summary_known": "Control changes",
+          "summary_unknown": "Control changes",
+          "summary_references": "Affected automations and scripts",
+          "summary_none": "No controls"
         },
         "data_description": {
           "summary_known": "**Added:**\n{added}\n\n**Removed:**\n{removed}\n\n**Unchanged:** {unchanged} controls keep their entity IDs.",
