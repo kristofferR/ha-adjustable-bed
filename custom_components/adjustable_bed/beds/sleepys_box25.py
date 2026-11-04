@@ -786,55 +786,18 @@ class SleepysBox25Controller(BedController):
         }
 
 
-_LEGACY = SLEEPYS_BOX25_LEGACY
-# Each inherited StarCode action as the legacy profile's key name.
-_LEGACY_KEY_BY_STAR_KEY: dict[tuple[int, int], str] = {
-    (0x30, 0x00): "head_up",
-    (0x30, 0x01): "head_down",
-    (0x30, 0x02): "foot_up",
-    (0x30, 0x03): "foot_down",
-    (0x30, 0x06): "lumbar_up",
-    (0x30, 0x07): "lumbar_down",
-    (0x30, 0x0A): "neck_up",
-    (0x30, 0x0B): "neck_down",
-    (0x30, 0x0F): "stop",
-    (0x30, 0x10): "flat",
-    (0x30, 0x11): "tv",
-    (0x30, 0x13): "zero_g",
-    (0x30, 0x16): "anti_snore",
-    (0x30, 0x17): "lounge",
-    (0x30, 0x1A): "memory_1",
-    (0x30, 0x1B): "memory_2",
-    (0x30, 0x94): "store_memory_1",
-    (0x30, 0x95): "store_memory_2",
-    (0x30, 0x71): "light_toggle",
-    (0x30, 0x5A): "massage_toggle",
-    (0x30, 0x6F): "massage_exit",
-    (0x30, 0x52): "massage_wave_1",
-    (0x30, 0x53): "massage_wave_2",
-    (0x30, 0x54): "massage_wave_3",
-    (0x30, 0x60): "massage_head_up",
-    (0x30, 0x61): "massage_head_down",
-    (0x30, 0x62): "massage_foot_up",
-    (0x30, 0x63): "massage_foot_down",
-    (0x40, 0x60): "massage_intensity_up",
-    (0x40, 0x61): "massage_intensity_down",
-}
-# The light's dedicated ON and OFF are ``04 E0`` setting frames.
-_LEGACY_SETTING_BY_STAR_KEY: dict[tuple[int, int], bytes] = {
-    (0x30, 0x73): codec.extended(0x01, 0x01),
-    (0x30, 0x74): codec.extended(0x01, 0x00),
-}
+def _star_action(name: str) -> bytes:
+    return getattr(Box25Commands, name.upper(), None) or getattr(Box25Commands, f"STAR_{name.upper()}")
 
 
-def _legacy_frame(category: int, key: int) -> bytes:
-    """Frame one inherited StarCode action in the legacy dialect."""
-    if setting := _LEGACY_SETTING_BY_STAR_KEY.get((category, key)):
-        return setting
-    name = _LEGACY_KEY_BY_STAR_KEY[(category, key)]
-    if name in _LEGACY.long_keys:
-        return codec.frame(_LEGACY.long_keys[name], 8)
-    return codec.frame40(_LEGACY.keys[name])
+# Each inherited StarCode action framed by the legacy profile. The light's
+# dedicated ON and OFF are ``04 E0`` setting frames.
+_LEGACY_BY_STAR_ACTION: dict[bytes, bytes] = {
+    **{_star_action(n): codec.frame40(w) for n, w in SLEEPYS_BOX25_LEGACY.keys.items()},
+    **{_star_action(n): codec.frame(w, 8) for n, w in SLEEPYS_BOX25_LEGACY.long_keys.items()},
+    Box25Commands.LIGHT_ON_WHITE: codec.extended(0x01, 0x01),
+    Box25Commands.LIGHT_OFF: codec.extended(0x01, 0x00),
+}
 
 
 def _translate_star_to_legacy(command: bytes) -> bytes:
@@ -845,13 +808,11 @@ def _translate_star_to_legacy(command: bytes) -> bytes:
     if command == Box25Commands.QUERY_STATUS:
         return codec.request(0xD0)
     if len(command) == 7 and command[:4] == b"\x5A\x01\x03\x10" and command[-1] == 0xA5:
-        try:
-            return _legacy_frame(command[4], command[5])
-        except KeyError as err:
+        if (legacy := _LEGACY_BY_STAR_ACTION.get(command)) is None:
             raise ValueError(
-                "No artifact-proven legacy CB25 mapping for StarCode action "
-                f"{command.hex()}"
-            ) from err
+                f"No artifact-proven legacy CB25 mapping for StarCode action {command.hex()}"
+            )
+        return legacy
     if len(command) == 7 and command[:3] == b"\x5A\xF0\x03" and command[-1] == 0xA5:
         return codec.position_target(command[3], command[4])
     if len(command) == 8 and command[:3] == b"\x5A\xE0\x04" and command[-1] == 0xA5:

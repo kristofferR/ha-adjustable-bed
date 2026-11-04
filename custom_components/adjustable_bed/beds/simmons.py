@@ -30,7 +30,12 @@ from ..const import (
     SIMMONS_VARIANT_SMARTBED,
 )
 from ..detection import is_mac_like_name
-from ..profiles.okin_nframe import SIMMONS_PROFILES, SIMMONS_SAVE_HOLD_MS, OkinNFrameProfile
+from ..profiles.okin_nframe import (
+    SIMMONS_PROFILES,
+    SIMMONS_REFRESH_MS,
+    SIMMONS_SAVE_HOLD_MS,
+    OkinNFrameProfile,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -237,12 +242,7 @@ class SimmonsController(BedController):
         return SIMMONS_PROFILES[self._protocol]
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        return self._coordinator.motor_pulse_count, self._refresh_ms
-
-    @property
-    def _refresh_ms(self) -> int:
-        # Every SIMMONS profile has a fixed refresh, never the entry's pulse delay.
-        return self.profile.hold.repeat_ms or 0
+        return self._coordinator.motor_pulse_count, SIMMONS_REFRESH_MS
 
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -483,9 +483,9 @@ class SimmonsController(BedController):
                         await self.write_command(
                             control_frame(self._protocol, control),
                             repeat_count=self.timed_move_repeat_count(
-                                duration_ms, self._refresh_ms
+                                duration_ms, SIMMONS_REFRESH_MS
                             ),
-                            repeat_delay_ms=self._refresh_ms,
+                            repeat_delay_ms=SIMMONS_REFRESH_MS,
                         )
                     except TimeoutError:
                         write_timeout = True

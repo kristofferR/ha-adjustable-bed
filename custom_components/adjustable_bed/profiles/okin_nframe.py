@@ -1,13 +1,19 @@
-"""Profiles over the Okin N-frame codec (32-bit command words).
+"""Profiles over the Okin N-frame codec.
 
-``OKIMAT`` serves the ``okimat`` and ``okin_uuid`` bed types, whose keys come
-from the selected handset's remote table. ``DEWERTOKIN`` serves ``dewertokin``
-and ``okin_handle``, and ``RF_ECO_BT`` the ``okin_rf_eco_bt`` stair lift; these
-three are pre-v5 routes without an accepted APK report. ``CUSTOMATIC_PROFILES``
-are the Customatic Clarity, Jerome's and Remedy 1.0.1 apps, one per bed type.
-``LEGGETT_PROFILES`` are Prodigy 2L 1.2, Prodigy 2 2.2.0, Prodigy CE 1.2.0 and
-U Series 2.1, chosen by the ``leggett_okin`` entry's app profile. Every app
-profile comes from its accepted APK Protocol Audit report.
+32-bit: ``OKIMAT`` serves ``okimat`` and ``okin_uuid``, whose keys come from the
+selected handset's remote table. ``DEWERTOKIN`` serves ``dewertokin`` and
+``okin_handle``, and ``RF_ECO_BT`` the ``okin_rf_eco_bt`` stair lift.
+``CUSTOMATIC_PROFILES`` are the Customatic Clarity, Jerome's and Remedy 1.0.1
+apps. ``LEGGETT_PROFILES`` are Prodigy 2L 1.2, Prodigy 2 2.2.0, Prodigy CE 1.2.0
+and U Series 2.1, chosen by the ``leggett_okin`` entry's app profile.
+
+40-bit: ``OKIN_DOT`` (DOT handset tables), ``OKIN_CB24``, ``SIMMONS_PROFILES``
+(chosen by the Bluetooth name), ``DOUBLESLEEP``, ``SLEEPYS_BOX25_LEGACY`` and
+``STARCODE_ABM5_4_PROFILES`` (one per command selector).
+
+App profiles come from their accepted APK Protocol Audit report; Okimat,
+DewertOkin, RF ECO BT, CB24, DOT, Sleepy's legacy CB25 and AdjustableM5X4 keep
+the pre-v5 controllers' frames.
 """
 
 from __future__ import annotations
@@ -548,6 +554,7 @@ SLEEPYS_BOX25_LEGACY: Final = OkinNFrameProfile(
     write="no_response",
     envelope="plain",
     axes=("head", "foot", "lumbar", "neck"),
+    # Named as the StarCode actions (``Box25Commands``) the controller translates.
     keys=MappingProxyType(
         {
             "head_up": 0x1,
@@ -556,16 +563,16 @@ SLEEPYS_BOX25_LEGACY: Final = OkinNFrameProfile(
             "foot_down": 0x8,
             "lumbar_up": 0x10,
             "lumbar_down": 0x20,
-            "neck_up": 0x40,
-            "neck_down": 0x80,
-            "stop": 0x0,
-            "flat": 0x08000000,
-            "tv": 0x4000,
-            "zero_g": 0x1000,
-            "anti_snore": 0x8000,
-            "lounge": 0x2000,
-            "memory_1": 0x10000,
-            "memory_2": 0x40000,
+            "neck_tilt_up": 0x40,
+            "neck_tilt_down": 0x80,
+            "motor_stop": 0x0,
+            "preset_flat": 0x08000000,
+            "preset_tv": 0x4000,
+            "preset_zero_gravity": 0x1000,
+            "preset_anti_snore": 0x8000,
+            "preset_lounge": 0x2000,
+            "preset_memory_1": 0x10000,
+            "preset_memory_2": 0x40000,
             "store_memory_1": 0x08010000,
             "store_memory_2": 0x08040000,
             "massage_toggle": 0x80000,
@@ -581,9 +588,9 @@ SLEEPYS_BOX25_LEGACY: Final = OkinNFrameProfile(
     long_keys=MappingProxyType(
         {
             "light_toggle": 0x0002000000000000,
-            "massage_wave_1": 0x80000,
-            "massage_wave_2": 0x100000,
-            "massage_wave_3": 0x200000,
+            "massage_wave1": 0x80000,
+            "massage_wave2": 0x100000,
+            "massage_wave3": 0x200000,
         }
     ),
     # The app's one sender, shared with the StarCode dialect: motors follow the

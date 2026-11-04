@@ -94,75 +94,38 @@ class MotorDirection(Enum):
     STOP = "stop"
 
 
-def build_cb24_massage_intensity(
-    zone: int, intensity: int, bed_selection: int = 0x00
-) -> bytes:
-    """Build a 5-byte CB24 massage intensity packet.
+def build_cb24_massage_intensity(zone: int, intensity: int, bed_selection: int = 0x00) -> bytes:
+    """Build the 5-byte exact massage level ``03 03 zone level selector``.
 
-    Allows setting exact massage intensity level instead of stepping up/down.
-
-    Args:
-        zone: Massage zone (1=timer, 2=head, 3=feet, 4=wave)
-        intensity: Intensity level (0-4, 0=off)
-        bed_selection: Bed selection byte (0x00=default, 0xAA=bed A, 0xBB=bed B)
-
-    Returns:
-        5-byte command: [0x03, 0x03, zone, intensity, bed_selection]
+    Zones: 1 timer, 2 head, 3 feet, 4 wave; levels 0-4, 0 is off.
     """
     return bytes([0x03, 0x03, zone & 0xFF, intensity & 0xFF, bed_selection])
 
 
+# CBNewProtocol packets (CB27New / cb_new): a separate packet family.
 def build_cbnew_motor_command(command_value: int) -> bytes:
-    """Build CBNewProtocol motor command ([0x2A, 0x00, 0x00, 0x01, 0x01, 0x04, ...])."""
-    return bytes(
-        [
-            0x2A,
-            0x00,
-            0x00,
-            0x01,
-            0x01,
-            0x04,
-            command_value & 0xFF,
-            (command_value >> 8) & 0xFF,
-            (command_value >> 16) & 0xFF,
-            (command_value >> 24) & 0xFF,
-        ]
-    )
+    """Motion: ``2A 00 00 01 01 04`` and the key word, little-endian."""
+    return bytes.fromhex("2a0000010104") + (command_value & 0xFFFFFFFF).to_bytes(4, "little")
 
 
 def build_cbnew_memory_command(memory_index: int) -> bytes:
-    """Build CBNewProtocol memory command ([0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, idx])."""
+    """Preset recall: ``2A 00 00 01 03 01 index``."""
     return bytes([0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, memory_index & 0xFF])
 
 
 def build_cbnew_stop_command() -> bytes:
-    """Build CBNewProtocol stop command ([0xAA, 0x00, 0x00, 0x01, 0x02, 0x00])."""
-    return bytes([0xAA, 0x00, 0x00, 0x01, 0x02, 0x00])
+    """STOP: ``AA 00 00 01 02 00``."""
+    return bytes.fromhex("aa0000010200")
 
 
 def build_cbnew_massage_command(command_code: int) -> bytes:
-    """Build CBNewProtocol massage command ([0x2A, 0x00, 0x00, 0x02, 0x01, 0x01, code])."""
+    """Massage: ``2A 00 00 02 01 01 code``."""
     return bytes([0x2A, 0x00, 0x00, 0x02, 0x01, 0x01, command_code & 0xFF])
 
 
 def build_cbnew_light_command(is_on: bool) -> bytes:
-    """Build CBNewProtocol light command packet for discrete on/off."""
-    return bytes(
-        [
-            0xAA,
-            0x00,
-            0x00,
-            0x04,
-            0x01,
-            0x05,
-            0x00,
-            0x01 if is_on else 0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-        ]
-    )
+    """Discrete light switch: ``AA 00 00 04 01 05 00 <on> 00 00 00 00``."""
+    return bytes.fromhex("aa0000040105") + bytes([0x00, int(is_on), 0, 0, 0, 0])
 
 
 class OkinCB24Controller(BedController):
@@ -214,7 +177,6 @@ class OkinCB24Controller(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
         return NORDIC_UART_WRITE_CHAR_UUID
 
     async def write_command(
@@ -245,7 +207,6 @@ class OkinCB24Controller(BedController):
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - CB24 beds support under-bed lighting."""
         return True
 
     @property
@@ -255,17 +216,14 @@ class OkinCB24Controller(BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - CB24 beds support memory presets 1-3."""
         return True
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 3 - CB24 beds support memory slots 1-3."""
         return 3
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - CB24 beds don't support programming memory positions."""
         return False
 
     @property
@@ -280,7 +238,6 @@ class OkinCB24Controller(BedController):
 
     @property
     def supports_massage(self) -> bool:
-        """Return True - CB24 beds support massage functions."""
         return True
 
     @property
@@ -379,55 +336,42 @@ class OkinCB24Controller(BedController):
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up."""
         await self._move_motor("head", MotorDirection.UP)
 
     async def move_head_down(self) -> None:
-        """Move head down."""
         await self._move_motor("head", MotorDirection.DOWN)
 
     async def move_head_stop(self) -> None:
-        """Stop head motor."""
         await self._move_motor("head", MotorDirection.STOP)
 
     async def move_back_up(self) -> None:
-        """Move back up (same as head)."""
         await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        """Move back down (same as head)."""
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up."""
         await self._move_motor("feet", MotorDirection.UP)
 
     async def move_legs_down(self) -> None:
-        """Move legs down."""
         await self._move_motor("feet", MotorDirection.DOWN)
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
         await self._move_motor("feet", MotorDirection.STOP)
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
         await self.move_legs_up()
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
         await self.move_legs_down()
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         await self.move_legs_stop()
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
         self._motor_state = {}
         await self.write_command(
             self._build_stop_command(),
@@ -441,11 +385,9 @@ class OkinCB24Controller(BedController):
         await self.write_command(preset_command)
 
     async def preset_flat(self) -> None:
-        """Go to flat position."""
         await self._send_preset(_KEYS["flat"])
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
         commands = {
             1: _KEYS["memory_1"],
             2: _KEYS["memory_2"],
@@ -464,11 +406,9 @@ class OkinCB24Controller(BedController):
         )
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
         await self._send_preset(_KEYS["zero_g"])
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
         await self._send_preset(_KEYS["anti_snore"])
 
     async def preset_lounge(self) -> None:
@@ -481,7 +421,6 @@ class OkinCB24Controller(BedController):
 
     # Light methods
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
         if self._is_new_protocol:
             if self._lights_on:
                 await self.lights_off()
@@ -491,7 +430,6 @@ class OkinCB24Controller(BedController):
         await self.write_command(self._build_command(_KEYS["light"]))
 
     async def lights_on(self) -> None:
-        """Turn on lights."""
         if self._is_new_protocol:
             await self.write_command(build_cbnew_light_command(True))
             self._lights_on = True
@@ -499,7 +437,6 @@ class OkinCB24Controller(BedController):
         await self.lights_toggle()
 
     async def lights_off(self) -> None:
-        """Turn off lights."""
         if self._is_new_protocol:
             await self.write_command(build_cbnew_light_command(False))
             self._lights_on = False
@@ -508,7 +445,6 @@ class OkinCB24Controller(BedController):
 
     # Massage methods
     async def massage_head_up(self) -> None:
-        """Increase head massage intensity."""
         if self._is_new_protocol:
             level = min(3, self._massage_head_level + 1)
             await self.write_command(build_cbnew_massage_command(79 + level))
@@ -517,7 +453,6 @@ class OkinCB24Controller(BedController):
         await self.write_command(self._build_command(_KEYS["massage_head_up"]))
 
     async def massage_head_down(self) -> None:
-        """Decrease head massage intensity."""
         if self._is_new_protocol:
             level = max(0, self._massage_head_level - 1)
             command_code = 83 if level == 0 else 79 + level
@@ -531,7 +466,6 @@ class OkinCB24Controller(BedController):
         await self.massage_head_up()
 
     async def massage_foot_up(self) -> None:
-        """Increase foot massage intensity."""
         if self._is_new_protocol:
             level = min(3, self._massage_foot_level + 1)
             await self.write_command(build_cbnew_massage_command(83 + level))
@@ -540,7 +474,6 @@ class OkinCB24Controller(BedController):
         await self.write_command(self._build_command(_KEYS["massage_foot_up"]))
 
     async def massage_foot_down(self) -> None:
-        """Decrease foot massage intensity."""
         if self._is_new_protocol:
             level = max(0, self._massage_foot_level - 1)
             command_code = 87 if level == 0 else 83 + level
@@ -554,7 +487,6 @@ class OkinCB24Controller(BedController):
         await self.massage_foot_up()
 
     async def massage_toggle(self) -> None:
-        """Toggle all massage zones."""
         if self._is_new_protocol:
             self._massage_on = not self._massage_on
             await self.write_command(
@@ -567,15 +499,12 @@ class OkinCB24Controller(BedController):
         await self.write_command(self._build_command(_KEYS["massage_toggle"]))
 
     async def massage_intensity_up(self) -> None:
-        """Increase all massage intensity."""
         await self.write_command(self._build_command(_KEYS["massage_intensity_up"]))
 
     async def massage_intensity_down(self) -> None:
-        """Decrease all massage intensity."""
         await self.write_command(self._build_command(_KEYS["massage_intensity_down"]))
 
     async def massage_off(self) -> None:
-        """Turn off all massage."""
         if self._is_new_protocol:
             self._massage_on = False
             self._massage_head_level = 0
@@ -585,7 +514,6 @@ class OkinCB24Controller(BedController):
         await self.write_command(self._build_command(_KEYS["massage_off"]))
 
     async def massage_mode_step(self) -> None:
-        """Cycle through massage wave patterns."""
         if self._is_new_protocol:
             self._massage_mode = (self._massage_mode % 4) + 1
             await self.write_command(build_cbnew_massage_command(65 + self._massage_mode))
