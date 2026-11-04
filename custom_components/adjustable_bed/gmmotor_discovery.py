@@ -5,9 +5,9 @@ from __future__ import annotations
 
 def scan_name_matches(name: str) -> bool:
     """Source case-sensitive substring filter; service UUID alone is insufficient."""
-    from .gmmotor_catalog import SCAN_KEYWORDS
+    from .discovery_hints.gmmotor import SCAN
 
-    return any(keyword in name for keyword in SCAN_KEYWORDS)
+    return SCAN.matches_name(name)
 
 
 def selector_from_name(name: str, *, russian: bool = False) -> str:

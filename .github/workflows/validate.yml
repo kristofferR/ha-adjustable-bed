@@ -59,6 +59,8 @@ jobs:
           uv pip install -r /tmp/ha-bluetooth-requirements.txt
       - name: Pyright
         run: uvx pyright@1.1.411 custom_components tests scripts
+      - name: Bluetooth matchers match the discovery hints
+        run: uv run --no-sync python scripts/generate_bluetooth_matchers.py --check
 
   frontend:
     runs-on: ubuntu-latest
