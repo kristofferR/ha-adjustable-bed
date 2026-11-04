@@ -12,8 +12,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
+from .command_scheduler import current_command_context
+
 HoldMode = Literal["stream", "latched"]
 HOLD_MODES: Final[frozenset[str]] = frozenset({"stream", "latched"})
+MAX_HOLD_MS: Final = 30_000
+"""Longest one renewable hold runs in total, however often it is renewed."""
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -62,3 +66,15 @@ class ExecutionCapabilities:
 
 
 NO_EXECUTION_CAPABILITIES: Final = ExecutionCapabilities()
+
+
+def leased_pulses(refresh_ms: int) -> tuple[int, int] | None:
+    """Pulse count and delay that refresh a renewable hold at the app's ``refresh_ms``.
+
+    Returns None outside a renewable hold (#483), so finite moves keep their
+    own pulses. The lease ends the hold; the count only spans the ceiling.
+    """
+    context = current_command_context()
+    if context is None or context.lease is None:
+        return None
+    return MAX_HOLD_MS // refresh_ms + 1, refresh_ms

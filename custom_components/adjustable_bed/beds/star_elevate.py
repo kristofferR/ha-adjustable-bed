@@ -22,6 +22,7 @@ from ..codec import okin_5a as codec
 
 # starcode_m1x12 imports the RX characteristic from here.
 from ..const import NORDIC_UART_READ_CHAR_UUID as NORDIC_UART_READ_CHAR_UUID
+from ..execution import leased_pulses
 from ..profiles.okin_5a import ELEVATE
 from .base import BedController, MotorControlSpec
 
@@ -198,6 +199,11 @@ class StarElevateController(BedController):
         from ..starcode_accessory_group import interrupt_conflicting_group
 
         await interrupt_conflicting_group(self._coordinator)
+
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """A renewable hold (#483) refreshes at the app's interval until its lease ends."""
+        refresh = self.profile.hold_refresh_ms
+        return (refresh and leased_pulses(refresh)) or super().motor_pulse_settings()
 
     async def _move_with_stop(self, command: bytes) -> None:
         await self._interrupt_group()

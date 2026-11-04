@@ -91,6 +91,7 @@ from .const import (
     bed_type_has_position_feedback,
     resolve_explicit_bed_type,
 )
+from .execution import MAX_HOLD_MS
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
     BedChild,
@@ -355,7 +356,7 @@ MAX_TIMED_MOVE_DURATION_MS = 30000  # 30 seconds max
 # ceiling also bounds one hold in total: it never streams past it, however
 # often it is renewed.
 MIN_HOLD_LEASE_MS = MIN_TIMED_MOVE_DURATION_MS
-MAX_HOLD_LEASE_MS = MAX_TIMED_MOVE_DURATION_MS
+MAX_HOLD_LEASE_MS = MAX_HOLD_MS
 HOLD_LEASE_FIELDS = {
     vol.Inclusive(ATTR_HOLD_OWNER, "hold_lease"): vol.All(
         cv.string, vol.Length(min=1, max=64)

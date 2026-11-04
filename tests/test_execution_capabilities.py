@@ -44,13 +44,19 @@ APP_ROUTES = {
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
 # Declaration -> declared field -> evidence keys from the design document.
-EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {}
+EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
+    # the 5A keys those profiles send, so only ELEVATE declares.
+    "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
+}
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
-DECLARATION_SITES: dict[str, tuple[str, ...]] = {}
+DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
+}
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent"})
