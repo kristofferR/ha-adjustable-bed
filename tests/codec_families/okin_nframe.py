@@ -1,4 +1,4 @@
-"""O1 Okin N-frame: the 32- and 40-bit routes; the other command-word widths are pending."""
+"""O1 Okin N-frame: the 32-, 40- and 96-bit routes; the 64-bit routes are pending."""
 
 from __future__ import annotations
 
@@ -20,6 +20,9 @@ def _variant(key: str, bed_type: str) -> str | None:
         # SIMMONS profile keys are the packet-format variants.
         const.BED_TYPE_SIMMONS: key,
         const.BED_TYPE_DOUBLESLEEP: "p1",
+        # CST profile keys are the product variants; Z-Series keys name the page.
+        const.BED_TYPE_OKIN_CST: key,
+        const.BED_TYPE_ZSERIES: key.removeprefix("zseries_"),
     }.get(bed_type)
 
 
@@ -30,19 +33,23 @@ FAMILY = CodecFamily(
             "customatic_clarity",
             "customatic_jeromes",
             "customatic_remedy",
+            "customatic_zseries",
             "dewertokin",
             "doublesleep",
             "leggett_okin",
             "leggett_platt",
             "okimat",
             "okin_cb24",
+            "okin_cst",
             "okin_dot",
             "okin_handle",
             "okin_rf_eco_bt",
             "okin_uuid",
+            "serenity",
             "simmons",
             "sleepys_box25",
             "starcode_abm5_4",
+            "tranquil",
         }
     ),
     app_routes={
@@ -54,11 +61,7 @@ FAMILY = CodecFamily(
     pending=dict.fromkeys(
         (
             "adjustable_lumbar",
-            "customatic_zseries",
             "okin_64bit",
-            "okin_cst",
-            "serenity",
-            "tranquil",
         ),
         _O1,
     ),
@@ -66,7 +69,8 @@ FAMILY = CodecFamily(
         path="docs/beds/okin-nframe.md",
         spelled=spelled_frames(
             r"`(04 ?02(?: ?[0-9A-F]{2}){4}|05 ?02(?: ?[0-9A-F]{2}){5}|08 ?02(?: ?[0-9A-F]{2}){8}"
-            r"|E5 ?FE ?16(?: ?[0-9A-F]{2}){5}|E6 ?FE ?16(?: ?[0-9A-F]{2}){6})`",
+            r"|0C ?02(?: ?[0-9A-F]{2}){12}|E5 ?FE ?16(?: ?[0-9A-F]{2}){5}"
+            r"|E6 ?FE ?16(?: ?[0-9A-F]{2}){6})`",
             re.IGNORECASE,
         ),
         # AdjustableM5X4's BOX15 selector moves with its app's frozen Keeson E6 frames.
