@@ -34,12 +34,14 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_GMMOTOR_SLEEP_SXB,
+    BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
@@ -681,6 +683,16 @@ async def create_controller(
         from .beds.solace import SolaceController
 
         return SolaceController(coordinator)
+
+    if bed_type == BED_TYPE_GOODVIBE:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.goodvibe", __package__)
+        from .beds.goodvibe import GoodVibeController
+        return GoodVibeController(coordinator, profile=protocol_variant or "")
+
+    if bed_type == BED_TYPE_ESHINE_OKIN:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.eshine_okin", __package__)
+        from .beds.eshine_okin import EshineOkinController
+        return EshineOkinController(coordinator, profile=protocol_variant or "")
 
     if bed_type == BED_TYPE_HJBED:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)

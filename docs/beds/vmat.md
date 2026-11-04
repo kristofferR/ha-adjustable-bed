@@ -75,7 +75,7 @@ move through CBI.
   the app.
 - **Legacy setup** inside the family chooser retains the older generic
   controller for fresh setup. Existing entries change through the
-  [guided migration](../CONFIGURATION.md#vibradorm-guided-setup-and-migration).
+  [guided migration](vibradorm.md#guided-setup-and-migration).
 - The choices distinguish setup contracts; some command paths overlap. Controls
   and features follow this exact selection.
 - Shared Bluetooth identifiers and device-information strings cannot select this
@@ -186,6 +186,19 @@ the three DIS fields, then serially issues seven CBI stages:
   app/remote. Select the exact address explicitly.
 - Malformed lengths that make Android hang, crash or pad missing bytes are
   rejected safely.
+
+### Home Assistant setup
+
+Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+bed-type picker, then **VMAT** and the same remote ordinal as the app. Its fourteen
+shipped selections derive the logical axes, memory, sync, floor, mood and
+massage controls. Independent feature overrides
+and inferred product identification are unavailable. Setup requires positive
+native bond evidence for the exact address and actual host adapter; an
+unverified proxy pairing request cannot finish setup. Ordinary sessions do not
+send onboarding queries or position polls. Accessory state is assumed local
+intent, preserved during the current HA process and rolled back on failed
+writes. Configure each physical side separately before combining a two-address pair.
 
 ## Commands
 

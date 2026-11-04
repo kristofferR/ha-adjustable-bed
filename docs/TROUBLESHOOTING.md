@@ -31,6 +31,10 @@ page so it loads the matching card version. For paired-bed conversion, existing
 side entity IDs should survive. Report missing entities with diagnostics before
 deleting and recreating entries.
 
+Upgrading from 4.x to v5: read the [v5 breaking changes](V5_BREAKING_CHANGES.md)
+and take a Home Assistant backup first. That backup is the only way back; see
+[Going back to 4.x](#going-back-to-4x).
+
 ### "New app profiles are available" repair
 
 Beds added before 4.1.0 keep the bed type they were set up with. Version 4.1.0
@@ -38,21 +42,28 @@ adds app profiles for beds that the earlier generic routes controlled only
 partly, or with the wrong commands. Bluetooth advertisements cannot tell these
 apps apart, so an upgraded bed whose bed type gained app profiles shows one
 repair under **Settings > System > Repairs**. It lists only the apps that fit
-that bed type and asks once:
+that bed type:
 
 - **Choose the app you use.** Most apps are applied right away, with the same
   checks as **Configure**. The bed reloads with that app's controls and keeps
   its device and matching entity IDs.
-- Apps with their own settings (FSM Relax, Limoss Remote, Motion Bed, the
-  Vibradorm apps, V-MAT Basic, AdjustableM5X4, AdjustableM5X5, LOGICDATA
-  Sleep Smart), or a change **Configure** would refuse, are not applied here.
-  The repair tells you to open **Configure** and choose the app there.
-- **Keep current configuration** if the bed already works. The repair does
-  not come back.
+- Apps with their own settings (FSM Relax, Limoss Remote, Motion Bed,
+  AdjustableM5X4, AdjustableM5X5, LOGICDATA Sleep Smart), or a change
+  **Configure** would refuse, are not applied here. The repair opens
+  **Configure** with the app selected.
+- A family with a guided change, such as Vibradorm and V-MAT Basic, opens
+  [the guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed).
+- **Keep current configuration** if the bed already works. The repair comes
+  back only if a later release adds an app for that setup that you have not
+  been shown.
 - A paired bed cannot switch app in its shared settings, because app profiles
   belong to one physical bed and none supports paired controls. In
   **Configure**, choose **Split into two beds** (or **Restore standalone
-  controls**), then choose the app for each bed.
+  controls**). Each bed then gets its own repair. A working pair can keep its
+  current configuration instead.
+
+Handing off to **Configure** or the guided change does not answer the repair.
+It stays open until you save a change or choose to keep the current setup.
 
 The repair reads **"... matches the ... profile"** instead when the bed's
 advertisement now identifies another bed type than the one it was set up
@@ -81,6 +92,37 @@ start with, `base-i5`; they are Cool Base beds.
 
 FurniMove is not listed: older RF ECO BT and Okin DOT entries get their own
 [FurniMove repair](beds/furnimove.md#repairing-existing-configurations).
+
+### Going back to 4.x
+
+v5 migrates every Adjustable Bed config entry to schema 5 on its first start.
+4.x cannot read schema 5, so **restoring a Home Assistant backup taken before
+the upgrade is the only way back to 4.x**. There is no downgrade path. The
+[v5 breaking changes](V5_BREAKING_CHANGES.md) page lists what the migration
+stores.
+
+If you install 4.x over v5 anyway:
+
+- Every Adjustable Bed entry fails to load. Home Assistant logs `Config entry
+  ... for adjustable_bed has version 5 which is higher than the current version
+  4` and shows the entry as a migration error. Its devices and entities stay
+  unavailable.
+- Nothing is converted back. The entries keep their schema 5 data, so
+  installing the same or a later v5 version again loads them as before.
+- Deleting the entries and setting the beds up again under 4.x is not a
+  rollback. It loses each entry's options, app profile choices and paired-bed
+  setup, and it can change entity IDs that dashboards and automations use.
+
+To go back:
+
+1. Install the 4.x version you want to run.
+2. Restore the backup you made before upgrading, under **Settings > System >
+   Backups**. Restoring its Home Assistant settings also rolls back every other
+   change made since that backup, not only this integration.
+3. Restart Home Assistant and reload the dashboard page.
+
+Report the problem that made you go back in the v5 beta feedback issue, with the
+beta number and, if you still have them, diagnostics or a support bundle from v5.
 
 ## Dashboard Card Missing or Configuration Error
 

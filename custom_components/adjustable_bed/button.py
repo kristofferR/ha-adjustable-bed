@@ -15,7 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import ProductButtonSpec, SideBoundController
+from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec, SideBoundController
 from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LIMOSS_REMOTE,
@@ -28,7 +28,7 @@ from .const import (
     SIDE_BOTH,
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
-from .entity import AdjustableBedEntity
+from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
@@ -951,7 +951,7 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_"):
+        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_", "eshine_okin_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1378,6 +1378,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
+            attributes.update(hold_lease_attributes([controller]))
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
@@ -1493,6 +1494,16 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
+        if self._spec.release_only:
+            controller = self._coordinator.capability_controller
+            if controller is not None:
+                controller.on_gesture_release()
+            token = CONTROLLER_GESTURE_RELEASE.set(True)
+            try:
+                await self._coordinator.async_stop_command()
+            finally:
+                CONTROLLER_GESTURE_RELEASE.reset(token)
+            return
         if self._spec.key == "hjbed_release":
             from .hjbed_state import GESTURE_RELEASE
 
@@ -1528,6 +1539,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 held_control=hold.control,
                 hold_start_delay_ms=hold.start_delay_ms,
                 hold_release_delay_ms=hold.release_delay_ms,
+                **hold_lease_attributes([self._coordinator.capability_controller]),
             )
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
@@ -1673,6 +1685,7 @@ class PairedBedCombinedButton(ButtonEntity):
                     held_control=(hold.up_control if direction == "up" else hold.down_control),
                     hold_start_delay_ms=hold.start_delay_ms,
                     hold_release_delay_ms=hold.release_delay_ms,
+                    **_paired_hold_lease_attributes(self._coordinator),
                 )
                 if hold.release_button_key is not None:
                     attributes["hold_release_button_key"] = hold.release_button_key
@@ -1734,6 +1747,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Advertise this common motor through the bounded paired action."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        attributes.update(_paired_hold_lease_attributes(self._coordinator, self._motor_key))
         hold = _paired_motor_hold_spec(self._coordinator, self._motor_key, self._direction)
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
@@ -1808,6 +1822,24 @@ class PairedBedCombinedMotorButton(ButtonEntity):
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _paired_hold_lease_attributes(
+    coordinator: PairedBedCoordinator, motor: str | None = None
+) -> dict[str, str]:
+    """Offer a combined renewable hold only when both sides can run it together.
+
+    Separate receivers must be connected concurrently, as for a Both hold
+    contract; a single address holds both sides on one link.
+    """
+    if not isinstance(coordinator, SingleAddressPairedCoordinator) and (
+        coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+        or len(coordinator.children) != 2
+    ):
+        return {}
+    return hold_lease_attributes(
+        (child.capability_controller for child in coordinator.children.values()), motor
+    )
 
 
 def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:

@@ -7,14 +7,21 @@ The checks run for every family module in ``scripts/codec_docs/`` and
 
 from __future__ import annotations
 
+import re
+from collections import defaultdict
 from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.const import get_motor_pulse_defaults
 from custom_components.adjustable_bed.controller_factory import create_controller
 from scripts import generate_codec_docs as generator
 from tests.codec_families import families
-from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
+from tests.test_controller_contract import (
+    _create_controller_for_bed_type,
+    _FactoryCoordinator,
+    _make_connected_client,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 FAMILIES = families()
@@ -78,3 +85,21 @@ async def test_guide_bed_types_match_the_factory(name: str) -> None:
             profile = getattr(controller, "profile", None)
             assert type(profile) in family.profiles, (key, bed_type)
             assert getattr(profile, "key", None) == key, (key, bed_type)
+
+
+@pytest.mark.parametrize("name", GUIDED)
+async def test_guide_lists_its_aliases(name: str) -> None:
+    """Bed types that build one controller, profile and timing are listed as aliases (#742)."""
+    family = FAMILIES[name]
+    assert family.guide is not None
+    groups: dict[tuple[object, ...], list[str]] = defaultdict(list)
+    for bed_type in sorted(family.bed_types):
+        controller = await _create_controller_for_bed_type(bed_type)
+        profile = getattr(controller, "profile", None)
+        signature = (type(controller), type(profile), getattr(profile, "key", None))
+        groups[(*signature, get_motor_pulse_defaults(bed_type))].append(bed_type)
+    aliases = {bed_type for group in groups.values() if len(group) > 1 for bed_type in group}
+    text = (ROOT / family.guide.path).read_text(encoding="utf-8")
+    section = re.search(r"^### Aliases\n(.*?)(?=^##)", text, re.MULTILINE | re.DOTALL)
+    listed = set(re.findall(r"`([a-z0-9_]+)`", section[1])) if section else set()
+    assert not aliases - listed, f"List these aliases under ### Aliases: {sorted(aliases - listed)}"

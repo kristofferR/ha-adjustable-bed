@@ -29,6 +29,8 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_PAIR_ID,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SUPPORTED_BED_TYPES,
@@ -39,6 +41,7 @@ from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .paired_coordinator import PairedBedCoordinator
+from .pairing import get_child
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data
 from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
@@ -87,6 +90,8 @@ async def _async_paired_diagnostics(
             "position_data": getattr(child, "position_data", None),
             "command_timing": child.command_timing,
             "config": dict(child.entry.data),
+            # From the side's descriptor: a single-address side's entry is the parent.
+            "profile_id": (get_child(entry.data, side) or {}).get(CONF_PROFILE_ID),
             "profile_recommendations": await async_profile_decision_history(hass, child.address),
         }
         if child.bed_type in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}:
@@ -120,9 +125,11 @@ async def _async_paired_diagnostics(
         "config_entry": {
             "title": entry.title,
             "version": entry.version,
+            "minor_version": entry.minor_version,
             "data": dict(entry.data),
             "options": dict(entry.options),
         },
+        "profile_migration": entry.data.get(CONF_PROFILE_MIGRATION),
         "sides": sides,
     }
     return redact_data(data)
@@ -282,8 +289,14 @@ async def async_get_config_entry_diagnostics(
         "entry": {
             "entry_id": entry.entry_id,
             "version": entry.version,
+            "minor_version": entry.minor_version,
             "title": entry.title,
             "data": dict(entry.data),
+        },
+        # The id the controller was built from, and the schema 5 migration record.
+        "profile": {
+            "id": coordinator.profile_id,
+            "migration": entry.data.get(CONF_PROFILE_MIGRATION),
         },
         "config": {
             "bed_type": entry.data.get(CONF_BED_TYPE),

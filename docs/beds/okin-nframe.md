@@ -77,6 +77,7 @@ Customatic app profiles.
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
 | ✅ | Adjustable bed | `com.okin.bedding.adjustbed` | [Okin 64-Bit](#okin-64-bit) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
+| ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | Own guide, [eShine E2000 / E3000 / E3100 / E5000](eshine-okin.md): its 40-bit command words match this codec, but its `07 04` clock and `07 05` alarm frames do not |
 
 Beds controlled with FurniMove handset IDs normally use the explicit
 [FurniMove / OKIN Smart Remote](furnimove.md) app profile.
@@ -291,6 +292,36 @@ refresh; it streams Flat for 600 ms and saves or resets for 6000 ms. SleepEase P
 presets are held keys on its refresh too. The OKIN Bedding apps hold every action
 to its own deadline, saves for 5000 ms; see their profiles.
 <!-- /generated -->
+
+### Aliases
+
+Bed types that build the same controller over the same profile with the same
+default timing, so they send identical bytes. They stay separate bed types so
+existing entries keep their identities; the
+[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+
+| Bed type | Same as | Profile |
+|----------|---------|---------|
+| `okimat` | `okin_uuid` | [Okimat](#okimat) |
+| `dewertokin` | `okin_handle` | [DewertOkin](#dewertokin) |
+| `leggett_platt` with variant `okin` | `leggett_okin` | [Leggett Okin family](#leggett-okin-family) |
+
+`okimat`, `dewertokin` and `leggett_platt` are kept for existing entries and
+are not offered in the bed-type list.
+
+Each route also keeps its own [profile id](../design/profile-id.md#aliases).
+Besides the bed-type list, the device manufacturer differs for `okimat` and
+`dewertokin`, and the app profile review (a Repairs issue) covers `dewertokin`
+only. `leggett_platt` without a variant picks its controller from GATT at
+connect, and `leggett_platt` variant `gen2` stays apart from `leggett_gen2`
+because only `leggett_gen2` is in the bed-type list.
+
+Routes that send the same bytes as their default route keep their own id too,
+since only a missing variant and `auto` share one: `okin_64bit` variant `nordic`
+is what `auto` builds, but it is a saved choice that Configure and the profile
+review show as its own route; `adjustable_lumbar` variant `adjustable_lumbar_star`
+matches `auto` only for Star-named beds, because `auto` picks the table from the
+Bluetooth name at connect.
 
 ## Wire codec
 
@@ -1936,6 +1967,10 @@ Bed type and motors:
 - Motor count is fixed at two (back, legs).
 - Position feedback, massage and pairing do not exist in the app.
 
+##### Home Assistant setup
+
+Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it.
+
 #### Controls
 
 ##### Features
@@ -2745,6 +2780,10 @@ manufacturer result; C is not a transport-readiness barrier.
 - Auto uses the retained original BLE name and requires an explicit transport
   when that identity is unavailable.
 
+##### Home Assistant setup
+
+Choose the AdjustableM5X4 app profile explicitly. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
+
 #### Controls
 
 ##### Features
@@ -3500,6 +3539,10 @@ secondary field (both big-endian), then four zero bytes
   leave alarm controls disabled. Existing CST product profiles are separate.
 - There is no PIN, bonding, or pairing gate established by the artifact.
 
+##### Home Assistant setup
+
+Select **Jordan's Serenity app** explicitly for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+
 #### Controls
 
 ##### Features
@@ -3768,6 +3811,10 @@ policy.
 - Manufacturer strings, including CST13/CST14, never enable alarm controls in
   this app.
 
+##### Home Assistant setup
+
+Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
+
 #### Controls
 
 ##### Features
@@ -3969,6 +4016,10 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 - Shared OKIN names and GATT UUIDs do not identify the app or the model.
 - Setup accepts 1 to 600 motor pulses for these profiles; a stored value outside
   that range is clamped.
+
+##### Home Assistant setup
+
+For `com.okin.bedding.glory` 1.0.4 (5), select **Customatic Z-Series app (Z-230)** or **(Z-280)** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
 
 #### Controls
 

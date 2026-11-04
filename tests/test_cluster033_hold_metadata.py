@@ -28,6 +28,7 @@ PAIR_CHILDREN = {side: SimpleNamespace(bed_type="tempur_curve") for side in ("le
 
 def entity_runtime():
     return SimpleNamespace(
+        capability_controller=None,
         entity_side="left",
         device_info={},
         name="App left",

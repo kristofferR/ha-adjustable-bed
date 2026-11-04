@@ -233,7 +233,7 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
         assert result["step_id"] in ("pairing_result", "verify_connection")
         assert entry.data == before and entry.options == options
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-        assert result["step_id"] == "vibradorm_confirm"
+        assert result["step_id"] == "migration_confirm"
         assert entry.data == before and entry.options == options
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"confirm": True}
@@ -248,7 +248,7 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
     assert entry.options == options
     assert dr.async_get(hass).async_get(device.id).identifiers == {(const.DOMAIN, ADDRESS)}
     assert er.async_get(hass).async_get(entity.entity_id).unique_id == entity.unique_id
-    reservation.assert_called_once_with("vibradorm_setup")
+    reservation.assert_called_once_with("profile_migration")
     old_client.disconnect.assert_awaited_once()
     assert not client.is_connected
 
@@ -353,7 +353,7 @@ async def test_confirmation_rejects_concurrent_changes(hass, enable_custom_integ
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"confirm": True}
         )
-    assert result["reason"] == "vibradorm_configuration_changed"
+    assert result["reason"] == "migration_entry_changed"
     assert getattr(entry, change) == changed
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
 
@@ -388,7 +388,7 @@ async def test_no_scanner_cannot_skip_migration_verification(hass, enable_custom
         ) as probe,
     ):
         result = await select_app(hass, entry, "vmatbasic")
-        assert result["errors"] == {"base": "vibradorm_verification_required"}
+        assert result["errors"] == {"base": "migration_verification_required"}
         assert result["data_schema"].schema["action"].config["options"] == ["retry", "keep"]
         hass.config_entries.flow.async_abort(result["flow_id"])
     probe.assert_awaited_once()
@@ -491,7 +491,7 @@ async def test_repairs_handoff_leaves_review_pending_until_explicit_keep(
     flow = ProfileReviewRepairFlow(entry.entry_id)
     flow.hass = hass
     result = await flow.async_step_init({"issue_id": "ignored"})
-    assert result["step_id"] == "vibradorm"
+    assert result["step_id"] == "managed"
     result = await flow.async_step_init({"choice": "configure"})
     assert result["type"] == FlowResultType.ABORT
     assert const.CONF_PROFILE_REVIEW_PENDING in entry.data
@@ -505,7 +505,7 @@ async def test_repairs_handoff_leaves_review_pending_until_explicit_keep(
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"app": "legacy"})
-    assert result["reason"] == "vibradorm_legacy_kept"
+    assert result["reason"] == "migration_kept"
     assert const.CONF_PROFILE_REVIEW_PENDING not in entry.data
     assert (
         ir.async_get(hass).async_get_issue(const.DOMAIN, "app_profile_review_" + entry.entry_id)
@@ -542,7 +542,7 @@ async def test_paired_setup_is_unchanged_until_explicit_split(
     result = await manager.async_init(
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    assert result["step_id"] == "vibradorm_unpair"
+    assert result["step_id"] == "migration_split"
     assert entry.data == data
     manager.async_abort(result["flow_id"])
     assert entry.data == data
@@ -552,7 +552,7 @@ async def test_paired_setup_is_unchanged_until_explicit_split(
         )
         result = await manager.async_configure(result["flow_id"], {"confirm": True})
         await hass.async_block_till_done()
-    assert result["reason"] == "vibradorm_pair_split_started"
+    assert result["reason"] == "migration_pair_split_started"
     unpair.assert_awaited_once_with(hass, entry)
 
 

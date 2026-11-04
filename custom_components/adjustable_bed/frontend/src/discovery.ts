@@ -3,7 +3,7 @@
 // integration sets a stable translation_key (see strings.json), so this mapping
 // is robust across all supported bed types — a section only appears when its
 // entities exist.
-import { heldReleaseButton } from "./hold";
+import { heldReleaseButton, holdLeaseRoute } from "./hold";
 import type {
   BedSide,
   BedEntities,
@@ -34,6 +34,7 @@ export const SECTION_ORDER = [
   "motors",
   "firmness",
   "presets",
+  "saved_positions",
   "memory",
   "lighting",
   "massage",
@@ -147,6 +148,8 @@ export function bedEntitiesForDevice(
   ): void => {
     const item = motor(key);
     item[direction] = id;
+    const holdLease = holdLeaseRoute(hass, id, ownerDeviceId ?? deviceId);
+    if (holdLease) item.holdLease = holdLease;
     const attributes = hass.states[id]?.attributes;
     const control = attributes?.held_control;
     const startDelayMs = attributes?.hold_start_delay_ms;
@@ -222,6 +225,8 @@ export function bedEntitiesForDevice(
           const down = attributes?.held_control_down;
           const releaseButton = heldReleaseButton(hass, id);
           if (releaseButton) item.releaseButton = releaseButton;
+          const holdLease = holdLeaseRoute(hass, id, entry.device_id);
+          if (holdLease) item.holdLease = holdLease;
           if (attributes?.held_stop_scope === "motor" || attributes?.held_stop_scope === "side") {
             item.coverStopScope = attributes.held_stop_scope;
           }
@@ -249,6 +254,10 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key === "eshine_okin_massage") { (bed.massage.states ??= []).push(id); break; }
+        if (key === "eshine_okin_alarm") { bed.utilityStates?.push(id); break; }
+        if (key.startsWith("goodvibe_")) { bed.utilityStates?.push(id); break; }
+        if (key === "saved_positions") { bed.savedPositions = id; break; }
         if (key.startsWith("doublesleep_")) {
           if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
           else if (key === "doublesleep_light") (bed.lights.states ??= []).push(id);
@@ -303,6 +312,11 @@ export function bedEntitiesForDevice(
         break;
 
       case "number":
+        if (key.startsWith("goodvibe_")) { (bed.utilityNumbers ??= []).push(id); break; }
+        if (key.endsWith("_position_estimated")) {
+          motor(key.slice(0, -"_position_estimated".length)).estimate = id;
+          break;
+        }
         if (key.startsWith("adjustamattress_")) {
           (bed.utilityNumbers ??= []).push(id);
           break;
@@ -351,6 +365,8 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
+        if (key === "estimate_remote_used") { bed.estimateRemote = id; break; }
+        if ((match = key.match(/^set_(.+)_reference$/))) { motor(match[1]).reference = id; break; }
         if (key === "doublesleep_massage_action") { bed.massage.buttons.push(id); break; }
         if (key === "doublesleep_light_action") { (bed.lights.buttons ??= []).push(id); break; }
         if (key === "doublesleep_action") { bed.utility.push(id); break; }
@@ -438,6 +454,10 @@ export function bedEntitiesForDevice(
           presetMap.set(key, id);
         } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm" || key === "bf_query_alarm") {
           bed.utility.push(id);
+        } else if (key.startsWith("eshine_okin_massage_")) {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("eshine_okin_")) {
+          bed.utility.push(id);
         } else if (key.startsWith("eshine_massage_")) {
           bed.massage.buttons.push(id);
         } else if (key.startsWith("eshine_save_")) {
@@ -447,7 +467,7 @@ export function bedEntitiesForDevice(
         } else if (key === "richmat_mh_preset") {
           // App-labelled presets share one translation key; keep each entity.
           presetMap.set(`${key}:${id}`, id);
-        } else if (key === "hjbed_action") {
+        } else if (key === "hjbed_action" || key === "goodvibe_action") {
           bed.utility.push(id);
         } else if (key.startsWith("richmat_mh_")) {
           // Saves, app actions, the smart set lock and detection controls.
@@ -569,7 +589,7 @@ export function bedEntitiesForDevice(
           (bed.utilitySelects ??= []).push(id);
           break;
         }
-        if (key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
+        if (key === "goodvibe_massage_timer" || key === "goodvibe_light_duration" || key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
         else if (key === "reverie_stk_side")
           (bed.utilitySelects ??= []).push(id);
@@ -581,7 +601,7 @@ export function bedEntitiesForDevice(
           (bed.massage.selects ??= []).push(id);
         else if (key === "light_timer") bed.lights.timer = id;
         // A split bed's local left/right selector routes the motor controls.
-        else if (key === "remacro_control_side") bed.controlSide = id;
+        else if (key === "remacro_control_side" || key === "goodvibe_side") bed.controlSide = id;
         else if (key === "starcode_color") mood().selects.push(id);
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);
@@ -723,7 +743,8 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.utility.length === 0 &&
     !bed.utilityNumbers?.length &&
     !bed.utilitySelects?.length &&
-    !bed.utilityStates?.length
+    !bed.utilityStates?.length &&
+    !bed.savedPositions
   );
 }
 

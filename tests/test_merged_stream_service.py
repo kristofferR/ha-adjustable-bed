@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
+import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.command_scheduler import (
@@ -141,3 +142,36 @@ async def test_repeated_cover_stop_stays_member_scoped(
     assert not legs.done()
     await asyncio.wait_for(legs, 1)
     assert controller.frames.count("release") == 1
+
+
+async def test_streamed_timed_moves_feed_position_estimates(
+    runtime: tuple[HomeAssistant, AdjustableBedCoordinator],  # noqa: F811
+) -> None:
+    from custom_components.adjustable_bed import position_estimate as pe
+
+    hass, coordinator = runtime
+
+    class EstimatedController(ComposingController):
+        @property
+        def estimated_position_motor_groups(self) -> dict[str, tuple[str, ...]]:
+            return {"back": ("back",), "legs": ("legs",)}
+
+    controller = EstimatedController(coordinator, CONCURRENT)
+    coordinator._controller = controller
+    manager = await pe.async_setup_position_estimates(
+        hass, coordinator.entry.entry_id, ((coordinator.address, None),)
+    )
+    bed = manager.beds[coordinator.address]
+    bed.configure({"back": (20.0, 10.0), "legs": (10.0, 8.0)})
+    bed.set_reference()
+
+    back = asyncio.create_task(_move(hass, "back", 200))
+    while not controller.frames:
+        await asyncio.sleep(0.005)
+    await asyncio.wait_for(_move(hass, "legs", 100), 1)
+    # legs settled on its own; back is still streaming and not yet counted.
+    assert bed.motors["back"].percent == 0
+    assert bed.motors["legs"].percent == pytest.approx(100 / 10.0 * 0.1, abs=0.3)
+    await asyncio.wait_for(back, 1)
+    assert bed.motors["back"].percent == pytest.approx(100 / 20.0 * 0.2, abs=0.15)
+    assert bed.tracking(["back", "legs"])
