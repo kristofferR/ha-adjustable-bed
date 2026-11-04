@@ -169,13 +169,19 @@ def test_keeson_routes_match_the_profiles() -> None:
 
 
 def test_okin_nframe_guide_frames_are_frozen_vectors() -> None:
-    """Every fully spelled 32-bit frame or envelope in the guide is a frozen one."""
+    """Every fully spelled N-frame, envelope or Keeson E6 frame in the guide is frozen."""
     from tests.okin_nframe_vectors import FIELD_FRAMES, FROZEN_FRAMES, GATEWAY_FRAMES
+    from tests.starcode_abm5_4_vectors import BUILDER_VECTORS
 
-    frozen = frozenset().union(*FROZEN_FRAMES.values(), *FIELD_FRAMES.values(), GATEWAY_FRAMES)
+    # AdjustableM5X4's BOX15 selector moves with its app's frozen Keeson E6 frames.
+    abm = {vector for *_, vector in BUILDER_VECTORS}
+    frozen = frozenset().union(*FROZEN_FRAMES.values(), *FIELD_FRAMES.values(), GATEWAY_FRAMES, abm)
     text = (ROOT / "docs" / "beds" / "okin-nframe.md").read_text(encoding="utf-8")
     frames = re.findall(
-        r"`(04 ?02(?: ?[0-9A-F]{2}){4}|E5 ?FE ?16(?: ?[0-9A-F]{2}){5})`", text, re.IGNORECASE
+        r"`(04 ?02(?: ?[0-9A-F]{2}){4}|05 ?02(?: ?[0-9A-F]{2}){5}|08 ?02(?: ?[0-9A-F]{2}){8}"
+        r"|E5 ?FE ?16(?: ?[0-9A-F]{2}){5}|E6 ?FE ?16(?: ?[0-9A-F]{2}){6})`",
+        text,
+        re.IGNORECASE,
     )
     assert frames
     unknown = sorted(
@@ -188,17 +194,30 @@ async def test_okin_nframe_bed_types_match_the_factory() -> None:
     """Each profile's bed types build a controller over that profile."""
     from custom_components.adjustable_bed.const import (
         CONF_LEGGETT_APP_PROFILE,
+        CONF_PRODUCT_TYPE,
+        CONF_STARCODE_COMMAND_SELECTOR,
         LEGGETT_VARIANT_OKIN,
     )
     from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.profiles.okin_nframe import STARCODE_ABM5_4_PROFILES
     from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
 
+    abm = {p.key: selector for selector, p in reversed(list(STARCODE_ABM5_4_PROFILES.items()))}
     for profile in _load_generator()._okin_profiles():
         assert profile.bed_types, profile.key
         for bed_type in profile.bed_types:
             coordinator = _FactoryCoordinator()
             coordinator.entry.data[CONF_LEGGETT_APP_PROFILE] = profile.key
-            variant = LEGGETT_VARIANT_OKIN if bed_type == "leggett_platt" else None
+            coordinator.entry.options = {}
+            if selector := abm.get(profile.key):
+                coordinator.entry.data[CONF_STARCODE_COMMAND_SELECTOR] = selector
+            if bed_type == "doublesleep":
+                coordinator.entry.data[CONF_PRODUCT_TYPE] = 3  # a saved app model
+            variant = {
+                "leggett_platt": LEGGETT_VARIANT_OKIN,
+                "simmons": profile.key,
+                "doublesleep": "p1",
+            }.get(bed_type)
             controller = await create_controller(
                 coordinator, bed_type, variant, _make_connected_client()
             )

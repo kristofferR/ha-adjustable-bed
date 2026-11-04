@@ -120,6 +120,17 @@ Sleepy's Elite and AdjustableM5X4 are explicit app choices.
 | Prodigy 2 | `prodigy2` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 4 |
 | Prodigy CE | `prodigy4` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow, lumbar | 4 |
 | U Series | `useries` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 2 |
+| OKIN SmartBed CB24 | `okin_cb24` | `okin_cb24` | 40-bit | plain frame | without response | head, feet | 3 |
+| DewertOkin DOT handset table | `okin_dot` | `okin_dot` | 40-bit | plain frame | without response | handset table | handset table |
+| SIMMONS SmartBed names | `simmons_smartbed` | `simmons` | 40-bit | plain frame | without response | back, legs | 1 |
+| SIMMONS OKIN names | `simmons_okin` | `simmons` | 40-bit | Keeson E6 frame; inclined keys plain | with response | back, legs | 1 |
+| OKIN SleepEase | `doublesleep` | `doublesleep` | 40-bit | plain frame | without response | head, feet, lumbar, pillow, hip | 2 |
+| Sleepy's Elite legacy CB25 | `sleepys_box25` | `sleepys_box25` | 40-bit | plain frame | without response | head, foot, lumbar, neck | 2 |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | `starcode_abm5_4` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX3633 | `starcode_abm5_4_box3633` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX25 | `starcode_abm5_4_box25` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX15 | `starcode_abm5_4_box15` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX1220 | `starcode_abm5_4_box1220` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
 
 ### Hold and release timing
 
@@ -135,27 +146,52 @@ Sleepy's Elite and AdjustableM5X4 are explicit app choices.
 | Prodigy 2 | 100 ms | entry pulse count | 4 STOP at 100 ms |
 | Prodigy CE | 100 ms | entry pulse count | 4 STOP at 100 ms |
 | U Series | 100 ms | entry pulse count | 4 STOP at 100 ms |
+| OKIN SmartBed CB24 | entry pulse delay | entry pulse count | 1 STOP |
+| DewertOkin DOT handset table | entry pulse delay | entry pulse count | 1 STOP |
+| SIMMONS SmartBed names | 300 ms | entry pulse count | 2 STOP at 300 ms, 100 ms after the last write |
+| SIMMONS OKIN names | 300 ms | entry pulse count | 2 STOP at 300 ms, 100 ms after the last write |
+| OKIN SleepEase | 300 ms | entry pulse count | 1 STOP |
+| Sleepy's Elite legacy CB25 | entry pulse delay | entry pulse count | 1 STOP |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | 100 ms | entry pulse count | 1 STOP |
+| AdjustableM5X4 BOX3633 | 100 ms | entry pulse count | 1 STOP |
+| AdjustableM5X4 BOX25 | 100 ms | entry pulse count | 1 STOP |
+| AdjustableM5X4 BOX15 | n/a | n/a | moves with its own frames |
+| AdjustableM5X4 BOX1220 | n/a | n/a | moves with its own frames |
 
 Entry pulse settings are the configured motor pulse count and delay.
 
 ### One-shot timing
 
-| Profile | Presets and recall | Memory save | Sync, child lock | Light, massage | Control mode |
-|---|---|---|---|---|---|
-| Okimat handset table | 100 × 300 ms, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
-| DewertOkin | 100 × 300 ms, 1 STOP | n/a | n/a | once, no STOP | n/a |
-| OKIN Smart Remote RF ECO BT stair lift | n/a | n/a | n/a | n/a | n/a |
-| Customatic Clarity | once, no STOP | n/a | n/a | once, no STOP | n/a |
-| Customatic Jerome's | 3 × 0 ms, no STOP | n/a | n/a | n/a | n/a |
-| Customatic Remedy | once, no STOP | n/a | n/a | once, no STOP | n/a |
-| Prodigy 2L | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
-| Prodigy 2 | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
-| Prodigy CE | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
-| U Series | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | n/a |
+| Profile | Presets and recall | Memory recall | Memory save | Sync, child lock | Light, massage | Control mode |
+|---|---|---|---|---|---|---|
+| Okimat handset table | 100 × 300 ms, 1 STOP | 100 × 300 ms, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
+| DewertOkin | 100 × 300 ms, 1 STOP | 100 × 300 ms, 1 STOP | n/a | n/a | once, no STOP | n/a |
+| OKIN Smart Remote RF ECO BT stair lift | n/a | n/a | n/a | n/a | n/a | n/a |
+| Customatic Clarity | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| Customatic Jerome's | 3 × 0 ms, no STOP | 3 × 0 ms, no STOP | n/a | n/a | n/a | n/a |
+| Customatic Remedy | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| Prodigy 2L | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
+| Prodigy 2 | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
+| Prodigy CE | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
+| U Series | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | n/a |
+| OKIN SmartBed CB24 | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| DewertOkin DOT handset table | 100 × 300 ms, 1 STOP | once, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
+| SIMMONS SmartBed names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| SIMMONS OKIN names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| OKIN SleepEase | n/a | n/a | n/a | n/a | n/a | n/a |
+| Sleepy's Elite legacy CB25 | 3 × 100 ms, 1 STOP | 3 × 100 ms, 1 STOP | 110 × 100 ms, no STOP | n/a | n/a | n/a |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | n/a | n/a | n/a | n/a | n/a | n/a |
+| AdjustableM5X4 BOX3633 | n/a | n/a | n/a | n/a | n/a | n/a |
+| AdjustableM5X4 BOX25 | n/a | n/a | n/a | n/a | n/a | n/a |
+| AdjustableM5X4 BOX15 | n/a | n/a | n/a | n/a | n/a | n/a |
+| AdjustableM5X4 BOX1220 | n/a | n/a | n/a | n/a | n/a | n/a |
 
 Leggett Okin profiles also stream Flat for 30000 ms and program a favorite by
 holding the store key 5000 ms, then the slot 2000 ms. Customatic named memory
-controls hold 2700 ms with no STOP.
+controls hold 2700 ms with no STOP. SIMMONS saves Custom Mode by holding its
+recall key 5500 ms. AdjustableM5X4 presets and recalls are held keys on its
+refresh; it streams Flat for 600 ms and saves or resets for 6000 ms. SleepEase P1
+presets are held keys on its refresh too.
 <!-- /generated -->
 
 ## Wire codec
@@ -178,8 +214,13 @@ times them. Every frame table in this section is generated from the codec.
 | Revision selector | `00001721-0000-1000-8000-00805f9b34fb` | Leggett Okin (presence selects R1) |
 | Settings write | `90311625-25fa-3346-12ef-3cfb7a2556ac` | Leggett Okin Prodigy profiles |
 | Settings notify | `90311725-25fa-3346-12ef-3cfb7a2556ac` | Leggett Okin Prodigy profiles |
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
+| Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
+| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, SleepEase, Sleepy's, AdjustableM5X4 |
 
-The settings channel opens with `01 02` after subscribing.
+The settings channel opens with `01 02` after subscribing. SIMMONS also accepts
+FFE5/FFE9 with FFE0/FFE4, and AdjustableM5X4 two more transports; see their
+profiles.
 <!-- /generated -->
 
 Numeric GATT handles vary by device and firmware, so every profile writes by
@@ -306,6 +347,168 @@ The stair profile has no STOP: release ends the refresh.
 | Alarm cancel / stop | `0xFD200000` | Prodigy 2L, Prodigy 2, Prodigy CE | `04 02 FD 20 00 00` | `E5 FE 16 FD 20 00 00 E9` |
 | CU170 stop (DUMMY) | `0x00040000` | Prodigy CE | `04 02 00 04 00 00` | `E5 FE 16 00 04 00 00 02` |
 | STOP / release | `0x00000000` | all | `04 02 00 00 00 00` | `E5 FE 16 00 00 00 00 06` |
+
+#### CB24 keys
+
+| Command | Word | Frame |
+|---|---|---|
+| Head up | `0x00000001` | `05 02 00 00 00 01 00` |
+| Head down | `0x00000002` | `05 02 00 00 00 02 00` |
+| Feet up | `0x00000004` | `05 02 00 00 00 04 00` |
+| Feet down | `0x00000008` | `05 02 00 00 00 08 00` |
+| Flat | `0x08000000` | `05 02 08 00 00 00 00` |
+| Zero-G | `0x00001000` | `05 02 00 00 10 00 00` |
+| Memory 1 | `0x00002000` | `05 02 00 00 20 00 00` |
+| Memory 2 | `0x00004000` | `05 02 00 00 40 00 00` |
+| Anti-snore / Snore | `0x00008000` | `05 02 00 00 80 00 00` |
+| Memory 3 | `0x00010000` | `05 02 00 01 00 00 00` |
+| Under-bed light toggle | `0x00020000` | `05 02 00 02 00 00 00` |
+| Head massage up | `0x00000800` | `05 02 00 00 08 00 00` |
+| Head massage down | `0x00800000` | `05 02 00 80 00 00 00` |
+| Foot massage up | `0x00000400` | `05 02 00 00 04 00 00` |
+| Foot massage down | `0x01000000` | `05 02 01 00 00 00 00` |
+| Massage toggle | `0x00000100` | `05 02 00 00 01 00 00` |
+| Massage off | `0x02000000` | `05 02 02 00 00 00 00` |
+| Massage wave mode step | `0x10000000` | `05 02 10 00 00 00 00` |
+| Massage intensity up | `0x00000C00` | `05 02 00 00 0C 00 00` |
+| Massage intensity down | `0x01800000` | `05 02 01 80 00 00 00` |
+| STOP / release | `0x00000000` | `05 02 00 00 00 00 00` |
+
+Legacy CB24 replaces the last byte with `AA` (Side A) or `BB` (Side B) for one
+side; held motors send the sum of their words.
+
+#### SIMMONS keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `0x00000001` | all | `05 02 00 00 00 01 00` or `E6 FE 16 01 00 00 00 00 04` |
+| Head down | `0x00000002` | all | `05 02 00 00 00 02 00` or `E6 FE 16 02 00 00 00 00 03` |
+| Legs up | `0x00000004` | all | `05 02 00 00 00 04 00` or `E6 FE 16 04 00 00 00 00 01` |
+| Legs down | `0x00000008` | all | `05 02 00 00 00 08 00` or `E6 FE 16 08 00 00 00 00 FD` |
+| Flat | `0x08000000` | all | `05 02 08 00 00 00 00` or `E6 FE 16 00 00 00 08 00 FD` |
+| Zero-G | `0x00001000` | all | `05 02 00 00 10 00 00` or `E6 FE 16 00 10 00 00 00 F5` |
+| TV | `0x00004000` | all | `05 02 00 00 40 00 00` or `E6 FE 16 00 40 00 00 00 C5` |
+| Anti-snore / Snore | `0x00008000` | all | `05 02 00 00 80 00 00` or `E6 FE 16 00 80 00 00 00 85` |
+| Custom Mode (memory) | `0x00010000` | all | `05 02 00 01 00 00 00` or `E6 FE 16 00 00 01 00 00 04` |
+| Under-bed light toggle | `0x00020000` | all | `05 02 00 02 00 00 00` or `E6 FE 16 00 00 02 00 00 03` |
+| Inclined Left | `0x00000010` | all | `05 02 00 00 00 10 00` |
+| Inclined Middle | `0x00001000` | all | `05 02 00 00 10 00 00` |
+| Inclined Right | `0x00000020` | all | `05 02 00 00 00 20 00` |
+| STOP / release | `0x00000000` | all | `05 02 00 00 00 00 00` or `E6 FE 16 00 00 00 00 00 05` |
+
+SmartBed and unmatched names send the 40-bit frame, OKIN names the Keeson E6
+frame. The inclined keys keep the 40-bit frame on both.
+
+#### SleepEase keys
+
+| Command | Word | Frame |
+|---|---|---|
+| Index 1 | `0x00000000` | `05 02 00 00 00 00 00` |
+| Index 2 | `0x00000001` | `05 02 00 00 00 01 00` |
+| Index 3 | `0x00000002` | `05 02 00 00 00 02 00` |
+| Index 4 | `0x00000004` | `05 02 00 00 00 04 00` |
+| Index 5 | `0x00000008` | `05 02 00 00 00 08 00` |
+| Index 8 | `0x00000040` | `05 02 00 00 00 40 00` |
+| Index 9 | `0x00000080` | `05 02 00 00 00 80 00` |
+| Index 10 | `0x00000010` | `05 02 00 00 00 10 00` |
+| Index 11 | `0x00000020` | `05 02 00 00 00 20 00` |
+| Index 12 | `0x40000000` | `05 02 40 00 00 00 00` |
+| Index 13 | `0x80000000` | `05 02 80 00 00 00 00` |
+| Index 14 | `0x00010000` | `05 02 00 01 00 00 00` |
+| Index 15 | `0x00040000` | `05 02 00 04 00 00 00` |
+| Index 16 | `0x00008000` | `05 02 00 00 80 00 00` |
+| Index 17 | `0x00002000` | `05 02 00 00 20 00 00` |
+| Index 18 | `0x00004000` | `05 02 00 00 40 00 00` |
+| Index 19 | `0x00001000` | `05 02 00 00 10 00 00` |
+| Index 26 | `0x08000000` | `05 02 08 00 00 00 00` |
+| Index 28 | `0x00000100` | `05 02 00 00 01 00 00` |
+| Index 29 | `0x00000100` | `05 02 00 00 01 00 00` |
+| Index 31 | `0x00000200` | `05 02 00 00 02 00 00` |
+| Index 35 | `0x00000800` | `05 02 00 00 08 00 00` |
+| Index 36 | `0x00800000` | `05 02 00 80 00 00 00` |
+| Index 37 | `0x00000400` | `05 02 00 00 04 00 00` |
+| Index 38 | `0x10000000` | `05 02 10 00 00 00 00` |
+| Index 40 | `0x10000000` | `05 02 10 00 00 00 00` |
+| Index 41 | `0x04000000` | `05 02 04 00 00 00 00` |
+| Index 58 | `0x00020000` | `05 02 00 02 00 00 00` |
+
+SleepDriver (P1) words by the app's command index; index 1 is STOP. The profile's
+other static frames and the XiaoBao (P2) and P3 packets are listed in its section.
+
+#### Sleepy's legacy CB25 keys
+
+| Command | Word | Frame |
+|---|---|---|
+| Head up | `0x00000001` | `05 02 00 00 00 01 00` |
+| Head down | `0x00000002` | `05 02 00 00 00 02 00` |
+| Foot up | `0x00000004` | `05 02 00 00 00 04 00` |
+| Foot down | `0x00000008` | `05 02 00 00 00 08 00` |
+| Lumbar up | `0x00000010` | `05 02 00 00 00 10 00` |
+| Lumbar down | `0x00000020` | `05 02 00 00 00 20 00` |
+| Neck up | `0x00000040` | `05 02 00 00 00 40 00` |
+| Neck down | `0x00000080` | `05 02 00 00 00 80 00` |
+| STOP / release | `0x00000000` | `05 02 00 00 00 00 00` |
+| Flat | `0x08000000` | `05 02 08 00 00 00 00` |
+| TV | `0x00004000` | `05 02 00 00 40 00 00` |
+| Zero-G | `0x00001000` | `05 02 00 00 10 00 00` |
+| Anti-snore / Snore | `0x00008000` | `05 02 00 00 80 00 00` |
+| Lounge | `0x00002000` | `05 02 00 00 20 00 00` |
+| Memory 1 | `0x00010000` | `05 02 00 01 00 00 00` |
+| Memory 2 | `0x00040000` | `05 02 00 04 00 00 00` |
+| Store memory 1 | `0x08010000` | `05 02 08 01 00 00 00` |
+| Store memory 2 | `0x08040000` | `05 02 08 04 00 00 00` |
+| Massage toggle | `0x00080000` | `05 02 00 08 00 00 00` |
+| Massage exit | `0x02000000` | `05 02 02 00 00 00 00` |
+| Head massage up | `0x00000800` | `05 02 00 00 08 00 00` |
+| Head massage down | `0x00800000` | `05 02 00 80 00 00 00` |
+| Foot massage up | `0x00000400` | `05 02 00 00 04 00 00` |
+| Foot massage down | `0x01000000` | `05 02 01 00 00 00 00` |
+| Massage intensity up | `0x00000C00` | `05 02 00 00 0C 00 00` |
+| Massage intensity down | `0x01800000` | `05 02 01 80 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | `08 02 00 02 00 00 00 00 00 00` |
+| Massage wave 1 | `0x0000000000080000` | `08 02 00 00 00 00 00 08 00 00` |
+| Massage wave 2 | `0x0000000000100000` | `08 02 00 00 00 00 00 10 00 00` |
+| Massage wave 3 | `0x0000000000200000` | `08 02 00 00 00 00 00 20 00 00` |
+
+#### AdjustableM5X4 keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| `headUp` | `0x00000001` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 01 00` |
+| `headDown` | `0x00000002` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 02 00` |
+| `footUp` | `0x00000004` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 04 00` |
+| `footDown` | `0x00000008` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 08 00` |
+| `unionUp` | `0x00000005` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 05 00` |
+| `unionDown` | `0x0000000A` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 0A 00` |
+| STOP / release | `0x00000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 00 00` |
+| `flatPosition` | `0x08000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 08 00 00 00 00` |
+| TV | `0x00004000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 40 00 00` |
+| Lounge | `0x00002000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 20 00 00` |
+| `zeroGravity` | `0x00001000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 10 00 00` |
+| `anti` | `0x00008000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 80 00 00` |
+| `m1` | `0x00010000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 01 00 00 00` |
+| `saveM1` | `0x00010000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 01 00 00 00` |
+| `saveTv` | `0x80004000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 80 00 40 00 00` |
+| `saveLounge` | `0x80002000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 80 00 20 00 00` |
+| `saveZeroGravity` | `0x80001000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 80 00 10 00 00` |
+| `resetMemory` | `0x88000000` | all | `05 02 88 00 00 00 00` |
+| `massageOnOff` | `0x00080000` | all | `05 02 00 08 00 00 00` |
+| `headStrengthAdd` | `0x00000800` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 00 00 08 00 00` |
+| `headStrengthReduce` | `0x00800000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 00 80 00 00 00` |
+| `footStrengthAdd` | `0x00000400` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 00 00 04 00 00` |
+| `footStrengthReduce` | `0x01000000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 01 00 00 00 00` |
+| `waveAdd` | `0x10000000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 10 00 00 00 00` |
+| `waveReduce` | `0x04000000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 04 00 00 00 00` |
+| `underbedLighting` | `0x00020000` | AdjustableM5X4 BOX3633 | `05 02 00 02 00 00 00` |
+| `change2White` | `0x00020004` | AdjustableM5X4 BOX25 | `05 02 00 02 00 04 00` |
+| `turnonUnderbedLighting` | `0x00020000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX15, AdjustableM5X4 BOX1220 | `05 02 00 02 00 00 00` |
+| `turnoffUnderbedLighting` | `0x00020000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX15, AdjustableM5X4 BOX1220 | `05 02 00 02 00 00 00` |
+| `underbedLighting` | `0x0002000000000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX25 | `08 02 00 02 00 00 00 00 00 00` |
+| `turnonUnderbedLighting` | `0x0000000000000040` | AdjustableM5X4 BOX3633 | `08 02 00 00 00 00 00 00 00 40` |
+| `turnoffUnderbedLighting` | `0x0000000000000080` | AdjustableM5X4 BOX3633 | `08 02 00 00 00 00 00 00 00 80` |
+
+Keyed by the app's action names. BOX15 and BOX1220 move with their own frames, so
+their profiles hold only the shared keys; BOX25_STAR sends StarCode only.
 <!-- /generated -->
 
 ### Responses
