@@ -194,6 +194,8 @@ def test_leggett_umbrella_route_has_a_friendly_label():
         "Linx",
         "Juna Sleep",
         "Woosa Sleep",
+        "Good Vibe Sleep",
+        "eShine",
     ],
 )
 def test_every_listed_app_is_searchable_by_name(name):
@@ -250,3 +252,31 @@ async def test_a_refused_route_is_asked_again(hass, enable_custom_integrations):
     result = await hass.config_entries.flow.async_configure(result["flow_id"], choice)
     assert result["step_id"] == "route"
     hass.config_entries.flow.async_abort(result["flow_id"])
+
+
+def test_every_picker_label_maps_back_to_one_choice():
+    """The searchable picker uses labels as values, so labels must be unique."""
+    labels = [option["label"] for option in get_bed_type_options()]
+    assert len(labels) == len(set(labels))
+
+
+@pytest.mark.parametrize("bed_type", [const.BED_TYPE_GOODVIBE, const.BED_TYPE_ESHINE_OKIN])
+def test_product_apps_choose_their_route_from_the_app_entry(bed_type):
+    """Each product is its own app entry: no global variant and no route step."""
+    from custom_components.adjustable_bed.config_flow import _apply_setup_bed_type_choice
+    from custom_components.adjustable_bed.detection import resolve_bed_type_choice
+
+    assert _setup_routes(bed_type) == {}
+    rows = [
+        option
+        for option in get_bed_type_options()
+        if resolve_bed_type_choice(option["value"])[0] == bed_type
+    ]
+    assert rows
+    assert all(bed_type_label(bed_type) != option["label"] for option in rows)
+    choice = rows[0]["value"]
+    submitted = {const.CONF_BED_TYPE: choice}
+    _apply_setup_bed_type_choice(submitted, None, const.VARIANT_AUTO)
+    assert (submitted[const.CONF_BED_TYPE], submitted[const.CONF_PROTOCOL_VARIANT]) == (
+        resolve_bed_type_choice(choice)
+    )

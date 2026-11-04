@@ -17,6 +17,7 @@ These guides describe `main`. The integration requires **Home Assistant
 | [Wake-up automation](WAKE_UP.md) | Importable scheduled raise or memory recall, with optional lighting |
 | [Apple Home and Siri](HOMEKIT.md) | Importable control blueprint, HomeKit scenes and Siri Shortcuts |
 | [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and upgrade problems |
+| [v5 breaking changes](V5_BREAKING_CHANGES.md) | What the 4.x to v5 upgrade migrates, adds and moves, and why a backup is the only rollback |
 | [Getting help](GETTING_HELP.md) | Support bundles, diagnostics, issue reports and app traffic captures |
 
 ## Controller and Protocol Reference
@@ -93,12 +94,16 @@ sensor/report consumers and explicit safety/product exclusions.
 
 [HJBed app controls and telemetry](beds/richmat.md#hjbed), including the complete [row121 disposition ledger](apk-analysis/dispositions/row121-hjbed.md).
 
+[Good Vibe Sleep profiles and independent sleep sensors](beds/goodvibe.md), with the complete [row116 disposition ledger](apk-analysis/dispositions/row116-goodvibe.md).
+
 [Solace, Woosa Sleep, BedSense and Motion Bed](beds/ff_frame.md) share the FFFF frame codec
 guide, with the [MotionFlex ledger](beds/solace-disposition.md).
 
 [Ergomotion 4.0 setup and protocol](beds/keeson.md#ergomotion-40), including the
 [issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
 and opt-in P1 split-side controls.
+
+[eShine E2000/E3000/E3100/E5000 protocol and setup](beds/eshine-okin.md), with the complete [row122 disposition ledger](apk-analysis/dispositions/row122-eshine.md).
 
 ## Development and Validation
 

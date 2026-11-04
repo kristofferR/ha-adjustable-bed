@@ -3256,6 +3256,10 @@ class AdjustableBedCoordinator:
 
     def _auto_reconnect_enabled(self) -> bool:
         """Return True when unexpected disconnects should schedule a reconnect timer."""
+        controller = self.capability_controller
+        if controller is not None and controller.requests_connection_recovery is True:
+            return True
+
         # disconnect_after_command beds intentionally drop the link after each command
         # (and on idle), so an unexpected disconnect is expected behaviour, not a fault.
         # Scheduling a reconnect there causes a storm: some receivers (e.g. Keeson
@@ -5132,6 +5136,18 @@ class AdjustableBedCoordinator:
                 self._address,
                 err,
             )
+        finally:
+            controller = self.capability_controller
+            if (
+                not self._shutting_down
+                and not self._intentional_disconnect
+                and not self.is_connected
+                and controller is not None
+                and controller.requests_connection_recovery is True
+                and self._reconnect_timer is None
+            ):
+                self._reconnect_timer = self.hass.loop.call_later(5.0, self._schedule_auto_reconnect)
+
 
     async def async_read_initial_positions(self) -> None:
         """Read positions to initialize sensors.
@@ -5771,6 +5787,10 @@ class AdjustableBedCoordinator:
                 self.hass, self._address, sxb=self._bed_type == BED_TYPE_GMMOTOR_SLEEP_SXB
             ).live_enabled = False
 
+        # An explicit release ends app intent even if the physical link already dropped.
+        for controller in (self._controller, self._offline_controller):
+            if controller is not None:
+                controller.on_connection_release(reason)
         # Recovery may have launched while this caller waited for the lock.
         self._cancel_auto_reconnect()
         await self._async_cancel_furnimove_bond_request()
