@@ -307,6 +307,20 @@ existing entries keep their identities; the
 `okimat`, `dewertokin` and `leggett_platt` are kept for existing entries and
 are not offered in the bed-type list.
 
+Each route also keeps its own [profile id](../design/profile-id.md#aliases).
+Besides the bed-type list, the device manufacturer differs for `okimat` and
+`dewertokin`, and the app profile review (a Repairs issue) covers `dewertokin`
+only. `leggett_platt` without a variant picks its controller from GATT at
+connect, and `leggett_platt` variant `gen2` stays apart from `leggett_gen2`
+because only `leggett_gen2` is in the bed-type list.
+
+Routes that send the same bytes as their default route keep their own id too,
+since only a missing variant and `auto` share one: `okin_64bit` variant `nordic`
+is what `auto` builds, but it is a saved choice that Configure and the profile
+review show as its own route; `adjustable_lumbar` variant `adjustable_lumbar_star`
+matches `auto` only for Star-named beds, because `auto` picks the table from the
+Bluetooth name at connect.
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/okin_nframe.py`.
