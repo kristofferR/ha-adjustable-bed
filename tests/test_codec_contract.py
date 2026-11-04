@@ -81,6 +81,7 @@ UNMIGRATED: dict[str, str] = {
     "coolbase": "#745 K1 Keeson E5/E6",
     "customatic_zseries": "#745 O1 Okin N-frame",
     "ergo_slim": "#745 K1 Keeson E5/E6",
+    "ergomotion_4": "#745 K1 Keeson E5/E6",
     "ergomotion_app": "#745 K1 Keeson E5/E6",
     "eshine": "standalone: own wire format",
     "furnimove": "#745 K1 Keeson E5/E6",
