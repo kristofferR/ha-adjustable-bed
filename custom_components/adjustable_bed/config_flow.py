@@ -96,6 +96,7 @@ from .bond_verification import (
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BEDSENSE,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -409,6 +410,7 @@ from .profile_migration import (
     KEESON_FAMILY,
     MANAGED_FAMILIES,
     OKIN_FAMILY,
+    SOLACE_FAMILY,
     VIBRADORM_FAMILY,
     ManagedFamily,
     MigrationSnapshot,
@@ -1054,6 +1056,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
     **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
     **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
+    **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_DOUBLESLEEP: "doublesleep",
@@ -2574,7 +2577,7 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
 APP_SETTINGS_BED_TYPES: Final = frozenset(
     bed_type
     for bed_type, step in _APP_SETUP_STEPS.items()
-    if step not in ("jiecang_family", "okin_family", "keeson_family")
+    if step not in ("jiecang_family", "okin_family", "keeson_family", "solace_family")
 ) | frozenset(_OPTIONS_APP_FIELDS)
 
 
@@ -3418,10 +3421,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "restonic":
             return await self.async_step_keeson_restonic()
         if choice == "other_route":
-            self._select_keeson_route(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
+            self._select_family_route(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
             return await self.async_step_keeson_route()
         if choice in ("sleep_harmony", "coolbase"):
-            self._select_keeson_route(
+            self._select_family_route(
                 *(
                     (BED_TYPE_KEESON, KEESON_VARIANT_SLEEP_HARMONY)
                     if choice == "sleep_harmony"
@@ -3445,8 +3448,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={"current": bed_type_label(incoming)},
         )
 
-    def _select_keeson_route(self, bed_type: str, variant: str | None) -> None:
-        """Stage one Keeson-family route, with Configure's defaults when it changes."""
+    def _select_family_route(self, bed_type: str, variant: str | None) -> None:
+        """Stage one family route, with Configure's defaults when it changes."""
         assert self._manual_data is not None
         data = self._manual_data
         self._migration_verified = False
@@ -3481,7 +3484,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         }
         choice = (user_input or {}).get("choice")
         if choice in routes:
-            self._select_keeson_route(*routes[choice])
+            self._select_family_route(*routes[choice])
             return await self._async_continue_keeson_route()
         return self.async_show_form(
             step_id="keeson_app",
@@ -3507,7 +3510,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         style = (user_input or {}).get(CONF_PROTOCOL_VARIANT)
         if style in _KEESON_RESTONIC:
-            self._select_keeson_route(BED_TYPE_KEESON, style)
+            self._select_family_route(BED_TYPE_KEESON, style)
             return await self._async_finish_family_route()
         current = self._manual_data.get(CONF_PROTOCOL_VARIANT)
         return self.async_show_form(
@@ -3567,12 +3570,95 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         routes = _labelled_routes(BED_TYPE_KEESON)
         motor_counts = _motor_count_options(BED_TYPE_KEESON)
         if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
-            self._select_keeson_route(BED_TYPE_KEESON, user_input[CONF_PROTOCOL_VARIANT])
+            self._select_family_route(BED_TYPE_KEESON, user_input[CONF_PROTOCOL_VARIANT])
             data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
             return await self._async_finish_family_route()
         return self.async_show_form(
             step_id="keeson_route",
             data_schema=_route_and_motors_schema(data, routes, motor_counts),
+        )
+
+    async def async_step_solace_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app runs a QMS-named bed; several apps share those names."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._solace_incoming is None:
+            self._solace_incoming = (
+                data[CONF_BED_TYPE],
+                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+            )
+            if self._migration is None and self._solace_incoming[1] == SOLACE_VARIANT_WOOSA:
+                # The Woosa Sleep row already answered the question.
+                return await self.async_step_solace_woosa()
+        incoming, _variant = self._solace_incoming
+        choice = (user_input or {}).get("choice")
+        if choice == "keep":
+            if self._migration is not None:
+                return await self.async_step_migration_keep()
+            return await self._async_finish_family_route()
+        if choice == "name_route":
+            self._select_family_route(BED_TYPE_SOLACE, VARIANT_AUTO)
+            return await self._async_finish_family_route()
+        if choice == "woosa":
+            return await self.async_step_solace_woosa()
+        if choice == "motion_bed":
+            self._select_family_route(BED_TYPE_MOTION_BED, None)
+            return await self.async_step_motion_bed()
+        if choice == "bedsense":
+            self._select_family_route(BED_TYPE_BEDSENSE, None)
+            return await self.async_step_solace_bedsense()
+        return self.async_show_form(
+            step_id="solace_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=["name_route", "woosa", "motion_bed", "bedsense", "keep"],
+                            translation_key="solace_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
+        )
+
+    async def async_step_solace_woosa(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Say what Woosa Sleep controls differ before choosing it."""
+        if user_input is not None:
+            self._select_family_route(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA)
+            return await self._async_finish_family_route()
+        return self.async_show_form(step_id="solace_woosa", data_schema=vol.Schema({}))
+
+    async def async_step_solace_bedsense(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the BedSense layout, which owns its motion controls."""
+        assert self._manual_data is not None
+        routes = _labelled_routes(BED_TYPE_BEDSENSE)
+        layout = (user_input or {}).get(CONF_PROTOCOL_VARIANT)
+        if layout in routes:
+            self._select_family_route(BED_TYPE_BEDSENSE, layout)
+            return await self._async_finish_family_route()
+        return self.async_show_form(
+            step_id="solace_bedsense",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                SelectOptionDict(value=key, label=label)
+                                for key, label in routes.items()
+                            ],
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
         )
 
     async def async_step_jiecang_app(
@@ -3996,6 +4082,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._okin_incoming: tuple[str, str] | None = None
         self._keeson_incoming: tuple[str, str] | None = None
         self._keeson_group: str | None = None
+        self._solace_incoming: tuple[str, str] | None = None
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None

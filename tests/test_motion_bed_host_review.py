@@ -112,6 +112,9 @@ async def test_explicit_discovered_app_choice_reaches_its_real_factory(enable_cu
         assert result["step_id"] == "motion_bed"
         await flow.async_step_motion_bed({CONF_BLE_DEVICE_NAME: "QMS-IQ"})
     else:
+        # The Solace row asks which app shares the QMS name.
+        assert result["step_id"] == "solace_family"
+        result = await flow.async_step_solace_family({"choice": "name_route"})
         assert result["type"] == FlowResultType.CREATE_ENTRY
     flow._finish_with_verify.assert_awaited_once()
     data = flow._finish_with_verify.call_args.args[0]
