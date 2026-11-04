@@ -564,7 +564,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_ERGOMOTION_4: "Ergomotion 4.0 app (explicit product)",
     BED_TYPE_JIECANG: "Jiecang (legacy Glide / Comfort Motion)",
-    BED_TYPE_JIECANG_APP: "Jiecang (ERGOBALANCE / Dream Motion / Dream Motion HD / Comfort Motion apps)",
+    BED_TYPE_JIECANG_APP: (
+        "Jiecang: ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps, "
+        "Glide and Lierda remotes"
+    ),
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
     BED_TYPE_KEESON: (
         "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
@@ -685,6 +688,12 @@ def resolve_bed_type_choice(choice: str) -> tuple[str, str | None]:
     return choice, None
 
 
+# Routes reached through their family's one picker row and family step.
+FAMILY_STEP_ROUTES: Final = frozenset(
+    {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC, BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION}
+)
+
+
 def bed_type_label(bed_type: str | None) -> str:
     """Return the friendly label of a bed type, including saved compatibility IDs.
 
@@ -713,13 +722,13 @@ def get_bed_type_options() -> list[SelectOptionDict]:
     """Get bed type and app choices sorted alphabetically by label.
 
     A bed type whose variant has no automatic choice is offered only through
-    its app entries. Vibradorm's app/product profiles share one family wizard.
+    its app entries. The Vibradorm and Jiecang families each have one row that
+    opens their family step; the routes behind it stay selectable there.
     """
     choices = {
         bed_type: label
         for bed_type, label in BED_TYPE_DISPLAY_NAMES.items()
-        if bed_type not in VARIANT_REQUIRED_BED_TYPES
-        and bed_type not in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
+        if bed_type not in VARIANT_REQUIRED_BED_TYPES and bed_type not in FAMILY_STEP_ROUTES
     }
     choices.update({bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()})
     return [

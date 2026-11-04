@@ -482,19 +482,26 @@
         }
       },
       "jiecang_app": {
-        "title": "Jiecang app and layout",
-        "description": "Choose the app and physical controls that match this bed. Existing legacy Jiecang entries keep their original protocol.",
+        "title": "{app} layout",
+        "description": "Choose the controls your bed has. Only layouts {app} supports are listed. The app sets the motor count and its own timing, so they aren't asked here.",
         "data": {
-          "jiecang_app_profile": "Bed app",
           "jiecang_app_layout": "Physical actuator layout",
-          "jiecang_app_transport": "BLE transport",
           "has_light": "Enable light controls"
         },
         "data_description": {
-          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
-          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
+          "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
           "has_light": "Expose light controls when this bed has under-bed lighting."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced: transport",
+            "data": {
+              "jiecang_app_transport": "BLE transport"
+            },
+            "data_description": {
+              "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only."
+            }
+          }
         }
       },
       "lp_legacy": {
@@ -799,6 +806,20 @@
               "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
             }
           }
+        }
+      },
+      "jiecang_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. The bed's name and Bluetooth services don't identify the app. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
+        }
+      },
+      "jiecang_legacy": {
+        "title": "Motors on this bed",
+        "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
+        "data": {
+          "motor_count": "Number of motors"
         }
       }
     },
@@ -1330,7 +1351,6 @@
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
-      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
       "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
@@ -1342,7 +1362,8 @@
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
-      "estimate_acknowledge_required": "Confirm that you understand positions are estimated."
+      "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
+      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -8971,6 +8992,17 @@
       "options": {
         "split": "I'll split the pair in Configure",
         "keep": "Keep current configuration"
+      }
+    },
+    "jiecang_family_choice": {
+      "options": {
+        "dreamask": "ERGOBALANCE app (Dreamask)",
+        "dreamotion": "Dream Motion app",
+        "dreamhd": "Dream Motion HD app",
+        "comfort_motion": "Comfort Motion app",
+        "legacy_jiecang": "No app: Glide or Comfort Motion remote (legacy Jiecang controls)",
+        "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
+        "keep": "I don't know: keep the current controls"
       }
     }
   }
