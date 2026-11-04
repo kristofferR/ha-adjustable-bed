@@ -332,6 +332,31 @@ def _gatt_has_characteristic(
     return False
 
 
+# The command endpoints each Okin route's controller writes. An Okin UUID entry
+# also drives a DOT box, and FurniMove selects whichever of the two it finds.
+_OKIN_ROUTE_ENDPOINTS: Final[dict[str, frozenset[str]]] = {
+    **dict.fromkeys(
+        (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_FURNIMOVE),
+        frozenset({OKIMAT_WRITE_CHAR_UUID.lower(), NORDIC_UART_WRITE_CHAR_UUID.lower()}),
+    ),
+    BED_TYPE_OKIN_RF_ECO_BT: frozenset({OKIMAT_WRITE_CHAR_UUID.lower()}),
+    BED_TYPE_OKIN_DOT: frozenset({NORDIC_UART_WRITE_CHAR_UUID.lower()}),
+}
+
+
+def require_okin_route_endpoint(client: BleakClient, bed_type: str) -> None:
+    """Raise ConnectionError unless the link has a writable endpoint the route writes."""
+    endpoints = _OKIN_ROUTE_ENDPOINTS[bed_type]
+    for service in client.services or ():
+        for characteristic in service.characteristics:
+            if str(characteristic.uuid).lower() in endpoints and {
+                "write",
+                "write-without-response",
+            } & set(characteristic.properties):
+                return
+    raise ConnectionError(f"The bed exposes no command endpoint for {bed_type}")
+
+
 def _is_dewertokin_dot_box(client: BleakClient | None) -> bool:
     """Return True when a connected Okin box is a DOT PROTOCOL receiver.
 

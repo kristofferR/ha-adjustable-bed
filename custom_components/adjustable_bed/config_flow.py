@@ -385,6 +385,7 @@ from .profile_id import with_profile_ids
 from .profile_migration import (
     JIECANG_FAMILY,
     MANAGED_FAMILIES,
+    OKIN_FAMILY,
     VIBRADORM_FAMILY,
     ManagedFamily,
     MigrationSnapshot,
@@ -826,6 +827,11 @@ def _setup_routes(bed_type: str | None) -> dict[str, str]:
     """
     if bed_type is None or bed_type in _APP_SETUP_STEPS:
         return {}
+    return _labelled_routes(bed_type)
+
+
+def _labelled_routes(bed_type: str) -> dict[str, str]:
+    """Return a bed type's labelled routes, with the automatic one first."""
     variants = get_variants_for_bed_type(bed_type) or {}
     excluded = _SETUP_ROUTE_EXCLUSIONS.get(bed_type, frozenset())
     routes = {
@@ -884,6 +890,8 @@ def _bed_type_selector(
         if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
         else BED_TYPE_JIECANG_APP
         if default in (BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION) and not show_saved_id
+        else BED_TYPE_FURNIMOVE
+        if default in OKIN_FAMILY.bed_types - {BED_TYPE_FURNIMOVE} and not show_saved_id
         else None
     )
     if family_row is not None and default is not None:
@@ -1016,6 +1024,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_VIBRADORM: "vibradorm",
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
     **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
+    **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_DOUBLESLEEP: "doublesleep",
@@ -2108,6 +2117,48 @@ def _add_jiecang_app_schema_fields(
     ] = bool
 
 
+# The Okin family's own routes, by the answer that selects each.
+_OKIN_ROUTES: Final[dict[str, str]] = {
+    "furnimove": BED_TYPE_FURNIMOVE,
+    "okin_uuid": BED_TYPE_OKIN_UUID,
+    "okin_dot": BED_TYPE_OKIN_DOT,
+    "okin_rf_eco_bt": BED_TYPE_OKIN_RF_ECO_BT,
+}
+# English labels; strings.json translates the same keys.
+_OKIN_ROUTE_LABELS: Final[dict[str, str]] = {
+    "furnimove": "FurniMove / OKIN Smart Remote app",
+    "okin_uuid": "No app: Okimat or OKIN handset code (requires pairing)",
+    "okin_dot": "No app: DOT remote (RF34 or RF6707)",
+    "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
+}
+_OKIN_KEEP_LABEL: Final = "I don't know: keep the detected controls"
+
+
+def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | None) -> None:
+    """Give a newly chosen route the defaults Configure gives a bed-type change."""
+    data[CONF_BED_TYPE] = bed_type
+    variants = get_variants_for_bed_type(bed_type)
+    if variant is None and variants:
+        variant = (
+            VARIANT_AUTO
+            if is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO)
+            else next(iter(variants))
+        )
+    if variant is None:
+        data.pop(CONF_PROTOCOL_VARIANT, None)
+    else:
+        data[CONF_PROTOCOL_VARIANT] = variant
+    route_variant = variant or VARIANT_AUTO
+    motor_counts = _motor_count_options(bed_type, route_variant)
+    if data.get(CONF_MOTOR_COUNT) not in motor_counts:
+        data[CONF_MOTOR_COUNT] = motor_counts[0]
+    pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, route_variant)
+    data[CONF_MOTOR_PULSE_COUNT] = pulse_count
+    data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+    data[CONF_DISABLE_ANGLE_SENSING] = not bed_type_has_position_feedback(bed_type, route_variant)
+
+
 _JIECANG_LEGACY_ROUTES: Final[dict[str, str]] = {
     "legacy_jiecang": BED_TYPE_JIECANG,
     "legacy_lierda": BED_TYPE_COMFORT_MOTION,
@@ -2856,6 +2907,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             from .beds.jiecang_app import require_app_transport
 
             require_app_transport(client, data)
+        elif self._migration_family is OKIN_FAMILY and data[CONF_BED_TYPE] in OKIN_FAMILY.bed_types:
+            from .controller_factory import require_okin_route_endpoint
+
+            require_okin_route_endpoint(client, data[CONF_BED_TYPE])
 
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
@@ -3122,15 +3177,124 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Continue a route chosen in a family step the way the generic forms would."""
         assert self._manual_data is not None
         data = self._manual_data
-        if self._migration is None and requires_pairing(
-            data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)
-        ):
+        if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
             return await (
                 self.async_step_bluetooth_pairing()
                 if self._vibradorm_app_bluetooth_pairing
                 else self.async_step_manual_pairing()
             )
         return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
+
+    async def async_step_okin_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app or remote controls an Okin receiver; its GATT cannot tell."""
+        from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
+        from .profile_review import choice_label, related_app_choices
+
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._okin_incoming is None:
+            self._okin_incoming = (
+                data[CONF_BED_TYPE],
+                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+            )
+        incoming, incoming_variant = self._okin_incoming
+        # The apps the app review suggests for this route stay one answer away.
+        apps = related_app_choices(incoming, incoming_variant)
+        # A FurniMove row or gateway chose no handset, so there is nothing to keep.
+        can_keep = self._migration is not None or incoming != BED_TYPE_FURNIMOVE
+        choice = (user_input or {}).get("choice")
+        if choice == "keep" and can_keep:
+            if self._migration is not None:
+                return await self.async_step_migration_keep()
+            return await self._async_finish_family_route()
+        if choice in _OKIN_ROUTES or choice in apps:
+            bed_type, variant = (
+                (_OKIN_ROUTES[choice], None)
+                if choice in _OKIN_ROUTES
+                else resolve_bed_type_choice(choice)
+            )
+            if incoming == BED_TYPE_OKIMAT and bed_type == BED_TYPE_OKIN_UUID:
+                # The same route under its saved ID; never rewrite the ID.
+                bed_type = BED_TYPE_OKIMAT
+            self._migration_verified = False
+            if bed_type != data[CONF_BED_TYPE]:
+                for key in (*OKIN_FAMILY.route_keys, CONF_STAIRCASE_LAYOUT_CONFIRMED):
+                    data.pop(key, None)
+                _apply_route_defaults(data, bed_type, variant)
+            if bed_type == BED_TYPE_FURNIMOVE:
+                return await self.async_step_furnimove()
+            if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
+                return await self.async_step_okin_remote()
+            if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+                # Choosing the staircase is the explicit confirmation its repair asks for.
+                data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
+                data[CONF_MOTOR_COUNT] = 1
+            return await self._async_finish_family_route()
+        options = [
+            *(
+                SelectOptionDict(value=key, label=label)
+                for key, label in _OKIN_ROUTE_LABELS.items()
+            ),
+            *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
+            *([SelectOptionDict(value="keep", label=_OKIN_KEEP_LABEL)] if can_keep else []),
+        ]
+        return self.async_show_form(
+            step_id="okin_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            translation_key="okin_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
+        )
+
+    async def async_step_okin_remote(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the handset or remote code, which picks the motors and buttons."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        bed_type = data[CONF_BED_TYPE]
+        routes = _labelled_routes(bed_type)
+        motor_counts = _motor_count_options(bed_type)
+        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
+            data[CONF_PROTOCOL_VARIANT] = user_input[CONF_PROTOCOL_VARIANT]
+            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
+            return await self._async_finish_family_route()
+        variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+        motor_count = data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+        return self.async_show_form(
+            step_id="okin_remote",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_PROTOCOL_VARIANT,
+                        default=variant if variant in routes else next(iter(routes)),
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                SelectOptionDict(value=key, label=label)
+                                for key, label in routes.items()
+                            ],
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                    vol.Required(
+                        CONF_MOTOR_COUNT,
+                        default=motor_count if motor_count in motor_counts else motor_counts[0],
+                    ): vol.All(vol.Coerce(int), vol.In(motor_counts)),
+                }
+            ),
+            description_placeholders={"current": bed_type_label(bed_type)},
+        )
 
     async def async_step_jiecang_app(
         self, user_input: dict[str, Any] | None = None
@@ -3550,6 +3714,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._migration_endpoints_checked = False
         # The route a Jiecang family step started from.
         self._jiecang_incoming: str | None = None
+        self._okin_incoming: tuple[str, str] | None = None
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -9108,6 +9273,12 @@ class AdjustableBedOptionsFlow(
                 original_profile = _vibradorm_app_data(original_profile, {})
             elif original_type == BED_TYPE_VMATBASIC:
                 original_profile = _vmatbasic_data(original_profile, {})
+            # The form shows an unsaved variant as the route the entry runs.
+            if isinstance(original_type, str):
+                original_profile.setdefault(
+                    CONF_PROTOCOL_VARIANT,
+                    self._variant_for_bed_type(original_type, original_profile),
+                )
             if (
                 not separate_address_pair
                 and family is not None

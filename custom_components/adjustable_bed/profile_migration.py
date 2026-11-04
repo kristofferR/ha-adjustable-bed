@@ -43,15 +43,22 @@ from homeassistant.helpers.translation import async_get_translations
 
 from .const import (
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_DOT,
+    BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
+    CONF_FURNIMOVE_REMOTE,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
+    CONF_PROTOCOL_VARIANT,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
     CONF_VIBRADORM_VMAT_REMOTE,
@@ -102,7 +109,30 @@ JIECANG_FAMILY: Final = ManagedFamily(
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP,
 )
 
-MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (VIBRADORM_FAMILY, JIECANG_FAMILY)
+_OKIN_ROUTES: Final = frozenset(
+    {
+        BED_TYPE_FURNIMOVE,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_DOT,
+        BED_TYPE_OKIN_RF_ECO_BT,
+    }
+)
+# Every Okin route writes an exact command endpoint, and the Okin UUID and
+# RF ECO BT routes also need a bond. The handset or remote code picks the layout.
+# An app the review suggests switches as Configure switched it, unchecked.
+OKIN_FAMILY: Final = ManagedFamily(
+    key="okin_family",
+    bed_types=_OKIN_ROUTES,
+    route_keys=(CONF_FURNIMOVE_REMOTE, CONF_PROTOCOL_VARIANT),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) in _OKIN_ROUTES,
+)
+
+MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
+    VIBRADORM_FAMILY,
+    JIECANG_FAMILY,
+    OKIN_FAMILY,
+)
 
 
 def managed_family(entry_data: Mapping[str, Any]) -> ManagedFamily | None:
@@ -361,7 +391,9 @@ async def async_control_changes(
         if (entity_id := registry.async_get_entity_id(current[unique_id][0], DOMAIN, unique_id))
     ]
     return ControlChanges(
-        added=tuple(sorted((target[uid][1] for uid in target.keys() - current.keys()), key=str.lower)),
+        added=tuple(
+            sorted((target[uid][1] for uid in target.keys() - current.keys()), key=str.lower)
+        ),
         removed=tuple(sorted((current[uid][1] for uid in removed_ids), key=str.lower)),
         unchanged=len(current.keys() & target.keys()),
         references=_references(hass, removed_entities),

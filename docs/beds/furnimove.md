@@ -142,8 +142,10 @@ below.
 > Smart Remote → 82417: RF TOPLINE SI/BK/BK/07**. This table exposes Back and
 > Legs, with no massage or memory slots. `90167: RF1058` is a different layout
 > and is not a fallback for this receiver. Correct an existing entry through its
-> integration options; selecting `82417` does not require replacing the entry or
-> removing an operating-system bond.
+> **Reconfigure** (see
+> [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+> selecting `82417` does not require replacing the entry or removing an
+> operating-system bond.
 
 ### Discovery
 
@@ -167,8 +169,9 @@ disconnects before service discovery completes.
 
 ### Home Assistant setup
 
-Select **FurniMove / OKIN Smart Remote** and the exact handset ID used
-by the app. The catalog includes all 87 captured production IDs and three
+Select the **Okin** row, answer **FurniMove / OKIN Smart Remote app** (see the
+[Okin question](okin-nframe.md#home-assistant-setup)), then choose the exact
+handset ID used by the app. The catalog includes all 87 captured production IDs and three
 shipped local/offline IDs. Motor count, massage capability and ordered commands
 come from the selected table; manual motor count and pulse delay are hidden.
 Shared RF ECO BT receiver labels and GATT UUIDs do not choose a handset.
@@ -177,8 +180,8 @@ The profile has no angle feedback or mandatory pairing/protected-read gate.
 Old RF ECO BT entries receive a [guided layout repair](#repairing-existing-configurations),
 including offline entries and unconfirmed one-motor configurations. It preserves
 the existing entry and matching entity IDs. Confirm a staircase or select the
-FurniMove handset. For a bed using another app, select its corresponding profile
-in integration options. Paired repairs change only their own physical side.
+FurniMove handset. For a bed using another app, choose that app through
+**Reconfigure**. Paired repairs change only their own physical side.
 
 ## Repairing existing configurations
 
@@ -192,7 +195,8 @@ not establish the product. The repair offers these choices:
 - **Single-actuator staircase:** retain its one Stair cover.
 - **Keep current configuration:** dismiss the repair without changing any
   setting. A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406);
-  set its printed handset code under Okin UUID in the integration options.
+  choose its printed handset code through **Reconfigure**, under **No app:
+  Okimat or OKIN handset code**.
 
 A FurniMove entry without a captured handset gets the first two choices.
 
@@ -219,8 +223,8 @@ Every repair:
 - For FurniMove conversion, clears obsolete mandatory-pairing state and the old
   pairing repair; it never removes an operating-system bond.
 
-Saving the matching profile in integration options also clears the layout repair
-on the next setup.
+Applying the matching profile through **Reconfigure** also clears the layout
+repair on the next setup.
 
 ## Controls and actions
 
