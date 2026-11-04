@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_VARIANT_OKIN,
     requires_pairing,
@@ -61,17 +62,18 @@ async def test_setup_collects_app_then_preserves_pairing(
             CONF_PREFERRED_ADAPTER: "auto",
         }
     )
-    assert result["step_id"] == "leggett_app"
+    # The L&P question names each app, which picks its own layout.
+    assert result["step_id"] == "leggett_family"
     with patch.object(flow, f"async_step_{pairing}", new=AsyncMock()) as resume:
-        await flow.async_step_leggett_app({CONF_LEGGETT_APP_PROFILE: "prodigy2l"})
+        await flow.async_step_leggett_family({"choice": "prodigy2l"})
     resume.assert_awaited_once_with()
     assert flow._manual_data[CONF_LEGGETT_APP_PROFILE] == "prodigy2l"
     assert flow._manual_data[CONF_MOTOR_COUNT] == 3
     assert requires_pairing(BED_TYPE_LEGGETT_OKIN)
 
 
-@pytest.mark.parametrize("profile,count", LEGGETT_APP_MOTOR_COUNTS.items())
-async def test_options_derive_motor_count_from_profile(hass, profile, count):
+@pytest.mark.parametrize("profile", LEGGETT_APP_MOTOR_COUNTS)
+async def test_options_send_a_profile_change_to_the_guided_change(hass, profile):
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN, CONF_MOTOR_COUNT: 2}
     )
@@ -82,9 +84,12 @@ async def test_options_derive_motor_count_from_profile(hass, profile, count):
     result = await flow.async_step_settings(
         {CONF_LEGGETT_APP_PROFILE: profile, CONF_MOTOR_COUNT: 2}
     )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_LEGGETT_APP_PROFILE] == profile
-    assert entry.data[CONF_MOTOR_COUNT] == count
+    if profile == LEGGETT_APP_DEFAULT_PROFILE:
+        # An entry saved before app profiles already runs the default one.
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+    else:
+        assert result["errors"] == {"base": "migration_reconfigure_required"}
+        assert CONF_LEGGETT_APP_PROFILE not in entry.data
 
 
 async def test_legacy_options_without_profile_keep_existing_motor_count(hass):
@@ -155,7 +160,7 @@ async def test_pair_cannot_switch_to_leggett_app_without_unpairing(hass):
     assert flow._pending_data == {}
 
 
-async def test_legacy_umbrella_variant_change_collects_profile(hass):
+async def test_legacy_umbrella_variant_change_uses_the_guided_change(hass):
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
@@ -169,8 +174,7 @@ async def test_legacy_umbrella_variant_change_collects_profile(hass):
     flow.handler = entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN})
-    assert result["type"] == FlowResultType.FORM
-    assert CONF_LEGGETT_APP_PROFILE in {marker.schema for marker in result["data_schema"].schema}
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[CONF_PROTOCOL_VARIANT] == "gen2"
 
 

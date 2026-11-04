@@ -123,6 +123,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
@@ -293,6 +294,8 @@ from .const import (
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_OKIN,
     LIMOSS_REMOTE_CONFIG_KEYS,
     LOGICDATA_APP_FAMILIES,
     LOGICDATA_APP_LAYOUTS,
@@ -324,6 +327,7 @@ from .const import (
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
+    RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_REMOTES,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
@@ -407,6 +411,7 @@ from .profile_id import with_profile_ids
 from .profile_migration import (
     JIECANG_FAMILY,
     KEESON_FAMILY,
+    LEGGETT_FAMILY,
     MANAGED_FAMILIES,
     OKIN_FAMILY,
     SOLACE_FAMILY,
@@ -917,6 +922,8 @@ def _bed_type_selector(
         if default in (BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION) and not show_saved_id
         else BED_TYPE_FURNIMOVE
         if default in OKIN_FAMILY.bed_types - {BED_TYPE_FURNIMOVE} and not show_saved_id
+        else BED_TYPE_LEGGETT_OKIN
+        if default in LEGGETT_FAMILY.bed_types - {BED_TYPE_LEGGETT_OKIN} and not show_saved_id
         else None
     )
     if family_row is not None and default is not None:
@@ -1057,6 +1064,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
     **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
     **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
+    **dict.fromkeys(LEGGETT_FAMILY.bed_types, "leggett_family"),
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_DOUBLESLEEP: "doublesleep",
@@ -2200,6 +2208,31 @@ _KEESON_SCREEN_APPS: Final = ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA}
 _KEESON_RESTONIC: Final = frozenset({KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B})
 
 
+# The L&P question's answers: each app's own route and layout, by its report.
+_LEGGETT_ROUTES: Final[dict[str, tuple[str, Mapping[str, str]]]] = {
+    "prodigy_ce": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy4"}),
+    "prodigy2": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy2"}),
+    "prodigy2l": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy2l"}),
+    "useries": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "useries"}),
+    # LP Control drives an LP BED receiver with its Okin profile; the route
+    # keeps its default layout, which no LP Control product is proven to change.
+    "lp_control_okin": (
+        BED_TYPE_LEGGETT_OKIN,
+        {CONF_LEGGETT_APP_PROFILE: LEGGETT_APP_DEFAULT_PROFILE},
+    ),
+    "lp_control_gen2": (BED_TYPE_LEGGETT_GEN2, {}),
+    "lp_app_mlrm": (BED_TYPE_LEGGETT_WILINKE, {}),
+    "lp_app_qrrm": (BED_TYPE_RICHMAT, {CONF_RICHMAT_REMOTE: RICHMAT_REMOTE_LP_QRRM}),
+    "lp_legacy": (BED_TYPE_LEGGETT_LP_LEGACY, {}),
+}
+# The umbrella ID's variant for each route it can run.
+_LEGGETT_ALIAS_VARIANTS: Final[dict[str, str]] = {
+    BED_TYPE_LEGGETT_GEN2: LEGGETT_VARIANT_GEN2,
+    BED_TYPE_LEGGETT_OKIN: LEGGETT_VARIANT_OKIN,
+    BED_TYPE_LEGGETT_WILINKE: LEGGETT_VARIANT_MLRM,
+}
+
+
 # The Keeson question's answers, in the order the form lists them.
 _KEESON_CHOICES: Final = (
     "sleep_harmony",
@@ -2561,7 +2594,8 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
 APP_SETTINGS_BED_TYPES: Final = frozenset(
     bed_type
     for bed_type, step in _APP_SETUP_STEPS.items()
-    if step not in ("jiecang_family", "okin_family", "keeson_family", "solace_family")
+    if step
+    not in ("jiecang_family", "okin_family", "keeson_family", "solace_family", "leggett_family")
 ) | frozenset(_OPTIONS_APP_FIELDS)
 
 
@@ -2872,10 +2906,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult | None:
         """Continue with the step that collects the selected app's own settings."""
         bed_type = entry_data.get(CONF_BED_TYPE)
-        if _is_leggett_app_type(bed_type, entry_data.get(CONF_PROTOCOL_VARIANT)):
-            self._leggett_app_pairing_step = pairing_step
-            step = "leggett_app"
-        elif not isinstance(bed_type, str) or (step := _APP_SETUP_STEPS.get(bed_type)) is None:
+        if not isinstance(bed_type, str) or (step := _APP_SETUP_STEPS.get(bed_type)) is None:
             return None
         self._manual_data = entry_data
         self._vibradorm_app_bluetooth_pairing = pairing_step == "bluetooth_pairing"
@@ -3140,26 +3171,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self.hass.config_entries.async_schedule_reload(entry.entry_id)
         return result
 
-    async def async_step_leggett_app(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Choose the app's actuator/capability profile before normal BLE pairing."""
-        assert self._manual_data is not None
-        errors = {}
-        if user_input is not None:
-            profile = user_input.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE)
-            if profile not in LEGGETT_APP_PROFILES:
-                errors[CONF_LEGGETT_APP_PROFILE] = "leggett_app_invalid_profile"
-            else:
-                self._manual_data[CONF_LEGGETT_APP_PROFILE] = profile
-                self._manual_data[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
-                return await getattr(self, f"async_step_{self._leggett_app_pairing_step}")()
-        schema: dict[vol.Marker, Any] = {}
-        _add_leggett_app_schema_field(schema, user_input)
-        return self.async_show_form(
-            step_id="leggett_app", data_schema=vol.Schema(schema), errors=errors
-        )
-
     async def async_step_logicdata_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -3280,6 +3291,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Continue a route chosen in a family step the way the generic forms would."""
         assert self._manual_data is not None
         data = self._manual_data
+        if self._migration is not None and grants_one_connection_per_pairing_window(
+            data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)
+        ):
+            # Pairing would spend the one connection the box grants per window,
+            # so the entry's first connection bonds after the change, as at setup.
+            return await self._async_create_selected_app_entry(
+                title=data.get(CONF_NAME, "Adjustable Bed"), data=data
+            )
         if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
             return await (
                 self.async_step_bluetooth_pairing()
@@ -3643,6 +3662,56 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                 }
             ),
+        )
+
+    async def async_step_leggett_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which L&P app or remote runs the bed; each app has its own layout."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._leggett_incoming is None:
+            self._leggett_incoming = (
+                data[CONF_BED_TYPE],
+                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+            )
+        incoming, _variant = self._leggett_incoming
+        choice = (user_input or {}).get("choice")
+        if choice == "keep":
+            if self._migration is not None:
+                return await self.async_step_migration_keep()
+            return await self._async_finish_family_route()
+        if choice in _LEGGETT_ROUTES:
+            bed_type, extra = _LEGGETT_ROUTES[choice]
+            variant: str | None = None
+            if incoming == BED_TYPE_LEGGETT_PLATT and bed_type in _LEGGETT_ALIAS_VARIANTS:
+                # The same route under its saved ID; never rewrite the ID.
+                bed_type, variant = BED_TYPE_LEGGETT_PLATT, _LEGGETT_ALIAS_VARIANTS[bed_type]
+            self._select_family_route(bed_type, variant)
+            data.update(extra)
+            if CONF_LEGGETT_APP_PROFILE in extra:
+                data[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[extra[CONF_LEGGETT_APP_PROFILE]]
+            elif CONF_LEGGETT_APP_PROFILE in data and not _is_leggett_app_type(
+                bed_type, variant
+            ):
+                data.pop(CONF_LEGGETT_APP_PROFILE)
+            if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+                return await self.async_step_lp_legacy()
+            return await self._async_finish_family_route()
+        return self.async_show_form(
+            step_id="leggett_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[*_LEGGETT_ROUTES, "keep"],
+                            translation_key="leggett_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
         )
 
     async def async_step_profile_questions(
@@ -4054,7 +4123,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._all_ble_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._manual_data: dict[str, Any] | None = None
-        self._leggett_app_pairing_step = "manual_pairing"
         self._vibradorm_app_bluetooth_pairing = False
         # Guided change of an existing entry (profile_migration).
         self._migration: MigrationSnapshot | None = None
@@ -4067,6 +4135,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._keeson_incoming: tuple[str, str] | None = None
         self._keeson_group: str | None = None
         self._solace_incoming: tuple[str, str] | None = None
+        self._leggett_incoming: tuple[str, str] | None = None
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -9637,6 +9706,9 @@ class AdjustableBedOptionsFlow(
                     CONF_PROTOCOL_VARIANT,
                     self._variant_for_bed_type(original_type, original_profile),
                 )
+            if _is_leggett_app_type(original_type, original_profile.get(CONF_PROTOCOL_VARIANT)):
+                # An entry saved before app profiles runs the default one.
+                original_profile.setdefault(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE)
             if (
                 not separate_address_pair
                 and family is not None

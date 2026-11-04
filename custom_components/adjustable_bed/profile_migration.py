@@ -49,6 +49,10 @@ from .const import (
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
@@ -64,6 +68,7 @@ from .const import (
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
+    CONF_LEGGETT_APP_PROFILE,
     CONF_PROTOCOL_VARIANT,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -71,6 +76,8 @@ from .const import (
     CONF_VMATBASIC_PROFILE,
     DOMAIN,
     PAIR_SIDES,
+    grants_one_connection_per_pairing_window,
+    requires_pairing,
 )
 from .pairing import effective_child_data, get_child, is_paired
 
@@ -162,12 +169,36 @@ SOLACE_FAMILY: Final = ManagedFamily(
     requires_check=lambda _data: False,
 )
 
+# The Okin receiver needs a bond, which the pairing step proves. LP Comfort
+# Connect grants one connection per pairing window, so its first connection
+# after the change bonds, as at setup. The MlRM receiver and the apps on other
+# bed types switch unchecked, as Configure did.
+LEGGETT_FAMILY: Final = ManagedFamily(
+    key="leggett_family",
+    bed_types=frozenset(
+        {
+            BED_TYPE_LEGGETT_PLATT,
+            BED_TYPE_LEGGETT_GEN2,
+            BED_TYPE_LEGGETT_OKIN,
+            BED_TYPE_LEGGETT_WILINKE,
+        }
+    ),
+    route_keys=(CONF_PROTOCOL_VARIANT, CONF_LEGGETT_APP_PROFILE),
+    requires_check=lambda data: requires_pairing(
+        data.get(CONF_BED_TYPE, ""), data.get(CONF_PROTOCOL_VARIANT)
+    )
+    and not grants_one_connection_per_pairing_window(
+        data.get(CONF_BED_TYPE, ""), data.get(CONF_PROTOCOL_VARIANT)
+    ),
+)
+
 MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     VIBRADORM_FAMILY,
     JIECANG_FAMILY,
     OKIN_FAMILY,
     KEESON_FAMILY,
     SOLACE_FAMILY,
+    LEGGETT_FAMILY,
 )
 
 

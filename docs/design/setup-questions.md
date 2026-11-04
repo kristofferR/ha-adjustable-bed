@@ -49,7 +49,7 @@ recorded here as each family converts:
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 
 ## Converted
 
