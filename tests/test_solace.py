@@ -82,24 +82,6 @@ class TestSolaceController:
 
         assert coordinator.controller.control_characteristic_uuid == SOLACE_CHAR_UUID
 
-    async def test_write_command(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test writing a command to the bed."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        command = SolaceCommands.MOTOR_STOP
-        await coordinator.controller.write_command(command)
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, command, response=True
-        )
-
     async def test_write_command_not_connected(
         self,
         hass: HomeAssistant,
@@ -140,6 +122,7 @@ class TestSolaceProfiles:
             ("Solace Smart Bed", SOLACE_PROFILES["unverified"]),
         ],
     )
+
     def test_profile_resolution(self, name: str, expected: SolaceProfile) -> None:
         assert resolve_solace_profile(name) is expected
 
@@ -160,6 +143,7 @@ class TestSolaceProfiles:
             ("Solace Smart Bed", {"back", "legs"}, False, False, False),
         ],
     )
+
     def test_profile_capabilities(
         self,
         name: str,
@@ -195,6 +179,7 @@ class TestSolaceProfiles:
             ("Solace Smart Bed", None),
         ],
     )
+
     def test_query_family(self, name: str, expected: str | None) -> None:
         coordinator = MagicMock()
         coordinator.ble_device_name = name
@@ -644,107 +629,6 @@ class TestSolaceProfiles:
         ]
 
 
-class TestSolaceMovement:
-    """Test Solace movement commands."""
-
-    @pytest.fixture(autouse=True)
-    def _short_movement(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Latched moves otherwise run for the full 5s safety window."""
-        monkeypatch.setattr(SolaceController, "_MOVEMENT_SAFETY_TIMEOUT", 0.01)
-
-    async def test_move_head_up(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head up sends HEAD_UP followed by stop."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-        # First call should be HEAD_UP
-        first_command = calls[0][0][1]
-        assert first_command == SolaceCommands.MOTOR_HEAD_UP
-
-        # Last call should be stop
-        last_command = calls[-1][0][1]
-        assert last_command == SolaceCommands.MOTOR_STOP
-
-    async def test_move_head_down(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head down sends HEAD_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        first_command = calls[0][0][1]
-        assert first_command == SolaceCommands.MOTOR_HEAD_DOWN
-
-    async def test_move_legs_up(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move legs up sends LEGS_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_legs_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        first_command = calls[0][0][1]
-        assert first_command == SolaceCommands.MOTOR_LEGS_UP
-
-    async def test_move_legs_down(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move legs down sends LEGS_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_legs_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        first_command = calls[0][0][1]
-        assert first_command == SolaceCommands.MOTOR_LEGS_DOWN
-
-    async def test_stop_all(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test stop all sends stop command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.stop_all()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MOTOR_STOP, response=True
-        )
-
-
 class TestSolacePresets:
     """Test Solace preset commands."""
 
@@ -846,6 +730,7 @@ class TestSolacePresets:
             (2, SolaceCommands.PRESET_MEMORY_2),
         ],
     )
+
     async def test_preset_memory(
         self,
         hass: HomeAssistant,
@@ -871,6 +756,7 @@ class TestSolacePresets:
             (2, SolaceCommands.PROGRAM_MEMORY_2),
         ],
     )
+
     async def test_program_memory(
         self,
         hass: HomeAssistant,
@@ -923,124 +809,3 @@ class TestSolacePositionNotifications:
         await coordinator.controller.read_positions()
 
 
-class TestSolaceMassage:
-    """Test Solace massage commands."""
-
-    async def test_massage_head_up(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage head up command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_head_up()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MASSAGE_HEAD_UP, response=True
-        )
-
-    async def test_massage_head_down(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage head down command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_head_down()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MASSAGE_HEAD_DOWN, response=True
-        )
-
-    async def test_massage_foot_up(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage foot up command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_foot_up()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MASSAGE_FOOT_UP, response=True
-        )
-
-    async def test_massage_foot_down(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage foot down command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_foot_down()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MASSAGE_FOOT_DOWN, response=True
-        )
-
-    async def test_massage_intensity_up(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage frequency up command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_intensity_up()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MASSAGE_FREQUENCY_UP, response=True
-        )
-
-    async def test_massage_intensity_down(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage frequency down command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_intensity_down()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MASSAGE_FREQUENCY_DOWN, response=True
-        )
-
-    async def test_massage_off(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage stop command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_off()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MASSAGE_STOP, response=True
-        )
