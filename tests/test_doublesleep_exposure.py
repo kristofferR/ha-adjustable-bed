@@ -171,6 +171,7 @@ def test_standard_button_exposes_p1_hold_without_changing_other_buttons():
 def test_motor_covers_expose_the_shared_app_hold_owner(driver):
     bed = Bed(driver, 3)
     runtime = SimpleNamespace(
+        capability_controller=None,
         device_info={},
         entity_side=None,
         entity_translation_key=lambda key: key,
