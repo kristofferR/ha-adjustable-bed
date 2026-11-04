@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from homeassistant.util import dt as dt_util
 
 from ..const import ESHINE_OKIN_PROFILES
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -73,6 +74,11 @@ class EshineOkinController(BedController):
         self._session: Session | None = None
         self._notifying = False
         self._observed: dict[str, dict[str, StateValue]] = {}
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """Held keys refresh every 300 ms until release, then STOP after 200 ms (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:

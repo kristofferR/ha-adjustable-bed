@@ -165,6 +165,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # route keeps finite pulses; ``svane`` and ``leggett_lp_legacy`` are not
     # declared yet (see the design note).
     "eshine": {"hold": ("eshine",)},
+    "eshine_okin": {"hold": ("eshine-okin",)},
     "furnimove": {"hold": ("fm157",)},
     "isleep": {"hold": ("kaidi",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
@@ -196,6 +197,8 @@ _CUSTOMATIC = (
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/eshine.py:<module>.EshineController": ("eshine",),
     "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
+    "beds/eshine_okin.py:<module>.EshineOkinController": ("eshine_okin",),
+    "beds/eshine_okin.py:<module>.EshineOkinController.execution": ("eshine_okin",),
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
     "beds/isleep.py:<module>.IsleepController": ("isleep",),
