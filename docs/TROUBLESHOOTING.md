@@ -31,6 +31,10 @@ page so it loads the matching card version. For paired-bed conversion, existing
 side entity IDs should survive. Report missing entities with diagnostics before
 deleting and recreating entries.
 
+Upgrading from 4.x to v5: read the [v5 breaking changes](V5_BREAKING_CHANGES.md)
+and take a Home Assistant backup first. That backup is the only way back; see
+[Going back to 4.x](#going-back-to-4x).
+
 ### "New app profiles are available" repair
 
 Beds added before 4.1.0 keep the bed type they were set up with. Version 4.1.0
@@ -81,6 +85,37 @@ start with, `base-i5`; they are Cool Base beds.
 
 FurniMove is not listed: older RF ECO BT and Okin DOT entries get their own
 [FurniMove repair](beds/furnimove.md#repairing-existing-configurations).
+
+### Going back to 4.x
+
+v5 migrates every Adjustable Bed config entry to schema 5 on its first start.
+4.x cannot read schema 5, so **restoring a Home Assistant backup taken before
+the upgrade is the only way back to 4.x**. There is no downgrade path. The
+[v5 breaking changes](V5_BREAKING_CHANGES.md) page lists what the migration
+stores.
+
+If you install 4.x over v5 anyway:
+
+- Every Adjustable Bed entry fails to load. Home Assistant logs `Config entry
+  ... for adjustable_bed has version 5 which is higher than the current version
+  4` and shows the entry as a migration error. Its devices and entities stay
+  unavailable.
+- Nothing is converted back. The entries keep their schema 5 data, so
+  installing the same or a later v5 version again loads them as before.
+- Deleting the entries and setting the beds up again under 4.x is not a
+  rollback. It loses each entry's options, app profile choices and paired-bed
+  setup, and it can change entity IDs that dashboards and automations use.
+
+To go back:
+
+1. Install the 4.x version you want to run.
+2. Restore the backup you made before upgrading, under **Settings > System >
+   Backups**. Restoring its Home Assistant settings also rolls back every other
+   change made since that backup, not only this integration.
+3. Restart Home Assistant and reload the dashboard page.
+
+Report the problem that made you go back in the v5 beta feedback issue, with the
+beta number and, if you still have them, diagnostics or a support bundle from v5.
 
 ## Dashboard Card Missing or Configuration Error
 

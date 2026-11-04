@@ -100,6 +100,19 @@ An unpaired side is recreated at the current schema (5.1), so it no longer
 re-runs the 4.x minor steps: its saved fields were already migrated with the
 pair, and the one-time app profile review is not raised for it again.
 
+### Physical validation
+
+Deferred for the v5 beta ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)).
+Proven offline: `tests/test_profile_id.py` migrates every former route (each
+bed type, listed variant and app key choice), standalone and in both pair modes.
+It checks that saved fields stay, that entry, device and entity identities
+stay, and that every wire snapshot scenario builds the same controller from its
+profile id. Needs real reports: upgrades of real 4.x installations, especially
+entries from early releases, entries with options saved over several versions
+and paired beds, that come up with the same controls and entity IDs. The
+`profile_migration` record in diagnostics and support bundles shows what each
+upgrade derived.
+
 ## Runtime
 
 - **Setup** re-derives the stored ids before any coordinator is created, for
@@ -113,6 +126,9 @@ pair, and the one-time app profile review is not raised for it again.
   `_SIMPLE_CONTROLLERS` stays reachable: each of its bed types is its own id.
 - **Diagnostics** show the running id and the migration record (`profile` for a
   standalone entry, `profile_migration` and each side's `profile_id` for a pair).
+- **Support bundles** carry a `profile` section: the schema version, the stored
+  id, the migration record and, for a pair, each side's stored id with whether
+  the bundle's address reaches that side (both, for a single-address pair).
 
 `tests/test_profile_id.py` builds every wire snapshot scenario from its profile
 id and checks that the factory receives the same arguments and returns the same

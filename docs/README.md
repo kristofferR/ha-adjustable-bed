@@ -17,6 +17,7 @@ These guides describe `main`. The integration requires **Home Assistant
 | [Wake-up automation](WAKE_UP.md) | Importable scheduled raise or memory recall, with optional lighting |
 | [Apple Home and Siri](HOMEKIT.md) | Importable control blueprint, HomeKit scenes and Siri Shortcuts |
 | [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and upgrade problems |
+| [v5 breaking changes](V5_BREAKING_CHANGES.md) | What the 4.x to v5 upgrade migrates, adds and moves, and why a backup is the only rollback |
 | [Getting help](GETTING_HELP.md) | Support bundles, diagnostics, issue reports and app traffic captures |
 
 ## Controller and Protocol Reference

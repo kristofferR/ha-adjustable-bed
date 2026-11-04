@@ -194,6 +194,10 @@ Requires **Home Assistant 2026.9.0 or newer**.
 3. Install/download the latest stable version
 4. Restart Home Assistant
 
+Upgrading from 4.x to v5? Read the [v5 breaking changes](docs/V5_BREAKING_CHANGES.md)
+first. v5 migrates your config entries, and **a Home Assistant backup taken
+before the upgrade is the only way back to 4.x**.
+
 ### Manual
 
 Use a release archive, or check out `main` for the current development
