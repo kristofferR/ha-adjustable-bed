@@ -134,6 +134,16 @@ affected extraction and dependent claims, independently review the repair, and
 freeze an explicit addendum/replacement with new hashes. Do not call a scoped
 repair a fresh FULL clean-room run or reopen unrelated accepted work by default.
 
+## Map implementation to codecs
+
+The post-freeze implementation pass records, for every `IMPLEMENTED` or
+`ALREADY_IMPLEMENTED` ledger item, which wire codec carries it: an existing
+codec only when its vector harness reproduces the item's frozen literals byte
+for byte, otherwise a new codec with its own vectors. New app support then lands
+as a profile over that codec ([design](../design/protocol-codecs.md)). The
+analyst prompt, schema and clean-room analysis do not change; the comparison
+stays in the post-freeze pass.
+
 ## Measure improvement without another framework
 
 Issue #542 owns the bounded workflow task; #550 owns the pilot. Freeze the pilot's

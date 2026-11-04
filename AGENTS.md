@@ -85,6 +85,8 @@ custom_components/adjustable_bed/
 ├── paired_coordinator.py # Parent/side routing and combined operation cleanup
 ├── paired_registry.py    # Device/entity ownership transfer and rollback
 ├── paired_devices.py     # Native parent/child devices and service targeting
+├── codec/                # Wire codecs: one module per proven wire format
+├── profiles/             # Typed app profiles that drive a codec
 ├── beds/                 # Bed controllers — one module per protocol
 │   ├── base.py           # Abstract base class (BedController)
 │   ├── diagnostic.py     # Debug controller for unsupported beds
@@ -158,33 +160,55 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 
 ## Adding a New Bed Type
 
+Bed support has three layers ([design](docs/design/protocol-codecs.md)): a
+**codec** per proven wire format (`codec/<family>.py`), a typed **profile** per
+app or route (`profiles/<family>.py`), and thin **controller** glue in `beds/`.
+A new app is normally a profile plus its vectors, not a new controller.
+
 1. **Document the BLE protocol** - Use APK reverse engineering (see `docs/apk-analysis/TOOLING.md`) to extract UUIDs and command bytes. The `generate_support_bundle` service captures GATT structure and device responses. User-provided nRF Connect logs can supplement APK analysis with real traffic captures.
 
-2. **Add constants to `const.py`**:
+2. **Find the codec before writing code.** Add the app's frozen frames to a
+   codec's vector file (for example `tests/jiecang_vectors.py`) and run its
+   harness (`tests/test_jiecang_vectors.py`). An existing codec is the right one
+   only if it reproduces every frozen literal byte for byte. Shared names, UUIDs,
+   packet resemblance or constructor calls are not proof. Families without a
+   codec yet are listed, with their #745 family, in `tests/test_codec_contract.py`.
+   - **A codec reproduces the vectors:** add a profile to its
+     `profiles/<family>.py`. Timing, layouts, presets, memory slots, setup
+     schedules and name rules are profile data, from this app's evidence only.
+   - **None does:** add `codec/<family>.py` with its vector file and harness,
+     then the profile. Record the reason in the design note.
+   - Write controller code only for behavior the evidence proves and data cannot
+     express, such as a session, an authentication handshake or a state machine.
+     Extend the family's shared controller instead of copying it.
+
+3. **Add constants to `const.py`**:
    ```python
    BED_TYPE_NEWBED: Final = "newbed"
    NEWBED_SERVICE_UUID: Final = "..."
    NEWBED_CHAR_UUID: Final = "..."
    ```
 
-3. **Create controller in `beds/`** (e.g., `newbed.py`):
-   - Extend `BedController`
+4. **Wire the controller in `beds/`.** A profile over an existing codec usually
+   needs only its family controller and the profile's key. A new family adds a
+   controller that drives its codec from the profile:
+   - Extend `BedController`, or the family's shared controller
    - Implement all abstract methods
-   - Define command bytes as a class (see existing controllers)
+   - Build every frame through the codec, never as literals in the controller
    - Declare capabilities by **overriding the properties `BedController` already
      defines** (`supports_massage`, `memory_slot_count`, `auto_stops_on_idle`, …).
      Entity platforms read these directly, so a typo is a type error rather than a
      silently-wrong default. Do not invent a new capability by setting an
      undeclared attribute — add it to the base class first.
 
-4. **Add detection to `detection.py`** in `detect_bed_type()`:
+5. **Add detection to `detection.py`** in `detect_bed_type()`:
 
    ```python
    if NEWBED_SERVICE_UUID.lower() in service_uuids:
        return BED_TYPE_NEWBED
    ```
 
-5. **Register the controller in `controller_factory.py`.** Most beds are one line
+6. **Register the controller in `controller_factory.py`.** Most beds are one line
    in the `_SIMPLE_CONTROLLERS` registry, which lazily imports the module so
    integration startup does not pay for ~50 unused controllers:
 
@@ -199,13 +223,13 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
    consulted last, so the entry would be silently unreachable.
    `tests/test_controller_contract.py` enforces this and resolves every entry.
 
-6. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
+7. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
 
-7. **Add to `manifest.json`** `bluetooth` array if using different service UUID for discovery
+8. **Add to `manifest.json`** `bluetooth` array if using different service UUID for discovery
 
-8. **Update `beds/__init__.py`** to export the new controller
+9. **Update `beds/__init__.py`** to export the new controller
 
-9. **If the bed reports motor positions**, override `position_number_specs` to
+10. **If the bed reports motor positions**, override `position_number_specs` to
    return the sliders, building each with `build_position_number_spec()`:
 
    ```python
@@ -225,12 +249,12 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
    sensors stuck at "unknown". Note that `position_number_specs` requires a live
    controller, so these entities only appear once the bed has connected.
 
-10. **Create documentation** in `docs/beds/newbed.md` using the
+11. **Create documentation** in `docs/beds/newbed.md` using the
     [bed guide format](docs/BED_GUIDE_FORMAT.md): Status, Credit, Known Models,
     Apps and Features tables, Protocol Details and command tables. Evidence and
     dispositions go in the discovery ledger, not the guide.
 
-11. **For an app profile, make the app findable and declare what it owns.**
+12. **For an app profile, make the app findable and declare what it owns.**
     Users search the bed-type list by app name. An app that is its own bed type
     is named in `BED_TYPE_DISPLAY_NAMES`. An app chosen by a protocol variant
     gets an entry in `APP_VARIANT_CHOICES` (`detection.py`); the bed type's own
@@ -446,6 +470,7 @@ account for every reachable discovery before the task can be called complete.
 
 - Build a discovery ledger covering every reachable BLE behavior, including commands, packet builders, responses and notifications, parsers, timing, release behavior, pairing/authentication, discovery rules, model/variant selection, capability gates, configuration writes, and user-visible state.
 - Give every ledger item exactly one disposition: `IMPLEMENTED`, `ALREADY_IMPLEMENTED`, or `EXCLUDED`.
+- Record for every `IMPLEMENTED` or `ALREADY_IMPLEMENTED` item which codec carries it, existing or new. Reuse an existing codec only when it reproduces the item's frozen literals byte for byte. The clean-room analysis itself does not change; this mapping belongs to the post-freeze pass.
 - Implement every in-scope item marked `IMPLEMENTED` in the same task, with focused artifact-vector tests, entity or service exposure where users need it, and durable protocol documentation: a bed guide in the [bed guide format](docs/BED_GUIDE_FORMAT.md) with command tables from the shipped code, plus the discovery ledger for evidence and dispositions. Never write the guide as audit prose. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
 - `ALREADY_IMPLEMENTED` requires a concrete code and test reference showing behavior equivalent to the frozen artifact, not a family resemblance or an assumed shared protocol.
 - `EXCLUDED` requires the exact evidence and reason. Valid reasons are an out-of-scope transport or product boundary (for example WiFi/cloud behavior in this BLE-only integration), a safety constraint, dead or unreachable artifact code, or behavior unrelated to bed integration. Convenience, uncertain model prevalence, missing maintainer hardware, or lack of an existing entity are not valid exclusions.
