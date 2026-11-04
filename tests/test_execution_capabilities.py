@@ -124,6 +124,18 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
     "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
     "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
+    "RichmatProfile:hjbed": {"hold": ("row121",)},
+    "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
+    "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
+    "RichmatProfile:richmat_mh_blvd_home": {"hold": ("blvd", "row055")},
+    "RichmatProfile:richmat_mh_harmony": {"hold": ("harmony", "row055")},
+    "RichmatProfile:richmat_mh_idealbed": {"hold": ("ideal", "row055")},
+    "RichmatProfile:richmat_mh_revive": {"hold": ("revive", "row055")},
+    "RichmatProfile:richmat_nordic": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_prefix55": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_prefixaa": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_wilinke": {"hold": ("rmc2",)},
     # Limoss DD (L1). The legacy ``limoss`` route keeps finite pulses: its
     # cadence is the entry's pulse settings, not the app's.
     "LimossProfile:limoss_remote": {"hold": ("limoss",)},
@@ -145,6 +157,11 @@ _CUSTOMATIC = (
     "OkinNFrameProfile:remedy",
 )
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    # RMControl narrows its framing's declaration to sustain-press products.
+    "beds/rmcontrol.py:<module>.RmcontrolController": (
+        "RichmatProfile:richmat_nordic",
+        "RichmatProfile:richmat_wilinke",
+    ),
     "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
     "profiles/jiecang.py:<module>.DREAMOTION": ("JiecangProfile:dreamotion",),
     "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
@@ -169,6 +186,16 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
     "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
+    "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
+    "profiles/richmat.py:<module>.RICHMAT": tuple(
+        f"RichmatProfile:richmat_{framing}"
+        for framing in ("nordic", "prefix55", "prefixaa", "wilinke")
+    ),
+    "profiles/richmat.py:<module>.RICHMAT_MH": tuple(
+        f"RichmatProfile:richmat_mh_{app}"
+        for app in ("best_mattress", "blvd_home", "harmony", "idealbed", "revive")
+    ),
     "profiles/limoss.py:<module>.LIMOSS_REMOTE": ("LimossProfile:limoss_remote",),
     "profiles/limoss.py:<module>.FSM_RELAX": ("LimossProfile:fsm_relax",),
 }
