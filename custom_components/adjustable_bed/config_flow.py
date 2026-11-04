@@ -376,6 +376,7 @@ from .pairing_candidates import (
     build_pair_selection_schema,
     selected_pair_ids,
 )
+from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
 from .setup_operation import (
@@ -7705,7 +7706,9 @@ def _validate_pairlink_option_values(
     return errors
 
 
-class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEntry):
+class AdjustableBedOptionsFlow(
+    EstimatedPositionsFlowMixin, BluetoothOperationMixin, OptionsFlowWithConfigEntry
+):
     """Handle Adjustable Bed options."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
@@ -7973,6 +7976,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             product_type=data.get(CONF_PRODUCT_TYPE),
         ):
             menu_options.append("pair_sides")
+        menu_options.extend(self.estimate_menu_options())
         if data.get(CONF_ADDRESS) or (
             data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS and bool(iter_children(data))
         ):

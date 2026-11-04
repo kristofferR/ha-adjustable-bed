@@ -202,6 +202,7 @@ class MotorEstimate:
 class _Move:
     motors: tuple[str, ...]
     generations: dict[str, int]
+    started: float
     failed: bool = False
 
 
@@ -277,9 +278,14 @@ class BedEstimate:
     def begin_move(self, motors: tuple[str, ...]) -> int:
         self._next_move += 1
         self._moves[self._next_move] = _Move(
-            motors, {motor: self.motors[motor].generation for motor in motors}
+            motors, {motor: self.motors[motor].generation for motor in motors}, _clock()
         )
         return self._next_move
+
+    def move_elapsed(self, motor: str) -> float | None:
+        """Seconds since the running tracked move of ``motor`` started, if any."""
+        started = [move.started for move in self._moves.values() if motor in move.motors]
+        return _clock() - max(started) if started else None
 
     def end_move(self, token: int, direction: str, seconds: float | None) -> None:
         """Apply a finished move, or mark its motors unknown when it failed."""
@@ -916,6 +922,13 @@ def lower_to_flat_seconds(estimate: MotorEstimate) -> float:
     if estimate.down_s is None:
         return 0.0
     return min(MAX_TRAVEL_S, estimate.down_s * LOWER_TO_FLAT_FACTOR + LOWER_TO_FLAT_EXTRA_S)
+
+
+async def async_measure_move(
+    hass: HomeAssistant, manager: PositionEstimates, bed: BedEstimate, motor: str, direction: str
+) -> None:
+    """Move one motor until STOP, bounded by the longest calibratable travel."""
+    await _async_timed_move(_parent(hass, manager), bed, motor, direction, MAX_TRAVEL_S)
 
 
 async def async_lower_to_flat(
