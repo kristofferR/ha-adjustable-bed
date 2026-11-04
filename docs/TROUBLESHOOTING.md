@@ -38,21 +38,28 @@ adds app profiles for beds that the earlier generic routes controlled only
 partly, or with the wrong commands. Bluetooth advertisements cannot tell these
 apps apart, so an upgraded bed whose bed type gained app profiles shows one
 repair under **Settings > System > Repairs**. It lists only the apps that fit
-that bed type and asks once:
+that bed type:
 
 - **Choose the app you use.** Most apps are applied right away, with the same
   checks as **Configure**. The bed reloads with that app's controls and keeps
   its device and matching entity IDs.
-- Apps with their own settings (FSM Relax, Limoss Remote, Motion Bed, the
-  Vibradorm apps, V-MAT Basic, AdjustableM5X4, AdjustableM5X5, LOGICDATA
-  Sleep Smart), or a change **Configure** would refuse, are not applied here.
-  The repair tells you to open **Configure** and choose the app there.
-- **Keep current configuration** if the bed already works. The repair does
-  not come back.
+- Apps with their own settings (FSM Relax, Limoss Remote, Motion Bed,
+  AdjustableM5X4, AdjustableM5X5, LOGICDATA Sleep Smart), or a change
+  **Configure** would refuse, are not applied here. The repair opens
+  **Configure** with the app selected.
+- A family with a guided change, such as Vibradorm and V-MAT Basic, opens
+  [the guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed).
+- **Keep current configuration** if the bed already works. The repair comes
+  back only if a later release adds an app for that setup that you have not
+  been shown.
 - A paired bed cannot switch app in its shared settings, because app profiles
   belong to one physical bed and none supports paired controls. In
   **Configure**, choose **Split into two beds** (or **Restore standalone
-  controls**), then choose the app for each bed.
+  controls**). Each bed then gets its own repair. A working pair can keep its
+  current configuration instead.
+
+Handing off to **Configure** or the guided change does not answer the repair.
+It stays open until you save a change or choose to keep the current setup.
 
 The repair reads **"... matches the ... profile"** instead when the bed's
 advertisement now identifies another bed type than the one it was set up

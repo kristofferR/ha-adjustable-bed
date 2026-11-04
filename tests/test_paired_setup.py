@@ -2258,6 +2258,147 @@ class TestPairBedsConversion:
         assert final_device.name_by_user == "Left headboard"
         assert final_device.via_device_id is None
 
+    async def test_split_keeps_current_connection_preferences(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Splitting a provenance-bearing pair keeps the connection preferences
+        chosen while combined and restores the side's original bed settings."""
+        from custom_components.adjustable_bed.const import (
+            CONF_DISCONNECT_AFTER_COMMAND,
+            CONF_IDLE_DISCONNECT_SECONDS,
+            SIDE_LEFT,
+        )
+        from custom_components.adjustable_bed.pairing import with_updated_child
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+        left_original = dict(left.data)
+        hass.config_entries.async_update_entry(
+            left, options={"back_max_angle": 55.0, CONF_IDLE_DISCONNECT_SECONDS: 40}
+        )
+        await hass.async_block_till_done()
+        result = await self._reach_pair_step(hass)
+        await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id),
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+        pair = next(e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data))
+
+        # Edit the left receiver through Configure, as a user would.
+        adapters = {"auto": "Automatic", "hci1": "hci1 (AA:BB:CC:00:00:01)"}
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_available_adapters",
+            return_value=adapters,
+        ):
+            options = hass.config_entries.options
+            result = await options.async_init(pair.entry_id)
+            result = await options.async_configure(
+                result["flow_id"], {"next_step_id": "left_settings"}
+            )
+            result = await options.async_configure(
+                result["flow_id"],
+                {
+                    CONF_PREFERRED_ADAPTER: "hci1",
+                    CONF_IDLE_DISCONNECT_SECONDS: 120,
+                    CONF_DISCONNECT_AFTER_COMMAND: False,
+                },
+            )
+            assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+        # A side setting changed while combined still reverts on split.
+        hass.config_entries.async_update_entry(
+            pair, data=with_updated_child(pair.data, SIDE_LEFT, {CONF_MOTOR_COUNT: 4})
+        )
+        await hass.async_block_till_done()
+
+        await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+
+        restored = hass.config_entries.async_get_entry(left.entry_id)
+        assert restored is not None
+        assert dict(restored.data) == {
+            **left_original,
+            CONF_PREFERRED_ADAPTER: "hci1",
+            CONF_IDLE_DISCONNECT_SECONDS: 120,
+            CONF_DISCONNECT_AFTER_COMMAND: False,
+        }
+        assert restored.data[CONF_MOTOR_COUNT] == 2
+        # The original idle option no longer shadows the retained value.
+        assert restored.options == {"back_max_angle": 55.0}
+        untouched = hass.config_entries.async_get_entry(right.entry_id)
+        assert untouched is not None
+        assert untouched.data[CONF_PREFERRED_ADAPTER] == "auto"
+        from custom_components.adjustable_bed.const import CONF_PROFILE_ID
+        from custom_components.adjustable_bed.profile_id import resolve_profile_id
+
+        for split_entry in (restored, untouched):
+            assert split_entry.data[CONF_PROFILE_ID] == resolve_profile_id(split_entry.data)
+
+    async def test_split_keeps_an_earlier_keep_through_setup(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A Keep recorded on the pair still covers each bed after the split.
+
+        The restored entries run setup (and its migrations) again, which must
+        not re-mark them for the upgrade review.
+        """
+        from custom_components.adjustable_bed.const import (
+            BED_TYPE_RICHMAT,
+            CONF_PROFILE_REVIEW_KEPT,
+            CONF_PROFILE_REVIEW_PENDING,
+        )
+        from custom_components.adjustable_bed.profile_review import (
+            _review,
+            profile_review_mark,
+        )
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng", bed_type=BED_TYPE_RICHMAT)
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587", bed_type=BED_TYPE_RICHMAT)
+        result = await self._reach_pair_step(hass)
+        await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id),
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+        pair = next(e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data))
+        apps = sorted(_review(hass, pair.data).choices)
+        assert apps
+        hass.config_entries.async_update_entry(
+            pair,
+            data={
+                **pair.data,
+                CONF_PROFILE_REVIEW_KEPT: {"route": profile_review_mark(pair.data), "apps": apps},
+            },
+        )
+        await hass.async_block_till_done()
+
+        await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+
+        for original in (left, right):
+            restored = hass.config_entries.async_get_entry(original.entry_id)
+            assert restored is not None
+            assert restored.state == ConfigEntryState.LOADED
+            assert restored.minor_version == pair.minor_version
+            assert CONF_PROFILE_REVIEW_PENDING not in restored.data
+            assert restored.data[CONF_PROFILE_REVIEW_KEPT] == {
+                "route": "richmat:auto",
+                "apps": apps,
+            }
+
     async def test_conversion_connect_failure_preserves_originals(
         self,
         hass: HomeAssistant,

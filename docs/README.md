@@ -53,6 +53,7 @@ testing status.
 | [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence and design |
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer and rollback |
+| [Guided setup changes](design/guided-setup-changes.md) | Staged app and layout changes, Repairs, Keep and the paired split rules |
 
 ## Protocol Research
 

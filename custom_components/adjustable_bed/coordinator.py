@@ -1229,7 +1229,7 @@ class AdjustableBedCoordinator:
             return self._controller
         return self._offline_controller
 
-    async def async_prime_offline_controller(self) -> None:
+    async def async_prime_offline_controller(self, *, preview: bool = False) -> None:
         """Best-effort mint of a client-free controller for capability reads.
 
         Construction only — never connects or starts notifications. Failures are
@@ -1237,6 +1237,10 @@ class AdjustableBedCoordinator:
         controller needs a live client (auto-detected Richmat/L&P/Keeson
         variants) raise ConnectionError and are left without an offline
         controller until they connect.
+
+        ``preview`` mints for a staged configuration that is never set up: it
+        lists the controls the configuration declares before connecting, so it
+        skips the runtime safety gate and never reads or writes app state.
         """
         if self._offline_controller is not None or self._controller is not None:
             return
@@ -1304,7 +1308,7 @@ class AdjustableBedCoordinator:
             or (bed_type == BED_TYPE_JENSEN and jensen_snapshot is not None)
             or (bed_type in RICHMAT_MH_BED_TYPES and isinstance(richmat_mh_snapshot, dict))
         )
-        if not mintable:
+        if not mintable and not preview:
             # Only beds whose entity-gating capabilities are fully determined by
             # stored config offline are safe to mint without a live connection.
             # Others auto-detect their variant from live GATT/advertisement, can
@@ -1328,7 +1332,8 @@ class AdjustableBedCoordinator:
                 cb24_bed_selection=self._cb24_bed_selection,
                 capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
-            await self._async_restore_app_state(self._offline_controller)
+            if not preview:
+                await self._async_restore_app_state(self._offline_controller)
             if bed_type in RICHMAT_MH_BED_TYPES and not getattr(
                 self._offline_controller, "has_stored_capabilities", False
             ):

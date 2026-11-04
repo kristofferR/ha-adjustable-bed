@@ -56,6 +56,34 @@ Beds that support [estimated positions](ESTIMATED_POSITIONS.md) also show
 **Estimated positions** in this menu, or one entry per side on a paired bed. It
 enables and calibrates travel-time estimates for beds without position feedback.
 
+### Changing the app or layout of an existing bed
+
+Some families have a guided change: Configure shows **Change app or layout**
+with the bed's current setup. Home Assistant cannot open the guided change from
+Configure itself, so start it from the entry's three-dot menu, **Reconfigure**,
+or from the bed's repair. Today this covers the
+[Vibradorm family](beds/vibradorm.md#guided-setup-and-migration); more families
+follow.
+
+1. Choose the app you use, then the layout or remote the app shows. **Keep
+   current setup** leaves the entry exactly as it is.
+2. Where the family has exact Bluetooth endpoint or pairing requirements,
+   Home Assistant releases its connection and checks the chosen setup. Nothing
+   is saved yet.
+3. A review lists the controls that are added and removed, how many keep their
+   entity IDs, and the automations and scripts that use a removed control.
+4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
+
+A failed check, a closed window, **Keep current setup** or a concurrent edit
+leaves the saved setup unchanged and working. Choosing a label that resolves to
+the saved setup changes nothing. A passed check does not prove the bed's
+physical layout or presets, so test the controls after applying a change.
+
+A paired bed is split first, because an app belongs to one physical bed.
+Splitting keeps the Bluetooth adapter or proxy, idle disconnect and disconnect
+after each command that you chose while combined, and restores the bed type,
+app profile and side settings from before the beds were combined.
+
 ---
 
 ## Profile recommendations
@@ -449,8 +477,8 @@ listed together below, with links to their profile sections.
    names and services do not always identify the right layout.
 
 Existing entries keep their selection until you change it. Beds added before
-4.1.0 whose bed type gained app profiles are asked once, through a repair,
-which app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
+4.1.0 whose bed type gained app profiles are asked, through a repair, which
+app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a two-address pair, settings belong to each physical bed. If the shared form
 refuses a change, split the pair, configure each side, then combine them again.
 
@@ -611,7 +639,9 @@ used by two-address beds.
 
 This conversion keeps the existing config entry, Bluetooth address, device,
 and standalone entity history. It is reversible through **Restore standalone
-controls**. Existing entries do not change automatically.
+controls**, which keeps the Bluetooth adapter, idle disconnect and disconnect
+after each command chosen while combined. Existing entries do not change
+automatically.
 
 Routing remains protocol-native:
 
