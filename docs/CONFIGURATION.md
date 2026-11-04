@@ -56,6 +56,34 @@ Beds that support [estimated positions](ESTIMATED_POSITIONS.md) also show
 **Estimated positions** in this menu, or one entry per side on a paired bed. It
 enables and calibrates travel-time estimates for beds without position feedback.
 
+### Changing the app or layout of an existing bed
+
+Some families have a guided change: Configure shows **Change app or layout**
+with the bed's current setup. Home Assistant cannot open the guided change from
+Configure itself, so start it from the entry's three-dot menu, **Reconfigure**,
+or from the bed's repair. Today this covers the
+[Vibradorm family](beds/vibradorm.md#guided-setup-and-migration); more families
+follow.
+
+1. Choose the app you use, then the layout or remote the app shows. **Keep
+   current setup** leaves the entry exactly as it is.
+2. Where the family has exact Bluetooth endpoint or pairing requirements,
+   Home Assistant releases its connection and checks the chosen setup. Nothing
+   is saved yet.
+3. A review lists the controls that are added and removed, how many keep their
+   entity IDs, and the automations and scripts that use a removed control.
+4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
+
+A failed check, a closed window, **Keep current setup** or a concurrent edit
+leaves the saved setup unchanged and working. Choosing a label that resolves to
+the saved setup changes nothing. A passed check does not prove the bed's
+physical layout or presets, so test the controls after applying a change.
+
+A paired bed is split first, because an app belongs to one physical bed.
+Splitting keeps the Bluetooth adapter or proxy, idle disconnect and disconnect
+after each command that you chose while combined, and restores the bed type,
+app profile and side settings from before the beds were combined.
+
 ---
 
 ## Profile recommendations
@@ -77,6 +105,19 @@ updates. Only a materially different profile or candidate set may ask again.
 Paired notices identify the physical bed and explain any required split or restore
 standalone action; neither side changes automatically. See the
 [matching evidence and limits](design/profile-recommendations.md).
+
+### Physical Validation of Setup Changes
+
+Proven offline: config flow tests drive setup, Configure, Repairs and the
+guided reconfigure against simulated beds, and check the saved fields and the
+refusal of invalid combinations. A passed Bluetooth check proves that the bed
+answered on the expected connection, not which motors, buttons or remote layout
+it has. Needs real-bed reports: after an app or layout change, whether the
+controls Home Assistant shows match the bed's remote and app, and whether each
+one moves what it names. The v5 setup changes from
+[#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676) arrive in
+later betas, and this applies to each as it lands. Report the app and layout you
+chose, with diagnostics, in the v5 beta feedback issue.
 
 ## Basic Settings
 
@@ -274,11 +315,12 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Clarity app | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app | `customatic_remedy` | 8 | 120 ms |
+| eShine app (E2000 / E3000 / E3100 / E5000) | `eshine_okin` | 10 | 300 ms |
 | FSM Relax app (explicit chair/bed profile) | `fsm_relax` | 10 | 60 ms |
 | Jensen (JMC400, LinON Entry) | `jensen` | 4 | 300 ms |
 | Leggett & Platt WiLinke (MlRM) | `leggett_wilinke` | 10 | 110 ms |
 | Limoss / Stawett (TEA encrypted) | `limoss` | 12 | 80 ms |
-| Linak: Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
+| Linak (Bed Control and Performance Series apps): Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
 | Malouf (FFE5 protocol) | `malouf_legacy_okin` | 7 | 150 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |
@@ -316,10 +358,16 @@ profiles. Its cadence is not controlled by the generic motor pulse settings.
 
 ## Protocol Variants
 
-Some beds support multiple protocol variants. Auto-detection usually works, but you can override if needed.
+Some beds support multiple protocol variants, also called receiver routes.
+Auto-detection usually works, but you can override if needed.
 
-The selector lists the variants available for the current bed type. Additional
-controller-specific choices are documented here:
+Setup asks for a route only when the chosen bed type has more than one, and
+lists only that bed type's own labelled routes. An app chosen from the bed-type
+list sets its route itself. For a discovered or preselected bed the routes sit
+in a collapsed **Advanced: receiver route** section of the form; choosing
+another bed type with several routes adds a short route step. Configure lists
+the routes of the saved bed type. Additional controller-specific choices are
+documented here:
 
 | Bed type | Choices covered by its guide |
 |----------|-----------------------------|
@@ -442,15 +490,17 @@ listed together below, with links to their profile sections.
 
 1. Let automatic discovery identify the controller where possible.
 2. If adding manually, find your brand or app in [Supported Beds](../README.md#supported-beds).
-   The bed-type list names each app, so you can also search it for the app you
-   use, for example **INNOVA app (Keeson)** or **The Brick app (Remacro)**.
-   Choosing an app sets its protocol variant for you.
+   The bed-type list names each app, so you can type to search it for the app
+   you use, for example **INNOVA app (Keeson)**, **Power Bob** or **HomeKobo**.
+   Choosing an app sets its protocol variant for you. A saved compatibility ID,
+   such as `okimat`, keeps working; setup shows its friendly name and Configure
+   adds the saved ID in brackets.
 3. Match any requested model or remote to your physical bed. Shared Bluetooth
    names and services do not always identify the right layout.
 
 Existing entries keep their selection until you change it. Beds added before
-4.1.0 whose bed type gained app profiles are asked once, through a repair,
-which app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
+4.1.0 whose bed type gained app profiles are asked, through a repair, which
+app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a two-address pair, settings belong to each physical bed. If the shared form
 refuses a change, split the pair, configure each side, then combine them again.
 
@@ -489,6 +539,8 @@ refuses a change, split the pair, configure each side, then combine them again.
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | HJBed | [The exact app product](beds/richmat.md#hjbed). |
+| Good Vibe Sleep | [The exact product, configuration or remote alias](beds/goodvibe.md#detection--setup); independent RM-/HJ- sleep sensors are separate entries with their own type 1 or type 2 profile. App side selection is local; light duration and supported snore settings are device controls. |
+| eShine E2000 / E3000 / E3100 / E5000 | [The same product selector as the app](beds/eshine-okin.md); E3000/E3100 is one choice, and name or UART matches never choose it. The profile owns its axes, massage/light features and 300 ms refresh. Each side of a two-address pair keeps its own profile; single-address split controls are unavailable. |
 
 ### Octo PIN
 
@@ -611,7 +663,9 @@ used by two-address beds.
 
 This conversion keeps the existing config entry, Bluetooth address, device,
 and standalone entity history. It is reversible through **Restore standalone
-controls**. Existing entries do not change automatically.
+controls**, which keeps the Bluetooth adapter, idle disconnect and disconnect
+after each command chosen while combined. Existing entries do not change
+automatically.
 
 Routing remains protocol-native:
 

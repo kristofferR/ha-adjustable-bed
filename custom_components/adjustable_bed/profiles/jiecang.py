@@ -14,7 +14,7 @@ from typing import Final, Literal
 
 from ..codec import jiecang as codec
 from ..codec.jiecang import BILATERAL, STANDARD, Axis, MassageZone, Preset, TransportKey, Wake
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
 
 Layout = Literal[
     "standard_2",
@@ -182,6 +182,7 @@ _DREAM_BOOTSTRAP: Final = _repeat_pairs(
 )
 DREAMASK: Final = JiecangProfile(
     key="dreamask",
+    execution=STREAM_HOLD,
     fixed_rate=True,
     layouts=APP_LAYOUT_AXES,
     transports=("g3", "g1", "g2"),
@@ -196,6 +197,7 @@ DREAMASK: Final = JiecangProfile(
 )
 DREAMOTION: Final = JiecangProfile(
     key="dreamotion",
+    execution=STREAM_HOLD,
     fixed_rate=True,
     layouts=APP_LAYOUT_AXES,
     transports=("g3", "g1", "g2"),
@@ -214,6 +216,7 @@ DREAMOTION: Final = JiecangProfile(
 )
 DREAMHD: Final = JiecangProfile(
     key="dreamhd",
+    execution=STREAM_HOLD,
     fixed_rate=True,
     layouts=_DREAMHD_LAYOUT_AXES,
     transports=("g3", "g1", "g2"),

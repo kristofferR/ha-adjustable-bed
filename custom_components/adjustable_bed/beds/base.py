@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from ..casper_base_protocol import Request as CasperBaseRequest
     from ..coordinator import AdjustableBedCoordinator
     from ..gmmotor_requests import Request as GmmotorRequest
+    from ..goodvibe_services import Request as GoodVibeRequest
     from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
@@ -53,6 +54,8 @@ from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCap
 from ..position_seek import PositionSeekPolicy
 
 _LOGGER = logging.getLogger(__name__)
+
+CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
 
 MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
 
@@ -117,6 +120,8 @@ class ControllerButtonSpec:
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
     hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
+    # Cancel held admission; only the held task owns its protocol release frame.
+    release_only: bool = field(default=False, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
 
@@ -1592,6 +1597,27 @@ class BedController(ABC):
     async def set_massage_speed(self, value: float) -> None:
         """Set the controller-declared massage speed scale."""
         raise NotImplementedError("Massage speed control is not supported")
+
+    @property
+    def supports_goodvibe(self) -> bool:
+        return False
+
+    def validate_goodvibe_request(self, request: GoodVibeRequest) -> None:
+        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
+
+    async def async_execute_goodvibe_request(self, request: GoodVibeRequest) -> None:
+        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
+
+    @property
+    def requests_connection_recovery(self) -> bool:
+        """Whether a user-started background session needs recovery after link loss."""
+        return False
+
+    def on_connection_release(self, reason: str) -> None:  # noqa: B027
+        """End explicit user/session intent before releasing connection resources."""
+
+    def on_gesture_release(self) -> None:  # noqa: B027
+        """Mark the current admitted gesture as released before STOP invalidates it."""
 
     @property
     def supports_hjbed(self) -> bool:

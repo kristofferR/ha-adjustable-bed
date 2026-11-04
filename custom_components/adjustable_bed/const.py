@@ -6,6 +6,7 @@ from typing import Final, overload
 
 from . import casper_base_catalog as _casper_base_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
+from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 
 DOMAIN: Final = "adjustable_bed"
@@ -334,6 +335,10 @@ CONF_SIDE: Final = "side"
 # profiles whose route gained some, to the reviewed bed types and variants;
 # cleared once the review is answered or the route changes.
 CONF_PROFILE_REVIEW_PENDING: Final = "profile_review_pending"
+# An explicit "Keep current setup" answer: the reviewed route signature and the
+# app choices offered at that time. The review returns only for that route when
+# a later release offers an app the user was not shown.
+CONF_PROFILE_REVIEW_KEPT: Final = "profile_review_kept"
 
 # Schema 5: the profile id the entry (or one paired side) runs, derived from the
 # saved bed type, variant and app key (see profile_id.py), and the record the
@@ -457,6 +462,13 @@ BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 # Bed types - Legacy naming (backwards compatibility)
 # These map to the protocol-based types above
 BED_TYPE_LINAK: Final = "linak"
+BED_TYPE_ESHINE_OKIN: Final = "eshine_okin"  # com.okin.eshine explicit product selection
+ESHINE_OKIN_PROFILES: Final = {
+    "eshine_e2000": "E2000",
+    "eshine_e30003100": "E3000 / E3100",
+    "eshine_e5000": "E5000",
+}
+
 BED_TYPE_ESHINE: Final = "eshine"  # Explicit Eshine E6000 app profile
 BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_SOLACE: Final = "solace"
@@ -494,6 +506,7 @@ CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
+BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
@@ -520,7 +533,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_HJBED, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
+    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -685,6 +698,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
+    BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
@@ -732,6 +746,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
+    BED_TYPE_ESHINE_OKIN,
     # Explicit Richmat MH app profiles
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_RICHMAT_BEST_MATTRESS,
@@ -1904,7 +1919,9 @@ OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
+    BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
     BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
 }
@@ -2714,101 +2731,6 @@ OKIN_64BIT_VARIANTS: Final = {
     OKIN_64BIT_VARIANT_CUSTOM: "Custom OKIN (wait-for-response)",
 }
 
-# All protocol variants (for validation)
-ALL_PROTOCOL_VARIANTS: Final = [
-    *CASPER_BASE_VARIANTS,
-
-    "p1", "p2", "p3",
-    *COMFORT_ENHANCEMENTS_VARIANTS,
-    *(v for v in BEDSENSE_VARIANTS if v != "auto"),
-    VARIANT_AUTO,
-    STAR_ELEVATE_VARIANT_M1X12,
-    SOLACE_VARIANT_WOOSA,
-    SVANE_VARIANT_JENSEN_LINON,
-    SVANE_VARIANT_JMC,
-    REMACRO_VARIANT_THE_BRICK,
-    REMACRO_VARIANT_JEROMES,
-    KAIDI_VARIANT_SEAT_1,
-    KAIDI_VARIANT_SEAT_2,
-    KAIDI_VARIANT_SEAT_3,
-    KAIDI_VARIANT_SEAT_1_2,
-    OKIN_CB24_VARIANT_OLD,
-    OKIN_CB24_VARIANT_NEW,
-    OKIN_CB24_VARIANT_CB24,
-    OKIN_CB24_VARIANT_CB27,
-    OKIN_CB24_VARIANT_CB24_AB,
-    OKIN_CB24_VARIANT_CB1221,
-    OKIN_CB24_VARIANT_DACHENG,
-    OKIN_CB24_VARIANT_CB27NEW,
-    KEESON_VARIANT_BASE,
-    KEESON_VARIANT_JSON,
-    KEESON_VARIANT_KSBT,
-    KEESON_VARIANT_KSBT04C,
-    KEESON_VARIANT_SLEEP_HARMONY,
-    KEESON_VARIANT_ADJUSTABLE_LITE,
-    KEESON_VARIANT_SIMON_LI,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
-    KEESON_VARIANT_OKIN_SEATING,
-    KEESON_VARIANT_AVANTI_BASES,
-    KEESON_VARIANT_AMERICANSTAR,
-    KEESON_VARIANT_BEDSENSE_BASES,
-    KEESON_VARIANT_INNOVA,
-    KEESON_VARIANT_MAXCOIL_UNA,
-    KEESON_VARIANT_DYNASTY_BASES,
-    KEESON_VARIANT_RESTONIC_A,
-    KEESON_VARIANT_RESTONIC_B,
-    KEESON_VARIANT_ERGOMOTION,
-    KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_SERTA,
-    KEESON_VARIANT_SINO,
-    KEESON_VARIANT_PURPLE,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_OKIN,
-    LEGGETT_VARIANT_MLRM,
-    SLEEP_NUMBER_VARIANT_LEFT,
-    SLEEP_NUMBER_VARIANT_RIGHT,
-    RICHMAT_VARIANT_NORDIC,
-    RICHMAT_VARIANT_WILINKE,
-    RICHMAT_VARIANT_PREFIX55,
-    RICHMAT_VARIANT_PREFIXAA,
-    OCTO_VARIANT_STANDARD,
-    OCTO_VARIANT_STAR2,
-    *(_variant for _variant in OKIMAT_VARIANTS if _variant != VARIANT_AUTO),
-    *(
-        _variant
-        for _variant in OKIN_DOT_VARIANTS
-        if _variant != VARIANT_AUTO and _variant not in OKIN_DOT_FURNIMOVE_VARIANTS
-    ),
-    OKIN_64BIT_VARIANT_NORDIC,
-    OKIN_64BIT_VARIANT_CUSTOM,
-    LINAK_VARIANT_BED_CONTROL,
-    LINAK_VARIANT_PERFORMANCE,
-    *(_variant for _variant in OKIN_CST_VARIANTS if _variant != VARIANT_AUTO),
-    SLEEPYS_BOX25_VARIANT_STAR,
-    SLEEPYS_BOX25_VARIANT_LEGACY,
-    # SBI/Q-Plus variants
-    SBI_VARIANT_BOTH,
-    SBI_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
-    # Rondure variants (already in RONDURE_VARIANTS)
-    RONDURE_VARIANT_BOTH,
-    RONDURE_VARIANT_SIDE_A,
-    RONDURE_VARIANT_SIDE_B,
-    *(_variant for _variant in SIMMONS_VARIANTS if _variant != VARIANT_AUTO),
-    *(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
-    ADJUSTABLE_LUMBAR_VARIANT_OKIN,
-    ADJUSTABLE_LUMBAR_VARIANT_STAR,
-    *dict.fromkeys(
-        variant
-        for variants in RICHMAT_MH_VARIANTS_BY_APP.values()
-        for variant in variants
-        if variant != VARIANT_AUTO
-    ),
-    *ZSERIES_VARIANTS,
-    *HJBED_PROFILES,
-    *GLIDEAWAY_MOTION_MODELS,
-]
-
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does
 # not prove that a successful connection or metadata read is authenticated.
 #
@@ -3009,6 +2931,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         # mapping to HA's generic head/back/legs/feet angle entities.
         BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
+        BED_TYPE_GOODVIBE,
         BED_TYPE_HJBED,
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_ISLEEP,
@@ -3028,6 +2951,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_COMFORT_ENHANCEMENTS,
         BED_TYPE_ESHINE,
+        BED_TYPE_ESHINE_OKIN,
         # VER1 angle replies feed the app's arc labels, not the shared angle axes.
         *RICHMAT_MH_BED_TYPES,
         BED_TYPE_CUSTOMATIC_CLARITY,
@@ -3172,6 +3096,8 @@ def disconnect_after_command_default_enabled(
     Only new entries consult this. An existing entry already stores its own
     value, which is left alone.
     """
+    if bed_type == BED_TYPE_GOODVIBE:
+        return protocol_variant not in ("sleep_rm", "sleep_hj")
     if not bed_type:
         return DEFAULT_DISCONNECT_AFTER_COMMAND
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
@@ -3260,6 +3186,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
+    BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement

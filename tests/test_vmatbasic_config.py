@@ -152,9 +152,9 @@ async def test_full_rendered_profile_change_discards_all_old_dependent_defaults(
             with patch.object(flow, "_finish_with_verify", new=AsyncMock()):
                 await step(next_submission)
         assert entry.data == data
-        flow._vibradorm_verified = True
-        flow._create_selected_app_entry(title="Basic", data=flow._manual_data)
-        completed = await flow.async_step_vibradorm_confirm({"confirm": True})
+        flow._migration_verified = True
+        await flow._async_create_selected_app_entry(title="Basic", data=flow._manual_data)
+        completed = await flow.async_step_migration_confirm({"confirm": True})
         assert completed["type"] == FlowResultType.ABORT
         assert entry is not None
         assert entry.data[const.CONF_VMATBASIC_PROFILE] == new

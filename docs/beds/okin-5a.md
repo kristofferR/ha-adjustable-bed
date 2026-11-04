@@ -56,6 +56,7 @@ of this one (see [Nectar](#nectar)).
 | Massage | ✅ Global on, wave and off; no intensity commands | ✅ On, toggle, wave, off, intensity up/down | ✅ Toggle, head/foot strength, mode step, stop | ❌ |
 | Under-bed Lights | ✅ Separate on/off | ✅ On/off, light-cycle button | ✅ On/off, light-cycle button | ❌ |
 | Group control with M5X5 / M1X12 mains | ❌ | ❌ | ❌ | ✅ (see [AdjustableM5X5 lifts](#adjustablem5x5-lifts)) |
+| Hold until release | ❌ (finite pulses) | ❌ (finite pulses) | ❌ (finite pulses) | ✅ (renewable `timed_move`, both routes) |
 | BLE Pairing / Authentication | ❌ Not required | ❌ Not required | ❌ Not required | ❌ Not required |
 | Hardware-confirmed | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
 
@@ -513,6 +514,12 @@ there is no manufacturer-selected dialect.
 
 The apps refresh a held command every 100 ms. Release cancels held repeats and
 sends the shared STOP frame once.
+
+A renewable hold (`timed_move` with `hold_owner` and `hold_generation`, see
+[Renewable holds](../SERVICES.md#renewable-holds)) refreshes at the apps' 100 ms
+on both routes, whatever the entry's motor pulse settings, until its lease runs
+out. Then STOP follows. A finite move on the default route keeps the entry's
+pulse settings; the M1X12 variant always holds at the 100 ms sender interval.
 
 #### Notifications
 
