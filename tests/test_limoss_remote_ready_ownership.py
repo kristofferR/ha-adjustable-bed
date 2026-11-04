@@ -81,7 +81,7 @@ async def test_retirement_after_ready_before_waiter_resumes_prevents_first_movem
     new_client.write_gatt_char.side_effect = new_write
     new_client.disconnect = AsyncMock(side_effect=disconnect)
     adapter = AdapterSelectionResult(BLEDevice(right.address, "App bed", {}), "local", -50, True, ["local"])
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     owner = operation = None
     try:
         with ExitStack() as stack:

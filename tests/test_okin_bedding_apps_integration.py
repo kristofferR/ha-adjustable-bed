@@ -225,6 +225,10 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch(
+            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
+            new=resolve,
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
@@ -382,7 +386,7 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
     coordinator = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ),
         patch("asyncio.sleep", new=AsyncMock()),
@@ -424,7 +428,7 @@ async def _set_alarm(hass, controller):
     target = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
             return_value=([(target, SIDE_BOTH)], []),
         ),
         patch("asyncio.sleep", new=AsyncMock()),
@@ -528,7 +532,8 @@ async def _call(hass, resolved, service="zseries_set_alarm"):
     if service == "zseries_set_alarm":
         data |= {"enabled": True, "time": "07:45:00", "wake_mode": "massage"}
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])) as resolve,
+        patch("custom_components.adjustable_bed.serenity_services._resolve_sided_targets", new=resolve),
         patch("asyncio.sleep", new=AsyncMock()),
     ):
         await hass.services.async_call(DOMAIN, service, data, blocking=True)
@@ -657,11 +662,17 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
         for child in (left, right):
             child.async_execute_controller_command = AsyncMock(side_effect=executor(child))
         resolved = [(left, SIDE_BOTH), (right, SIDE_BOTH)]
-    with patch(
-        "custom_components.adjustable_bed.services._command_targets",
-        side_effect=lambda coordinator, side: list(coordinator.children.values())
-        if paired
-        else [coordinator],
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._command_targets",
+            side_effect=lambda coordinator, side: list(coordinator.children.values())
+            if paired
+            else [coordinator],
+        ) as command_targets,
+        patch(
+            "custom_components.adjustable_bed.serenity_services._command_targets",
+            new=command_targets,
+        ),
     ):
         await _call(hass, resolved, "sync_clock")
     for child in (left, right):

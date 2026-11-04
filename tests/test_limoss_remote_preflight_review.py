@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.limoss_remote_state import (
     get_limoss_remote_session,
 )
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+from tests.coordinator_patches import patch_coordinator_global
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import (
     CAPS,
@@ -164,7 +165,7 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
         # Preserve real timer yielding; the held loop must be cancellable.
         return controller
 
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     try:
         with ExitStack() as stack:
             stack.enter_context(patch(module + "select_adapter", side_effect=adapter))
@@ -173,7 +174,7 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
             stack.enter_context(patch(module + "discover_services", new=AsyncMock(return_value=True)))
             stack.enter_context(patch(module + "client_source", return_value="local"))
             stack.enter_context(patch(module + "async_path_for_source", return_value=None))
-            stack.enter_context(patch(module + "create_controller", side_effect=factory))
+            stack.enter_context(patch_coordinator_global("create_controller", side_effect=factory))
             stack.enter_context(patch.object(hass.config_entries, "async_reload", new=AsyncMock()))
             data = {"duration": 0.1}
             service = {"recall": "goto_preset", "hold": "hold_control", "goto": "goto_preset", "save": "save_preset"}[route]

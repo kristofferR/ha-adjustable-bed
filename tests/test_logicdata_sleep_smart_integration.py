@@ -31,8 +31,8 @@ from custom_components.adjustable_bed.const import (
     SIDE_BOTH,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.logicdata_app_services import SERVICE_LOGICDATA_HOLD_PRESET
 from custom_components.adjustable_bed.services import (
-    SERVICE_LOGICDATA_HOLD_PRESET,
     SERVICE_LOGICDATA_RENAME,
     async_register_services,
 )
@@ -158,9 +158,13 @@ def _target(name, bed_type, **controller):
 @pytest.fixture
 async def services(hass: HomeAssistant):
     await async_register_services(hass)
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets"
-    ) as resolve:
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets") as resolve,
+        patch(
+            "custom_components.adjustable_bed.logicdata_app_services._resolve_sided_targets",
+            new=resolve,
+        ),
+    ):
         yield resolve
 
 

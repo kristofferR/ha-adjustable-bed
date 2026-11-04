@@ -740,7 +740,7 @@ class TestVibradormController:
         entry.add_to_hass(hass)
 
         with patch(
-            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            "custom_components.adjustable_bed.coordinator_connection.read_ble_device_info",
             new=AsyncMock(return_value=("Vibradorm GmbH", "VMAT-BASIC-RF-CBI")),
         ):
             coordinator = AdjustableBedCoordinator(hass, entry)

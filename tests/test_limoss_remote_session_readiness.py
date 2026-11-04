@@ -75,7 +75,7 @@ async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(h
     right_client.write_gatt_char.side_effect = right_write
     right_client.disconnect = AsyncMock(side_effect=disconnect)
     adapter = AdapterSelectionResult(BLEDevice(right.address, "App bed", {}), "local", -50, True, ["local"])
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     connect = operation = None
     try:
         with ExitStack() as stack:

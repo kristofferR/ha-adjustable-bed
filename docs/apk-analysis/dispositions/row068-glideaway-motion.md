@@ -52,9 +52,9 @@ Connect selected address, discover services, reconnect and explicit disconnect
 
 Evidence: E05, E06.
 
-Code: `custom_components/adjustable_bed/coordinator.py:async_connect, _async_connect_locked, async_disconnect`.
+Code: `custom_components/adjustable_bed/coordinator_connection.py:async_connect, _async_connect_locked, async_disconnect`.
 
-Tests: `tests/test_coordinator.py:TestCoordinatorPositionSeek.test_ensure_connected_reconnects; TestDisconnectCommandSerialization.test_disconnect_button_waits_for_running_command`.
+Tests: `tests/test_coordinator_positions.py:TestCoordinatorPositionSeek.test_ensure_connected_reconnects`; `tests/test_coordinator_connection.py:TestDisconnectCommandSerialization.test_disconnect_button_waits_for_running_command`.
 
 HA owns transport discovery/lifecycle; selected-address connection and explicit disconnect are equivalent. Android API overloads and permission/UI delays are phone infrastructure, excluded in X05; unsafe stale repeats excluded in S02.
 

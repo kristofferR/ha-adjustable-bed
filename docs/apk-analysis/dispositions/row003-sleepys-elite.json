@@ -91,7 +91,7 @@
       "code": [
         "custom_components/adjustable_bed/beds/sleepys_app.py::SleepysEliteAppController._ensure_initialized",
         "custom_components/adjustable_bed/beds/sleepys_app.py::SleepysEliteAppController.start_notify",
-        "custom_components/adjustable_bed/coordinator.py::AdjustableBedCoordinator.async_connect",
+        "custom_components/adjustable_bed/coordinator_connection.py::CoordinatorConnectionMixin.async_connect",
         "custom_components/adjustable_bed/coordinator.py::AdjustableBedCoordinator._async_read_sleepys_app_device_info"
       ],
       "tests": [

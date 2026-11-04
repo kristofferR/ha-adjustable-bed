@@ -21,12 +21,14 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.leggett_okin_services import (
+    SERVICE_LEGGETT_ALARM_TIMER,
+    SERVICE_LEGGETT_SLEEP_TIMER,
+)
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import (
     LEGGETT_HELD_CONTROLS,
-    SERVICE_LEGGETT_ALARM_TIMER,
     SERVICE_LEGGETT_HOLD_CONTROL,
-    SERVICE_LEGGETT_SLEEP_TIMER,
     async_register_services,
 )
 
@@ -59,10 +61,13 @@ async def service_target(hass: HomeAssistant):
         await command(controller)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    ) as resolve:
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch("custom_components.adjustable_bed.leggett_okin_services._resolve_sided_targets", new=resolve),
+    ):
         yield coordinator, controller, resolve
 
 

@@ -261,7 +261,7 @@ async def test_runtime_selected_app_connects_without_bond_support(
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     with patch(
-        "custom_components.adjustable_bed.coordinator.establish_connection",
+        "custom_components.adjustable_bed.coordinator_connection.establish_connection",
         new=AsyncMock(return_value=mock_bleak_client),
     ) as connect:
         assert await coordinator.async_connect()
