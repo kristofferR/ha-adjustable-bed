@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import MethodType
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -572,7 +573,14 @@ async def capture(hass: HomeAssistant, topology: Topology, scenario: Scenario) -
     clock = WIRE.FakeClock()
     trace = Trace(clock)
     baseline = asyncio.all_tasks()
-    with WIRE.virtual_time(clock):
+    async def import_inline(func: Callable[..., Any], *args: Any) -> Any:
+        # A real executor thread would race the virtual clock.
+        return func(*args)
+
+    with (
+        patch.object(hass, "async_add_import_executor_job", import_inline),
+        WIRE.virtual_time(clock),
+    ):
         pair = topology.build(hass, trace, scenario.failing)
         run = Run(pair, trace)
         if scenario.connect_first:
