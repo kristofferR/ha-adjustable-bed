@@ -187,9 +187,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
     "SolaceProfile:woosa": {"hold": ("woosa",)},
     # Standalone controllers. Stream holds need stream evidence; latched holds
-    # (#821) a latched row. The generic ``vibradorm`` route keeps finite pulses;
-    # ``svane`` and ``leggett_lp_legacy`` are not declared yet (see the design
-    # note). Sleepy's BOX25 declares on the controller for both dialects.
+    # (#821) a latched row. The generic ``vibradorm`` route keeps finite pulses
+    # and ``leggett_lp_legacy`` is not declared yet (see the design note). Svane
+    # Remote declares hold and composition on its controller (#516), and Sleepy's
+    # BOX25 declares on the controller for both dialects.
     "eshine": {"hold": ("eshine",)},
     "eshine_okin": {"hold": ("eshine-okin",)},
     "furnimove": {"hold": ("fm157",)},
@@ -206,6 +207,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "sleepys_elite_app": {"hold": ("sleepy",)},
     "starcode_m1x12": {"hold": ("m1x12",)},
     "starcode_m5x5": {"hold": ("abm5_5",)},
+    "svane": {"hold": ("svane", "svane-guide"), "concurrent": ("svane", "svane-guide")},
     "timotion_ahf": {"hold": ("ahf",)},
     "vibradorm_app": {"hold": ("diamant", "werkmeister", "vmat")},
     "vmatbasic": {"hold": ("vmatbasic",)},
@@ -271,6 +273,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller.execution": ("starcode_m1x12",),
     "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller": ("starcode_m5x5",),
     "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller.execution": ("starcode_m5x5",),
+    "beds/svane.py:<module>.SVANE_EXECUTION": ("svane",),
+    "beds/svane.py:<module>.SvaneController": ("svane",),
     "beds/timotion_ahf.py:<module>.TiMOTIONAhfController": ("timotion_ahf",),
     "beds/timotion_ahf.py:<module>.TiMOTIONAhfController.execution": ("timotion_ahf",),
     "beds/vibradorm_app.py:<module>.VibradormAppController": ("vibradorm_app",),
