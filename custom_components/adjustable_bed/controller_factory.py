@@ -973,18 +973,18 @@ async def create_controller(
 
     if bed_type == BED_TYPE_FSM_RELAX:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)
-        from .beds.fsm_relax import FsmRelaxController, FsmRelaxProfile
+        from .beds.fsm_relax import FsmRelaxController, FsmRelaxSetup
         from .fsm_relax_state import FsmRelaxSession, validate_names
 
         data = {**coordinator.entry.data, **coordinator.entry.options}
         reversals = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
-        profile = FsmRelaxProfile(data.get(CONF_PRODUCT_TYPE, "chair"),
-                                  data.get(CONF_HAS_LIGHT, False),
-                                  data.get(CONF_HAS_MASSAGE, False),
-                                  (reversals[0], reversals[1], reversals[2], reversals[3]))
+        setup = FsmRelaxSetup(data.get(CONF_PRODUCT_TYPE, "chair"),
+                              data.get(CONF_HAS_LIGHT, False),
+                              data.get(CONF_HAS_MASSAGE, False),
+                              (reversals[0], reversals[1], reversals[2], reversals[3]))
         return FsmRelaxController(
             coordinator,
-            profile=profile,
+            setup=setup,
             session=app_session(
                 coordinator.hass, coordinator.address, ("fsm_relax",), FsmRelaxSession
             ),

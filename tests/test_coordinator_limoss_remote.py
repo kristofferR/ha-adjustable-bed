@@ -8,9 +8,8 @@ from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children, const
-from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.limoss_remote_state import (
@@ -62,7 +61,7 @@ async def test_terminal_information_progress_survives_actual_reconstruction(hass
     coordinator.save_app_state(controller)
 
     def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         if opcode == 1 and failure is not None:
             raise failure("software failed")
         reply = {
@@ -70,7 +69,7 @@ async def test_terminal_information_progress_survives_actual_reconstruction(hass
             0: bytes.fromhex("00ff8000ff"),
             1: bytes.fromhex("0101020304"),
         }[opcode]
-        controller._notification(char, bytearray(format_command(reply, 0)))
+        controller._notification(char, bytearray(codec.frame(reply, 0)))
 
     coordinator.client.write_gatt_char = AsyncMock(side_effect=write)
     with patch.object(
@@ -115,11 +114,11 @@ async def test_actual_memory_capture_and_rename_survive_new_coordinator(hass):
     values = {0x10: -2147483648, 0x20: 2147483647}
 
     def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         controller._notification(
             char,
             bytearray(
-                format_command(bytes((opcode,)) + values[opcode].to_bytes(4, "big", signed=True), 0)
+                codec.frame(bytes((opcode,)) + values[opcode].to_bytes(4, "big", signed=True), 0)
             ),
         )
 
@@ -283,7 +282,7 @@ async def test_native_disconnect_invalidates_callback_before_controller_is_clear
         assert coordinator.client is None and coordinator.controller is None
     with pytest.raises(ConnectionError, match="notification channel stopped"):
         reply.result()
-    callback(role, bytearray(format_command(bytes.fromhex("06ffffffff"), 0)))
+    callback(role, bytearray(codec.frame(bytes.fromhex("06ffffffff"), 0)))
     assert "limoss_remote_serial" not in coordinator.controller_state
     assert const.CONF_LIMOSS_REMOTE_STATE not in coordinator.entry.data
     controller._request_reply = None

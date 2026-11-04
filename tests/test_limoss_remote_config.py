@@ -7,6 +7,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -134,7 +135,6 @@ async def test_enabling_local_features_saves_options_without_ble(hass):
 
 @pytest.mark.parametrize("fail", [False, True])
 async def test_options_disable_finishes_exact_off_bursts_before_saving(hass, fail):
-    from custom_components.adjustable_bed.beds.limoss import LimossController
     from custom_components.adjustable_bed.controller_factory import create_controller
     from tests.test_coordinator_limoss_remote import actual_coordinator
 
@@ -162,7 +162,7 @@ async def test_options_disable_finishes_exact_off_bursts_before_saving(hass, fai
 
     def write(char, packet, **kwargs):
         assert coordinator.entry.data == previous
-        payloads.append(LimossController._tea_decrypt(packet[1:9])[1:6].hex())
+        payloads.append(codec.decrypt(packet[1:9])[1:6].hex())
         if fail:
             raise ConnectionError("OFF write failed")
 

@@ -10,13 +10,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.fsm_relax import (
-    FsmRelaxController,
-    FsmRelaxProfile,
-    build_packet,
-    decode_packet,
-    signed_version,
-)
+from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController, FsmRelaxSetup
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxSession
 
 
@@ -39,7 +34,7 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
     coordinator._client = client
     coordinator._auto_reconnect_enabled = MagicMock(return_value=False)
     ctrl._subscribed = True
-    ctrl._buffer.extend(b"partial")
+    ctrl._parser.buffer.extend(b"partial")
     pending = asyncio.get_running_loop().create_future()
     ctrl._pending[0] = pending
     optional = asyncio.create_task(asyncio.sleep(100))
@@ -50,7 +45,7 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
     assert coordinator.controller is None and coordinator.client is None
     assert ctrl._generation == generation + 1
     assert not ctrl._subscribed and not ctrl._live_capabilities
-    assert not ctrl._buffer and not ctrl._pending
+    assert not ctrl._parser.buffer and not ctrl._pending
     assert isinstance(pending.exception(), ConnectionError)
     assert optional.cancelling()
     await asyncio.gather(optional, return_exceptions=True)
@@ -77,7 +72,7 @@ async def test_initializing_disconnect_fails_query_and_rejects_same_client_old_c
     disconnect_callback = coordinator._on_disconnect
     await ctrl.start_notify()
     old_notify = client.start_notify.call_args.args[1]
-    query = asyncio.create_task(ctrl._query(2))
+    query = asyncio.create_task(ctrl._query(codec.query(2)))
     while not client.write_gatt_char.await_count:
         await asyncio.sleep(0)
     generation = ctrl._generation
@@ -92,7 +87,7 @@ async def test_initializing_disconnect_fails_query_and_rejects_same_client_old_c
         assert not ctrl._pending
         client.is_connected = True
         await ctrl.start_notify()
-        packet = bytearray(build_packet(bytes.fromhex("0204000004"), 9))
+        packet = bytearray(codec.frame(bytes.fromhex("0204000004"), 9))
         old_notify(None, packet)
         assert not ctrl._live_capabilities
         client.start_notify.call_args.args[1](None, packet)
@@ -104,7 +99,7 @@ async def test_initializing_disconnect_fails_query_and_rejects_same_client_old_c
         await ctrl.stop_notify()
 
 
-def make_controller(profile=None, *, cap=b"\x02\x08\x04\x00\x08"):
+def make_controller(setup=None, *, cap=b"\x02\x08\x04\x00\x08"):
     c = MagicMock()
     c.address = "AA:BB:CC:DD:EE:FF"
     c.motor_pulse_count = 2
@@ -132,7 +127,7 @@ def make_controller(profile=None, *, cap=b"\x02\x08\x04\x00\x08"):
     c.client.stop_notify = AsyncMock()
     c.entry.data = {}
     c.async_write_app_state = AsyncMock()
-    ctrl = FsmRelaxController(c, profile=profile, session=FsmRelaxSession())
+    ctrl = FsmRelaxController(c, setup=setup, session=FsmRelaxSession())
     c.controller = ctrl
     if cap is not None:
         ctrl._accept_body(cap)
@@ -141,58 +136,12 @@ def make_controller(profile=None, *, cap=b"\x02\x08\x04\x00\x08"):
 
 
 def bodies(ctrl):
-    return [decode_packet(call.args[1]) for call in ctrl.client.write_gatt_char.call_args_list]
+    return [codec.decode(call.args[1]) for call in ctrl.client.write_gatt_char.call_args_list]
 
 
 def feed(ctrl, body):
-    ctrl._receive(build_packet(body, 99))
+    ctrl._receive(codec.frame(body, 99))
 
-
-SOURCE_VECTORS = [
-    ("V001", "0000000003", 0, "dd9afc185029d7131907"),
-    ("V002", "0100000003", 1, "dd8fe3b94f8267bd9895"),
-    ("V003", "0200000003", 2, "ddb4b0bf6c3e4f750270"),
-    ("V004", "0300000000", 3, "ddf3b6e1dd55b83ffe8e"),
-    ("V005", "0500000000", 4, "dd054d35081d1f1310cb"),
-    ("V006", "1000000000", 5, "dd9acfa5bb77b9189785"),
-    ("V007", "1100000000", 6, "dd7d1ea96bfe1e275322"),
-    ("V008", "1200000000", 7, "dd5f7afa96da2202c70b"),
-    ("V009", "1300000000", 8, "dd08e317af00410807de"),
-    ("V010", "2000000000", 9, "ddfe65e204f46c83c7d0"),
-    ("V011", "2100000000", 10, "dd46f4b0d2d2da5a38d7"),
-    ("V012", "2200000000", 11, "ddc268d63c94d8fc4dce"),
-    ("V013", "2300000000", 12, "ddbcd100113a44dd6036"),
-    ("V014", "3000000000", 13, "dd9052aec9efa366acda"),
-    ("V015", "3100000000", 14, "dd8a21c1d716c6fe4c46"),
-    ("V016", "3200000000", 15, "dd6ab825caf0704954eb"),
-    ("V017", "3300000000", 16, "ddbad370866fe3af1677"),
-    ("V018", "4000000000", 17, "ddc28e105a42f4a9d046"),
-    ("V019", "4100000000", 18, "dd56ec8d5ee6a02526db"),
-    ("V020", "5000000000", 19, "ddd602866c85bcfad8ba"),
-    ("V021", "5100000000", 20, "dd49b34d0bae1237577f"),
-    ("V022", "5200000000", 21, "dd4955d98402d886ade5"),
-    ("V023", "5300000000", 22, "dd46becf690d06f084a0"),
-    ("V024", "5400000000", 23, "dd17acab69e22d75f72f"),
-    ("V025", "5500000000", 24, "ddfa3949a4df6a07f03d"),
-    ("V026", "6000000000", 25, "dd557e9121960dbaf8b7"),
-    ("V027", "6100000000", 26, "dda0f3141997af550a42"),
-    ("V028", "6200000000", 27, "dd114762ef8766a3e5fb"),
-    ("V029", "6300000000", 28, "dd4b472be983c164204b"),
-    ("V030", "6400000000", 29, "dd6c354ba8c8f7d21a1c"),
-    ("V031", "6500000000", 30, "dd96ba2b023fc6e980c8"),
-    ("V032", "7000000000", 31, "dd3ccf3c621311c30d7a"),
-    ("V033", "ff00000000", 32, "dd1ccd6b601a4af101e7"),
-    ("V034", "1112345678", 255, "dd5f581ba20c1bd0367e"),
-    ("V035", "1180000000", 255, "ddbaef6db9f57d839839"),
-    ("V036", "2112345678", 255, "ddf71f768d0f40ab0afa"),
-    ("V037", "2180000000", 255, "ddf34c8a695ea2f0faf9"),
-    ("V038", "3112345678", 255, "dda612d7666869cf9709"),
-    ("V039", "3180000000", 255, "ddec4d7b42d73b039179"),
-    ("V040", "4112345678", 255, "dda582e2dc33e6ef9963"),
-    ("V041", "4180000000", 255, "dd5121fe549d282c30c2"),
-    ("V042", "1201010000", 256, "dd4ee817eaf4b3fe742d"),
-    ("V043", "0000000000", 105, "ddd38905b3757e79d431"),
-]
 
 SOURCE_TABLES = [
     ("chair", 2, 0, (80, 81)),
@@ -218,24 +167,10 @@ SOURCE_TABLES = [
 ]
 
 
-@pytest.mark.parametrize("identity,body,counter,expected", SOURCE_VECTORS)
-def test_source_codec_vectors(identity, body, counter, expected):
-    from custom_components.adjustable_bed.beds.limoss import LimossController
-
-    packet = bytes.fromhex(expected)
-    logical = bytes.fromhex(body)
-    assert build_packet(logical, counter) == packet, identity
-    assert decode_packet(packet) == logical
-    legacy = object.__new__(LimossController)
-    legacy._counter = counter & 255
-    assert legacy._build_packet(*logical) == packet
-    assert legacy._decode_packet(packet) == (logical[0], logical[1:])
-
-
 @pytest.mark.parametrize("layout,key,flags,expected", SOURCE_TABLES)
 def test_exact_source_tables(layout, key, flags, expected):
     ctrl = make_controller(
-        FsmRelaxProfile(layout, bool(flags & 1), bool(flags & 2)), cap=bytes((2, key, 255, 0, 8))
+        FsmRelaxSetup(layout, bool(flags & 1), bool(flags & 2)), cap=bytes((2, key, 255, 0, 8))
     )
     assert ctrl.action_opcodes == expected
     assert len(ctrl.controller_button_specs) == len(expected)
@@ -281,8 +216,8 @@ def test_signed_opaque_positions(opcode, raw):
 
 
 async def test_exact_signed_versions_ack_serial_and_unknown():
-    assert signed_version(bytes.fromhex("018002ff")) == "1-128.2"
-    assert signed_version(bytes.fromhex("ffffffff")) == "-1."
+    assert codec.version(bytes.fromhex("018002ff")) == "1-128.2"
+    assert codec.version(bytes.fromhex("ffffffff")) == "-1."
     ctrl = make_controller()
     for opcode in (0, 1):
         feed(ctrl, bytes((opcode,)) + bytes.fromhex("018002ff"))
@@ -299,8 +234,8 @@ async def test_exact_signed_versions_ack_serial_and_unknown():
 
 def test_fragment_coalesced_noise_and_checksum_validation():
     ctrl = make_controller()
-    a = build_packet(bytes.fromhex("10ffffffff"), 1)
-    b = build_packet(bytes.fromhex("2000000002"), 2)
+    a = codec.frame(bytes.fromhex("10ffffffff"), 1)
+    b = codec.frame(bytes.fromhex("2000000002"), 2)
     ctrl._receive(b"noise" + a[:3])
     assert "fsm_relax_motor_1_raw" not in ctrl._state
     ctrl._receive(a[3:] + b)
@@ -313,26 +248,26 @@ def test_fragment_coalesced_noise_and_checksum_validation():
         ctrl._receive(bytes(corrupted))
     assert ctrl._state == before
     ctrl._receive(b"\xdd" * 2000)
-    assert len(ctrl._buffer) < 10
+    assert len(ctrl._parser.buffer) < 10
 
 
 @pytest.mark.parametrize("bad", (None, "chairish", 1))
 def test_profile_validation(bad):
     with pytest.raises(ValueError):
-        FsmRelaxProfile(bad)
+        FsmRelaxSetup(bad)
     with pytest.raises(ValueError):
-        FsmRelaxProfile(reversals=(False, False, False, 0))
+        FsmRelaxSetup(reversals=(False, False, False, 0))
 
 
 @pytest.mark.parametrize("reversals", list(itertools.product((False, True), repeat=4)))
 async def test_no_response_fresh_counter_and_reversal_frames(reversals):
-    ctrl = make_controller(FsmRelaxProfile("bed", reversals=reversals))
+    ctrl = make_controller(FsmRelaxSetup("bed", reversals=reversals))
     ctrl._counter = 255
     await ctrl.write_command(bytes((0x12,)) + bytes(reversals), repeat_count=2, repeat_delay_ms=0)
     calls = ctrl.client.write_gatt_char.call_args_list
     assert all(call.kwargs == {"response": False} for call in calls)
-    assert calls[0].args[1] == build_packet(bytes((0x12,)) + bytes(reversals), 255)
-    assert calls[1].args[1] == build_packet(bytes((0x12,)) + bytes(reversals), 0)
+    assert calls[0].args[1] == codec.frame(bytes((0x12,)) + bytes(reversals), 255)
+    assert calls[1].args[1] == codec.frame(bytes((0x12,)) + bytes(reversals), 0)
 
 
 @pytest.mark.parametrize("mutation", ("missing_service", "wrong_char", "duplicate"))
@@ -365,7 +300,7 @@ async def test_controls_ready_before_optional_info_and_query_bodies():
     ctrl = make_controller(cap=None)
 
     def respond(_role, packet, **_kwargs):
-        body = decode_packet(packet)
+        body = codec.decode(packet)
         if body[0] == 2:
             feed(ctrl, bytes.fromhex("0202040008"))
 
@@ -385,7 +320,7 @@ async def test_optional_wait_outside_command_lock_timeout_preserves_caps(failure
         await ctrl._optional_information()
     assert ctrl.memory_slot_count == 8
     assert "remain usable" in ctrl._state["fsm_relax_optional_information"]
-    task = asyncio.create_task(ctrl._query(0, optional=True))
+    task = asyncio.create_task(ctrl._query(codec.query(0), optional=True))
     await asyncio.sleep(0.01)
     assert not ctrl._coordinator._command_lock.locked()
     assert bodies(ctrl)[0] == bytes.fromhex("0000000003")
@@ -400,22 +335,22 @@ async def test_old_generation_and_disconnected_callbacks_ignored():
     callback = ctrl.client.start_notify.call_args.args[1]
     await ctrl.stop_notify()
     await ctrl.start_notify()
-    callback(None, bytearray(build_packet(bytes.fromhex("10ffffffff"), 1)))
+    callback(None, bytearray(codec.frame(bytes.fromhex("10ffffffff"), 1)))
     assert "fsm_relax_motor_1_raw" not in ctrl._state
     callback = ctrl.client.start_notify.call_args.args[1]
     ctrl.client.is_connected = False
-    callback(None, bytearray(build_packet(bytes.fromhex("10ffffffff"), 1)))
+    callback(None, bytearray(codec.frame(bytes.fromhex("10ffffffff"), 1)))
     assert "fsm_relax_motor_1_raw" not in ctrl._state
 
 
 async def test_hold_timing_and_five_release_attempts_despite_failure():
-    ctrl = make_controller(FsmRelaxProfile("bed"))
+    ctrl = make_controller(FsmRelaxSetup("bed"))
     loop = asyncio.get_running_loop()
     started = loop.time()
     times = []
 
     def write(_role, packet, **_kwargs):
-        times.append((loop.time() - started, decode_packet(packet)[0]))
+        times.append((loop.time() - started, codec.decode(packet)[0]))
         if len(times) == 3:
             raise BleakError("first cleanup failure")
 
@@ -428,7 +363,7 @@ async def test_hold_timing_and_five_release_attempts_despite_failure():
 
 
 async def test_cancel_before_first_write_repeated_cancellation_cleanup():
-    ctrl = make_controller(FsmRelaxProfile("bed"))
+    ctrl = make_controller(FsmRelaxSetup("bed"))
     ctrl._coordinator._cancel_command.set()
     task = asyncio.create_task(ctrl.hold_control("command_12", 120))
     await asyncio.sleep(0.075)
@@ -465,7 +400,7 @@ async def test_sequential_new_query_atomic_signed_save(key):
     ctrl._live_capabilities = True
 
     def respond(_role, packet, **_kwargs):
-        opcode = decode_packet(packet)[0]
+        opcode = codec.decode(packet)[0]
         feed(ctrl, bytes((opcode,)) + (-opcode).to_bytes(4, "big", signed=True))
 
     ctrl.client.write_gatt_char.side_effect = respond
@@ -574,7 +509,7 @@ async def test_memory_invalid_slots_and_missing_motor_zero(slot):
 
 
 async def test_calibration_confirmation_single_attempt_and_current_callback():
-    ctrl = make_controller(FsmRelaxProfile("bed", reversals=(True, False, True, False)))
+    ctrl = make_controller(FsmRelaxSetup("bed", reversals=(True, False, True, False)))
     ctrl._live_capabilities = True
     with pytest.raises(ValueError):
         await ctrl.calibrate(confirmed=False)
@@ -584,14 +519,14 @@ async def test_calibration_confirmation_single_attempt_and_current_callback():
         await ctrl.calibrate(confirmed=True)
     assert bodies(ctrl) == [bytes.fromhex("0501000100")]
     spec = ctrl.controller_button_specs[0]
-    other = make_controller(FsmRelaxProfile("bed"))
+    other = make_controller(FsmRelaxSetup("bed"))
     other.hold_control = AsyncMock()
     await spec.press_fn(other)
     other.hold_control.assert_awaited_once_with("command_12", 120)
 
 
 def test_negative_capabilities_no_unproven_routes():
-    ctrl = make_controller(FsmRelaxProfile("bed", True, True))
+    ctrl = make_controller(FsmRelaxSetup("bed", True, True))
     for key in (
         "supports_preset_flat",
         "supports_position_feedback",
@@ -648,7 +583,7 @@ async def test_scoped_cancel_event_overrides_legacy_global_event():
 async def test_every_reachable_held_opcode_execution_and_release(opcode):
     layout, key, flags, _expected = next(row for row in SOURCE_TABLES if opcode in row[3])
     ctrl = make_controller(
-        FsmRelaxProfile(layout, bool(flags & 1), bool(flags & 2), (True, False, True, False)),
+        FsmRelaxSetup(layout, bool(flags & 1), bool(flags & 2), (True, False, True, False)),
         cap=bytes((2, key, 0, 0, 8)),
     )
     await ctrl.hold_control(f"command_{opcode:02x}", 60)
@@ -661,7 +596,7 @@ async def test_complete_optional_hardware_software_stage_order():
     await ctrl.start_notify()
 
     def reply(_role, packet, **_kwargs):
-        opcode = decode_packet(packet)[0]
+        opcode = codec.decode(packet)[0]
         feed(ctrl, bytes((opcode, 1, 2, 3, 4)))
 
     ctrl.client.write_gatt_char.side_effect = reply
@@ -676,7 +611,7 @@ async def test_discovery_capability_change_requests_entity_reconciliation():
     ctrl._coordinator.entry.data = {"capabilities": {"fsm_relax": "0202000004"}}
 
     def reply(_role, packet, **_kwargs):
-        if decode_packet(packet)[0] == 2:
+        if codec.decode(packet)[0] == 2:
             feed(ctrl, bytes.fromhex("0208000008"))
 
     ctrl.client.write_gatt_char.side_effect = reply
@@ -696,7 +631,7 @@ async def test_first_capability_body_reconciles_loaded_offline_entities(loaded):
     entry.state = ConfigEntryState.LOADED if loaded else ConfigEntryState.SETUP_IN_PROGRESS
 
     def reply(_role, packet, **_kwargs):
-        if decode_packet(packet)[0] == 2:
+        if codec.decode(packet)[0] == 2:
             feed(ctrl, bytes.fromhex("0208000008"))
 
     ctrl.client.write_gatt_char.side_effect = reply

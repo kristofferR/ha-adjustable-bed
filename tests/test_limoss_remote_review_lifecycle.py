@@ -13,14 +13,13 @@ from homeassistant.helpers.entity_component import EntityComponent
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_update_listener, _build_paired_children, const
-from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.button import (
     AdjustableBedButton,
     ControllerActionButton,
     _button_entities_for,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
@@ -51,7 +50,7 @@ async def live_controller(coordinator):
     client = coordinator.client
 
     def startup(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         assert controller.capabilities is not None
         caps = controller.capabilities
         payload = {
@@ -61,7 +60,7 @@ async def live_controller(coordinator):
             )),
             0: bytes.fromhex("0001020304"), 1: bytes.fromhex("0101020304"),
         }[opcode]
-        client.start_notify.call_args.args[1](char, bytearray(format_command(payload, 0)))
+        client.start_notify.call_args.args[1](char, bytearray(codec.frame(payload, 0)))
 
     client.write_gatt_char.side_effect = startup
     await coordinator.async_start_notify()
@@ -183,7 +182,7 @@ async def test_paired_feature_flags_persist_only_after_all_off_bursts_succeed(ha
     def write_for(side):
         def write(char, packet, **kwargs):
             assert pair.entry.data == before  # Even after the first child finishes.
-            inner = LimossController._tea_decrypt(packet[1:9])
+            inner = codec.decrypt(packet[1:9])
             packets[side].append(inner[1:6])
             if side == const.SIDE_RIGHT and len(packets[side]) == 3 and failure:
                 raise failure("Second OFF burst interrupted")
@@ -307,9 +306,9 @@ async def test_changed_capability_reply_refreshes_offline_layout_and_defers_relo
     )
 
     def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         response = {2: "020c140004", 0: "0001020304", 1: "0101020304"}[opcode]
-        controller._notification(char, bytearray(format_command(bytes.fromhex(response), 0)))
+        controller._notification(char, bytearray(codec.frame(bytes.fromhex(response), 0)))
 
     coordinator.client.write_gatt_char.side_effect = write
     with patch.object(
@@ -338,7 +337,7 @@ async def test_changed_capability_reply_refreshes_offline_layout_and_defers_relo
             == 4
         )
         reload.reset_mock()
-        controller._notification(role, bytearray(format_command(bytes.fromhex("020c140004"), 0)))
+        controller._notification(role, bytearray(codec.frame(bytes.fromhex("020c140004"), 0)))
         coordinator._schedule_pending_capability_reload()
         await hass.async_block_till_done()
         reload.assert_not_awaited()
@@ -369,7 +368,7 @@ async def test_public_paired_feature_task_cancel_preserves_flags_and_required_st
     assert all(ctrl.underbed_light and ctrl.massage for ctrl in controllers.values())
     for child in children.values():
         frames = [
-            LimossController._tea_decrypt(call.args[1][1:9])[1:6]
+            codec.decrypt(call.args[1][1:9])[1:6]
             for call in child.client.write_gatt_char.await_args_list
         ]
         assert frames[-5:] == [bytes.fromhex("ff00000000")] * 5
@@ -387,10 +386,10 @@ async def test_partial_refresh_capability_change_persists_and_reconciles_after_f
     controller = await live_controller(coordinator)
 
     def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         if opcode == 0:
             raise ConnectionError("Hardware information read failed")
-        controller._notification(char, bytearray(format_command(bytes.fromhex("020c140004"), 0)))
+        controller._notification(char, bytearray(codec.frame(bytes.fromhex("020c140004"), 0)))
 
     coordinator.client.write_gatt_char.side_effect = write
     refresh = next(

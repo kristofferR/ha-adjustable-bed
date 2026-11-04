@@ -10,9 +10,8 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.limoss_remote_state import (
     LimossRemoteMemory,
@@ -50,20 +49,20 @@ async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(h
         child.save_app_state()
 
     def left_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("left", opcode))
         if opcode == 0x11:
             moved.set()
 
     async def right_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("right", opcode))
         if opcode == 2:
             entered.set()
             await release.wait()
         if opcode in {0, 1, 2}:
             reply = {2: "0208120007", 0: "0001020304", 1: "0101020304"}[opcode]
-            right_client.start_notify.call_args.args[1](role, bytearray(format_command(bytes.fromhex(reply), 0)))
+            right_client.start_notify.call_args.args[1](role, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
     async def disconnect():
         right_client.is_connected = False
@@ -139,13 +138,13 @@ async def pending_controller(hass):
     requests = []
 
     async def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         requests.append(opcode)
         if opcode == 2:
             entered.set()
             await release.wait()
         payload = {2: "0208120008", 0: "0001020304", 1: "0101020304"}[opcode]
-        client.start_notify.call_args.args[1](char, bytearray(format_command(bytes.fromhex(payload), 0)))
+        client.start_notify.call_args.args[1](char, bytearray(codec.frame(bytes.fromhex(payload), 0)))
 
     client.write_gatt_char.side_effect = write
     return coordinator, controller, client, entered, release, requests
@@ -232,10 +231,10 @@ async def test_retired_startup_cannot_complete_or_unsubscribe_replacement_genera
         await controller.stop_notify()
 
         def replacement_write(char, packet, **kwargs):
-            opcode = LimossController._tea_decrypt(packet[1:9])[1]
+            opcode = codec.decrypt(packet[1:9])[1]
             requests.append(opcode)
             payload = {2: "0208120007", 0: "0001020304", 1: "0101020304"}[opcode]
-            client.start_notify.call_args.args[1](char, bytearray(format_command(bytes.fromhex(payload), 0)))
+            client.start_notify.call_args.args[1](char, bytearray(codec.frame(bytes.fromhex(payload), 0)))
 
         client.write_gatt_char.side_effect = replacement_write
         # The real ATT lane remains occupied by the retired generation until it

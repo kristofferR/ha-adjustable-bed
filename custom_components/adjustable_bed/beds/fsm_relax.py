@@ -1,4 +1,4 @@
-"""FSM Relax 1.9 app profile. Static artifact verified; hardware unverified."""
+"""FSM Relax 1.9 app profile over the Limoss DD codec. Static artifact verified; hardware unverified."""
 
 from __future__ import annotations
 
@@ -10,12 +10,15 @@ from typing import TYPE_CHECKING, Any, Literal
 from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
 
+from ..codec import limoss as codec
+from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
 from ..fsm_relax_state import (
     FsmRelaxSession,
     validate_capability_body,
     validate_names,
     validate_positions,
 )
+from ..profiles.limoss import FSM_LABELS, FSM_RELAX, Burst, fsm_relax_layout
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -23,69 +26,15 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .limoss import LimossController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..coordinator import AdjustableBedCoordinator
 
-_SERVICE = "0000ffe0-0000-1000-8000-00805f9b34fb"
-_CHAR = "0000ffe1-0000-1000-8000-00805f9b34fb"
-_TICK = 0.06
-# Exact source order, including the asymmetric light-only six-key table.
-_TABLES = {
-    2: (
-        (0x12, 0x13),
-        (0x12, 0x13, 0x70),
-        (0x12, 0x13, 0x60, 0x61, 0x62, 0x63),
-        (0x12, 0x13, 0x64, 0x65, 0x70),
-    ),
-    4: (
-        (0x12, 0x13, 0x22, 0x23, 0x50, 0x51),
-        (0x12, 0x13, 0x22, 0x23, 0x70, 0x51),
-        (0x12, 0x13, 0x22, 0x23, 0x60, 0x61, 0x62, 0x63),
-        (0x12, 0x13, 0x22, 0x23, 0x70, 0x51, 0x64, 0x65),
-    ),
-    6: (
-        (0x12, 0x13, 0x22, 0x23, 0x32, 0x33, 0x54, 0x55),
-        (0x12, 0x13, 0x22, 0x23, 0x32, 0x33, 0x70, 0x54),
-        (0x12, 0x13, 0x60, 0x22, 0x23, 0x61, 0x32, 0x33, 0x62, 0x54, 0x55, 0x63),
-        (0x12, 0x13, 0x64, 0x22, 0x23, 0x65, 0x32, 0x33, 0x70, 0x54, 0x55),
-    ),
-    8: (
-        (0x12, 0x13, 0x22, 0x23, 0x50, 0x51, 0x52, 0x53),
-        (0x12, 0x13, 0x70, 0x22, 0x23, 0x50, 0x51, 0x52, 0x53),
-        (0x12, 0x13, 0x60, 0x22, 0x23, 0x61, 0x50, 0x51, 0x62, 0x52, 0x53, 0x63),
-        (0x12, 0x13, 0x64, 0x22, 0x23, 0x65, 0x50, 0x51, 0x70, 0x52, 0x53),
-    ),
-}
-_LABELS = {
-    0x12: "Back up",
-    0x13: "Back down",
-    0x22: "Legs up",
-    0x23: "Legs down",
-    0x32: "Tilt up",
-    0x33: "Tilt down",
-    0x50: "Combined up",
-    0x51: "Combined down",
-    0x52: "Elevation up",
-    0x53: "Elevation down",
-    0x54: "All regions up",
-    0x55: "All regions down",
-    0x60: "Back massage plus",
-    0x61: "Back massage minus",
-    0x62: "Legs massage plus",
-    0x63: "Legs massage minus",
-    0x64: "Both massage plus",
-    0x65: "Both massage minus",
-    0x70: "Underbed light control",
-}
-
-
 @dataclass(frozen=True, slots=True)
-class FsmRelaxProfile:
-    """Explicit immutable app layout, independent of shared advertisements."""
+class FsmRelaxSetup:
+    """The entry's explicit app layout, independent of shared advertisements."""
 
     layout: Literal["chair", "bed"] = "chair"
     light_enabled: bool = False
@@ -107,38 +56,6 @@ class FsmRelaxProfile:
             raise ValueError("Exactly four boolean reversals are required")
 
 
-def build_packet(body: bytes, counter: int) -> bytes:
-    """Pure source framing; the shared cipher has exact 43-vector proof."""
-    if len(body) != 5:
-        raise ValueError("FSM Relax command body must be five bytes")
-    inner = b"\xaa" + body + bytes((counter & 255,))
-    inner += bytes((sum(inner) & 255,))
-    outer = b"\xdd" + LimossController._tea_encrypt(inner)
-    return outer + bytes((sum(outer) & 255,))
-
-
-def decode_packet(packet: bytes) -> bytes | None:
-    """Reject malformed input before publishing raw or capability state."""
-    if len(packet) != 10 or packet[0] != 0xDD or sum(packet[:9]) & 255 != packet[9]:
-        return None
-    inner = LimossController._tea_decrypt(packet[1:9])
-    if inner[0] != 0xAA or sum(inner[:7]) & 255 != inner[7]:
-        return None
-    return inner[1:6]
-
-
-def signed_version(data: bytes) -> str:
-    """Preserve signed Java byte concatenation, including negative fields."""
-    values = [v if v < 128 else v - 256 for v in data]
-    return (
-        (str(values[0]) if values[0] >= 0 else "")
-        + str(values[1])
-        + "."
-        + (str(values[2]) if values[2] >= 0 else "")
-        + (str(values[3]) if values[3] >= 0 else "")
-    )
-
-
 def _action(opcode: int) -> Callable[[BedController], Coroutine[Any, Any, None]]:
     async def invoke(controller: BedController) -> None:
         if not isinstance(controller, FsmRelaxController):
@@ -155,17 +72,18 @@ class FsmRelaxController(BedController):
         self,
         coordinator: AdjustableBedCoordinator,
         *,
-        profile: FsmRelaxProfile | None = None,
+        setup: FsmRelaxSetup | None = None,
         session: FsmRelaxSession,
         names: tuple[str, ...] | None = None,
     ) -> None:
         super().__init__(coordinator)
-        self.profile = profile or FsmRelaxProfile()
+        self.profile = FSM_RELAX
+        self.setup = setup or FsmRelaxSetup()
         self.session = session
         self.names = names or validate_names([""] * 8)
         self._write_lock = asyncio.Lock()
         self._memory_lock = session.memory_lock
-        self._buffer = bytearray()
+        self._parser = codec.StreamParser(verify=True)
         self._generation = 0
         self._subscribed = False
         self._quarantined = False
@@ -214,7 +132,12 @@ class FsmRelaxController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        return _CHAR
+        return LIMOSS_CHAR_UUID
+
+    @property
+    def _tick_ms(self) -> int:
+        assert self.profile.tick_ms is not None
+        return self.profile.tick_ms
 
     @property
     def supports_preset_flat(self) -> bool:
@@ -283,10 +206,13 @@ class FsmRelaxController(BedController):
     def action_opcodes(self) -> tuple[int, ...]:
         if self._known_capabilities is None:
             return ()
-        if self.profile.layout == "chair":
-            return (0x50, 0x51) if self.key_count == 2 else (0x22, 0x23, 0x12, 0x13, 0x50, 0x51)
-        flags = int(self.profile.light_enabled) + 2 * int(self.profile.massage_enabled)
-        return _TABLES[self.key_count][flags]
+        layout = fsm_relax_layout(
+            self.setup.layout == "chair",
+            self.key_count,
+            self.setup.light_enabled,
+            self.setup.massage_enabled,
+        )
+        return tuple(op for op in self.profile.layouts[layout] if op is not None)
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
@@ -295,11 +221,11 @@ class FsmRelaxController(BedController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         def label(op: int) -> str:
-            if self.profile.layout == "chair" and op in (0x12, 0x13):
+            if self.setup.layout == "chair" and op in (0x12, 0x13):
                 return "Footrest up" if op == 0x12 else "Footrest down"
-            if self.profile.layout == "chair" and op in (0x22, 0x23):
+            if self.setup.layout == "chair" and op in (0x22, 0x23):
                 return "Chair back up" if op == 0x22 else "Chair back down"
-            return _LABELS[op]
+            return FSM_LABELS[op]
 
         return tuple(
             ControllerButtonSpec(f"fsm_relax_{op:02x}", label(op), _action(op))
@@ -347,8 +273,8 @@ class FsmRelaxController(BedController):
             **super().protocol_diagnostics,
             **self._state,
             **persisted,
-            "layout": self.profile.layout,
-            "reversals": list(self.profile.reversals),
+            "layout": self.setup.layout,
+            "reversals": list(self.setup.reversals),
             "memory_quarantined": self._quarantined,
             "reply_freshness": "No echoed request ID; delayed same-opcode replies may be indistinguishable",
             "hardware_verified": False,
@@ -367,9 +293,9 @@ class FsmRelaxController(BedController):
         roles = [
             char
             for service in client.services or ()
-            if service.uuid.lower() == _SERVICE
+            if service.uuid.lower() == LIMOSS_SERVICE_UUID
             for char in service.characteristics
-            if char.uuid.lower() == _CHAR
+            if char.uuid.lower() == LIMOSS_CHAR_UUID
         ]
         if len(roles) != 1:
             raise ValueError("FSM Relax requires exactly one FFE0/FFE1 role")
@@ -379,9 +305,11 @@ class FsmRelaxController(BedController):
         self,
         command: bytes,
         repeat_count: int = 1,
-        repeat_delay_ms: int = 60,
+        repeat_delay_ms: int | None = None,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
+        if repeat_delay_ms is None:
+            repeat_delay_ms = self._tick_ms
         if len(command) != 5:
             raise ValueError("Command body must be five bytes")
         event = cancel_event if cancel_event is not None else self._coordinator.cancel_command
@@ -395,7 +323,7 @@ class FsmRelaxController(BedController):
                 return
             async with self._write_lock:
                 role = self._role()
-                packet = build_packet(command, self._counter)
+                packet = codec.frame(command, self._counter)
                 self._counter = (self._counter + 1) & 255
                 client = self.client
                 if client is None:
@@ -409,7 +337,7 @@ class FsmRelaxController(BedController):
         role = self._role()
         self._generation += 1
         generation = self._generation
-        self._buffer.clear()
+        self._parser.clear()
         client = self.client
         if client is None:
             raise ConnectionError("FSM Relax disconnected")
@@ -439,7 +367,7 @@ class FsmRelaxController(BedController):
         self._generation += 1
         self._subscribed = False
         self._live_capabilities = False
-        self._buffer.clear()
+        self._parser.clear()
         for future in self._pending.values():
             if not future.done():
                 future.set_exception(ConnectionError("FSM Relax disconnected"))
@@ -458,26 +386,15 @@ class FsmRelaxController(BedController):
             self._optional_task = None
         client = self.client
         if client is not None and client.is_connected:
-            await client.stop_notify(_CHAR)
+            await client.stop_notify(LIMOSS_CHAR_UUID)
 
     def _receive(self, data: bytes) -> None:
         # Bound memory before appending arbitrary remote data.
         if len(data) > 1024:
-            self._buffer.clear()
+            self._parser.clear()
             return
-        self.forward_raw_notification(_CHAR, data)
-        self._buffer.extend(data)
-        while self._buffer:
-            if self._buffer[0] != 0xDD:
-                del self._buffer[0]
-                continue
-            if len(self._buffer) < 10:
-                return
-            body = decode_packet(bytes(self._buffer[:10]))
-            if body is None:
-                del self._buffer[0]
-                continue
-            del self._buffer[:10]
+        self.forward_raw_notification(LIMOSS_CHAR_UUID, data)
+        for body in self._parser.feed(data):
             self._accept_body(body)
             future = self._pending.get(body[0])
             if future is not None and not future.done():
@@ -485,7 +402,7 @@ class FsmRelaxController(BedController):
 
     def _accept_body(self, body: bytes) -> None:
         opcode, data = body[0], body[1:]
-        if opcode == 2:
+        if opcode == codec.QUERY_CAPABILITIES:
             self._capabilities = body
             self._live_capabilities = self._subscribed
             self._publish(
@@ -495,22 +412,22 @@ class FsmRelaxController(BedController):
                     "reported_memory_count": int.from_bytes(data[2:], "big"),
                 }
             )
-        elif opcode in (0, 1):
-            self._publish(
-                {"hardware_version" if opcode == 0 else "software_version": signed_version(data)}
-            )
-        elif opcode in (0x10, 0x20, 0x30, 0x40):
+        elif opcode in (codec.QUERY_HARDWARE, codec.QUERY_SOFTWARE):
+            field = "hardware_version" if opcode == codec.QUERY_HARDWARE else "software_version"
+            self._publish({field: codec.version(data)})
+        elif opcode in codec.POSITION_OPCODES:
             self._publish({f"motor_{opcode // 16}_raw": int.from_bytes(data, "big", signed=True)})
-        elif opcode == 4:
+        elif opcode == codec.ACKNOWLEDGE:
             self._publish({"acknowledgement": "Observed, not correlated to physical arrival"})
-        elif opcode == 5:
+        elif opcode == codec.CALIBRATE:
             self._publish({"calibration_observed": True})
-        elif opcode == 6:
+        elif opcode == codec.SERIAL:
             self.session.serial = int.from_bytes(data, "big", signed=True)
             self._coordinator.save_app_state(self)
             self._publish({"serial": self.session.serial})
 
-    async def _query(self, opcode: int, *, retries: int = 4, optional: bool = False) -> bytes:
+    async def _query(self, request: bytes, *, retries: int = 4, optional: bool = False) -> bytes:
+        opcode = request[0]
         if opcode in self._pending:
             raise RuntimeError("Response stage already active")
         future: asyncio.Future[bytes] = asyncio.get_running_loop().create_future()
@@ -525,13 +442,9 @@ class FsmRelaxController(BedController):
                     async with self._coordinator._command_lock:
                         if not self._subscribed or self._coordinator.controller is not self:
                             raise ConnectionError("Optional query session ended")
-                        await self.write_command(
-                            bytes((opcode, 0, 0, 0, 3 if opcode in (0, 1, 2) else 0))
-                        )
+                        await self.write_command(request)
                 else:
-                    await self.write_command(
-                        bytes((opcode, 0, 0, 0, 3 if opcode in (0, 1, 2) else 0))
-                    )
+                    await self.write_command(request)
                 done, _pending = await asyncio.wait(
                     (future, cancelled),
                     timeout=max(0, started + index + 1 - loop.time()),
@@ -555,7 +468,7 @@ class FsmRelaxController(BedController):
         await self.start_notify()
         previous = self._stored_capabilities
         async with asyncio.timeout(4):
-            body = await self._query(2)
+            body = await self._query(codec.query(codec.QUERY_CAPABILITIES))
         if len(body) != 5 or body[0] != 2:
             raise ValueError("Invalid capability record")
         self._coordinator.remember_fsm_relax_capabilities(body)
@@ -577,26 +490,30 @@ class FsmRelaxController(BedController):
 
     async def _optional_information(self) -> None:
         try:
-            for opcode in (0, 1):
+            for opcode in (codec.QUERY_HARDWARE, codec.QUERY_SOFTWARE):
                 await asyncio.sleep(0.12)
-                await self._query(opcode, optional=True)
+                await self._query(codec.query(opcode), optional=True)
             self._publish({"optional_information": "Observed"})
         except TimeoutError, ConnectionError, ValueError, OSError, BleakError:
             self._publish({"optional_information": "Unavailable; capabilities remain usable"})
 
     def _default_hold_ms(self) -> int:
-        return max(1, self._coordinator.motor_pulse_count) * 60
+        return max(1, self._coordinator.motor_pulse_count) * self._tick_ms
 
-    async def _cleanup(self, opcode: int, params: bytes) -> None:
+    async def _cleanup(self, burst: Burst) -> None:
+        body = codec.release(burst.opcode, self.setup.reversals)
+
         async def release() -> None:
             loop = asyncio.get_running_loop()
             started = loop.time()
             event = asyncio.Event()
             failure: Exception | None = None
-            for index in range(5):
-                await asyncio.sleep(max(0, started + (index + 1) * _TICK - loop.time()))
+            for index in range(burst.frames):
+                await asyncio.sleep(
+                    max(0, started + (index + 1) * self._tick_ms / 1000 - loop.time())
+                )
                 try:
-                    await self.write_command(bytes((opcode,)) + params, cancel_event=event)
+                    await self.write_command(body, cancel_event=event)
                 except Exception as error:
                     failure = failure or error
             if failure is not None:
@@ -625,18 +542,19 @@ class FsmRelaxController(BedController):
         loop = asyncio.get_running_loop()
         start = loop.time()
         index = 1
+        tick = self._tick_ms
         try:
-            while index * 60 <= duration_ms:
-                await asyncio.sleep(max(0, start + index * _TICK - loop.time()))
+            while index * tick <= duration_ms:
+                await asyncio.sleep(max(0, start + index * tick / 1000 - loop.time()))
                 if event.is_set():
                     break
-                await self.write_command(bytes((opcode,)) + bytes(self.profile.reversals))
+                await self.write_command(codec.flagged(opcode, self.setup.reversals))
                 index += 1
         finally:
-            await self._cleanup(0xFF, bytes(self.profile.reversals))
+            await self._cleanup(self.profile.stop)
 
     async def stop_all(self) -> None:
-        await self._cleanup(0xFF, bytes(self.profile.reversals))
+        await self._cleanup(self.profile.stop)
 
     def _validate_memory(self, slot: int) -> None:
         if type(slot) is not int or not 1 <= slot <= self.memory_slot_count:
@@ -651,7 +569,7 @@ class FsmRelaxController(BedController):
     def _quarantine(self) -> None:
         self._quarantined = True
         self._quarantine_client = self.client
-        self._buffer.clear()
+        self._parser.clear()
         self._publish({"memory_quarantined": True})
 
     def validate_memory_recall(self, memory_num: int) -> None:
@@ -677,7 +595,7 @@ class FsmRelaxController(BedController):
             try:
                 positions = {}
                 for index in range(self.key_count // 2):
-                    body = await self._query((index + 1) * 16, retries=1)
+                    body = await self._query(codec.ask_position(index + 1), retries=1)
                     positions[index] = int.from_bytes(body[1:], "big", signed=True)
                 await self._save_slot(memory_num, positions)
             except BaseException:
@@ -712,14 +630,13 @@ class FsmRelaxController(BedController):
                 for index in range(self.key_count // 2):
                     if index not in positions:
                         continue
-                    await asyncio.sleep(max(0, start + tick * _TICK - loop.time()))
+                    await asyncio.sleep(
+                        max(0, start + tick * self.profile.recall_ms / 1000 - loop.time())
+                    )
                     if event.is_set():
                         self._quarantine()
                         break
-                    await self.write_command(
-                        bytes(((index + 1) * 16 + 1,))
-                        + positions[index].to_bytes(4, "big", signed=True)
-                    )
+                    await self.write_command(codec.set_position(index + 1, positions[index]))
                     tick += 1
                 if not event.is_set():
                     try:
@@ -733,8 +650,9 @@ class FsmRelaxController(BedController):
                 self._quarantine()
                 raise
             finally:
+                assert self.profile.recall_release is not None
                 try:
-                    await self._cleanup(3, bytes(4))
+                    await self._cleanup(self.profile.recall_release)
                 except BaseException:
                     self._quarantine()
                     raise
@@ -748,7 +666,7 @@ class FsmRelaxController(BedController):
         if not self._live_capabilities:
             raise ConnectionError("Fresh capability subscription required")
         # One attempt only. A write failure does not prove hardware did nothing.
-        await self.write_command(b"\x05" + bytes(self.profile.reversals))
+        await self.write_command(codec.flagged(codec.CALIBRATE, self.setup.reversals))
 
     async def move_head_up(self) -> None:
         raise NotImplementedError("Use explicit app controls")

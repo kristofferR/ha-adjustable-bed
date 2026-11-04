@@ -10,7 +10,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.limoss import LimossCommands, LimossController
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LIMOSS,
     CONF_BED_TYPE,
@@ -54,21 +54,6 @@ def mock_limoss_config_entry(
     return entry
 
 
-class TestLimossPacketFormat:
-    """Test Limoss packet building/parsing."""
-
-    def test_build_and_decode_packet_roundtrip(self) -> None:
-        """5-byte payload should round-trip through encrypted 10-byte packet."""
-        controller = LimossController(MagicMock())
-
-        packet = controller._build_packet(0x12, 0x01, 0x02, 0x03, 0x04)
-        decoded = controller._decode_packet(packet)
-
-        assert len(packet) == 10
-        assert packet[0] == 0xDD
-        assert decoded == (0x12, bytes([0x01, 0x02, 0x03, 0x04]))
-
-
 class TestLimossController:
     """Test Limoss controller behavior."""
 
@@ -84,14 +69,14 @@ class TestLimossController:
         await coordinator.async_connect()
 
         controller = coordinator.controller
-        await controller.write_command(bytes([LimossCommands.MOTOR_1_UP, 0, 0, 0, 0]))
+        await controller.write_command(codec.body(0x12))
 
         call = mock_bleak_client.write_gatt_char.call_args_list[-1]
         assert call.args[0] == LIMOSS_CHAR_UUID
         packet = call.args[1]
         assert len(packet) == 10
         assert packet[0] == 0xDD
-        assert controller._decode_packet(packet) == (LimossCommands.MOTOR_1_UP, b"\x00\x00\x00\x00")
+        assert codec.decode(packet) == bytes.fromhex("1200000000")
 
     async def test_move_head_up_sends_stop(
         self,
@@ -111,8 +96,8 @@ class TestLimossController:
         first_packet = calls[0].args[1]
         last_packet = calls[-1].args[1]
 
-        assert controller._decode_packet(first_packet)[0] == LimossCommands.MOTOR_1_UP
-        assert controller._decode_packet(last_packet)[0] == LimossCommands.STOP_ALL
+        assert codec.decode(first_packet)[0] == 0x12
+        assert codec.decode(last_packet) == bytes.fromhex("ff00000000")
 
     async def test_position_notification_parsing(
         self,
@@ -129,14 +114,7 @@ class TestLimossController:
         controller._notify_callback = callback
 
         raw_position = 8000
-        pos_bytes = raw_position.to_bytes(4, byteorder="big")
-        packet = controller._build_packet(
-            LimossCommands.ASK_MOTOR_1_POS,
-            pos_bytes[0],
-            pos_bytes[1],
-            pos_bytes[2],
-            pos_bytes[3],
-        )
+        packet = codec.frame(b"\x10" + raw_position.to_bytes(4, byteorder="big"), 0)
 
         controller._handle_notification(MagicMock(), bytearray(packet))
 
@@ -167,7 +145,7 @@ class TestLimossController:
         await controller.move_head_up()
 
         first_packet = mock_bleak_client.write_gatt_char.call_args_list[0].args[1]
-        assert controller._decode_packet(first_packet)[0] == LimossCommands.MOTOR_3_UP
+        assert codec.decode(first_packet)[0] == 0x32
 
     async def test_move_feet_up_uses_motor_4_when_four_motors_reported(
         self,
@@ -186,7 +164,7 @@ class TestLimossController:
         await controller.move_feet_up()
 
         first_packet = mock_bleak_client.write_gatt_char.call_args_list[0].args[1]
-        assert controller._decode_packet(first_packet)[0] == LimossCommands.MOTOR_4_UP
+        assert codec.decode(first_packet)[0] == 0x42
 
     async def test_capability_response_updates_memory_slots(
         self,
@@ -200,7 +178,7 @@ class TestLimossController:
         controller = coordinator.controller
 
         # [cmd=0x02, button_count=8, system_type=0x12 (2 motors), vibration=1, mem=5]
-        packet = controller._build_packet(LimossCommands.QUERY_CAPABILITIES, 8, 0x12, 1, 0x05)
+        packet = codec.frame(bytes((0x02, 8, 0x12, 1, 0x05)), 0)
         controller._handle_notification(MagicMock(), bytearray(packet))
 
         assert controller._reported_motor_count == 2
@@ -221,14 +199,12 @@ class TestLimossController:
         await controller.read_positions(motor_count=3)
 
         decoded_packets = [
-            controller._decode_packet(call.args[1])
+            codec.decode(call.args[1])
             for call in mock_bleak_client.write_gatt_char.call_args_list
         ]
         decoded_cmds = [packet[0] for packet in decoded_packets if packet is not None]
-        assert LimossCommands.ASK_MOTOR_1_POS in decoded_cmds
-        assert LimossCommands.ASK_MOTOR_2_POS in decoded_cmds
-        assert LimossCommands.ASK_MOTOR_3_POS in decoded_cmds
-        assert LimossCommands.ASK_MOTOR_4_POS not in decoded_cmds
+        assert {0x10, 0x20, 0x30} <= set(decoded_cmds)
+        assert 0x40 not in decoded_cmds
 
     async def test_raw_to_angle_shrinks_overestimated_max_raw(
         self,

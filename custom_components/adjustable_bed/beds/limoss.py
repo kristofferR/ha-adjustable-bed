@@ -1,15 +1,8 @@
-"""Limoss / Stawett bed controller implementation.
+"""Legacy Limoss / Stawett route over the Limoss DD codec.
 
-Protocol reverse-engineered from:
-- com.limoss.limossremote
-- com.stawett
-
-Protocol summary:
-- Service/characteristic: FFE0 / FFE1 (shared with other bed protocols)
-- Command payload: 5 bytes [cmd, p1, p2, p3, p4]
-- Transport packet: 10 bytes [0xDD, encrypted(8), checksum]
-- Encryption: TEA (16 rounds) over 8-byte inner packet
-- Position feedback: AskPos commands (0x10/0x20/0x30/0x40) return 32-bit values
+Reverse engineered from com.limoss.limossremote and com.stawett before their
+audits. The capability reply sets the motor and memory counts, motor positions
+come back as 32-bit raw values, and memories are kept locally as raw positions.
 """
 
 from __future__ import annotations
@@ -23,7 +16,9 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..codec import limoss as codec
 from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
+from ..profiles.limoss import LEGACY
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -31,12 +26,8 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-# TEA constants from Limoss/Stawett APKs (BleService.KEY / CmdFormater.e)
-_TEA_KEY: tuple[int, int, int, int] = (1431639188, 1949848917, 1431639188, 1949848917)
-_TEA_DELTA = 0x9E3779B9
-_TEA_ROUNDS = 16
-_U32_MASK = 0xFFFFFFFF
-
+_POSITION_QUERY_GAP = 0.03
+_CAPABILITY_TIMEOUT = 2.0
 _DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
     "back": 16000,
     "legs": 12000,
@@ -48,65 +39,18 @@ _MAX_ESTIMATE_SHRINK_STREAK = 6
 _MAX_ESTIMATE_SHRINK_DECAY = 0.9
 _MAX_ESTIMATE_MIN_SHRINK_SAMPLE = 500
 
-
-class LimossCommands:
-    """Limoss command constants."""
-
-    # Motor movement (hold-style commands)
-    MOTOR_1_UP = 0x12  # Head/Back up
-    MOTOR_1_DOWN = 0x13  # Head/Back down
-    MOTOR_2_UP = 0x22  # Legs/Feet up
-    MOTOR_2_DOWN = 0x23  # Legs/Feet down
-    MOTOR_3_UP = 0x32
-    MOTOR_3_DOWN = 0x33
-    MOTOR_4_UP = 0x42
-    MOTOR_4_DOWN = 0x43
-
-    # Stop
-    STOP_ALL = 0xFF
-
-    # Preset-like movement
-    PRESET_FLAT = 0x51  # Both motors down
-
-    # Query/capability commands
-    QUERY_CAPABILITIES = 0x02
-    ASK_MOTOR_1_POS = 0x10
-    ASK_MOTOR_2_POS = 0x20
-    ASK_MOTOR_3_POS = 0x30
-    ASK_MOTOR_4_POS = 0x40
-
-    # SetPos commands (for memory recall)
-    SET_MOTOR_1_POS = 0x11
-    SET_MOTOR_2_POS = 0x21
-    SET_MOTOR_3_POS = 0x31
-    SET_MOTOR_4_POS = 0x41
-
-    # Vibration zone commands
-    VIBRATION_1 = 0x60
-    VIBRATION_2 = 0x61
-    VIBRATION_3 = 0x62
-    VIBRATION_4 = 0x63
-    VIBRATION_5 = 0x64
-    VIBRATION_6 = 0x65
-
-    # Optional feature commands
-    LIGHT_TOGGLE = 0x70
-
-
-POSITION_MAP: dict[int, str] = {
-    LimossCommands.ASK_MOTOR_1_POS: "back",
-    LimossCommands.ASK_MOTOR_2_POS: "legs",
-    LimossCommands.ASK_MOTOR_3_POS: "head",
-    LimossCommands.ASK_MOTOR_4_POS: "feet",
-}
+# Motor index (1-4) of each named position.
+MOTORS: dict[str, int] = {"back": 1, "legs": 2, "head": 3, "feet": 4}
+POSITION_MAP: dict[int, str] = {index * 0x10: name for name, index in MOTORS.items()}
 
 
 class LimossController(BedController):
-    """Controller for Limoss / Stawett TEA-encrypted protocol."""
+    """Controller for the legacy Limoss / Stawett route."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the controller."""
         super().__init__(coordinator)
+        self.profile = LEGACY
         self._notify_callback: Callable[[str, float], None] | None = None
         self._write_with_response: bool = True
         self._counter: int = 0
@@ -118,9 +62,7 @@ class LimossController(BedController):
         self._vibration_count: int = 0
         # Position normalization state (raw 32-bit samples -> estimated angles).
         self._max_raw_estimate: dict[str, int] = _DEFAULT_MAX_RAW_ESTIMATE.copy()
-        self._low_sample_streak: dict[str, int] = dict.fromkeys(
-            _DEFAULT_MAX_RAW_ESTIMATE, 0
-        )
+        self._low_sample_streak: dict[str, int] = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -150,103 +92,11 @@ class LimossController(BedController):
             self._coordinator.address,
         )
 
-    @staticmethod
-    def _tea_encrypt(block: bytes) -> bytes:
-        """Encrypt an 8-byte block with TEA (16 rounds)."""
-        if len(block) != 8:
-            raise ValueError("TEA block must be exactly 8 bytes")
-
-        v0 = int.from_bytes(block[:4], byteorder="big")
-        v1 = int.from_bytes(block[4:], byteorder="big")
-        k0, k1, k2, k3 = _TEA_KEY
-        sum_value = 0
-
-        for _ in range(_TEA_ROUNDS):
-            sum_value = (sum_value + _TEA_DELTA) & _U32_MASK
-            v0 = (
-                v0 + (((v1 << 4) + k0) ^ (v1 + sum_value) ^ ((v1 >> 5) + k1))
-            ) & _U32_MASK
-            v1 = (
-                v1 + (((v0 << 4) + k2) ^ (v0 + sum_value) ^ ((v0 >> 5) + k3))
-            ) & _U32_MASK
-
-        return v0.to_bytes(4, byteorder="big") + v1.to_bytes(4, byteorder="big")
-
-    @staticmethod
-    def _tea_decrypt(block: bytes) -> bytes:
-        """Decrypt an 8-byte block with TEA (16 rounds)."""
-        if len(block) != 8:
-            raise ValueError("TEA block must be exactly 8 bytes")
-
-        v0 = int.from_bytes(block[:4], byteorder="big")
-        v1 = int.from_bytes(block[4:], byteorder="big")
-        k0, k1, k2, k3 = _TEA_KEY
-        sum_value = (_TEA_DELTA * _TEA_ROUNDS) & _U32_MASK
-
-        for _ in range(_TEA_ROUNDS):
-            v1 = (
-                v1 - (((v0 << 4) + k2) ^ (v0 + sum_value) ^ ((v0 >> 5) + k3))
-            ) & _U32_MASK
-            v0 = (
-                v0 - (((v1 << 4) + k0) ^ (v1 + sum_value) ^ ((v1 >> 5) + k1))
-            ) & _U32_MASK
-            sum_value = (sum_value - _TEA_DELTA) & _U32_MASK
-
-        return v0.to_bytes(4, byteorder="big") + v1.to_bytes(4, byteorder="big")
-
     def _next_counter(self) -> int:
         """Return the current sequence counter and increment it."""
         value = self._counter
         self._counter = (self._counter + 1) & 0xFF
         return value
-
-    def _build_packet(self, cmd: int, p1: int = 0, p2: int = 0, p3: int = 0, p4: int = 0) -> bytes:
-        """Build a full 10-byte encrypted Limoss packet."""
-        inner = bytearray(8)
-        inner[0] = 0xAA
-        inner[1] = cmd & 0xFF
-        inner[2] = p1 & 0xFF
-        inner[3] = p2 & 0xFF
-        inner[4] = p3 & 0xFF
-        inner[5] = p4 & 0xFF
-        inner[6] = self._next_counter()
-        inner[7] = sum(inner[0:7]) & 0xFF
-
-        encrypted = self._tea_encrypt(bytes(inner))
-
-        outer = bytearray(10)
-        outer[0] = 0xDD
-        outer[1:9] = encrypted
-        outer[9] = sum(outer[0:9]) & 0xFF
-        return bytes(outer)
-
-    def _decode_packet(self, packet: bytes) -> tuple[int, bytes] | None:
-        """Decode and validate a Limoss packet.
-
-        Returns:
-            Tuple of (command, params[4]) if valid, otherwise None.
-        """
-        if len(packet) < 10:
-            return None
-
-        frame = packet[:10]
-        if frame[0] != 0xDD:
-            return None
-
-        if (sum(frame[0:9]) & 0xFF) != frame[9]:
-            _LOGGER.debug("Invalid Limoss outer checksum: %s", frame.hex())
-            return None
-
-        inner = self._tea_decrypt(frame[1:9])
-        if inner[0] != 0xAA:
-            _LOGGER.debug("Invalid Limoss inner header after decrypt: %s", inner.hex())
-            return None
-
-        if (sum(inner[0:7]) & 0xFF) != inner[7]:
-            _LOGGER.debug("Invalid Limoss inner checksum: %s", inner.hex())
-            return None
-
-        return inner[1], bytes(inner[2:6])
 
     def _raw_to_angle(self, raw_value: int, motor: str) -> float:
         """Convert raw Limoss 32-bit position value to an estimated angle."""
@@ -316,25 +166,6 @@ class LimossController(BedController):
             return max(2, min(4, self._reported_motor_count))
         return max(2, min(4, self._coordinator.motor_count))
 
-    async def _send_command(
-        self,
-        cmd: int,
-        p1: int = 0,
-        p2: int = 0,
-        p3: int = 0,
-        p4: int = 0,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Send a Limoss command payload [cmd, p1, p2, p3, p4]."""
-        await self.write_command(
-            bytes([cmd & 0xFF, p1 & 0xFF, p2 & 0xFF, p3 & 0xFF, p4 & 0xFF]),
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-        )
-
     async def write_command(
         self,
         command: bytes,
@@ -344,18 +175,15 @@ class LimossController(BedController):
     ) -> None:
         """Write a command to the bed.
 
-        Accepts:
-        - 5-byte logical payload: [cmd, p1, p2, p3, p4]
-        - 10-byte pre-built encrypted packet starting with 0xDD
+        Accepts a five-byte body, framed with the next counter value, or a
+        prebuilt ten-byte frame. Repeats resend the same frame.
         """
         if len(command) == 5:
-            packet = self._build_packet(command[0], command[1], command[2], command[3], command[4])
+            packet = codec.frame(command, self._next_counter())
         elif len(command) == 10 and command[0] == 0xDD:
             packet = command
         else:
-            raise ValueError(
-                "Limoss command must be 5-byte payload or 10-byte encrypted packet"
-            )
+            raise ValueError("Limoss command must be 5-byte payload or 10-byte encrypted packet")
 
         _LOGGER.debug(
             "Writing Limoss packet: %s (repeat=%d, delay=%dms, response=%s)",
@@ -378,13 +206,14 @@ class LimossController(BedController):
         """Handle Limoss notification packets."""
         raw = bytes(data)
         self.forward_raw_notification(LIMOSS_CHAR_UUID, raw)
-        decoded = self._decode_packet(raw)
+        decoded = codec.decode(raw[:10])
         if decoded is None:
+            _LOGGER.debug("Ignoring invalid Limoss frame: %s", raw.hex())
             return
 
-        cmd, params = decoded
+        cmd, params = decoded[0], decoded[1:]
 
-        if cmd == LimossCommands.QUERY_CAPABILITIES:
+        if cmd == codec.QUERY_CAPABILITIES:
             button_count = params[0]
             system_type = params[1]
             vibration_count = params[2]
@@ -433,9 +262,8 @@ class LimossController(BedController):
 
         self._capabilities_received = asyncio.Event()
         try:
-            # Matches app payload: [0x02, 0x00, 0x00, 0x00, 0x03]
-            await self._send_command(LimossCommands.QUERY_CAPABILITIES, 0, 0, 0, 3)
-            await asyncio.wait_for(self._capabilities_received.wait(), timeout=2.0)
+            await self.write_command(codec.query(codec.QUERY_CAPABILITIES))
+            await asyncio.wait_for(self._capabilities_received.wait(), _CAPABILITY_TIMEOUT)
         except TimeoutError:
             _LOGGER.debug("Timed out waiting for Limoss capability response")
         finally:
@@ -485,15 +313,9 @@ class LimossController(BedController):
             await self.client.stop_notify(LIMOSS_CHAR_UUID)
 
     async def read_positions(self, motor_count: int = 2) -> None:
-        """Query current motor positions.
+        """Query current motor positions; the replies arrive as notifications.
 
-        Position responses are returned via notifications.
-
-        The caller-supplied ``motor_count`` is treated as a hint. If
-        ``self._reported_motor_count`` is available from a capability response,
-        that device-reported value takes precedence over ``motor_count``.
-        The effective count is then clamped to the 2-4 range and used to build
-        the query command list before sending each query via ``_send_command``.
+        A reported motor count overrides ``motor_count``; either is clamped to 2-4.
         """
         if self.client is None or not self.client.is_connected:
             return
@@ -502,32 +324,22 @@ class LimossController(BedController):
         if self._reported_motor_count is not None:
             effective_motor_count = self._reported_motor_count
 
-        effective_motor_count = max(2, min(4, effective_motor_count))
-        query_commands = [
-            LimossCommands.ASK_MOTOR_1_POS,
-            LimossCommands.ASK_MOTOR_2_POS,
-        ]
-        if effective_motor_count >= 3:
-            query_commands.append(LimossCommands.ASK_MOTOR_3_POS)
-        if effective_motor_count >= 4:
-            query_commands.append(LimossCommands.ASK_MOTOR_4_POS)
-
-        for cmd in query_commands:
-            await self._send_command(cmd)
-            await asyncio.sleep(0.03)
+        for index in range(1, max(2, min(4, effective_motor_count)) + 1):
+            await self.write_command(codec.ask_position(index))
+            await asyncio.sleep(_POSITION_QUERY_GAP)
 
     async def _send_stop(self) -> None:
-        """Send stop command with a fresh cancel event."""
-        await self._send_command(
-            LimossCommands.STOP_ALL,
-            cancel_event=asyncio.Event(),
+        """Send STOP with a fresh cancel event."""
+        stop = self.profile.stop
+        await self.write_command(
+            codec.body(stop.opcode), repeat_count=stop.frames, cancel_event=asyncio.Event()
         )
 
-    async def _move_with_stop(self, cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def _move_with_stop(self, opcode: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Send a hold-style movement command and then stop."""
         try:
-            await self._send_command(
-                cmd,
+            await self.write_command(
+                codec.body(opcode),
                 repeat_count=self._coordinator.motor_pulse_count,
                 repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
             )
@@ -535,61 +347,40 @@ class LimossController(BedController):
             with contextlib.suppress(BleakError, ConnectionError):
                 await self._send_stop()
 
-    # Motor control methods
+    # Motor control methods. Head is motor 3 on 3+ motor beds, else motor 1;
+    # feet is motor 4 on 4-motor beds, else motor 2.
     async def move_head_up(self) -> None:
-        # For 3+ motor beds, head is motor 3. For 2-motor beds, alias head to motor 1.
-        cmd = (
-            LimossCommands.MOTOR_3_UP
-            if self._effective_motor_count() >= 3
-            else LimossCommands.MOTOR_1_UP
-        )
-        await self._move_with_stop(cmd)
+        await self._move_with_stop(codec.motor(3 if self._effective_motor_count() >= 3 else 1, True))
 
     async def move_head_down(self) -> None:
-        cmd = (
-            LimossCommands.MOTOR_3_DOWN
-            if self._effective_motor_count() >= 3
-            else LimossCommands.MOTOR_1_DOWN
-        )
-        await self._move_with_stop(cmd)
+        await self._move_with_stop(codec.motor(3 if self._effective_motor_count() >= 3 else 1, False))
 
     async def move_head_stop(self) -> None:
         await self._send_stop()
 
     async def move_back_up(self) -> None:
-        await self._move_with_stop(LimossCommands.MOTOR_1_UP)
+        await self._move_with_stop(codec.motor(1, True))
 
     async def move_back_down(self) -> None:
-        await self._move_with_stop(LimossCommands.MOTOR_1_DOWN)
+        await self._move_with_stop(codec.motor(1, False))
 
     async def move_back_stop(self) -> None:
         await self._send_stop()
 
     async def move_legs_up(self) -> None:
-        await self._move_with_stop(LimossCommands.MOTOR_2_UP)
+        await self._move_with_stop(codec.motor(2, True))
 
     async def move_legs_down(self) -> None:
-        await self._move_with_stop(LimossCommands.MOTOR_2_DOWN)
+        await self._move_with_stop(codec.motor(2, False))
 
     async def move_legs_stop(self) -> None:
         await self._send_stop()
 
     async def move_feet_up(self) -> None:
-        # For 4-motor beds, feet is motor 4. For 2/3-motor beds, alias feet to motor 2.
-        cmd = (
-            LimossCommands.MOTOR_4_UP
-            if self._effective_motor_count() >= 4
-            else LimossCommands.MOTOR_2_UP
-        )
-        await self._move_with_stop(cmd)
+        await self._move_with_stop(codec.motor(4 if self._effective_motor_count() >= 4 else 2, True))
 
     async def move_feet_down(self) -> None:
-        cmd = (
-            LimossCommands.MOTOR_4_DOWN
-            if self._effective_motor_count() >= 4
-            else LimossCommands.MOTOR_2_DOWN
-        )
-        await self._move_with_stop(cmd)
+        await self._move_with_stop(codec.motor(4 if self._effective_motor_count() >= 4 else 2, False))
 
     async def move_feet_stop(self) -> None:
         await self._send_stop()
@@ -600,7 +391,7 @@ class LimossController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Send both-down movement command and then stop."""
-        await self._move_with_stop(LimossCommands.PRESET_FLAT)
+        await self._move_with_stop(codec.FLAT)
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -613,62 +404,42 @@ class LimossController(BedController):
         return True
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Recall a saved memory position via SetPos commands.
-
-        Sends stored position data to each motor at 300ms intervals.
-        """
+        """Recall a saved memory by sending each motor's stored raw position."""
         positions = self._memory_positions.get(memory_num)
         if not positions:
-            _LOGGER.warning(
-                "No positions saved in Limoss memory slot %d (save first)", memory_num
-            )
+            _LOGGER.warning("No positions saved in Limoss memory slot %d (save first)", memory_num)
             return
 
-        set_pos_commands = {
-            "back": LimossCommands.SET_MOTOR_1_POS,
-            "legs": LimossCommands.SET_MOTOR_2_POS,
-            "head": LimossCommands.SET_MOTOR_3_POS,
-            "feet": LimossCommands.SET_MOTOR_4_POS,
-        }
-
         for motor_name, raw_pos in positions.items():
-            cmd = set_pos_commands.get(motor_name)
-            if cmd is None:
+            index = MOTORS.get(motor_name)
+            if index is None:
                 continue
-            p1 = (raw_pos >> 24) & 0xFF
-            p2 = (raw_pos >> 16) & 0xFF
-            p3 = (raw_pos >> 8) & 0xFF
-            p4 = raw_pos & 0xFF
-            await self._send_command(cmd, p1, p2, p3, p4)
-            await asyncio.sleep(0.3)
+            await self.write_command(codec.set_position(index, raw_pos, signed=False))
+            await asyncio.sleep(self.profile.recall_ms / 1000)
 
     async def program_memory(self, memory_num: int) -> None:
         """Save current motor positions to a memory slot."""
         if not self._last_positions_raw:
-            _LOGGER.warning("No position data available to save to Limoss memory slot %d", memory_num)
+            _LOGGER.warning(
+                "No position data available to save to Limoss memory slot %d", memory_num
+            )
             return
         self._memory_positions[memory_num] = dict(self._last_positions_raw)
         _LOGGER.info(
-            "Saved Limoss positions to memory slot %d: %s", memory_num, self._memory_positions[memory_num]
+            "Saved Limoss positions to memory slot %d: %s",
+            memory_num,
+            self._memory_positions[memory_num],
         )
 
     # Massage/vibration methods
     async def massage_toggle(self) -> None:
         """Toggle vibration zone 1."""
-        await self._send_command(LimossCommands.VIBRATION_1)
+        await self.write_command(codec.body(codec.MASSAGE_ZONES[0]))
 
     async def massage_zone(self, zone: int) -> None:
         """Toggle a specific vibration zone (1-6)."""
-        zone_commands = {
-            1: LimossCommands.VIBRATION_1,
-            2: LimossCommands.VIBRATION_2,
-            3: LimossCommands.VIBRATION_3,
-            4: LimossCommands.VIBRATION_4,
-            5: LimossCommands.VIBRATION_5,
-            6: LimossCommands.VIBRATION_6,
-        }
-        if cmd := zone_commands.get(zone):
-            await self._send_command(cmd)
+        if (opcode := dict(enumerate(codec.MASSAGE_ZONES, 1)).get(zone)) is not None:
+            await self.write_command(codec.body(opcode))
         else:
             _LOGGER.warning("Invalid Limoss vibration zone: %d (valid: 1-6)", zone)
 
@@ -679,4 +450,4 @@ class LimossController(BedController):
 
     async def lights_toggle(self) -> None:
         """Toggle lights."""
-        await self._send_command(LimossCommands.LIGHT_TOGGLE)
+        await self.write_command(codec.body(codec.LIGHT))

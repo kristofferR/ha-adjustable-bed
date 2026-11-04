@@ -7,9 +7,8 @@ import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds import limoss_remote
-from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from tests.test_coordinator_limoss_remote import actual_coordinator
@@ -34,7 +33,7 @@ async def startup_controller(hass, monkeypatch, *, cached=True):
 
 def respond(client, role, opcode):
     callback = client.start_notify.call_args.args[1]
-    callback(role, bytearray(format_command(bytes.fromhex(REPLIES[opcode]), 0)))
+    callback(role, bytearray(codec.frame(bytes.fromhex(REPLIES[opcode]), 0)))
 
 
 @pytest.mark.parametrize("cached", [False, True])
@@ -47,7 +46,7 @@ async def test_registered_startup_admits_fresh02_with_missing_optional_version(
     emitted, times = [], []
 
     def write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         emitted.append(opcode)
         times.append(asyncio.get_running_loop().time())
         if opcode != missing:
@@ -72,7 +71,7 @@ async def test_registered_startup_never_uses_cache_without_fresh02(hass, monkeyp
     coordinator, controller = await startup_controller(hass, monkeypatch, cached=cached)
     emitted = []
     coordinator.client.write_gatt_char.side_effect = lambda role, packet, **kwargs: emitted.append(
-        LimossController._tea_decrypt(packet[1:9])[1]
+        codec.decrypt(packet[1:9])[1]
     )
     with pytest.raises(TimeoutError, match="No matching app reply"):
         await coordinator.async_start_notify()
@@ -93,7 +92,7 @@ async def test_optional_version_write_and_owner_failures_still_fail_startup(
     transport_error = TimeoutError("ATT failure, not reply expiry")
 
     async def write(role, packet, **kwargs):
-        command = LimossController._tea_decrypt(packet[1:9])[1]
+        command = codec.decrypt(packet[1:9])[1]
         emitted.append(command)
         if command != opcode:
             respond(client, role, command)
@@ -126,19 +125,19 @@ async def test_explicit_refresh_keeps_strict_optional_reply_failure(hass, monkey
     coordinator, controller = await startup_controller(hass, monkeypatch)
     client = coordinator.client
     client.write_gatt_char.side_effect = lambda role, packet, **kwargs: respond(
-        client, role, LimossController._tea_decrypt(packet[1:9])[1]
+        client, role, codec.decrypt(packet[1:9])[1]
     )
     await coordinator.async_start_notify()
     client.write_gatt_char.reset_mock()
 
     def write(role, packet, **kwargs):
-        if LimossController._tea_decrypt(packet[1:9])[1] == 2:
+        if codec.decrypt(packet[1:9])[1] == 2:
             respond(client, role, 2)
 
     client.write_gatt_char.side_effect = write
     with pytest.raises(TimeoutError, match="No matching app reply"):
         await controller.refresh_device_info()
-    assert [LimossController._tea_decrypt(c.args[1][1:9])[1] for c in client.write_gatt_char.call_args_list] == [2, 0]
+    assert [codec.decrypt(c.args[1][1:9])[1] for c in client.write_gatt_char.call_args_list] == [2, 0]
     assert controller._notify_client is client
     await controller.stop_notify()
 
@@ -150,7 +149,7 @@ async def test_caller_task_cancel_during_optional_wait_preserves_cleanup(hass, m
     entered = asyncio.Event()
 
     def write(role, packet, **kwargs):
-        command = LimossController._tea_decrypt(packet[1:9])[1]
+        command = codec.decrypt(packet[1:9])[1]
         if command == opcode:
             entered.set()
         else:
@@ -175,7 +174,7 @@ async def test_pre_query_version_reply_cannot_launch_software_query(hass, monkey
     emitted = []
 
     def write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         emitted.append(opcode)
         if opcode == 2:
             respond(client, role, 0)  # Native diagnostics may retain this; it isn't query00's reply.
@@ -200,7 +199,7 @@ async def test_optional_phase_admission_respects_remaining_native_pacing(
     emitted, starts = [], []
 
     async def write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         emitted.append(opcode)
         starts.append(asyncio.get_running_loop().time())
         if opcode == late_reply_opcode:
@@ -240,7 +239,7 @@ async def test_optional_phase_skip_never_admits_cancelled_or_stale_subscription(
     emitted = []
 
     async def write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         emitted.append(opcode)
         if opcode == late_reply_opcode:
             await asyncio.sleep(0.02)
@@ -284,7 +283,7 @@ async def test_admitted_optional_phase_still_fails_when_write_budget_expires(
         await release.wait()
 
     def write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         emitted.append(opcode)
         respond(client, role, opcode)
         if opcode == 2:

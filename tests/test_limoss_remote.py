@@ -8,23 +8,22 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import (
-    HELD_COMMANDS,
-    LAYOUTS,
     LimossRemoteCapabilities,
-    LimossRemoteParser,
     LimossRemoteSequence,
-    format_command,
-    version_string,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
 from custom_components.adjustable_bed.limoss_remote_state import (
     LimossRemoteMemoryStore,
     LimossRemoteSession,
 )
-from tests.limoss_remote_vectors import NATIVE_FRAMES, RENDERED_LAYOUTS
+from custom_components.adjustable_bed.profiles.limoss import REMOTE_CHANNELS as HELD_COMMANDS
+from tests.limoss_vectors import REMOTE_LAYOUTS as RENDERED_LAYOUTS
+from tests.limoss_vectors import WIRE_FRAMES
+
+NATIVE_FRAMES = WIRE_FRAMES["limoss_remote"]
 
 
 def make_controller(
@@ -68,21 +67,9 @@ def assert_nothing_persisted(c):
 
 def inner_packets(controller):
     return [
-        LimossController._tea_decrypt(call.args[1][1:9])
+        codec.decrypt(call.args[1][1:9])
         for call in controller.client.write_gatt_char.call_args_list
     ]
-
-
-@pytest.mark.parametrize(("command", "counter", "native"), NATIVE_FRAMES)
-def test_native_literal_frames(command, counter, native):
-    packet = format_command(bytes.fromhex(command), counter)
-    assert packet.hex() == native
-    assert LimossRemoteParser().feed(bytes.fromhex(native)) == [bytes.fromhex(command)]
-
-
-@pytest.mark.parametrize("layout", tuple(RENDERED_LAYOUTS))
-def test_all29_rendered_tables_match_independent_frozen_fixture(layout):
-    assert LAYOUTS[layout] == RENDERED_LAYOUTS[layout]
 
 
 @pytest.mark.parametrize(
@@ -146,23 +133,23 @@ async def test_all16_reversal_parameters_and_format_time_sequence(reversal):
 def test_parser_all_split_points_coalescing_and_unchecked_native_integrity():
     packets = [bytes.fromhex(native) for _, _, native in NATIVE_FRAMES[:3]]
     for split in range(1, 10):
-        parser = LimossRemoteParser()
+        parser = codec.StreamParser(verify=False)
         assert parser.feed(packets[0][:split]) == []
         assert parser.feed(packets[0][split:] + packets[1]) == [
             bytes.fromhex(row[0]) for row in NATIVE_FRAMES[:2]
         ]
-    parser = LimossRemoteParser()
+    parser = codec.StreamParser(verify=False)
     changed = bytearray(packets[0])
     changed[-1] ^= 255
     assert parser.feed(b"noise" + changed) == [bytes.fromhex(NATIVE_FRAMES[0][0])]
     # These synthetic plaintext boundary values prove the source's unchecked AA/sum path.
     inner = b"\0\x10\xff\xff\xff\xff\0\0"
-    packet = b"\xdd" + LimossController._tea_encrypt(inner) + b"\0"
+    packet = b"\xdd" + codec.encrypt(inner) + b"\0"
     assert parser.feed(packet) == [b"\x10\xff\xff\xff\xff"]
 
 
 def test_parser_late_marker_noise_and_per_target_buffers_are_bounded():
-    first, second = LimossRemoteParser(), LimossRemoteParser()
+    first, second = codec.StreamParser(verify=False), codec.StreamParser(verify=False)
     native = bytes.fromhex(NATIVE_FRAMES[0][2])
     assert first.feed(b"x" * 10000 + native[:9]) == []
     assert len(first.buffer) == 9
@@ -182,7 +169,7 @@ def test_parser_late_marker_noise_and_per_target_buffers_are_bounded():
     ],
 )
 def test_signed_version_strings(parameters, expected):
-    assert version_string(bytes.fromhex(parameters)) == expected
+    assert codec.version(bytes.fromhex(parameters)) == expected
 
 
 @pytest.mark.asyncio
@@ -190,9 +177,9 @@ async def test_information_query_chain_literal_order_and_completed_batch():
     c = make_controller()
 
     def callback(char, packet, *, response):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         replies = {2: b"\x02\x0c\x14\xff\x18", 0: b"\0\xff\x80\0\xff", 1: b"\x01\x01\x02\x03\x04"}
-        c._notification(char, bytearray(format_command(replies[opcode], 0)))
+        c._notification(char, bytearray(codec.frame(replies[opcode], 0)))
 
     c.client.write_gatt_char.side_effect = callback
     await c.start_notify()
@@ -217,11 +204,11 @@ async def test_failed_info_retains_completed_fields_without_false_success():
     c = make_controller()
 
     def callback(char, packet, *, response):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         if opcode == 1:
             raise OSError("software failed")
         raw = b"\x02\x08\x12\0\x08" if opcode == 2 else b"\0\x01\x02\x03\x04"
-        c._notification(char, bytearray(format_command(raw, 0)))
+        c._notification(char, bytearray(codec.frame(raw, 0)))
 
     c.client.write_gatt_char.side_effect = callback
     with pytest.raises(OSError):
@@ -238,10 +225,10 @@ async def test_save_queries_fresh_signed_values_atomically_and_reconstructs8slot
     values = (-2147483648, -1, 0, 2147483647)
 
     def callback(char, packet, *, response):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         motor = opcode // 16 - 1
         raw = bytes((opcode,)) + values[motor].to_bytes(4, "big", signed=True)
-        c._notification(char, bytearray(format_command(raw, 0)))
+        c._notification(char, bytearray(codec.frame(raw, 0)))
 
     c.client.write_gatt_char.side_effect = callback
     for slot in range(1, 9):
@@ -263,10 +250,10 @@ async def test_failed_partial_save_preserves_previous_slot_and_unsolicited_is_di
     c.memories.save(1, ((0, 99), (1, 101)))
 
     def callback(char, packet, *, response):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         if opcode == 0x20:
             raise OSError("second position failed")
-        c._notification(char, bytearray(format_command(bytes((opcode, 0, 0, 0, 7)), 0)))
+        c._notification(char, bytearray(codec.frame(bytes((opcode, 0, 0, 0, 7)), 0)))
 
     c.client.write_gatt_char.side_effect = callback
     with pytest.raises(OSError):
@@ -274,7 +261,7 @@ async def test_failed_partial_save_preserves_previous_slot_and_unsolicited_is_di
     assert c.memories.slots[1].positions == ((0, 99), (1, 101))
     before = c.client.write_gatt_char.call_count
     c._notification(
-        c.client.services[0].characteristics[0], bytearray(format_command(b"\x10\0\0\0\x08", 0))
+        c.client.services[0].characteristics[0], bytearray(codec.frame(b"\x10\0\0\0\x08", 0))
     )
     await asyncio.sleep(0)
     assert c.client.write_gatt_char.call_count == before
@@ -299,7 +286,7 @@ async def test_held_deadline_and_midflight_cancel_always_five_fresh_native_relea
 
     def write(char, packet, *, response):
         times.append(asyncio.get_running_loop().time())
-        if LimossController._tea_decrypt(packet[1:9])[1] == 0x12:
+        if codec.decrypt(packet[1:9])[1] == 0x12:
             c._coordinator.cancel_command.set()
 
     c.client.write_gatt_char.side_effect = write
@@ -411,7 +398,7 @@ async def test_held_deadline_and_att_latency_never_create_backlog():
         times.append(
             (
                 asyncio.get_running_loop().time() - started,
-                LimossController._tea_decrypt(packet[1:9])[1],
+                codec.decrypt(packet[1:9])[1],
             )
         )
         try:
@@ -468,7 +455,7 @@ async def test_capability_retry_one_second_then_hw_sw_without_extra_queries():
     requested, times = [], []
 
     def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         requested.append(opcode)
         times.append(asyncio.get_running_loop().time())
         if opcode == 2 and requested.count(2) == 1:
@@ -476,7 +463,7 @@ async def test_capability_retry_one_second_then_hw_sw_without_extra_queries():
         c._notification(
             char,
             bytearray(
-                format_command(
+                codec.frame(
                     {2: b"\x02\x08\x12\0\x08", 0: b"\0\1\2\3\4", 1: b"\1\1\2\3\4"}[opcode], 0
                 )
             ),
@@ -497,7 +484,7 @@ def test_every_signed_response_preserves_bits_without_idle_queries_or_memory_mut
     c = make_controller()
     char = c.client.services[0].characteristics[0]
     c._notification(
-        char, bytearray(format_command(bytes((opcode,)) + value.to_bytes(4, "big", signed=True), 0))
+        char, bytearray(codec.frame(bytes((opcode,)) + value.to_bytes(4, "big", signed=True), 0))
     )
     c.client.write_gatt_char.assert_not_called()
     assert c.memories.slots == {}
@@ -526,7 +513,7 @@ async def test_repeated_task_cancellation_still_drains_five_fresh_releases():
     entered = asyncio.Event()
 
     async def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         if opcode == 0xFF:
             entered.set()
             await asyncio.sleep(0.01)
@@ -555,7 +542,7 @@ async def test_subscription_callback_ignores_old_client_after_reconnect_and_stop
     assert first.start_notify.await_args.args[0] is first_char
     await c.stop_notify()
     first.stop_notify.assert_awaited_once_with(first_char)
-    first_callback(first_char, bytearray(format_command(b"\6\xff\xff\xff\xff", 0)))
+    first_callback(first_char, bytearray(codec.frame(b"\6\xff\xff\xff\xff", 0)))
     assert_nothing_persisted(c)
     second = make_controller().client
     second_char = second.services[0].characteristics[0]
@@ -563,9 +550,9 @@ async def test_subscription_callback_ignores_old_client_after_reconnect_and_stop
     c._coordinator.client = second
     await c.start_notify()
     second_callback = second.start_notify.await_args.args[1]
-    first_callback(first_char, bytearray(format_command(b"\6\0\0\0\1", 0)))
+    first_callback(first_char, bytearray(codec.frame(b"\6\0\0\0\1", 0)))
     assert_nothing_persisted(c)
-    second_callback(second_char, bytearray(format_command(b"\6\xff\xff\xff\xff", 0)))
+    second_callback(second_char, bytearray(codec.frame(b"\6\xff\xff\xff\xff", 0)))
     assert c.session.metadata == {"serial": "-1"}
     await c.stop_all()
     assert all(call.args[0] is second_char for call in second.write_gatt_char.call_args_list)
@@ -690,7 +677,7 @@ async def test_actual_att_timeout_is_not_mistaken_for_hold_deadline_and_still_re
     c = make_controller()
 
     async def write(char, packet, **kwargs):
-        if LimossController._tea_decrypt(packet[1:9])[1] == 0x12:
+        if codec.decrypt(packet[1:9])[1] == 0x12:
             await asyncio.Event().wait()
 
     c.client.write_gatt_char.side_effect = write
@@ -705,7 +692,7 @@ def test_unused04_unknown_opcodes_do_not_mutate_capabilities_memories_or_issue_q
     char = c.client.services[0].characteristics[0]
     for opcode in (4, 0x91, 0x92, 0x99, 0xFF):
         c._notification(
-            char, bytearray(format_command(bytes((opcode,)) + bytes.fromhex("80000000"), 0))
+            char, bytearray(codec.frame(bytes((opcode,)) + bytes.fromhex("80000000"), 0))
         )
     assert c.protocol_diagnostics == before
     c._coordinator.handle_controller_state_update.assert_not_called()
@@ -757,7 +744,7 @@ async def test_registered_callback_rejects_stale_client_and_wrong_exact_role(tra
         client.services[0].characteristics = [
             MagicMock(uuid=LIMOSS_CHAR_UUID, handle=role.handle, properties=["write", "notify"])
         ]
-    callback(role, bytearray(format_command(bytes.fromhex("06ffffffff"), 0)))
+    callback(role, bytearray(codec.frame(bytes.fromhex("06ffffffff"), 0)))
     assert_nothing_persisted(c)
     c._coordinator.handle_controller_state_update.assert_not_called()
     raw_callback.assert_not_called()
@@ -787,10 +774,10 @@ async def test_disconnect_generation_fences_reused_client_and_fails_active_query
     current_callback = client.start_notify.await_args.args[1]
     pending = asyncio.get_running_loop().create_future()
     c._request_reply = (6, pending)
-    old_callback(role, bytearray(format_command(bytes.fromhex("0600000001"), 0)))
+    old_callback(role, bytearray(codec.frame(bytes.fromhex("0600000001"), 0)))
     assert_nothing_persisted(c)
     assert not pending.done()
-    current_callback(role, bytearray(format_command(bytes.fromhex("06ffffffff"), 0)))
+    current_callback(role, bytearray(codec.frame(bytes.fromhex("06ffffffff"), 0)))
     assert pending.result() == bytes.fromhex("ffffffff")
     assert c.session.metadata == {"serial": "-1"}
     c._request_reply = None
@@ -807,7 +794,7 @@ async def test_unsubscribe_invalidates_registered_callback_before_native_await()
 
     async def unsubscribe(char):
         assert char is role
-        callback(role, bytearray(format_command(bytes.fromhex("06ffffffff"), 0)))
+        callback(role, bytearray(codec.frame(bytes.fromhex("06ffffffff"), 0)))
         assert_nothing_persisted(c)
 
     client.stop_notify.side_effect = unsubscribe
@@ -833,7 +820,7 @@ async def test_disconnect_hook_fails_actual_information_request_and_drops_late_r
     c.on_disconnect()
     with pytest.raises(ConnectionError, match="notification channel stopped"):
         await task
-    callback(role, bytearray(format_command(bytes.fromhex("0208140028"), 0)))
+    callback(role, bytearray(codec.frame(bytes.fromhex("0208140028"), 0)))
     assert c._request_reply is None and c._progress is None
     assert_nothing_persisted(c)
     assert client.write_gatt_char.await_count == 1
