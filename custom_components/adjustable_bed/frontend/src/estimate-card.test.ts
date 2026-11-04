@@ -141,7 +141,14 @@ test("closing the dialog while lowering stops the bed", () => {
 test("removing the card while lowering stops the bed", () => {
   const { card, ctx, calls } = fixture("unknown");
   card._estimateDialog = { kind: "reference", ctx, choice: "lower", phase: "lowering" };
-  (card as unknown as { disconnectedCallback(): void }).disconnectedCallback();
+  // The lifecycle detaches window listeners; give it a window when run alone.
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
+  if (!previous) Object.defineProperty(globalThis, "window", { configurable: true, value: new EventTarget() });
+  try {
+    (card as unknown as { disconnectedCallback(): void }).disconnectedCallback();
+  } finally {
+    if (!previous) Reflect.deleteProperty(globalThis, "window");
+  }
   expect(calls).toEqual([{ service: "stop_all", data: { device_id: "bed" } }]);
   expect(card._estimateDialog).toBeUndefined();
 });
