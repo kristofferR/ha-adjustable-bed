@@ -82,6 +82,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -411,10 +412,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     ),
     BED_TYPE_SUTA: _ControllerSpec("suta", "SutaController"),
     BED_TYPE_TIMOTION_AHF: _ControllerSpec("timotion_ahf", "TiMOTIONAhfController"),
-    BED_TYPE_REVERIE: _ControllerSpec("reverie", "ReverieController"),
-    BED_TYPE_REVERIE_NIGHTSTAND: _ControllerSpec(
-        "reverie_nightstand", "ReverieNightstandController"
-    ),
     BED_TYPE_COMFORT_MOTION: _ControllerSpec("jiecang", "JiecangController"),
     # Ergomotion is the Keeson protocol with position feedback; Serta Motion
     # Perfect is the same protocol with its own variant.
@@ -587,6 +584,54 @@ async def create_controller(
             protocol_variant=protocol_variant,
             device_name=device_name if client is not None else None,
         )
+
+    if bed_type == BED_TYPE_REVERIE_NIGHTSTAND:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.reverie_nightstand", __package__
+        )
+        from .beds.reverie_nightstand import ReverieNightstandController
+
+        return ReverieNightstandController(coordinator, model=protocol_variant)
+
+    if bed_type == BED_TYPE_REVERIE_PAIRLINK:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.reverie_pairlink", __package__
+        )
+        from .beds.reverie_pairlink import ReveriePairlinkController
+        from .beds.reverie_pairlink_runtime import create_pairlink_runtime_for_entry
+
+        pairlink_runtime = getattr(coordinator, "_pairlink_runtime", None)
+        if pairlink_runtime is None:
+            entry_data = getattr(coordinator.entry, "data", {})
+            entry_options = getattr(coordinator.entry, "options", {})
+            pairlink_runtime = create_pairlink_runtime_for_entry(
+                entry_data if isinstance(entry_data, Mapping) else {},
+                entry_options if isinstance(entry_options, Mapping) else {},
+                manufacturer_data=manufacturer_data,
+            )
+            coordinator._pairlink_runtime = pairlink_runtime
+        else:
+            pairlink_runtime.refresh_configured_inputs(
+                coordinator.entry.data,
+                getattr(coordinator.entry, "options", {}),
+                manufacturer_data=manufacturer_data,
+            )
+
+        return ReveriePairlinkController(
+            coordinator,
+            model=protocol_variant,
+            device_name=device_name,
+            manufacturer_data=manufacturer_data,
+            runtime=pairlink_runtime,
+        )
+
+    if bed_type == BED_TYPE_REVERIE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.reverie", __package__
+        )
+        from .beds.reverie import ReverieController
+
+        return ReverieController(coordinator, model=protocol_variant)
 
     if bed_type in RICHMAT_MH_APPS:
         # The app's name rule picks the model unless the variant fixes it;

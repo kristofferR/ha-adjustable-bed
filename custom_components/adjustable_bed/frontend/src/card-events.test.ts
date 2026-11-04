@@ -36,6 +36,8 @@ class TestKeyboardEvent {
   preventDefault(): void {
     this.defaultPrevented = true;
   }
+
+  stopPropagation(): void {}
 }
 
 function invoke(handler: unknown, thisArg: unknown, args: unknown[] = []): void {
@@ -228,6 +230,7 @@ function nativePairCardFixture(
   add("button.parent_stop_both", "parent", "stop_both");
   add("button.parent_back_up", "parent", "back_up", {
     paired_hold_motor: "back",
+    paired_hold_side: "both",
     held_control: "back_up",
     hold_start_delay_ms: 100,
     hold_release_delay_ms: 100,
@@ -237,6 +240,7 @@ function nativePairCardFixture(
     add(`cover.${side}_back`, side, "back", {
       bed_side: side,
       held_control_up: "back_up",
+      held_stop_scope: "side",
       held_control_down: "back_down",
       hold_start_delay_ms: 100,
       hold_release_delay_ms: 100,
@@ -463,6 +467,7 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
           {
             bed_side: side,
             held_control_up: "back_up",
+            held_stop_scope: "side",
             held_control_down: "back_down",
             hold_start_delay_ms: 100,
             hold_release_delay_ms: 100,
@@ -715,7 +720,7 @@ for (const parentRelation of ["parent_device_id", "via_device_id"] as const) {
       );
       if (!activeMotor || !fixture.bothBed.stop)
         throw new Error("Missing discovered paired OCTO Both action/Stop");
-      expect(activeMotor.timedMove).toEqual({ deviceId: "parent", motor: "back" });
+      expect(activeMotor.timedMove).toEqual({ deviceId: "parent", motor: "back", side: "both" });
       expect(activeMotor.heldControls?.up).toEqual({
         control: "back_up",
         startDelayMs: 100,
@@ -892,7 +897,7 @@ for (const phase of ["active", "pending-release"] as const) {
       );
       if (!activeMotor || !fixture.bothBed.stop)
         throw new Error("Missing discovered single-address OCTO Both action/Stop");
-      expect(activeMotor.timedMove).toBeUndefined();
+      expect(activeMotor.timedMove).toEqual({ deviceId: "bed", motor: "back", side: "both" });
       expect(activeMotor.heldControls?.up).toEqual({
         control: "back_up",
         startDelayMs: 100,
@@ -1011,14 +1016,14 @@ test("a side STOP prevents the registered finite Both action from repeating", as
   add("button.parent_stop", "parent", "stop_both");
   add("button.left_stop", "left", "stop", { bed_side: "left" });
   add("button.right_stop", "right", "stop", { bed_side: "right" });
-  add("button.parent_back_up", "parent", "back_up", { paired_hold_motor: "back" });
+  add("button.parent_back_up", "parent", "back_up", { paired_hold_motor: "back", paired_hold_side: "both" });
 
   try {
     const bothBed = bedEntitiesForDevice(hass, "parent");
     const leftBed = bedEntitiesForDevice(hass, "left");
     const motor = bothBed.motors.find((candidate) => candidate.up === "button.parent_back_up");
     if (!motor) throw new Error("Missing discovered paired Both motor");
-    expect(motor.timedMove).toEqual({ deviceId: "parent", motor: "back" });
+    expect(motor.timedMove).toEqual({ deviceId: "parent", motor: "back", side: "both" });
 
     const createDirection: unknown = Reflect.get(AdjustableBedCard.prototype, "_motorDirection");
     if (typeof createDirection !== "function") throw new Error("Missing motor direction renderer");
@@ -1308,3 +1313,70 @@ test("metadata loss does not let a different side Stop cancel the retained hold"
     }
   }
 });
+
+for (const key of ["Enter", " "] as const) {
+  test(`live OCTO concurrent-to-sequential metadata preserves bounded ${JSON.stringify(key)} and assistive routes`, async () => {
+    const previousKeyboardEvent = Object.getOwnPropertyDescriptor(globalThis, "KeyboardEvent");
+    Object.defineProperty(globalThis, "KeyboardEvent", { configurable: true, value: TestKeyboardEvent });
+    const scheduled = fakeTimers();
+    const calls: RecordedServiceCall[] = [];
+    const fixture = nativePairCardFixture(calls);
+    let finishMove = (): void => undefined;
+    const originalCall = fixture.hass.callService;
+    fixture.hass.callService = (domain, service, data) => {
+      if (service !== "timed_move") return originalCall(domain, service, data);
+      calls.push({ domain, service, data });
+      return new Promise<void>((resolve) => { finishMove = resolve; });
+    };
+    const render: unknown = Reflect.get(AdjustableBedCard.prototype, "_motorDirection");
+    if (typeof render !== "function") throw new Error("Missing production motor direction renderer");
+    const discover = (): { motor: NonNullable<BedEntities["motors"][number]>; tile: TemplateResult } => {
+      const bed = bedEntitiesForDevice(fixture.hass, "parent");
+      const motor = bed.motors.find((candidate) => candidate.up === "button.parent_back_up");
+      if (!motor) throw new Error("Missing current OCTO Both motor");
+      const tile: unknown = Reflect.apply(render, fixture.card, [motor, "up", bed.stop]);
+      if (!isTemplateResult(tile)) throw new Error("Missing current OCTO Both row");
+      return { motor, tile };
+    };
+    try {
+      const current = discover();
+      expect(current.motor.heldControls?.up).toEqual({ control: "back_up", startDelayMs: 100, releaseDelayMs: 100 });
+      expect(current.motor.timedMove).toEqual({ deviceId: "parent", motor: "back", side: "both" });
+      invoke(eventHandler(current.tile, "keydown"), fixture.card, [new TestKeyboardEvent(key)]);
+      scheduled.timers.find((timer) => timer.delay === 100 && !timer.cancelled)?.callback();
+      await Promise.resolve();
+      expect(calls[0]).toEqual({ domain: "adjustable_bed", service: "hold_control",
+        data: { device_id: ["parent"], control: "back_up", duration: 60 } });
+      invoke(eventHandler(current.tile, "keyup"), fixture.card, [new TestKeyboardEvent(key)]);
+      [...scheduled.timers].reverse().find((timer) => timer.delay === 100 && !timer.cancelled)?.callback();
+      expect(calls.at(-1)).toEqual({ domain: "button", service: "press", data: { entity_id: "button.parent_stop_both" } });
+      fixture.finishHold();
+      await Promise.resolve();
+
+      // The backend drops the rich contract on a live sequential fallback.
+      fixture.hass.states["button.parent_back_up"].attributes = {
+        paired_hold_motor: "back", paired_hold_side: "both",
+      };
+      const sequential = discover();
+      expect(sequential.motor.heldControls).toBeUndefined();
+      expect(sequential.motor.timedMove).toEqual({ deviceId: "parent", motor: "back", side: "both" });
+      const finite = { domain: "adjustable_bed", service: "timed_move", data: {
+        device_id: "parent", side: "both", motor: "back", direction: "up", duration_ms: 1000,
+      } };
+      invoke(eventHandler(sequential.tile, "keydown"), fixture.card, [new TestKeyboardEvent(key)]);
+      expect(calls.at(-1)).toEqual(finite);
+      invoke(eventHandler(sequential.tile, "keyup"), fixture.card, [new TestKeyboardEvent(key)]);
+      expect(calls.at(-1)).toEqual({ domain: "button", service: "press", data: { entity_id: "button.parent_stop_both" } });
+      finishMove();
+      await Promise.resolve();
+      invoke(eventHandler(sequential.tile, "click"), fixture.card, [{ detail: 0 }]);
+      expect(calls.at(-1)).toEqual(finite);
+      finishMove();
+      expect(calls.filter((call) => call.service === "hold_control")).toHaveLength(1);
+    } finally {
+      scheduled.restore();
+      if (previousKeyboardEvent) Object.defineProperty(globalThis, "KeyboardEvent", previousKeyboardEvent);
+      else Reflect.deleteProperty(globalThis, "KeyboardEvent");
+    }
+  });
+}

@@ -942,7 +942,10 @@ class DoubleSleepController(BedController):
                 motor(up),
                 motor(down),
                 action(1),
-                hold=ControllerMotorHoldSpec(f"doublesleep_{up}", f"doublesleep_{down}", 0, 0),
+                # Any motor release replaces the app's one shared hold stream.
+                hold=ControllerMotorHoldSpec(
+                    f"doublesleep_{up}", f"doublesleep_{down}", 0, 0, stop_scope="side"
+                ),
             )
             for key, up, down in (
                 ("head", 2, 3),

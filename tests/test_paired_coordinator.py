@@ -1324,6 +1324,35 @@ class ScheduledSingleAddressInner(SingleAddressInner):
 
 
 class TestSingleAddressCoordinator:
+    @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT])
+    async def test_side_motor_scope_is_accepted_by_physical_command_intent(self, side):
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        coordinator, inner = self._scheduled_coordinator()
+        intents = []
+        physical = SimpleNamespace(_protocol_command_resources=lambda scope: scope)
+
+        async def execute(command, *, resource=None, resources=None, **_kwargs):
+            intent = AdjustableBedCoordinator._build_command_intent(
+                physical,
+                lambda: command(inner.controller),
+                resource=resource,
+                resources=resources,
+                kind=CommandKind.COMMAND,
+                cancel_running=False,
+            )
+            intents.append(intent)
+            await command(inner.controller)
+
+        inner.async_execute_controller_command = execute
+        command = AsyncMock()
+        await coordinator.children[side].async_execute_controller_command(
+            command, resource="motor:back", cancel_running=False
+        )
+
+        command.assert_awaited_once()
+        assert intents[0].resources == command_resources(f"side:{side}:motor:back")
+
     def _coordinator(self, bed_type, controller_type):
         entry = SimpleNamespace(
             data={CONF_PAIR_ID: "pair_single", "name": "Single", CONF_BED_TYPE: bed_type},

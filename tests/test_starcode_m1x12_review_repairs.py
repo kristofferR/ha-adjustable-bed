@@ -207,6 +207,8 @@ async def test_mixed_elevate_pair_keeps_combined_parent_movement_finite(
 ) -> None:
     """The wizard-supported mixed profile pair must use its existing finite route."""
     await _patch_protocol_sleeps(monkeypatch)
+    # The flow result is consumed below with the existing fake child links.
+    monkeypatch.setattr(hass.config_entries, "async_add", AsyncMock())
     sides: dict[str, Any] = {}
     clients: dict[str, _GattClient] = {}
     variants = {
@@ -224,6 +226,8 @@ async def test_mixed_elevate_pair_keeps_combined_parent_movement_finite(
         )
         controller = await create_controller(child, BED_TYPE_STAR_ELEVATE, variant, child.client)
         child._controller = controller
+        await controller.start_notify()
+        client.events.clear()
         child._ready = True
         child.entry.mock_state(hass, ConfigEntryState.LOADED)
         sides[side] = child

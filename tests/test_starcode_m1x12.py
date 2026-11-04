@@ -56,7 +56,11 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.cover import _cover_entities_for
+from custom_components.adjustable_bed.cover import (
+    AdjustableBedCover,
+    _build_cover_description,
+    _cover_entities_for,
+)
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
@@ -224,14 +228,16 @@ async def _create_controller(
 
 
 @pytest.mark.parametrize(
-    ("entity_kind", "entity_key", "control", "expected_key"),
+    ("entity_kind", "entity_key", "control", "expected_key", "action"),
     (
-        ("cover", "m1x12_part_1", "part_1_up", 0x03103000),
+        ("cover", "m1x12_part_1", "part_1_up", 0x03103000, "hold_control"),
+        ("cover", "m1x12_part_1", "part_1_up", 0x03103000, "timed_move"),
         (
             "button",
             "starcode_m1x12_hold_massage_wave_up",
             "massage_wave_up",
             0x03103058,
+            "hold_control",
         ),
     ),
 )
@@ -241,6 +247,7 @@ async def test_held_entity_metadata_reaches_real_bounded_service_and_controller(
     entity_key: str,
     control: str,
     expected_key: int,
+    action: str,
 ) -> None:
     """The target cover and button metadata drive the registered shared service."""
     client = _GattClient()
@@ -262,6 +269,7 @@ async def test_held_entity_metadata_reaches_real_bounded_service_and_controller(
     if entity_kind == "cover":
         assert attributes["held_control_up"] == control
         assert attributes["held_control_down"] == control.replace("_up", "_down")
+        assert attributes["held_stop_scope"] == "side"
     else:
         assert attributes["held_control"] == control
     assert attributes["hold_start_delay_ms"] == 100
@@ -291,8 +299,15 @@ async def test_held_entity_metadata_reaches_real_bounded_service_and_controller(
     held_service = asyncio.create_task(
         hass.services.async_call(
             DOMAIN,
-            "hold_control",
-            {"device_id": [device.id], "control": control, "duration": 60},
+            action,
+            {
+                "device_id": [device.id],
+                **(
+                    {"motor": entity_key, "direction": "up", "duration_ms": 30000}
+                    if action == "timed_move"
+                    else {"control": control, "duration": 60}
+                ),
+            },
             blocking=True,
         )
     )
@@ -971,6 +986,13 @@ async def test_only_explicit_m1x12_elevate_selects_version_gated_controller(
         "elevate_both",
     ]
     assert all(spec.hold is not None for spec in controller.motor_control_specs)
+    assert [
+        entity.extra_state_attributes["held_stop_scope"]
+        for entity in (
+            AdjustableBedCover(coordinator, _build_cover_description(spec))
+            for spec in controller.motor_control_specs
+        )
+    ] == ["motor", "motor", "side"]
 
 
 async def test_m1x12_startup_keeps_read_subscribe_and_wake_order(

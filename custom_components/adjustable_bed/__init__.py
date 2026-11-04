@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from collections.abc import Callable, Mapping
-from typing import Any, Final
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Final
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import (
     SOURCE_BLUETOOTH,
     ConfigEntry,
+    ConfigEntryState,
 )
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
@@ -28,6 +31,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_OCTO,
     BED_TYPE_REMACRO,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_VIBRADORM,
@@ -50,6 +54,8 @@ from .const import (
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
+    CONF_PAIRLINK_HOST_SOURCE,
+    CONF_PAIRLINK_ROLE,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -60,17 +66,20 @@ from .const import (
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
+    PAIRLINK_ROLE_PERIPHERAL,
     RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
     connection_gated_by_bond,
     requires_pairing,
     supports_runtime_authentication_recovery,
 )
+from .controller_factory import create_controller
 from .coordinator import (
     AdjustableBedCoordinator,
     ChildEntryView,
     PairingOnlyConnectionActiveError,
 )
+from .entity_runtime import EntityRuntime
 from .furnimove_repair import (
     async_clear_furnimove_layout_issues,
     async_refresh_furnimove_layout_issues,
@@ -663,7 +672,8 @@ def _async_ensure_paired_device_registry(
 
 
 async def _async_release_absorbed_singles(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: ConfigEntry,
+    *, local_transfers: list[_PairlinkLocalLeaseTransfer] | None = None,
 ) -> tuple[AdjustableBedCoordinator, ...]:
     """Release the original singles' links before their paired children connect.
 
@@ -689,7 +699,20 @@ async def _async_release_absorbed_singles(
             if not isinstance(original_coordinator, AdjustableBedCoordinator):
                 continue
             try:
-                released = await original_coordinator.async_release_for_pairing_transfer()
+                transfer = next(
+                    (item for item in local_transfers or () if item.original is original_coordinator),
+                    None,
+                )
+                if local_transfers and absorbed_id in {
+                    item.original.entry.entry_id for item in local_transfers
+                } and transfer is None:
+                    raise ConfigEntryNotReady("Absorbed local runtime changed before transfer")
+                if transfer is not None:
+                    released = await original_coordinator.async_release_for_pairing_transfer(
+                        expected_pairlink_runtime=transfer.runtime,
+                    )
+                else:
+                    released = await original_coordinator.async_release_for_pairing_transfer()
                 if released is not False:
                     transferring.append(original_coordinator)
                 if released is False or original_coordinator.is_connected:
@@ -758,8 +781,20 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     for child in children.values():
         await child.async_prime_offline_controller()
 
-    coordinator = PairedBedCoordinator(hass, entry, children)
-    _async_ensure_paired_device_registry(hass, entry, coordinator)
+    # A local Pairlink server is selected per physical child. Validate and
+    # reserve all selected adapters before creating the parent device or
+    # releasing the existing single-entry owners.
+    pairlink_inventory, pairlink_local_roles, pairlink_transfers = _preflight_paired_pairlink_local_roles(
+        hass, entry, children
+    )
+
+    try:
+        coordinator = PairedBedCoordinator(hass, entry, children)
+        _async_ensure_paired_device_registry(hass, entry, coordinator)
+    except BaseException:
+        _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+        await _async_restore_pairlink_local_transfers(hass, None, pairlink_transfers, pairlink_inventory)
+        raise
 
     async def _pairing_repairs_for_unconnected() -> None:
         # Surface a per-side pairing repair for any side that needs OS-level BLE
@@ -771,165 +806,230 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             if not child.is_connected:
                 await _maybe_create_pairing_issue_for(hass, child)
 
+    pair_shutdown_complete = False
+
+    async def _shutdown_failed_pair() -> None:
+        nonlocal pair_shutdown_complete
+        if not pair_shutdown_complete:
+            await coordinator.async_shutdown()
+            pair_shutdown_complete = True
+
     transferring: tuple[AdjustableBedCoordinator, ...] = ()
     try:
         try:
-            async with asyncio.timeout(SETUP_TIMEOUT):
-                # Release the old owners of these addresses before opening replacement
-                # links. Keep their entries until setup succeeds so they can reconnect
-                # on failure. The shared setup deadline also bounds stalled BLE teardown.
-                transferring = await _async_release_absorbed_singles(hass, entry)
-                connected = await coordinator.async_connect()
-        except ConfigEntryNotReady:
-            await coordinator.async_shutdown()
-            raise
-        except TimeoutError:
-            # The coordinator isn't in hass.data yet, so the unload path won't run —
-            # shut it down here or a side that already connected keeps its BLE link
-            # alive across SETUP_RETRY.
+            try:
+                async with asyncio.timeout(SETUP_TIMEOUT):
+                    # Release the old owners of these addresses before opening replacement
+                    # links. Keep their entries until setup succeeds so they can reconnect
+                    # on failure. The shared setup deadline also bounds stalled BLE teardown.
+                    if pairlink_transfers:
+                        transferring = await _async_release_absorbed_singles(
+                            hass, entry, local_transfers=pairlink_transfers,
+                        )
+                    else:
+                        transferring = await _async_release_absorbed_singles(hass, entry)
+                    for _side, child, source, adapter, owner in pairlink_local_roles:
+                        if hass.data[DOMAIN][_PAIRLINK_LOCAL_PROFILE_LEASES_KEY].get(adapter) != owner:
+                            raise ConfigEntryNotReady("Pairlink local reservation changed before startup")
+                        await _async_start_paired_pairlink_local_child(
+                            hass,
+                            child,
+                            host_adapter_source=source,
+                            adapter_inventory=pairlink_inventory,
+                        )
+                    if pairlink_local_roles:
+                        connected = await coordinator._async_connect_children(
+                            started_local_sides={side for side, *_rest in pairlink_local_roles},
+                        )
+                    else:
+                        connected = await coordinator.async_connect()
+            except ConfigEntryNotReady:
+                await _shutdown_failed_pair()
+                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                raise
+            except TimeoutError:
+                # The coordinator isn't in hass.data yet, so the unload path won't run —
+                # shut it down here or a side that already connected keeps its BLE link
+                # alive across SETUP_RETRY.
+                await _pairing_repairs_for_unconnected()
+                await _shutdown_failed_pair()
+                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                raise ConfigEntryNotReady(
+                    f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
+                ) from None
+            except (Exception, asyncio.CancelledError):
+                await _shutdown_failed_pair()
+                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                raise
+
+            # Half-available is fine, but surface pairing repairs for any unconnected side
+            # first — including the all-offline case, which aborts below.
             await _pairing_repairs_for_unconnected()
-            await coordinator.async_shutdown()
-            raise ConfigEntryNotReady(
-                f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
-            ) from None
+            if not connected:
+                # If NO side connected there is nothing to control yet — retry like a
+                # single bed.
+                await _shutdown_failed_pair()
+                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                raise ConfigEntryNotReady(
+                    f"No side of paired bed {entry.title} could be connected"
+                )
 
-        # Half-available is fine, but surface pairing repairs for any unconnected side
-        # first — including the all-offline case, which aborts below.
-        await _pairing_repairs_for_unconnected()
-        if not connected:
-            # If NO side connected there is nothing to control yet — retry like a
-            # single bed.
-            await coordinator.async_shutdown()
-            raise ConfigEntryNotReady(
-                f"No side of paired bed {entry.title} could be connected"
-            )
-
-        # Some sides cannot recreate their extra controls without discovery. A
-        # concurrent side can lose its first race with the standalone receiver's
-        # just-released link, so retry it while the original entry and registry
-        # ownership are still intact. This keeps capability validation before the
-        # irreversible absorption step without making the later reconnect path
-        # unreachable for controller-gated sides.
-        try:
-            for child in children.values():
-                if not async_has_side_controller_entities(hass, entry, child.address):
-                    continue
-                await child.async_prime_offline_controller()
-                capability_controller = child.capability_controller
-                if (
-                    coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL
-                    and not child.is_connected
-                    and (
+            # Some sides cannot recreate their extra controls without discovery. A
+            # concurrent side can lose its first race with the standalone receiver's
+            # just-released link, so retry it while the original entry and registry
+            # ownership are still intact. This keeps capability validation before the
+            # irreversible absorption step without making the later reconnect path
+            # unreachable for controller-gated sides.
+            try:
+                for child in children.values():
+                    if not async_has_side_controller_entities(hass, entry, child.address):
+                        continue
+                    await child.async_prime_offline_controller()
+                    capability_controller = child.capability_controller
+                    if (
+                        coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL
+                        and not child.is_connected
+                        and (
+                            capability_controller is None
+                            or not capability_controller.controller_entity_discovery_complete
+                        )
+                    ):
+                        try:
+                            async with asyncio.timeout(SETUP_TIMEOUT):
+                                if await child.async_connect():
+                                    child.cache_capability_controller()
+                        except Exception:  # noqa: BLE001 - validation below reports the retry
+                            _LOGGER.debug(
+                                "Pre-absorb capability reconnect of %s failed",
+                                child.address,
+                                exc_info=True,
+                            )
+                        capability_controller = child.capability_controller
+                    if (
                         capability_controller is None
                         or not capability_controller.controller_entity_discovery_complete
-                    )
-                ):
-                    try:
-                        async with asyncio.timeout(SETUP_TIMEOUT):
-                            if await child.async_connect():
-                                child.cache_capability_controller()
-                    except Exception:  # noqa: BLE001 - validation below reports the retry
-                        _LOGGER.debug(
-                            "Pre-absorb capability reconnect of %s failed",
-                            child.address,
-                            exc_info=True,
+                    ):
+                        raise ConfigEntryNotReady(
+                            f"Paired bed {entry.title} needs {child.name} to connect "
+                            "and finish discovering its controls before they can be restored"
                         )
-                    capability_controller = child.capability_controller
-                if (
-                    capability_controller is None
-                    or not capability_controller.controller_entity_discovery_complete
-                ):
-                    raise ConfigEntryNotReady(
-                        f"Paired bed {entry.title} needs {child.name} to connect "
-                        "and finish discovering its controls before they can be restored"
-                    )
+            except (Exception, asyncio.CancelledError):
+                await _shutdown_failed_pair()
+                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                raise
+
+            hass.data[DOMAIN][entry.entry_id] = coordinator
+            # At least one child connected, so the pair can provide controls. ONLY NOW
+            # absorb the original single entries — re-home their entity/device registry
+            # rows onto the pair, then remove them. Deferring this until after a successful
+            # connect keeps the originals (and their live controls) intact on the timeout /
+            # no-side-connected paths above: if the pair can't load, the user keeps two
+            # working beds that can reconnect on demand. Must run before
+            # forwarding platforms so the originals' live entities are torn down first,
+            # freeing the shared {address}_{key} unique_ids the paired platforms reuse.
+            # No-op on reload (originals already gone).
+            absorbed_sides = await _async_rehome_absorbed_singles(hass, entry)
+        finally:
+            try:
+                await _async_restore_pairlink_local_transfers(
+                    hass, coordinator, pairlink_transfers, pairlink_inventory,
+                )
+            finally:
+                for original_coordinator in transferring:
+                    original_coordinator.finish_pairing_transfer()
+        # A side whose original entry survived a registry rollback must remain solely
+        # controlled by that original. Do not let paired platforms adopt the same
+        # unique ids back onto the pair under Home Assistant's single-owner registry.
+        retained_sides = {
+            side
+            for child in iter_children(entry.data)
+            if (side := child.get(CONF_SIDE))
+            and (absorbed_id := child.get(KEY_ABSORBED_ENTRY_ID))
+            and hass.config_entries.async_get_entry(absorbed_id) is not None
+        }
+        for side in retained_sides:
+            await coordinator.async_remove_child(side)
+        if not coordinator.children:
+            hass.data[DOMAIN].pop(entry.entry_id, None)
+            await _shutdown_failed_pair()
+            _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+            raise ConfigEntryNotReady(
+                f"Could not absorb either standalone side of paired bed {entry.title}"
+            )
+        # A just-absorbed concurrent side may have failed its initial connect ONLY
+        # because its original single was still holding the (single-link) BLE — which
+        # the absorb above has now freed. Retry such a side once so a non-offline-
+        # mintable side (an auto-detected Richmat/L&P/Keeson variant) gets its live
+        # controller and exposes entities, instead of staying empty until a reload.
+        # Skip in explicit sequential mode, which deliberately releases each side's link
+        # and mints offline sides from the pairing-time capability snapshot.
+        if absorbed_sides and coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL:
+            for side in absorbed_sides:
+                child = coordinator.children.get(side)
+                if child is None or child.is_connected or _has_selected_disconnected_transport(child):
+                    continue
+                try:
+                    # Bound the retry like the initial connect above: async_connect can
+                    # hang, and an unbounded retry would block offline-prime / platform
+                    # forwarding indefinitely. A timeout just falls back to offline-prime.
+                    async with asyncio.timeout(SETUP_TIMEOUT):
+                        await child.async_connect()
+                except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
+                    _LOGGER.debug("Post-absorb reconnect of %s side failed; priming offline", side)
+        # Prime a client-free capability controller for any side that did NOT connect,
+        # so its per-side entities are still created up-front (with byte-identical
+        # unique_ids); the live controller takes over on reconnect with no reload.
+        # Connected sides already have a live controller and are skipped. Bed types
+        # whose controller needs a live connection (auto-detected variants) stay as
+        # before until they connect.
+        for child in coordinator.children.values():
+            assert isinstance(child, AdjustableBedCoordinator)
+            await child.async_prime_offline_controller()
+        try:
+            async_register_children(hass, coordinator)
+            entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+            await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
         except (Exception, asyncio.CancelledError):
-            await coordinator.async_shutdown()
+            hass.data[DOMAIN].pop(entry.entry_id, None)
+            await _shutdown_failed_pair()
+            _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
             raise
 
-        hass.data[DOMAIN][entry.entry_id] = coordinator
-        # At least one child connected, so the pair can provide controls. ONLY NOW
-        # absorb the original single entries — re-home their entity/device registry
-        # rows onto the pair, then remove them. Deferring this until after a successful
-        # connect keeps the originals (and their live controls) intact on the timeout /
-        # no-side-connected paths above: if the pair can't load, the user keeps two
-        # working beds that can reconnect on demand. Must run before
-        # forwarding platforms so the originals' live entities are torn down first,
-        # freeing the shared {address}_{key} unique_ids the paired platforms reuse.
-        # No-op on reload (originals already gone).
-        absorbed_sides = await _async_rehome_absorbed_singles(hass, entry)
-    finally:
-        for original_coordinator in transferring:
-            original_coordinator.finish_pairing_transfer()
-    # A side whose original entry survived a registry rollback must remain solely
-    # controlled by that original. Do not let paired platforms adopt the same
-    # unique ids back onto the pair under Home Assistant's single-owner registry.
-    retained_sides = {
-        side
-        for child in iter_children(entry.data)
-        if (side := child.get(CONF_SIDE))
-        and (absorbed_id := child.get(KEY_ABSORBED_ENTRY_ID))
-        and hass.config_entries.async_get_entry(absorbed_id) is not None
-    }
-    for side in retained_sides:
-        await coordinator.async_remove_child(side)
-    if not coordinator.children:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-        await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(
-            f"Could not absorb either standalone side of paired bed {entry.title}"
+        # Seed each connected child's positions, like the single-bed path does, so
+        # per-side covers don't sit at "unknown" until the first movement.
+        for child in coordinator.children.values():
+            assert isinstance(child, AdjustableBedCoordinator)
+            if child.is_connected:
+                child._schedule_position_hydration()
+
+        sides = coordinator.children.values()
+        async_watch_remacro_fallback(
+            hass, entry, (side for side in sides if isinstance(side, AdjustableBedCoordinator))
         )
-    # A just-absorbed concurrent side may have failed its initial connect ONLY
-    # because its original single was still holding the (single-link) BLE — which
-    # the absorb above has now freed. Retry such a side once so a non-offline-
-    # mintable side (an auto-detected Richmat/L&P/Keeson variant) gets its live
-    # controller and exposes entities, instead of staying empty until a reload.
-    # Skip in explicit sequential mode, which deliberately releases each side's link
-    # and mints offline sides from the pairing-time capability snapshot.
-    if absorbed_sides and coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL:
-        for side in absorbed_sides:
-            child = coordinator.children.get(side)
-            if child is None or child.is_connected:
-                continue
-            try:
-                # Bound the retry like the initial connect above: async_connect can
-                # hang, and an unbounded retry would block offline-prime / platform
-                # forwarding indefinitely. A timeout just falls back to offline-prime.
-                async with asyncio.timeout(SETUP_TIMEOUT):
-                    await child.async_connect()
-            except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
-                _LOGGER.debug("Post-absorb reconnect of %s side failed; priming offline", side)
-    # Prime a client-free capability controller for any side that did NOT connect,
-    # so its per-side entities are still created up-front (with byte-identical
-    # unique_ids); the live controller takes over on reconnect with no reload.
-    # Connected sides already have a live controller and are skipped. Bed types
-    # whose controller needs a live connection (auto-detected variants) stay as
-    # before until they connect.
-    for child in coordinator.children.values():
-        assert isinstance(child, AdjustableBedCoordinator)
-        await child.async_prime_offline_controller()
-    try:
-        async_register_children(hass, coordinator)
-        entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-        await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
-    except (Exception, asyncio.CancelledError):
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-        await coordinator.async_shutdown()
+        _LOGGER.info("Paired bed setup complete for %s", entry.title)
+        return True
+    except BaseException:
+        # Source removal commits registry ownership even if setup is cancelled.
+        # Stop the failed pair without reclaiming committed or restored singles.
+        if hass.data[DOMAIN].get(entry.entry_id) is coordinator:
+            hass.data[DOMAIN].pop(entry.entry_id)
+        cleanup_task = hass.async_create_task(
+            _shutdown_failed_pair(), "adjustable_bed.failed_pair_shutdown"
+        )
+        cancelled = False
+        try:
+            while not cleanup_task.done():
+                try:
+                    await asyncio.shield(cleanup_task)
+                except asyncio.CancelledError:
+                    cancelled = True
+            cleanup_task.result()
+        finally:
+            for _side, _child, _source, adapter, owner in pairlink_local_roles:
+                _release_pairlink_local_profile_lease(hass, owner, adapter)
+        if cancelled:
+            raise asyncio.CancelledError from None
         raise
-
-    # Seed each connected child's positions, like the single-bed path does, so
-    # per-side covers don't sit at "unknown" until the first movement.
-    for child in coordinator.children.values():
-        assert isinstance(child, AdjustableBedCoordinator)
-        if child.is_connected:
-            child._schedule_position_hydration()
-
-    sides = coordinator.children.values()
-    async_watch_remacro_fallback(
-        hass, entry, (side for side in sides if isinstance(side, AdjustableBedCoordinator))
-    )
-    _LOGGER.info("Paired bed setup complete for %s", entry.title)
-    return True
 
 
 async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1100,6 +1200,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _async_ensure_device_registry_entry(hass, entry, coordinator)
     await async_watch_profile_recommendations(hass, entry, ((None, coordinator),))
 
+    selected_pairlink_role = entry.options.get(
+        CONF_PAIRLINK_ROLE,
+        entry.data.get(CONF_PAIRLINK_ROLE),
+    )
+    if (
+        entry.data.get(CONF_BED_TYPE) == BED_TYPE_REVERIE_PAIRLINK
+        and selected_pairlink_role == PAIRLINK_ROLE_PERIPHERAL
+    ):
+        return await _async_setup_pairlink_local_entry(hass, entry, coordinator)
+
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
     initial_connection_timed_out = False
@@ -1179,6 +1289,396 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator,
         schedule_initial_position_read=True,
     )
+
+
+if TYPE_CHECKING:
+    from .beds.reverie_pairlink_runtime import PairlinkRuntime
+    from .beds.reverie_pairlink_transport import PairlinkHostAdapterInventoryEntry
+
+_PAIRLINK_LOCAL_PROFILE_LEASES_KEY = "_pairlink_local_profile_leases"
+
+
+
+@dataclass(frozen=True, slots=True)
+class _PairlinkLocalLeaseTransfer:
+    side: str
+    original: AdjustableBedCoordinator
+    entry: ConfigEntry
+    runtime: PairlinkRuntime
+    source: str
+    adapter: str
+    owner: str
+
+
+def _trusted_absorbed_single(
+    hass: HomeAssistant, entry: ConfigEntry, side: str, child: AdjustableBedCoordinator,
+) -> tuple[ConfigEntry | None, AdjustableBedCoordinator | None]:
+    """Validate a descriptor before it can identify an existing lease owner."""
+    if not child.entry.data.get(KEY_ABSORBED_ENTRY_ID):
+        return None, None
+    descriptor = get_child(entry.data, side)
+    absorbed_id = descriptor.get(KEY_ABSORBED_ENTRY_ID) if descriptor is not None else None
+    if not absorbed_id:
+        return None, None
+    original = hass.config_entries.async_get_entry(absorbed_id)
+    if original is None:
+        return None, None
+    if (
+        is_paired(original.data)
+        or str(original.data.get(CONF_ADDRESS, "")).upper() != child.address
+        or original.data.get(CONF_BED_TYPE) != child.bed_type
+        or (
+            descriptor is not None
+            and descriptor.get("origin_unique_id") is not None
+            and descriptor.get("origin_unique_id") != original.unique_id
+        )
+    ):
+        raise ConfigEntryNotReady("Absorbed bed identity does not match its paired side")
+    coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+    if coordinator is not None and (
+        not isinstance(coordinator, AdjustableBedCoordinator)
+        or coordinator.entry is not original
+        or coordinator.address != child.address
+    ):
+        raise ConfigEntryNotReady("Absorbed bed runtime does not match its config entry")
+    return original, coordinator
+
+
+def _release_pairlink_local_reservations(
+    hass: HomeAssistant,
+    roles: list[tuple[str, AdjustableBedCoordinator, str, str, str]],
+    transfers: list[_PairlinkLocalLeaseTransfer],
+) -> None:
+    """Keep predecessor reservations held until their rollback or commit."""
+    retained = {transfer.adapter for transfer in transfers}
+    for _side, _child, _source, adapter, owner in roles:
+        if adapter not in retained:
+            _release_pairlink_local_profile_lease(hass, owner, adapter)
+
+
+async def _async_restore_pairlink_local_transfers(
+    hass: HomeAssistant, parent: PairedBedCoordinator | None,
+    transfers: list[_PairlinkLocalLeaseTransfer],
+    inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
+) -> None:
+    """Settle source restoration before propagating caller cancellation."""
+    if not transfers:
+        return
+    task = hass.async_create_task(
+        _async_restore_pairlink_local_sources(hass, parent, transfers, inventory),
+        "adjustable_bed.pairlink_transfer_rollback",
+    )
+    cancelled = False
+    while not task.done():
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            # Keep cleanup isolated from every caller cancellation.
+            cancelled = True
+    task.result()
+    if cancelled:
+        raise asyncio.CancelledError
+
+
+async def _async_restore_pairlink_local_sources(
+    hass: HomeAssistant, parent: PairedBedCoordinator | None,
+    transfers: list[_PairlinkLocalLeaseTransfer],
+    inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
+) -> None:
+    """Restore surviving singles only after their replacement server has stopped."""
+    failures: list[Exception] = []
+    for transfer in reversed(transfers):
+        original = transfer.original
+        entry = transfer.entry
+        if hass.config_entries.async_get_entry(entry.entry_id) is not entry:
+            # Removing a source entry is the registry transaction's commit point.
+            continue
+        try:
+            if parent is not None:
+                await parent.async_remove_child(transfer.side)
+            leases = hass.data[DOMAIN][_PAIRLINK_LOCAL_PROFILE_LEASES_KEY]
+            if leases.get(transfer.adapter) != transfer.owner:
+                raise ConfigEntryNotReady("Pairlink transfer reservation changed before rollback")
+            current = hass.data[DOMAIN].get(entry.entry_id)
+            unloaded = (
+                current is None
+                and original._shutting_down
+                and entry.state is ConfigEntryState.NOT_LOADED
+            )
+            if current is not original and not unloaded:
+                raise ConfigEntryNotReady("Pairlink source runtime changed before rollback")
+            leases[transfer.adapter] = entry.entry_id
+            if unloaded:
+                if not await hass.config_entries.async_setup(entry.entry_id):
+                    raise ConfigEntryNotReady("Could not reload the original Pairlink local entry")
+            elif transfer.runtime.is_closed:
+                async with original._command_lock, original._lock:
+                    if original._pairlink_runtime is not None:
+                        raise ConfigEntryNotReady("Pairlink source runtime changed during rollback")
+                    await _async_start_paired_pairlink_local_child(
+                        hass, original, host_adapter_source=transfer.source,
+                        adapter_inventory=inventory,
+                    )
+        except Exception as err:
+            failures.append(err)
+        finally:
+            original.finish_pairing_transfer()
+    if failures:
+        raise ExceptionGroup("Pairlink local source restoration failed", failures)
+
+
+def _release_pairlink_local_profile_lease(
+    hass: HomeAssistant,
+    entry_id: str,
+    adapter: str,
+) -> None:
+    """Release one integration-local lease after the entry-owned backend stops."""
+    domain_data = hass.data.get(DOMAIN)
+    if not isinstance(domain_data, dict):
+        return
+    leases = domain_data.get(_PAIRLINK_LOCAL_PROFILE_LEASES_KEY)
+    if isinstance(leases, dict) and leases.get(adapter) == entry_id:
+        leases.pop(adapter, None)
+
+
+async def _async_setup_pairlink_local_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+) -> bool:
+    """Start an explicitly selected Pairlink local profile without Bleak central."""
+    from .beds.reverie_pairlink import ReveriePairlinkController
+    from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
+
+    data = {**entry.data, **entry.options}
+    host_adapter_source = data.get(CONF_PAIRLINK_HOST_SOURCE)
+    if not isinstance(host_adapter_source, str) or not host_adapter_source:
+        raise ConfigEntryNotReady(
+            "Select the exact active local Bluetooth source for Pairlink peripheral mode"
+        )
+
+    adapter_inventory = pairlink_host_adapter_inventory(hass)
+    source_matches = [
+        item for item in adapter_inventory if item.source == host_adapter_source
+    ]
+    if (
+        len(source_matches) != 1
+        or source_matches[0].transport != "local"
+        or not source_matches[0].active
+        or re.fullmatch(r"hci[0-9]+", source_matches[0].adapter) is None
+    ):
+        raise ConfigEntryNotReady(
+            "The selected Pairlink source must map to one active local BlueZ adapter"
+        )
+    adapter = source_matches[0].adapter
+
+    leases = hass.data[DOMAIN].setdefault(_PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
+    if not isinstance(leases, dict):
+        raise ConfigEntryNotReady("Pairlink local profile ownership state is unavailable")
+    current_owner = leases.get(adapter)
+    if current_owner is not None and current_owner != entry.entry_id:
+        raise ConfigEntryNotReady(
+            "Another Adjustable Bed entry already owns a Pairlink local profile on this adapter"
+        )
+    leases[adapter] = entry.entry_id
+    entry.async_on_unload(
+        lambda: _release_pairlink_local_profile_lease(
+            hass,
+            entry.entry_id,
+            adapter,
+        )
+    )
+
+    service_info = bluetooth.async_last_service_info(
+        hass,
+        entry.data[CONF_ADDRESS],
+        connectable=True,
+    )
+    manufacturer_data = (
+        getattr(service_info, "manufacturer_data", None)
+        if service_info is not None
+        else None
+    )
+    device_name = getattr(service_info, "name", None) if service_info is not None else None
+
+    try:
+        controller = await create_controller(
+            coordinator=coordinator,
+            bed_type=BED_TYPE_REVERIE_PAIRLINK,
+            protocol_variant=entry.data.get(CONF_PROTOCOL_VARIANT),
+            client=None,
+            device_name=device_name if isinstance(device_name, str) else None,
+            manufacturer_data=(
+                manufacturer_data if isinstance(manufacturer_data, dict) else None
+            ),
+        )
+        if not isinstance(controller, ReveriePairlinkController):
+            raise ConfigEntryNotReady("Pairlink factory returned an incompatible controller")
+        coordinator._controller = controller
+        await controller.async_start_peripheral(
+            host_adapter_source=host_adapter_source,
+            adapter_inventory=adapter_inventory,
+        )
+        coordinator.cache_capability_controller()
+        entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+        async_watch_remacro_fallback(hass, entry, (coordinator,))
+        return await _async_finish_entry_setup(
+            hass,
+            entry,
+            coordinator,
+            schedule_initial_position_read=False,
+        )
+    except BaseException as err:
+        _release_pairlink_local_profile_lease(hass, entry.entry_id, adapter)
+        try:
+            await coordinator.async_shutdown()
+        except Exception:  # noqa: BLE001 - preserve the concrete setup failure
+            _LOGGER.exception("Pairlink peripheral cleanup failed during setup")
+        if isinstance(err, asyncio.CancelledError):
+            raise
+        if isinstance(err, ConfigEntryNotReady):
+            raise
+        raise ConfigEntryNotReady(
+            f"Could not start Pairlink peripheral on the selected local Bluetooth source: {err}"
+        ) from err
+
+
+def _preflight_paired_pairlink_local_roles(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    children: Mapping[str, AdjustableBedCoordinator],
+) -> tuple[
+    tuple[PairlinkHostAdapterInventoryEntry, ...],
+    list[tuple[str, AdjustableBedCoordinator, str, str, str]],
+    list[_PairlinkLocalLeaseTransfer],
+]:
+    """Validate every source and conflict before reserving any selected adapter."""
+    from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
+
+    inventory = pairlink_host_adapter_inventory(hass)
+    selected: list[tuple[str, AdjustableBedCoordinator, str, str, str]] = []
+    transfers: list[_PairlinkLocalLeaseTransfer] = []
+    for side, child in children.items():
+        if child.bed_type != BED_TYPE_REVERIE_PAIRLINK:
+            continue
+        data = {**child.entry.data, **child.entry.options}
+        if data.get(CONF_PAIRLINK_ROLE) != PAIRLINK_ROLE_PERIPHERAL:
+            continue
+        source = data.get(CONF_PAIRLINK_HOST_SOURCE)
+        if not isinstance(source, str) or not source:
+            raise ConfigEntryNotReady(
+                f"Select an exact active local Bluetooth source for the {side} Pairlink child"
+            )
+        matches = [item for item in inventory if item.source == source]
+        if (
+            len(matches) != 1
+            or matches[0].transport != "local"
+            or not matches[0].active
+            or re.fullmatch(r"hci[0-9]+", matches[0].adapter) is None
+        ):
+            raise ConfigEntryNotReady(
+                f"The {side} Pairlink source must map to one active local BlueZ adapter"
+            )
+        adapter = matches[0].adapter
+        owner = f"{entry.entry_id}:{side}:{child.address.upper()}"
+        selected.append((side, child, source, adapter, owner))
+
+    adapters = [item[3] for item in selected]
+    if len(set(adapters)) != len(adapters):
+        raise ConfigEntryNotReady(
+            "Paired Pairlink local children need distinct unambiguous BlueZ adapters"
+        )
+    if not selected:
+        return inventory, selected, transfers
+
+    originals = {
+        side: _trusted_absorbed_single(hass, entry, side, child)
+        for side, child in children.items()
+    }
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    leases = domain_data.setdefault(_PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
+    if not isinstance(leases, dict):
+        raise ConfigEntryNotReady("Pairlink local profile ownership state is unavailable")
+    for side, _child, source, adapter, owner in selected:
+        current_owner = leases.get(adapter)
+        original, coordinator = originals[side]
+        if current_owner is not None and current_owner != owner:
+            runtime = coordinator._pairlink_runtime if coordinator is not None else None
+            if (
+                original is None or coordinator is None
+                or current_owner != original.entry_id
+                or runtime is None or not runtime.is_peripheral_role_active
+                or runtime.peripheral_backend is None or not runtime.peripheral_backend.is_ready
+                or runtime.host_adapter_source != source
+                or runtime.host_adapter_path != f"/org/bluez/{adapter}"
+                or {**original.data, **original.options}.get(CONF_PAIRLINK_ROLE) != PAIRLINK_ROLE_PERIPHERAL
+            ):
+                raise ConfigEntryNotReady(
+                    "Another Adjustable Bed entry already owns a Pairlink local profile on this adapter"
+                )
+            transfers.append(_PairlinkLocalLeaseTransfer(
+                side, coordinator, original, runtime, source, adapter, owner,
+            ))
+        elif coordinator is not None and coordinator._pairlink_runtime is not None:
+            runtime = coordinator._pairlink_runtime
+            if runtime.peripheral_backend is not None:
+                raise ConfigEntryNotReady("Absorbed local backend has no matching source lease")
+
+    for _side, _child, _source, adapter, owner in selected:
+        leases[adapter] = owner
+        entry.async_on_unload(
+            lambda adapter=adapter, owner=owner: _release_pairlink_local_profile_lease(
+                hass, owner, adapter
+            )
+        )
+    return inventory, selected, transfers
+
+
+def _has_selected_disconnected_transport(child: EntityRuntime) -> bool:
+    """Recognize a selected local role without inferring physical readiness."""
+    controller = child.controller or child.capability_controller
+    return bool(
+        controller is not None
+        and controller.requires_disconnected_transport
+    )
+
+
+async def _async_start_paired_pairlink_local_child(
+    hass: HomeAssistant,
+    child: AdjustableBedCoordinator,
+    *,
+    host_adapter_source: str,
+    adapter_inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
+) -> None:
+    """Start one prevalidated child-owned local Pairlink backend."""
+    from .beds.reverie_pairlink import ReveriePairlinkController
+
+    address = child.entry.data.get(CONF_ADDRESS)
+    if not isinstance(address, str):
+        raise ConfigEntryNotReady("Paired Pairlink child has no physical address")
+    service_info = bluetooth.async_last_service_info(hass, address, connectable=True)
+    manufacturer_data = (
+        getattr(service_info, "manufacturer_data", None) if service_info is not None else None
+    )
+    device_name = getattr(service_info, "name", None) if service_info is not None else None
+    controller = await create_controller(
+        coordinator=child,
+        bed_type=BED_TYPE_REVERIE_PAIRLINK,
+        protocol_variant=child.entry.data.get(CONF_PROTOCOL_VARIANT),
+        client=None,
+        device_name=device_name if isinstance(device_name, str) else None,
+        manufacturer_data=(
+            manufacturer_data if isinstance(manufacturer_data, dict) else None
+        ),
+    )
+    if not isinstance(controller, ReveriePairlinkController):
+        raise ConfigEntryNotReady("Pairlink factory returned an incompatible child controller")
+    child._controller = controller
+    await controller.async_start_peripheral(
+        host_adapter_source=host_adapter_source,
+        adapter_inventory=adapter_inventory,
+    )
+    child.cache_capability_controller()
 
 
 async def _async_maybe_reclassify_bedtech_qrrm_entry(

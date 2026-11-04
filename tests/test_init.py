@@ -1892,9 +1892,10 @@ class TestServices:
         move_packet = controller._build_packet([0x02, 0x70], [0x02])
         stop_packet = controller._build_packet([0x02, 0x73])
         payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
-        assert 1 <= len(payloads[:-2]) <= 2
-        assert payloads[:-2] == [move_packet] * len(payloads[:-2])
-        assert payloads[-2:] == [stop_packet] * 2
+        # The declared held route owns its fresh STOP cleanup.
+        assert 1 <= len(payloads[:-1]) <= 2
+        assert payloads[:-1] == [move_packet] * len(payloads[:-1])
+        assert payloads[-1:] == [stop_packet]
 
     async def test_timed_move_service_rejects_bed_height_for_standard_layout(
         self,

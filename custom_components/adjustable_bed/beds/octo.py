@@ -2125,6 +2125,7 @@ class OctoController(BedController, OctoPacketCodec):
                 down_control=f"{key}_down",
                 start_delay_ms=100,
                 release_delay_ms=100,
+                stop_scope="side",
             )
 
         if motor_count == 1:

@@ -751,6 +751,7 @@ def test_combined_motor_button_keeps_controller_hold_metadata() -> None:
 
     assert button.extra_state_attributes == {
         "paired_hold_motor": "back",
+        "paired_hold_side": SIDE_BOTH,
         "held_control": "back_up",
         "hold_start_delay_ms": 100,
         "hold_release_delay_ms": 100,

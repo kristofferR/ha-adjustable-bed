@@ -343,6 +343,7 @@ class StarcodeM1X12Controller(BedController):
                     # replaces the refresh with STOP immediately.
                     start_delay_ms=100,
                     release_delay_ms=0,
+                    stop_scope="side",
                 ),
             )
             for part, translation_key, up, down in _PARTS
@@ -1186,6 +1187,7 @@ class StarElevateM1X12Controller(StarElevateController):
                     # replaces the refresh with STOP immediately.
                     start_delay_ms=100,
                     release_delay_ms=0,
+                    stop_scope="side" if control_pair[0] == "both_up" else "motor",
                 ),
             )
             for spec, control_pair in zip(

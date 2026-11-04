@@ -68,6 +68,8 @@ include Flat, Zero gravity, Anti-snore, Lounge/Reading, TV and two numbered reca
 P1 recall is held; P2 recall is one-shot. P2 can save all six non-Flat targets.
 All movement uses the protocol's STOP on release and cancellation. The native
 card receives held-control metadata for the axes and P1 presets.
+The app shares one held-movement stream across motor controls. A card Stop
+cancels that shared software stream; hardware effects across axes remain unverified.
 
 Controller buttons expose regular massage, P2 sonic massage when its MFP function
 list contains 7, light toggle, privacy, explicit state/version queries and legacy

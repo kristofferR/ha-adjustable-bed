@@ -25,19 +25,21 @@ plugin({
 });
 
 const customElements = new Map();
-globalThis.window = {
+globalThis.window = Object.assign(new EventTarget(), {
   customElements: {
     get: (name) => customElements.get(name),
     define: (name, value) => customElements.set(name, value),
     whenDefined: () => new Promise(() => {}),
   },
-};
+});
 globalThis.KeyboardEvent = class {
   constructor(type, init = {}) {
     Object.assign(this, { type, key: "Enter", repeat: false }, init);
   }
 
   preventDefault() {}
+
+  stopPropagation() {}
 };
 
 const { AdjustableBedCard } = await import("./adjustable-bed-card.ts");
@@ -132,6 +134,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
         ...sideAttributes(side),
         held_control_up: `part_${part}_up`,
         held_control_down: `part_${part}_down`,
+        held_stop_scope: "side",
         hold_start_delay_ms: 100,
         hold_release_delay_ms: 0,
       });
@@ -343,6 +346,7 @@ test("an explicit unsided STOP remains broad within its own device", async () =>
         attributes: {
           held_control_up: "part_1_up",
           held_control_down: "part_1_down",
+          held_stop_scope: "side",
           hold_start_delay_ms: 100,
           hold_release_delay_ms: 0,
         },

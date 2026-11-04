@@ -251,6 +251,94 @@ set_positions:
             - value: right
               label: Right
 
+reverie_set_comfort:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    comfort:
+      required: true
+      example:
+        head_position: 20
+        foot_position: 30
+        lumbar_position: 0
+        head_massage: 0
+        foot_massage: 0
+        timer_byte: 0
+        mode: 0
+      selector:
+        object:
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
+reverie_pairlink_alarm_comfort:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    comfort:
+      required: true
+      example:
+        head_position: 20
+        foot_position: 30
+        lumbar_position: 40
+        head_massage: 0
+        foot_massage: 0
+        timer_byte: 0
+        mode: 0
+      selector:
+        object:
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
+reverie_run_routine:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    steps:
+      required: true
+      example:
+        - duration_minutes: 1
+          comfort:
+            head_position: 20
+            foot_position: 30
+            lumbar_position: 0
+            head_massage: 0
+            foot_massage: 0
+      selector:
+        object:
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
+reverie_test:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right, both]
+
 timed_move:
   fields:
     device_id:
@@ -283,6 +371,22 @@ timed_move:
               value: bed_height
             - label: Stair
               value: stair
+            - label: M1X12 Part 1
+              value: m1x12_part_1
+            - label: M1X12 Part 2
+              value: m1x12_part_2
+            - label: M1X12 Part 4
+              value: m1x12_part_4
+            - label: M1X12 Part 8
+              value: m1x12_part_8
+            - label: M1X12 Part 16
+              value: m1x12_part_16
+            - label: ELEVATE Actuator 1
+              value: elevate_actuator_1
+            - label: ELEVATE Actuator 2
+              value: elevate_actuator_2
+            - label: ELEVATE Both Actuators
+              value: elevate_both
     direction:
       required: true
       selector:

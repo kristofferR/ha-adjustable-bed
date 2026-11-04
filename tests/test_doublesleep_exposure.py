@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.detection import (
     BED_TYPE_DISPLAY_NAMES,
     detect_bed_type_detailed,
@@ -164,3 +165,20 @@ def test_standard_button_exposes_p1_hold_without_changing_other_buttons():
     assert entity.extra_state_attributes["held_control"] == "doublesleep_26"
     bed.bed.protocol = "p2"
     assert "held_control" not in entity.extra_state_attributes
+
+
+@pytest.mark.parametrize("driver", ("p1", "p2"))
+def test_motor_covers_expose_the_shared_app_hold_owner(driver):
+    bed = Bed(driver, 3)
+    runtime = SimpleNamespace(
+        device_info={},
+        entity_side=None,
+        entity_translation_key=lambda key: key,
+        entity_unique_id=lambda key: key,
+    )
+    specs = bed.bed.motor_control_specs
+    assert len(specs) == 5
+    for spec in specs:
+        entity = AdjustableBedCover(runtime, _build_cover_description(spec))
+        assert entity.extra_state_attributes["held_stop_scope"] == "side"
+        assert entity.extra_state_attributes["held_control_up"] == spec.hold.up_control

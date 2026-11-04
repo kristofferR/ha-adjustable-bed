@@ -264,10 +264,10 @@ def _conflicting_entry_ids(source: AdjustableBedCoordinator) -> tuple[str, ...]:
 async def prepare_individual_command(
     source: AdjustableBedCoordinator,
     command: Callable[[BedController], Awaitable[None]] | None,
-) -> None:
+) -> bool:
     """Settle old group STOPs before an ordinary command owns its scheduler lane."""
     if command is not None and unwrap(command) in (_interrupt, _flat, _up, _down):
-        return
+        return False
     hass = source.hass
     source_id = source.entry.entry_id
     current = asyncio.current_task()
@@ -276,7 +276,7 @@ async def prepare_individual_command(
         for cleanup in (False, True)
         for task in _tasks(hass, cleanup=cleanup).get(source_id, ())
     ):
-        return
+        return False
     other_ids = _conflicting_entry_ids(source)
     ids = (source_id, *other_ids)
     for entry_id in ids:
@@ -293,6 +293,7 @@ async def prepare_individual_command(
         or hass.data.get(DOMAIN, {}).get(source_id) is not source
     ):
         raise asyncio.CancelledError("The AdjustableM5X5 individual admission was cancelled")
+    return True
 
 
 async def interrupt_conflicting_group(source: AdjustableBedCoordinator) -> None:

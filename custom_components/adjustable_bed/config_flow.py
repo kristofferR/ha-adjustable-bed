@@ -130,6 +130,7 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -205,6 +206,11 @@ from .const import (
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
+    CONF_PAIRLINK_HOME_ID,
+    CONF_PAIRLINK_HOST_SOURCE,
+    CONF_PAIRLINK_PASSWORD_HEX,
+    CONF_PAIRLINK_PASSWORD_TEXT,
+    CONF_PAIRLINK_ROLE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -286,6 +292,8 @@ from .const import (
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
+    PAIRLINK_ROLE_CENTRAL,
+    PAIRLINK_ROLE_PERIPHERAL,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     PRODUCT_TYPES,
@@ -7520,6 +7528,151 @@ def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
         return {}
 
 
+def _pairlink_settings_schema(
+    hass: HomeAssistant,
+    current_data: Mapping[str, Any],
+) -> dict[vol.Marker, Any]:
+    """Build private, per-target Pairlink role and credential fields."""
+    local_sources: list[SelectOptionDict] = []
+    try:
+        from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
+
+        local_sources = [
+            {"value": item.source, "label": f"{item.source} ({item.adapter})"}
+            for item in pairlink_host_adapter_inventory(hass)
+            if item.transport == "local" and item.active
+        ]
+    except Exception:  # noqa: BLE001 - setup revalidates current inventory
+        local_sources = []
+
+    current_source = current_data.get(CONF_PAIRLINK_HOST_SOURCE)
+    if isinstance(current_source, str) and current_source and all(
+        option["value"] != current_source for option in local_sources
+    ):
+        local_sources.append(
+            {"value": current_source, "label": f"{current_source} (not currently active)"}
+        )
+    source_selector: Any = (
+        SelectSelector(
+            SelectSelectorConfig(options=local_sources, mode=SelectSelectorMode.DROPDOWN)
+        )
+        if local_sources
+        else TextSelector(TextSelectorConfig())
+    )
+    return {
+        vol.Optional(
+            CONF_PAIRLINK_ROLE,
+            default=current_data.get(CONF_PAIRLINK_ROLE, PAIRLINK_ROLE_CENTRAL),
+        ): vol.In(
+            {
+                PAIRLINK_ROLE_CENTRAL: "Selected-bed central connection",
+                PAIRLINK_ROLE_PERIPHERAL: "Join from this host adapter",
+            }
+        ),
+        vol.Optional(
+            CONF_PAIRLINK_HOST_SOURCE,
+            default=current_source or "",
+        ): source_selector,
+        vol.Optional(
+            CONF_PAIRLINK_HOME_ID,
+            default=(
+                ""
+                if current_data.get(CONF_PAIRLINK_HOME_ID) is None
+                else str(current_data[CONF_PAIRLINK_HOME_ID])
+            ),
+        ): TextSelector(TextSelectorConfig()),
+        vol.Optional(
+            CONF_PAIRLINK_PASSWORD_TEXT,
+            default=current_data.get(CONF_PAIRLINK_PASSWORD_TEXT, "1122"),
+        ): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        vol.Optional(
+            CONF_PAIRLINK_PASSWORD_HEX,
+            default=current_data.get(CONF_PAIRLINK_PASSWORD_HEX, ""),
+        ): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+    }
+
+
+def _validate_pairlink_option_values(
+    hass: HomeAssistant,
+    current_data: Mapping[str, Any],
+    values: dict[str, Any],
+) -> dict[str, str]:
+    """Validate only explicit Pairlink inputs and current selected-source evidence."""
+    from .beds.reverie_pairlink_profile import (
+        pairlink_host_adapter_inventory,
+    )
+    from .beds.reverie_pairlink_runtime import encode_pairlink_password, normalize_home_id
+
+    errors: dict[str, str] = {}
+    role = values.get(
+        CONF_PAIRLINK_ROLE,
+        current_data.get(CONF_PAIRLINK_ROLE, PAIRLINK_ROLE_CENTRAL),
+    )
+    if role not in (PAIRLINK_ROLE_CENTRAL, PAIRLINK_ROLE_PERIPHERAL):
+        errors[CONF_PAIRLINK_ROLE] = "invalid_pairlink_role"
+    else:
+        values[CONF_PAIRLINK_ROLE] = role
+
+    if role == PAIRLINK_ROLE_PERIPHERAL:
+        source = values.get(CONF_PAIRLINK_HOST_SOURCE, current_data.get(CONF_PAIRLINK_HOST_SOURCE))
+        inventory = pairlink_host_adapter_inventory(hass)
+        matches = [
+            item
+            for item in inventory
+            if item.source == source and item.transport == "local" and item.active
+        ]
+        if not isinstance(source, str) or not source or len(matches) != 1:
+            errors[CONF_PAIRLINK_HOST_SOURCE] = "pairlink_local_source_unavailable"
+        else:
+            values[CONF_PAIRLINK_HOST_SOURCE] = source
+
+    raw_home_id = values.get(CONF_PAIRLINK_HOME_ID, current_data.get(CONF_PAIRLINK_HOME_ID))
+    home_id: int | None = None
+    if raw_home_id not in (None, ""):
+        try:
+            parsed_home_id = (
+                int(raw_home_id.strip(), 10) if isinstance(raw_home_id, str) else raw_home_id
+            )
+            if isinstance(parsed_home_id, bool) or not isinstance(parsed_home_id, int):
+                raise TypeError("Pairlink HomeID must be an integer")
+            home_id = parsed_home_id
+            normalize_home_id(home_id)
+        except (TypeError, ValueError):
+            errors[CONF_PAIRLINK_HOME_ID] = "invalid_pairlink_home_id"
+        else:
+            values[CONF_PAIRLINK_HOME_ID] = home_id
+    else:
+        values[CONF_PAIRLINK_HOME_ID] = None
+
+    # A blank value preserves caller-context provenance: runtime prefers the
+    # current advertisement and uses the source-known 5566 default only when
+    # that caller supplies no HomeID.
+
+    password_text = values.get(
+        CONF_PAIRLINK_PASSWORD_TEXT,
+        current_data.get(CONF_PAIRLINK_PASSWORD_TEXT, "1122"),
+    )
+    password_hex = values.get(
+        CONF_PAIRLINK_PASSWORD_HEX,
+        current_data.get(CONF_PAIRLINK_PASSWORD_HEX),
+    )
+    if password_hex == "":
+        password_hex = None
+    try:
+        encode_pairlink_password(
+            password_text=password_text,
+            password_hex=password_hex,
+        )
+    except (TypeError, ValueError):
+        errors[CONF_PAIRLINK_PASSWORD_HEX if password_hex is not None else CONF_PAIRLINK_PASSWORD_TEXT] = (
+            "invalid_pairlink_password"
+        )
+    else:
+        values[CONF_PAIRLINK_PASSWORD_TEXT] = password_text
+        values[CONF_PAIRLINK_PASSWORD_HEX] = password_hex
+    return errors
+
+
 class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEntry):
     """Handle Adjustable Bed options."""
 
@@ -7589,6 +7742,20 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
     @staticmethod
     def _remove_irrelevant_bed_settings(data: dict[str, Any], bed_type: str) -> None:
         """Drop settings that belong only to the previously selected protocol."""
+        pairlink_keys = (
+            CONF_PAIRLINK_ROLE,
+            CONF_PAIRLINK_HOST_SOURCE,
+            CONF_PAIRLINK_HOME_ID,
+            CONF_PAIRLINK_PASSWORD_TEXT,
+            CONF_PAIRLINK_PASSWORD_HEX,
+        )
+        if bed_type != BED_TYPE_REVERIE_PAIRLINK:
+            for key in pairlink_keys:
+                data.pop(key, None)
+        else:
+            for key in (CONF_PAIRLINK_HOST_SOURCE, CONF_PAIRLINK_HOME_ID, CONF_PAIRLINK_PASSWORD_HEX):
+                if data.get(key) in (None, ""):
+                    data.pop(key, None)
         if not get_variants_for_bed_type(bed_type):
             data.pop(CONF_PROTOCOL_VARIANT, None)
         if bed_type != BED_TYPE_OCTO:
@@ -7850,10 +8017,20 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 default=current.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
             ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
         }
+        if bed_type == BED_TYPE_REVERIE_PAIRLINK:
+            schema.update(_pairlink_settings_schema(self.hass, current))
         _hide_owned_generic_fields(schema, bed_type, variant)
         errors: dict[str, str] = {}
         if user_input is not None:
             changes = dict(user_input)
+            if bed_type == BED_TYPE_REVERIE_PAIRLINK:
+                errors.update(
+                    _validate_pairlink_option_values(
+                        self.hass,
+                        current,
+                        changes,
+                    )
+                )
             for field, default in zip(
                 (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS), pulse_defaults, strict=True
             ):
@@ -8244,6 +8421,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = vol.In(variants)
 
+        if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
+            schema_dict.update(_pairlink_settings_schema(self.hass, current_data))
+
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
             schema_dict[
@@ -8481,6 +8661,18 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
             bed_type = requested_bed_type
             stale_vibradorm_keys: frozenset[str] = frozenset()
+            if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
+                pairlink_errors = _validate_pairlink_option_values(
+                    self.hass,
+                    current_data,
+                    user_input,
+                )
+                if pairlink_errors:
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors=pairlink_errors,
+                    )
             # The discovery toggle is global, not per-entry: pull it out of
             # user_input now so it is never written into entry data, but only
             # persist it on the success path below - otherwise a later

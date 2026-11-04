@@ -281,6 +281,9 @@ normal reset, bed light and massage send their configured STOP where applicable.
 Presets and sofa reset end refresh without an extra STOP. Sofa lamp and music
 send once without STOP. BJRN preset programming waits three seconds; other
 programming sends its long code once. Explicit Stop remains available separately.
+Native cover Stop uses the selected side's shared Stop action, so card ownership
+is cleared across that side's motor controls. Cross-axis firmware effects remain
+unverified.
 The **HJBed layout** local select chooses Normal or the conditionally named Motion
 layout; Motion reset is a short action and its mode query has a narrower gate.
 

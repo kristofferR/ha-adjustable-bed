@@ -2418,6 +2418,7 @@ class TestPairBedsConversion:
             manual_disconnect_strands_connection=False,
             invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
+            on_disconnect=MagicMock(),
         )
         hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
 
@@ -2480,6 +2481,7 @@ class TestPairBedsConversion:
             manual_disconnect_strands_connection=False,
             invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
+            on_disconnect=MagicMock(),
         )
         coord._pending_capability_reload = True
         hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
@@ -3347,7 +3349,12 @@ class TestSideServiceRouting:
                 connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
             )
             coord.children = {
-                side: SimpleNamespace(bed_type=BED_TYPE_OCTO) for side in (SIDE_LEFT, SIDE_RIGHT)
+                SIDE_LEFT: SimpleNamespace(
+                    bed_type=BED_TYPE_OCTO, capability_controller=left.capability_controller
+                ),
+                SIDE_RIGHT: SimpleNamespace(
+                    bed_type=BED_TYPE_OCTO, capability_controller=right.capability_controller
+                ),
             }
             return coord, _combined_motor_buttons_for(coord, [left, right])
 
@@ -3528,17 +3535,84 @@ class TestPairedReceiverSettings:
             await asyncio.gather(movement, *([stop] if stop else []), return_exceptions=True)
 
     @pytest.mark.parametrize(
-        ("motor", "mode", "bed_type", "eligible"),
+        ("mode", "left_hold", "right_hold", "expected"),
         [
-            ("back", "concurrent", BED_TYPE_OCTO, True),
-            ("legs", "concurrent", BED_TYPE_OCTO, True),
-            ("back_legs", "concurrent", BED_TYPE_OCTO, False),
-            ("back", "sequential", BED_TYPE_OCTO, True),
-            ("back", "concurrent", BED_TYPE_LINAK, False),
+            (
+                "concurrent",
+                ("back_up", "back_down", 250, 100),
+                ("back_up", "back_down", 250, 100),
+                {
+                    "paired_hold_motor": "back",
+                    "paired_hold_side": SIDE_BOTH,
+                    "held_control": "back_up",
+                    "hold_start_delay_ms": 250,
+                    "hold_release_delay_ms": 100,
+                },
+            ),
+            (
+                "concurrent",
+                ("back_up", "back_down", 250, 100),
+                ("back_up", "back_down", 250, 101),
+                {},
+            ),
+            (
+                "concurrent",
+                ("back_up", "back_down", 250, 100),
+                None,
+                {},
+            ),
+            (
+                "sequential",
+                ("back_up", "back_down", 250, 100),
+                ("back_up", "back_down", 250, 100),
+                {},
+            ),
         ],
     )
-    def test_timed_hold_metadata_only_for_supported_concurrent_motors(
-        self, motor, mode, bed_type, eligible
+    def test_timed_hold_metadata_requires_matching_concurrent_pair_contract(
+        self, mode, left_hold, right_hold, expected
+    ):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import (
+            ControllerMotorHoldSpec,
+            MotorControlSpec,
+        )
+        from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
+
+        coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
+        def make_spec(metadata):
+            hold = ControllerMotorHoldSpec(*metadata) if metadata is not None else None
+            return MotorControlSpec(
+                key="back",
+                translation_key="back",
+                open_fn=AsyncMock(),
+                close_fn=AsyncMock(),
+                stop_fn=AsyncMock(),
+                hold=hold,
+            )
+
+        left_spec = make_spec(left_hold)
+        right_spec = make_spec(right_hold)
+        coord.children = {
+            SIDE_LEFT: SimpleNamespace(
+                capability_controller=SimpleNamespace(motor_control_specs=[left_spec]),
+                bed_type=BED_TYPE_LINAK,
+            ),
+            SIDE_RIGHT: SimpleNamespace(
+                capability_controller=SimpleNamespace(motor_control_specs=[right_spec]),
+                bed_type=BED_TYPE_LINAK,
+            ),
+        }
+        entity = PairedBedCombinedMotorButton(coord, left_spec, "up")
+        assert entity.extra_state_attributes == expected
+
+    @pytest.mark.parametrize("mode", ["concurrent", "sequential"])
+    @pytest.mark.parametrize("right_bed_type", [BED_TYPE_OCTO, BED_TYPE_LINAK])
+    @pytest.mark.parametrize("motor", ["back", "legs"])
+    def test_octo_timed_pair_metadata_does_not_require_declared_hold(
+        self, mode, right_bed_type, motor,
     ):
         from types import SimpleNamespace
         from unittest.mock import MagicMock
@@ -3546,26 +3620,19 @@ class TestPairedReceiverSettings:
         from custom_components.adjustable_bed.beds.base import MotorControlSpec
         from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
 
+        spec = MotorControlSpec(motor, motor, AsyncMock(), AsyncMock(), AsyncMock())
         coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
-        spec = MotorControlSpec(
-            key=motor,
-            translation_key=motor,
-            open_fn=AsyncMock(),
-            close_fn=AsyncMock(),
-            stop_fn=AsyncMock(),
-        )
-        controller = SimpleNamespace(motor_control_specs=(spec,), held_control_options=())
         coord.children = {
-            side: SimpleNamespace(bed_type=bed_type, capability_controller=controller)
-            for side in PAIR_SIDES
+            SIDE_LEFT: SimpleNamespace(bed_type=BED_TYPE_OCTO),
+            SIDE_RIGHT: SimpleNamespace(bed_type=right_bed_type),
         }
+        for child in coord.children.values():
+            child.capability_controller = SimpleNamespace(motor_control_specs=[spec])
         entity = PairedBedCombinedMotorButton(coord, spec, "up")
-        assert entity.extra_state_attributes == ({"paired_hold_motor": motor} if eligible else {})
-        coord.connection_mode = "sequential"
-        finite_octo_move = bed_type == BED_TYPE_OCTO and motor in {"back", "legs"}
-        assert entity.extra_state_attributes == (
-            {"paired_hold_motor": motor} if finite_octo_move else {}
-        )
+        expected = {"paired_hold_motor": motor, "paired_hold_side": SIDE_BOTH} if (
+            right_bed_type == BED_TYPE_OCTO
+        ) else {}
+        assert entity.extra_state_attributes == expected
 
     @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT])
     async def test_receiver_edit_preserves_other_side_and_survives_split(
@@ -4734,7 +4801,7 @@ class TestOctoOfflineSnapshot:
                     ConnectionError("connection slot exhausted"), attempt_cursors
                 )
 
-            finite_metadata = {"paired_hold_motor": "back"}
+            finite_metadata = {"paired_hold_motor": "back", "paired_hold_side": SIDE_BOTH}
             assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
             assert button.extra_state_attributes == finite_metadata
             assert published_attributes[-1] == finite_metadata
@@ -4804,6 +4871,8 @@ class TestOctoOfflineSnapshot:
 
         assert button.extra_state_attributes == {
             "bed_side": SIDE_BOTH,
+            "paired_hold_motor": "back",
+            "paired_hold_side": SIDE_BOTH,
             "held_control": "back_up",
             "hold_start_delay_ms": 100,
             "hold_release_delay_ms": 100,
