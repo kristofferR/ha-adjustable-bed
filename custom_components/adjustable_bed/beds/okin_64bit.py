@@ -112,7 +112,6 @@ class Okin64BitController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - memory programming uses set commands at preset positions."""
         return False
 
     @property
@@ -121,17 +120,14 @@ class Okin64BitController(BedController):
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return True - OKIN 64-bit supports discrete on/off control."""
         return True
 
     @property
     def has_lumbar_support(self) -> bool:
-        """Return True - OKIN 64-bit beds support lumbar motor."""
         return True
 
     @property
     def supports_stop_all(self) -> bool:
-        """Return True - OKIN 64-bit supports explicit stop command."""
         return True
 
     @property
@@ -188,70 +184,54 @@ class Okin64BitController(BedController):
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up."""
         await self._move_with_stop(self._build_command(_KEYS["head_up"]))
 
     async def move_head_down(self) -> None:
-        """Move head down."""
         await self._move_with_stop(self._build_command(_KEYS["head_down"]))
 
     async def move_head_stop(self) -> None:
-        """Stop head motor."""
         await self.write_command(
             self._build_command(_KEYS["stop"]),
             cancel_event=asyncio.Event(),
         )
 
     async def move_back_up(self) -> None:
-        """Move back up (same as head for OKIN 64-bit)."""
         await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        """Move back down (same as head for OKIN 64-bit)."""
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up (same as feet for OKIN 64-bit)."""
         await self._move_with_stop(self._build_command(_KEYS["foot_up"]))
 
     async def move_legs_down(self) -> None:
-        """Move legs down (same as feet for OKIN 64-bit)."""
         await self._move_with_stop(self._build_command(_KEYS["foot_down"]))
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
         await self.move_head_stop()
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
         await self._move_with_stop(self._build_command(_KEYS["foot_up"]))
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
         await self._move_with_stop(self._build_command(_KEYS["foot_down"]))
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         await self.move_head_stop()
 
     async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
         await self._move_with_stop(self._build_command(_KEYS["lumbar_up"]))
 
     async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
         await self._move_with_stop(self._build_command(_KEYS["lumbar_down"]))
 
     async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
         await self.move_head_stop()
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
         await self.write_command(
             self._build_command(_KEYS["stop"]),
             cancel_event=asyncio.Event(),
@@ -259,7 +239,6 @@ class Okin64BitController(BedController):
 
     # Preset methods
     async def preset_flat(self) -> None:
-        """Go to flat position."""
         await self.write_command(self._build_command(_KEYS["flat"]))
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -281,47 +260,36 @@ class Okin64BitController(BedController):
         )
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
         await self.write_command(self._build_command(_KEYS["zero_g"]))
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
         await self.write_command(self._build_command(_KEYS["anti_snore"]))
 
     async def preset_tv(self) -> None:
-        """Go to TV position."""
         await self.write_command(self._build_command(_KEYS["tv_pc"]))
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position."""
         await self.write_command(self._build_command(_KEYS["lounge"]))
 
     # Light methods
     async def lights_on(self) -> None:
-        """Turn on under-bed lights."""
         await self.write_command(self._build_command(_KEYS["light_on"]))
 
     async def lights_off(self) -> None:
-        """Turn off under-bed lights."""
         await self.write_command(self._build_command(_KEYS["light_off"]))
 
     async def lights_toggle(self) -> None:
-        """Toggle under-bed lights."""
         await self.write_command(self._build_command(_KEYS["light_toggle"]))
 
     # Massage methods
     async def massage_toggle(self) -> None:
-        """Toggle massage on/off."""
         await self.write_command(self._build_command(_KEYS["massage_switch"]))
 
     async def massage_head_up(self) -> None:
-        """Increase massage intensity."""
         await self.write_command(self._build_command(_KEYS["strength_up"]))
 
     async def massage_head_down(self) -> None:
-        """Decrease massage intensity."""
         await self.write_command(self._build_command(_KEYS["strength_down"]))
 
     async def massage_mode_step(self) -> None:
-        """Step through massage wave modes."""
         await self.write_command(self._build_command(_KEYS["wave_mode"]))
