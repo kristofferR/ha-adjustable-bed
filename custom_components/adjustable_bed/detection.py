@@ -556,7 +556,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2 (LP Control app, LP Comfort Connect)",
     BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base (legacy app)",
-    BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (LP Control app, requires pairing)",
+    BED_TYPE_LEGGETT_OKIN: (
+        "Leggett & Platt Okin (Prodigy CE, Prodigy 2, Prodigy 2L, U Series and LP Control apps, "
+        "requires pairing)"
+    ),
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
     # Brand-specific types
     BED_TYPE_BEDTECH: "BedTech",
@@ -698,6 +701,8 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_OKIN_UUID,
         BED_TYPE_OKIN_DOT,
         BED_TYPE_OKIN_RF_ECO_BT,
+        BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_LEGGETT_WILINKE,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -705,6 +710,10 @@ FAMILY_STEP_ROUTES: Final = frozenset(
 _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_FURNIMOVE: (
         "Okin: FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes"
+    ),
+    BED_TYPE_LEGGETT_OKIN: (
+        "Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and "
+        "L&P Adjustable Base apps"
     ),
 }
 

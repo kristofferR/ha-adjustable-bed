@@ -1437,8 +1437,10 @@ Adds the lumbar motor. Flat sends the Flat word once.
   [Leggett & Platt](leggett-platt.md)). **Detection:** device names containing
   "leggett", "l&p" or "lp bed" tell these beds from Okimat and Nectar beds on the
   same service UUID.
-- Choose the app profile matching the bed's remote app. The default remains
-  **Prodigy CE / Prodigy 4**, preserving existing configurations. Device names
+- Choose the bed's app in the [L&P question](leggett-platt.md#home-assistant-setup);
+  each app selects its own profile. The default remains **Prodigy CE / Prodigy 4**,
+  preserving existing configurations, and an existing entry changes it through
+  **Reconfigure**. Device names
   and shared service UUIDs cannot establish the physical actuator layout.
 - App profile and wire revision are independent. The app picks the frame once
   per connection: the plain frame (revision 1) when the revision selector

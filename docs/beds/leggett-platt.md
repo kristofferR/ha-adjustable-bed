@@ -38,6 +38,35 @@
 | Lounge Preset | ❌ | ❌ | ✅ | ❌ |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 200 ms refresh, then STOP) | ❌ | ❌ | ❌ |
 
+## Home Assistant setup
+
+The bed-type list has one **Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L,
+U Series, LP Control and L&P Adjustable Base apps** row; the Gen2 and MlRM rows
+are behind it. Setup then asks which app or remote you use. Each answer comes
+from that app's accepted report; the bed's name never decides it.
+
+| Answer | Route |
+|---|---|
+| Prodigy CE (Prodigy 4), Prodigy 2, Prodigy 2L or U Series app | [Leggett Okin](okin-nframe.md#leggett-okin-family) with that app's layout; requires pairing |
+| LP Control app with an LP BED receiver | Leggett Okin with its default (Prodigy CE) layout; requires pairing |
+| LP Control app with an LP Comfort Connect base | [Gen2](#gen2-variant); requires pairing |
+| L&P Adjustable Base app with an MlRM base | [MlRM](#mlrm-variant) |
+| L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2) | [Richmat](richmat.md) with the **L&P QRRM** remote |
+| L&P Adjustable Base legacy app (2.2.1) | [L&P legacy](lp-legacy.md), which keeps its own row and settings |
+| I don't know: keep the current controls | The detected or chosen route |
+
+LP Control lists its own Okin products, but none is proven to change the Leggett
+Okin layout, so LP Control on an LP BED receiver keeps the default one.
+
+For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+**Keep** leaves the entry as it is. A change to the Okin or Gen2 route pairs the
+bed before the review, as setup does; the MlRM, Richmat and legacy routes switch
+unchecked, as Configure did. A saved `leggett_platt` entry keeps that ID. A
+review lists the added and removed controls before **Apply this change** saves
+it. **Configure** keeps routine settings; the app, layout and route change only
+through **Reconfigure**.
+
 ## Detection
 
 Leggett & Platt beds have four protocol variants with different detection methods:
@@ -169,7 +198,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 - **Device Name:** Starts with "MlRM"
 - Detection: Automatic by device name prefix + WiLinke service UUID
 
-**If your Okin bed is misidentified as Okimat:** Change the bed type in integration settings and select the Okin variant.
+**If your Okin bed is misidentified as Okimat:** in Configure, change the bed type to the Leggett & Platt row, then answer which app you use.
 
 See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 
