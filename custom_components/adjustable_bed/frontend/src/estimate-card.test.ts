@@ -141,13 +141,15 @@ test("closing the dialog while lowering stops the bed", () => {
 test("removing the card while lowering stops the bed", () => {
   const { card, ctx, calls } = fixture("unknown");
   card._estimateDialog = { kind: "reference", ctx, choice: "lower", phase: "lowering" };
-  // The lifecycle detaches window listeners; give it a window when run alone.
+  // The lifecycle detaches window listeners. Use a window of its own rather
+  // than whatever another test file left behind, and restore it afterwards.
   const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
-  if (!previous) Object.defineProperty(globalThis, "window", { configurable: true, value: new EventTarget() });
+  Object.defineProperty(globalThis, "window", { configurable: true, value: new EventTarget() });
   try {
     (card as unknown as { disconnectedCallback(): void }).disconnectedCallback();
   } finally {
-    if (!previous) Reflect.deleteProperty(globalThis, "window");
+    if (previous) Object.defineProperty(globalThis, "window", previous);
+    else Reflect.deleteProperty(globalThis, "window");
   }
   expect(calls).toEqual([{ service: "stop_all", data: { device_id: "bed" } }]);
   expect(card._estimateDialog).toBeUndefined();

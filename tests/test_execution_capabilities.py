@@ -108,6 +108,9 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "LogicdataProfile:phone": {"hold": ("ld-phone",)},
     "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
     "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
+    # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
+    # the 5A keys those profiles send, so only ELEVATE declares.
+    "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
     "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
@@ -159,6 +162,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/logicdata.py:<module>.PHONE": ("LogicdataProfile:phone",),
     "profiles/logicdata.py:<module>.TABLET": ("LogicdataProfile:tablet",),
     "profiles/logicdata.py:<module>.SLEEP_SMART": ("LogicdataProfile:sleep_smart",),
+    "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),

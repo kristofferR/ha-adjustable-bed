@@ -1121,11 +1121,12 @@ async def test_discovery_form_reports_an_app_that_does_not_list_the_model(
     with patch(_HISTORY, return_value=None):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {CONF_BED_TYPE: BED_TYPE_REMACRO, CONF_PROTOCOL_VARIANT: "jeromes"},
+            {CONF_BED_TYPE: f"{BED_TYPE_REMACRO}:jeromes"},
         )
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "bluetooth_confirm"
-    assert result["errors"][CONF_PROTOCOL_VARIANT] == "remacro_model_not_in_app"
+    # The app entry chose the route, so the error belongs to the whole form.
+    assert result["errors"]["base"] == "remacro_model_not_in_app"
 
 
 async def test_options_keep_or_fix_the_app_of_a_fallback_entry(

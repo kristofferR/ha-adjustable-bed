@@ -271,6 +271,14 @@ async def _complete_setup_pairing(hass: HomeAssistant, result: Any) -> Any:
         return await hass.config_entries.flow.async_configure(result["flow_id"], finish_input)
 
 
+async def _answer_route(hass: HomeAssistant, result, variant: str = VARIANT_AUTO):
+    """Answer the conditional receiver-route step of a generic setup form."""
+    assert result["step_id"] == "route"
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"advanced": {CONF_PROTOCOL_VARIANT: variant}}
+    )
+
+
 async def _advance_progress(hass: HomeAssistant, result: Any) -> Any:
     """Drive pairing and background work through to the next stable form."""
     for _ in range(20):
@@ -1680,7 +1688,6 @@ class TestBluetoothDiscoveryFlow:
             BED_TYPE_SVANE,
             BED_TYPE_VIBRADORM,
             KEESON_VARIANT_SINO,
-            LEGGETT_VARIANT_GEN2,
             LEGGETT_VARIANT_MLRM,
             VARIANT_AUTO,
             disconnect_after_command_default_enabled,
@@ -1853,6 +1860,9 @@ class TestBluetoothDiscoveryFlow:
                 CONF_DISCONNECT_AFTER_COMMAND: False,
             }
         )
+        # Linak has several routes, and a raw manual entry has no suggested one.
+        assert result["step_id"] == "route"
+        result = await flow.async_step_route({"advanced": {CONF_PROTOCOL_VARIANT: VARIANT_AUTO}})
         assert result["step_id"] == "disconnect_after_command"
         confirm_marker = next(iter(result["data_schema"].schema))
         assert confirm_marker.default() is True
@@ -1957,12 +1967,13 @@ class TestBluetoothDiscoveryFlow:
             marker for marker in result["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         selector = result["data_schema"].schema[bed_type_marker]
-        options = selector.config["options"]
-        options_by_value = {option["value"]: option["label"] for option in options}
+        labels = {option["label"] for option in selector.config["options"]}
 
-        assert bed_type_marker.default() == BED_TYPE_LINAK
-        assert options_by_value[BED_TYPE_LINAK] == BED_TYPE_DISPLAY_NAMES[BED_TYPE_LINAK]
-        assert options_by_value[BED_TYPE_DIAGNOSTIC] == "Diagnostic (unknown bed)"
+        # The searchable picker shows labels and maps them back to bed types.
+        assert bed_type_marker.default() == BED_TYPE_DISPLAY_NAMES[BED_TYPE_LINAK]
+        assert selector(bed_type_marker.default()) == BED_TYPE_LINAK
+        assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_LINAK] in labels
+        assert selector("Diagnostic (unknown bed)") == BED_TYPE_DIAGNOSTIC
 
     async def test_bluetooth_confirm_legacy_alias_default_stays_selectable(
         self,
@@ -1989,9 +2000,9 @@ class TestBluetoothDiscoveryFlow:
             marker for marker in result["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         selector = result["data_schema"].schema[bed_type_marker]
-        option_values = [option["value"] for option in selector.config["options"]]
+        option_values = [selector(option["value"]) for option in selector.config["options"]]
 
-        assert bed_type_marker.default() == BED_TYPE_OKIMAT
+        assert selector(bed_type_marker.default()) == BED_TYPE_OKIMAT
         assert option_values[0] == BED_TYPE_OKIMAT
         assert option_values.count(BED_TYPE_OKIMAT) == 1
 
@@ -2925,6 +2936,8 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
+            if result.get("step_id") == "route":
+                result = await _answer_route(hass, result)
             if disconnect_after_command:
                 assert result["step_id"] == "disconnect_after_command"
                 result = await hass.config_entries.flow.async_configure(
@@ -2963,7 +2976,6 @@ class TestManualFlow:
             user_input={
                 CONF_ADDRESS: "11:22:33:44:55:66",
                 CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
                 CONF_NAME: "MF900 Bed",
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
@@ -2971,6 +2983,7 @@ class TestManualFlow:
                 CONF_PREFERRED_ADAPTER: "auto",
             },
         )
+        result = await _answer_route(hass, result, OKIN_CST_VARIANT_MF900)
 
         assert result["step_id"] == "manual_pairing"
         result = await _complete_setup_pairing(hass, result)
@@ -3176,6 +3189,7 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
+            result = await _answer_route(hass, result)
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_KAIDI_ROOM_ID] == 0x12345678
@@ -3252,6 +3266,7 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
+            result = await _answer_route(hass, result)
             assert result["step_id"] == "disconnect_after_command"
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
@@ -3795,8 +3810,10 @@ class TestOptionsFlow:
             marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         bed_type_selector = initial["data_schema"].schema[bed_type_marker]
-        option_values = {option["value"] for option in bed_type_selector.config["options"]}
-        assert bed_type_marker.default() == BED_TYPE_OKIN_CST
+        option_values = {
+            bed_type_selector(option["value"]) for option in bed_type_selector.config["options"]
+        }
+        assert bed_type_selector(bed_type_marker.default()) == BED_TYPE_OKIN_CST
         assert BED_TYPE_OCTO in option_values
 
         rebuilt = await hass.config_entries.options.async_configure(
@@ -3809,7 +3826,8 @@ class TestOptionsFlow:
 
         assert rebuilt["type"] == FlowResultType.FORM
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_BED_TYPE].default() == BED_TYPE_OCTO
+        bed_type = rebuilt_markers[CONF_BED_TYPE]
+        assert rebuilt["data_schema"].schema[bed_type](bed_type.default()) == BED_TYPE_OCTO
         assert CONF_MOTOR_COUNT not in rebuilt_markers
         assert rebuilt_markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
         assert CONF_PROTOCOL_VARIANT in rebuilt_markers
@@ -3939,9 +3957,9 @@ class TestOptionsFlow:
             marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         selector = initial["data_schema"].schema[marker]
-        option_values = {option["value"] for option in selector.config["options"]}
+        option_values = {selector(option["value"]) for option in selector.config["options"]}
 
-        assert marker.default() == BED_TYPE_OKIMAT
+        assert selector(marker.default()) == BED_TYPE_OKIMAT
         assert BED_TYPE_OKIMAT in option_values
 
         saved = await hass.config_entries.options.async_configure(
@@ -4055,7 +4073,7 @@ class TestOptionsFlow:
             marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         selector = initial["data_schema"].schema[bed_type_marker]
-        assert choice in {option["value"] for option in selector.config["options"]}
+        assert choice in {selector(option["value"]) for option in selector.config["options"]}
 
         rebuilt = await hass.config_entries.options.async_configure(
             initial["flow_id"], user_input={CONF_BED_TYPE: choice}
@@ -6377,15 +6395,15 @@ async def test_the_preview_follows_the_adapter_the_user_actually_picked(
             context={"source": SOURCE_BLUETOOTH},
             data=mock_bluetooth_service_info,
         )
-        # A variant that does not belong to the chosen bed type re-renders the
-        # form with everything the user submitted still in hand.
+        # An invalid timing value re-renders the form with everything the
+        # user submitted still in hand.
         rendered = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             user_input={
                 # A pairing-required type, so the proxy warning is relevant.
                 CONF_BED_TYPE: BED_TYPE_VIBRADORM,
                 CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_GEN2,
+                CONF_MOTOR_PULSE_COUNT: "not a number",
                 CONF_PREFERRED_ADAPTER: "esphome_bedroom",
             },
         )
@@ -6415,6 +6433,8 @@ async def test_typed_address_setup_previews_the_transport_once_it_is_valid(
             {
                 CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
                 CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                # An explicit route, so the route step does not come first.
+                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
                 CONF_MOTOR_COUNT: 99,
             }
         )
@@ -7577,7 +7597,7 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
             {
                 CONF_BED_TYPE: BED_TYPE_OCTO,
                 CONF_NAME: "Octo PIN test",
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                "advanced": {CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD},
                 CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
                 CONF_OCTO_PIN: "1111",
             },
