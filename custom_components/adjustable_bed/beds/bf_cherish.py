@@ -17,6 +17,8 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..app_session import app_session
+from ..codec import keeson as codec
+from ..profiles import keeson as keeson_profiles
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -55,20 +57,14 @@ CH_PRESETS: Final = {
 PRESET_POSITIONS: Final = {"zero_g": 6, "flat": 7, "anti_snore": 8, "memory_1": 9, "memory_2": 11}
 
 
-def finish(template: bytes) -> bytes:
-    """Replace the checksum placeholder with the complement of the preceding sum."""
-    if not template:
-        raise ValueError("A packet needs a checksum placeholder")
-    return template[:-1] + bytes((~sum(template[:-1]) & 255,))
-
-
-def control_frame(key: int) -> bytes:
-    return finish(b"\xe5\xfe\x16" + (key & 0xFFFFFFFF).to_bytes(4, "big") + b"\x00")
+def control_frame(key: int, profile: keeson_profiles.KeesonProfile = keeson_profiles.BF) -> bytes:
+    """The big-endian E5 frame of the low 32 bits of ``key``; BF and Cherish share it."""
+    return keeson_profiles.encode(profile, key & 0xFFFFFFFF)
 
 
 def query_frame(now: datetime) -> bytes:
-    return finish(
-        bytes((0xE2, 0xFE, 0x16, now.second, now.minute, now.hour, (now.weekday() + 1) % 7, 0))
+    return codec.checked(
+        bytes((0xE2, 0xFE, 0x16, now.second, now.minute, now.hour, (now.weekday() + 1) % 7))
     )
 
 
@@ -88,7 +84,7 @@ def alarm_frame(
         else {"none": 255, "memory_1": 248, "memory_2": 249}
     )[memory]
     if cherish:
-        return finish(
+        return codec.checked(
             bytes(
                 (
                     0xEA,
@@ -103,13 +99,12 @@ def alarm_frame(
                     255,
                     255,
                     selector if enabled else 255,
-                    0,
                 )
             )
         )
     weekday = (now.weekday() + 1) % 7
     day = (weekday + ((hour, minute) < (now.hour, now.minute))) % 7
-    return finish(
+    return codec.checked(
         bytes(
             (
                 0xEB,
@@ -125,7 +120,6 @@ def alarm_frame(
                 0 if enabled else 255,
                 0 if enabled else 255,
                 selector if enabled else 255,
-                0,
             )
         )
     )
@@ -165,6 +159,7 @@ class BfCherishController(BedController):
     def __init__(self, coordinator: Any, *, cherish: bool = False) -> None:
         super().__init__(coordinator)
         self.cherish = cherish
+        self.profile = keeson_profiles.CHERISH if cherish else keeson_profiles.BF
         self.state = app_session(
             coordinator.hass, str(coordinator.address), ("bf_cherish", cherish), AppState
         )
@@ -239,7 +234,7 @@ class BfCherishController(BedController):
         event = asyncio.Event() if cleanup else self._coordinator.cancel_command
         if event.is_set():
             return False
-        await self.write_command(control_frame(key), cancel_event=event)
+        await self.write_command(control_frame(key, self.profile), cancel_event=event)
         return not event.is_set()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -324,7 +319,7 @@ class BfCherishController(BedController):
         count, _ = self.motor_pulse_settings()
         try:
             await self.write_command(
-                control_frame(MOVE_KEYS[control]), repeat_count=count, repeat_delay_ms=200
+                control_frame(MOVE_KEYS[control], self.profile), repeat_count=count, repeat_delay_ms=200
             )
         finally:
             await self.movement_stop()

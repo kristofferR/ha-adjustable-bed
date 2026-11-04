@@ -19,7 +19,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
-from .cluster033_profiles import SERTA_MEMORY_KEYS
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -132,6 +131,7 @@ from .const import (
     VIBRADORM_APP_CONFIG_KEYS,
     VMATBASIC_CONFIG_KEYS,
 )
+from .profiles.keeson import SERTA_MEMORY_KEYS
 
 # The generic fields a profile can own.
 GENERIC_FIELDS: Final = frozenset(

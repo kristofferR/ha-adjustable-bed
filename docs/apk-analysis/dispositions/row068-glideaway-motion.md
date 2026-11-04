@@ -847,7 +847,7 @@ into massage. `frontend/src/discovery.test.ts` test “Glideaway exposes its
 reported massage timer and alarm refresh” proves these keys plus tilt/elevation
 covers. The committed bundle is rebuilt from source.
 
-[The user guide](../../beds/glideaway-motion.md) documents every wire mask,
+[The user guide](../../beds/keeson.md#glideaway-motion) documents every wire mask,
 calendar offset, model gate, public action and deliberate safety difference.
 Real-user post-beta checks remain deferred external validation: GATT properties,
 physical tilt/elevation, memory storage threshold, alarm midnight/weekdays,

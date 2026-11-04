@@ -93,7 +93,6 @@ from .bond_verification import (
     bond_owner_from_entry,
     build_bond_context,
 )
-from .cluster033_profiles import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
@@ -377,6 +376,7 @@ from .pairing_candidates import (
     build_pair_selection_schema,
     selected_pair_ids,
 )
+from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
 from .setup_operation import (
     BluetoothOperationMixin,

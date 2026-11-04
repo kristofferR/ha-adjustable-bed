@@ -1043,7 +1043,7 @@ Brands using DewertOkin/ORE actuators, from 79 analyzed apps:
   [Sleepy's Elite](sleepys.md)), Nectar Motion, Glory Furniture, Tranquil Sleep,
   Luxe, Ultra
 - **ORE/Glideaway family:** Glideaway Motion (current app:
-  [explicit MOTION 400/450/500/600 profile](glideaway-motion.md)), Symphony
+  [explicit MOTION 400/450/500/600 profile](keeson.md#glideaway-motion)), Symphony
   Sleep, Movita, Dynasty Bases (current app:
   [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](keeson.md#ore-comfort-bed-profiles)),
   Better Living, LevaSleep, American Star, Avanti Bases (current app: explicit
@@ -1076,7 +1076,7 @@ The 79 apps use one of these protocols:
 | Resident | `com.okin.resident.release` | Flutter |
 | Rize II | `com.okin.bedding.rizeii` | OKIN UUID |
 | Simmons | `com.okin.simmons` | Flutter; own frames, see [SIMMONS app](#simmons) |
-| Glideaway | `com.ore.bedding.glideawaymontion` | E6 FE 16 on FFE5/FFE9, [explicit Motion app profile](glideaway-motion.md) |
+| Glideaway | `com.ore.bedding.glideawaymontion` | E6 FE 16 on FFE5/FFE9, [explicit Motion app profile](keeson.md#glideaway-motion) |
 | Symphony | `com.ore.bedding.symphony` | FFE5 + Nordic |
 | INNOVA/SFM | `com.ore.sfm` | FFE9/FFE4, little-endian E5 FE 16; see the [INNOVA profile](keeson.md#innova-profile) |
 | OkinSmartComfort | `com.okin.okinsmartcomfort` | OKIN UUID + Nordic |
@@ -1631,6 +1631,13 @@ for motion, `2A 00 00 01 03 01 <index>` for presets, `AA 00 00 01 02 00` for
 STOP, `2A 00 00 02 01 01 <code>` for massage and a discrete
 `AA 00 00 04 01 05 00 <on> 00 00 00 00` light switch. Both families set an exact
 massage level with `03 03 <zone> <level> <selector>`.
+
+> [!WARNING]
+> On the CBNew variants, overall massage intensity up and down still send the
+> legacy [CB24 keys](#cb24-keys), and the exact massage level sends the legacy
+> `03 03` frame. Every other CBNew control uses CBNew packets. No accepted report
+> covers this app (the SmartBed 2.4.2 analysis is PARTIAL), so whether CBNew
+> receivers accept these frames is unproven.
 
 #### Timing
 
@@ -4289,6 +4296,10 @@ Existing entries keep their bed type until you change it.
 - Use a fixed variant if Home Assistant sees a different name than the phone.
 - In a two-address pair the variant belongs to each physical bed: unpair, set
   each bed, then combine them again.
+
+###### Home Assistant setup
+
+Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the shared services do not identify this app. `auto` applies the app's name rule: a name starting with `okin` uses the OKIN-service table; a name starting with `star` uses a Nordic UART table chosen by the Device Information manufacturer. Any other name needs a fixed variant. Head, foot and lumbar are fixed, as is the 100 ms refresh. The variant belongs to each physical bed: split a two-address pair before changing it.
 
 #### Controls
 

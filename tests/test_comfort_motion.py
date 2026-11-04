@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import astuple
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -108,6 +108,7 @@ def make_controller(monkeypatch):
             motor_pulse_count=2,
             controller_state={},
             has_massage=True,
+            record_command_trace=MagicMock(),
         )
         coordinator.handle_controller_state_updates = coordinator.controller_state.update
         return (

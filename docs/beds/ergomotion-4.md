@@ -11,7 +11,7 @@ in the offline catalog acquired on 2026-11-03. The product table below gives
 the exact choices. App labels do not establish physical motor counts.
 
 This is the **Ergomotion 4.0** app (`com.sfd.hump`), distinct from the older
-[Ergomotion app](ergomotion.md) B1/B2/C1/D1 profiles. Existing
+[Ergomotion app](keeson.md#ergomotion-app) B1/B2/C1/D1 profiles. Existing
 [Keeson and Ergomotion profiles](keeson.md) keep their controls and entities.
 
 ## Apps
@@ -52,6 +52,10 @@ subscribed. The `38534c454550` notification suffix is captured for diagnostics
 but ignored by the app-state parser, as in the app.
 
 ### Packet Format
+
+[`codec/keeson.py`](../../custom_components/adjustable_bed/codec/keeson.py)
+builds every frame below as the `ergomotion_4` Keeson app profile; the product
+catalog picks which keys each product sends.
 
 | Route | Format |
 |-------|--------|

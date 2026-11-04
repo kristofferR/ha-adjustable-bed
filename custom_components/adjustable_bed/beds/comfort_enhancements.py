@@ -14,11 +14,13 @@ from typing import TYPE_CHECKING, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ..codec import keeson as codec
 from ..const import (
     COMFORT_ENHANCEMENTS_VARIANTS,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
 )
+from ..profiles import keeson as keeson_profiles
 from .base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
@@ -33,17 +35,13 @@ PRESET_STOP = 0x01000000
 MASSAGE_BASE = {"head": 0x10000010, "foot": 0x11000010, "wave": 0x10000020}
 
 
-def packet(prefix: bytes) -> bytes:
-    """CmdUtils.getCmd / CreateData: complement of the complete byte sum."""
-    return prefix + bytes(((255 - sum(prefix)) & 0xFF,))
-
-
 def control_frame(word: int) -> bytes:
-    return packet(bytes.fromhex("e5fe16") + word.to_bytes(4, "big"))
+    """The big-endian E5 frame (CmdUtils.getCmd / CreateData)."""
+    return keeson_profiles.encode(keeson_profiles.COMFORT_ENHANCEMENTS, word)
 
 
 def clock_frame(now: datetime) -> bytes:
-    return packet(
+    return codec.checked(
         bytes((0xE2, 0xFE, 0x16, now.second, now.minute, now.hour, (now.weekday() + 1) % 7))
     )
 
@@ -56,7 +54,7 @@ def alarm_frame(
     fields = (minute, hour, day, 1 << day, 0x11 if massage else 0, 0x33 if massage else 0, memory)
     if not enabled:
         fields = (0xFF, 0xFF, day, 0xFF, 0xFF, 0xFF, 0xFF)
-    return packet(bytes((0xEB, 0xFE, 0x16, now.second, now.minute, now.hour, *fields)))
+    return codec.checked(bytes((0xEB, 0xFE, 0x16, now.second, now.minute, now.hour, *fields)))
 
 
 def _axis_action(axis: str, up: bool) -> MotorCommandCallable:
@@ -71,6 +69,7 @@ class ComfortEnhancementsController(BedController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, layout: str) -> None:
         super().__init__(coordinator)
+        self.profile = keeson_profiles.COMFORT_ENHANCEMENTS
         if layout not in COMFORT_ENHANCEMENTS_VARIANTS:
             raise ValueError("Choose a Comfort Enhancements MC2, MC3, MC4 or MC5 layout")
         self.layout = layout

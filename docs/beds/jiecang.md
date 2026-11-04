@@ -2,7 +2,7 @@
 
 **Status:** ❓ Needs testing (the app profiles are APK-verified with hardware unverified; the legacy route is unverified)
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 One wire codec (`F1 F1 ... 7E` frames over three GATT transports) serves a legacy
 route, four audited Jiecang app profiles and three audited LOGICDATA app profiles.
@@ -478,8 +478,11 @@ data cannot express.
 
 ### Legacy route
 
-**Status:** ❓ Needs testing. No accepted APK report; the frames are those the
-original controller sent (smartbed-mqtt reverse engineering).
+**Status:** ❓ Needs testing. No accepted APK report. The frames are those the
+original controller sent, taken from pre-audit decompiles of Comfort Motion 2.1.6
+([#127](https://github.com/kristofferR/ha-adjustable-bed/issues/127)) and
+`com.logicdata.motionrelax` ([#260](https://github.com/kristofferR/ha-adjustable-bed/issues/260)).
+smartbed-mqtt has no Jiecang implementation.
 
 #### Setup
 
@@ -494,6 +497,13 @@ original controller sent (smartbed-mqtt reverse engineering).
   `0000ff01-0000-1000-8000-00805f9b34fb`. Always written with response.
 - Motor count selects the motors. The head and feet controls drive the back and
   legs motors.
+- Only the back and legs motors are controlled. The route sends no head, lumbar,
+  neck, height or right-side split frames, because no issue, capture or report
+  shows a legacy bed accepting them. For a 3 or 4-motor or split bed, select the
+  app profile for the bed's app instead: [Comfort Motion](#comfort-motion-app),
+  [ERGOBALANCE](#ergobalance-dreamask), [Dream Motion](#dream-motion-dreamotion),
+  [Dream Motion HD](#dream-motion-hd), or the
+  [LOGICDATA app family](#logicdata-app-family) for MOTIONrelax and Sleep Smart beds.
 - Existing legacy entries stay on this route: it keeps three memory slots, 0-10
   massage and G3 support, which the Comfort Motion app profile does not, so
   migrating them would drop entities and break G3 beds.
@@ -521,6 +531,24 @@ None: the legacy route does not subscribe.
 #### Evidence
 
 None beyond the controller's own tests.
+
+#### MOTIONrelax beds on this route
+
+Detection never selects `logicdata_app`, so a MOTIONrelax bed that advertises the
+G1 or G3 service, or has a matching name, lands here. Compared with the accepted
+MOTIONrelax 1.0.6 and 1.0.4 apps it:
+
+- sends P1 frames only, so a P2 (middle-motor) bed gets frames from the other
+  packet family;
+- refreshes movement every 50 ms for 25 frames and releases at once, where the
+  apps refresh every 100 ms, add one final movement frame and release 100 ms later;
+- offers memory slot 3 and massage levels 1 and 5-10, which the apps never send;
+- prefers G3, then G1, and never writes T2, where the apps write to whichever
+  transport service enumerates last, which can be T2;
+- subscribes to no notifications.
+
+Select `logicdata_app` for these beds. Guided migration belongs to
+[#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676).
 
 ### Comfort Motion app
 

@@ -10,13 +10,22 @@ Some ``keeson`` routes carry the same key word in other frames, listed as
 carriers below. The ``p2`` frames are the Okin N-frame layout; they live here
 until that family's codec exists (#759). Which carrier, header, byte order and
 words an app uses belongs to its profile (``profiles/keeson.py``).
+
+The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
+``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``EF 02`` rename) end with the
+same checksum, as do the ``E2``/``EA``/``EB FE 16`` clock and alarm frames whose
+fields the BF, Cherish and Comfort Enhancements controllers fill in.
+
+Ergomotion 4.0 (com.sfd.hump 3.7) adds its ``07 D0`` custom massage frames and
+its ``09 0A`` and ``0A 02`` RGB frames, which carry no checksum.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Final, Literal
 
 from ..const import (
@@ -84,6 +93,11 @@ def checksum(body: bytes) -> int:
     return ~sum(body) & 0xFF
 
 
+def checked(body: bytes) -> bytes:
+    """Append the checksum to a frame body."""
+    return body + bytes((checksum(body),))
+
+
 def _word(word: int) -> int:
     if not 0 <= word <= 0xFFFFFFFF:
         raise ValueError(f"Key word must be 32-bit, got {word:#x}")
@@ -99,7 +113,7 @@ def frame(
     body = bytes((header, 0xFE, 0x16)) + _word(word).to_bytes(4, order)
     if side is not None:
         body += bytes((side,))
-    return body + bytes((checksum(body),))
+    return checked(body)
 
 
 # Side selectors of a split receiver that serves both halves on one address
@@ -122,7 +136,7 @@ def p2(word: int, carrier: Carrier = "p2") -> bytes:
     if carrier in ("p2_side", "p2_padded"):
         return body + b"\x00"
     if carrier == "p2_checked":
-        return body + bytes((checksum(body),))
+        return checked(body)
     if carrier != "p2":
         raise ValueError(f"{carrier} is not a P2 carrier")
     return body
@@ -142,12 +156,70 @@ def json_command(word: int, device_id: str, *, ctrm: int, km: int, keykt: int) -
 STATUS_QUERY: Final = b"\x00\xb0"
 
 
+def custom_massage(program: int) -> bytes:
+    """Encode Ergomotion 4.0's nine-byte ``07 D0`` custom massage frame.
+
+    Programs 999 and 1 to 8 are the app's; any other value sends its all-zero fallback.
+    """
+    if program == 999:
+        return bytes.fromhex("07d004040000100000")
+    if program == 1:
+        return bytes.fromhex("07d002060000090001")
+    if 2 <= program <= 4:
+        return bytes((7, 208, 2, 4, 0, 0, 9, 0, program))
+    if 5 <= program <= 8:
+        return bytes((7, 208, 4, 6, 0, 0, 9, 0, program))
+    return bytes.fromhex("07d000000000000000")
+
+
+def rgb(color: tuple[int, int, int], *, inverted: bool = False) -> bytes:
+    """Encode Ergomotion 4.0's RGB frame: ``09 0A``, or ``0A 02`` with inverted channels."""
+    if inverted:
+        return (
+            b"\x0a\x02\x00\x00\x00\x00\x01\x01\xbb" + bytes((255 - c) & 255 for c in color) + b"\0"
+        )
+    return b"\x09\x0a\x00\x02\x00\x00\x01" + bytes(c & 255 for c in color) + b"\0"
+
+
 def rename(raw_name: bytes) -> bytes:
-    """Encode the 18-byte ``EF 02`` rename frame: name padded to 15 bytes, checksum last."""
-    if len(raw_name) > 14:
-        raise ValueError("Rename payload must be at most 14 bytes")
-    body = b"\xef\x02" + raw_name.ljust(15, b"\x00")
-    return body + bytes((checksum(body),))
+    """Encode the 18-byte ``EF 02`` rename frame: name zero-filled to 15 bytes, checksum last.
+
+    Each app limits the name itself; the frame holds at most 15 bytes.
+    """
+    if len(raw_name) > 15:
+        raise ValueError("Rename payload must be at most 15 bytes")
+    return checked(b"\xef\x02" + raw_name.ljust(15, b"\x00"))
+
+
+def position_target(head: int, foot: int) -> bytes:
+    """Encode the ``E5 FE 17`` pulse-target frame: two little-endian 16-bit pulse counts."""
+    return checked(
+        b"\xe5\xfe\x17"
+        + (head & 0xFFFF).to_bytes(2, "little")
+        + (foot & 0xFFFF).to_bytes(2, "little")
+    )
+
+
+def clock_fields(fields: Sequence[int]) -> bytes:
+    """Encode the ``E7 80 01`` clock frame from six date and time bytes.
+
+    Apps differ in how they derive the bytes (month and day bases, hour offset).
+    """
+    if len(fields) != 6:
+        raise ValueError("The clock frame carries six date and time bytes")
+    return checked(bytes((0xE7, 0x80, 0x01, *fields)))
+
+
+def clock(now: datetime) -> bytes:
+    """Clock frame with year minus 1900, zero-based month, then day and time as they are."""
+    year = (now.year - 1900) & 0xFF
+    return clock_fields((year, now.month - 1, now.day, now.hour, now.minute, now.second))
+
+
+# Dismisses a ringing wake alarm.
+ALARM_DISMISS: Final = checked(b"\xe1\x80\x04")
+# Asks for the stored alarm records (Glideaway Motion, AdjustaMattress P1).
+ALARM_QUERY: Final = checked(b"\xe2\x80\x03\x00")
 
 
 @dataclass(frozen=True)

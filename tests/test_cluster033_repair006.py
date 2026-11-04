@@ -12,13 +12,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_update_listener, _build_paired_children
 from custom_components.adjustable_bed.button import ControllerActionButton, _button_entities_for
-from custom_components.adjustable_bed.cluster033_profiles import APP_LAYOUTS, DEFAULT_LAYOUTS
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_devices import child_device_info
 from custom_components.adjustable_bed.pairing import get_child
+from custom_components.adjustable_bed.profiles.keeson import APP_LAYOUTS, DEFAULT_LAYOUTS
 from custom_components.adjustable_bed.services import async_register_services
 
 from .test_cluster033 import coordinator as transport

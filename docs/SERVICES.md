@@ -303,7 +303,7 @@ they are not exposed through `hold_control`.
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
-| [Glideaway Motion / Montion](beds/glideaway-motion.md) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
+| [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide. `leggett_hold_control` remains as an alias limited to this list |
 | [Jordan's Serenity](beds/okin-nframe.md#reachable-commands) | 31 literal app actions | Two-frame release |
 | [Jordan's Tranquil](beds/okin-nframe.md#reachable-commands-1) | 30 literal app actions | Two-frame release |
@@ -359,7 +359,7 @@ still work, with their original name checks.
 
 Set each targeted controller's clock to Home Assistant's local time. Supported
 by the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
-transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/okin-nframe.md#alarms-and-clock), and
+transports, [Glideaway Motion / Montion](beds/keeson.md#alarm-and-clock), [SIMMONS](beds/okin-nframe.md#alarms-and-clock), and
 [Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) controllers whose
 manufacturer string enables the alarm page (see
 [`zseries_set_alarm`](#zseries_set_alarm)). Z-Series beds cannot share a call
@@ -384,7 +384,7 @@ enable additional commands.
 | Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer` | [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family) |
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/okin-nframe.md#customatic-family) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/okin-nframe.md#customatic-family) |
-| Glideaway Motion / Montion app | `glideaway_set_alarm` | [Glideaway Motion](beds/glideaway-motion.md#alarm-and-clock) |
+| Glideaway Motion / Montion app | `glideaway_set_alarm` | [Glideaway Motion](beds/keeson.md#alarm-and-clock) |
 | Customatic Z-Series app | `zseries_set_alarm` | [Z-Series](beds/okin-nframe.md#customatic-z-series) |
 | SIMMONS app | `simmons_set_alarm` | [SIMMONS](beds/okin-nframe.md#simmons) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_hold_preset` | [LOGICDATA](beds/jiecang.md#motionrelax-phone-and-tablet) |
@@ -416,7 +416,7 @@ For the explicit MOTION 400/450/500/600 profiles. Accepts `device_id`, `enabled`
 `memory_1`, `memory_2`, default `none`) and optional `side`. Sends HA local RTC,
 then the alarm 300 ms later. Time is the wire 24-hour value; the app sends one
 hour below its 1–12 wheel label. The app's unusual automatic weekday rule and
-RTC offsets are preserved. Read the [calendar details](beds/glideaway-motion.md#alarm-and-clock)
+RTC offsets are preserved. Read the [calendar details](beds/keeson.md#alarm-and-clock)
 before use. `sync_clock` sends only RTC; Refresh alarm queries twice, 200 ms apart.
 Alarm state is reported by a sensor. Hardware semantics remain unverified.
 
@@ -555,7 +555,7 @@ when enabling. Optional `memory` is 0 (none), 1 (A/single Memory), or 2 (B,
 MC2/MC3 only); `massage` defaults to false. Paired `side` routing is supported.
 Disable with `enabled: false`, without a time. `adjustable_bed.sync_clock`
 synchronizes the clock and sends the app query. There is no alarm feedback or
-phone scheduler. See [packet behavior and limits](beds/comfort-enhancements.md#clock-and-alarm).
+phone scheduler. See [packet behavior and limits](beds/keeson.md#clock-and-alarm).
 ### Floyd Home actions
 
 `adjustable_bed.floyd_action` exposes confirmed `save_zero_g`,
@@ -572,7 +572,7 @@ schedule these presets; the app's phone alarms are not on-bed alarm storage.
 `adjustable_bed.bf_cherish_set_alarm` accepts `device_id`, `enabled`, optional
 `side`, `time` (required when enabling, minute precision), and `memory` (`none`,
 `memory_1`, `memory_2`, default `none`). The clock uses HA local time. All
-targets must be BF or Cherish profiles. [Profile details and example](beds/bf-cherish.md#alarm-action)
+targets must be BF or Cherish profiles. [Profile details and example](beds/keeson.md#alarm-action)
 cover distinct packet formats, retained intent and report limitations.
 
 ### Casper Base

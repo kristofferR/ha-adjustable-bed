@@ -30,7 +30,7 @@ During initial setup, you'll configure basic options like bed type, motor count,
 **Glideaway Motion / Montion app:** Select the explicit MOTION 400, 450, 500 or
 600 app entry matching the app's model selection. Layout, massage and light
 capabilities follow that choice, with a fixed 300 ms refresh interval. No
-advertisement identifies the model. See the [Glideaway guide](beds/glideaway-motion.md).
+advertisement identifies the model. See the [Glideaway guide](beds/keeson.md#glideaway-motion).
 
 **OKIN ORE:** The **Okin ORE (legacy A5 5A)** entry preserves existing legacy
 configurations. The accepted Glideaway Motion app uses a separate protocol. Beds controlled with the current Dynasty Bases or INNOVA apps use
@@ -326,7 +326,7 @@ controller-specific choices are documented here:
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-nframe.md#okin-cst) | Rize and Support product profiles; Auto retains MF900 behavior |
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Auto, StarCode, Legacy CB25 |
-| [SBI](beds/sbi.md#protocol-variants) / [Rondure](beds/rondure.md#side-selection-split-king) | Both, Side A, Side B |
+| [SBI](beds/keeson.md#protocol-variants) / [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
 | [OKIN CB24](beds/okin-nframe.md#cb24-preset-safety) | Legacy/CBNew and specific SmartBed profiles |
 | [Okin DOT](beds/okin-nframe.md#okin-dot) / [Okin 64-bit](beds/okin-nframe.md#okin-64-bit) | Handset or transport-specific selection |
 
@@ -464,7 +464,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | FurniMove / OKIN Smart Remote | [Exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/adjustamattress.md). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
-| Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/comfort-enhancements.md). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
+| Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | AdjustableM5X4 / M5X5 | [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
@@ -899,11 +899,11 @@ the other side automatically if one side fails.
 
 ### Curve, Q-Plus, Serta MP and SFD app profiles
 
-Choose the exact app in the bed-type picker: [Tempur Curve](beds/tempur-curve.md),
-[Q-Plus Adjustable Remote](beds/q-plus-adjustable-remote.md),
-[Serta MP Remote](beds/serta-mp-remote.md), [Omazz Adjusto III](beds/omazz-adjusto-iii.md),
-[Ergomotion](beds/ergomotion.md), [ROW Control](beds/row-control.md),
-[Ergo Slim](beds/ergo-slim.md), or [TEMPUR AU](beds/tempur-au.md).
+Choose the exact app in the bed-type picker: [Tempur Curve](beds/keeson.md#tempur-curve),
+[Q-Plus Adjustable Remote](beds/keeson.md#q-plus-adjustable-remote),
+[Serta MP Remote](beds/keeson.md#serta-mp-remote), [Omazz Adjusto III](beds/keeson.md#omazz-adjusto-iii),
+[Ergomotion](beds/keeson.md#ergomotion-app), [ROW Control](beds/keeson.md#row-control),
+[Ergo Slim](beds/keeson.md#ergo-slim), or [TEMPUR AU](beds/keeson.md#tempur-au).
 Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
 Select the bed address manually when automatic discovery cannot disambiguate it.
 
@@ -961,7 +961,7 @@ selectors and explicit assignment of an unassigned BLE room.
 
 ### BF and Cherish app profiles
 
-Select the exact [BF or Cherish app](beds/bf-cherish.md) in manual setup.
+Select the exact [BF or Cherish app](beds/keeson.md#bf-and-cherish) in manual setup.
 The app fixes its motor layout, capabilities and 200 ms movement refresh.
 Only the bounded pulse count is configurable. A shared FFE9 service does not
 select either app automatically. Each physical address keeps its own profile.

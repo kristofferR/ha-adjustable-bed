@@ -239,9 +239,11 @@ async def test_cancellation_during_the_release_wait_still_writes_the_zero_frame(
     ]
 
 
+@pytest.mark.parametrize("cancellations", [1, 2, 3])
 async def test_cancelling_the_caller_never_aborts_the_zero_frame_write(
-    coordinator, mock_bleak_client: MagicMock
+    coordinator, mock_bleak_client: MagicMock, cancellations: int
 ):
+    """Cancelling during the in-flight zero-frame write, even repeatedly, cannot drop it."""
     started = asyncio.Event()
     gate = asyncio.Event()
     written: list[bytes] = []
@@ -254,8 +256,11 @@ async def test_cancelling_the_caller_never_aborts_the_zero_frame_write(
     mock_bleak_client.write_gatt_char.side_effect = slow_write
     task = asyncio.create_task(_restonic(coordinator, KEESON_VARIANT_RESTONIC_A).stop_all())
     await started.wait()
-    task.cancel()
-    await asyncio.sleep(0)
+    for _ in range(cancellations):
+        task.cancel()
+        for _ in range(3):
+            await asyncio.sleep(0)
+        assert not task.done()
     gate.set()
     with pytest.raises(asyncio.CancelledError):
         await task

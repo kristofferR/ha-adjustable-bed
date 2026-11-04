@@ -33,6 +33,8 @@ Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
 | BOX24 | 7 bytes | No | ❌ | ❌ | ❌ | ❌ | ❌ | 62741523 (OKIN 64-bit) |
 | BOX25 (StarCode or legacy) | 2-20 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
 
+BOX15 sends the nine-byte E6 frame of the [Keeson codec](keeson.md#controller-profiles).
+
 **Protocol Selection:**
 
 - If your device name starts with **"Star25"** and advertises Nordic UART, use BOX25. Auto mode reads Device Information `2A29`: text containing `star` selects StarCode; any other/missing value selects legacy CB25. A manual dialect override is available.
@@ -403,6 +405,10 @@ extended: 04 E0 [subcommand] [value] [value2] 00
 position: 03 F0 [zone] [position] 00
 query:    00 B0 (massage/light), 00 D0 (motor position)
 ```
+
+The app builds both queries. The integration sends only `00 D0`: it translates
+the StarCode status query `5A B0 00 A5`, which serves both purposes, to the
+legacy position query, and never sends `00 B0`.
 
 Movement keys are `1/2` head, `4/8` foot, `10/20` lumbar, `40/80` neck,
 and zero for STOP. Preset keys are `08000000` flat, `00004000` TV,

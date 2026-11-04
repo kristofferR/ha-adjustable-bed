@@ -24,6 +24,17 @@ from custom_components.adjustable_bed.profiles.jiecang import (
 DREAM_APPS = ("dreamask", "dreamotion", "dreamhd")
 
 
+class _Services(SimpleNamespace):
+    """A GATT service collection: lookups by UUID, iteration over services."""
+
+    def __init__(self, services: dict[str, SimpleNamespace], **lookups: object) -> None:
+        super().__init__(**lookups)
+        self._services = services
+
+    def __iter__(self):
+        return iter(self._services.values())
+
+
 @pytest.fixture
 def make_controller(monkeypatch):
     """Build actual GATT role maps; skip wall time without skipping packet writes."""
@@ -44,11 +55,15 @@ def make_controller(monkeypatch):
                 if uuid
             }
             characteristics.update(members)
-            services[service_uuid] = SimpleNamespace(get_characteristic=members.get)
+            services[service_uuid] = SimpleNamespace(
+                uuid=service_uuid,
+                characteristics=list(members.values()),
+                get_characteristic=members.get,
+            )
         client = SimpleNamespace(
             is_connected=True,
-            services=SimpleNamespace(
-                get_service=services.get, get_characteristic=characteristics.get
+            services=_Services(
+                services, get_service=services.get, get_characteristic=characteristics.get
             ),
             write_gatt_char=AsyncMock(),
             start_notify=AsyncMock(),
@@ -63,6 +78,7 @@ def make_controller(monkeypatch):
             handle_controller_state_updates=MagicMock(),
             async_execute_controller_command=AsyncMock(),
             hass=SimpleNamespace(async_create_task=asyncio.create_task),
+            record_command_trace=MagicMock(),
         )
         controller = JiecangAppController(coordinator, profile=profile, layout=layout, **options)
         return controller, coordinator, client
@@ -283,6 +299,23 @@ async def test_retained_motor_spec_uses_reconnected_controller(make_controller):
     await old.motor_control_specs[0].open_fn(current)
     assert not packets(old_client)
     assert packets(current_client)
+
+
+async def test_family_writes_reach_the_command_trace(make_controller):
+    """The family write loop and rename bypass the shared helper but are still traced."""
+    controller, coordinator, _ = make_controller(profile="dreamotion")
+    await controller.move_back_up()
+    first = coordinator.record_command_trace.call_args_list[0].kwargs
+    assert first["payload"]["hex"] == "f1f1010101037e"
+    assert first["characteristic_uuid"] == TRANSPORTS["g1"].write_uuid
+    assert (first["repeat_count"], first["repeat_delay_ms"]) == (3, 100)
+    assert first["command_origin"] == "_move_axis"
+
+    coordinator.record_command_trace.reset_mock()
+    await controller.rename_device("Bed1")
+    renames = [call.kwargs for call in coordinator.record_command_trace.call_args_list]
+    assert [trace["payload"]["hex"] for trace in renames] == [b"Bed1".hex()] * 2
+    assert {trace["characteristic_uuid"] for trace in renames} == {TRANSPORTS["g1"].name_uuid}
 
 
 @pytest.mark.parametrize(

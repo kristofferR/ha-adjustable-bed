@@ -1,7 +1,8 @@
 """Bed types that stay standalone controllers, each with its reason (#745).
 
-A standalone bed type has no wire format shared with another bed type, or no
-bed commands at all. It is not a profile over a codec family.
+A standalone bed type has no wire format shared with another bed type, no bed
+commands at all, or frames built by a codec under a runtime catalog that has no
+fixed per-key vectors. It is not a profile over a codec family.
 """
 
 from __future__ import annotations
@@ -12,6 +13,10 @@ STANDALONE: dict[str, str] = {
     "casper_sleep_mm": "sleep sensor without bed commands",
     "casper_sleep_sxb": "sleep sensor without bed commands",
     "eshine": "own wire format",
+    "furnimove": "frames use codec/keeson.py; the per-handset FurniMove key catalog"
+    " and its combined-key frames stay controller code",
+    "gmmotor": "frames use codec/richmat.py; the GM Control product catalog, its P1"
+    " service selection and its menu session stay controller code",
     "gmmotor_sleep_mm": "sleep sensor without bed commands",
     "gmmotor_sleep_sxb": "sleep sensor without bed commands",
     "isleep": "Kaidi mesh frames",

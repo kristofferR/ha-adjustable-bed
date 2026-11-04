@@ -12,8 +12,9 @@ from collections.abc import Sequence
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
-from ..cluster033_profiles import app_profile
+from ..codec import keeson as codec
 from ..command_scheduler import CommandKind, CommandOutcome, current_command_context
+from ..profiles.keeson import app_profile
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -23,7 +24,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .cluster033 import AppController, finish
+from .cluster033 import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -139,15 +140,6 @@ FOOT_TABLE = (
     11453,
     11667,
 )
-
-
-def pulse_frame(head: int, foot: int) -> bytes:
-    """Encode two source pulse fields, including the app's 0x8000 other axis."""
-    return finish(
-        b"\xe5\xfe\x17"
-        + (head & 65535).to_bytes(2, "little")
-        + (foot & 65535).to_bytes(2, "little")
-    )
 
 
 def pulse_angle(pulse: int, table: tuple[int, ...], threshold: int) -> int:
@@ -281,7 +273,7 @@ class SertaMPRemoteController(AppController):
                 stop_epoch = scheduler.stop_epoch
                 table = HEAD_TABLE if motor == "back" else FOOT_TABLE
                 await self.write_command(
-                    pulse_frame(
+                    codec.position_target(
                         table[target] if motor == "back" else 0x8000,
                         table[target] if motor == "legs" else 0x8000,
                     ),
@@ -347,7 +339,7 @@ class SertaMPRemoteController(AppController):
         if type(position) is not int or not 0 <= position < len(table):
             raise ValueError("Angle target outside app calibration table")
         await self.write_command(
-            pulse_frame(
+            codec.position_target(
                 table[position] if motor == "back" else 0x8000,
                 table[position] if motor == "legs" else 0x8000,
             )
@@ -357,7 +349,7 @@ class SertaMPRemoteController(AppController):
         if not 1 <= memory_num <= 4:
             raise ValueError("MP Remote local memory slots are 1 through 4")
         head, foot = self._memories[memory_num - 1]
-        await self.write_command(pulse_frame(HEAD_TABLE[head], FOOT_TABLE[foot]))
+        await self.write_command(codec.position_target(HEAD_TABLE[head], FOOT_TABLE[foot]))
         self._memory_target = head, foot
         # Source schedules a state setter, not a second packet or an ACK.
         session = self._session_cancel

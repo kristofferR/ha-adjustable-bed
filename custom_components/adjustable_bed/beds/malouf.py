@@ -31,6 +31,7 @@ from ..const import (
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
     MALOUF_MEMORY_SLOTS_AUTO,
 )
+from ..profiles import keeson as keeson_profiles
 from ..profiles.malouf import NEW_OKIN
 from .base import BedController, MotorControlSpec
 
@@ -484,14 +485,14 @@ class MaloufLegacyOkinController(BedController):
     Protocol characteristics:
     - Service: 0000ffe5-0000-1000-8000-00805f9b34fb
     - Write characteristic: 0000ffe9-0000-1000-8000-00805f9b34fb
-    - Command format: 9 bytes with checksum
-      [0xE6, 0xFE, 0x16, cmd&0xFF, (cmd>>8)&0xFF, (cmd>>16)&0xFF, (cmd>>24)&0xFF, 0x00, checksum]
-    - Checksum: (~sum(bytes[0:8])) & 0xFF
+    - Command format: the nine-byte Keeson E6 frame, side byte 0x00
+      (``profiles/keeson.py`` MALOUF_LEGACY_OKIN)
     """
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Malouf LEGACY_OKIN controller."""
         super().__init__(coordinator)
+        self.profile = keeson_profiles.MALOUF_LEGACY_OKIN
         _LOGGER.debug("MaloufLegacyOkinController initialized")
 
     @property
@@ -574,24 +575,8 @@ class MaloufLegacyOkinController(BedController):
         return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
 
     def _build_command(self, command_value: int) -> bytes:
-        """Build a 9-byte LEGACY_OKIN command with checksum.
-
-        Format: [0xE6, 0xFE, 0x16, cmd&0xFF, (cmd>>8)&0xFF, (cmd>>16)&0xFF, (cmd>>24)&0xFF, 0x00, checksum]
-        Checksum: (~sum(bytes[0:8])) & 0xFF
-        """
-        data = [
-            0xE6,
-            0xFE,
-            0x16,
-            command_value & 0xFF,
-            (command_value >> 8) & 0xFF,
-            (command_value >> 16) & 0xFF,
-            (command_value >> 24) & 0xFF,
-            0x00,
-        ]
-        checksum = (~sum(data)) & 0xFF
-        data.append(checksum)
-        return bytes(data)
+        """Build a nine-byte E6 frame through the Keeson codec (side byte ``00``)."""
+        return keeson_profiles.encode(self.profile, command_value & 0xFFFFFFFF)
 
     async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""

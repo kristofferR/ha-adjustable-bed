@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import keeson as codec
 from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
@@ -31,6 +32,7 @@ from ..const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from ..profiles import keeson as keeson_profiles
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -90,6 +92,7 @@ class RondureController(BedController):
             variant: Side selection - "both", "side_a", or "side_b".
         """
         super().__init__(coordinator)
+        self.profile = keeson_profiles.RONDURE
         self._variant = variant
         _LOGGER.debug("RondureController initialized with variant: %s", variant)
 
@@ -129,10 +132,6 @@ class RondureController(BedController):
         """Return True - Rondure beds support tilt control."""
         return True
 
-    def _calculate_checksum(self, data: bytes) -> int:
-        """Calculate checksum (bitwise NOT of sum of all bytes)."""
-        return (~sum(data)) & 0xFF
-
     def _variant_for_side(self, side: str | None = None) -> str:
         """Resolve a per-call logical side without changing legacy defaults."""
         logical_side = side or self.command_side
@@ -145,34 +144,12 @@ class RondureController(BedController):
         return self._variant
 
     def _build_packet(self, command: int, side: str | None = None) -> bytes:
-        """Build a command packet for the bed.
-
-        Args:
-            command: 32-bit command value.
-
-        Returns:
-            8-byte packet for "both" mode, 9-byte for single side mode.
-        """
-        # Split command into little-endian bytes
-        cmd_bytes = [
-            command & 0xFF,
-            (command >> 8) & 0xFF,
-            (command >> 16) & 0xFF,
-            (command >> 24) & 0xFF,
-        ]
-
+        """Build the eight-byte E5 frame for Both, or the nine-byte E6 frame for side A or B."""
         variant = self._variant_for_side(side)
         if variant == RONDURE_VARIANT_BOTH:
-            # 8-byte packet: [0xE5, 0xFE, 0x16, cmd[0-3], checksum]
-            packet = bytes([0xE5, 0xFE, 0x16] + cmd_bytes)
-            checksum = self._calculate_checksum(packet)
-            return packet + bytes([checksum])
-        else:
-            # 9-byte packet: [0xE6, 0xFE, 0x16, cmd[0-3], side, checksum]
-            side_byte = 0x01 if variant == RONDURE_VARIANT_SIDE_A else 0x02
-            packet = bytes([0xE6, 0xFE, 0x16] + cmd_bytes + [side_byte])
-            checksum = self._calculate_checksum(packet)
-            return packet + bytes([checksum])
+            return keeson_profiles.encode(self.profile, command & 0xFFFFFFFF)
+        selector = self.profile.split_sides["side_a" if variant == RONDURE_VARIANT_SIDE_A else "side_b"]
+        return codec.frame(command & 0xFFFFFFFF, header=0xE6, side=selector)
 
     async def write_command(
         self,

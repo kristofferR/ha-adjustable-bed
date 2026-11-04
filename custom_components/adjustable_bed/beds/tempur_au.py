@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..cluster033_profiles import app_profile
+from ..profiles.keeson import app_profile
 from .cluster033 import AppController
 
 if TYPE_CHECKING:

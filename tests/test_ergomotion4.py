@@ -17,7 +17,6 @@ from custom_components.adjustable_bed.alarm_table import (
     OneTimeAlarmRecord,
     WeeklyAlarmRecord,
 )
-from custom_components.adjustable_bed.beds.cluster033 import control_frame
 from custom_components.adjustable_bed.beds.ergomotion4 import (
     CONF_MASSAGE_KEYS,
     CONF_MODEL_KEYS,
@@ -27,13 +26,12 @@ from custom_components.adjustable_bed.beds.ergomotion4 import (
     SILENT_RX,
     TX_UUIDS,
     Ergomotion4Controller,
-    custom_frame,
     custom_product,
     p2_frame,
     parse_status,
-    rgb_frame,
 )
 from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.ergomotion4_profiles import ACTIONS, PRODUCTS
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
 
@@ -93,8 +91,10 @@ def packets(coord):
     ids=lambda v: v["id"],
 )
 def test_p1_side_vectors(vector):
-    side = {"Both": "both", "Left": "side_b", "Right": "side_a"}[vector["inputs"]["side"]]
-    assert control_frame(vector["inputs"]["key"], side).hex() == vector["expected_bytes"]
+    side = {"Both": None, "Left": 2, "Right": 1}[vector["inputs"]["side"]]
+    key = vector["inputs"]["key"] & 0xFFFFFFFF
+    frame = codec.frame(key) if side is None else codec.frame(key, header=0xE6, side=side)
+    assert frame.hex() == vector["expected_bytes"]
 
 
 @pytest.mark.parametrize(
@@ -107,15 +107,15 @@ def test_p2_custom_rgb_vectors(vector):
     if vector["id"].startswith("P2-"):
         frame = p2_frame(data["key"])
     elif vector["id"].startswith("custom-"):
-        frame = custom_frame(data["key"])
+        frame = codec.custom_massage(data["key"])
     else:
-        frame = rgb_frame((data["r"], data["g"], data["b"]), inverted=data["invert"])
+        frame = codec.rgb((data["r"], data["g"], data["b"]), inverted=data["invert"])
     assert frame.hex() == vector["expected_bytes"]
 
 
 def test_p2_unsupported_key_does_not_become_arbitrary_command():
     assert p2_frame(0xDEADBEEF).hex() == "040200000000"
-    assert custom_frame(9).hex() == "07d000000000000000"
+    assert codec.custom_massage(9).hex() == "07d000000000000000"
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["id"])

@@ -137,7 +137,7 @@
     },
     "rgb": {
       "code": [
-        "custom_components/adjustable_bed/beds/ergomotion4.py::rgb_frame",
+        "custom_components/adjustable_bed/codec/keeson.py::rgb",
         "custom_components/adjustable_bed/beds/ergomotion4.py::_send_rgb",
         "custom_components/adjustable_bed/beds/ergomotion4.py::set_light_color",
         "custom_components/adjustable_bed/light.py::AdjustableBedLight"
@@ -164,8 +164,8 @@
     "builders": {
       "code": [
         "custom_components/adjustable_bed/beds/ergomotion4.py::p2_frame",
-        "custom_components/adjustable_bed/beds/ergomotion4.py::custom_frame",
-        "custom_components/adjustable_bed/beds/cluster033.py::control_frame"
+        "custom_components/adjustable_bed/codec/keeson.py::custom_massage",
+        "custom_components/adjustable_bed/codec/keeson.py::frame"
       ],
       "tests": [
         "tests/test_ergomotion4.py::test_p1_side_vectors",

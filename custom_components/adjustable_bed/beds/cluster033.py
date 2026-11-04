@@ -1,7 +1,8 @@
 """Session-safe transport for the explicitly selected cluster033 app profiles.
 
-The profile tables carry caller gates and timing. Shared arithmetic is covered
-by each package's frozen vectors; a shared UUID never selects an app profile.
+The profiles (``profiles/keeson.py``) carry each app's keys, caller gates and
+timing; every frame is built by the Keeson codec. A shared UUID never selects
+an app profile.
 """
 
 from __future__ import annotations
@@ -13,7 +14,8 @@ from typing import TYPE_CHECKING, cast
 from homeassistant.util import dt as dt_util
 
 from ..alarm_table import AlarmTableSchedule, AlarmTableScheduleSpec
-from ..cluster033_profiles import AppAction, AppProfile
+from ..codec import keeson as codec
+from ..profiles.keeson import AppAction, AppProfile
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -37,49 +39,12 @@ NUS_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 # STOP. Every source-held key stops refreshing on release, so the card adds
 # none; MX's delayed 300/600/900 ms release queries belong to _release().
 _CARD_RELEASE_DELAY_MS = 0
-
-
-def finish(data: bytes) -> bytes:
-    """Java signed sum and unsigned sum have the same low-byte complement."""
-    return data + bytes((~sum(data) & 255,))
-
-
-def control_frame(mask: int, side: str = "both") -> bytes:
-    payload = (mask & 0xFFFFFFFF).to_bytes(4, "little")
-    if side == "both":
-        return finish(b"\xe5\xfe\x16" + payload)
-    return finish(b"\xe6\xfe\x16" + payload + bytes(({"side_a": 1, "side_b": 2}.get(side, 0),)))
-
-
-def mx_frame(mask: int) -> bytes:
-    """The sparse source builder is private; it grants no arbitrary-mask API."""
-    allowed = {
-        1,
-        2,
-        4,
-        8,
-        16,
-        32,
-        0x200,
-        0x400,
-        0x800,
-        0x2000,
-        0x4000,
-        0x8000,
-        0x10000,
-        0x20000,
-        0x800000,
-        0x1000000,
-        0x2000000,
-        0x4000000,
-        0x8000000,
-        0x40000000,
-    }
-    return b"\x04\x02" + (mask if mask in allowed else 0).to_bytes(4, "big")
+# Q-Plus P1's A/B/Both selector: Both is the eight-byte E5 frame.
+_SIDE_BYTES = {"side_a": 1, "side_b": 2}
 
 
 def name_frame(name: str, *, max_units: int = 15) -> bytes:
-    """Preserve Java's code-unit-count copy using the documented UTF-8 model.
+    """Copy as many UTF-8 bytes as the name has UTF-16 units, as the apps do.
 
     Android's unnamed default charset is not a firmware encoding declaration.
     Non-ASCII names can end with an incomplete encoded character, as in source.
@@ -87,7 +52,7 @@ def name_frame(name: str, *, max_units: int = 15) -> bytes:
     units = len(name.encode("utf-16-le")) // 2
     if not name or units > min(max_units, 15):
         raise ValueError(f"Use a nonempty device name of at most {min(max_units, 15)} UTF-16 units")
-    return finish(b"\xef\x02" + name.encode("utf-8")[:units].ljust(15, b"\0"))
+    return codec.rename(name.encode("utf-8")[:units])
 
 
 class AppController(BedController):
@@ -116,7 +81,7 @@ class AppController(BedController):
 
     @property
     def supports_device_rename(self) -> bool:
-        return self.profile.rename
+        return self.profile.rename_units > 0
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -134,7 +99,7 @@ class AppController(BedController):
     def diagnostic_poll_interval(self) -> float | None:
         # The existing query scheduler performs the first poll immediately.
         # A five-second check retains the app's first5/then30-second cadence.
-        return 5 if self.profile.parser == "qplus" and self.profile.layout == "MX" else None
+        return 5 if self._mx else None
 
     async def async_refresh_diagnostics(self) -> None:
         if self._next_query is None:
@@ -142,7 +107,7 @@ class AppController(BedController):
         now = asyncio.get_running_loop().time()
         if now < self._next_query:
             return
-        await self.write_command(b"\x00\xb0")
+        await self.write_command(codec.STATUS_QUERY)
         self._next_query = now + 30
 
     @property
@@ -238,7 +203,7 @@ class AppController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        if self.profile.parser == "row" and self.profile.layout == "Zero-G Box":
+        if self._zero_g_box:
             return ()
         return (
             ControllerStateSensorSpec(
@@ -321,8 +286,8 @@ class AppController(BedController):
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("App session is disconnected")
-        tx_uuids = {FFE9, NUS_TX} if self.profile.parser == "qplus" else {FFE9}
-        rx_uuids = {FFE4, NUS_RX} if self.profile.parser == "qplus" else {FFE4}
+        tx_uuids = {FFE9, NUS_TX} if self._qplus else {FFE9}
+        rx_uuids = {FFE4, NUS_RX} if self._qplus else {FFE4}
         # Exact source selector: independent last match, with no service filter.
         for service in client.services:
             for char in service.characteristics:
@@ -338,7 +303,7 @@ class AppController(BedController):
         self._session_client = client
         self._session_cancel = asyncio.Event()
         self._notify_callback = callback
-        if self.profile.parser == "qplus" and self.profile.layout == "MX":
+        if self._mx:
             self._next_query = asyncio.get_running_loop().time() + 5
         session_cancel = self._session_cancel
 
@@ -347,11 +312,11 @@ class AppController(BedController):
                 self._on_notification(sender, data)
 
         await client.start_notify(self._rx, notify)
-        if self.profile.parser == "qplus":
-            if self.profile.layout == "MX":
+        if self._qplus:
+            if self._mx:
                 await self._queries((300, 600, 900))
             else:
-                await self.write_command(control_frame(0, self._side))
+                await self.write_command(self._frame(codec.RELEASE))
         elif self.profile.clock_init_delay_ms is not None:
             if not await self._wait(self.profile.clock_init_delay_ms):
                 await self.sync_clock()
@@ -374,23 +339,41 @@ class AppController(BedController):
         for offset in offsets:
             if await self._wait(offset - previous, cleanup=cleanup):
                 return
-            await self.write_command(b"\x00\xb0", cancel_event=asyncio.Event() if cleanup else None)
+            await self.write_command(
+                codec.STATUS_QUERY, cancel_event=asyncio.Event() if cleanup else None
+            )
             previous = offset
 
+    @property
+    def _qplus(self) -> bool:
+        return self.profile.key == "qplus_app"
+
+    @property
+    def _mx(self) -> bool:
+        return self.profile.p2_keys is not None
+
+    @property
+    def _zero_g_box(self) -> bool:
+        return self.profile.key == "row_control" and self.profile.layout == "Zero-G Box"
+
     def _frame(self, mask: int) -> bytes:
-        if self.profile.parser == "qplus" and self.profile.layout == "MX":
-            return mx_frame(mask)
+        if self.profile.p2_keys is not None:
+            # The sparse source builder is private; it grants no arbitrary-mask API.
+            return codec.p2(mask if mask in self.profile.p2_keys else codec.RELEASE)
+        mask &= 0xFFFFFFFF  # The K1 builders cast their long key to its low 32 bits.
         # Only Q-Plus P1 has an accepted A/B/Both wire selector. It is not a
         # guessed physical left/right identity and never follows command_side.
-        return control_frame(mask, self._side if self.profile.parser == "qplus" else "both")
+        if self._qplus and self._side != "both":
+            return codec.frame(mask, header=0xE6, side=_SIDE_BYTES.get(self._side, 0))
+        return codec.frame(mask)
 
     async def _release(self) -> None:
         if self._session_client is not self.client or self._session_cancel.is_set():
             return
-        if self.profile.parser == "qplus" and self.profile.layout == "MX":
+        if self._mx:
             await self._queries((300, 600, 900), cleanup=True)
         else:
-            await self.write_command(self._frame(0), cancel_event=asyncio.Event())
+            await self.write_command(self._frame(codec.RELEASE), cancel_event=asyncio.Event())
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -454,7 +437,7 @@ class AppController(BedController):
                     await self._release()
         else:
             await self.write_command(self._frame(action.mask))
-            if self.profile.parser == "qplus" and self.profile.layout == "MX":
+            if self._mx:
                 await self._queries((500, 800))
 
     async def stop_all(self) -> None:
@@ -509,18 +492,17 @@ class AppController(BedController):
         self._device_name_frame(name)
 
     def _device_name_frame(self, name: str) -> bytes:
-        if not self.profile.rename:
+        if not self.profile.rename_units:
             raise ValueError("This app has no reachable device-name writer")
         # Caller domains are package-owned, not inferred from a shared EF02
         # builder. Java trim removes only code points <= U+0020.
-        if self.profile.parser in ("curve", "serta", "ergomotion", "row", "slim", "au"):
+        if self.profile.rename_trimmed:
             name = name.strip("".join(chr(value) for value in range(33)))
         elif name != name.strip():
             # Q-Plus has a14-unit editor, but its accepted report does not
             # establish the other apps' trimmed caller behavior.
             raise ValueError("Use a device name without outer spaces")
-        max_units = 15 if self.profile.parser in ("row", "ergomotion") else 14
-        return name_frame(name, max_units=max_units)
+        return name_frame(name, max_units=self.profile.rename_units)
 
     async def rename_device(self, name: str) -> None:
         await self.write_command(self._device_name_frame(name))
@@ -528,24 +510,7 @@ class AppController(BedController):
     async def sync_clock(self) -> None:
         if not self.profile.clock:
             raise ValueError("This app has no clock writer")
-        now = dt_util.now()
-        await self.write_command(
-            finish(
-                bytes(
-                    (
-                        0xE7,
-                        0x80,
-                        1,
-                        (now.year - 1900) & 255,
-                        now.month - 1,
-                        now.day,
-                        now.hour,
-                        now.minute,
-                        now.second,
-                    )
-                )
-            )
-        )
+        await self.write_command(codec.clock(dt_util.now()))
         await self._wait(500)
 
     async def configure_alarm_table_schedule(self, schedule: AlarmTableSchedule) -> None:
@@ -569,36 +534,36 @@ class AppController(BedController):
         if not self.profile.shutdown_count:
             raise ValueError("This profile has no direct BLE alarm dismissal action")
         for _ in range(self.profile.shutdown_count):
-            await self.write_command(b"\xe1\x80\x04\x9a")
+            await self.write_command(codec.ALARM_DISMISS)
             if await self._wait(self.profile.shutdown_delay_ms):
                 return
 
     def _timer_byte(self, data: bytes) -> int | None:
-        parser = self.profile.parser
+        parser = self.profile.key
         if len(data) == 16:
-            if parser == "qplus" and data[:3] == b"\xa5\x0b\x0d":
+            if parser == "qplus_app" and data[:3] == b"\xa5\x0b\x0d":
                 value = int.from_bytes(data[3:5], "big")
                 return (value - 1) // 600 + 1 if 1 <= value <= 1800 else 255
             if data[13] & 32:
                 return None
-            if parser in ("qplus", "slim") and any(data[7:10]):
+            if parser in ("qplus_app", "ergo_slim") and any(data[7:10]):
                 return None
             return data[14]
         if len(data) == 19:
-            if parser in ("omazz", "serta"):
+            if parser in ("omazz_adjusto_iii", "serta_mp_remote"):
                 return None
-            if parser == "ergomotion":
+            if parser == "ergomotion_app":
                 return data[14] if data[0] == 0xF1 else data[15]
-            if parser == "slim":
+            if parser == "ergo_slim":
                 return data[14] if data[0] == 0xF1 else data[15] if data[0] == 0xF4 else None
-            if parser == "qplus":
+            if parser == "qplus_app":
                 if any(data[7:10]):
                     return None
                 return None if data[16] & 2 else data[15]
             return None if data[14] & 32 else data[15]
-        if len(data) == 20 and parser != "serta":
+        if len(data) == 20 and parser != "serta_mp_remote":
             return data[14]
-        if len(data) == 23 and parser in ("omazz", "qplus"):
+        if len(data) == 23 and parser in ("omazz_adjusto_iii", "qplus_app"):
             return data[15]
         return None
 
@@ -609,7 +574,7 @@ class AppController(BedController):
     def _parse_notification(self, data: bytes | None) -> None:
         if not data:
             return
-        if self.profile.parser == "row" and self.profile.layout == "Zero-G Box":
+        if self._zero_g_box:
             return
         status = self._timer_byte(data)
         if status in (255, 1, 2, 3):

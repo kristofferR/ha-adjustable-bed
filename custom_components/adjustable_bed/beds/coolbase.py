@@ -34,6 +34,7 @@ from ..const import (
     KEESON_BASE_SERVICE_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
 )
+from ..profiles import keeson as keeson_profiles
 from .base import BedController, ControllerButtonSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
@@ -108,6 +109,7 @@ class CoolBaseController(BedController):
                 Cool Base packet format without Cool Base fan controls.
         """
         super().__init__(coordinator)
+        self.profile = keeson_profiles.COOLBASE
         self._dewert_okin_profile = dewert_okin_profile
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
@@ -278,25 +280,17 @@ class CoolBaseController(BedController):
             )
 
     def _build_command(self, cmd0: int = 0, cmd1: int = 0, cmd2: int = 0, cmd3: int = 0) -> bytes:
-        """Build an 8-byte command packet.
+        """Build the eight-byte E5 frame from the four little-endian word bytes.
 
-        Format: [0xE5, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, trailer]
-        The Cool Base app sends the trailer as a literal; this formula reproduces
-        every literal it ships (tests pin all of them).
+        The Cool Base app sends the trailer as a literal; the codec's checksum
+        reproduces every literal it ships (tests pin all of them).
         """
-        header = [0xE5, 0xFE, 0x16]
-        data = header + [cmd0, cmd1, cmd2, cmd3]
-        checksum = sum(data) ^ 0xFF
-        data.append(checksum & 0xFF)
-        return bytes(data)
+        word = int.from_bytes(bytes((cmd0, cmd1, cmd2, cmd3)), "little")
+        return keeson_profiles.encode(self.profile, word)
 
     def _build_command_from_value(self, command_value: int) -> bytes:
         """Build command from 32-bit value (little-endian byte order)."""
-        cmd0 = command_value & 0xFF
-        cmd1 = (command_value >> 8) & 0xFF
-        cmd2 = (command_value >> 16) & 0xFF
-        cmd3 = (command_value >> 24) & 0xFF
-        return self._build_command(cmd0, cmd1, cmd2, cmd3)
+        return keeson_profiles.encode(self.profile, command_value & 0xFFFFFFFF)
 
     async def write_command(
         self,

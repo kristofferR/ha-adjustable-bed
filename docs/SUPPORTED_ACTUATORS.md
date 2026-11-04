@@ -18,7 +18,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Reverie](beds/reverie.md) | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okin-nframe.md#okimat) | 4 memory presets, massage, lights (requires pairing) |
 | [Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |
-| [Glideaway Motion / Montion app](beds/glideaway-motion.md) | Manual 400/450/500/600 layouts, two memories, clock/alarm, model-gated massage/light; hardware unverified |
+| [Glideaway Motion / Montion app](beds/keeson.md#glideaway-motion) | Manual 400/450/500/600 layouts, two memories, clock/alarm, model-gated massage/light; hardware unverified |
 | [Jiecang](beds/jiecang.md) | Motor control, memory, massage, split beds; [ERGOBALANCE / Dream Motion](beds/jiecang.md#dream-app-family) layouts, alarms, wake routines and renaming; [Comfort Motion app](beds/jiecang.md#comfort-motion-app) |
 | [Kaidi](beds/kaidi.md) | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
 | [Jensen](beds/jensen.md) | Go-to-position, massage/light/fan levels (0-10), app-stored memories, dynamic feature detection |
@@ -39,10 +39,10 @@ validation limits; the feature summaries below depend on the selected controller
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
 | [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss.md#limoss-remote) and [FSM Relax](beds/limoss.md#fsm-relax) bed/chair layouts and local memories |
 | [Motion Bed app](beds/ff_frame.md#motion-bed) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
-| [Cool Base](beds/coolbase.md) | Keeson BaseI5 with fan control |
-| [Scott Living](beds/scott-living.md) | 9-byte protocol |
-| [SBI/Q-Plus](beds/sbi.md) | Position feedback via pulse lookup |
-| [Rondure](beds/rondure.md) | 4 motors, split-king, massage, lights |
+| [Cool Base](beds/keeson.md#cool-base) | Keeson BaseI5 with fan control |
+| [Scott Living](beds/keeson.md#scott-living) | 9-byte protocol |
+| [SBI/Q-Plus](beds/keeson.md#sbi--q-plus-costco) | Position feedback via pulse lookup |
+| [Rondure](beds/keeson.md#rondure) | 4 motors, split-king, massage, lights |
 | [Remacro](beds/remacro.md) | Slumberland, The Brick and Jerome's app screens: up to 3 motors, split sides, presets, memory, massage, light |
 | [Logicdata](beds/logicdata.md) | SILVERmotion / SimplicityFrame memory, lights and massage; [MOTIONrelax](beds/jiecang.md#motionrelax-phone-and-tablet) layouts and alarms; [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) bed controls and separate [air mattress pump](beds/logicdata-sleep-smart.md) |
 | [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |

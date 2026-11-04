@@ -507,8 +507,10 @@ The `malouf_legacy_okin` bed type sends the Keeson E6 frame
 `0000ffe9-0000-1000-8000-00805f9b34fb` in service
 `0000ffe5-0000-1000-8000-00805f9b34fb`. It uses the OKIN words of the
 [command table](#command-encoders) (column OKIN word (NEW_OKIN)) and the same
-layout and memory settings as [NEW_OKIN](#new_okin). It moves with the Keeson E6
-group of the v5 protocol split.
+layout and memory settings as [NEW_OKIN](#new_okin). Its profile is
+`malouf_legacy_okin` in the Keeson guide's
+[controller profiles](keeson.md#controller-profiles); the controller builds the
+frame through that codec.
 
 Some Lucid L600 / DewertOKIN `OKIN-BLE` controllers advertise the Malouf/Lucid
 family UUID (`01000001-...`) but expose only the FFE5/FFE9 command service after

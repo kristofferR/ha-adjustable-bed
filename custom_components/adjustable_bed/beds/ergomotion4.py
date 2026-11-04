@@ -10,9 +10,9 @@ from collections.abc import Callable
 from time import monotonic
 from typing import TYPE_CHECKING, cast
 
-from ..alarm_table import AlarmTableScheduleSpec
-from ..cluster033_profiles import AppProfile
+from ..codec import keeson as codec
 from ..ergomotion4_profiles import ACTIONS, PRODUCTS, Action, Product, Step
+from ..profiles.keeson import ergomotion_4_profile
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -21,7 +21,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .cluster033 import AppController, control_frame, finish
+from .cluster033 import AppController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -95,27 +95,7 @@ LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS = 2.0
 
 def p2_frame(key: int) -> bytes:
     """Finite shipped switch, including its zero-key fallback."""
-    return b"\x04\x02" + (key if key in P2_KEYS else 0).to_bytes(4, "big")
-
-
-def custom_frame(key: int) -> bytes:
-    if key == 999:
-        return bytes.fromhex("07d004040000100000")
-    if key == 1:
-        return bytes.fromhex("07d002060000090001")
-    if 2 <= key <= 4:
-        return bytes((7, 208, 2, 4, 0, 0, 9, 0, key))
-    if 5 <= key <= 8:
-        return bytes((7, 208, 4, 6, 0, 0, 9, 0, key))
-    return bytes.fromhex("07d000000000000000")
-
-
-def rgb_frame(color: tuple[int, int, int], *, inverted: bool = False) -> bytes:
-    if inverted:
-        return (
-            b"\x0a\x02\x00\x00\x00\x00\x01\x01\xbb" + bytes((255 - c) & 255 for c in color) + b"\0"
-        )
-    return b"\x09\x0a\x00\x02\x00\x00\x01" + bytes(c & 255 for c in color) + b"\0"
+    return codec.p2(key if key in P2_KEYS else codec.RELEASE)
 
 
 def custom_product(
@@ -245,18 +225,7 @@ class Ergomotion4Controller(AppController):
             "EZI MAID",
         }
         # Reuse the existing transport, rename, clock and validated alarm tables.
-        super().__init__(
-            coordinator,
-            AppProfile(
-                "Ergomotion 4.0",
-                self.product.style,
-                (),
-                AlarmTableScheduleSpec(128, 3),
-                "ergomotion",
-                shutdown_count=1,
-                shutdown_delay_ms=0,
-            ),
-        )
+        super().__init__(coordinator, ergomotion_4_profile(self.product.style))
         self._light: bool | None = None
         self._light_state_changed = asyncio.Event()
         self._rgb = (0, 0, 0)
@@ -349,8 +318,9 @@ class Ergomotion4Controller(AppController):
             if self.command_side in ("left", "right"):
                 raise ValueError("Ergomotion 4.0 P2 has no side selector")
             return p2_frame(mask)
-        side = {"left": "side_b", "right": "side_a"}.get(self.command_side or "", "both")
-        return control_frame(mask, side)
+        if self.command_side in ("left", "right"):
+            return codec.side_frame(mask & 0xFFFFFFFF, cast(codec.Side, self.command_side))
+        return codec.frame(mask & 0xFFFFFFFF)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if (
@@ -394,7 +364,7 @@ class Ergomotion4Controller(AppController):
         self._notification_chars = tuple(rx_chars)
         # M30/EZI MAID initializes using P1 zero despite its P2 movement keys.
         if self.product.protocol == "P1" or self.product.style == "M30":
-            await self.write_command(control_frame(0))
+            await self.write_command(codec.frame(codec.RELEASE))
         else:
             await self._queries((300, 600, 900))
 
@@ -443,7 +413,7 @@ class Ergomotion4Controller(AppController):
                     if kind == "p1"
                     else p2_frame(value)
                     if kind == "p2"
-                    else custom_frame(value)
+                    else codec.custom_massage(value)
                 )
                 await self.write_command(frame, cancel_event=asyncio.Event() if cleanup else None)
 
@@ -455,7 +425,7 @@ class Ergomotion4Controller(AppController):
                 return
             if session is not self._session_cancel or session.is_set():
                 return
-            await self.write_command(b"\x00\xb0", cancel_event=asyncio.Event() if cleanup else None)
+            await self.write_command(codec.STATUS_QUERY, cancel_event=asyncio.Event() if cleanup else None)
             previous = offset
 
     def _device_name_frame(self, name: str) -> bytes:
@@ -465,7 +435,7 @@ class Ergomotion4Controller(AppController):
         units = len(name.encode("utf-16-le")) // 2
         if not name or units > 16:
             raise ValueError("Use a nonempty name of at most 16 UTF-16 units")
-        return finish(b"\xef\x02" + name.encode("utf-8")[: min(units, 15)].ljust(15, b"\0"))
+        return codec.rename(name.encode("utf-8")[: min(units, 15)])
 
     async def _run_action(self, key: str) -> None:
         if key in ("meditation_start", "meditation_stop"):
@@ -636,7 +606,7 @@ class Ergomotion4Controller(AppController):
 
         factor = struct.unpack("f", struct.pack("f", level / 100))[0]
         scaled = tuple(int(struct.unpack("f", struct.pack("f", c * factor))[0]) for c in color)
-        frame = rgb_frame(
+        frame = codec.rgb(
             cast(tuple[int, int, int], scaled),
             inverted=self._dynamic and "4194" in self.product.style,
         )

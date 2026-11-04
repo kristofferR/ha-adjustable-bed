@@ -191,7 +191,7 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     if bed_type in const.CLUSTER033_BED_TYPES:
-        from custom_components.adjustable_bed.cluster033_profiles import DEFAULT_LAYOUTS
+        from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
     if bed_type == const.BED_TYPE_ISLEEP:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})

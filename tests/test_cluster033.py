@@ -23,8 +23,6 @@ from custom_components.adjustable_bed.beds.cluster033 import (
     NUS_RX,
     NUS_TX,
     AppController,
-    control_frame,
-    mx_frame,
     name_frame,
 )
 from custom_components.adjustable_bed.beds.serta_mp_remote import (
@@ -32,9 +30,9 @@ from custom_components.adjustable_bed.beds.serta_mp_remote import (
     HEAD_TABLE,
     SertaMPRemoteController,
     pulse_angle,
-    pulse_frame,
 )
-from custom_components.adjustable_bed.cluster033_profiles import (
+from custom_components.adjustable_bed.codec import keeson as codec
+from custom_components.adjustable_bed.profiles.keeson import (
     APP_LAYOUTS,
     app_profile,
 )
@@ -108,7 +106,8 @@ for package, fixture in FIXTURES.items():
 @pytest.mark.parametrize(("key", "expected"), KEY_VECTORS)
 def test_accepted_control_vectors(key, expected):
     """Independent frozen bytes cover each package's shared low32 arithmetic."""
-    assert control_frame(key) == expected
+    ctrl = AppController(coordinator(), app_profile("tempur_curve"))
+    assert ctrl._frame(key) == expected
 
 
 @pytest.mark.parametrize(
@@ -120,7 +119,8 @@ def test_accepted_control_vectors(key, expected):
     ],
 )
 def test_qplus_p1_side_vectors(side, expected):
-    assert control_frame(0 if side == "side_b" else 1, side).hex() == expected
+    ctrl = AppController(coordinator(), app_profile("qplus_app", "M2"), side=side)
+    assert ctrl._frame(0 if side == "side_b" else 1).hex() == expected
 
 
 @pytest.mark.parametrize(
@@ -133,7 +133,8 @@ def test_qplus_p1_side_vectors(side, expected):
     ],
 )
 def test_mx_sparse_builder_vectors(mask, expected):
-    assert mx_frame(mask).hex() == expected
+    ctrl = AppController(coordinator(), app_profile("qplus_app", "MX"))
+    assert ctrl._frame(mask).hex() == expected
 
 
 @pytest.mark.parametrize(
@@ -303,16 +304,16 @@ async def test_declared_actions_dispatch_exact_event_lifecycle(app, layout):
                 assert wire[3:] == [b"\0\xb0"] * 3
                 assert [w.args[0] for w in ctrl._wait.await_args_list] == [100] * 3 + [300] * 3
             else:
-                assert wire[3] == control_frame(0)
+                assert wire[3] == codec.frame(0)
                 assert not any(p[:3] == b"\xe5\xfe\x16" and len(p) != 8 for p in wire)
         elif action.mode == "pulse":
             if app == "qplus_app" and layout == "MX":
                 assert wire[1:] == [b"\0\xb0"] * 3
                 assert [w.args[0] for w in ctrl._wait.await_args_list] == [300, 300, 300, 300]
             else:
-                assert wire == [ctrl._frame(action.mask), control_frame(0)]
+                assert wire == [ctrl._frame(action.mask), codec.frame(0)]
         elif action.mode == "tap_zeros":
-            assert wire[1:] == [control_frame(0)] * 3
+            assert wire[1:] == [codec.frame(0)] * 3
             assert [w.args[0] for w in ctrl._wait.await_args_list] == [300, 100, 100]
         elif app == "qplus_app" and layout == "MX":
             assert wire[1:] == [b"\0\xb0"] * 2
@@ -335,7 +336,7 @@ async def test_cancelled_hold_has_fresh_release_and_no_late_control_packets(app)
     ctrl._wait.side_effect = wait
     await ctrl.hold_control("head_up", 60000)
     assert packets(coord)[0] == ctrl._frame(1)
-    assert packets(coord)[1:] == ([b"\0\xb0"] * 3 if app == "qplus_app" else [control_frame(0)])
+    assert packets(coord)[1:] == ([b"\0\xb0"] * 3 if app == "qplus_app" else [codec.frame(0)])
 
 
 async def test_mx_memory1_is_opaque_held_action_and_release_has_no_zero():
@@ -421,7 +422,7 @@ SERTA_PULSES = [
 @pytest.mark.parametrize("vector", SERTA_PULSES)
 def test_serta_accepted_angle_pulse_vectors(vector):
     inputs = vector["inputs"]
-    assert pulse_frame(inputs["head_pulse"], inputs["foot_pulse"]) == bytes.fromhex(
+    assert codec.position_target(inputs["head_pulse"], inputs["foot_pulse"]) == bytes.fromhex(
         vector["expected_bytes"]
     )
 
@@ -454,7 +455,7 @@ async def test_serta_local_memory_separate_from_m4_and_progress_equality_wins():
     callback.assert_any_call("back", 15.0)
     callback.assert_any_call("legs", 35.0)
     await ctrl.set_motor_position("back", 15)
-    assert packets(coord)[-1] == pulse_frame(3197, 0x8000)
+    assert packets(coord)[-1] == codec.position_target(3197, 0x8000)
     ctrl.on_disconnect()
     assert all(handle.cancelled() for handle in ctrl._setters)
 
@@ -475,7 +476,7 @@ async def test_source_action_receipts(receipt):
 async def test_old_session_writer_waiting_for_ble_lane_cannot_write_to_new_client():
     ctrl, coord = await ready("omazz_adjusto_iii")
     await ctrl.ble_lock.acquire()
-    pending = asyncio.create_task(ctrl.write_command(control_frame(1)))
+    pending = asyncio.create_task(ctrl.write_command(codec.frame(1)))
     await asyncio.sleep(0)
     ctrl.on_disconnect()
     coord.client = coordinator().client
@@ -515,7 +516,7 @@ async def test_serta_angle_edit_holds_locally_then_sends_one_bounded_target_on_r
     await ctrl.start_notify()
     ctrl._angles = 59, 0
     await ctrl.hold_control("head_target_up", 401)
-    assert packets(coord) == [pulse_frame(HEAD_TABLE[60], 0x8000)]
+    assert packets(coord) == [codec.position_target(HEAD_TABLE[60], 0x8000)]
     assert [x.args[0] for x in ctrl._wait.await_args_list] == [200, 200, 1]
     ctrl.on_disconnect()
 
@@ -628,7 +629,7 @@ async def test_serta_four_local_memory_defaults_and_configuration_are_not_physic
     await ctrl.start_notify()
     try:
         await ctrl.preset_memory(slot)
-        assert packets(coord) == [pulse_frame(HEAD_TABLE[head], FOOT_TABLE[foot])]
+        assert packets(coord) == [codec.position_target(HEAD_TABLE[head], FOOT_TABLE[foot])]
         assert not ctrl.supports_memory_programming
         assert ctrl.motor_max_angles == {"back": 60.0, "legs": 45.0}
     finally:
@@ -669,7 +670,7 @@ async def test_ergomotion_held_down_zeros_keep_original_offsets_and_early_releas
 ):
     ctrl, coord = await ready("ergomotion_app", "B2")
     await ctrl.hold_control("reset", duration)
-    assert packets(coord) == [control_frame(mask) for mask in expected_masks]
+    assert packets(coord) == [codec.frame(mask) for mask in expected_masks]
 
 
 async def test_pulse_write_failure_still_attempts_protocol_release():
@@ -679,7 +680,7 @@ async def test_pulse_write_failure_still_attempts_protocol_release():
     coord.client.write_gatt_char.side_effect = [BleakError("failed write callback"), None]
     with pytest.raises(BleakError):
         await ctrl._run_action("massage_timer")
-    assert packets(coord) == [control_frame(0x200), control_frame(0)]
+    assert packets(coord) == [codec.frame(0x200), codec.frame(0)]
 
 
 async def test_diagnostic_callback_change_does_not_repeat_session_initialization_or_subscription():

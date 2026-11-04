@@ -2,7 +2,7 @@
 
 The accepted Android app `com.keeson.coolbase` 1.0.0 (3) is a complete 19-APK XAPK with one reachable BLE control protocol. The comparison accounts for **70 discovery items: 23 IMPLEMENTED, 21 ALREADY_IMPLEMENTED, 26 EXCLUDED**. Rows overlap evidence coverage and are not distinct physical features. Hardware is unverified (STATIC VERIFIED / HARDWARE UNVERIFIED).
 
-The public controller contract is [Cool Base](../../beds/coolbase.md). Only the Cool Base profile follows this app; the DewertOKIN `OKIN-BLE` profile keeps its separately sourced behavior.
+The public controller contract is [Cool Base](../../beds/keeson.md#cool-base). Only the Cool Base profile follows this app; the DewertOKIN `OKIN-BLE` profile keeps its separately sourced behavior.
 
 ## Exact accepted authority
 

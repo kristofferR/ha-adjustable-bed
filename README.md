@@ -103,7 +103,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers |
 | ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) |
 | 🧪 [AdjustaMattress](docs/beds/adjustamattress.md) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
-| ⚠️ [Comfort Enhancements](docs/beds/comfort-enhancements.md) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
+| ⚠️ [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
 | ✅ Jordan's | [Serenity](docs/beds/okin-nframe.md#jordans-serenity), [Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) |
 | ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
 | ✅ [Adjustable bed (Lumbar)](docs/beds/okin-nframe.md#adjustable-bed-lumbar) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
@@ -111,7 +111,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-nframe.md#okin-64-bit) | NORA_CON / NORACON Mattress Firm controllers |
 | 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
-| ✅ [Glideaway Motion / Montion app](docs/beds/glideaway-motion.md) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
+| ✅ [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md); legacy ISleep entries |
 | 🔬 [ISleep](docs/beds/isleep.md) | Explicit com.kaidi_test4 1.6.3 profile, products 129–134, 142, 143 (artifact verified, hardware unverified) |
@@ -135,24 +135,24 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | [Caresse / Werkmeister](docs/beds/vibradorm_app.md), [VMAT](docs/beds/vmat.md), [V-MAT Basic / CBI / XT-Box](docs/beds/vmatbasic.md) |
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
 | ✅ [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION |
-| ✅ [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |
+| ✅ [Rondure](docs/beds/keeson.md#rondure) | 1500 Tilt Base |
 | ✅ [Remacro](docs/beds/remacro.md) | Slumberland, The Brick, Jerome's |
-| ✅ [Cool Base](docs/beds/coolbase.md) | Cool Base (Keeson with fan) |
-| ✅ [Scott Living](docs/beds/scott-living.md) | Scott Living |
-| ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
-| 🧪 [Tempur Curve app](docs/beds/tempur-curve.md) | Explicit com.ore.tempur app profile; static artifact proven, hardware unverified |
-| 🧪 [Q-Plus Adjustable Remote app](docs/beds/q-plus-adjustable-remote.md) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
-| 🧪 [Serta MP Remote app](docs/beds/serta-mp-remote.md) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
-| 🧪 [Omazz Adjusto III app](docs/beds/omazz-adjusto-iii.md) | Reachable RemoteB controls and alarm tables; hardware unverified |
+| ✅ [Cool Base](docs/beds/keeson.md#cool-base) | Cool Base (Keeson with fan) |
+| ✅ [Scott Living](docs/beds/keeson.md#scott-living) | Scott Living |
+| ✅ [SBI/Q-Plus](docs/beds/keeson.md#sbi--q-plus-costco) | Q-Plus (Costco) |
+| 🧪 [Tempur Curve app](docs/beds/keeson.md#tempur-curve) | Explicit com.ore.tempur app profile; static artifact proven, hardware unverified |
+| 🧪 [Q-Plus Adjustable Remote app](docs/beds/keeson.md#q-plus-adjustable-remote) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
+| 🧪 [Serta MP Remote app](docs/beds/keeson.md#serta-mp-remote) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
+| 🧪 [Omazz Adjusto III app](docs/beds/keeson.md#omazz-adjusto-iii) | Reachable RemoteB controls and alarm tables; hardware unverified |
 | 🧪 [Ergomotion 4.0](docs/beds/ergomotion-4.md) | Explicit H/M1–M22/M30 layouts and 21 catalog products; P1 Left/Right/Both, RGB, massage and alarms; hardware unverified |
-| 🧪 [Ergomotion app](docs/beds/ergomotion.md) | Explicit B1/B2/C1/D1 app layouts; hardware unverified |
-| 🧪 [ROW Control app](docs/beds/row-control.md) | Elevate, Lifestyle, Curve, Lifestyle Plus and Zero-G Box; hardware unverified |
-| 🧪 [Ergo Slim app](docs/beds/ergo-slim.md) | Explicit A/B/C app layouts; hardware unverified |
-| 🧪 [TEMPUR AU app](docs/beds/tempur-au.md) | Explicit B1/B2/C1/D1/E1 app layouts; hardware unverified |
+| 🧪 [Ergomotion app](docs/beds/keeson.md#ergomotion-app) | Explicit B1/B2/C1/D1 app layouts; hardware unverified |
+| 🧪 [ROW Control app](docs/beds/keeson.md#row-control) | Elevate, Lifestyle, Curve, Lifestyle Plus and Zero-G Box; hardware unverified |
+| 🧪 [Ergo Slim app](docs/beds/keeson.md#ergo-slim) | Explicit A/B/C app layouts; hardware unverified |
+| 🧪 [TEMPUR AU app](docs/beds/keeson.md#tempur-au) | Explicit B1/B2/C1/D1/E1 app layouts; hardware unverified |
 | ✅ [LOGICDATA](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame; [MOTIONrelax](docs/beds/jiecang.md#motionrelax-phone-and-tablet), [Sleep Smart](docs/beds/jiecang.md#sleep-smart-air-mattress-bed) Vienna / Toronto / Middle Rail and [air mattress pump](docs/beds/logicdata-sleep-smart.md) |
 | ✅ [Okin CB35](docs/beds/okin-5a.md#sealy-posturematic-cb35) | Sealy Posturematic |
 | ✅ [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
-| 🧪 [BF / Cherish](docs/beds/bf-cherish.md) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
+| 🧪 [BF / Cherish](docs/beds/keeson.md#bf-and-cherish) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
 | ✅ [Okin CST](docs/beds/okin-nframe.md#okin-cst) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
 | ✅ [Motion Bed](docs/beds/ff_frame.md#motion-bed) | QMS/SealyMF and TL beds, air and thermal controls |
 | ✅ [FurniMove / OKIN Smart Remote](docs/beds/furnimove.md) | App handset layouts, including RF ECO BT adjustable-bed receivers |

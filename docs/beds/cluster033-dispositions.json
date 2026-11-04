@@ -123,8 +123,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode"
         ],
         "tests": [
@@ -277,7 +277,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -335,7 +335,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -393,7 +393,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -451,7 +451,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -509,7 +509,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=massage_timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=massage_timer",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -567,7 +567,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=massage_foot_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=massage_foot_add",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -625,7 +625,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=massage_head_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=massage_head_add",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -683,7 +683,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=zero_g",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -741,7 +741,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=tv_III",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=tv_III",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -799,7 +799,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=anti_snore_I",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=anti_snore_I",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -857,7 +857,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=light",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -915,7 +915,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -973,7 +973,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=reset",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -1084,7 +1084,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_curve', 'standard')] / key=lounge_II",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_curve', 'standard')] / key=lounge_II",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -2186,8 +2186,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile"
@@ -2406,9 +2406,9 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
-          "custom_components/adjustable_bed/beds/cluster033.py::mx_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
+          "custom_components/adjustable_bed/beds/cluster033.py::AppController._frame",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile"
         ],
@@ -2626,8 +2626,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode"
         ],
         "tests": [
@@ -6351,9 +6351,9 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame"
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target"
         ],
         "tests": [
           "tests/test_cluster033.py::test_accepted_control_vectors",
@@ -6524,7 +6524,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6582,7 +6582,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6640,7 +6640,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6698,7 +6698,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6756,7 +6756,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6814,7 +6814,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=level",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6872,7 +6872,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=lounge",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6930,7 +6930,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=lumbardown",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=lumbardown",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -6988,7 +6988,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=lumbarup",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=lumbarup",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7046,7 +7046,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=m4",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=m4",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7104,7 +7104,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masfootadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masfootadd",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7162,7 +7162,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masfootmin",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masfootmin",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7220,7 +7220,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masheadadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masheadadd",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7278,7 +7278,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masheadmin",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=masheadmin",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7336,7 +7336,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=reset",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7394,7 +7394,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=tiltdown",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=tiltdown",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7452,7 +7452,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=tiltup",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=tiltup",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7510,7 +7510,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=timer",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7568,7 +7568,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=tv",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7626,7 +7626,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=zg",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('serta_mp_remote', 'standard')] / key=zg",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -7739,7 +7739,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -7797,7 +7797,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -7823,7 +7823,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -7881,7 +7881,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -7907,7 +7907,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -7969,7 +7969,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -8031,7 +8031,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -8092,7 +8092,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -8153,7 +8153,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -8214,7 +8214,7 @@
         "code": [
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.hold_control",
           "custom_components/adjustable_bed/beds/serta_mp_remote.py::SertaMPRemoteController.preset_memory",
-          "custom_components/adjustable_bed/beds/serta_mp_remote.py::pulse_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::position_target",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -8907,8 +8907,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode"
         ],
         "tests": [
@@ -9016,7 +9016,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9074,7 +9074,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9132,7 +9132,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9190,7 +9190,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9248,7 +9248,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=lounge",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9306,7 +9306,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=demonstration",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=demonstration",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9364,7 +9364,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=TV",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=TV",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9422,7 +9422,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=music",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=music",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9480,7 +9480,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9538,7 +9538,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=zg",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=zg",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9596,7 +9596,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=ubb",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=ubb",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9654,7 +9654,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_head",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9712,7 +9712,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_timer",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9770,7 +9770,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_foot",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -9828,7 +9828,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_all",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('omazz_adjusto_iii', 'RemoteB')] / key=massage_all",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -10768,8 +10768,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode"
         ],
         "tests": [
@@ -10924,10 +10924,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -10988,10 +10988,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11052,10 +11052,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11116,10 +11116,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11180,10 +11180,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11244,10 +11244,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=timer",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11308,10 +11308,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=zg",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=zg",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=zg",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=zg",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=zg",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=zg",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=zg",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=zg",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11372,10 +11372,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=masheadadd",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=masheadadd",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masheadadd",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masheadadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=masheadadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=masheadadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masheadadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masheadadd",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11436,10 +11436,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=masfootadd",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=masfootadd",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masfootadd",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masfootadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=masfootadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=masfootadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masfootadd",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masfootadd",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11500,10 +11500,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=reset",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11564,9 +11564,9 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=level",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=level",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=level",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11644,7 +11644,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=level1",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=level1",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11720,7 +11720,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=level2",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=level2",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11796,7 +11796,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B2')] / key=level3",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B2')] / key=level3",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11872,9 +11872,9 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=lounge",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -11952,9 +11952,9 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'B1')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'B1')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=tv",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -12032,8 +12032,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=light",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=light",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -12110,8 +12110,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masfootmin",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masfootmin",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masfootmin",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masfootmin",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -12188,8 +12188,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masheadmin",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masheadmin",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'C1')] / key=masheadmin",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=masheadmin",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -12266,7 +12266,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=tiltup",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=tiltup",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -12342,7 +12342,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=tiltdown",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=tiltdown",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -12418,7 +12418,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=lumbarup",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=lumbarup",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -12494,7 +12494,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergomotion_app', 'D1')] / key=lumbardown",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergomotion_app', 'D1')] / key=lumbardown",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -13431,14 +13431,14 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033.py::test_accepted_control_vectors",
@@ -13473,7 +13473,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -13519,9 +13519,9 @@
           "custom_components/adjustable_bed/paired_coordinator.py::PairedBedCoordinator._pair_admission_was_cancelled",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033.py::test_source_action_receipts[row_control/Elevate/head_up]",
@@ -13638,7 +13638,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -13662,41 +13662,41 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=anti_snore",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=anti_snore",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=anti_snore",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=anti_snore",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=anti_snore",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=anti_snore",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=anti_snore",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=anti_snore",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=anti_snore",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=anti_snore",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=lounge",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -13710,9 +13710,9 @@
           "custom_components/adjustable_bed/paired_coordinator.py::PairedBedCoordinator._pair_admission_was_cancelled",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033.py::test_source_action_receipts[row_control/Elevate/head_up]",
@@ -13794,7 +13794,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -13871,19 +13871,19 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=light",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=light",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=light",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -13964,21 +13964,21 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_foot",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -14061,16 +14061,16 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_foot",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_head",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle Plus')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Zero-G Box')] / key=massage_foot",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
           "custom_components/adjustable_bed/beds/base.py::ControllerMotorHoldSpec",
           "custom_components/adjustable_bed/cover.py::AdjustableBedCover.extra_state_attributes",
@@ -14985,8 +14985,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile"
@@ -15158,7 +15158,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=reset",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15216,7 +15216,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15274,7 +15274,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15332,7 +15332,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15390,7 +15390,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15448,7 +15448,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=massage_head_min",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=massage_head_min",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15506,7 +15506,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=massage_foot_min",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=massage_foot_min",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15564,7 +15564,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=level",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15622,7 +15622,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=zero_gravity",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=zero_gravity",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15680,7 +15680,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15738,7 +15738,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=tv",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15796,7 +15796,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=lounge",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15854,7 +15854,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'A')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'A')] / key=light",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15912,7 +15912,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_head",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -15988,7 +15988,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_timer",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16064,7 +16064,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_foot",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16140,7 +16140,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=ubb",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=ubb",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16216,7 +16216,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_all",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=massage_all",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16292,7 +16292,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=music",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=music",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16368,7 +16368,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16426,7 +16426,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16484,7 +16484,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16542,7 +16542,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16600,7 +16600,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16658,7 +16658,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=anti_snore",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=anti_snore",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16734,7 +16734,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=lounge",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16792,7 +16792,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=tv",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16850,7 +16850,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'B')] / key=zero_gravity",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'B')] / key=zero_gravity",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16908,7 +16908,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=massage_head",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=massage_head",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -16984,7 +16984,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=massage_timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=massage_timer",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17060,7 +17060,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=massage_foot",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=massage_foot",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17136,7 +17136,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=m3_out",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=m3_out",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17212,7 +17212,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=ubb",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=ubb",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17288,7 +17288,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=m3_in",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=m3_in",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17364,7 +17364,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17422,7 +17422,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17480,7 +17480,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17538,7 +17538,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17596,7 +17596,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=zero_gravity",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=zero_gravity",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17654,7 +17654,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=memory_4",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=memory_4",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17730,7 +17730,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=memory_2",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=memory_2",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17806,7 +17806,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=memory_3",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=memory_3",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -17882,7 +17882,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('ergo_slim', 'C')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('ergo_slim', 'C')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -18614,8 +18614,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/beds/cluster033.py::finish",
-          "custom_components/adjustable_bed/beds/cluster033.py::control_frame",
+          "custom_components/adjustable_bed/codec/keeson.py::checked",
+          "custom_components/adjustable_bed/codec/keeson.py::frame",
           "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec.encode"
         ],
         "tests": [
@@ -18840,11 +18840,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=head_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=head_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=head_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -18906,11 +18906,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=head_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=head_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=head_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -18972,11 +18972,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=foot_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=foot_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=foot_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19038,11 +19038,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=foot_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=foot_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=foot_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19104,7 +19104,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=tilt_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=tilt_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19180,7 +19180,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=tilt_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=tilt_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19256,8 +19256,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=lumbar_up",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=lumbar_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=lumbar_up",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=lumbar_up",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19334,8 +19334,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=lumbar_down",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=lumbar_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=lumbar_down",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=lumbar_down",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19412,9 +19412,9 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=level",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=level",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=level",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=level",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19492,11 +19492,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=timer",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=timer",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=timer",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19558,11 +19558,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=massage_foot_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=massage_foot_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_foot_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_foot_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=massage_foot_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=massage_foot_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=massage_foot_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_foot_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_foot_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=massage_foot_add",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19624,11 +19624,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=massage_head_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=massage_head_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_head_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_head_add",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=massage_head_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=massage_head_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=massage_head_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_head_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_head_add",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=massage_head_add",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19690,11 +19690,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=zero_g",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=zero_g",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=zero_g",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19756,10 +19756,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=lounge",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=lounge",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=lounge",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19838,10 +19838,10 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=tv",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=tv",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=tv",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19920,7 +19920,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=anti_snooze",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=anti_snooze",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -19996,7 +19996,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=music",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=music",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20072,9 +20072,9 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=light",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=light",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=light",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=light",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20152,7 +20152,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=memory_level_1",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=memory_level_1",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20228,7 +20228,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=memory_level_2",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=memory_level_2",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20304,7 +20304,7 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=memory_level_3",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=memory_level_3",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20380,8 +20380,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_head_decrease",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_head_decrease",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_head_decrease",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_head_decrease",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20458,8 +20458,8 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_foot_decrease",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_foot_decrease",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=massage_foot_decrease",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=massage_foot_decrease",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20536,11 +20536,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=flat",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=flat",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=flat",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -20602,11 +20602,11 @@
       ],
       "proof": {
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B1')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'B2')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'C1')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'D1')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('tempur_au', 'E1')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B1')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'B2')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'C1')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'D1')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('tempur_au', 'E1')] / key=reset",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController._run_action",
           "custom_components/adjustable_bed/beds/cluster033.py::AppController.hold_control",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -21255,8 +21255,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -21857,8 +21857,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -22267,8 +22267,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -22679,8 +22679,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -23131,8 +23131,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -23957,8 +23957,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -24517,8 +24517,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
@@ -24975,8 +24975,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -25489,8 +25489,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
         ],
@@ -26073,8 +26073,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
@@ -26381,8 +26381,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -26438,7 +26438,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -26483,8 +26483,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -26543,8 +26543,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -26603,8 +26603,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -26660,7 +26660,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -26685,8 +26685,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27259,8 +27259,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27335,8 +27335,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27481,8 +27481,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27537,8 +27537,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27613,8 +27613,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27689,8 +27689,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27765,8 +27765,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27841,8 +27841,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27897,8 +27897,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -27973,8 +27973,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -28249,8 +28249,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -28305,8 +28305,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -28617,8 +28617,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -28691,8 +28691,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -28765,8 +28765,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -28821,8 +28821,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -28895,8 +28895,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29081,8 +29081,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29098,9 +29098,9 @@
           "custom_components/adjustable_bed/paired_coordinator.py::PairedBedCoordinator._pair_admission_was_cancelled",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033_services.py::test_findable_app_and_side_owned_options[row_control]",
@@ -29149,7 +29149,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29174,8 +29174,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29191,9 +29191,9 @@
           "custom_components/adjustable_bed/paired_coordinator.py::PairedBedCoordinator._pair_admission_was_cancelled",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033_services.py::test_findable_app_and_side_owned_options[row_control]",
@@ -29242,7 +29242,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29267,8 +29267,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29282,9 +29282,9 @@
           "custom_components/adjustable_bed/command_scheduler.py::DeviceCommandScheduler.enqueue",
           "custom_components/adjustable_bed/coordinator.py::AdjustableBedCoordinator._async_schedule_command_operation",
           "custom_components/adjustable_bed/paired_coordinator.py::PairedBedCoordinator._pair_admission_was_cancelled",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033_services.py::test_findable_app_and_side_owned_options[row_control]",
@@ -29319,7 +29319,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29344,8 +29344,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29361,9 +29361,9 @@
           "custom_components/adjustable_bed/paired_coordinator.py::PairedBedCoordinator._pair_admission_was_cancelled",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedOptionsFlow._remove_irrelevant_bed_settings",
           "custom_components/adjustable_bed/app_profiles.py::per_side_profile",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033_services.py::test_findable_app_and_side_owned_options[row_control]",
@@ -29412,7 +29412,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29437,8 +29437,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29511,8 +29511,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29811,8 +29811,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29885,8 +29885,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -29941,8 +29941,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30015,8 +30015,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30207,8 +30207,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30281,8 +30281,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30355,8 +30355,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30411,8 +30411,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30467,8 +30467,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30541,8 +30541,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -30615,8 +30615,8 @@
       "proof": {
         "code": [
           "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
-          "custom_components/adjustable_bed/cluster033_profiles.py::APP_LAYOUTS",
-          "custom_components/adjustable_bed/cluster033_profiles.py::app_profile",
+          "custom_components/adjustable_bed/profiles/keeson.py::APP_LAYOUTS",
+          "custom_components/adjustable_bed/profiles/keeson.py::app_profile",
           "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_cluster033_app",
           "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE",
           "custom_components/adjustable_bed/beds/base.py::ControllerHoldSpec",
@@ -31256,7 +31256,7 @@
           "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
         ],
         "docs": [
-          "docs/beds/serta-mp-remote.md"
+          "docs/beds/keeson.md"
         ],
         "assertion": "Registered legs35/back61 is refused before writes or scheduling on current/offline standalone/native paired/multi-target paths. A later Serta failure cannot schedule an earlier independently validated Okimat target. Native 60/45 endpoints write calibrated pulse fields despite generic lower/higher overrides; legs46 is refused before writes. Other-bed configurable legs limit remains effective.",
         "fanout": "Four existing IDs gain the shared service-entry bound proof; existing calibration/controller/cover proofs remain."
@@ -31273,9 +31273,9 @@
         ],
         "status": "CLOSED_VERIFIED_SOFTWARE_REVIEW",
         "code": [
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
-          "custom_components/adjustable_bed/cluster033_profiles.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Elevate')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Lifestyle')] / key=reset",
+          "custom_components/adjustable_bed/profiles/keeson.py::_ACTIONS[('row_control', 'Curve')] / key=reset"
         ],
         "tests": [
           "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Elevate]",
@@ -31283,7 +31283,7 @@
           "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
         ],
         "docs": [
-          "docs/beds/row-control.md"
+          "docs/beds/keeson.md"
         ],
         "assertion": "Three supplemental production cases bind accepted V04 frame e5fe1600100008ee, 100ms waits and zero release to actual button platform finite press, registered held service, native Left/Right/Both routes and explicit Right STOP cancellation. The unselected physical side writes nothing. Lifestyle Plus and Zero-G reject Reset and publish no Reset button. The opaque source label makes no physical reset claim.",
         "fanout": "Seven existing IDs, six overlapping options; no new ledger IDs or accepted receipt/vector rows. Original 370 receipts and 413 vectors stay unchanged."
