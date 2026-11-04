@@ -7797,7 +7797,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -7881,7 +7881,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -13473,7 +13473,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -13638,7 +13638,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -13794,7 +13794,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -26438,7 +26438,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -26660,7 +26660,7 @@
               "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
             ],
             "docs": [
-              "docs/beds/serta-mp-remote.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29149,7 +29149,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29242,7 +29242,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29319,7 +29319,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -29412,7 +29412,7 @@
               "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
             ],
             "docs": [
-              "docs/beds/row-control.md"
+              "docs/beds/keeson.md"
             ]
           }
         }
@@ -31256,7 +31256,7 @@
           "tests/test_cluster033_repair006.py::test_other_bed_configurable_limits_remain_in_registered_preflight"
         ],
         "docs": [
-          "docs/beds/serta-mp-remote.md"
+          "docs/beds/keeson.md"
         ],
         "assertion": "Registered legs35/back61 is refused before writes or scheduling on current/offline standalone/native paired/multi-target paths. A later Serta failure cannot schedule an earlier independently validated Okimat target. Native 60/45 endpoints write calibrated pulse fields despite generic lower/higher overrides; legs46 is refused before writes. Other-bed configurable legs limit remains effective.",
         "fanout": "Four existing IDs gain the shared service-entry bound proof; existing calibration/controller/cover proofs remain."
@@ -31283,7 +31283,7 @@
           "tests/test_cluster033_repair006.py::test_row_reset_supplemental_production_paths[Curve]"
         ],
         "docs": [
-          "docs/beds/row-control.md"
+          "docs/beds/keeson.md"
         ],
         "assertion": "Three supplemental production cases bind accepted V04 frame e5fe1600100008ee, 100ms waits and zero release to actual button platform finite press, registered held service, native Left/Right/Both routes and explicit Right STOP cancellation. The unselected physical side writes nothing. Lifestyle Plus and Zero-G reject Reset and publish no Reset button. The opaque source label makes no physical reset claim.",
         "fanout": "Seven existing IDs, six overlapping options; no new ledger IDs or accepted receipt/vector rows. Original 370 receipts and 413 vectors stay unchanged."

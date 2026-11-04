@@ -899,11 +899,11 @@ the other side automatically if one side fails.
 
 ### Curve, Q-Plus, Serta MP and SFD app profiles
 
-Choose the exact app in the bed-type picker: [Tempur Curve](beds/tempur-curve.md),
-[Q-Plus Adjustable Remote](beds/q-plus-adjustable-remote.md),
-[Serta MP Remote](beds/serta-mp-remote.md), [Omazz Adjusto III](beds/omazz-adjusto-iii.md),
-[Ergomotion](beds/ergomotion.md), [ROW Control](beds/row-control.md),
-[Ergo Slim](beds/ergo-slim.md), or [TEMPUR AU](beds/tempur-au.md).
+Choose the exact app in the bed-type picker: [Tempur Curve](beds/keeson.md#tempur-curve),
+[Q-Plus Adjustable Remote](beds/keeson.md#q-plus-adjustable-remote),
+[Serta MP Remote](beds/keeson.md#serta-mp-remote), [Omazz Adjusto III](beds/keeson.md#omazz-adjusto-iii),
+[Ergomotion](beds/keeson.md#ergomotion-app), [ROW Control](beds/keeson.md#row-control),
+[Ergo Slim](beds/keeson.md#ergo-slim), or [TEMPUR AU](beds/keeson.md#tempur-au).
 Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
 Select the bed address manually when automatic discovery cannot disambiguate it.
 
