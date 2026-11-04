@@ -7,82 +7,119 @@
   ],
   "bluetooth": [
     {
-      "service_uuid": "99fa0001-338a-1024-8a49-009c0215f78a"
+      "service_uuid": "00001234-0000-1000-8000-00805f9b34fb"
     },
     {
-      "service_uuid": "99fa0020-338a-1024-8a49-009c0215f78a"
+      "service_uuid": "00001420-0000-1000-8000-00805f9b34fb"
     },
     {
-      "service_uuid": "0000fee9-0000-1000-8000-00805f9b34fb"
+      "service_uuid": "00001523-0000-1000-8000-00805f9b34fb"
     },
     {
-      "service_uuid": "0000fee9-0000-1000-8000-00805f9b34bb"
+      "service_uuid": "00001525-9f03-0de5-96c5-b8f4f3081186"
     },
     {
-      "service_uuid": "0000fff0-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "local_name": "HHC*"
-    },
-    {
-      "local_name": "hhc*"
-    },
-    {
-      "local_name": "MOTOB*"
-    },
-    {
-      "local_name": "motob*"
-    },
-    {
-      "local_name": "MOTOS*"
-    },
-    {
-      "local_name": "motos*"
-    },
-    {
-      "service_uuid": "0000ffc0-0000-1000-8000-00805f9b34fb",
-      "connectable": true
-    },
-    {
-      "manufacturer_id": 65535,
-      "manufacturer_data_start": [
-        192,
-        255
-      ]
-    },
-    {
-      "service_uuid": "9e5d1e47-5c13-43a0-8635-82adffc0386f"
-    },
-    {
-      "manufacturer_id": 65535,
-      "manufacturer_data_start": [
-        192
-      ]
-    },
-    {
-      "manufacturer_id": 1465,
-      "manufacturer_data_start": [
-        192
-      ]
-    },
-    {
-      "service_uuid": "0000ffe5-0000-1000-8000-00805f9b34fb"
+      "service_uuid": "00001527-9f03-0de5-96c5-b8f4f3081186"
     },
     {
       "service_uuid": "0000a00a-0000-1000-8000-00805f9b34fb",
       "connectable": true
     },
     {
-      "service_uuid": "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7"
+      "service_uuid": "0000aa5c-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000abcb-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000fe60-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000fee9-0000-1000-8000-00805f9b34bb"
+    },
+    {
+      "service_uuid": "0000fee9-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000ff12-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000ffc0-0000-1000-8000-00805f9b34fb",
+      "connectable": true
+    },
+    {
+      "service_uuid": "0000ffe0-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000ffe5-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000fff0-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "01000001-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
+    },
+    {
+      "service_uuid": "1b1d9641-b942-4da8-89cc-98e6a58fbd93"
     },
     {
       "service_uuid": "45e25100-3171-4cfc-ae89-1d83cf8d8071"
     },
     {
-      "manufacturer_id": 2349,
+      "service_uuid": "62741523-52f9-8864-b1ab-3b3a8d65950b"
+    },
+    {
+      "service_uuid": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+      "connectable": true
+    },
+    {
+      "service_uuid": "6e400020-b5a3-f393-e0a9-e50e24dcca9e",
+      "connectable": true
+    },
+    {
+      "service_uuid": "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
+    },
+    {
+      "service_uuid": "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7"
+    },
+    {
+      "service_uuid": "92111420-72ab-4564-62ef-2a881286a6b0"
+    },
+    {
+      "service_uuid": "99fa0001-338a-1024-8a49-009c0215f78a"
+    },
+    {
+      "service_uuid": "99fa0020-338a-1024-8a49-009c0215f78a"
+    },
+    {
+      "service_uuid": "9e5d1e47-5c13-43a0-8635-82adffc0386f"
+    },
+    {
+      "service_uuid": "b9934c43-5c91-462b-80a1-30fccc29d758"
+    },
+    {
+      "service_uuid": "db801000-f324-29c3-38d1-85c0c2e86885"
+    },
+    {
+      "service_uuid": "f6380280-6d90-442c-8feb-3aec76948f06",
+      "connectable": true
+    },
+    {
+      "service_uuid": "ffffd1fd-388d-938b-344a-939d1f6efee0"
+    },
+    {
+      "manufacturer_id": 89
+    },
+    {
+      "manufacturer_id": 944
+    },
+    {
+      "manufacturer_id": 1465,
       "manufacturer_data_start": [
-        88,
-        80
+        192
       ]
     },
     {
@@ -93,303 +130,24 @@
       ]
     },
     {
-      "service_uuid": "62741523-52f9-8864-b1ab-3b3a8d65950b"
-    },
-    {
-      "local_name": "OKIN*Receiver*"
-    },
-    {
-      "local_name": "OKIN*receiver*"
-    },
-    {
-      "local_name": "Okin*Receiver*"
-    },
-    {
-      "local_name": "Okin*receiver*"
-    },
-    {
-      "local_name": "okin*Receiver*"
-    },
-    {
-      "local_name": "okin*receiver*"
-    },
-    {
-      "service_uuid": "1b1d9641-b942-4da8-89cc-98e6a58fbd93"
-    },
-    {
-      "service_uuid": "0000ffe0-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "local_name": "QMS-IQ*"
-    },
-    {
-      "local_name": "qms-iq*"
-    },
-    {
-      "local_name": "QMS-I06*"
-    },
-    {
-      "local_name": "qms-i06*"
-    },
-    {
-      "local_name": "QMS-LQ*"
-    },
-    {
-      "local_name": "qms-lq*"
-    },
-    {
-      "local_name": "QMS-L04*"
-    },
-    {
-      "local_name": "qms-l04*"
-    },
-    {
-      "local_name": "QMS-JQ-D*"
-    },
-    {
-      "local_name": "qms-jq-d*"
-    },
-    {
-      "local_name": "QMS4*"
-    },
-    {
-      "local_name": "qms4*"
-    },
-    {
-      "local_name": "QMS-NQ*"
-    },
-    {
-      "local_name": "qms-nq*"
-    },
-    {
-      "local_name": "QMS3*"
-    },
-    {
-      "local_name": "qms3*"
-    },
-    {
-      "local_name": "QMS-MQ*"
-    },
-    {
-      "local_name": "qms-mq*"
-    },
-    {
-      "local_name": "QMS2*"
-    },
-    {
-      "local_name": "qms2*"
-    },
-    {
-      "local_name": "My QMS2*"
-    },
-    {
-      "local_name": "my qms2*"
-    },
-    {
-      "local_name": "SealyMF*"
-    },
-    {
-      "local_name": "sealymf*"
-    },
-    {
-      "local_name": "S4-Y-*"
-    },
-    {
-      "local_name": "s4-y-*"
-    },
-    {
-      "service_uuid": "0000aa5c-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "service_uuid": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
-      "connectable": true
-    },
-    {
-      "local_name": "base-i4*",
-      "connectable": true
-    },
-    {
-      "local_name": "base-i5*",
-      "connectable": true
-    },
-    {
-      "local_name": "KSBT01C*",
-      "connectable": true
-    },
-    {
-      "local_name": "KSBT03C*",
-      "connectable": true
-    },
-    {
-      "service_uuid": "6e400020-b5a3-f393-e0a9-e50e24dcca9e",
-      "connectable": true
-    },
-    {
-      "service_uuid": "00001523-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "service_uuid": "92111420-72ab-4564-62ef-2a881286a6b0"
-    },
-    {
-      "service_uuid": "00001234-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "service_uuid": "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
-    },
-    {
-      "service_uuid": "ffffd1fd-388d-938b-344a-939d1f6efee0"
-    },
-    {
-      "local_name": "AHF*"
-    },
-    {
-      "local_name": "SUTA*"
-    },
-    {
-      "local_name": "Mouselet*"
-    },
-    {
-      "local_name": "JMC*"
-    },
-    {
-      "local_name": "LIMOSS*"
-    },
-    {
-      "local_name": "STAWETT*"
-    },
-    {
-      "local_name": "Bed*"
-    },
-    {
-      "service_uuid": "0000abcb-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "local_name": "Star*"
-    },
-    {
-      "local_name": "SLEEPSTAR*"
-    },
-    {
-      "local_name": "sleepstar*"
-    },
-    {
-      "local_name": "ELEVATE*"
-    },
-    {
-      "local_name": "elevate*"
-    },
-    {
-      "local_name": "Svane*"
-    },
-    {
-      "service_uuid": "00001525-9f03-0de5-96c5-b8f4f3081186"
-    },
-    {
-      "service_uuid": "00001527-9f03-0de5-96c5-b8f4f3081186"
-    },
-    {
-      "local_name": "VMAT*"
-    },
-    {
-      "manufacturer_id": 944
-    },
-    {
-      "manufacturer_id": 89
-    },
-    {
-      "service_uuid": "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
-    },
-    {
-      "service_uuid": "0000fe60-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "service_uuid": "b9934c43-5c91-462b-80a1-30fccc29d758"
-    },
-    {
-      "service_uuid": "01000001-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "service_uuid": "0000ff12-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "service_uuid": "db801000-f324-29c3-38d1-85c0c2e86885"
-    },
-    {
-      "service_uuid": "00001420-0000-1000-8000-00805f9b34fb"
-    },
-    {
-      "local_name": "star*"
-    },
-    {
-      "local_name": "staR*"
-    },
-    {
-      "local_name": "stAr*"
-    },
-    {
-      "local_name": "stAR*"
-    },
-    {
-      "local_name": "sTar*"
-    },
-    {
-      "local_name": "sTaR*"
-    },
-    {
-      "local_name": "sTAr*"
-    },
-    {
-      "local_name": "sTAR*"
-    },
-    {
-      "local_name": "StaR*"
-    },
-    {
-      "local_name": "StAr*"
-    },
-    {
-      "local_name": "StAR*"
-    },
-    {
-      "local_name": "STar*"
-    },
-    {
-      "local_name": "STaR*"
-    },
-    {
-      "local_name": "STAr*"
-    },
-    {
-      "local_name": "STAR*"
-    },
-    {
-      "local_name": "STAR25*",
-      "connectable": true
-    },
-    {
-      "service_uuid": "f6380280-6d90-442c-8feb-3aec76948f06",
-      "connectable": true
-    },
-    {
-      "local_name": "RM-*"
-    },
-    {
-      "local_name": "HJ-*"
-    },
-    {
-      "local_name": "QRRM*"
-    },
-    {
-      "local_name": "COOL*"
-    },
-    {
-      "local_name": "MPE_*"
-    },
-    {
-      "local_name": "209A*"
-    },
-    {
-      "local_name": "ZRA1*"
+      "manufacturer_id": 2349,
+      "manufacturer_data_start": [
+        88,
+        80
+      ]
+    },
+    {
+      "manufacturer_id": 65535,
+      "manufacturer_data_start": [
+        192,
+        255
+      ]
+    },
+    {
+      "manufacturer_id": 65535,
+      "manufacturer_data_start": [
+        192
+      ]
     },
     {
       "local_name": "200I*"
@@ -399,6 +157,9 @@
     },
     {
       "local_name": "208A14*"
+    },
+    {
+      "local_name": "209A*"
     },
     {
       "local_name": "209A05*"
@@ -498,6 +259,9 @@
     },
     {
       "local_name": "AGRM*"
+    },
+    {
+      "local_name": "AHF*"
     },
     {
       "local_name": "AHRM*"
@@ -725,6 +489,9 @@
       "local_name": "BZRM*"
     },
     {
+      "local_name": "Bed*"
+    },
+    {
       "local_name": "C0RM*"
     },
     {
@@ -831,6 +598,9 @@
     },
     {
       "local_name": "CNRM*"
+    },
+    {
+      "local_name": "COOL*"
     },
     {
       "local_name": "CORM*"
@@ -1071,6 +841,9 @@
     },
     {
       "local_name": "EKRN*"
+    },
+    {
+      "local_name": "ELEVATE*"
     },
     {
       "local_name": "EMRM*"
@@ -1442,6 +1215,12 @@
       "local_name": "HERM*"
     },
     {
+      "local_name": "HHC*"
+    },
+    {
+      "local_name": "HJ-*"
+    },
+    {
       "local_name": "HKRM*"
     },
     {
@@ -1646,6 +1425,9 @@
       "local_name": "JLRM*"
     },
     {
+      "local_name": "JMC*"
+    },
+    {
       "local_name": "JMRM*"
     },
     {
@@ -1766,6 +1548,14 @@
       "local_name": "KRRN*"
     },
     {
+      "local_name": "KSBT01C*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSBT03C*",
+      "connectable": true
+    },
+    {
       "local_name": "KSRN*"
     },
     {
@@ -1839,6 +1629,9 @@
     },
     {
       "local_name": "LGRM*"
+    },
+    {
+      "local_name": "LIMOSS*"
     },
     {
       "local_name": "LJRM*"
@@ -1961,6 +1754,15 @@
       "local_name": "MMRM*"
     },
     {
+      "local_name": "MOTOB*"
+    },
+    {
+      "local_name": "MOTOS*"
+    },
+    {
+      "local_name": "MPE_*"
+    },
+    {
       "local_name": "MRRM*"
     },
     {
@@ -1974,6 +1776,12 @@
     },
     {
       "local_name": "MlRM*"
+    },
+    {
+      "local_name": "Mouselet*"
+    },
+    {
+      "local_name": "My QMS2*"
     },
     {
       "local_name": "N4RN*"
@@ -2024,6 +1832,12 @@
       "local_name": "OARM*"
     },
     {
+      "local_name": "OKIN*Receiver*"
+    },
+    {
+      "local_name": "OKIN*receiver*"
+    },
+    {
       "local_name": "OMRM*"
     },
     {
@@ -2064,6 +1878,12 @@
     },
     {
       "local_name": "OZRM*"
+    },
+    {
+      "local_name": "Okin*Receiver*"
+    },
+    {
+      "local_name": "Okin*receiver*"
     },
     {
       "local_name": "P0RM*"
@@ -2123,6 +1943,39 @@
       "local_name": "QHRN*"
     },
     {
+      "local_name": "QMS-I06*"
+    },
+    {
+      "local_name": "QMS-IQ*"
+    },
+    {
+      "local_name": "QMS-JQ-D*"
+    },
+    {
+      "local_name": "QMS-L04*"
+    },
+    {
+      "local_name": "QMS-LQ*"
+    },
+    {
+      "local_name": "QMS-MQ*"
+    },
+    {
+      "local_name": "QMS-NQ*"
+    },
+    {
+      "local_name": "QMS2*"
+    },
+    {
+      "local_name": "QMS3*"
+    },
+    {
+      "local_name": "QMS4*"
+    },
+    {
+      "local_name": "QRRM*"
+    },
+    {
       "local_name": "QVRN*"
     },
     {
@@ -2144,10 +1997,59 @@
       "local_name": "RARN*"
     },
     {
+      "local_name": "RM-*"
+    },
+    {
+      "local_name": "S4-Y-*"
+    },
+    {
       "local_name": "S9RM*"
     },
     {
       "local_name": "SARM*"
+    },
+    {
+      "local_name": "SLEEPSTAR*"
+    },
+    {
+      "local_name": "STAR*"
+    },
+    {
+      "local_name": "STAR25*",
+      "connectable": true
+    },
+    {
+      "local_name": "STAWETT*"
+    },
+    {
+      "local_name": "STAr*"
+    },
+    {
+      "local_name": "STaR*"
+    },
+    {
+      "local_name": "STar*"
+    },
+    {
+      "local_name": "SUTA*"
+    },
+    {
+      "local_name": "SealyMF*"
+    },
+    {
+      "local_name": "StAR*"
+    },
+    {
+      "local_name": "StAr*"
+    },
+    {
+      "local_name": "StaR*"
+    },
+    {
+      "local_name": "Star*"
+    },
+    {
+      "local_name": "Svane*"
     },
     {
       "local_name": "T0RM*"
@@ -2382,6 +2284,9 @@
     },
     {
       "local_name": "VLRM*"
+    },
+    {
+      "local_name": "VMAT*"
     },
     {
       "local_name": "VMRM*"
@@ -2870,6 +2775,9 @@
       "local_name": "ZRA0*"
     },
     {
+      "local_name": "ZRA1*"
+    },
+    {
       "local_name": "ZRA2*"
     },
     {
@@ -2922,6 +2830,98 @@
     },
     {
       "local_name": "ZZRM*"
+    },
+    {
+      "local_name": "base-i4*",
+      "connectable": true
+    },
+    {
+      "local_name": "base-i5*",
+      "connectable": true
+    },
+    {
+      "local_name": "elevate*"
+    },
+    {
+      "local_name": "hhc*"
+    },
+    {
+      "local_name": "motob*"
+    },
+    {
+      "local_name": "motos*"
+    },
+    {
+      "local_name": "my qms2*"
+    },
+    {
+      "local_name": "okin*Receiver*"
+    },
+    {
+      "local_name": "okin*receiver*"
+    },
+    {
+      "local_name": "qms-i06*"
+    },
+    {
+      "local_name": "qms-iq*"
+    },
+    {
+      "local_name": "qms-jq-d*"
+    },
+    {
+      "local_name": "qms-l04*"
+    },
+    {
+      "local_name": "qms-lq*"
+    },
+    {
+      "local_name": "qms-mq*"
+    },
+    {
+      "local_name": "qms-nq*"
+    },
+    {
+      "local_name": "qms2*"
+    },
+    {
+      "local_name": "qms3*"
+    },
+    {
+      "local_name": "qms4*"
+    },
+    {
+      "local_name": "s4-y-*"
+    },
+    {
+      "local_name": "sTAR*"
+    },
+    {
+      "local_name": "sTAr*"
+    },
+    {
+      "local_name": "sTaR*"
+    },
+    {
+      "local_name": "sTar*"
+    },
+    {
+      "local_name": "sealymf*"
+    },
+    {
+      "local_name": "sleepstar*"
+    },
+    {
+      "local_name": "stAR*"
+    },
+    {
+      "local_name": "stAr*"
+    },
+    {
+      "local_name": "staR*"
+    },
+    {
+      "local_name": "star*"
     }
   ],
   "categories": [
