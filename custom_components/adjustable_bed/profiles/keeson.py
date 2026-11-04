@@ -197,6 +197,7 @@ BASE: Final = KeesonProfile(
 )
 ERGOMOTION: Final = KeesonProfile(
     key="ergomotion",
+    execution=STREAM_HOLD,
     single_side=True,
     hold=(10, 100),
     presets=_KSBT_PRESETS,
@@ -206,6 +207,7 @@ ERGOMOTION: Final = KeesonProfile(
 )
 SERTA: Final = KeesonProfile(
     key="serta",
+    execution=STREAM_HOLD,
     hold=(10, 100),
     presets=_TV_UNLISTED,
     unlisted_presets=frozenset({"tv"}),
@@ -272,6 +274,7 @@ JSON: Final = KeesonProfile(
 # Direct P2 remotes stop by ending the refresh; the SFD apps then poll status three times.
 KSBT: Final = KeesonProfile(
     key="ksbt",
+    execution=STREAM_HOLD,
     carrier="p2",
     transport="ksbt",
     hold=(10, 100),
@@ -282,7 +285,13 @@ KSBT: Final = KeesonProfile(
 )
 # Ergomotion Sync: KSBT03C boxes have no tilt motor and no release write.
 KSBT03C: Final = replace(
-    KSBT, key="ksbt03c", hold=(4, 300), release=Release(steps=()), no_response=True, tilt=False
+    KSBT,
+    key="ksbt03c",
+    execution=STREAM_HOLD,
+    hold=(4, 300),
+    release=Release(steps=()),
+    no_response=True,
+    tilt=False,
 )
 KSBT_CR: Final = KeesonProfile(
     key="ksbt_cr",
@@ -350,6 +359,7 @@ PURPLE_PLUS: Final = replace(
 # cancels the 300 ms refresh; both remotes poll 00 B0 every 500 ms.
 ADJUSTABLE_LITE: Final = KeesonProfile(
     key="adjustable_lite",
+    execution=STREAM_HOLD,
     carrier="p2",
     transport="ksbt",
     notify="ksbt",
@@ -368,6 +378,7 @@ ADJUSTABLE_LITE: Final = KeesonProfile(
 ADJUSTABLE_LITE_KSBT03C: Final = replace(
     ADJUSTABLE_LITE,
     key="adjustable_lite_ksbt03c",
+    execution=STREAM_HOLD,
     presets={**_BASE_PRESETS, "anti_snore": K.PRESET_ANTI_SNORE},
     massage="zone_steps",
     status_timer=True,
@@ -397,6 +408,7 @@ RESTONIC_B_CONTROLS: Final[Mapping[str, tuple[int, bool]]] = MappingProxyType(
 )
 RESTONIC_A: Final = KeesonProfile(
     key="restonic_a",
+    execution=STREAM_HOLD,
     fixed_write=True,
     no_response=True,
     hold=(10, 100),
@@ -409,12 +421,17 @@ RESTONIC_A: Final = KeesonProfile(
     held_controls=RESTONIC_A_CONTROLS,
 )
 RESTONIC_B: Final = replace(
-    RESTONIC_A, key="restonic_b", lights="toggle", held_controls=RESTONIC_B_CONTROLS
+    RESTONIC_A,
+    key="restonic_b",
+    execution=STREAM_HOLD,
+    lights="toggle",
+    held_controls=RESTONIC_B_CONTROLS,
 )
 # INNOVA 2.0 (com.ore.sfm): holds every 100 ms, touch-up zero key 100 ms later, and
 # sendSingleMessage sleeps 100 ms before every one-shot write. Keys live in beds/innova.py.
 INNOVA: Final = KeesonProfile(
     key="innova",
+    execution=STREAM_HOLD,
     fixed_write=True,
     hold=(10, 100),
     refresh_ms=100,
@@ -428,6 +445,7 @@ INNOVA: Final = KeesonProfile(
 # Okin apps (beds/keeson_okin_apps.py): big-endian E5 frames, holds every 100 ms.
 SIMON_LI: Final = KeesonProfile(
     key="simon_li",
+    execution=STREAM_HOLD,
     order="big",
     fixed_write=True,
     hold=None,
@@ -436,6 +454,7 @@ SIMON_LI: Final = KeesonProfile(
 )
 OKIN_SEATING: Final = KeesonProfile(
     key="okin_seating",
+    execution=STREAM_HOLD,
     order="big",
     fixed_write=True,
     hold=None,
@@ -444,6 +463,7 @@ OKIN_SEATING: Final = KeesonProfile(
 )
 HEAL_EVERY_NIGHT: Final = KeesonProfile(
     key="heal_every_night",
+    execution=STREAM_HOLD,
     order="big",
     fixed_write=True,
     hold=None,
@@ -462,30 +482,35 @@ _ORE: Final = KeesonProfile(
     release=Release(steps=((100, codec.RELEASE),)),
     tap_wait_ms=100,
 )
-AMERICANSTAR: Final = replace(_ORE, key="americanstar")
-AVANTI_BASES: Final = replace(_ORE, key="avanti_bases")
-BEDSENSE_BASES: Final = replace(_ORE, key="bedsense_bases")
-DYNASTY_BASES: Final = replace(_ORE, key="dynasty_bases")
-MAXCOIL_UNA: Final = replace(_ORE, key="maxcoil_una")
+AMERICANSTAR: Final = replace(_ORE, key="americanstar", execution=STREAM_HOLD)
+AVANTI_BASES: Final = replace(_ORE, key="avanti_bases", execution=STREAM_HOLD)
+BEDSENSE_BASES: Final = replace(_ORE, key="bedsense_bases", execution=STREAM_HOLD)
+DYNASTY_BASES: Final = replace(_ORE, key="dynasty_bases", execution=STREAM_HOLD)
+MAXCOIL_UNA: Final = replace(_ORE, key="maxcoil_una", execution=STREAM_HOLD)
 # Bed types whose controllers keep their key tables, sessions and timing, over the
 # nine-byte E6 frame. Only the frame is profile data here.
 _E6: Final = KeesonProfile(key="e6", header=0xE6, side=0, hold=None)
-GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion")  # row068
+GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion", execution=STREAM_HOLD)  # row068
 MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin", execution=STREAM_HOLD)
 SLEEPYS_BOX15: Final = replace(_E6, key="sleepys_box15")
 SCOTT_LIVING: Final = replace(_E6, key="scott_living", side=1)
 # AdjustaMattress (row067): model P1 sends E6 frames, P2 big-endian E5 frames.
-ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress")
-ADJUSTAMATTRESS_P2: Final = KeesonProfile(key="adjustamattress_p2", order="big", hold=None)
+ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress", execution=STREAM_HOLD)
+ADJUSTAMATTRESS_P2: Final = KeesonProfile(
+    key="adjustamattress_p2", execution=STREAM_HOLD, order="big", hold=None
+)
 # Split-bed A/B selection of the SBI/Q-Plus and Rondure apps: Both is the E5 frame.
 _AB_SIDES: Final[Mapping[str, int]] = MappingProxyType({"side_a": 0x01, "side_b": 0x02})
-SBI: Final = KeesonProfile(key="sbi", hold=None, split_sides=_AB_SIDES)
+SBI: Final = KeesonProfile(key="sbi", execution=STREAM_HOLD, hold=None, split_sides=_AB_SIDES)
 RONDURE: Final = KeesonProfile(key="rondure", hold=None, split_sides=_AB_SIDES)
-COOLBASE: Final = KeesonProfile(key="coolbase", hold=None)  # com.keeson.coolbase 1.0.0
+# com.keeson.coolbase 1.0.0
+COOLBASE: Final = KeesonProfile(key="coolbase", execution=STREAM_HOLD, hold=None)
 # BF and Cherish (beds/bf_cherish.py), Comfort Enhancements: big-endian E5 frames.
-BF: Final = KeesonProfile(key="bf", order="big", hold=None)
-CHERISH: Final = KeesonProfile(key="cherish", order="big", hold=None)
-COMFORT_ENHANCEMENTS: Final = KeesonProfile(key="comfort_enhancements", order="big", hold=None)
+BF: Final = KeesonProfile(key="bf", execution=STREAM_HOLD, order="big", hold=None)
+CHERISH: Final = KeesonProfile(key="cherish", execution=STREAM_HOLD, order="big", hold=None)
+COMFORT_ENHANCEMENTS: Final = KeesonProfile(
+    key="comfort_enhancements", execution=STREAM_HOLD, order="big", hold=None
+)
 
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
@@ -1061,6 +1086,7 @@ def ergomotion_4_profile(style: str) -> AppProfile:
     """The Ergomotion 4.0 app profile for one catalog product style."""
     return AppProfile(
         key=ERGOMOTION_4,
+        execution=STREAM_HOLD,
         app="Ergomotion 4.0",
         layout=style,
         actions=(),
@@ -1085,6 +1111,7 @@ def app_profile(app: str, layout: str | None = None) -> AppProfile:
     )
     return AppProfile(
         key=app,
+        execution=STREAM_HOLD,
         app=APP_NAMES[app],
         layout=layout,
         actions=_ACTIONS[app, layout],
