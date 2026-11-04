@@ -11,32 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-# The names here are artifact selector identities, not inferred hardware families.
-_PREFIXES = {
-    "deviceFunctionItemExitLimit": (110, 2, 1),
-    "deviceFunctionItemCheckClock": (110, 8, 1),
-    "deviceFunctionItemCheckLight": (110, 10, 0),
-    "deviceFunctionItemCheckMusic": (110, 21, 1),
-    "deviceFunctionItemCheckAroma": (110, 26, 0),
-    "deviceFunctionItemCheckMattress": (94, 26, 0),
-    "deviceFunctionItemCheckSnore": (110, 33, 0),
-    "deviceFunctionItemCheckSpeech": (110, 34, 0),
-    "deviceFunctionItemCheckDetection": (110, 154, 192),
-    "deviceFunctionItemSendStartDetection": (110, 136, 194),
-    "deviceFunctionItemQueryVersion": (110, 154, 0),
-    "deviceFunctionVersionOneBedCurrentMode": (110, 154, 16),
-    "deviceFunctionVersionOneMotor1CurrentAngle": (110, 154, 48),
-    "deviceFunctionVersionOneMotor2CurrentAngle": (110, 154, 48),
-    "deviceFunctionVersionOneMotor3CurrentAngle": (110, 154, 48),
-    "deviceFunctionVersionOneMotor4CurrentAngle": (110, 154, 48),
-    "deviceFunctionVersionOneCurrentMassageMode": (110, 154, 160),
-    "deviceFunctionVersionOneCurrentBedLightStatus": (110, 154, 176),
-}
-
-
-def sum_frame(values: tuple[int, ...] | list[int]) -> bytes:
-    """Append the app's sum8, then apply the native integer-to-byte conversion."""
-    return bytes(v & 255 for v in (*values, sum(values)))
+from .codec import richmat as codec
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,14 +35,12 @@ class Material:
             code = self.short_override if self.short_override is not None else self.opcode
             if single and self.single_override is not None:
                 code = self.single_override
-        if single:
-            return bytes((code & 255,))
-        return sum_frame((*_PREFIXES.get(self.name, (110, 1, side)), code))
+        return codec.function(code, side, action=self.name, single=single)
 
 
 def stop_packet(*, side: int, single: bool) -> bytes:
     """The artifact's side-scoped release, with no inherited remote overrides."""
-    return Material("deviceFunctionItemStop", 110).packet(side=side, single=single)
+    return Material("deviceFunctionItemStop", codec.STOP).packet(side=side, single=single)
 
 
 def clock_frames(now: datetime) -> tuple[bytes, bytes]:
@@ -78,43 +51,14 @@ def clock_frames(now: datetime) -> tuple[bytes, bytes]:
     timestamp = int(now.timestamp())
     if not 0 <= timestamp <= 0xFFFFFFFF or not 1970 <= now.year <= 2225:
         raise ValueError("Date is outside the GM Control wire range")
-    return (
-        sum_frame(
-            (
-                110,
-                12,
-                32,
-                8,
-                2,
-                1,
-                *timestamp.to_bytes(4, "big"),
-                int(offset.total_seconds() / 3600),
-            )
-        ),
-        sum_frame(
-            (
-                110,
-                13,
-                32,
-                8,
-                3,
-                1,
-                now.year - 1970,
-                now.month,
-                now.day,
-                now.hour,
-                now.minute,
-                now.second,
-            )
-        ),
-    )
+    return codec.time_sync(now)
 
 
 def countdown_frames(minutes: int, opcode: int) -> tuple[bytes, bytes]:
     """The minute countdown and action frames; zero/zero cancels."""
     if not 0 <= minutes <= 65535 or not 0 <= opcode <= 255:
         raise ValueError("Countdown fields are outside their wire ranges")
-    return (sum_frame((110, 5, minutes & 255, 0)), sum_frame((110, 6, minutes // 256, opcode)))
+    return codec.countdown(minutes, opcode)
 
 
 def countdown_minutes(target: datetime, now: datetime) -> int:
@@ -137,19 +81,19 @@ def repeating_alarm(fields: tuple[int, int, int, int, int, int]) -> bytes:
     """Encode all six source bean fields, including its distinct record flag."""
     if any(not 0 <= x <= 255 for x in fields):
         raise ValueError("Alarm fields must fit in bytes")
-    return sum_frame((110, 13, 32, 5, 1, 1, *fields))
+    return codec.record(5, 1, 1, fields)
 
 
 def delete_alarm(slot: int) -> bytes:
     """Delete one selected repeat alarm."""
     if not 0 <= slot <= 255:
         raise ValueError("Alarm slot must fit in one byte")
-    return sum_frame((110, 8, 32, 5, 2, 1, slot))
+    return codec.record(5, 2, 1, (slot,))
 
 
 def query_alarm() -> bytes:
     """Request the repeat alarm table."""
-    return sum_frame((110, 8, 32, 5, 1, 0, 0))
+    return codec.record(5, 1, 0, (0,))
 
 
 def light_timeout(seconds: int) -> bytes:
@@ -157,7 +101,7 @@ def light_timeout(seconds: int) -> bytes:
     if not 0 <= seconds <= 65535:
         raise ValueError("Light timeout is outside the 16-bit wire range")
     seconds = seconds or 65535
-    return sum_frame((110, 11, seconds >> 8, seconds & 255))
+    return codec.light_timer(seconds >> 8, seconds & 255)
 
 
 def light_color(rgb: tuple[int, int, int]) -> bytes:
@@ -165,29 +109,29 @@ def light_color(rgb: tuple[int, int, int]) -> bytes:
     if any(not 0 <= x <= 255 for x in rgb):
         raise ValueError("RGB components must fit in one byte")
     red, green, blue = rgb
-    return sum_frame((110, 12, 255, red)) + sum_frame((110, 13, green, blue))
+    return codec.rgb(red, green, blue)
 
 
 def snore_config(mode: Literal["count", "time"], value: int) -> bytes:
     """Configure the intervention quantity; separate from the enable command."""
     if mode not in ("count", "time") or not 0 <= value <= 255:
         raise ValueError("Invalid anti-snore setting")
-    return sum_frame((110, 10, 32, 6, 5, 1, 1 if mode == "count" else 2, 0, value))
+    return codec.record(6, 5, 1, (1 if mode == "count" else 2, 0, value))
 
 
 def snore_enabled(enabled: bool) -> bytes:
     """Enable/disable the source's anti-snore intervention."""
-    return sum_frame((110, 9, 32, 6, 1, 1, 0, int(enabled)))
+    return codec.record(6, 1, 1, (0, int(enabled)))
 
 
 def query_snore(*, configuration: bool = False) -> bytes:
     """Read the intervention enable flag or its configuration."""
-    return sum_frame((110, 9, 32, 6, 5, 0, 0, 0) if configuration else (110, 8, 32, 6, 1, 0, 0))
+    return codec.record(6, 5, 0, (0, 0)) if configuration else codec.record(6, 1, 0, (0,))
 
 
 def query_sleep_name() -> bytes:
     """The BLE sleep-module advertisement-name query, not Wi-Fi provisioning."""
-    return sum_frame((110, 8, 32, 6, 3, 0, 0))
+    return codec.record(6, 3, 0, (0,))
 
 
 def desk_packet(material: Material, *, height: float = 0) -> bytes:
@@ -197,7 +141,7 @@ def desk_packet(material: Material, *, height: float = 0) -> bytes:
     if name.endswith("SetHeight"):
         if not 0 <= height <= 25599.99:
             raise ValueError("Height exceeds the two decimal-pair wire fields")
-        return sum_frame((110, 136, int(height / 100), int(height % 100)))
+        return codec.frame(codec.BED, 136, int(height / 100), int(height % 100))
     prefix = (
         149
         if name.endswith("Reset")
@@ -205,7 +149,7 @@ def desk_packet(material: Material, *, height: float = 0) -> bytes:
         if "Change" in name
         else (148 if name.endswith("RequestData") else 1)
     )
-    return sum_frame((110, prefix, 0, code))
+    return codec.frame(codec.BED, prefix, 0, code)
 
 
 def crc16(data: bytes) -> int:

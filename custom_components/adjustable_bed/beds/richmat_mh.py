@@ -24,6 +24,7 @@ from homeassistant.util import dt as dt_util
 
 from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
 from ..detection import is_mac_like_name
+from ..profiles.richmat import RICHMAT_MH
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -382,6 +383,7 @@ class RichmatMhController(BedController):
         if app not in APP_GROUPS:
             raise ValueError(f"Unknown Richmat MH app: {app}")
         self._app = app
+        self.profile = RICHMAT_MH[app]
         data = getattr(getattr(coordinator, "entry", None), "data", None)
         data = data if isinstance(data, Mapping) else {}
         stored_name = data.get(CONF_BLE_DEVICE_NAME)

@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.gmmotor_notifications import Event, common, desk21, extra
 from custom_components.adjustable_bed.gmmotor_protocol import (
     FrameBuffer,
@@ -24,7 +25,6 @@ from custom_components.adjustable_bed.gmmotor_protocol import (
     snore_config,
     snore_enabled,
     stop_packet,
-    sum_frame,
 )
 
 
@@ -49,7 +49,7 @@ def test_special_prefix_is_independent_of_side() -> None:
 def test_calendar_and_timezone_order() -> None:
     local = datetime(2023, 11, 14, 12, 34, 56, tzinfo=timezone(timedelta(hours=5, minutes=30)))
     epoch, calendar = clock_frames(local)
-    assert epoch == sum_frame((110, 12, 32, 8, 2, 1, *int(local.timestamp()).to_bytes(4, "big"), 5))
+    assert epoch == codec.frame(110, 12, 32, 8, 2, 1, *int(local.timestamp()).to_bytes(4, "big"), 5)
     assert calendar == bytes.fromhex("6e0d20080301350b0e0c22385b")
     negative = local.replace(tzinfo=timezone(timedelta(hours=-9, minutes=-30)))
     assert clock_frames(negative)[0][-2] == 247
@@ -155,22 +155,22 @@ def test_common_music_bitfields_and_detection_defaults() -> None:
 
 
 def test_alarm_and_light_timer_fields_keep_source_semantics() -> None:
-    alarm = sum_frame((110, 32, 13, 5, 1, 2, 3, 127, 6, 45, 2, 1))
+    alarm = codec.frame(110, 32, 13, 5, 1, 2, 3, 127, 6, 45, 2, 1)
     assert extra(alarm) == (
         Event(
             "alarm_list", {"id": 3, "repeat": 127, "hour": 6, "minute": 45, "mode": 2, "status": 1}
         ),
     )
-    timer = sum_frame((110, 32, 10, 4, 2, 2, 0, 2, 15))
+    timer = codec.frame(110, 32, 10, 4, 2, 2, 0, 2, 15)
     assert extra(timer) == (Event("rgb_timer", 135),)
     # The sender's timeout is BE16 seconds; the response uses minute/second pairs.
     assert light_timeout(135) == bytes.fromhex("6e0b008700")
 
 
 def test_empty_blanket_dto_and_end_relative_desk_fields() -> None:
-    blanket = sum_frame((110, 32, 9, 13, 1, 2, 0, 1))
+    blanket = codec.frame(110, 32, 9, 13, 1, 2, 0, 1)
     assert extra(blanket) == (Event("blanket_power", {}),)
-    desk = sum_frame((110, 33, 12, 15, 6, 2, 1, 2, 3, 4, 5))
+    desk = codec.frame(110, 33, 12, 15, 6, 2, 1, 2, 3, 4, 5)
     assert desk21(desk) == (
         Event(
             "desk_pair",

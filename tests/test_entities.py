@@ -15,7 +15,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Commands
-from custom_components.adjustable_bed.beds.richmat import RichmatCommands
 from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
     _button_translation_key,
@@ -2587,7 +2586,7 @@ class TestLightEntities:
 
         mock_bleak_client.write_gatt_char.assert_called_once_with(
             coordinator.controller.control_characteristic_uuid,
-            coordinator.controller._build_command(RichmatCommands.LIGHTS_TOGGLE),
+            coordinator.controller._build_command(0x3C),
             response=True,
         )
 

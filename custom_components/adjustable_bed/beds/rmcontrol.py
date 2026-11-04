@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Literal, cast
 from bleak import BleakClient
 from homeassistant.util import dt as dt_util
 
+from ..codec import richmat as codec
 from ..const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
 from ..richmat_profiles import RichmatAction, get_product_profile
 from ..rmcontrol_protocol import (
@@ -53,6 +54,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 # Integration readiness budget, not an on-wire protocol interval.
 _CAPABILITY_TIMEOUT = 5.0
+# The app's serialized queue: writes, sustain repeats and release at least this far apart.
+WRITE_SPACING_MS = 100
 _PREFIX = "deviceFunctionItem"
 _LOCAL_ACTIONS = frozenset(
     _PREFIX + name
@@ -60,37 +63,10 @@ _LOCAL_ACTIONS = frozenset(
 )
 _DESK_PRODUCTS = frozenset({"FWRM", "WFRM"})
 _SIDE_VALUES = {"left": 0, "right": 1, "both": 2}
-_TRANSPORTS = (
-    (
-        "0000fee9-0000-1000-8000-00805f9b34fb",
-        "d44bc439-abfd-45a2-b575-925416129600",
-        "d44bc439-abfd-45a2-b575-925416129601",
-    ),
-    (
-        "0000fee9-0000-1000-8000-00805f9b34bb",
-        "d44bc439-abfd-45a2-b575-925416129622",
-        "d44bc439-abfd-45a2-b575-925416129611",
-    ),
-    (
-        "0000ffe0-0000-1000-8000-00805f9b34fb",
-        "0000ffe2-0000-1000-8000-00805f9b34fb",
-        "0000ffe1-0000-1000-8000-00805f9b34fb",
-    ),
-    (
-        "0000fff0-0000-1000-8000-00805f9b34fb",
-        "0000fff2-0000-1000-8000-00805f9b34fb",
-        "0000fff1-0000-1000-8000-00805f9b34fb",
-    ),
-    (
-        "0000e0ff-3c17-d293-8e48-14fe2e4da212",
-        "00000002-3c17-d293-8e48-14fe2e4da212",
-        "00000003-3c17-d293-8e48-14fe2e4da212",
-    ),
-    (
-        "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
-        "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
-    ),
+# The app's service table; the last (Nordic UART) entry is unframed.
+_TRANSPORTS = tuple(
+    (t.service_uuid, t.write_uuid, t.notify_uuid)
+    for t in (codec.TRANSPORTS[key] for key in ("w1", "w2", "w3", "w4", "w5", "n1"))
 )
 
 
@@ -204,7 +180,7 @@ class RmcontrolController(RichmatController):
         return build_action(command_byte, side=self._side_value, nordic=self._nordic)
 
     def _build_stop_command(self) -> bytes:
-        return self._build_command(0x6E)
+        return self._build_command(codec.STOP)
 
     async def write_command(
         self,
@@ -220,7 +196,7 @@ class RmcontrolController(RichmatController):
             if cancel is not None and cancel.is_set():
                 return
             if self._last_write_at is not None:
-                remaining = max(0.0, 0.1 - (loop.time() - self._last_write_at))
+                remaining = max(0.0, WRITE_SPACING_MS / 1000 - (loop.time() - self._last_write_at))
                 if remaining:
                     await asyncio.sleep(remaining)
             if cancel is not None and cancel.is_set():
@@ -305,7 +281,7 @@ class RmcontrolController(RichmatController):
             await self.write_command(
                 packet,
                 repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=100,
+                repeat_delay_ms=WRITE_SPACING_MS,
             )
         except BaseException:
             movement_failed = True

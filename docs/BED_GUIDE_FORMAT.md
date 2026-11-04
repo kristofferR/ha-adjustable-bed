@@ -2,7 +2,7 @@
 
 Every bed guide in [`docs/beds/`](beds/) is a protocol reference that readers scan
 for values. Use this layout for new guides and keep it when you update one.
-[BedTech](beds/bedtech.md) is the canonical example.
+[BedTech](beds/richmat.md#bedtech) is the canonical example.
 
 A wire format shared by several apps or bed types gets one [codec guide](#codec-guides)
 instead of one guide per app. [Jiecang](beds/jiecang.md) is the reference.

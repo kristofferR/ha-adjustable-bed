@@ -451,7 +451,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/doublesleep.md): select the saved app model independently of the advertisement-selected P1/P2/P3 driver. Keep each physical receiver's settings separate. Sensor sides do not select motor halves. |
 | Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/keeson.md#ore-comfort-bed-profiles), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
-| Richmat | [RMControl](beds/rmcontrol.md): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md): app and model. |
+| Richmat | [RMControl](beds/richmat.md#rmcontrol): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps): app and model. |
 | Leggett & Platt | [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
 | Solace / Woosa | [Woosa Sleep](beds/ff_frame.md#woosa-sleep): protocol variant `woosa`; `auto` retains name-based Solace routing. |
 | Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
@@ -478,7 +478,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 
 ### Richmat app profiles
 
-Choose the app your phone uses, for example **Revive Control app (Richmat)**. Shared Richmat names and services never select these profiles. `auto` applies the app's name rule: the first four characters of the raw Bluetooth name, lowercased, select the model. Names starting with `QRRM` (and Idealbed names starting with `Cool Touch`) make the app ask, so choose the model variant (`model_<id>`, labelled as in the app's picker, wizard or manual list). The form reports a name the app cannot resolve. Motor count is fixed; the model's catalog decides the motors, and each control keeps the app's KEEP interval. The variant belongs to each physical bed: split a two-address pair before changing it. See [Richmat app profiles](beds/richmat-mh.md).
+Choose the app your phone uses, for example **Revive Control app (Richmat)**. Shared Richmat names and services never select these profiles. `auto` applies the app's name rule: the first four characters of the raw Bluetooth name, lowercased, select the model. Names starting with `QRRM` (and Idealbed names starting with `Cool Touch`) make the app ask, so choose the model variant (`model_<id>`, labelled as in the app's picker, wizard or manual list). The form reports a name the app cannot resolve. Motor count is fixed; the model's catalog decides the motors, and each control keeps the app's KEEP interval. The variant belongs to each physical bed: split a two-address pair before changing it. See [Richmat app profiles](beds/richmat.md#richmat-mh-apps).
 
 ### SIMMONS app profile
 
@@ -990,4 +990,4 @@ requires the selected product's actual side choices. See the
 
 ### HJBed app
 
-Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. See [HJBed](beds/hjbed.md) for all current and conditional profiles.
+Choose HJBed and the exact app product. Its profile owns layout, massage, timing and angle-sensor settings. The local Normal/Motion layout choice and acknowledged single-alarm preferences are persisted per physical receiver/profile. See [HJBed](beds/richmat.md#hjbed) for all current and conditional profiles.

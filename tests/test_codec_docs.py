@@ -234,3 +234,56 @@ async def test_limoss_bed_types_match_the_factory() -> None:
     for key, bed_type in bed_types.items():
         controller = await _create_controller_for_bed_type(bed_type)
         assert getattr(controller, "profile", None) is PROFILES[key], (key, bed_type)
+
+
+def _richmat_spelled_frames() -> set[str]:
+    """Fully spelled 6E/5E/55/AA/04 frames outside the Notifications sections."""
+    text = (ROOT / "docs" / "beds" / "richmat.md").read_text(encoding="utf-8")
+    sections = re.split(r"^(#+ .*)$", text, flags=re.M)
+    sent = "".join(
+        body
+        for heading, body in zip(["", *sections[1::2]], sections[0::2], strict=True)
+        if "Notifications" not in heading
+    )
+    spelled = re.findall(r"`((?:6E|5E|55|AA|04)(?: ?[0-9A-F]{2}){4,})`", sent, re.IGNORECASE)
+    frames = set()
+    for literal in spelled:
+        data = bytes.fromhex(literal.replace(" ", ""))
+        # One write may carry back-to-back 5-byte frames.
+        if len(data) % 5 == 0 and sum(data[:-1]) & 255 != data[-1]:
+            frames |= {data[i : i + 5].hex() for i in range(0, len(data), 5)}
+        else:
+            frames.add(data.hex())
+    return frames
+
+
+def test_richmat_guide_frames_are_frozen_vectors() -> None:
+    from tests.richmat_vectors import FROZEN_FRAMES
+
+    frozen = frozenset().union(*FROZEN_FRAMES.values())
+    frames = _richmat_spelled_frames()
+    assert frames
+    assert not sorted(frames - frozen), (
+        f"Frames no profile was frozen sending: {sorted(frames - frozen)}"
+    )
+
+
+async def test_richmat_bed_types_match_the_factory() -> None:
+    """The profile summary's bed types build controllers over the listed profile."""
+    from custom_components.adjustable_bed import const
+    from custom_components.adjustable_bed.controller_factory import create_controller
+    from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
+
+    variants = {
+        "richmat_wilinke": const.RICHMAT_VARIANT_WILINKE,
+        "richmat_nordic": const.RICHMAT_VARIANT_NORDIC,
+        "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
+        "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
+        "hjbed": "hj_bedbjrn",
+    }
+    for key, types in _load_generator().richmat_bed_types().items():
+        for bed_type in types:
+            controller = await create_controller(
+                _FactoryCoordinator(), bed_type, variants.get(key), _make_connected_client()
+            )
+            assert controller.profile.key == key, (key, bed_type)

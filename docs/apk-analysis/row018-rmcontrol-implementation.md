@@ -63,7 +63,7 @@ No raw APK, decompiler output or original report is deleted or committed.
 
 The implementation is explicitly selected with `rmcontrol_product` and
 `rmcontrol_side`; an empty product preserves the existing Richmat controller.
-See [RMControl configuration and services](../beds/rmcontrol.md).
+See [RMControl configuration and services](../beds/richmat.md#rmcontrol).
 
 Code anchors are relative to `custom_components/adjustable_bed/`. Test anchors
 are under `tests/`. “Implemented” describes local code plus focused coverage;

@@ -9,9 +9,6 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett_wilinke import (
-    LeggettWilinkeCommands,
-)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     CONF_BED_TYPE,
@@ -83,12 +80,12 @@ class TestLeggettWilinkeController:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        command = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_FLAT)
+        command = coordinator.controller._build_command(0x31)
         assert len(command) == 5
         assert command[0] == 0x6E
         assert command[1] == 0x01
         assert command[2] == 0x00
-        assert command[3] == LeggettWilinkeCommands.PRESET_FLAT
+        assert command[3] == 0x31
 
     async def test_build_command_checksum(
         self,
@@ -101,12 +98,12 @@ class TestLeggettWilinkeController:
         await coordinator.async_connect()
 
         # Test with PRESET_FLAT (0x31)
-        command = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_FLAT)
+        command = coordinator.controller._build_command(0x31)
         expected_checksum = (0x6E + 0x01 + 0x00 + 0x31) & 0xFF
         assert command[4] == expected_checksum
 
         # Test with END command (0x6E) - checksum wraps around
-        command = coordinator.controller._build_command(LeggettWilinkeCommands.END)
+        command = coordinator.controller._build_command(0x6E)
         expected_checksum = (0x6E + 0x01 + 0x00 + 0x6E) & 0xFF
         assert command[4] == expected_checksum
 
@@ -121,7 +118,7 @@ class TestLeggettWilinkeController:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        command = coordinator.controller._build_command(LeggettWilinkeCommands.END)
+        command = coordinator.controller._build_command(0x6E)
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
@@ -142,9 +139,7 @@ class TestLeggettWilinkeController:
         mock_bleak_client.is_connected = False
 
         with pytest.raises(ConnectionError):
-            await coordinator.controller.write_command(
-                coordinator.controller._build_command(LeggettWilinkeCommands.END)
-            )
+            await coordinator.controller.write_command(coordinator.controller._build_command(0x6E))
 
 
 class TestLeggettWilinkeCapabilities:
@@ -293,7 +288,7 @@ class TestLeggettWilinkeMovement:
 
         # Last call should be END command
         last_command = calls[-1][0][1]
-        expected_end = coordinator.controller._build_command(LeggettWilinkeCommands.END)
+        expected_end = coordinator.controller._build_command(0x6E)
         assert last_command == expected_end
 
     async def test_move_head_down(
@@ -328,7 +323,7 @@ class TestLeggettWilinkeMovement:
         calls = mock_bleak_client.write_gatt_char.call_args_list
         # First call should be FEET_UP
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(LeggettWilinkeCommands.MOTOR_FEET_UP)
+        expected = coordinator.controller._build_command(0x26)
         assert first_command == expected
 
     async def test_move_legs_down(
@@ -346,7 +341,7 @@ class TestLeggettWilinkeMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(LeggettWilinkeCommands.MOTOR_FEET_DOWN)
+        expected = coordinator.controller._build_command(0x27)
         assert first_command == expected
 
     async def test_move_back_aliases_head(
@@ -364,7 +359,7 @@ class TestLeggettWilinkeMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(LeggettWilinkeCommands.MOTOR_HEAD_UP)
+        expected = coordinator.controller._build_command(0x24)
         assert first_command == expected
 
     async def test_move_feet_up(
@@ -382,7 +377,7 @@ class TestLeggettWilinkeMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(LeggettWilinkeCommands.MOTOR_FEET_UP)
+        expected = coordinator.controller._build_command(0x26)
         assert first_command == expected
 
     async def test_stop_all(
@@ -398,7 +393,7 @@ class TestLeggettWilinkeMovement:
 
         await coordinator.controller.stop_all()
 
-        expected_end = coordinator.controller._build_command(LeggettWilinkeCommands.END)
+        expected_end = coordinator.controller._build_command(0x6E)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_end, response=True
         )
@@ -421,7 +416,7 @@ class TestLeggettWilinkePresets:
         with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_flat()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_FLAT)
+        expected_cmd = coordinator.controller._build_command(0x31)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -439,7 +434,7 @@ class TestLeggettWilinkePresets:
         with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_zero_g()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_ZERO_G)
+        expected_cmd = coordinator.controller._build_command(0x45)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -457,9 +452,7 @@ class TestLeggettWilinkePresets:
         with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_anti_snore()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.PRESET_ANTI_SNORE
-        )
+        expected_cmd = coordinator.controller._build_command(0x46)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -477,7 +470,7 @@ class TestLeggettWilinkePresets:
         with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_tv()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_TV)
+        expected_cmd = coordinator.controller._build_command(0x58)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -495,15 +488,15 @@ class TestLeggettWilinkePresets:
         with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_lounge()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_LOUNGE)
+        expected_cmd = coordinator.controller._build_command(0x59)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
     @pytest.mark.parametrize(
         ("memory_num", "expected_value"),
         [
-            (1, LeggettWilinkeCommands.PRESET_MEMORY_1),
-            (2, LeggettWilinkeCommands.PRESET_MEMORY_2),
+            (1, 0x2E),
+            (2, 0x2F),
         ],
     )
     async def test_preset_memory(
@@ -547,8 +540,8 @@ class TestLeggettWilinkePresets:
     @pytest.mark.parametrize(
         ("memory_num", "expected_value"),
         [
-            (1, LeggettWilinkeCommands.PROGRAM_MEMORY_1),
-            (2, LeggettWilinkeCommands.PROGRAM_MEMORY_2),
+            (1, 0x2B),
+            (2, 0x2C),
         ],
     )
     async def test_program_memory(
@@ -588,7 +581,7 @@ class TestLeggettWilinkeLights:
 
         await coordinator.controller.lights_toggle()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.LIGHTS_TOGGLE)
+        expected_cmd = coordinator.controller._build_command(0x3C)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -606,7 +599,7 @@ class TestLeggettWilinkeLights:
 
         await coordinator.controller.lights_on()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.LIGHTS_TOGGLE)
+        expected_cmd = coordinator.controller._build_command(0x3C)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -624,7 +617,7 @@ class TestLeggettWilinkeLights:
 
         await coordinator.controller.lights_off()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.LIGHTS_TOGGLE)
+        expected_cmd = coordinator.controller._build_command(0x3C)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -650,7 +643,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_head_up()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.MASSAGE_HEAD_UP)
+        expected_cmd = coordinator.controller._build_command(0x4C)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -668,9 +661,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_head_down()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_HEAD_DOWN
-        )
+        expected_cmd = coordinator.controller._build_command(0x4D)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -688,7 +679,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_foot_up()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.MASSAGE_FOOT_UP)
+        expected_cmd = coordinator.controller._build_command(0x4E)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -706,9 +697,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_foot_down()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_FOOT_DOWN
-        )
+        expected_cmd = coordinator.controller._build_command(0x4F)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -726,9 +715,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_off()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_MOTOR_STOP
-        )
+        expected_cmd = coordinator.controller._build_command(0x47)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -746,9 +733,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_toggle()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_MOTOR1_ON_OFF
-        )
+        expected_cmd = coordinator.controller._build_command(0x32)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -766,9 +751,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_head_toggle()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_MOTOR1_ON_OFF
-        )
+        expected_cmd = coordinator.controller._build_command(0x32)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -786,9 +769,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_foot_toggle()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_MOTOR2_ON_OFF
-        )
+        expected_cmd = coordinator.controller._build_command(0x33)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -806,9 +787,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_intensity_up()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_INCREASE_INTENSITY
-        )
+        expected_cmd = coordinator.controller._build_command(0x34)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -826,9 +805,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_intensity_down()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_DECREASE_INTENSITY
-        )
+        expected_cmd = coordinator.controller._build_command(0x35)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -846,9 +823,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_mode_step()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_PATTERN_STEP
-        )
+        expected_cmd = coordinator.controller._build_command(0x38)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -866,7 +841,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_wave_toggle()
 
-        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.MASSAGE_WAVE)
+        expected_cmd = coordinator.controller._build_command(0x39)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )

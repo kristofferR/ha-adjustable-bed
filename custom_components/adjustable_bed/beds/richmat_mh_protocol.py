@@ -17,22 +17,17 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
-HEADER_BED: Final = 0x6E
-HEADER_MATTRESS: Final = 0x5E
-STOP_CODE: Final = 0x6E
+from ..codec import richmat as codec
+from ..profiles.richmat import RICHMAT_MH
+
+HEADER_BED: Final = codec.BED
+HEADER_MATTRESS: Final = codec.MATTRESS
+STOP_CODE: Final = codec.STOP
 
 # Ordered known services (N1, W1, W2, W3, W4) with their write and notify roles.
-GATT_MAPS: Final = (
-    ("6e400001-b5a3-f393-e0a9-e50e24dcca9e", "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
-     "6e400003-b5a3-f393-e0a9-e50e24dcca9e"),
-    ("0000fee9-0000-1000-8000-00805f9b34fb", "d44bc439-abfd-45a2-b575-925416129600",
-     "d44bc439-abfd-45a2-b575-925416129601"),
-    ("0000fee9-0000-1000-8000-00805f9b34bb", "d44bc439-abfd-45a2-b575-925416129622",
-     "d44bc439-abfd-45a2-b575-925416129611"),
-    ("0000ffe0-0000-1000-8000-00805f9b34fb", "0000ffe2-0000-1000-8000-00805f9b34fb",
-     "0000ffe1-0000-1000-8000-00805f9b34fb"),
-    ("0000fff0-0000-1000-8000-00805f9b34fb", "0000fff2-0000-1000-8000-00805f9b34fb",
-     "0000fff1-0000-1000-8000-00805f9b34fb"),
+GATT_MAPS: Final = tuple(
+    (t.service_uuid, t.write_uuid, t.notify_uuid)
+    for t in (codec.TRANSPORTS[key] for key in RICHMAT_MH["revive"].transports)
 )
 # The fallback skips the generic access and attribute services.
 FALLBACK_SKIPPED_PREFIXES: Final = ("00001800", "00001801")
@@ -157,15 +152,12 @@ def checksum(data: Iterable[int]) -> int:
 
 def finalize(template: bytes | bytearray | list[int]) -> bytes:
     """``getFinalBytes``: zero the last byte, then store the sum of the frame."""
-    out = bytearray(template)
-    out[-1] = 0
-    out[-1] = checksum(out)
-    return bytes(out)
+    return codec.frame(*bytearray(template)[:-1])
 
 
 def control_frame(code: int, mode: int = 0) -> bytes:
     """``6e 01 M C SUM``, the frame every motor, preset and page button sends."""
-    return finalize([HEADER_BED, 0x01, mode & 0xFF, code & 0xFF, 0])
+    return codec.command(code, mode)
 
 
 def stop_frame(mode: int = 0) -> bytes:
@@ -198,7 +190,7 @@ def rgb_frame(red: int, green: int, blue: int) -> bytes:
     for value in (red, green, blue):
         if not 0 <= value <= 255:
             raise ValueError("RGB values must be 0-255")
-    return finalize([HEADER_BED, 0x0C, 0xFF, red, 0]) + finalize([HEADER_BED, 0x0D, green, blue, 0])
+    return codec.rgb(red, green, blue)
 
 
 def light_timer_frame(seconds: int, mode_byte: int | None = None) -> bytes:
@@ -210,23 +202,17 @@ def light_timer_frame(seconds: int, mode_byte: int | None = None) -> bytes:
     hi, lo = (0xFF, 0xFF) if seconds <= 0 else ((seconds >> 8) & 0xFF, seconds & 0xFF)
     if mode_byte is not None:
         hi = mode_byte & 0xFF
-    return finalize([HEADER_BED, 0x0B, hi, lo, 0])
+    return codec.light_timer(hi, lo)
 
 
 def alarm_frames(minutes: int, action: int, slot: int = 0) -> tuple[bytes, bytes]:
     """Countdown alarm: ``6e 05 lo slot`` then ``6e 06 hi action``."""
-    return (
-        finalize([HEADER_BED, 0x05, minutes & 0xFF, slot & 0xFF, 0]),
-        finalize([HEADER_BED, 0x06, (minutes >> 8) & 0xFF, action & 0xFF, 0]),
-    )
+    return codec.countdown(minutes, action, slot)
 
 
 def alarm_delete_frames(slot: int) -> tuple[bytes, bytes]:
     """Multi-slot alarm delete: ``6e 05 00 slot`` then ``6e 06 00 00``."""
-    return (
-        finalize([HEADER_BED, 0x05, 0x00, slot & 0xFF, 0]),
-        finalize([HEADER_BED, 0x06, 0x00, 0x00, 0]),
-    )
+    return codec.countdown(0, 0, slot)
 
 
 def clock_frames(hour: int, minute: int, second: int) -> tuple[bytes, bytes]:

@@ -391,8 +391,8 @@ enable additional commands.
 | LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1) | [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake` | [Jiecang](beds/jiecang.md#dream-app-family) |
 | Comfort Motion app | `jiecang_wake`, `jiecang_stop_wake`; use HA automations for scheduling | [Comfort Motion](beds/jiecang.md#comfort-motion-app) |
-| Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
-| Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat-mh.md#actions) |
+| Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/richmat.md#rmcontrol) |
+| Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat.md#richmat-mh-apps) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
 
 Controller alarm actions program the bed itself, rather than creating a Home
@@ -608,4 +608,4 @@ the distinct wire builders and raw-data limitations.
 
 ### HJBed configuration
 
-`adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/hjbed.md#configuration-actions).
+`adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/richmat.md#hjbed).
