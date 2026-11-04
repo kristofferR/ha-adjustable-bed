@@ -251,3 +251,31 @@ async def test_finite_pulses_are_unchanged_without_a_lease(
             expected = [held_frame] * 3 + releases
         assert _frames(client) == expected
         assert last_outcome(coordinator) is CommandOutcome.COMPLETED
+
+
+@pytest.mark.parametrize(("family", "key"), CASES)
+def test_motor_covers_advertise_the_stream_hold(family: str, key: str) -> None:
+    """The card reads ``hold_lease_mode`` from each declared motor cover."""
+    from custom_components.adjustable_bed.entity import hold_lease_attributes
+
+    coordinator = MagicMock()
+    coordinator.cancel_command = asyncio.Event()
+    controller, *_ = (_jiecang if family == "jiecang" else _logicdata)(coordinator, key)
+    specs = controller.motor_control_specs
+    assert specs
+    for spec in specs:
+        assert hold_lease_attributes([controller], spec.key)["hold_lease_mode"] == "stream"
+    assert hold_lease_attributes([controller], "back") == {
+        "hold_lease_mode": "stream",
+        "hold_lease_motor": "back",
+    }
+
+
+def test_comfort_motion_covers_advertise_no_hold() -> None:
+    from custom_components.adjustable_bed.beds.jiecang import JiecangProfileController
+    from custom_components.adjustable_bed.entity import hold_lease_attributes
+
+    controller = JiecangProfileController(
+        MagicMock(), jiecang.COMFORT_MOTION, "standard_2"
+    )
+    assert hold_lease_attributes([controller], "back") == {}
