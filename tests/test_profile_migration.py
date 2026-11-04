@@ -244,3 +244,24 @@ async def test_preview_never_touches_the_live_app_session(hass, enable_custom_in
     )
     assert same is intent
     assert same.floor.level == 4
+
+
+async def test_guided_change_saves_the_new_routes_profile_id(hass, enable_custom_integrations):
+    from custom_components.adjustable_bed.profile_id import resolve_profile_id
+
+    entry = _entry(hass)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, const.CONF_PROFILE_ID: resolve_profile_id(entry.data)}
+    )
+    assert entry.data[const.CONF_PROFILE_ID] == const.BED_TYPE_VIBRADORM
+    with ExitStack() as stack:
+        bluetooth_patches(stack, client_for("caresse"))
+        result = await select_app(hass, entry, "caresse")
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"confirm": True}
+        )
+    assert result["reason"] == "reconfigure_successful"
+    # Derived from the new route, never copied from the staged saved setup.
+    assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
+    assert entry.data[const.CONF_PROFILE_ID] == f"{const.BED_TYPE_VIBRADORM_APP}@caresse"

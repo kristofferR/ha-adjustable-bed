@@ -916,7 +916,10 @@
           "remove_bond": "Remove the Bluetooth bond",
           "left_settings": "Change left receiver settings",
           "right_settings": "Change right receiver settings",
-          "change_app": "Change app or layout"
+          "change_app": "Change app or layout",
+          "estimated_positions": "Estimated positions",
+          "left_estimated_positions": "Estimated positions, left side",
+          "right_estimated_positions": "Estimated positions, right side"
         }
       },
       "settings": {
@@ -1182,6 +1185,109 @@
       "change_app": {
         "title": "Change app or layout",
         "description": "Currently: **{current}**.\n\nClose this window. Under Settings > Devices & services > Adjustable Bed, open the three-dot menu for this entry and select **Reconfigure**. Choose your app and layout there. Your current setup stays saved and working until you review and confirm the change."
+      },
+      "estimated_positions": {
+        "title": "Estimated positions",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "data": {
+          "back": "Back",
+          "legs": "Legs",
+          "head": "Head",
+          "feet": "Feet",
+          "measure": "Measure travel times now",
+          "acknowledge": "I understand that positions are estimated"
+        },
+        "data_description": {
+          "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
+          "acknowledge": "Required to turn estimated positions on."
+        }
+      },
+      "left_estimated_positions": {
+        "title": "Estimated positions, left side",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "data": {
+          "back": "Back",
+          "legs": "Legs",
+          "head": "Head",
+          "feet": "Feet",
+          "measure": "Measure travel times now",
+          "acknowledge": "I understand that positions are estimated"
+        },
+        "data_description": {
+          "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
+          "acknowledge": "Required to turn estimated positions on."
+        }
+      },
+      "right_estimated_positions": {
+        "title": "Estimated positions, right side",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "data": {
+          "back": "Back",
+          "legs": "Legs",
+          "head": "Head",
+          "feet": "Feet",
+          "measure": "Measure travel times now",
+          "acknowledge": "I understand that positions are estimated"
+        },
+        "data_description": {
+          "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
+          "acknowledge": "Required to turn estimated positions on."
+        }
+      },
+      "estimate_flat": {
+        "title": "Calibrate {motor}",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} must be completely flat before it is measured. Lower it with the card or the remote, or let this step lower it. Only you can confirm that it is flat.",
+        "menu_options": {
+          "estimate_flat_confirm": "It is flat, raise it now",
+          "estimate_flat_lower": "Lower it for me",
+          "estimate_cancel": "Cancel, nothing is saved"
+        }
+      },
+      "estimate_lowering": {
+        "title": "Lowering {motor}",
+        "description": "The {motor} is moving down. Select **It is flat now** once it has stopped moving. Movement stops by itself after {max_s} s.",
+        "menu_options": {
+          "estimate_lowered": "It is flat now",
+          "estimate_cancel": "Stop, something is wrong"
+        }
+      },
+      "estimate_raise": {
+        "title": "Calibrate {motor}",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} is moving up from flat. Select **Reached the top** the moment it stops moving.\n\nThe time runs from the first movement command. Movement stops by itself after {max_s} s if you do nothing. Tapping adds a small delay; you can fine tune the times on the last step.",
+        "menu_options": {
+          "estimate_top": "Reached the top",
+          "estimate_cancel": "Stop, something is wrong. Nothing is saved"
+        }
+      },
+      "estimate_lower": {
+        "title": "Calibrate {motor}",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} is moving down. Select **Reached the bottom** the moment it stops moving. Movement stops by itself after {max_s} s if you do nothing.",
+        "menu_options": {
+          "estimate_bottom": "Reached the bottom",
+          "estimate_cancel": "Stop, something is wrong. Nothing is saved"
+        }
+      },
+      "estimate_retry": {
+        "title": "{motor} was not measured",
+        "description": "The movement was not timed. It may not have started yet, it may have reached the {max_s} s safety stop first, or it failed. The {motor} has been stopped.",
+        "menu_options": {
+          "estimate_retry_again": "Measure the {motor} again",
+          "estimate_cancel": "Cancel, nothing is saved"
+        }
+      },
+      "estimate_review": {
+        "title": "Review calibration",
+        "description": "Step {step} of {steps}.\n\nThe seconds each motor takes for its full travel. Adjust them to fine tune, or type them if you timed the bed with a stopwatch. Motors you just measured ended flat, so their reference is set and they start at 0%. Times can be measured again any time from this menu; changing them keeps your saved positions.",
+        "data": {
+          "back_up": "Back, full travel up",
+          "back_down": "Back, full travel down",
+          "legs_up": "Legs, full travel up",
+          "legs_down": "Legs, full travel down",
+          "head_up": "Head, full travel up",
+          "head_down": "Head, full travel down",
+          "feet_up": "Feet, full travel up",
+          "feet_down": "Feet, full travel down"
+        }
       }
     },
     "error": {
@@ -1235,7 +1341,8 @@
       "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls.",
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
-      "gmmotor_side": "This product does not expose the selected app side."
+      "gmmotor_side": "This product does not expose the selected app side.",
+      "estimate_acknowledge_required": "Confirm that you understand positions are estimated."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1249,7 +1356,9 @@
       "remove_bond_ambiguous": "Home Assistant cannot tell which Bluetooth bond you mean for **{name}** ({address}). Either more than one adapter on this host is bonded to it, or the adapter it was paired through no longer holds a bond. Set the bed's preferred adapter to the one you want to clear, then try again.",
       "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there.",
       "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings.",
-      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving."
+      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
+      "estimate_cancelled": "Calibration cancelled. The motor was stopped and your previous times were kept. Set the reference again for any motor you started measuring.",
+      "estimated_positions_unavailable": "Estimated positions are not available for this bed."
     }
   },
   "entity": {

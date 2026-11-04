@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 
 from custom_components.adjustable_bed.profiles.keeson import AppProfile, KeesonProfile
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.keeson_vectors import FROZEN_FRAMES
+
+# The guide's AdjustaMattress section also spells its P3/P4 Okin N-frames, which
+# its accepted report (row067) freezes in this fixture.
+_ADJUSTAMATTRESS = frozenset(
+    row["expected_bytes"].replace(" ", "").lower()
+    for row in json.loads(
+        (Path(__file__).parents[1] / "fixtures/adjustamattress/commands.json").read_text()
+    )
+    if row["expected_bytes"] != "NO WRITE"
+)
 
 FAMILY = CodecFamily(
     # The cluster033 apps: one AppProfile per layout, vectors per app.
@@ -44,6 +56,6 @@ FAMILY = CodecFamily(
         spelled=spelled_frames(
             r"`((?:E[56] ?FE ?16|0[45] ?02)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE
         ),
-        frozen=frozenset().union(*FROZEN_FRAMES.values()),
+        frozen=frozenset().union(*FROZEN_FRAMES.values(), _ADJUSTAMATTRESS),
     ),
 )

@@ -376,6 +376,8 @@ from .pairing_candidates import (
     build_pair_selection_schema,
     selected_pair_ids,
 )
+from .position_estimate_flow import EstimatedPositionsFlowMixin
+from .profile_id import with_profile_ids
 from .profile_migration import (
     VIBRADORM_FAMILY,
     ManagedFamily,
@@ -2406,9 +2408,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # v4 introduces the paired-bed schema (Dual Bed 4.0). The v3->v4 migration is
     # a strict no-op for non-paired entries; see async_migrate_entry. Minor
     # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
-    # version 3 marks older entries for the one-time app profile review.
-    VERSION = 4
-    MINOR_VERSION = 3
+    # version 3 marks older entries for the one-time app profile review. v5
+    # stores the profile id each entry runs (profile_id.py); setup derives it
+    # for new entries.
+    VERSION = 5
+    MINOR_VERSION = 1
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -2905,6 +2909,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             CONF_PROTOCOL_VARIANT,
         ):
             options.pop(key, None)
+        # The staged copy carries the saved route's profile id; derive the new one.
+        data = with_profile_ids(data, options)
         if {**data, **options} == {**self._migration.data, **self._migration.options}:
             # The answer resolves to the saved route: nothing to migrate.
             return self.async_abort(reason="migration_unchanged")
@@ -8034,7 +8040,9 @@ def _validate_pairlink_option_values(
     return errors
 
 
-class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEntry):
+class AdjustableBedOptionsFlow(
+    EstimatedPositionsFlowMixin, BluetoothOperationMixin, OptionsFlowWithConfigEntry
+):
     """Handle Adjustable Bed options."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
@@ -8302,6 +8310,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             product_type=data.get(CONF_PRODUCT_TYPE),
         ):
             menu_options.append("pair_sides")
+        menu_options.extend(self.estimate_menu_options())
         if data.get(CONF_ADDRESS) or (
             data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS and bool(iter_children(data))
         ):

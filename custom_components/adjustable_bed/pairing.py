@@ -55,6 +55,8 @@ from .const import (
     CONF_PAIR_SCHEMA_VERSION,
     CONF_PREFERRED_ADAPTER,
     CONF_PRODUCT_TYPE,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_KEPT,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
@@ -97,6 +99,8 @@ class ChildDescriptor(TypedDict, total=False):
     name: str
     bed_type: str
     protocol_variant: str
+    # Schema 5: derived from this side's effective config (profile_id.py).
+    profile_id: str
     kaidi_resolved_variant: str
     preferred_adapter: str
     octo_pin: str
@@ -250,6 +254,9 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         # The upgrade review belongs to the entry, not to either side.
         CONF_PROFILE_REVIEW_PENDING,
         CONF_PROFILE_REVIEW_KEPT,
+        # Each side stores its own profile id; the parent's must never stand in.
+        CONF_PROFILE_ID,
+        CONF_PROFILE_MIGRATION,
         CONF_PAIR_ID,
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,
@@ -537,7 +544,10 @@ def standalone_config_after_split(
             data[key] = current[key]
         else:
             data.pop(key, None)
-    return data, options
+    from .profile_id import with_profile_ids
+
+    # The restored route decides the id; a stale or side-level copy never does.
+    return with_profile_ids(data, options), options
 
 
 def _descriptor_from_single(

@@ -293,8 +293,32 @@ class TestSplitRetention:
             "preferred_adapter": "hci1",
             "idle_disconnect_seconds": 90,
             "disconnect_after_command": True,
+            "profile_id": "linak",
         }
         assert options == {"back_max_angle": 55.0}
+
+    def test_split_derives_each_sides_profile_id_from_its_restored_route(self):
+        from custom_components.adjustable_bed.const import CONF_PROFILE_ID
+        from custom_components.adjustable_bed.profile_id import resolve_profile_id
+
+        # The original was saved before profile ids, the side carries another
+        # route's id, and a parent option changes the variant while combined.
+        original = {"address": LEFT_ADDR, "bed_type": "keeson", "protocol_variant": "ksbt"}
+        data = build_pair_entry_data(
+            {**original, CONF_PROFILE_ID: "keeson:ksbt"},
+            {"address": RIGHT_ADDR, "bed_type": "keeson", CONF_PROFILE_ID: "stale"},
+            name="Master",
+            left_origin_data=original,
+        )
+        for side in (SIDE_LEFT, SIDE_RIGHT):
+            restored, options = standalone_config_after_split(
+                data, {"protocol_variant": "base"}, side
+            )
+            assert restored[CONF_PROFILE_ID] == resolve_profile_id({**restored, **options})
+        left, _options = standalone_config_after_split(data, {}, SIDE_LEFT)
+        assert left[CONF_PROFILE_ID] == "keeson:ksbt"
+        right, _options = standalone_config_after_split(data, {}, SIDE_RIGHT)
+        assert right[CONF_PROFILE_ID] == "keeson"
 
     def test_single_address_revert_keeps_current_connection_preferences(self):
         original = {

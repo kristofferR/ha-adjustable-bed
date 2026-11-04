@@ -1,4 +1,4 @@
-"""Config entry minor-version 2 migration of values released in v4.0.2."""
+"""Config entry migration of values released in v4.0.2, through schema 5."""
 
 from __future__ import annotations
 
@@ -17,6 +17,8 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_LIGHT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_SINO,
@@ -38,8 +40,9 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     assert await async_migrate_entry(hass, entry) is True
 
-    assert entry.minor_version == 3
+    assert (entry.version, entry.minor_version) == (5, 1)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
+    assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
 
 @pytest.mark.parametrize(
@@ -93,5 +96,11 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
 
     assert await async_migrate_entry(hass, entry) is True
 
-    assert (entry.version, entry.minor_version) == (4, 3)
-    assert dict(entry.data) == data
+    assert (entry.version, entry.minor_version) == (5, 1)
+    migrated = dict(entry.data)
+    assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
+    assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        CONF_PROTOCOL_VARIANT: "auto",
+    }
+    assert migrated == data

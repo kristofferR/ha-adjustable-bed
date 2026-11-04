@@ -28,7 +28,7 @@ from .const import (
     SIDE_BOTH,
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
-from .entity import AdjustableBedEntity
+from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
@@ -1378,6 +1378,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
+            attributes.update(hold_lease_attributes([controller]))
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
@@ -1528,6 +1529,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 held_control=hold.control,
                 hold_start_delay_ms=hold.start_delay_ms,
                 hold_release_delay_ms=hold.release_delay_ms,
+                **hold_lease_attributes([self._coordinator.capability_controller]),
             )
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
@@ -1673,6 +1675,7 @@ class PairedBedCombinedButton(ButtonEntity):
                     held_control=(hold.up_control if direction == "up" else hold.down_control),
                     hold_start_delay_ms=hold.start_delay_ms,
                     hold_release_delay_ms=hold.release_delay_ms,
+                    **_paired_hold_lease_attributes(self._coordinator),
                 )
                 if hold.release_button_key is not None:
                     attributes["hold_release_button_key"] = hold.release_button_key
@@ -1734,6 +1737,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Advertise this common motor through the bounded paired action."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        attributes.update(_paired_hold_lease_attributes(self._coordinator, self._motor_key))
         hold = _paired_motor_hold_spec(self._coordinator, self._motor_key, self._direction)
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
@@ -1808,6 +1812,24 @@ class PairedBedCombinedMotorButton(ButtonEntity):
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _paired_hold_lease_attributes(
+    coordinator: PairedBedCoordinator, motor: str | None = None
+) -> dict[str, str]:
+    """Offer a combined renewable hold only when both sides can run it together.
+
+    Separate receivers must be connected concurrently, as for a Both hold
+    contract; a single address holds both sides on one link.
+    """
+    if not isinstance(coordinator, SingleAddressPairedCoordinator) and (
+        coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+        or len(coordinator.children) != 2
+    ):
+        return {}
+    return hold_lease_attributes(
+        (child.capability_controller for child in coordinator.children.values()), motor
+    )
 
 
 def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:
