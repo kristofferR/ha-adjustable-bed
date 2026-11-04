@@ -200,7 +200,7 @@ def render_jiecang_profiles() -> str:
             for key, profile in profiles.items()
         ),
     )
-    layouts: dict[tuple[str, tuple[str, ...]], list[str]] = {}
+    layouts: dict[tuple[jiecang_profiles.Layout, tuple[jiecang_codec.Axis, ...]], list[str]] = {}
     for key, profile in profiles.items():
         for layout, axes in profile.layouts.items():
             layouts.setdefault((layout, axes), []).append(key)

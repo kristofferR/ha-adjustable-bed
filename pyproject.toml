@@ -48,7 +48,9 @@ typeCheckingMode = "standard"
 venvPath = "."
 venv = ".venv"
 stubPath = "typings"  # Mirror HA's runtime Voluptuous/Probatio alias
-include = ["custom_components", "tests"]
+include = ["custom_components", "tests", "scripts"]
+# Pyright's default excludes, plus a uv inline script whose Playwright dependency CI lacks.
+exclude = ["**/node_modules", "**/__pycache__", "**/.*", "scripts/test_compact_card_browser.py"]
 reportIncompatibleVariableOverride = "none"  # HA entities use @property over cached_property
 reportUnusedImport = "none"  # Covered by ruff F401; pyright also flags TYPE_CHECKING-only imports
 
