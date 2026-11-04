@@ -15,6 +15,7 @@ from dataclasses import dataclass, replace
 from typing import Final
 
 from ..codec.malouf import Family, TransportKey
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,6 +128,8 @@ class MaloufAppProfile:
     """One app: its model picker, command tables, routes and app-specific gates."""
 
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     models: tuple[str, ...]
     """The app's fresh-setup picker; every constructor stays valid for stored entries."""
     name_rule: tuple[tuple[tuple[str, ...], Family], ...]
@@ -297,6 +300,8 @@ class MaloufRouteProfile:
     """A fixed-transport route: its key words, recall and save; movement uses the pulse settings."""
 
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     transport: TransportKey
     words: Mapping[str, int]
     recall: Recall

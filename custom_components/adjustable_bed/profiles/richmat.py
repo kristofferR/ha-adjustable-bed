@@ -16,6 +16,7 @@ from typing import Final, Literal
 
 from ..codec import richmat as codec
 from ..codec.richmat import COMPAT_STOP, STOP, Framing, Transport, TransportKey
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Button = Literal[
     "head_up",
@@ -68,6 +69,8 @@ class Recall:
 @dataclass(frozen=True, kw_only=True)
 class RichmatProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     transports: tuple[TransportKey, ...]
     """Transports this profile drives, in the app's selection order."""
     framing: Framing = "wilinke"

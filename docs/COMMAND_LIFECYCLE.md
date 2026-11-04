@@ -79,6 +79,30 @@ A STOP on a later target also invalidates its pending dispatch while an earlier
 target is still starting. Paired admission rechecks ownership after lane waits,
 before reservations can cancel newer work, and before committing movement.
 
+## Renewable hold leases
+
+A renewable hold (#483) is a `CommandKind.HOLD` intent with a lease: an owner,
+a generation and a deadline on the event loop's monotonic clock. It is opt-in
+per controller through `ExecutionCapabilities.hold`; every other controller
+keeps finite pulses. The device scheduler owns the lease:
+
+- A request that names a live lease's owner, resources, generation and action
+  replaces its deadline and returns. No frame is written and nothing is
+  released, because the deadline is a timer, not a command.
+- The first request of a generation reserves it before preflight. Requests that
+  arrive while it connects renew the reservation, and a STOP before admission
+  ends it, so the starting call is dropped.
+- At the deadline the scheduler sets the hold's own cancel event, the same
+  signal a STOP or a replacement uses. The controller leaves its write loop and
+  runs its existing release cleanup with a fresh event.
+- STOP, replacement, a dropped link, disconnect and unload end the generation.
+  An ended, older or superseded generation is refused, including a renewal that
+  arrives while cleanup is still running. Leases live only in memory and are
+  never replayed. The scheduler remembers ended generations (bounded) so a late
+  renewal cannot start motion.
+- One hold executes for at most the 30-second service ceiling in total. The
+  lease ends it sooner when renewals stop.
+
 ## Useful regression scenarios
 
 Use the existing coordinator, controller-contract, scheduler, paired, and timed
