@@ -206,6 +206,10 @@ A new app is normally a profile plus its vectors, not a new controller.
      Entity platforms read these directly, so a typo is a type error rather than a
      silently-wrong default. Do not invent a new capability by setting an
      undeclared attribute — add it to the base class first.
+   - Held and concurrent execution (#483, #516) is the profile's `execution`
+     field, or an `execution` override on a standalone controller. Each
+     declaration needs an evidence row in `tests/test_execution_capabilities.py`
+     whose keys come from [execution capabilities](docs/design/execution-capabilities.md).
 
 5. **Add detection to `detection.py`** in `detect_bed_type()`:
 
@@ -231,7 +235,10 @@ A new app is normally a profile plus its vectors, not a new controller.
 
 7. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
 
-8. **Add to `manifest.json`** `bluetooth` array if using different service UUID for discovery
+8. **Declare discovery hints** in `discovery_hints/<family>.py`, then run
+   `scripts/generate_bluetooth_matchers.py` to regenerate the manifest's
+   `bluetooth` list. Never edit that list by hand; CI checks it
+   ([design](docs/design/discovery-hints.md)).
 
 9. **Update `beds/__init__.py`** to export the new controller
 

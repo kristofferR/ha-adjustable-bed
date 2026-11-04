@@ -406,6 +406,10 @@ position: 03 F0 [zone] [position] 00
 query:    00 B0 (massage/light), 00 D0 (motor position)
 ```
 
+The app builds both queries. The integration sends only `00 D0`: it translates
+the StarCode status query `5A B0 00 A5`, which serves both purposes, to the
+legacy position query, and never sends `00 B0`.
+
 Movement keys are `1/2` head, `4/8` foot, `10/20` lumbar, `40/80` neck,
 and zero for STOP. Preset keys are `08000000` flat, `00004000` TV,
 `00001000` zero-G, `00008000` anti-snore, `00002000` lounge,
@@ -479,9 +483,9 @@ Sleepy's Elite beds are auto-detected by name plus BLE services:
 ## Related Protocols
 
 - **[DewertOkin](okin-nframe.md#dewertokin)** - Different command format, uses handle writes
-- **[Okin 64-bit](okin-64bit.md)** - Similar service UUID but different packet format
+- **[Okin 64-bit](okin-nframe.md#okin-64-bit)** - Similar service UUID but different packet format
 - **[Keeson](keeson.md)** - Same FFE5 service but different command encoding
-- **[Adjustable bed (Lumbar) app](adjustable-lumbar.md)** - Also serves `Star` names over Nordic UART, but selects its own tables from an exact `STAR` manufacturer reply; choose that explicit profile for beds using that app
+- **[Adjustable bed (Lumbar) app](okin-nframe.md#adjustable-bed-lumbar)** - Also serves `Star` names over Nordic UART, but selects its own tables from an exact `STAR` manufacturer reply; choose that explicit profile for beds using that app
 
 ## AdjustableM5X5
 

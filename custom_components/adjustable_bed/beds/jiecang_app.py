@@ -629,6 +629,12 @@ class JiecangAppController(JiecangProfileController):
         for offset in (0, 500):
             if await self._pause(offset, self._coordinator.cancel_command):
                 return
+            self._record_command_trace(
+                self._name_uuid,
+                command,
+                response=response,
+                characteristic=characteristic,
+            )
             async with self._ble_lock:
                 await self.client.write_gatt_char(self._name_uuid, command, response=response)
 

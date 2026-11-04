@@ -177,7 +177,7 @@ def no_sleep(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     sleep = AsyncMock()
     monkeypatch.setattr("custom_components.adjustable_bed.beds.base.asyncio.sleep", sleep)
     wait = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.innova._wait_unless_cancelled", wait)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson._wait_unless_cancelled", wait)
     sleep.release_wait = wait
     return sleep
 
@@ -303,7 +303,7 @@ async def test_cancelling_mid_release_still_writes_the_zero_key(
         waiting.set()
         await asyncio.Event().wait()
 
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.innova._wait_unless_cancelled", wait)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson._wait_unless_cancelled", wait)
     task = asyncio.create_task(controller.move_feet_up())
     await waiting.wait()
     task.cancel()

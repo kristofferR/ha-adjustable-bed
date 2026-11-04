@@ -26,11 +26,9 @@ from custom_components.adjustable_bed.beds.ergomotion4 import (
     SILENT_RX,
     TX_UUIDS,
     Ergomotion4Controller,
-    custom_frame,
     custom_product,
     p2_frame,
     parse_status,
-    rgb_frame,
 )
 from custom_components.adjustable_bed.beds.keeson import KeesonController
 from custom_components.adjustable_bed.codec import keeson as codec
@@ -109,15 +107,15 @@ def test_p2_custom_rgb_vectors(vector):
     if vector["id"].startswith("P2-"):
         frame = p2_frame(data["key"])
     elif vector["id"].startswith("custom-"):
-        frame = custom_frame(data["key"])
+        frame = codec.custom_massage(data["key"])
     else:
-        frame = rgb_frame((data["r"], data["g"], data["b"]), inverted=data["invert"])
+        frame = codec.rgb((data["r"], data["g"], data["b"]), inverted=data["invert"])
     assert frame.hex() == vector["expected_bytes"]
 
 
 def test_p2_unsupported_key_does_not_become_arbitrary_command():
     assert p2_frame(0xDEADBEEF).hex() == "040200000000"
-    assert custom_frame(9).hex() == "07d000000000000000"
+    assert codec.custom_massage(9).hex() == "07d000000000000000"
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["id"])

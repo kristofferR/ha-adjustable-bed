@@ -64,6 +64,9 @@ a shared registry.
   stale blocks, one marked region per block, spelled frames are frozen vectors,
   and `bed_types()` matches the factory. Checks only one family needs go in
   `tests/test_codec_docs_<family>.py`.
+- **Discovery:** `custom_components/adjustable_bed/discovery_hints/<family>.py`
+  declares `HINTS`, from which the manifest's Bluetooth matchers are generated
+  (see [discovery hints](discovery-hints.md)).
 
 Profile keys are scoped to their profile class. Two families may use the same
 key (Jiecang and Limoss both call their pre-v5 route `legacy`); every lookup,
@@ -179,9 +182,3 @@ its own codec, with the reason recorded here.
   50 or 100 ms interval. Frames and their order are unchanged.
 - The legacy route no longer defines the unused `BOTH`, `HEAD_ALT`, `WAIST`,
   `TIMER` and right-side split constants. It never sent them.
-
-## Follow-ups
-
-- The family write loop bypasses `_write_gatt_with_retry`, so Jiecang writes
-  do not appear in support-bundle command traces. That was true before this
-  change and needs its own fix.

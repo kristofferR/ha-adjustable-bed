@@ -355,7 +355,7 @@ controller-specific choices are documented here:
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Auto, StarCode, Legacy CB25 |
 | [SBI](beds/keeson.md#protocol-variants) / [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
 | [OKIN CB24](beds/okin-nframe.md#cb24-preset-safety) | Legacy/CBNew and specific SmartBed profiles |
-| [Okin DOT](beds/okin-nframe.md#okin-dot) / [Okin 64-bit](beds/okin-64bit.md) | Handset or transport-specific selection |
+| [Okin DOT](beds/okin-nframe.md#okin-dot) / [Okin 64-bit](beds/okin-nframe.md#okin-64-bit) | Handset or transport-specific selection |
 
 ### Keeson Variants
 
@@ -492,7 +492,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/adjustamattress.md). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
-| Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/adjustable-lumbar.md). |
+| Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | AdjustableM5X4 / M5X5 | [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
 | Limoss | [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. |
@@ -517,7 +517,7 @@ Choose **Eshine app (E6000)** manually for `com.richmat.eshinesleep`. Its fixed 
 
 ### Adjustable bed (Lumbar) app profile
 
-Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the shared services do not identify this app. `auto` applies the app's name rule: a name starting with `okin` uses the OKIN-service table; a name starting with `star` uses a Nordic UART table chosen by the Device Information manufacturer. Any other name needs a fixed variant. Head, foot and lumbar are fixed, as is the 100 ms refresh. The variant belongs to each physical bed: split a two-address pair before changing it. See [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md).
+Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the shared services do not identify this app. `auto` applies the app's name rule: a name starting with `okin` uses the OKIN-service table; a name starting with `star` uses a Nordic UART table chosen by the Device Information manufacturer. Any other name needs a fixed variant. Head, foot and lumbar are fixed, as is the 100 ms refresh. The variant belongs to each physical bed: split a two-address pair before changing it. See [Adjustable bed (Lumbar)](beds/okin-nframe.md#adjustable-bed-lumbar).
 
 ### V-MAT Basic app profiles
 

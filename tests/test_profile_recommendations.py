@@ -1639,6 +1639,9 @@ async def test_failed_history_write_does_not_abort_committed_settings(
                 flow_id, {"disable_discovery": True}
             )
         change_discovery.assert_awaited_once_with(hass, True)
+    # Let the entry reload the accepted settings schedule finish; left running, it
+    # registers the device after teardown's final write and leaves a save timer.
+    await hass.async_block_till_done()
     assert result["type"] == "create_entry"
     assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
     assert issue(hass, target) is None

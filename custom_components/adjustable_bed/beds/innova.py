@@ -40,7 +40,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .keeson import KeesonCommands, KeesonController, _wait_unless_cancelled
+from .keeson import KeesonCommands, KeesonController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -283,45 +283,6 @@ class InnovaController(KeesonController):
         await asyncio.sleep(self.profile.tap_wait_ms / 1000)
         await self.write_command(command)
 
-    async def _release(self, *, delay: bool) -> None:
-        """``buttonUp``: the zero key, normally 100 ms after the refresh ends.
-
-        A Stop, a cancelled hold or a replacement sends it at once, and a Stop
-        arriving during the wait ends the wait. The write runs on a fresh event
-        in its own task, which is never cancelled and is awaited until it
-        finishes, however often the caller is cancelled. The cancellation is
-        re-raised afterwards, unless the write failed: that error wins.
-        """
-        ((wait_ms, step),) = self.profile.release.steps
-        stop_requested = self._coordinator.cancel_command
-        interrupted: asyncio.CancelledError | None = None
-        if delay and not stop_requested.is_set():
-            try:
-                await _wait_unless_cancelled(stop_requested, wait_ms / 1000)
-            except asyncio.CancelledError as err:
-                interrupted = err
-        release = asyncio.create_task(
-            self.write_command(self._step_frame(step), cancel_event=asyncio.Event())
-        )
-        # asyncio.wait never cancels the task, so keep waiting for the write
-        # through any number of cancellations of this caller.
-        while not release.done():
-            try:
-                await asyncio.wait((release,))
-            except asyncio.CancelledError:
-                interrupted = interrupted or asyncio.CancelledError()
-        if interrupted is not None:
-            # A failed release must not hide behind the cancellation: like an
-            # exception raised in a finally block, the write error wins.
-            failure = None if release.cancelled() else release.exception()
-            if failure is not None:
-                raise failure from interrupted
-            raise interrupted
-        release.result()
-
-    async def _release_motion(self, *, delay: bool = True) -> None:
-        await self._release(delay=delay)
-
     async def _hold(self, key: int, repeat_count: int | None = None) -> None:
         """Stream a held key every 100 ms, then release with the zero key."""
         if repeat_count is None:
@@ -336,7 +297,7 @@ class InnovaController(KeesonController):
             completed = True
         finally:
             self._motor_state = {}
-            await self._release(delay=completed)
+            await self._touch_up(delay=completed)
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         self._motor_state = {motor: direction}
@@ -345,7 +306,7 @@ class InnovaController(KeesonController):
             await self._hold(command)
         else:
             self._motor_state = {}
-            await self._release(delay=False)
+            await self._touch_up(delay=False)
 
     async def move_union_up(self) -> None:
         """2M combined back and legs up (``0x05``)."""
@@ -357,7 +318,7 @@ class InnovaController(KeesonController):
 
     async def stop_all(self) -> None:
         self._motor_state = {}
-        await self._release(delay=False)
+        await self._touch_up(delay=False)
 
     @property
     def supports_stop_all(self) -> bool:

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Final, Literal
 
 from ..codec import limoss as codec
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Counter = Literal["controller", "session", "app"]
 WriteMode = Literal["property", "without_response"]
@@ -37,6 +38,8 @@ class Calibration:
 @dataclass(frozen=True, kw_only=True)
 class LimossProfile:
     key: str
+    execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
+    """Held and concurrent execution this app is proven to support."""
     counter: Counter
     """Owner of the sequence byte: ``controller`` takes one value per command and
     resends that frame for repeats; ``session`` and ``app`` take one per frame,
