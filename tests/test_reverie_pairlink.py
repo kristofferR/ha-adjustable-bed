@@ -143,6 +143,7 @@ def _controller(model: str = "R510L") -> tuple[
         clear_position_feedback=Mock(),
         hold_command_connection=nullcontext,
         hass=SimpleNamespace(async_create_task=create_task, loop=fake_loop),
+        record_command_trace=Mock(),
     )
     controller = ReveriePairlinkController(coordinator, model=model, runtime=runtime)
     controller._sdk_io._store = Mock(async_load=AsyncMock(return_value=None), async_save=AsyncMock())
@@ -229,6 +230,23 @@ async def test_central_login_callback_replies_and_dispatches_with_learned_sessio
         device_key=bytes.fromhex("10203040"),
     )
     assert client.writes[-1] == (PAIRLINK_WRITE_UUID, expected_assigned_va, False)
+
+
+async def test_central_writes_are_traced_redacted() -> None:
+    """The login reply carries the password; no Pairlink frame is traced in clear."""
+    pytest.importorskip("cryptography")
+    controller, client, runtime, tasks = _controller()
+    await _join_central(controller, client, runtime, tasks)
+    await controller.async_send_payload(bytes.fromhex("0101FF00"))
+
+    traces = [call.kwargs for call in controller._coordinator.record_command_trace.call_args_list]
+    assert len(client.writes) >= 3  # login reply, add confirmation, user frame
+    assert [(t["characteristic_uuid"], t["payload"]["length"]) for t in traces] == [
+        (uuid, len(data)) for uuid, data, _response in client.writes
+    ]
+    assert {(t["payload"]["hex"], t["payload"]["ascii_preview"]) for t in traces} == {
+        ("**REDACTED**", None)
+    }
 
 
 async def test_clock_query_is_one_shot_and_rearmed_only_by_source_response() -> None:

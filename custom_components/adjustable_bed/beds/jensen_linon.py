@@ -144,6 +144,14 @@ class JensenLinonController(BedController):
             repeat_count,
             repeat_delay_ms,
         )
+        self._record_command_trace(
+            char_uuid,
+            command,
+            response=True,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            characteristic=char,
+        )
 
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
