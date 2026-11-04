@@ -77,6 +77,7 @@ custom_components/adjustable_bed/
 ├── services.py           # Action schemas, handlers and registration
 ├── config_flow.py        # Device discovery and setup wizard
 ├── coordinator.py        # BLE connection management (central hub)
+├── coordinator_bonds.py  # Coordinator mixin: bond verification and pairing
 ├── const.py              # Constants, UUIDs, bed type definitions, feature flags
 ├── detection.py          # Bed type auto-detection from BLE services/names
 ├── controller_factory.py # Factory for creating bed controller instances
