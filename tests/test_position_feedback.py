@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.position_seek import PositionFeedbackError, PositionSeekPolicy
+from tests.coordinator_patches import patch_coordinator_global
 
 from .conftest import make_controller_mock
 
@@ -291,8 +292,8 @@ async def test_notification_that_ages_out_during_read_is_rejected(coordinator):
         raise TimeoutError
 
     coordinator.controller.read_positions = AsyncMock(side_effect=read)
-    with patch(
-        "custom_components.adjustable_bed.coordinator.time",
+    with patch_coordinator_global(
+        "time",
         SimpleNamespace(monotonic=lambda: now),
     ):
         assert await coordinator._async_read_seek_position(

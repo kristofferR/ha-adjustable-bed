@@ -7,24 +7,27 @@ from contextlib import ExitStack, contextmanager
 from typing import Any
 from unittest.mock import patch
 
-from custom_components.adjustable_bed import coordinator_bonds
+from custom_components.adjustable_bed import (
+    coordinator,
+    coordinator_bonds,
+    coordinator_connection,
+)
 
-# Modules holding AdjustableBedCoordinator methods outside coordinator.py.
-COORDINATOR_MIXIN_MODULES = (coordinator_bonds,)
+# coordinator.py and the modules holding the rest of AdjustableBedCoordinator.
+COORDINATOR_MODULES = (coordinator, coordinator_bonds, coordinator_connection)
 
 
 @contextmanager
 def patch_coordinator_global(name: str, *args: Any, **kwargs: Any) -> Iterator[Any]:
-    """Patch ``name`` in ``coordinator`` and every mixin module that imports it.
+    """Patch ``name`` in every coordinator module that binds it, with one mock.
 
     Each module resolves its own binding, so one mock must replace all of them
     for a patch to reach every coordinator method that reads the name.
     """
-    with (
-        patch(f"custom_components.adjustable_bed.coordinator.{name}", *args, **kwargs) as mock,
-        ExitStack() as stack,
-    ):
-        for module in COORDINATOR_MIXIN_MODULES:
-            if hasattr(module, name):
-                stack.enter_context(patch.object(module, name, mock))
+    modules = [module for module in COORDINATOR_MODULES if hasattr(module, name)]
+    assert modules, name
+    first, *others = modules
+    with patch.object(first, name, *args, **kwargs) as mock, ExitStack() as stack:
+        for module in others:
+            stack.enter_context(patch.object(module, name, mock))
         yield mock

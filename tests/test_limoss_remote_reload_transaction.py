@@ -77,7 +77,7 @@ async def loaded_runtime(hass, paired):
         return clients[device.address]
 
     with ExitStack() as stack:
-        module = "custom_components.adjustable_bed.coordinator."
+        module = "custom_components.adjustable_bed.coordinator_connection."
         for name, mock in [
             ("select_adapter", AsyncMock(side_effect=adapter)),
             ("establish_connection", AsyncMock(side_effect=establish)),

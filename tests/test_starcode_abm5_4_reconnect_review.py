@@ -92,7 +92,7 @@ async def test_first_cold_registered_timed_move_keeps_query_after_native_STOP(
                 "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
                 device,
             ),
-            patch("custom_components.adjustable_bed.coordinator.establish_connection", connect),
+            patch("custom_components.adjustable_bed.coordinator_connection.establish_connection", connect),
             patch(
                 "custom_components.adjustable_bed.services._resolve_sided_targets",
                 return_value=([(parent, selected_side)], []),
@@ -308,7 +308,7 @@ async def test_cold_command_terminal_invalidates_queued_query_without_leaking_ta
     try:
         with (
             patch(
-                "custom_components.adjustable_bed.coordinator.establish_connection",
+                "custom_components.adjustable_bed.coordinator_connection.establish_connection",
                 AsyncMock(return_value=client),
             ),
             patch(

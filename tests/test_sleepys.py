@@ -45,6 +45,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.coordinator_patches import patch_coordinator_global
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -1343,8 +1344,8 @@ class TestSleepysBox25Controller:
 
         legacy = SleepysBox25LegacyController(coordinator)
         await coordinator.async_disconnect()
-        with patch(
-            "custom_components.adjustable_bed.coordinator.create_controller",
+        with patch_coordinator_global(
+            "create_controller",
             AsyncMock(return_value=legacy),
         ):
             await coordinator.async_connect()

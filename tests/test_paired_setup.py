@@ -128,6 +128,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
 )
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_recommendations import _watches
+from tests.coordinator_patches import patch_coordinator_global
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
 RIGHT_ADDR = "AA:BB:CC:DD:EE:02"
@@ -1513,7 +1514,7 @@ class TestPairBedsConversion:
 
     @pytest.mark.parametrize("right_offline", [False, True])
     @patch(
-        "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+        "custom_components.adjustable_bed.coordinator_connection.read_ble_device_info",
         new=AsyncMock(return_value=("Star", None)),
     )
     async def test_box25_combine_preserves_controls_and_retries_offline_setup(
@@ -2927,7 +2928,7 @@ class TestPairBedsConversion:
         coord._controller = controller
 
         with patch(
-            "custom_components.adjustable_bed.coordinator._PAIRING_RELEASE_RESTORE_TIMEOUT",
+            "custom_components.adjustable_bed.coordinator_connection._PAIRING_RELEASE_RESTORE_TIMEOUT",
             0.01,
         ):
             release = asyncio.create_task(coord.async_release_for_pairing_transfer())
@@ -4321,12 +4322,11 @@ class TestOfflineSideEntities:
         entry.add_to_hass(hass)
         left = _build_paired_children(hass, entry)[SIDE_LEFT]
 
-        from unittest.mock import patch
 
         from custom_components.adjustable_bed import coordinator as coordinator_mod
 
-        with patch(
-            "custom_components.adjustable_bed.coordinator.create_controller",
+        with patch_coordinator_global(
+            "create_controller",
             wraps=coordinator_mod.create_controller,
         ) as create_controller:
             await left.async_prime_offline_controller()

@@ -191,16 +191,16 @@ class TestBondMarkerReliability:
 
         with (
             patch(
-                "custom_components.adjustable_bed.coordinator.select_adapter",
+                "custom_components.adjustable_bed.coordinator_connection.select_adapter",
                 new_callable=AsyncMock,
                 return_value=adapter_result,
             ),
             patch(
-                "custom_components.adjustable_bed.coordinator.establish_connection",
+                "custom_components.adjustable_bed.coordinator_connection.establish_connection",
                 side_effect=_establish,
             ),
-            patch(
-                "custom_components.adjustable_bed.coordinator.create_controller",
+            patch_coordinator_global(
+                "create_controller",
                 new_callable=AsyncMock,
                 return_value=make_controller_mock(),
             ),

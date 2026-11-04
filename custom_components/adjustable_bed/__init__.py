@@ -74,11 +74,8 @@ from .const import (
     supports_runtime_authentication_recovery,
 )
 from .controller_factory import create_controller
-from .coordinator import (
-    AdjustableBedCoordinator,
-    ChildEntryView,
-    PairingOnlyConnectionActiveError,
-)
+from .coordinator import AdjustableBedCoordinator, ChildEntryView
+from .coordinator_connection import PairingOnlyConnectionActiveError
 from .entity_runtime import EntityRuntime
 from .furnimove_repair import (
     async_clear_furnimove_layout_issues,

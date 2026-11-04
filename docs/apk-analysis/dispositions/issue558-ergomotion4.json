@@ -66,9 +66,9 @@
     },
     "host_connection": {
       "code": [
-        "custom_components/adjustable_bed/coordinator.py::async_connect",
-        "custom_components/adjustable_bed/coordinator.py::async_disconnect",
-        "custom_components/adjustable_bed/coordinator.py::async_ensure_connected"
+        "custom_components/adjustable_bed/coordinator_connection.py::async_connect",
+        "custom_components/adjustable_bed/coordinator_connection.py::async_disconnect",
+        "custom_components/adjustable_bed/coordinator_connection.py::async_ensure_connected"
       ],
       "tests": [
         "tests/test_coordinator.py:425",

@@ -73,7 +73,7 @@ async def test_controller_owns_info_reads_after_subscription(
         return None, None
 
     with patch(
-        "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+        "custom_components.adjustable_bed.coordinator_connection.read_ble_device_info",
         side_effect=generic_read_loses_link,
     ) as generic_read:
         try:
