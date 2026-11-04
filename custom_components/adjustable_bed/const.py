@@ -339,6 +339,12 @@ CONF_PROFILE_REVIEW_PENDING: Final = "profile_review_pending"
 # a later release offers an app the user was not shown.
 CONF_PROFILE_REVIEW_KEPT: Final = "profile_review_kept"
 
+# Schema 5: the profile id the entry (or one paired side) runs, derived from the
+# saved bed type, variant and app key (see profile_id.py), and the record the
+# schema 5 migration left for diagnostics.
+CONF_PROFILE_ID: Final = "profile_id"
+CONF_PROFILE_MIGRATION: Final = "profile_migration"
+
 # pair_mode values: one shared BLE link vs two separate per-side links.
 PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"
 PAIR_MODE_SEPARATE_ADDRESS: Final = "separate_address"
@@ -348,6 +354,30 @@ PAIR_MODES: Final = (PAIR_MODE_SINGLE_ADDRESS, PAIR_MODE_SEPARATE_ADDRESS)
 SIDE_LEFT: Final = "left"
 SIDE_RIGHT: Final = "right"
 SIDE_BOTH: Final = "both"
+
+# Motors the timed_move action can name, and so the card can hold through it.
+TIMED_MOVE_MOTOR_OPTIONS: Final = (
+    "tv_lift",
+    "back",
+    "right_back",
+    "legs",
+    "head",
+    "feet",
+    "tilt",
+    "pillow",
+    "lumbar",
+    "bed_height",
+    "stair",
+    "m1x12_part_1",
+    "m1x12_part_2",
+    "m1x12_part_4",
+    "m1x12_part_8",
+    "m1x12_part_16",
+    "elevate_actuator_1",
+    "elevate_actuator_2",
+    "elevate_both",
+)
+
 # The two physical sides, in stable order (left first, right second).
 PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 

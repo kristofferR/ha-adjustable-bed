@@ -130,13 +130,13 @@ async def test_migration_marks_only_routes_that_gained_app_profiles(
 
     assert await async_migrate_entry(hass, entry) is True
 
-    assert entry.minor_version == 3
+    assert (entry.version, entry.minor_version) == (5, 1)
     assert entry.data.get(CONF_PROFILE_REVIEW_PENDING) == mark
 
 
 async def test_entries_created_now_are_never_marked(hass: HomeAssistant) -> None:
-    """New entries start at minor version 3, so the migration never marks them."""
-    assert AdjustableBedConfigFlow.MINOR_VERSION == 3
+    """Entries created at 4.3 or later are never marked."""
+    assert (AdjustableBedConfigFlow.VERSION, AdjustableBedConfigFlow.MINOR_VERSION) == (5, 1)
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},

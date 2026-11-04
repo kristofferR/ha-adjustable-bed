@@ -198,6 +198,9 @@ existing entries keep their identities; the
 |----------|---------|-----------------|
 | `comfort_motion` | `jiecang` | Detection signal, setup label and profile-review suggestions; both select the [legacy route](#legacy-route) |
 
+Those differences, plus the device manufacturer, keep separate
+[profile ids](../design/profile-id.md#aliases): the profile review is a Repairs issue.
+
 ## Wire codec
 
 Implemented once in `custom_components/adjustable_bed/codec/jiecang.py`. Profiles

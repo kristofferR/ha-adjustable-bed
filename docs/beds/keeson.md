@@ -279,6 +279,12 @@ existing entries keep their identities; the
 profile but not its timing: `okin_ffe` defaults to 7 pulses 150 ms apart and
 the variant to 10 pulses 100 ms apart, so they are not aliases.
 
+Each keeps its own [profile id](../design/profile-id.md#aliases). `ergomotion` and `serta` create their
+entities before the first connection and the `keeson` variants do not, and the
+device manufacturer differs. Among the ORE apps, Avanti Bases hides more generic
+setup fields, AMERICANSTAR and Avanti keep the motor count per side, and each
+app has its own setup label.
+
 ## Wire codec
 
 `custom_components/adjustable_bed/codec/keeson.py` owns the transports, the K1

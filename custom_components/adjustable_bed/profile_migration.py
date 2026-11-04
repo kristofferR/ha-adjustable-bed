@@ -234,8 +234,12 @@ async def _async_preview_labels(
     # address derived from the entry keeps the preview's sessions separate.
     digest = hashlib.sha256(f"preview:{entry.entry_id}".encode()).digest()
     preview_address = ":".join(f"{byte:02X}" for byte in (0x02, *digest[:5]))
+    from .profile_id import with_profile_ids
+
     preview = ConfigEntry(
-        data={**data, CONF_ADDRESS: preview_address},
+        # The runtime builds from the stored profile id, which staged data
+        # still carries for the saved route.
+        data=with_profile_ids({**data, CONF_ADDRESS: preview_address}),
         disabled_by=ConfigEntryDisabler.USER,
         discovery_keys=MappingProxyType({}),
         domain=DOMAIN,

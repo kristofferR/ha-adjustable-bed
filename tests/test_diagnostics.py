@@ -183,6 +183,34 @@ class TestDiagnosticsOutput:
         # Check controller info
         assert "initialized" in result["controller"]
 
+    async def test_diagnostics_show_the_profile_id_and_migration_record(
+        self,
+        hass: HomeAssistant,
+        mock_diagnostics_config_entry,
+        mock_coordinator_connected,  # noqa: ARG002
+        mock_bleak_client: MagicMock,  # noqa: ARG002
+        enable_custom_integrations,  # noqa: ARG002
+    ):
+        """The running profile id and the schema 5 migration record are reported."""
+        from custom_components.adjustable_bed import async_migrate_entry
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        assert await async_migrate_entry(hass, mock_diagnostics_config_entry) is True
+        coordinator = AdjustableBedCoordinator(hass, mock_diagnostics_config_entry)
+        hass.data.setdefault(DOMAIN, {})[mock_diagnostics_config_entry.entry_id] = coordinator
+
+        result = await async_get_config_entry_diagnostics(hass, mock_diagnostics_config_entry)
+
+        assert result["entry"]["minor_version"] == 1
+        assert result["profile"]["id"] == BED_TYPE_LINAK
+        assert result["profile"]["migration"] == {
+            "from_version": 1,
+            "from_minor_version": 1,
+            "resolver_version": 1,
+            "profile_id": BED_TYPE_LINAK,
+            "fields": {CONF_BED_TYPE: BED_TYPE_LINAK},
+        }
+
     async def test_diagnostics_redacts_sensitive_data(
         self,
         hass: HomeAssistant,
