@@ -170,8 +170,9 @@ profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1
 - `sum8` is the low byte of the sum of every byte before it. Values are masked to
   eight bits, as the apps do.
 - A **command** is `6E 01 side code sum8`. `side` is `00` for a single bed;
-  RMControl and HJBed use `01` for right and `02` for both, and the Richmat MH
-  apps put their `txMode` byte there (`00` in the single-device group).
+  RMControl uses `01` for right and `02` for both; HJBed sends both sides as
+  separate `00` and `01` frames; the Richmat MH apps put their `txMode` byte
+  there (`00` in the single-device group).
 - Nordic UART transports take the bare code. The legacy Richmat routes also frame
   the code behind a `55` or `AA` header:
 
@@ -663,8 +664,8 @@ These opt-in profiles preserve the app's exact product choices and individual
 button commands. Movement, preset, memory, massage, light and extra-action
 opcodes are per product: they come from the RMControl catalog in
 [`richmat_profiles.py`](../../custom_components/adjustable_bed/richmat_profiles.py),
-with separate short, long-press and Nordic short opcodes. Controls the catalog
-does not map fall back to the Richmat remotes codes.
+with separate short, long-press and Nordic short opcodes. An action absent from,
+or ambiguous in, the selected catalog is rejected.
 
 #### Setup
 

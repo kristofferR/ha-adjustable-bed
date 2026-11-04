@@ -413,7 +413,7 @@ class TestLeggettWilinkePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_flat()
 
         expected_cmd = coordinator.controller._build_command(0x31)
@@ -431,7 +431,7 @@ class TestLeggettWilinkePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_zero_g()
 
         expected_cmd = coordinator.controller._build_command(0x45)
@@ -449,7 +449,7 @@ class TestLeggettWilinkePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_anti_snore()
 
         expected_cmd = coordinator.controller._build_command(0x46)
@@ -467,7 +467,7 @@ class TestLeggettWilinkePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_tv()
 
         expected_cmd = coordinator.controller._build_command(0x58)
@@ -485,7 +485,7 @@ class TestLeggettWilinkePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_lounge()
 
         expected_cmd = coordinator.controller._build_command(0x59)
@@ -512,7 +512,7 @@ class TestLeggettWilinkePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett_wilinke.asyncio.sleep"):
             await coordinator.controller.preset_memory(memory_num)
 
         expected_cmd = coordinator.controller._build_command(expected_value)

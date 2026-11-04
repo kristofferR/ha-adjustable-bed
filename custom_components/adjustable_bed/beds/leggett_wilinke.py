@@ -7,8 +7,11 @@ massage timers, and presets held for 100 writes 300 ms apart before STOP.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
+
+from bleak.exc import BleakError
 
 from ..const import LEGGETT_RICHMAT_CHAR_UUID
 from ..profiles.richmat import LEGGETT_WILINKE, Button
@@ -34,6 +37,36 @@ class LeggettWilinkeController(RichmatProfileController):
         )
         # Optimistic timer state (no BLE feedback): 0 = off, 10/20/30 = active.
         self._timer_mode: int = 0
+
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """The pre-v5 L&P write loop: no command trace, cancel checked before the lock."""
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.error("Cannot write command: BLE client not connected")
+            raise ConnectionError("Not connected to bed")
+        effective_cancel = cancel_event or self._coordinator.cancel_command
+        for i in range(repeat_count):
+            if effective_cancel is not None and effective_cancel.is_set():
+                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                return
+            try:
+                async with self._ble_lock:
+                    await self.client.write_gatt_char(self._char_uuid, command, response=True)
+            except BleakError as err:
+                _LOGGER.exception("Failed to write command")
+                if "not found" in str(err).lower() or "invalid" in str(err).lower():
+                    _LOGGER.warning(
+                        "Characteristic %s may not exist on this device.", self._char_uuid
+                    )
+                    self.log_discovered_services(level=logging.INFO)
+                raise
+            if i < repeat_count - 1:
+                await asyncio.sleep(repeat_delay_ms / 1000)
 
     @property
     def has_discrete_motor_control(self) -> bool:
