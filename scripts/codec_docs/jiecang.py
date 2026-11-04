@@ -34,6 +34,12 @@ _AXIS_LABELS: dict[jiecang_codec.Axis, str] = {
     "right_legs": "Right legs",
     "both_legs": "Both legs",
 }
+# What each light toggle frame is sent for; the profiles come from the profile data.
+_LIGHT_TOGGLE_USES = {
+    jiecang_codec.light_toggle(): "Sent alone on routes without RGB lighting, otherwise "
+    "after the RGB state write",
+    jiecang_codec.light_toggle(jiecang_codec.BILATERAL): "Sent after the RGB state write",
+}
 _PRESET_LABELS: dict[jiecang_codec.Preset, str] = {
     "flat": "Flat",
     "zero_g": "Zero-G",
@@ -49,8 +55,8 @@ _QUERY_NAMES = {
     jiecang_codec.query(): "Initial status",
     jiecang_profiles.QUERY_SOFTWARE: "Software",
     jiecang_profiles.QUERY_LIGHT: "Light",
-    jiecang_codec.query(b"\x01"): "Actuator",
-    jiecang_codec.query(b"\x50"): "Actuator",
+    jiecang_codec.query(b"\x01"): "Actuator status (selector `01`)",
+    jiecang_codec.query(b"\x50"): "Actuator status (selector `50`)",
     jiecang_profiles.QUERY_HARDWARE: "Hardware",
     jiecang_profiles.QUERY_VIBRATION: "Vibration (massage)",
     jiecang_profiles.QUERY_ALARM: "Alarm",
@@ -404,27 +410,25 @@ def render_jiecang_massage() -> str:
 
 
 def render_jiecang_lights() -> str:
-    tap = jiecang_profiles.DREAMHD.recall
+    toggles: dict[bytes, list[str]] = {}
+    for key, profile in _profiles().items():
+        toggles.setdefault(jiecang_profiles.light_toggle_command(profile), []).append(key)
+    hd = jiecang_profiles.DREAMHD
+    tap = hd.recall
     return _block(
         _table(
             ("Command", "Bytes (hex)", "Description"),
             (
-                (
-                    "Light toggle (legacy route, Comfort Motion, Dream Motion HD)",
-                    _hex(jiecang_codec.light_toggle()),
-                    "The only light command of the first two; Dream Motion HD sends it after the RGB state write",
-                ),
-                (
-                    "Light toggle (ERGOBALANCE, Dream Motion)",
-                    _hex(jiecang_codec.light_toggle(jiecang_codec.BILATERAL)),
-                    "Sent after the RGB state write",
+                *(
+                    (f"Light toggle: {_names(keys)}", _hex(command), _LIGHT_TOGGLE_USES[command])
+                    for command, keys in toggles.items()
                 ),
                 (
                     "Automatic light toggle",
                     _hex(jiecang_codec.AUTOMATIC_LIGHT_TOGGLE),
-                    "Sent only when the reported state differs. ERGOBALANCE and Dream Motion write "
-                    f"it once; Dream Motion HD sends it as a tap, with a {_frame(tap.release or b'')} "
-                    f"{tap.release_after_ms} ms later",
+                    "Sent only when the reported state differs. Written once, except by "
+                    f"{_name(hd.key)}, which sends it as a tap with a "
+                    f"{_frame(tap.release or b'')} {tap.release_after_ms} ms later",
                 ),
                 (
                     "RGB state",
@@ -435,6 +439,87 @@ def render_jiecang_lights() -> str:
         ),
         f"Timeouts: {', '.join(str(seconds) for seconds in LIGHT_TIMEOUTS[:-1])} or "
         f"{LIGHT_TIMEOUTS[-1]} seconds.",
+    )
+
+
+_WAKE_ZONES: dict[jiecang_codec.MassageZone, str] = {
+    "back": "Back massage",
+    "right": "Right massage, at the back level",
+    "legs": "Leg massage",
+}
+
+
+def _wake_steps(
+    profile: jiecang_profiles.JiecangProfile, layout: jiecang_profiles.Layout
+) -> tuple[tuple[str, str, str], ...]:
+    """(step, offsets, frame) runs of a memory 2 wake with both massage levels at 1."""
+    level = profile.massage_levels[1]
+    labels = {
+        jiecang_codec.massage(zone, level): label for zone, label in _WAKE_ZONES.items()
+    }
+    recall = jiecang_profiles.memory_command(profile, 2)
+    preset_longs = {
+        offset
+        for offset, command in jiecang_profiles.wake_schedule(profile, layout, "flat", 1, 1)
+        if command == jiecang_codec.LONG_RELEASE
+    }
+    runs: list[tuple[str, list[int], bytes]] = []
+    for offset, command in jiecang_profiles.wake_schedule(profile, layout, "memory_2", 1, 1):
+        if command == jiecang_codec.LONG_RELEASE:
+            label = "Long release" if offset in preset_longs else "Long release, memory 2 only"
+        elif command == jiecang_codec.SHORT_RELEASE:
+            label = "Short release"
+        elif command == recall:
+            label = "Preset or memory recall"
+        else:
+            label = labels[command]
+        if runs and runs[-1][0] == label:
+            runs[-1][1].append(offset)
+        else:
+            runs.append((label, [offset], command))
+    return tuple(
+        (label, ", ".join(f"{offset} ms" for offset in offsets), _frame(command))
+        for label, offsets, command in runs
+    )
+
+
+def render_jiecang_wake() -> str:
+    # JiecangAppController runs the alarm wake routine for every app profile but
+    # Comfort Motion, whose controller has its own.
+    keys = [
+        key
+        for key, profile in jiecang_profiles.APP_PROFILES.items()
+        if profile is not jiecang_profiles.COMFORT_MOTION
+    ]
+    groups: dict[tuple[tuple[str, str, str], ...], dict[str, list[str]]] = {}
+    for key in keys:
+        profile = jiecang_profiles.APP_PROFILES[key]
+        for layout in profile.layouts:
+            groups.setdefault(_wake_steps(profile, layout), {}).setdefault(key, []).append(layout)
+    by_profiles: dict[tuple[str, ...], list[tuple[tuple[str, str, str], ...]]] = {}
+    for steps, layouts in groups.items():
+        by_profiles.setdefault(tuple(layouts), []).append(steps)
+    lines: list[str] = []
+    for steps, layouts in groups.items():
+        siblings = by_profiles[tuple(layouts)]
+        widest = max(siblings, key=lambda other: len(next(iter(groups[other].values()))))
+        names = next(iter(layouts.values()))
+        if len(siblings) == 1:
+            scope = "every layout"
+        elif steps is widest:
+            scope = "every other layout"
+        else:
+            scope = ", ".join(f"`{layout}`" for layout in names)
+        lines += [
+            "",
+            f"**{_names(layouts)}**, {scope}",
+            "",
+            *_table(("Step", "Offsets", "Frame at level 1, memory 2"), steps),
+        ]
+    return _block(
+        "Offsets count from the start of the routine. A zone at level 0 is skipped, and "
+        "a preset replaces the memory recall.",
+        lines[1:],
     )
 
 
@@ -464,4 +549,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "jiecang-massage", render_jiecang_massage),
     (GUIDE, "jiecang-lights", render_jiecang_lights),
     (GUIDE, "jiecang-queries", render_jiecang_queries),
+    (GUIDE, "jiecang-wake", render_jiecang_wake),
 ]

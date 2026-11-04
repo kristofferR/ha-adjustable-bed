@@ -19,8 +19,8 @@ _LOGICDATA_QUERY_NAMES = {
     logicdata_profiles.QUERY_SOFTWARE: "Software",
     logicdata_profiles.QUERY_VIBRATION: "Vibration (massage)",
     logicdata_profiles.QUERY_HARDWARE: "Hardware",
-    logicdata_profiles.QUERY_ACTUATOR: "Actuator",
-    jiecang_codec.query(b"\x01"): "Actuator",
+    logicdata_profiles.QUERY_ACTUATOR: "Actuator status (selector `50`)",
+    jiecang_codec.query(b"\x01"): "Actuator status (selector `01`)",
     logicdata_profiles.QUERY_LIGHT: "Light",
     logicdata_profiles.QUERY_STATUS: "Device status",
 }

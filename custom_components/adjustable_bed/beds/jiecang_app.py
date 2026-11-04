@@ -26,6 +26,7 @@ from ..profiles.jiecang import (
     Tap,
     automatic_light_on,
     is_bilateral,
+    light_toggle_command,
     massage_command,
     massage_zones,
     wake_schedule,
@@ -541,7 +542,7 @@ class JiecangAppController(JiecangProfileController):
                 await self.write_command(codec.SHORT_RELEASE)
                 if await self._pause(100, self._coordinator.cancel_command):
                     return
-                await self.write_command(codec.light_toggle())
+                await self.write_command(light_toggle_command(self.profile))
                 await self._pause(100, self._coordinator.cancel_command)
             finally:
                 await self.write_command(codec.SHORT_RELEASE, cancel_event=asyncio.Event())
@@ -549,7 +550,7 @@ class JiecangAppController(JiecangProfileController):
         try:
             await self._write_rgb(replace(state, on=not state.on))
             if not await self._pause(150, self._coordinator.cancel_command):
-                await self.write_command(codec.light_toggle(codec.BILATERAL))
+                await self.write_command(light_toggle_command(self.profile))
                 await self._pause(80, self._coordinator.cancel_command)
         finally:
             await self._schedule(((0, codec.SHORT_RELEASE), (0, codec.LONG_RELEASE)), cleanup=True)
