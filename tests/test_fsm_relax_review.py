@@ -22,11 +22,8 @@ from custom_components.adjustable_bed.app_state_store import (
     app_state_store,
     async_remove_app_states,
 )
-from custom_components.adjustable_bed.beds.fsm_relax import (
-    FsmRelaxController,
-    build_packet,
-    decode_packet,
-)
+from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator, ChildEntryView
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
@@ -52,7 +49,7 @@ def _reply_to_queries(
 
     async def write(_role: object, packet: bytes, **_kwargs: object) -> None:
         nonlocal query_count
-        body = decode_packet(packet)
+        body = codec.decode(packet)
         assert body is not None
         if body[0] == 2:
             query_count += 1
@@ -60,7 +57,7 @@ def _reply_to_queries(
                 client.is_connected = False
                 establish.call_args.kwargs["disconnected_callback"](client)
             else:
-                callbacks[-1](None, bytearray(build_packet(bytes.fromhex("0208000008"), 1)))
+                callbacks[-1](None, bytearray(codec.frame(bytes.fromhex("0208000008"), 1)))
 
     client.start_notify.side_effect = subscribe
     client.write_gatt_char.side_effect = write
@@ -99,7 +96,7 @@ async def test_explicit_query_task_cancellation_still_propagates() -> None:
     await controller.start_notify()
     sent = asyncio.Event()
     controller.client.write_gatt_char.side_effect = lambda *_args, **_kwargs: sent.set()
-    query = asyncio.create_task(controller._query(2))
+    query = asyncio.create_task(controller._query(codec.query(2)))
     await sent.wait()
     query.cancel()
     with pytest.raises(asyncio.CancelledError):
@@ -228,7 +225,7 @@ async def test_actual_reconnect_and_repeated_serial_skip_unchanged_storage(
                 assert controller._live_capabilities
                 notify = mock_bleak_client.start_notify.call_args.args[1]
                 for _ in range(2):
-                    notify(None, bytearray(build_packet(bytes.fromhex("06ffffffff"), 2)))
+                    notify(None, bytearray(codec.frame(bytes.fromhex("06ffffffff"), 2)))
                 assert controller.session.serial == -1
                 assert await coordinator.async_disconnect()
             assert mock_establish_connection.await_count == 2
@@ -266,11 +263,11 @@ def _reply_to_saved_positions(client: MagicMock, establish: AsyncMock, raw: int)
     capability_reply = client.write_gatt_char.side_effect
 
     async def reply(role: object, packet: bytes, **kwargs: object) -> None:
-        body = decode_packet(packet)
+        body = codec.decode(packet)
         assert body is not None
         if body[0] in (0x10, 0x20, 0x30, 0x40):
             callback = client.start_notify.call_args.args[1]
-            callback(None, bytearray(build_packet(
+            callback(None, bytearray(codec.frame(
                 bytes((body[0],)) + raw.to_bytes(4, "big", signed=True), 9,
             )))
         else:
@@ -332,7 +329,7 @@ async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory
             assert isinstance(current, FsmRelaxController)
             assert current is not live and current.session is offline.session
             assert offline.session.slots[8] == dict.fromkeys(range(4), -(2**31))
-            written = [decode_packet(call.args[1]) for call in
+            written = [codec.decode(call.args[1]) for call in
                        mock_bleak_client.write_gatt_char.call_args_list[prior_writes:]]
             assert [body for body in written if body is not None and body[0] in (0x11, 0x21, 0x31, 0x41)] == [
                 bytes((opcode,)) + (-(2**31)).to_bytes(4, "big", signed=True)
@@ -410,7 +407,7 @@ async def test_paired_save_replacement_keeps_asymmetric_target_memories(
             patch.object(children[side], "async_ensure_connected", side_effect=reconnect),
         ):
             await hass.services.async_call(const.DOMAIN, service, data, blocking=True)
-        written = [decode_packet(call.args[1]) for call in clients[side].write_gatt_char.call_args_list]
+        written = [codec.decode(call.args[1]) for call in clients[side].write_gatt_char.call_args_list]
         assert [body for body in written if body is not None and body[0] == 0x11] == [
             b"\x11" + raw_by_side[side].to_bytes(4, "big", signed=True),
         ]
@@ -453,7 +450,7 @@ async def test_factory_shared_sessions_isolate_addresses_and_end_with_removal(
     replacement_coordinator = AdjustableBedCoordinator(hass, entry)
     replacement = await create_controller(replacement_coordinator, const.BED_TYPE_FSM_RELAX, None, None)
     assert isinstance(replacement, FsmRelaxController) and replacement.session is old.session
-    assert replacement.profile is not old.profile
+    assert replacement.setup is not old.setup
     replacement_coordinator.remember_fsm_relax_capabilities(bytes.fromhex("0206040004"))
     replacement.session.serial = 2**31 - 1
     assert old.memory_slot_count == 4 and old.key_count == 6

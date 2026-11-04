@@ -468,8 +468,8 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/adjustable-lumbar.md). |
 | AdjustableM5X4 / M5X5 | [M5X4](beds/starcode-abm5-4.md): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
-| Limoss | [Limoss Remote](beds/limoss-remote.md): bed/chair layout, light/massage and reversal settings. |
-| FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/fsm_relax.md). |
+| Limoss | [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. |
+| FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/limoss.md#fsm-relax). |
 | GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |
 | Legacy OKIN CB24 | [Single-address controls](#single-address-left--right-controls): both sides, Side A / Left, or Side B / Right. |
 
@@ -611,7 +611,7 @@ Select the explicit **Motion Bed app** route and the original case-sensitive Blu
 
 ### Limoss Remote app
 
-Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile. See [the protocol page](beds/limoss-remote.md).
+Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile. See [the protocol page](beds/limoss.md#limoss-remote).
 
 ### AdjustableM5X5 app
 
@@ -635,7 +635,7 @@ Select the explicit FSM Relax app bed type, then choose chair/bed layout, option
 light/massage controls and four reversal flags. These settings are local app
 configuration, not inferred hardware identity. Options include eight local memory
 names, with blank names resetting M1–M8. Raw memory values have no known units.
-See [FSM Relax](beds/fsm_relax.md) for exact controls, quarantine and calibration.
+See [FSM Relax](beds/limoss.md#fsm-relax) for exact controls, quarantine and calibration.
 
 </details>
 

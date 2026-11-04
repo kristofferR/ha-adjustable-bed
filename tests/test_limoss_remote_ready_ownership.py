@@ -10,9 +10,8 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.limoss_remote_state import (
     LimossRemoteMemory,
     get_limoss_remote_session,
@@ -52,23 +51,23 @@ async def test_retirement_after_ready_before_waiter_resumes_prevents_first_movem
         child.save_app_state()
 
     def left_write(role, packet, **kwargs):
-        trace.append(("left", LimossController._tea_decrypt(packet[1:9])[1]))
+        trace.append(("left", codec.decrypt(packet[1:9])[1]))
 
     async def old_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("old_right", opcode))
         if opcode == 2:
             entered.set()
             await release.wait()
         if opcode in {0, 1, 2}:
             reply = {2: "0208120008", 0: "0001020304", 1: "0101020304"}[opcode]
-            old_client.start_notify.call_args.args[1](role, bytearray(format_command(bytes.fromhex(reply), 0)))
+            old_client.start_notify.call_args.args[1](role, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
     def new_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("new_right", opcode))
         reply = {2: "0208120007", 0: "0001020304", 1: "0101020304"}[opcode]
-        new_client.start_notify.call_args.args[1](role, bytearray(format_command(bytes.fromhex(reply), 0)))
+        new_client.start_notify.call_args.args[1](role, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
     async def establish(*args, **kwargs):
         new_client.is_connected = True

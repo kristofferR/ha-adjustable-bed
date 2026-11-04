@@ -11243,7 +11243,7 @@
     "candidate_or_transport": {
       "code_symbols": [
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController",
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::format_command"
+        "custom_components/adjustable_bed/codec/limoss.py::frame"
       ],
       "test_symbols": [
         "tests/test_limoss_remote.py::test_every_reachable_held_opcode_and_native_stop_through_live_caller",
@@ -11253,11 +11253,11 @@
     },
     "legacy_crypto": {
       "code_symbols": [
-        "custom_components/adjustable_bed/beds/limoss.py::LimossController._tea_encrypt",
-        "custom_components/adjustable_bed/beds/limoss.py::LimossController._tea_decrypt"
+        "custom_components/adjustable_bed/codec/limoss.py::encrypt",
+        "custom_components/adjustable_bed/codec/limoss.py::decrypt"
       ],
       "test_symbols": [
-        "tests/test_limoss_remote.py::test_native_literal_frames"
+        "tests/test_limoss_vectors.py::test_frozen_frame_round_trips_through_codec"
       ]
     },
     "command": {
@@ -11278,13 +11278,13 @@
     },
     "rendered_caller": {
       "code_symbols": [
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::LAYOUTS",
+        "custom_components/adjustable_bed/profiles/limoss.py::LIMOSS_REMOTE",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.held_control_options",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.motor_control_specs",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.controller_button_specs"
       ],
       "test_symbols": [
-        "tests/test_limoss_remote.py::test_all29_rendered_tables_match_independent_frozen_fixture",
+        "tests/test_limoss_vectors.py::test_remote_layouts_match_the_independent_fixture",
         "tests/test_limoss_remote.py::test_exact_layout_gates_reversal_and_capability_bytes",
         "tests/test_limoss_remote_entities.py::test_motor_cover_and_app_button_use_current_literal_action"
       ]
@@ -11352,20 +11352,20 @@
     },
     "packet_format": {
       "code_symbols": [
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::format_command",
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::LimossRemoteParser",
-        "custom_components/adjustable_bed/beds/limoss.py::LimossController._tea_encrypt",
-        "custom_components/adjustable_bed/beds/limoss.py::LimossController._tea_decrypt"
+        "custom_components/adjustable_bed/codec/limoss.py::frame",
+        "custom_components/adjustable_bed/codec/limoss.py::StreamParser",
+        "custom_components/adjustable_bed/codec/limoss.py::encrypt",
+        "custom_components/adjustable_bed/codec/limoss.py::decrypt"
       ],
       "test_symbols": [
-        "tests/test_limoss_remote.py::test_native_literal_frames",
+        "tests/test_limoss_vectors.py::test_frozen_frame_round_trips_through_codec",
         "tests/test_limoss_remote.py::test_parser_all_split_points_coalescing_and_unchecked_native_integrity"
       ]
     },
     "notifications": {
       "code_symbols": [
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::LimossRemoteParser",
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::version_string",
+        "custom_components/adjustable_bed/codec/limoss.py::StreamParser",
+        "custom_components/adjustable_bed/codec/limoss.py::version",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController._notification",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController._request",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController._invalidate_notification_channel",
@@ -11403,13 +11403,13 @@
     },
     "theme_glyph_mapping": {
       "code_symbols": [
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::LAYOUTS",
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::THEMES",
+        "custom_components/adjustable_bed/profiles/limoss.py::LIMOSS_REMOTE",
+        "custom_components/adjustable_bed/profiles/limoss.py::REMOTE_THEMES",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.motor_control_specs",
-        "docs/beds/limoss-remote.md"
+        "docs/beds/limoss.md"
       ],
       "test_symbols": [
-        "tests/test_limoss_remote.py::test_all29_rendered_tables_match_independent_frozen_fixture",
+        "tests/test_limoss_vectors.py::test_remote_layouts_match_the_independent_fixture",
         "tests/test_limoss_remote.py::test_exact_layout_gates_reversal_and_capability_bytes",
         "tests/test_limoss_remote_config.py::test_enabling_local_features_saves_options_without_ble"
       ]
@@ -11417,9 +11417,9 @@
     "model_mappings": {
       "code_symbols": [
         "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::LimossRemoteCapabilities",
-        "custom_components/adjustable_bed/beds/limoss_remote_protocol.py::THEMES",
+        "custom_components/adjustable_bed/profiles/limoss.py::REMOTE_THEMES",
         "custom_components/adjustable_bed/beds/limoss_remote.py::LimossRemoteController.protocol_diagnostics",
-        "docs/beds/limoss-remote.md"
+        "docs/beds/limoss.md"
       ],
       "test_symbols": [
         "tests/test_limoss_remote.py::test_exact_layout_gates_reversal_and_capability_bytes",

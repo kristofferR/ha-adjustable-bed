@@ -1,4 +1,4 @@
-"""Explicit com.limoss.limossremote 7.1.8 app profile, independent of legacy."""
+"""Limoss Remote 7.1.8 app profile over the Limoss DD codec, independent of legacy."""
 
 from __future__ import annotations
 
@@ -12,8 +12,10 @@ from typing import TYPE_CHECKING
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..codec import limoss as codec
 from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
 from ..limoss_remote_state import LimossRemoteSession
+from ..profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -24,16 +26,10 @@ from .base import (
 )
 from .limoss_remote_protocol import (
     APP_SEQUENCE,
-    HELD_COMMANDS,
-    LAYOUTS,
-    THEMES,
     LimossRemoteCapabilities,
-    LimossRemoteParser,
     LimossRemoteSequence,
     Product,
-    format_command,
     integer,
-    version_string,
 )
 
 if TYPE_CHECKING:
@@ -60,7 +56,7 @@ def validate_limoss_remote_profile(
         or any(type(value) is not bool for value in reverse_motors)
     ):
         raise ValueError("Select exactly four reversal booleans")
-    if theme is not None and theme not in THEMES:
+    if theme is not None and theme not in REMOTE_THEMES:
         raise ValueError("Select a shipped app theme")
 
 
@@ -139,6 +135,7 @@ class LimossRemoteController(BedController):
         sequence: LimossRemoteSequence | None = None,
     ) -> None:
         super().__init__(coordinator)
+        self.profile = LIMOSS_REMOTE
         validate_limoss_remote_profile(product, underbed_light, massage, reverse_motors, theme)
         if not isinstance(session, LimossRemoteSession):
             raise TypeError("A persistent per-target session is required")
@@ -150,7 +147,7 @@ class LimossRemoteController(BedController):
         self.memories = session.memories
         self.sequence = sequence if sequence is not None else APP_SEQUENCE
         self._metadata = session.metadata
-        self._parser = LimossRemoteParser()
+        self._parser = codec.StreamParser(verify=False)
         self._notify_client: BleakClient | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
         self._notify_generation = 0
@@ -166,6 +163,11 @@ class LimossRemoteController(BedController):
     @property
     def control_characteristic_uuid(self) -> str:
         return LIMOSS_CHAR_UUID
+
+    @property
+    def _tick(self) -> float:
+        assert self.profile.tick_ms is not None
+        return self.profile.tick_ms / 1000
 
     @property
     def persisted_app_state(self) -> dict[str, object]:
@@ -210,12 +212,14 @@ class LimossRemoteController(BedController):
     @property
     def visible_opcodes(self) -> tuple[int, ...]:
         layout = self.layout
-        return tuple(opcode for opcode in LAYOUTS[layout] if opcode is not None) if layout else ()
+        return (
+            tuple(op for op in self.profile.layouts[layout] if op is not None) if layout else ()
+        )
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
         return tuple(
-            action for action, opcode in HELD_COMMANDS.items() if opcode in self.visible_opcodes
+            action for action, opcode in REMOTE_CHANNELS.items() if opcode in self.visible_opcodes
         )
 
     @property
@@ -333,7 +337,7 @@ class LimossRemoteController(BedController):
             raise asyncio.CancelledError
         if len(payload) != 5:
             raise ValueError("Logical command needs five bytes")
-        return format_command(payload, self.sequence.take())
+        return codec.frame(payload, self.sequence.take())
 
     async def _write(
         self, payload: bytes, event: asyncio.Event | None = None, *,
@@ -347,7 +351,7 @@ class LimossRemoteController(BedController):
     ) -> None:
         event = event if event is not None else self._coordinator.cancel_command
         async with self._ble_lock:
-            wait = self._last_write_started + 0.08 - asyncio.get_running_loop().time()
+            wait = self._last_write_started + self._tick - asyncio.get_running_loop().time()
             if wait > 0:
                 await self._sleep(wait, event)
             if event.is_set():
@@ -363,7 +367,7 @@ class LimossRemoteController(BedController):
                 characteristic_handle=char.handle,
                 response=response,
                 repeat_count=1,
-                repeat_delay_ms=80,
+                repeat_delay_ms=round(self._tick * 1000),
                 command_origin="limoss_remote",
                 controller_class=type(self).__name__,
             )
@@ -382,9 +386,11 @@ class LimossRemoteController(BedController):
         self,
         command: bytes,
         repeat_count: int = 1,
-        repeat_delay_ms: int = 80,
+        repeat_delay_ms: int | None = None,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
+        if repeat_delay_ms is None:
+            repeat_delay_ms = round(self._tick * 1000)
         integer(repeat_count, 1, 1000, "Repeat count")
         integer(repeat_delay_ms, 0, 60000, "Repeat delay")
         for index in range(repeat_count):
@@ -544,13 +550,13 @@ class LimossRemoteController(BedController):
         self.forward_raw_notification(sender.uuid, bytes(raw))
         for payload in self._parser.feed(bytes(raw)):
             opcode, parameters = payload[0], payload[1:]
-            if opcode in (0, 1):
-                field = "hardware_version" if opcode == 0 else "software_version"
-                value = version_string(parameters)
+            if opcode in (codec.QUERY_HARDWARE, codec.QUERY_SOFTWARE):
+                field = "hardware_version" if opcode == codec.QUERY_HARDWARE else "software_version"
+                value = codec.version(parameters)
                 self._metadata[field] = value
                 self._coordinator.save_app_state(self)
                 self.forward_controller_state_update(f"limoss_remote_{field}", value)
-            elif opcode == 2:
+            elif opcode == codec.QUERY_CAPABILITIES:
                 self.capabilities = LimossRemoteCapabilities.from_parameters(parameters)
                 self._publish_capabilities()
                 # The information phase persists its result once, when it ends.
@@ -558,16 +564,16 @@ class LimossRemoteController(BedController):
                     self._progress["capabilities"] = asdict(self.capabilities)
                 else:
                     self._coordinator.remember_limoss_remote_capabilities(asdict(self.capabilities))
-            elif opcode == 5:
+            elif opcode == codec.CALIBRATE:
                 self.forward_controller_state_update(
                     "limoss_remote_calibration_result", "reply_received"
                 )
-            elif opcode == 6:
+            elif opcode == codec.SERIAL:
                 value = str(int.from_bytes(parameters, "big", signed=True))
                 self._metadata["serial"] = value
                 self._coordinator.save_app_state(self)
                 self.forward_controller_state_update("limoss_remote_serial", value)
-            elif opcode in (0x10, 0x20, 0x30, 0x40):
+            elif opcode in codec.POSITION_OPCODES:
                 self.forward_controller_state_update(
                     f"limoss_remote_motor_{opcode // 16}_position_raw",
                     int.from_bytes(parameters, "big", signed=True),
@@ -646,10 +652,13 @@ class LimossRemoteController(BedController):
         try:
             deadline = asyncio.get_running_loop().time() + _INFORMATION_TIMEOUT_SECONDS
             await self._request(
-                2, b"\x02\0\0\0\x03", retry_capabilities=True, deadline=deadline
+                codec.QUERY_CAPABILITIES,
+                codec.query(codec.QUERY_CAPABILITIES),
+                retry_capabilities=True,
+                deadline=deadline,
             )
             try:
-                for opcode in (0, 1):
+                for opcode in (codec.QUERY_HARDWARE, codec.QUERY_SOFTWARE):
                     if allow_incomplete_versions:
                         task = asyncio.current_task()
                         if self._coordinator.cancel_command.is_set() or (
@@ -668,10 +677,10 @@ class LimossRemoteController(BedController):
                         # Admit optional phases only if a legal native write can still start.
                         # Once admitted, lane/pacing/ATT failures remain fatal.
                         if max(
-                            asyncio.get_running_loop().time(), self._last_write_started + 0.08
+                            asyncio.get_running_loop().time(), self._last_write_started + self._tick
                         ) >= deadline:
                             break
-                    await self._request(opcode, bytes((opcode, 0, 0, 0, 3)), deadline=deadline)
+                    await self._request(opcode, codec.query(opcode), deadline=deadline)
             except _ReplyWaitTimeout:
                 # The app opens controls on fresh02; version replies are optional metadata.
                 if not allow_incomplete_versions:
@@ -697,8 +706,8 @@ class LimossRemoteController(BedController):
         positions: list[tuple[int, int]] = []
         async with asyncio.timeout(10):
             for motor in range(count):
-                opcode = 0x10 * (motor + 1)
-                raw = await self._request(opcode, bytes((opcode, 0, 0, 0, 0)))
+                query = codec.ask_position(motor + 1)
+                raw = await self._request(query[0], query)
                 positions.append((motor, int.from_bytes(raw, "big", signed=True)))
         self.memories.save(slot, tuple(positions))
         self._coordinator.save_app_state(self)
@@ -712,11 +721,18 @@ class LimossRemoteController(BedController):
         self.forward_controller_state_update("limoss_remote_memory_names", self.memory_slot_names)
 
     async def _release(self, *, calibration: bool = False) -> None:
-        payload = bytes((3, 0, 0, 0, 0)) if calibration else bytes((0xFF, *self.reverse_motors))
+        burst = self.profile.stop
+        if calibration:
+            assert self.profile.calibration is not None
+            assert self.profile.calibration.release is not None
+            burst = self.profile.calibration.release
+        payload = codec.release(burst.opcode, self.reverse_motors)
 
         async def cleanup() -> None:
             error: Exception | None = None
-            packets = tuple(self._construct(payload, asyncio.Event()) for _ in range(5))
+            packets = tuple(
+                self._construct(payload, asyncio.Event()) for _ in range(burst.frames)
+            )
             for packet in packets:
                 try:
                     async with asyncio.timeout(2):
@@ -787,10 +803,10 @@ class LimossRemoteController(BedController):
         if control not in self.held_control_options:
             raise ValueError("Control is not rendered by the current app layout")
         await self._held(
-            (bytes((HELD_COMMANDS[control], *self.reverse_motors)),),
+            (codec.flagged(REMOTE_CHANNELS[control], self.reverse_motors),),
             duration_ms,
-            interval=0.08,
-            initial_delay=0.08,
+            interval=self._tick,
+            initial_delay=self._tick,
         )
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -806,11 +822,9 @@ class LimossRemoteController(BedController):
         count = self.capabilities.effective_motor_count(self.product_selection)
         # The source recalls present rows; retained sparse memories are valid.
         payloads = tuple(
-            bytes((0x11 + motor * 16,)) + value.to_bytes(4, "big", signed=True)
-            for motor, value in memory.positions
-            if motor < count
+            codec.set_position(motor + 1, value) for motor, value in memory.positions if motor < count
         )
-        await self._held(payloads, duration_ms, interval=0.3)
+        await self._held(payloads, duration_ms, interval=self.profile.recall_ms / 1000)
 
     def validate_memory_recall(self, memory_num: int) -> None:
         slot = self._slot(memory_num)
@@ -827,12 +841,19 @@ class LimossRemoteController(BedController):
     async def hold_calibration(self, duration_ms: int, *, confirmed: bool) -> None:
         if confirmed is not True or self.memory_slot_count == 0:
             raise ValueError("Calibration needs explicit confirmation and a memory-capable profile")
+        calibration = self.profile.calibration
+        assert calibration is not None and calibration.refresh_ms is not None
         await self._held(
-            (bytes((5, *self.reverse_motors)),), duration_ms, interval=0.1, calibration=True
+            (codec.flagged(codec.CALIBRATE, self.reverse_motors),),
+            duration_ms,
+            interval=calibration.refresh_ms / 1000,
+            calibration=True,
         )
 
     async def _feature_off(self, opcode: int) -> None:
-        packets = tuple(self._construct(bytes((opcode, 0, 0, 0, 0))) for _ in range(10))
+        packets = tuple(
+            self._construct(codec.body(opcode)) for _ in range(self.profile.feature_off_frames)
+        )
         for packet in packets:
             await self._send(packet)
 
@@ -843,9 +864,9 @@ class LimossRemoteController(BedController):
             self.product_selection, underbed_light, massage, self.reverse_motors, self.theme
         )
         if self.underbed_light and not underbed_light:
-            await self._feature_off(0x71)
+            await self._feature_off(codec.LIGHT_OFF)
         if self.massage and not massage:
-            await self._feature_off(0x66)
+            await self._feature_off(codec.MASSAGE_OFF)
         self.underbed_light, self.massage = underbed_light, massage
         if persist:
             self._coordinator.remember_limoss_remote_features(underbed_light, massage)
@@ -856,9 +877,9 @@ class LimossRemoteController(BedController):
         elif action == "refresh_info":
             await self.refresh_device_info()
         elif action == "light_off" and self.underbed_light:
-            await self._feature_off(0x71)
+            await self._feature_off(codec.LIGHT_OFF)
         elif action == "massage_off" and self.massage:
-            await self._feature_off(0x66)
+            await self._feature_off(codec.MASSAGE_OFF)
         else:
             raise ValueError("Action is unavailable in this profile")
 

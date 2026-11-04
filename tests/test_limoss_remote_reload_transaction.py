@@ -11,8 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss import LimossController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
@@ -49,7 +48,7 @@ async def loaded_runtime(hass, paired):
             trace.append((address, "disconnect"))
 
         async def write(role, packet, *, address=address, client=client, **kwargs):
-            opcode = LimossController._tea_decrypt(packet[1:9])[1]
+            opcode = codec.decrypt(packet[1:9])[1]
             trace.append((address, opcode))
             if opcode in {0, 1, 2}:
                 reply = {
@@ -57,7 +56,7 @@ async def loaded_runtime(hass, paired):
                     0: bytes.fromhex("0001020304"),
                     1: bytes.fromhex("0101020304"),
                 }[opcode]
-                client.start_notify.call_args.args[1](role, bytearray(format_command(reply, 0)))
+                client.start_notify.call_args.args[1](role, bytearray(codec.frame(reply, 0)))
             elif opcode == 0x11 and state["failure"]:
                 entered.set()
                 if state["failure"] == "error":

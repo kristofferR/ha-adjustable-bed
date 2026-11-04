@@ -11,13 +11,14 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const, services
-from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController, build_packet
+from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
 from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
     ControllerActionButton,
     _discovered_memory_slot_name,
     _should_add_button,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from tests.test_fsm_relax import make_controller
@@ -122,7 +123,7 @@ async def _actual_memory_target(hass: HomeAssistant, address: str) -> Adjustable
     coordinator._controller = controller
     await controller.start_notify()
     coordinator.client.start_notify.call_args.args[1](
-        None, bytearray(build_packet(bytes.fromhex("0208000008"), 9))
+        None, bytearray(codec.frame(bytes.fromhex("0208000008"), 9))
     )
     controller.session.slots[8] = {0: -1, 2: -(2**31)}
     return coordinator
@@ -283,7 +284,7 @@ async def test_registered_memory_recall_valid_offline_snapshot_reconnects_before
         client.is_connected = True
         await controller.start_notify()
         client.start_notify.call_args.args[1](
-            None, bytearray(build_packet(bytes.fromhex("0208000008"), 10))
+            None, bytearray(codec.frame(bytes.fromhex("0208000008"), 10))
         )
         return True
 

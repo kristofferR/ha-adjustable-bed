@@ -24,12 +24,14 @@ from custom_components.adjustable_bed.profiles.ff_frame import (
 )
 from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
 from custom_components.adjustable_bed.profiles.keeson import KeesonProfile
+from custom_components.adjustable_bed.profiles.limoss import LimossProfile
 from custom_components.adjustable_bed.profiles.logicdata import LogicdataProfile
 from custom_components.adjustable_bed.profiles.okin_5a import Okin5AProfile
 from custom_components.adjustable_bed.profiles.okin_nframe import OkinNFrameProfile
 from tests.ff_frame_vectors import FROZEN_FRAMES as FF_FRAME_VECTORS
 from tests.jiecang_vectors import FROZEN_FRAMES as JIECANG_VECTORS
 from tests.keeson_vectors import FROZEN_FRAMES as KEESON_VECTORS
+from tests.limoss_vectors import FROZEN_BODIES as LIMOSS_VECTORS
 from tests.logicdata_vectors import FROZEN_FRAMES as LOGICDATA_VECTORS
 from tests.okin_5a_vectors import FROZEN_FRAMES as OKIN_5A_VECTORS
 from tests.okin_nframe_vectors import FROZEN_FRAMES as OKIN_NFRAME_VECTORS
@@ -50,6 +52,7 @@ CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
     BedSenseProfile: FF_FRAME_VECTORS,
     MotionBedProfile: FF_FRAME_VECTORS,
     OkinNFrameProfile: OKIN_NFRAME_VECTORS,
+    LimossProfile: LIMOSS_VECTORS,
 }
 
 # App choices of codec-backed bed types: bed type -> (config key, choices).
@@ -79,7 +82,6 @@ UNMIGRATED: dict[str, str] = {
     "ergo_slim": "#745 K1 Keeson E5/E6",
     "ergomotion_app": "#745 K1 Keeson E5/E6",
     "eshine": "standalone: own wire format",
-    "fsm_relax": "#745 L1 Limoss DD",
     "furnimove": "#745 K1 Keeson E5/E6",
     "glideaway_motion": "#745 K1 Keeson E5/E6",
     "gmmotor": "#745 R1 Richmat 6E, partial",
@@ -92,8 +94,6 @@ UNMIGRATED: dict[str, str] = {
     "leggett_gen2": "standalone: own wire format",
     "leggett_lp_legacy": "standalone: own wire format",
     "leggett_wilinke": "#745 R1 Richmat 6E",
-    "limoss": "#745 L1 Limoss DD",
-    "limoss_remote": "#745 L1 Limoss DD",
     "linak": "standalone: own wire format",
     "logicdata": "standalone: own wire format",
     "logicdata_air_pump": "standalone: own wire format",

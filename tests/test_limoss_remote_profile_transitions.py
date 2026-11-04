@@ -7,8 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.limoss import LimossController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
@@ -76,10 +75,10 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
     client = coordinator.client
 
     def startup(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         payload = {2: "0208120008", 0: "0001020304", 1: "0101020304"}[opcode]
         callback = client.start_notify.call_args.args[1]
-        callback(char, bytearray(format_command(bytes.fromhex(payload), 0)))
+        callback(char, bytearray(codec.frame(bytes.fromhex(payload), 0)))
 
     client.write_gatt_char.side_effect = startup
     await coordinator.async_start_notify()
@@ -91,7 +90,7 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
 
     async def write(char, packet, **kwargs):
         assert coordinator.entry.data == before
-        payloads.append(LimossController._tea_decrypt(packet[1:9])[1:6].hex())
+        payloads.append(codec.decrypt(packet[1:9])[1:6].hex())
         if len(payloads) == 12:
             if failure == "error":
                 raise ConnectionError("OFF failed after partial hardware success")

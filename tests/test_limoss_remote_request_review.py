@@ -9,9 +9,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.limoss import LimossController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.pairing import get_child
@@ -35,10 +34,10 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
 
     # Register the real owner callback; its startup reads get actual replies.
     def startup(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         raw = {2: "0208120008", 0: "0001020304", 1: "0101020304"}[opcode]
         callback = client.start_notify.call_args.args[1]
-        callback(char, bytearray(format_command(bytes.fromhex(raw), 0)))
+        callback(char, bytearray(codec.frame(bytes.fromhex(raw), 0)))
 
     client.write_gatt_char.side_effect = startup
     await controller.start_notify()
@@ -46,9 +45,9 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
     char, callback = client.start_notify.call_args.args
 
     def write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         received.append(opcode)
-        callback(role, bytearray(format_command(bytes((opcode, 0, 0, 0, 7)), 0)))
+        callback(role, bytearray(codec.frame(bytes((opcode, 0, 0, 0, 7)), 0)))
 
     client.write_gatt_char.side_effect = write
     if blocked == "pacing":
@@ -78,7 +77,7 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
     try:
         await asyncio.wait_for(entered.wait(), 1)
         # This valid owner frame arrives before the query can reach ATT.
-        callback(char, bytearray(format_command(bytes.fromhex("10ffffffff"), 0)))
+        callback(char, bytearray(codec.frame(bytes.fromhex("10ffffffff"), 0)))
         assert controller._request_reply is None
         assert get_limoss_remote_session(coordinator.hass, coordinator.address).memories.slots == {}
         client.write_gatt_char.assert_not_awaited()
@@ -146,7 +145,7 @@ async def test_mixed_pair_features_connect_only_receiver_requiring_off(hass):
     left._controller = left._client = None
     left.async_ensure_connected = AsyncMock(side_effect=AssertionError("This side only enables"))
     right_packets = []
-    right.client.write_gatt_char.side_effect = lambda role, packet, **kwargs: right_packets.append(LimossController._tea_decrypt(packet[1:9])[1:6])
+    right.client.write_gatt_char.side_effect = lambda role, packet, **kwargs: right_packets.append(codec.decrypt(packet[1:9])[1:6])
     with patch.object(hass.config_entries, "async_reload", new=AsyncMock(return_value=True)):
         await public_call(hass, pair, "limoss_remote_features", {"underbed_light": True, "massage": False})
         left.async_ensure_connected.assert_not_awaited()

@@ -1430,7 +1430,7 @@ def _add_limoss_remote_schema_fields(
     schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
 ) -> None:
     """Source-local selectors; never select this app using a shared UUID/name."""
-    from .beds.limoss_remote_protocol import THEMES
+    from .profiles.limoss import REMOTE_THEMES
 
     data = current_data or {}
     schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, vol.UNDEFINED))] = (
@@ -1442,7 +1442,7 @@ def _add_limoss_remote_schema_fields(
         if data.get(CONF_LIMOSS_REMOTE_THEME) is not None
         else vol.Optional(CONF_LIMOSS_REMOTE_THEME)
     )
-    schema[marker] = vol.In(THEMES)
+    schema[marker] = vol.In(REMOTE_THEMES)
 
 
 def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
@@ -1512,12 +1512,12 @@ def _add_fsm_relax_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[st
 
 
 def _fsm_relax_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .beds.fsm_relax import FsmRelaxProfile
+    from .beds.fsm_relax import FsmRelaxSetup
     from .fsm_relax_state import validate_names
 
     try:
         r = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
-        FsmRelaxProfile(
+        FsmRelaxSetup(
             data.get(CONF_PRODUCT_TYPE, "chair"),
             data.get(CONF_HAS_LIGHT, False),
             data.get(CONF_HAS_MASSAGE, False),

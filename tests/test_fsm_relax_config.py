@@ -41,9 +41,9 @@ async def test_factory_retains_exact_profile_store_and_legacy_limoss(hass):
     ctrl = await create_controller(c, const.BED_TYPE_FSM_RELAX, None, None)
     assert isinstance(ctrl, FsmRelaxController)
     ctrl.restore_persisted_app_state({"slots": {"8": {"0": -1}}})
-    assert ctrl.profile.layout == "bed"
-    assert ctrl.profile.reversals == (True, False, True, False)
-    assert ctrl.profile.light_enabled and ctrl.profile.massage_enabled
+    assert ctrl.setup.layout == "bed"
+    assert ctrl.setup.reversals == (True, False, True, False)
+    assert ctrl.setup.light_enabled and ctrl.setup.massage_enabled
     assert ctrl.key_count == 6 and ctrl.memory_slot_count == 8
     assert ctrl.session.slots[8] == {0: -1} and ctrl.memory_slot_names[0] == "Sleep"
     assert ctrl.motor_control_specs == () and not ctrl.supports_position_feedback

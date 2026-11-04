@@ -320,8 +320,8 @@ they are not exposed through `hold_control`.
 | [V-MAT Basic](beds/vmatbasic.md) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
 | [OCTO Smart Control](beds/octo.md) | Advertised motor directions and `memory_1` through the discovered memory count | P1 commands repeat every 350 ms inside each bounded operation, which ends with STOP. The 60-second service maximum is a Home Assistant safety bound; the card starts another bounded call only while the user still holds the control. |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
-| [Limoss Remote](beds/limoss-remote.md) | Controls rendered for the receiver's layout | Five-frame release |
-| [FSM Relax](beds/fsm_relax.md) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
+| [Limoss Remote](beds/limoss.md#limoss-remote) | Controls rendered for the receiver's layout | Five-frame release |
+| [FSM Relax](beds/limoss.md#fsm-relax) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
 | [TiMOTION AHF](beds/timotion-ahf.md) | `control_1_up`/`control_1_down` through `control_5_up`/`control_5_down`, `night`, `light`, `chair` | First 100 ms wait is inside the requested bound; a 100 ms wait separates writes, plus BLE write latency. Release sends three neutral STOP writes. This is bounded HA behavior, not Android timing parity or a firmware maximum |
 
 Customatic Clarity, Remedy and Jerome's C use
@@ -468,7 +468,7 @@ The [Motion Bed action index](beds/ff_frame.md#services-2) covers all 12 typed a
 
 ## Limoss Remote app
 
-The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_remote_rename_memory`, `limoss_remote_calibrate` and `limoss_remote_features`, and supports [`hold_control`](#hold_control) and `goto_preset` with an optional recall `duration`. Holds accept 0.1–60 seconds. Calibration requires `confirmed: true`. Memory actions accept slots 1–8 within the live capacity; `save_preset` and `goto_preset` expose the same local slots. Rename permits an empty name. All selected targets are validated before writes; paired child targets and `side` retain their physical-target settings.
+The explicit [Limoss Remote app profile](beds/limoss.md#limoss-remote) adds `limoss_remote_rename_memory`, `limoss_remote_calibrate` and `limoss_remote_features`, and supports [`hold_control`](#hold_control) and `goto_preset` with an optional recall `duration`. Holds accept 0.1–60 seconds. Calibration requires `confirmed: true`. Memory actions accept slots 1–8 within the live capacity; `save_preset` and `goto_preset` expose the same local slots. Rename permits an empty name. All selected targets are validated before writes; paired child targets and `side` retain their physical-target settings.
 
 ### FSM Relax app actions
 
@@ -480,7 +480,7 @@ write attempt.
 Native Save/Memory buttons and generic memory actions expose up to eight slots
 subject to the reported count. All actions use the serialized coordinator path.
 Duration is local gesture policy and replies cannot prove physical arrival.
-See [FSM Relax](beds/fsm_relax.md) for profile gates and reply ambiguity.
+See [FSM Relax](beds/limoss.md#fsm-relax) for profile gates and reply ambiguity.
 
 ### `starcode_move_lifts`
 

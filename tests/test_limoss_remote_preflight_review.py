@@ -11,8 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss import LimossController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.limoss_remote_state import (
@@ -34,9 +33,9 @@ async def prepare_live(coordinator):
     client = coordinator.client
 
     def startup(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         reply = {2: "0208120008", 0: "0001020304", 1: "0101020304"}[opcode]
-        client.start_notify.call_args.args[1](char, bytearray(format_command(bytes.fromhex(reply), 0)))
+        client.start_notify.call_args.args[1](char, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
     client.write_gatt_char.side_effect = startup
     await coordinator.async_start_notify()
@@ -57,7 +56,7 @@ async def test_options_off_must_finish_before_persist_even_after_scheduler_repla
     opcodes = []
 
     async def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         opcodes.append(opcode)
         if interrupt and opcode == 0x71:
             entered.set()
@@ -128,7 +127,7 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
             trace.append((side, "disconnect"))
 
         def write(role, packet, *, side=side, client=client, **kwargs):
-            opcode = LimossController._tea_decrypt(packet[1:9])[1]
+            opcode = codec.decrypt(packet[1:9])[1]
             trace.append((side, opcode))
             if opcode in {0, 1, 2}:
                 if side == const.SIDE_RIGHT and change == "failure" and opcode == 2:
@@ -142,7 +141,7 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
                 if side == const.SIDE_RIGHT and change == "layout":
                     caps = "0202120008"
                 reply = {2: caps, 0: "0001020304", 1: "0101020304"}[opcode]
-                client.start_notify.call_args.args[1](role, bytearray(format_command(bytes.fromhex(reply), 0)))
+                client.start_notify.call_args.args[1](role, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
         client.disconnect = AsyncMock(side_effect=disconnect)
         client.write_gatt_char.side_effect = write
@@ -231,7 +230,7 @@ async def test_feature_service_interrupted_off_never_commits_selected_flags(hass
     opcodes = []
 
     async def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         opcodes.append(opcode)
         if opcode == 0x71:
             entered.set()
