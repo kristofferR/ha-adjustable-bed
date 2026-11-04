@@ -112,17 +112,39 @@ test("tapping a tracking saved position recalls it by id", async () => {
 
 test("lower to flat moves first, then the user confirms flat", async () => {
   const { card, ctx, calls } = fixture("unknown");
-  card._estimateDialog = { kind: "reference", ctx, choice: "lower", lowered: false };
+  card._estimateDialog = { kind: "reference", ctx, choice: "lower", phase: "choose" };
   let primary = clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!;
   primary();
   expect(calls.map((c) => c.service)).toEqual(["lower_to_flat"]);
-  expect(card._estimateDialog?.lowered).toBe(true);
+  // Confirming flat waits for the lowering to finish.
+  expect(card._estimateDialog?.phase).toBe("lowering");
+  clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
+  expect(calls.map((c) => c.service)).toEqual(["lower_to_flat"]);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(card._estimateDialog?.phase).toBe("lowered");
   primary = clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!;
   primary();
   expect(calls.at(-1)).toEqual({
     service: "set_position_reference", data: { device_id: "bed", motors: ["back", "legs"] },
   });
   expect(card._estimateDialog).toBeUndefined();
+});
+
+test("closing the dialog while lowering stops the bed", () => {
+  const { card, ctx, calls } = fixture("unknown");
+  card._estimateDialog = { kind: "reference", ctx, choice: "lower", phase: "lowering" };
+  (card as unknown as { _closeEstimateDialog(): void })._closeEstimateDialog();
+  expect(calls).toEqual([{ service: "stop_all", data: { device_id: "bed" } }]);
+  expect(card._estimateDialog).toBeUndefined();
+});
+
+test("a failed lowering never offers to confirm flat", async () => {
+  const { card, ctx } = fixture("unknown");
+  card.hass.callService = async () => { throw new Error("not connected"); };
+  card._estimateDialog = { kind: "reference", ctx, choice: "lower", phase: "choose" };
+  clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(card._estimateDialog?.phase).toBe("choose");
 });
 
 test("saving names the current position and keeps the button choice", () => {

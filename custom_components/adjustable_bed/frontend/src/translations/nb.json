@@ -127,7 +127,7 @@
   "estimate.recalled": "Flyttet til {name} (anslått)",
   "estimate.ref_title": "Sett referanse",
   "estimate.ref_text": "Velg hvordan du får en kjent posisjon. Sengen flytter seg aldri av seg selv for å finne den igjen.",
-  "estimate.ref_lowering": "Sengen senkes lenger enn hele bevegelsestiden. Bekreft når den har stoppet og ligger helt flatt.",
+  "estimate.ref_lowering": "Senkingen er ferdig. Sjekk at sengen ligger helt flatt, og bekreft.",
   "estimate.ref_flat": "Sengen er flat nå",
   "estimate.ref_flat_detail": "{motors} er helt nede. Setter dem til 0 %.",
   "estimate.ref_lower": "Senk til flat, så bekrefter jeg",
@@ -147,5 +147,6 @@
   "estimate.now": "Nå",
   "estimate.update_blocked": "«Oppdater til nåværende» krever at alle sidene den dekker er bekreftet. Sett en referanse først.",
   "estimate.delete": "Slett",
-  "estimate.update": "Oppdater til nåværende"
+  "estimate.update": "Oppdater til nåværende",
+  "estimate.ref_lowering_running": "Sengen senkes lenger enn hele bevegelsestiden. Vent til den har stoppet, eller trykk Stopp."
 }

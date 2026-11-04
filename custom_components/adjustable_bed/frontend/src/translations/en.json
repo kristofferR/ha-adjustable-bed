@@ -127,7 +127,7 @@
   "estimate.recalled": "Moved to {name} (estimated)",
   "estimate.ref_title": "Set reference",
   "estimate.ref_text": "Choose how to get a known position. The bed never moves on its own to recover.",
-  "estimate.ref_lowering": "The bed is lowering past its full travel time. When it has stopped and is completely flat, confirm.",
+  "estimate.ref_lowering": "The lowering has finished. Check that the bed is completely flat, then confirm.",
   "estimate.ref_flat": "The bed is flat now",
   "estimate.ref_flat_detail": "{motors} are fully down. Sets them to 0%.",
   "estimate.ref_lower": "Lower to flat, then I confirm",
@@ -147,5 +147,6 @@
   "estimate.now": "Now",
   "estimate.update_blocked": "\"Update to current\" needs every side it covers confirmed. Set a reference first.",
   "estimate.delete": "Delete",
-  "estimate.update": "Update to current"
+  "estimate.update": "Update to current",
+  "estimate.ref_lowering_running": "The bed is lowering past its full travel time. Wait until it has stopped, or press Stop."
 }

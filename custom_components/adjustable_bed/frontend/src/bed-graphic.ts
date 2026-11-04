@@ -22,6 +22,8 @@ export interface DualBedGraphicSide {
   upper: BedGraphicPanel;
   lower: BedGraphicPanel;
   moving: boolean;
+  // A travel-time estimate is drawn dashed and translucent, never like feedback.
+  estimated?: boolean;
 }
 
 export interface DualBedGraphicOptions {
@@ -107,9 +109,10 @@ export function renderDualBedGraphic(
     upper: number,
     lower: number,
     moving: boolean,
+    estimated = false,
   ): TemplateResult => svg`
     <g
-      class="dual-bed-side dual-bed-side-${name} ${moving ? "is-moving" : ""}"
+      class="dual-bed-side dual-bed-side-${name} ${moving ? "is-moving" : ""} ${estimated ? "is-estimated" : ""}"
       fill=${`url(#abDual${name === "left" ? "Left" : "Right"})`}
     >
       <g
@@ -159,12 +162,14 @@ export function renderDualBedGraphic(
         rightUpper,
         rightLower,
         opts.right.moving,
+        opts.right.estimated,
       )}
       ${side(
         "left",
         leftUpper,
         leftLower,
         opts.left.moving,
+        opts.left.estimated,
       )}
     </svg>
   `;

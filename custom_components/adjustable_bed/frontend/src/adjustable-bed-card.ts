@@ -87,7 +87,8 @@ interface EstimateContext {
 }
 
 type EstimateDialog =
-  | { kind: "reference"; ctx: EstimateContext; choice: string; lowered: boolean }
+  // "lowering" only while lower_to_flat runs; "lowered" once it succeeded.
+  | { kind: "reference"; ctx: EstimateContext; choice: string; phase: "choose" | "lowering" | "lowered" }
   | { kind: "save"; ctx: EstimateContext; name: string; button: boolean }
   | { kind: "edit"; ctx: EstimateContext; position: SavedPosition; name: string; button: boolean };
 
@@ -1588,7 +1589,10 @@ export class AdjustableBedCard extends LitElement {
 
   private _estimateValues(estimates: MotorEstimate[]): string {
     return estimates
-      .map((e) => `${this._motorName({ key: e.motor })} ${Math.round(e.percent ?? 0)}%`)
+      .map((e) => `${this._motorName({ key: e.motor })} ${estimateReadout(
+        { ...e, state: e.percent === undefined ? "unknown" : "tracking" },
+        (k, p) => this._t(k, p),
+      )}`)
       .join(", ");
   }
 
@@ -1704,7 +1708,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _openReference(ctx: EstimateContext): void {
-    this._estimateDialog = { kind: "reference", ctx, choice: "flat", lowered: false };
+    this._estimateDialog = { kind: "reference", ctx, choice: "flat", phase: "choose" };
   }
 
   private _openEdit(ctx: EstimateContext, position: SavedPosition): void {
@@ -1720,8 +1724,15 @@ export class AdjustableBedCard extends LitElement {
   };
 
   private _closeEstimateDialog = (): void => {
+    const dialog = this._estimateDialog;
+    // Closing never leaves a lowering running: the dialog covers the Stop controls.
+    if (dialog?.kind === "reference" && dialog.phase === "lowering") this._stopEstimate(dialog.ctx);
     this._estimateDialog = undefined;
   };
+
+  private _stopEstimate(ctx: EstimateContext): void {
+    void this._estimateService("stop_all", ctx).catch(() => undefined);
+  }
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
@@ -1767,22 +1778,35 @@ export class AdjustableBedCard extends LitElement {
         detail: this._t("estimate.ref_only_detail"),
       })) : []),
     ];
-    const lowering = dialog.choice === "lower" && !dialog.lowered;
+    const startLowering = dialog.choice === "lower" && dialog.phase === "choose";
     const selected = dialog.choice.startsWith("only:") ? [dialog.choice.slice(5)] : motors;
     const confirm = (): void => {
-      if (lowering) {
-        this._estimateDialog = { ...dialog, lowered: true };
-        void this._estimateService("lower_to_flat", dialog.ctx).catch(() => undefined);
+      if (dialog.phase === "lowering") return;
+      if (startLowering) {
+        const lowering = { ...dialog, phase: "lowering" as const };
+        this._estimateDialog = lowering;
+        // Confirming flat is offered only once the lowering has finished.
+        void this._estimateService("lower_to_flat", dialog.ctx).then(
+          () => {
+            if (this._estimateDialog === lowering) this._estimateDialog = { ...dialog, phase: "lowered" };
+          },
+          () => {
+            if (this._estimateDialog === lowering) this._estimateDialog = { ...dialog, phase: "choose" };
+          },
+        );
         return;
       }
       void this._estimateService("set_position_reference", dialog.ctx, { motors: selected })
         .catch(() => undefined);
       this._estimateDialog = undefined;
     };
+    const text = dialog.phase === "lowering"
+      ? "estimate.ref_lowering_running"
+      : dialog.phase === "lowered" ? "estimate.ref_lowering" : "estimate.ref_text";
     return html`
       <h2>${this._t("estimate.ref_title")}</h2>
-      <p class="dialog-text">${dialog.lowered ? this._t("estimate.ref_lowering") : this._t("estimate.ref_text")}</p>
-      ${dialog.lowered ? nothing : html`<div class="dialog-choices" role="radiogroup">
+      <p class="dialog-text">${this._t(text)}</p>
+      ${dialog.phase !== "choose" ? nothing : html`<div class="dialog-choices" role="radiogroup">
         ${choices.map((choice) => html`<label class="dialog-choice">
           <input type="radio" name="reference" .checked=${dialog.choice === choice.value}
             @change=${() => { this._estimateDialog = { ...dialog, choice: choice.value }; }} />
@@ -1790,9 +1814,15 @@ export class AdjustableBedCard extends LitElement {
         </label>`)}
       </div>`}
       <div class="dialog-actions">
+        ${dialog.phase === "lowering"
+          ? html`<button class="dialog-btn danger" @click=${() => {
+              this._stopEstimate(dialog.ctx);
+              this._estimateDialog = { ...dialog, phase: "choose" };
+            }}>${this._t("action.stop")}</button>`
+          : nothing}
         <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
-        <button class="dialog-btn primary" @click=${confirm}>
-          ${this._t(lowering ? "estimate.ref_lower_start" : "estimate.ref_confirm")}</button>
+        <button class="dialog-btn primary" ?disabled=${dialog.phase === "lowering"} @click=${confirm}>
+          ${this._t(startLowering ? "estimate.ref_lower_start" : "estimate.ref_confirm")}</button>
       </div>`;
   }
 
@@ -2487,6 +2517,12 @@ export class AdjustableBedCard extends LitElement {
     }
     .bed-graphic.is-moving {
       opacity: 0.95;
+    }
+    .dual-bed-side.is-estimated .dual-bed-surface {
+      fill-opacity: 0.45;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-dasharray: 5 4;
     }
     .bed-graphic.is-estimated .bed-surface {
       fill-opacity: 0.45;
