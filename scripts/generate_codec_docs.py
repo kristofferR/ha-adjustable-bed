@@ -792,6 +792,25 @@ def render_okin_nframe_okimat() -> str:
             if isinstance(save := OKIN_UUID_REMOTES[code].memory_save, OkinUuidComplexCommand)
         }
     )
+    flats = _okin_remote_words("flat")
+    flat_table = _table(
+        ("Flat word", "Codes"),
+        (
+            (f"`0x{word:08X}`", ", ".join(sorted(users, key=int)))
+            for word, users in sorted(flats.items())
+        ),
+    )
+    slots: dict[int, list[str]] = {}
+    for code in codes:
+        remote = OKIN_UUID_REMOTES[code]
+        keys = (remote.memory_1, remote.memory_2, remote.memory_3, remote.memory_4)
+        top = max((slot for slot, key in enumerate(keys, 1) if key is not None), default=0)
+        if top:
+            slots.setdefault(top, []).append(code)
+    slot_table = _table(
+        ("Memory slots", "Codes"),
+        ((str(top), ", ".join(sorted(users, key=int))) for top, users in sorted(slots.items())),
+    )
     return _block(
         f"{len(codes)} selectable handset codes. Each row counts the codes that define the "
         "key and lists every command word they use for it.",
@@ -799,6 +818,10 @@ def render_okin_nframe_okimat() -> str:
         "Handset memory-save holds: "
         + ", ".join(f"{count} × {wait} ms" for count, wait in timed)
         + ". Other handsets use the profile's default memory save.",
+        "Flat words per handset:",
+        flat_table,
+        "Memory slots per handset (the highest slot each code defines):",
+        slot_table,
     )
 
 
