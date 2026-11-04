@@ -270,6 +270,10 @@ class _MergedStream:
                             self.retire(member, CommandOutcome.EXPIRED)
                     if not self.ending:
                         break
+                    if not self.members:
+                        # Close before yielding to the cleanup task, so a ready
+                        # newcomer cannot join a stream that is ending.
+                        self.closing = True
                     await _settled(self._clean_up(driver))
                 if not self.members or context.cancel_event.is_set():
                     break

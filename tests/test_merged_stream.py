@@ -428,3 +428,24 @@ async def test_members_ending_back_to_back_close_the_stream() -> None:
     assert not head.done()
     assert await asyncio.wait_for(head, 1) is CommandOutcome.EXPIRED
     assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
+
+
+async def test_newcomer_ready_as_the_last_member_expires_waits_for_release() -> None:
+    scheduler = DeviceCommandScheduler("ready-newcomer")
+    driver = FakeDriver()
+    held = HoldLease(owner="card", generation=1, action="up", duration_s=0.01)
+    newcomer: list[asyncio.Task[CommandOutcome | None]] = []
+
+    async def slow_connect(body: Callable[[StreamDriver], Awaitable[None]]) -> None:
+        await asyncio.sleep(0.03)  # back's lease runs out while connecting
+        # A newcomer becomes ready just before the streamer's first pass.
+        newcomer.append(join(scheduler, driver, member("head", seconds=0.02)))
+        await body(driver)
+
+    back = asyncio.create_task(
+        scheduler.execute_stream_member(member("back", lease=held), CONCURRENT, slow_connect)
+    )
+    assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
+    assert await asyncio.wait_for(newcomer[0], 1) is CommandOutcome.EXPIRED
+    assert ("end", "back:up") in driver.events
+    assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
