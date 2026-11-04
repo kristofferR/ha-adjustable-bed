@@ -5,7 +5,7 @@ bed type to its controller, helpers, routes, config keys and frozen APK report,
 then groups bed types by wire format **proven by encoding**. Findings feed #744
 (Jiecang pilot), #745 (remaining families), #746 (process) and #747 (docs).
 
-State described: `main` at `08c7e8b7` (`v5` branch point), before the #744 pilot.
+State described: `v5` at `bf0ccd65`, before the #744 pilot.
 The pilot consolidates the Jiecang modules listed below into `codec/jiecang.py`
 and `profiles/jiecang.py`; this document describes the pre-pilot layout.
 
@@ -19,19 +19,22 @@ guard test (see [How the proof was produced](#how-the-proof-was-produced)).
 | Supported bed types (`SUPPORTED_BED_TYPES`) | 110 |
 | Modules in `beds/` | 131 files |
 | Capture scenarios (bed types + variant and app-profile routes) | 250 |
-| Scenarios with captured commands | 223 |
-| Scenarios recorded as coverage gaps | 27 (3 still pin recorded writes) |
-| Write runs in the committed snapshot | 8,238 |
+| Commands driven (all scenarios, connect included) | 11,993 |
+| Scenarios with at least one successful command | 236 |
+| Scenarios with a coverage gap (a declared command fails, or the connect hooks fail) | 53 |
+| Scenarios where nothing succeeds | 14 |
+| Event runs in the committed snapshot | 15,110 (14,761 writes, 200 subscriptions, 148 reads, 1 unsubscribe) |
 
-Seven wire formats cover 70 of the 110 bed types (71 counting the partial Richmat
-6E frames of GM Control), including LOGICDATA MOTIONrelax/Sleep Smart in the
-Jiecang family and the Richmat MH apps in the Richmat family. The remaining bed
+Seven wire formats cover 70 of the 110 bed types (73 counting the partial Richmat
+6E frames of GM Control and the Okin `05 02` motion frames of Starcode M1X12 and
+M5X5), including LOGICDATA MOTIONrelax/Sleep Smart in the Jiecang family and the
+Richmat MH apps in the Richmat family. The remaining bed
 types are distinct protocols, sensors/remotes, or coverage gaps. See the next section.
 
 ## Wire families (proven by encoding)
 
 A family is a framing rule that holds, byte for byte, for the **command writes**
-of every member: movement, STOP, preset, memory, light and massage frames. Writes
+of its members: movement, STOP, preset, memory, light and massage frames. Writes
 made while connecting (`connect` entries: handshakes, clock sync, configuration,
 queries) follow their own encodings and are counted separately. Where a rule has
 exceptions among command writes they are listed below the table. "Relation"
@@ -44,16 +47,20 @@ classifies how members relate once framed alike:
 
 | Family | Frame rule | Command writes matching | Connect writes matching | Bed types | Relation |
 | --- | --- | ---: | ---: | ---: | --- |
-| **J1 Jiecang F1** | `F1 F1 op len payload sum8(op..payload) 7E` | 1055 / 1055 | 151 / 151 | 4 (+ 3 more app profiles) | Same framing, different command sets and payloads, per profile |
-| **K1 Keeson E5/E6** | `E5 FE ...` (8 bytes) or `E6 FE ...` (8 or 9 bytes), last byte `~sum8(all previous)` | 1751 / 1751 | 1 / 18 | 23 | Same framing, different command sets; core classes below |
-| **O1 Okin N-frame** | `N 02 <N-byte command word>`, so length is `N+2` | 2026 / 2056 | 3 / 42 | 22 | Same framing, command word width 32/40/48/64/96 bit (48 bit only on `adjustamattress:P4_L6`); different command sets |
-| **O2 Okin 5A** | `5A .. .. .. .. .. A5`, 7 bytes | 273 / 279 | 0 / 2 | 6 | Core classes below: `nectar` = `okin_7byte` = `box25_star`, `mattressfirm` = `okin_nordic`, `okin_cb35` differs; both `star_elevate` scenarios capture STOP only |
-| **R1 Richmat 6E** | `6E xx xx xx sum8`, 5 bytes | 532 / 534 | 87 / 109 | 9 (+ gmmotor partial) | Same framing, per-model byte tables |
-| **L1 Limoss DD** | `DD ...`, 10 bytes, last byte `sum8(previous)` | 62 / 62 | 5 / 5 | 3 (`limoss_remote` partial: handshake and STOP frames only) | Same framing, different command sets |
-| **S1 FFFF frame** | 11 bytes starting `FF FF FF FF` | 308 / 308 | 64 / 66 | 3 | Same framing; `head_up`, `back_up`, `legs_up` and `stop_all` coincide between `bedsense` and `solace`, other axes and routes differ (core classes below); trailer algorithm not identified here |
+| **J1 Jiecang F1** | `F1 F1 op len payload sum8(op..payload) 7E` | 1544 / 1569 | 151 / 151 | 4 (+ 3 more app profiles) | Same framing, different command sets and payloads, per profile |
+| **K1 Keeson E5/E6** | `E5 FE ...` (8 bytes) or `E6 FE ...` (8 or 9 bytes), last byte `~sum8(all previous)` | 2922 / 2992 | 1 / 18 | 23 | Same framing, different command sets; core classes below |
+| **O1 Okin N-frame** | `N 02 <N-byte command word>`, so length is `N+2` | 3711 / 3921 | 3 / 44 | 22 (+ Starcode M1X12 and M5X5 partial) | Same framing, command word width 32/40/48/64/96 bit (48 bit only on `adjustamattress:P4_L6`); different command sets |
+| **O2 Okin 5A** | `5A .. .. .. .. .. A5`, 7 bytes | 395 / 415 | 0 / 3 | 6 | Core classes below: `nectar` = `okin_7byte` = `box25_star`, `mattressfirm` = `okin_nordic`, `okin_cb35` differs, `star_elevate` = its M1X12 route |
+| **R1 Richmat 6E** | `6E xx xx xx sum8`, 5 bytes | 840 / 875 | 87 / 109 | 9 (+ gmmotor partial) | Same framing, per-model byte tables |
+| **L1 Limoss DD** | `DD ...`, 10 bytes, last byte `sum8(previous)` | 75 / 75 | 17 / 17 | 3 (`limoss_remote` partial: handshake and STOP frames only) | Same framing, different command sets |
+| **S1 FFFF frame** | 11 bytes starting `FF FF FF FF` | 876 / 877 | 57 / 58 | 3 | Same framing; `head_up`, `back_up`, `legs_up` and `stop_all` coincide between `bedsense` and `solace`, other axes and routes differ (core classes below); trailer algorithm not identified here |
 
-Counts are write runs across all captured scenarios of the family (bed types and
-routes). "Bed types" is the number of `SUPPORTED_BED_TYPES` entries in the family.
+Counts are write runs, in the scenarios (bed types and routes) whose command
+writes mostly satisfy the family rule; a route of another family (for example
+`keeson:json`) is not counted. They cover the whole command plan, so they include
+settings, alarm, clock, rename and query frames that the movement frames' rule was
+never meant to describe. "Bed types" is the number of `SUPPORTED_BED_TYPES`
+entries in the family.
 The exact predicates used for counting:
 
 - J1: starts `F1 F1`, ends `7E`, byte 3 equals `len - 6`, byte `-2` equals
@@ -65,16 +72,28 @@ The exact predicates used for counting:
 - L1: starts `DD`, length 10, last byte equals `sum8(previous)`.
 - S1: starts `FF FF FF FF`, length 11 (trailer not tested).
 
-Command writes that do **not** satisfy their family rule (all from the snapshot):
+Command writes that do **not** satisfy their family rule (all from the snapshot).
+Most are not motion frames but settings, clock, alarm, rename and query frames that
+the wider command plan now reaches:
 
 | Family | Bed type | Frames outside the rule |
 | --- | --- | --- |
+| J1 | `jiecang_app`, `logicdata_app` | `01 FC 07 ...` and the ASCII name (`rename_device`) |
+| K1 | cluster033 apps (`ergo_slim`, `ergomotion_app`, `qplus_app`, `row_control`, `tempur_au`, `tempur_curve`, `omazz_adjusto_iii`, `serta_mp_remote`), `keeson` | `E7 80 ...` 10-byte clock sync, `E1 80 ...` 4-byte alarm dismiss, `EF 02 ...` 18-byte rename |
+| K1 | `adjustamattress`, `glideaway_motion`, `bf`, `comfort_enhancements` | `E2 80`/`E2 FE` alarm queries and clock, `E7 80` clock sync, `ED 80` 16-byte alarm commit |
+| K1 | `furnimove` | `00 B0` position request, ASCII rename |
+| K1 | `simmons` (Okin route) | `05 02` 7-byte frames from the inclined buttons, `E1 80`/`E7 80` alarm and clock |
 | O1 | `okin_dot` | `61 66 66 69 72 6D` (ASCII name write) |
-| O1 | `sleepys_box25` | `04 E0 01 00 00 00`, `04 E0 01 01 00 00` (6-byte `04 E0` frames) |
-| O1 | `keeson` (a route), `starcode_abm5_4` | `00 B0` (2-byte request) |
-| R1 | `richmat` | `04 09 04 01 ...` 9-byte frames (remote-code writes) |
+| O1 | `sleepys_box25` | `04 E0 ...` 6-byte light and massage frames, `03 F0 ...` position targets, `00 D0` position request |
+| O1 | `keeson:ksbt`, `adjustamattress`, `doublesleep`, `simmons`, `starcode_*` | `00 B0`/`00 C0`/`00 D0` 2-byte requests, `07 04`/`07 05`/`08 05` setting frames, short DoubleSleep `01 B1`/`01 B2`/`02 0B` frames |
+| O1 | `starcode_m1x12`, `starcode_m5x5`, `starcode_abm5_4` | `04 E0` massage, light and timer frames; M1X12 also sends `5A 01 ...` (O2-shaped) massage holds |
+| O1 | `adjustable_lumbar` | `02 04` massage check |
+| R1 | `richmat` | `04 09`/`04 0A`/`04 0B` remote-code frames (lights, light timer, colour) |
+| R1 | `richmat_best_mattress` | `6E 0C ...` 10-byte colour frame |
 | O2 | `okin_nordic`, `mattressfirm` | `09 05 0A 23 05 00 00`, `5A 0B 00 A5` |
-| O2 | `okin_cb35`, `star_elevate` | `5A 0B 00 A5` (4 bytes) |
+| O2 | `okin_cb35` | `5A 0B 00 A5` (4 bytes) |
+| O2 | `sleepys_box25` (star route) | `5A E0 ...` 8-byte light and massage frames, `5A B0` request |
+| S1 | `motion_bed` | one 10-byte `FF FF FF FF 02 ...` calibration frame |
 
 Connect-time writes outside the rules include the E7 80 01 7E clock/config frame
 and `E1 80 03 9B` (K1 apps), `6E 0C ...`/`6E 0D ...` variable-length frames
@@ -87,13 +106,13 @@ family needs a place for them (setup frames), not only the command frame.
 Everything not listed above has its own framing, is a sensor or remote, or is a
 coverage gap (see [Coverage gaps](#coverage-gaps)):
 `linak`, `octo`, `reverie`, `reverie_nightstand`, `vibradorm`, `vibradorm_app`,
-`vmatbasic`, `jensen` and `svane:jensen_linon`, `sleep_number` and `_mcr`,
+`vmatbasic`, `jensen` (its motor frames equal `svane:svane_remote_jmc`),
+`svane:jensen_linon`, `sleep_number` and `_mcr`,
 `kaidi` and `isleep`, `motosleep`, `suta`, `sleepstar`, `timotion_ahf`,
 `remacro`, `logicdata` (legacy), `logicdata_air_pump`, `eshine`, `casper_base`,
 `okin_ore`, `sleepys_box24`, `leggett_gen2`, `malouf_new_okin` and `malouf_app`
 (Okin-like header with one extra byte, so the O1 length rule fails), `svane`,
-`sleeptracker`, `sleepys_elite_app`, `starcode_m1x12`, `starcode_m5x5`,
-`leggett_lp_legacy`, and the Casper and GM Control sleep sensors/remote.
+`sleeptracker`, `sleepys_elite_app`, `leggett_lp_legacy`, and the Casper and GM Control sleep sensors/remote.
 
 ### Core classes inside each family
 
@@ -112,12 +131,12 @@ the axes it has. The digits after a class name count the core commands.
 | K1 | **D, ORE bases** (11) | `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` (5) |
 | K1 | smaller classes | `scott_living` = `rondure:side_a` = `sbi:side_a`; `rondure:side_b` = `sbi:side_b`; `keeson:okin` = `okin_ffe`; `keeson:okin_seating` = `keeson:simon_li`; `keeson:heal_every_night` = `keeson:sino`; singles `bf`, `cherish`, `furnimove`, `glideaway_motion` |
 | O1 | **32-bit `04 02`** (13) | `okimat` = `okin_uuid`, `dewertokin` = `okin_handle`, `customatic_clarity`/`jeromes`/`remedy` (7) |
-| O1 | **40-bit `05 02`** (13) | `okin_cb24` (base and 6 routes), `doublesleep` (+ `p1`), `simmons` (+ `simmons_smartbed`, `inclined`, `inclined_smartbed`), `keeson:ksbt_cr`, `sleepys_box25` (+ `box25_legacy`) (16) |
+| O1 | **40-bit `05 02`** (13) | `okin_cb24` (base and 6 routes), `doublesleep` (+ `p1`), `simmons` (+ `simmons_smartbed`, `inclined`, `inclined_smartbed`), `keeson:ksbt_cr`, `sleepys_box25` (+ `box25_legacy`), `starcode_m1x12`, `starcode_m5x5` (18) |
 | O1 | **96-bit `0C 02`** (13) | `okin_cst` (base and 10 routes), `serenity`, `tranquil`, `customatic_zseries` (14) |
 | O1 | **64-bit `08 02`** (13) | `okin_64bit`, `adjustable_lumbar` (6) |
 | O1 | 48-bit `06 02` | `adjustamattress:P4_L6` (13), the only 48-bit frame width captured |
 | O1 | smaller classes | `leggett_okin` = `leggett_platt` (3 incl. route `okin`); `okin_dot` (+ `97450`, `97544`; `90167`/`91983`/`93558` form a 9-command class; `98035` its own); singles `starcode_abm5_4`, `okin_rf_eco_bt`, `keeson:ksbt`, `keeson:adjustable_lite` |
-| O2 | 5A (13) | `nectar` = `okin_7byte` = `sleepys_box25:box25_star` (3); `mattressfirm` = `okin_nordic` (2); single `okin_cb35`. `star_elevate` and its M1X12 route capture only 5 STOP commands (their movement calls error): partial coverage |
+| O2 | 5A (13) | `nectar` = `okin_7byte` = `sleepys_box25:box25_star` (3); `mattressfirm` = `okin_nordic` (2); `star_elevate` = `star_elevate:adjustable_comfort_m1x12` (2); single `okin_cb35` |
 | R1 | 6E (13) | `hjbed`, `leggett_wilinke` = `leggett_platt:mlrm`, `richmat:wilinke`, five Richmat MH apps by model (14); `richmat` = `bedtech` (2); `gmmotor` (5 frames) |
 | L1 | DD | `limoss` (13 commands), `fsm_relax` (5), each its own class |
 | S1 | FFFF | `bedsense` (5 layouts, 11 commands), `bedsense_1`/`7`/`9` (9), `bedsense_6`/`8` (7), `solace`, `solace:woosa`, `motion_bed` (STOP only): six classes |
@@ -152,14 +171,14 @@ Cross-family notes:
 | **Comfort Motion** | bed type `comfort_motion`, `JiecangController` (`beds/jiecang.py`) | `jiecang_app` with profile `comfort_motion`, `ComfortMotionController` (`beds/comfort_motion.py`) | Motion, preset and memory frames **identical** on the shared commands; the sets differ (route A also covers massage start/stop and 3 memory slots). Different: pulse (25 x 50 ms vs 10 x 100 ms), memory slots (3 vs 2), a connect-time setup schedule and name/notify roles only in route B, two massage encodings |
 | **Jiecang `jiecang` bed type** | legacy `jiecang` (README: Glideaway, Dream Motion, LOGICDATA) | `jiecang_app` DreamAsk/Dreamotion/DreamHD profiles | Same F1 frame, different payload width for memory (`01` vs `00 00`), different pulse and release schedule |
 | **LOGICDATA MOTIONrelax / Sleep Smart** | `jiecang` (its FE60/FE61 "Lierda3" write-characteristic branch) | `logicdata_app` (`logicdata_app_protocol.py`, T1/T2/T3 equal Jiecang G1/G2/G3) | Same F1 frames: all 9 captured `logicdata_app` scenarios satisfy the F1 rule. P1 uses the legacy `01` payload (memory recall equals the legacy route); P2 uses `00 00` for every command, which no Jiecang profile does |
-| **JMC400 / Jensen** | `jensen` (`JensenController`) | `svane` variant `svane_remote_jmc` | Not comparable yet: the `svane` routes are a coverage gap; both are named in the README |
+| **JMC400 / Jensen** | `jensen` (`JensenController`) | `svane` variant `svane_remote_jmc` (`SvaneController`) | Same motor and STOP frames on the `1111` characteristic; different pulse (4 x 300 ms against 10 x 100 ms), connect sequence and memory handling (Jensen PIN and saved slots, Svane raw position reads) |
 | **QMS / Sealy Motion** | `solace` | `motion_bed` | Both emit the `FF FF FF FF` STOP frame; `motion_bed` adds state and air/thermal controls |
 | **Okin SmartBed** | `okin_cb24` variants | `simmons:simmons_smartbed`, `doublesleep`, `starcode_abm5_4` | Shared 40-bit `05 02` framing and motor masks for `okin_cb24`, `simmons`, `doublesleep`; memory and preset mappings differ per profile (`memory_recall_1` is `05 02 00 00 20 00 00` in `okin_cb24`, `05 02 00 01 00 00 00` in `starcode_abm5_4`, which also forms its own core class) |
-| **Okin OKIN FFE** | bed type `okin_ffe` | `keeson` variant `okin` | Identical (same controller and kwargs) |
+| **Okin OKIN FFE** | bed type `okin_ffe` | `keeson` variant `okin` | Same controller and frames, different pulse defaults: `okin_ffe` 7 x 150 ms, `keeson:okin` 10 x 100 ms |
 
-Byte-identical routes. The pairs below produce the same status and the same
-writes on **every** captured command (same controller class). Collapsing them
-needs a config-entry migration (or documented alias) in #744/#745:
+Byte-identical routes. The groups below produce the same status and the same
+events, timing included, on **every** captured command. Collapsing them needs a
+config-entry migration (or documented alias) in #744/#745:
 
 | Group | Controller |
 | --- | --- |
@@ -168,40 +187,55 @@ needs a config-entry migration (or documented alias) in #744/#745:
 | `dewertokin` = `okin_handle` | `OkinHandleController` |
 | `nectar` = `okin_7byte` | `Okin7ByteController` |
 | `mattressfirm` = `okin_nordic` | `OkinNordicController` |
-| `okin_ffe` = `keeson:okin`; `ergomotion` = `keeson:ergomotion`; `serta` = `keeson:serta` | `KeesonController` |
-| `leggett_okin` = `leggett_platt` = `leggett_platt:okin`; `leggett_gen2` = `leggett_platt:gen2`; `leggett_wilinke` = `leggett_platt:mlrm` | `LeggettOkinController`, `LeggettGen2Controller`, `LeggettWilinkeController` |
-| `tempur_au` = `tempur_curve` (two cluster033 apps, different controllers) | `TempurAUController`, `TempurCurveController` |
+| `ergomotion` = `keeson:ergomotion`; `serta` = `keeson:serta` | `KeesonController` |
+| `leggett_okin` = `leggett_platt` = `leggett_platt:okin`; `leggett_gen2` = `leggett_platt:gen2` | `LeggettOkinController`, `LeggettGen2Controller` |
+| `keeson:americanstar` = `avanti_bases` = `bedsense_bases` = `dynasty_bases` = `maxcoil_una` | `OreComfortBedController` |
+| `richmat_best_mattress:model_bfrm` = `richmat_blvd_home:model_bfrm` (one model in two apps) | `RichmatMhController` |
 
 Routes equal to their default route: `sbi:both`, `rondure:both`, `keeson:json`,
-`octo:standard`, `linak:bed_control`, `doublesleep:p1`, `okin_cb24:cb24`,
-`simmons:simmons_smartbed`, `sleepys_box25:box25_legacy`, `remacro:the_brick`.
+`octo:standard`, `linak:bed_control`, `doublesleep:p1`, `okin_cb24:cb24` (and
+`cb1221`, `cb24_ab`, `cb27`, `cb_old`, `dacheng`), `simmons:simmons_smartbed`,
+`sleepys_box25:box25_legacy`, `remacro:the_brick`, `adjustable_lumbar_star`,
+`adjustamattress:P1_L1`, `bedsense:bedsense_3`, `comfort_enhancements:mc2`,
+`jiecang_app:dreamask:standard_2:g1`, `kaidi:seat_1`, `logicdata_app:phone:p1:standard_2:t1`,
+`okin_64bit:nordic`, `okin_cst:cst_aviada`/`cst_contempo`/`cst_mf900` and
+`okin_dot:97450`. Other equal route pairs: `okin_cb24:cb27new` = `cb_new`,
+`okin_dot:91983` = `93558`, `bedsense_4` = `bedsense_5`,
+`simmons:simmons_inclined` = `simmons_inclined_smartbed`.
 
-**Not aliases.** One controller class or one frame, but different bytes on some
-commands, so each stays its own profile:
+**Not aliases.** One controller class or one frame, but different bytes or timing
+on some commands, so each stays its own profile. Counts are commands of the full
+plan that differ (status, events or timing):
 
 | Pair | Commands that differ |
 | --- | --- |
-| `bf` vs `cherish` (`BfCherishController`) | 13 of 21+ commands, including head moves, lights, massage and memory program |
-| `customatic_clarity` vs `_jeromes` vs `_remedy` (`CustomaticController`) | `preset_flat`, `lights_toggle`, lumbar moves |
-| `remacro:the_brick` vs `remacro:jeromes` | 19 commands |
-| `serenity` vs `tranquil` | `preset_tv` only |
-| `serenity` vs `okin_cst` (same 96-bit frame) | massage, memory, `preset_flat`, `preset_tv` |
-| `ergo_slim` vs `ergomotion_app`; `omazz_adjusto_iii` vs `tempur_au` | connect frame only, plus `preset_flat` for `ergo_slim` |
-| `sbi` vs `rondure` (same E5 frame) | identical motion masks; they differ in write mode and repetition or timing, and on massage (28 commands in all) |
-| `solace` vs `solace:woosa`; `solace` vs `bedsense` (same FFFF frame) | 10 and 32 commands |
+| `okin_ffe` vs `keeson:okin` (`KeesonController`) | movement timing only: 7 x 150 ms against 10 x 100 ms |
+| `leggett_wilinke` vs `leggett_platt:mlrm` (`LeggettWilinkeController`) | movement timing only: 10 x 110 ms against 10 x 100 ms |
+| `tempur_au` vs `tempur_curve` (two cluster033 apps) | same motor frames; 12 controller-declared buttons differ |
+| `bf` vs `cherish` (`BfCherishController`) | 30 of 47, including head moves, lights, massage and memory program |
+| `customatic_clarity` vs `_jeromes` vs `_remedy` (`CustomaticController`) | 41 of 76 and 24 of 96: product buttons, held combinations, lumbar |
+| `remacro:the_brick` vs `remacro:jeromes` | 39 of 42 |
+| `serenity` vs `tranquil` | 35 of 103, product buttons and `preset_tv` |
+| `serenity` vs `okin_cst` (same 96-bit frame) | 85 of 92: same motion frames, but Serenity paces from the start of each write (wall-clock pacing), plus massage, memory and presets |
+| `ergo_slim` vs `ergomotion_app`; `omazz_adjusto_iii` vs `tempur_au` | 30 of 49 and 35 of 54: connect frame, product buttons, `preset_flat` for `ergo_slim` |
+| `sbi` vs `rondure` (same E5 frame) | 38 of 51: identical motion masks, but write mode (with against without response), repetition (10 x 100 against 25 x 50 ms) and massage differ |
+| `solace` vs `solace:woosa`; `solace` vs `bedsense` (same FFFF frame) | 38 of 84 and 88 of 94 |
 
 ## Genuine per-app differences (profile schema inputs)
 
 Values below are captured from the snapshot (movement call on the controller,
-virtual time). Protocol values are hardware specific and must stay per profile.
-The stub adds a fixed 7 ms to every write, so a controller that waits its delay
-after the write shows 107 ms where the intervals below say 100 ms; one that
-measures the delay from the start of the write (wall-clock pacing) shows exactly
-100 ms. The intervals below are the nominal values.
+virtual time), with each bed type's own pulse defaults
+(`get_motor_pulse_defaults`, recorded per scenario as `info.pulse`). Protocol
+values are hardware specific and must stay per profile. The stub adds a fixed
+7 ms to every write, so a controller that waits its delay after the write shows
+107 ms where the intervals below say 100 ms; one that measures the delay from the
+start of the write (wall-clock pacing) shows exactly 100 ms. The intervals below
+are the nominal values.
 
 | Axis | Observed range | Examples |
 | --- | --- | --- |
-| Movement refresh | 10 x 100 ms default; 25 x 50 ms; 10 x 120/150/200/300 ms; 11 x 100 ms; 25 x 200 ms; 4 x 300 ms; 3 x 400 ms | `jiecang`, `rondure` 25 x 50; `customatic` 120; `malouf_app` 150; `bf`/`cherish`/`comfort_enhancements`/`adjustamattress` 200; `simmons`/`doublesleep`/`glideaway_motion` 300; `leggett_gen2` 25 x 200; `logicdata_app` 11 x 100 |
+| Pulse defaults (`BED_MOTOR_PULSE_DEFAULTS`) | 10 x 100 ms default; 1 x 300; 3 x 50/300/350; 4 x 300; 5 x 200; 7 x 150; 8 x 120; 10 x 30/60/110; 12 x 80; 25 x 50; 34 x 30 | `okin_ore` 1 x 300; `octo` 3 x 350 (`octo:star2` 3 x 50); `okin_cb24`/`okin_cb35` 3 x 300; `jensen`/`simmons`/`linak:performance_legacy` 4 x 300; `adjustamattress`/`comfort_enhancements` 5 x 200; `richmat`/`okin_ffe`/`malouf_app`/`malouf_legacy_okin`/`suta` 7 x 150; `customatic_*` 8 x 120; `logicdata` 10 x 30; `fsm_relax` 10 x 60; `leggett_wilinke` 10 x 110; `limoss` 12 x 80; `rondure` 25 x 50; `vmatbasic` 34 x 30 |
+| Movement refresh as sent | the pulse default, unless the protocol fixes its own cadence | follows the default: the rows above; fixed by the protocol: `jiecang`/`comfort_motion` 25 x 50, `bf`/`cherish` 10 x 200, `glideaway_motion` 10 x 300, `doublesleep` 10 x 300, `leggett_gen2` 25 x 200, `logicdata_app` 11 x 100, `keeson:base` 3 x 400, `keeson:ksbt*`/`adjustable_lite`/`sleep_harmony` 4 x 300, `svane:jensen_linon` 2 x 800; single frame then release: `bedsense`, `kaidi:floyd`, `isleep`, `keeson:json` |
 | Release schedule | none; one STOP; two STOPs at 100 ms; four at 100 ms; five at 30 ms; two at 300 ms | none: `furnimove`, `okin_rf_eco_bt`, `octo:star2`, `keeson:adjustable_lite`; DreamAsk 10 x 100 then the long `4E 02 00 00` release twice; Dreamotion 10 x 100, one more press, the short `4E 00` release, then the long one; DreamHD the same without the long release; Comfort Motion app and legacy: short release only (presets: DreamAsk/Dreamotion press plus long release, DreamHD and Comfort Motion press plus short release, legacy 3 x 100 press with no release); `okin_cst` family and `suta` 2 x 100; `leggett_okin` 4 x 100; `motosleep` 5 x 30 |
 | Write mode | response true or false, per protocol and per route | `okin_cb24` false, `okin_cst` true, Richmat MH false, `richmat` true, `adjustable_lumbar` follows the variant (okin true, star false) |
 | Hold-only or gesture actions | presets as single press, as repeated hold, or as press plus release | LOGICDATA Sleep Smart presets 10 x 200 ms; DreamHD press then short release; `jiecang` 3 x 100 ms with no release; `bedsense`/`solace`/`remacro` presets are one frame with no STOP (their motion calls send a frame plus STOP) |
@@ -273,9 +307,9 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `logicdata` | `LogicdataController` (`logicdata`, 393) | inline | D distinct |  | none direct |
 | `logicdata_air_pump` | `LogicdataAirPumpController` (`logicdata_air_pump`, 386) | inline | D distinct |  | `test_logicdata_air_pump.py` |
 | `logicdata_app` | `LogicdataAppController` (`logicdata_app`, 1310) | `logicdata_app_protocol.py` | J1 Jiecang F1 | phone:p1:standard_2:t1, phone:p1:standard_2:t3, phone:p2:middle:t1, sleep_smart:p1:standard_2:t1, sleep_smart:p1:standard_2:t2 +3 | `test_paired_setup.py` |
-| `malouf_app` | `MaloufAppController` (`malouf_app`, 1140) | `malouf_app_protocol.py` | O3 Okin-like (extra byte) |  | `test_malouf_app.py` |
+| `malouf_app` | `MaloufAppController` (`malouf_app`, 1140) | `malouf_app_protocol.py` | D distinct (Okin-like, one extra byte) |  | `test_malouf_app.py` |
 | `malouf_legacy_okin` | `MaloufLegacyOkinController` (`malouf`, 889) | inline | K1 Keeson E5/E6 |  | `test_malouf.py` |
-| `malouf_new_okin` | `MaloufNewOkinController` (`malouf`, 889) | inline | O3 Okin-like (extra byte) |  | `test_malouf.py` |
+| `malouf_new_okin` | `MaloufNewOkinController` (`malouf`, 889) | inline | D distinct (Okin-like, one extra byte) |  | `test_malouf.py` |
 | `mattressfirm` | `OkinNordicController` (`okin_nordic`, 445) | `okin_7byte.py` | O2 Okin 5A |  | `test_okin_nordic.py` |
 | `motion_bed` | `MotionBedController` (`motion_bed`, 4676) | `motion_bed_actions.py`, `motion_bed_models.py`, `motion_bed_protocol.py`, `motion_bed_requests.py`, `motion_bed_state.py` | S1 FFFF frame |  | `test_paired_setup.py` |
 | `motosleep` | `MotoSleepController` (`motosleep`, 1006) | `motosleep_profiles.py` | D distinct |  | `test_motosleep.py` |
@@ -299,7 +333,7 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `remacro` | `RemacroController` (`remacro`, 1198) | `remacro_protocol.py` | D distinct | jeromes, the_brick | `test_remacro.py` |
 | `reverie` | `ReverieController` (`reverie`, 2077) | `reverie_comfort.py`, `reverie_profiles.py` | D distinct |  | `test_reverie.py` |
 | `reverie_nightstand` | `ReverieNightstandController` (`reverie_nightstand`, 2573) | `reverie_comfort.py`, `reverie_profiles.py` | D distinct |  | `test_reverie_nightstand.py` |
-| `reverie_pairlink` | `ReveriePairlinkController` (`reverie_pairlink`, 10363) | `reverie_pairlink_profile.py`, `reverie_pairlink_protocol.py`, `reverie_pairlink_runtime.py`, `reverie_pairlink_sdk*.py`, `reverie_pairlink_transport.py`, `reverie_comfort.py`, `reverie_pairlink_sdk.py` | not captured (gap) |  | `test_reverie_pairlink*.py` |
+| `reverie_pairlink` | `ReveriePairlinkController` (`reverie_pairlink`, 10363) | `reverie_pairlink_profile.py`, `reverie_pairlink_protocol.py`, `reverie_pairlink_runtime.py`, `reverie_pairlink_sdk*.py`, `reverie_pairlink_transport.py`, `reverie_comfort.py` | gap (no successful command) |  | `test_reverie_pairlink*.py` |
 | `richmat` | `RichmatController` (`richmat`, 1112) | inline | R1 Richmat 6E | nordic, prefix55, prefixaa, wilinke | `test_richmat.py` |
 | `richmat_best_mattress` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_bfrm, model_vsrm | `test_richmat_mh.py` |
 | `richmat_blvd_home` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_bfrm, model_eorm | `test_richmat_mh.py` |
@@ -325,8 +359,8 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `solace` | `SolaceController` (`solace`, 1143) | inline | S1 FFFF frame | woosa | `test_solace.py` |
 | `star_elevate` | `StarElevateController` (`star_elevate`, 794) | `starcode_accessory_group.py` | O2 Okin 5A | adjustable_comfort_m1x12 | `test_star_elevate.py` |
 | `starcode_abm5_4` | `StarcodeAbm5_4Controller` (`starcode_abm5_4`, 1735) | `starcode_abm5_4_profiles.py` | O1 Okin N-frame |  | `test_starcode_abm5_4.py` |
-| `starcode_m1x12` | `StarcodeM1X12Controller` (`starcode_m1x12`, 2507) | `star_elevate.py`, `starcode_m1x12_protocol.py`, `starcode_accessory_group.py` | D distinct (Starcode) |  | `test_starcode_m1x12.py` |
-| `starcode_m5x5` | `StarcodeM5X5Controller` (`starcode_m5x5`, 1685) | `starcode_m5x5_protocol.py`, `starcode_accessory_group.py` | D distinct (Starcode) |  | `test_starcode_m5x5.py` |
+| `starcode_m1x12` | `StarcodeM1X12Controller` (`starcode_m1x12`, 2507) | `star_elevate.py`, `starcode_m1x12_protocol.py`, `starcode_accessory_group.py` | O1 Okin N-frame (partial: motion and presets) |  | `test_starcode_m1x12.py` |
+| `starcode_m5x5` | `StarcodeM5X5Controller` (`starcode_m5x5`, 1685) | `starcode_m5x5_protocol.py`, `starcode_accessory_group.py` | O1 Okin N-frame (partial: motion and presets) |  | `test_starcode_m5x5.py` |
 | `suta` | `SutaController` (`suta`, 542) | inline | D distinct |  | `test_suta.py` |
 | `svane` | `SvaneController` (`svane`, 1018) | `svane_state.py` | D distinct | jensen_linon, svane_remote_jmc | `test_svane.py` |
 | `tempur_au` | `TempurAUController` (`tempur_au`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
@@ -484,8 +518,9 @@ Other reports whose package id appears in a test: `com.fenmenbielei.bedsense`
 `com.keeson.coolbase` (`test_coolbase.py`), `com.cheers.*` (`test_remacro.py`),
 `air.no.jensen.adjustablesleep` (`test_jensen.py`, `test_jensen_linon.py`),
 `com.starcode.abm5_4` (`starcode_abm5_4_vectors.py`). Most other reports carry their
-vectors in a bed-named test or a `tests/fixtures/` vector file; the wire snapshot
-now pins the emitted bytes for all of them uniformly.
+vectors in a bed-named test or a `tests/fixtures/` vector file. The wire snapshot
+pins what the command plan reaches for each bed type and route, within the limits
+in [Coverage gaps](#coverage-gaps); it does not replace those vector tests.
 
 ### Routes with their own controller class
 
@@ -500,7 +535,7 @@ now pins the emitted bytes for all of them uniformly.
 | `solace:woosa` | `WoosaController` | S1 |
 | `star_elevate:adjustable_comfort_m1x12` | `StarElevateM1X12Controller` | O2 |
 | `svane:jensen_linon` | `JensenLinonController` | distinct |
-| `kaidi:floyd` | `FloydController` | coverage gap |
+| `kaidi:floyd` | `FloydController` | distinct (Kaidi mesh) |
 
 ## Proposed #745 migration order
 
@@ -513,12 +548,12 @@ needs more than one PR gets its own sub-issue.
 - [ ] **0. J1 Jiecang** (#744 pilot): `jiecang`, `comfort_motion`, `jiecang_app` (DreamAsk, Dreamotion, DreamHD, Comfort Motion). Resolves the Comfort Motion double route.
 - [ ] **1. J1 LOGICDATA** (first #745 family): `logicdata_app` (phone, tablet, Sleep Smart) onto the Jiecang codec. Same frame and transports as J1; small, no new users at risk; proves the codec on a second profile set. `logicdata` (legacy 13-byte) and `logicdata_air_pump` stay standalone.
 - [ ] **2. K1 Keeson E5/E6** (23 bed types, largest verified duplication, stateless): sub-PRs for (a) core `KeesonController` variants and the alias bed types `ergomotion`, `serta`, `okin_ffe`; (b) cluster033 apps (already one base class, so mostly a codec move); (c) the E6 9-byte group `adjustamattress`, `glideaway_motion`, `malouf_legacy_okin`, `sleepys_box15`, `scott_living`, Simmons Okin; (d) `sbi`, `rondure`, `coolbase`, `bf`, `cherish`, `comfort_enhancements`, `furnimove`.
-- [ ] **3. O1 Okin N-frame** (22 bed types, most users): one sub-issue, PRs per command word width: 32-bit (`okimat`/`okin_uuid`, `dewertokin`/`okin_handle`, `customatic_*`, `leggett_okin`, `okin_rf_eco_bt`), 40-bit (`okin_cb24`, `simmons`, `doublesleep`, `sleepys_box25`, `starcode_abm5_4`, `okin_dot`), 96-bit (`okin_cst`, `serenity`, `tranquil`, `customatic_zseries`), 64-bit (`okin_64bit`, `adjustable_lumbar`). Keep sessions, bonds and DoubleSleep state in profile controllers.
+- [ ] **3. O1 Okin N-frame** (22 bed types, most users): one sub-issue, PRs per command word width: 32-bit (`okimat`/`okin_uuid`, `dewertokin`/`okin_handle`, `customatic_*`, `leggett_okin`, `okin_rf_eco_bt`), 40-bit (`okin_cb24`, `simmons`, `doublesleep`, `sleepys_box25`, `starcode_abm5_4`, `okin_dot`, and the motion and preset frames of Starcode M1X12/M5X5), 96-bit (`okin_cst`, `serenity`, `tranquil`, `customatic_zseries`), 64-bit (`okin_64bit`, `adjustable_lumbar`). Keep sessions, bonds and DoubleSleep state in profile controllers.
 - [ ] **4. R1 Richmat 6E** (`richmat`, `bedtech`, `leggett_wilinke`, `hjbed`, `richmat_mh` apps, the 6E frames of `gmmotor`): the Richmat MH catalogs stay data; `hjbed` and `gmmotor` sessions stay controller code.
 - [ ] **5. S1 FFFF** (`solace`/`woosa`, `bedsense`, `motion_bed`): identify the trailer algorithm first (not done here).
-- [ ] **6. O2 Okin 5A** (`okin_7byte`/`nectar`, `okin_nordic`/`mattressfirm`, `okin_cb35`, `star_elevate`, `sleepys_box25` star) and O3 (`malouf_*`).
+- [ ] **6. O2 Okin 5A** (`okin_7byte`/`nectar`, `okin_nordic`/`mattressfirm`, `okin_cb35`, `star_elevate`, `sleepys_box25` star). `malouf_new_okin` and `malouf_app` share one Okin-like frame with an extra byte (equal motor frames); decide there whether it is an O1 variant or its own codec.
 - [ ] **7. L1 Limoss DD** (`limoss`, `limoss_remote`, `fsm_relax`): three controllers, low user count; `limoss_remote` needs a replying session to capture beyond its handshake and STOP frames.
-- [ ] **8. Standalone with a recorded reason** (no shared frame): `linak`, `octo`, `sleep_number` and `_mcr`, `reverie`, `_nightstand` and `_pairlink`, `vibradorm` family, `kaidi`/`isleep`/`floyd`, `svane`/`jensen`, `sleeptracker`, GM Control, Casper, `suta`, `sleepstar`, `timotion_ahf`, `motosleep`, `remacro`, `eshine`, `okin_ore`/`sleepys_box24`, `leggett_gen2`/`lp_legacy`, `logicdata`, `logicdata_air_pump`, `sleepys_elite_app`, Starcode M5X5/M1X12.
+- [ ] **8. Standalone with a recorded reason** (no shared frame): `linak`, `octo`, `sleep_number` and `_mcr`, `reverie`, `_nightstand` and `_pairlink`, `vibradorm` family, `kaidi`/`isleep`/`floyd`, `svane`/`jensen` (the JMC route shares Jensen's motor frames), `sleeptracker`, GM Control, Casper, `suta`, `sleepstar`, `timotion_ahf`, `motosleep`, `remacro`, `eshine`, `okin_ore`/`sleepys_box24`, `leggett_gen2`/`lp_legacy`, `logicdata`, `logicdata_air_pump`, `sleepys_elite_app`, and the non-motion frames of Starcode M5X5/M1X12.
 
 Families 2 and 3 likely carry most of the line-count reduction; families 0 and 1
 carry the smallest regression surface.
@@ -526,56 +561,111 @@ carry the smallest regression surface.
 ## How the proof was produced
 
 `scripts/wire_snapshot.py` builds every `SUPPORTED_BED_TYPES` entry through
-`create_controller` (using the construction recipe of
-`tests/test_controller_contract.py`), plus protocol-variant and app-profile
-routes, then drives a fixed command set against a recording client:
-motors up/down/stop (head, back, legs, feet, lumbar, neck, pillow, tilt, hip, bed
-height), `stop_all`, flat, zero-g, anti-snore, TV, memory recall and program for
-slot 1, lights toggle/on/off, massage toggle/off, and the post-connect hooks.
-Unsupported methods (`NotImplementedError` before any write) are skipped. Each write
-records the characteristic, bytes, `response` flag, order and virtual time offset.
-Time is virtual: sleeps and timeouts wake in deadline order and wall-clock time
-follows the virtual clock, and every stubbed write takes a fixed 7 ms so pacing
-that absorbs write latency differs from pacing that adds to it. After the last
-command the clock runs 2 s more, so delayed work it scheduled is captured. Writes
-made by a task started in an earlier phase (a delayed retry, a startup query) are
-recorded under a separate `background` entry, not under the running command. Query
-callbacks (`async_execute_controller_query`) run against the constructed
-controller, and `random` and `secrets` are seeded per scenario so nonces repeat.
-A scenario where no command succeeded is marked a coverage gap, and every write
-it did record stays in the snapshot.
-`tests/test_wire_snapshot.py` fails when a fresh capture differs from
-`tests/fixtures/wire_snapshot.json`.
+`create_controller`, plus protocol-variant and app-profile routes, on its own
+coordinator stub (the real per-bed pulse defaults from `get_motor_pulse_defaults`,
+`has_massage` on, two motors) and a recording client. It replays the
+coordinator's post-connect hooks (capability discovery, notifications, the Octo,
+Jensen and Sleep Number startup calls), then drives a command plan:
 
-For #744 and #745: a refactor that only moves code must leave the snapshot
-untouched. A deliberate byte change regenerates it in the same PR so the diff is
-reviewed.
+- motors up/down/stop on all ten axes, `stop_all`, flat, zero-g, anti-snore, TV,
+  memory recall and program for slot 1, lights toggle/on/off, massage toggle/off
+  (the original plan, in its original order);
+- every further memory slot up to `memory_slot_count` and held recall per slot;
+- each cover the integration creates, through its `motor_control_specs` callables;
+- every other no-argument `BedController` action the controller implements;
+- one call of each implemented action that takes arguments, with arguments taken
+  from the controller's own options: every light level bound, a light colour,
+  each light and massage timer option, each massage intensity per zone, fan
+  levels, sleep and alarm timers, each motor position slider at mid travel, each
+  held control and preset, sync, locks, automatic drive and light, RMControl
+  alarm and anti-snore settings, Solace audio, calibration and rename;
+- every controller-declared button, each option of every controller select, and
+  both bounds of every controller number.
+
+Not driven: base actions that take controller-specific request or schedule
+objects (`async_execute_*_request`, `async_execute_*_action`,
+`async_perform_casper_base_action`, `configure_clock_alarm`,
+`configure_alarm_table_schedule`, `program_alarm`, `program_solace_alarm`,
+`floyd_action`, `richmat_mh_*` alarms and aroma, `rmcontrol_repeat_alarm`,
+`set_motion_bed_surface`, `async_execute_sleep_number_command`) and
+`seek_position_step`. Most of those products expose the same frames through the
+controller-declared buttons above.
+
+Each event records the characteristic, kind (the write `response` flag, or
+`notify`, `unnotify`, `read`, `pair`), bytes, order and virtual time offset. All
+timing is virtual: `sleep`, `wait`, `wait_for`, `timeout`, `timeout_at`, the loop
+clock and `call_later` run on a fake clock that advances only once runnable work
+is quiet, and wall-clock time follows it. A held command is released after 10 s
+of virtual time, and a command still running after 60 s of virtual time is
+recorded as `timeout`. Every stubbed write takes a fixed 7 ms so pacing that
+absorbs write latency differs from pacing that adds to it. After the last command
+the clock runs 2 s more; events from a task started in an earlier phase are
+recorded under `background`. Query callbacks run against the constructed
+controller, `random` and `secrets` are seeded per scenario, and HA's Bluetooth
+history reads as empty.
+
+A few sessions get scripted replies so they really run: the TiMOTION status
+frame, Kaidi and iSleep room join and node ping answers (with a provisioned
+Kaidi advertisement, product 139 for Floyd), the Sleep Number Auth session read
+and Svane raw axis reads.
+
+Each scenario's fake GATT layout is stored in
+`tests/fixtures/wire_snapshot_layouts.json` and replayed, so renaming a UUID
+constant changes nothing. The capture derives a layout from the controller's
+UUID constants only for a scenario that has none stored (or with `--relayout`);
+seven scenarios carry a hand-written layout (`gatt: manual`) taken from their
+controller's role table. Stored characteristics advertise every property; no
+per-device property data exists in the repository, so a scenario that needs real
+properties sets them in its layout (`properties`).
+
+The capture runs in its own process with `PYTHONHASHSEED=0`:
+`SvaneController` releases a two-axis hold by iterating a set, so its frame order
+otherwise changes from run to run. `tests/test_wire_snapshot.py` runs
+`scripts/wire_snapshot.py --check`, which fails when the snapshot or the layouts
+differ from a fresh capture, and a second test covers the virtual clock.
+
+What the guard proves: on every path the plan reaches, a change to bytes,
+characteristic, write mode, subscriptions, reads, order or relative timing fails
+it, deterministically. What it does not prove: behavior behind a coverage gap,
+paths the plan does not drive (above), mid-command cancellation (a STOP during a
+move), cover-level hold loops and paired coordinators, and protocol replies
+other than the scripted ones.
+
+For #744 and #745: a refactor that only moves code must leave both fixture files
+untouched. A deliberate byte change regenerates them in the same PR so the diff
+is reviewed.
 
 Family tests in this document were computed from the snapshot: frame rules by
 checking every captured write run (the counts in the family table), core classes by
-byte equality of motor and STOP commands.
+byte equality of motor and STOP commands, aliases by equality of every command
+including timing.
 
 ### Coverage gaps
 
-| Scenario | Why it is a gap |
-| --- | --- |
-| `casper_remote`, `casper_sleep_mm`, `gmmotor_sleep_mm`, `gmmotor_sleep_sxb` | remote or sensor entries, no bed commands |
-| `isleep`, `kaidi` and its `seat_*`, `floyd` routes | need advertisement-derived IDs or exact product tables; the mock supplies neither. `isleep` still pins one frame per command that timed out |
-| `sleep_number`, `sleep_number_mcr`, `limoss_remote` | need a live authenticated session or handshake replies (the connect hooks time out). `sleep_number_mcr` and `limoss_remote` still pin the handshake and request frames they wrote before timing out |
-| `sleeptracker`, `sleepys_elite_app`, `starcode_m1x12`, `starcode_m5x5` | exact multi-service GATT or product tables the derived layout does not satisfy |
-| `svane`, `svane:svane_remote_jmc` | raw axis reads needed before most commands |
-| `reverie_pairlink` | needs its Pairlink runtime, which the stub coordinator does not provide |
-| `leggett_lp_legacy` | no write came from the logical command set |
-| `richmat_*` Richmat MH bed types in their `auto` form | covered through the `model_*` routes instead |
+A gap is a command the controller declares (through a capability property, a
+motor spec or a controller entity spec) that does not succeed in the capture. The
+scenario lists them under `info.gaps`; every event they recorded stays pinned.
 
-Other limits: controllers are driven directly, so cover-level hold loops and the
-paired coordinator are not exercised; pulse counts come from the stub coordinator
-(10 x 100 ms) unless a protocol fixes them; `keeson` in its `auto` form resolves
-to the JSON variant on the derived layout (the variant routes cover the rest);
-Octo and Linak capability sessions are not replayed (Octo base routes record
-errors only, `octo:star2` is covered); remote-code tables (`richmat_remote`),
-cluster033 product layouts, Okimat remote codes beyond the default, and
-Casper/AdjustaMattress product sets are sampled, not exhaustive.
+| Scenario | Gaps | Why |
+| --- | ---: | --- |
+| `casper_remote`, `casper_sleep_mm`, `casper_sleep_sxb`, `gmmotor_sleep_mm` | 0 to 3 | remote or sleep-sensor entries with no bed commands; nothing succeeds (the sensor write/notify pair is not in the derived layout) |
+| `richmat_*` Richmat MH bed types in their `auto` form | 0 (connect fails) | the app needs a known advertised name; covered through the `model_*` routes |
+| `sleep_number` | 26 | the encrypted session needs replies the capture does not script (Auth read, subscriptions and the first request are pinned) |
+| `sleep_number_mcr`, `limoss_remote`, `fsm_relax` | 9, 3, 2 | handshake replies are not scripted; the handshake and request frames they send are pinned |
+| `sleeptracker` | 19 | its hello/auth/control GATT path is not in the derived layout |
+| `reverie_pairlink` | 7 | needs its Pairlink runtime and reported massage state |
+| `jensen` | 10 | memory recall needs a saved slot; programming and position targets wait for a position reply |
+| `svane`, `svane:svane_remote_jmc` | 1, 2 | memory recall needs a saved slot (`svane`); the JMC route rejects the scripted position read |
+| `isleep` | 1 | enrollment needs a live unprovisioned advertisement |
+| state the bed has not reported: `octo`, `octo:standard`, `jiecang_app` (13 scenarios) light toggle; `reverie_nightstand` light level; `bedsense` (10 scenarios), `solace:woosa` memory recall; `cherish`, `keeson:heal_every_night` massage levels; `motion_bed` audio buttons | 1 to 6 | the controller refuses until the bed reports the state; no notification in the capture supplies it |
+| `furnimove`, `comfort_enhancements:mc3`, `sleepys_elite_app` | 8, 4, 2 | the default handset or product has no massage, although the massage flags are set |
+| `leggett_okin`, `leggett_platt`, `leggett_platt:okin` | 1 | press-and-hold mode selection is deliberately disabled for Prodigy CE |
+
+`doublesleep:p3` (the sensor driver) has no motor control by design, so it is
+not a gap. `keeson` in its `auto` form resolves to the JSON variant (the variant
+routes cover the rest). Remote-code tables (`richmat_remote`), cluster033
+product layouts, Okimat remote codes beyond the default and Casper/AdjustaMattress
+product sets are sampled, not exhaustive.
 
 ## Observations (not fixed here)
 
@@ -594,3 +684,12 @@ Casper/AdjustaMattress product sets are sampled, not exhaustive.
 - Frozen report workspaces for `com.dewertokin.okinsmartcomfort`,
   `com.intretech.app.suta`, and `com.fullpower.applications.horizon` carry no
   `report/analysis.json` at the top level, so no status is listed for them.
+- `SvaneController` releases a two-axis hold (`hold_head_up_feet_down`,
+  `hold_head_down_feet_up`) by iterating a set of roles, so which axis gets its
+  release frame first changes between Python processes. The snapshot pins it by
+  running with `PYTHONHASHSEED=0`.
+- Starcode M1X12 and M5X5 send Okin `05 02` 40-bit frames for motion and presets,
+  with the same motor and STOP frames as the `okin_cb24` class.
+- `malouf_app` and `malouf_new_okin` send the same motor and STOP frames.
+- `furnimove`, `comfort_enhancements:mc3` and `sleepys_elite_app` declare massage
+  controls their default handset or product rejects.
