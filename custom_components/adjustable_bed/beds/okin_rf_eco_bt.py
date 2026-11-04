@@ -5,13 +5,11 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
+from ..profiles.okin_nframe import RF_ECO_BT, RF_ECO_BT_REFRESH_MS
 from .base import MotorControlSpec
 from .okin_uuid import OkinUuidController
 
 _LOGGER = logging.getLogger(__name__)
-
-STAIR_OUT_COMMAND = 0x00000001
-STAIR_IN_COMMAND = 0x00000002
 
 
 class OkinRfEcoBtController(OkinUuidController):
@@ -21,6 +19,8 @@ class OkinRfEcoBtController(OkinUuidController):
     the moving stair actuator. This profile intentionally exposes only that
     single actuator surface.
     """
+
+    _route_profile = RF_ECO_BT
 
     @property
     def requires_persistent_connection(self) -> bool:
@@ -127,11 +127,11 @@ class OkinRfEcoBtController(OkinUuidController):
 
     async def move_back_up(self) -> None:
         """Move the stair actuator out/open."""
-        await self._move_motor("back", STAIR_OUT_COMMAND)
+        await self._move_motor("back", RF_ECO_BT.keys["stair_out"])
 
     async def move_back_down(self) -> None:
         """Move the stair actuator in/close."""
-        await self._move_motor("back", STAIR_IN_COMMAND)
+        await self._move_motor("back", RF_ECO_BT.keys["stair_in"])
 
     async def stop_all(self) -> None:
         """End held-command refresh; this layout defines no release packet."""
@@ -147,7 +147,7 @@ class OkinRfEcoBtController(OkinUuidController):
             await self.write_command(
                 self._build_command(command_value),
                 repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=100,
+                repeat_delay_ms=RF_ECO_BT_REFRESH_MS,
             )
         finally:
             self._motor_state.pop(motor, None)

@@ -26,11 +26,13 @@ from custom_components.adjustable_bed.profiles.jiecang import JiecangProfile
 from custom_components.adjustable_bed.profiles.keeson import KeesonProfile
 from custom_components.adjustable_bed.profiles.logicdata import LogicdataProfile
 from custom_components.adjustable_bed.profiles.okin_5a import Okin5AProfile
+from custom_components.adjustable_bed.profiles.okin_nframe import OkinNFrameProfile
 from tests.ff_frame_vectors import FROZEN_FRAMES as FF_FRAME_VECTORS
 from tests.jiecang_vectors import FROZEN_FRAMES as JIECANG_VECTORS
 from tests.keeson_vectors import FROZEN_FRAMES as KEESON_VECTORS
 from tests.logicdata_vectors import FROZEN_FRAMES as LOGICDATA_VECTORS
 from tests.okin_5a_vectors import FROZEN_FRAMES as OKIN_5A_VECTORS
+from tests.okin_nframe_vectors import FROZEN_FRAMES as OKIN_NFRAME_VECTORS
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
     _FactoryCoordinator,
@@ -47,6 +49,7 @@ CODEC_FAMILIES: dict[type, dict[str, frozenset[str]]] = {
     SolaceProfile: FF_FRAME_VECTORS,
     BedSenseProfile: FF_FRAME_VECTORS,
     MotionBedProfile: FF_FRAME_VECTORS,
+    OkinNFrameProfile: OKIN_NFRAME_VECTORS,
 }
 
 # App choices of codec-backed bed types: bed type -> (config key, choices).
@@ -56,6 +59,7 @@ APP_ROUTES: dict[str, tuple[str, tuple[str, ...]]] = {
         const.CONF_LOGICDATA_APP_PROFILE,
         tuple(const.LOGICDATA_APP_PROFILES),
     ),
+    const.BED_TYPE_LEGGETT_OKIN: (const.CONF_LEGGETT_APP_PROFILE, tuple(const.LEGGETT_APP_PROFILES)),
 }
 
 UNMIGRATED: dict[str, str] = {
@@ -70,11 +74,7 @@ UNMIGRATED: dict[str, str] = {
     "cherish": "#745 K1 Keeson E5/E6",
     "comfort_enhancements": "#745 K1 Keeson E5/E6",
     "coolbase": "#745 K1 Keeson E5/E6",
-    "customatic_clarity": "#745 O1 Okin N-frame",
-    "customatic_jeromes": "#745 O1 Okin N-frame",
-    "customatic_remedy": "#745 O1 Okin N-frame",
     "customatic_zseries": "#745 O1 Okin N-frame",
-    "dewertokin": "#745 O1 Okin N-frame",
     "doublesleep": "#745 O1 Okin N-frame",
     "ergo_slim": "#745 K1 Keeson E5/E6",
     "ergomotion_app": "#745 K1 Keeson E5/E6",
@@ -91,8 +91,6 @@ UNMIGRATED: dict[str, str] = {
     "kaidi": "standalone: Kaidi mesh frames",
     "leggett_gen2": "standalone: own wire format",
     "leggett_lp_legacy": "standalone: own wire format",
-    "leggett_okin": "#745 O1 Okin N-frame",
-    "leggett_platt": "#745 O1 Okin N-frame",
     "leggett_wilinke": "#745 R1 Richmat 6E",
     "limoss": "#745 L1 Limoss DD",
     "limoss_remote": "#745 L1 Limoss DD",
@@ -104,15 +102,11 @@ UNMIGRATED: dict[str, str] = {
     "malouf_new_okin": "#745 O2 Okin 5A, Okin-like Malouf frames",
     "motosleep": "standalone: own wire format",
     "octo": "standalone: own wire format",
-    "okimat": "#745 O1 Okin N-frame",
     "okin_64bit": "#745 O1 Okin N-frame",
     "okin_cb24": "#745 O1 Okin N-frame",
     "okin_cst": "#745 O1 Okin N-frame",
     "okin_dot": "#745 O1 Okin N-frame",
-    "okin_handle": "#745 O1 Okin N-frame",
     "okin_ore": "standalone: own wire format",
-    "okin_rf_eco_bt": "#745 O1 Okin N-frame",
-    "okin_uuid": "#745 O1 Okin N-frame",
     "omazz_adjusto_iii": "#745 K1 Keeson E5/E6",
     "qplus_app": "#745 K1 Keeson E5/E6",
     "remacro": "standalone: own wire format",

@@ -7,12 +7,12 @@ Known brands using this protocol:
 - Okimat
 - Various Okin-based OEM beds
 
-These beds use the Okin protocol with 6-byte commands: [0x04, 0x02, ...int_to_bytes(command)]
-They require BLE pairing before use.
+Commands are 32-bit Okin N-frames (``codec/okin_nframe.py``); timing is the
+``OKIMAT`` profile and the keys come from the selected handset's remote table.
+These beds require BLE pairing before use.
 
-Note: This shares the same BLE service UUID (62741523-52f9-8864-b1ab-3b3a8d65950b) with
-Leggett & Platt Okin variant and Nectar beds. Detection uses device name patterns to
-distinguish between these bed types. See okin_protocol.py for shared protocol details.
+Note: This shares the Okin service UUID with Leggett & Platt Okin and Nectar beds.
+Detection uses device name patterns to distinguish between these bed types.
 
 Supported remote codes (configured via variant):
 - RFS-ELLIPSE/06: 76688, 78375, 78378, 78386, 80599, 80602, 80608, 80616
@@ -30,28 +30,27 @@ Reference: https://github.com/richardhopton/smartbed-mqtt
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..codec import okin_nframe as codec
 from ..const import (
-    OKIMAT_WRITE_CHAR_UUID,
     OKIN_FOOT_MAX_ANGLE,
     OKIN_FOOT_MAX_RAW,
     OKIN_HEAD_MAX_ANGLE,
     OKIN_HEAD_MAX_RAW,
-    OKIN_POSITION_NOTIFY_CHAR_UUID,
     VARIANT_AUTO,
 )
 from ..furnimove_profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
-from .base import BedController, MotorControlSpec
-from .okin_protocol import build_okin_command
+from ..profiles.okin_nframe import OKIMAT, OkinNFrameProfile, Tap
+from .base import MotorControlSpec
+from .okin_nframe import OkinNFrameController
 from .okin_uuid_remotes import (
     DEFAULT_OKIN_UUID_REMOTE,
     OKIN_DOT_VARIANT_LABELS,
@@ -63,9 +62,6 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-# Error message constant for connection checks
-_NOT_CONNECTED_MSG = "Not connected to bed"
 
 
 @dataclass
@@ -226,7 +222,7 @@ OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
 DEFAULT_REMOTE = DEFAULT_OKIN_UUID_REMOTE
 
 
-class OkinUuidController(BedController):
+class OkinUuidController(OkinNFrameController):
     """Controller for beds using Okin UUID-based protocol.
 
     Note: These beds require BLE pairing before they can be controlled.
@@ -263,13 +259,20 @@ class OkinUuidController(BedController):
             self._remote.name,
         )
 
-    # Whether GATT writes request a response (DOT subclass writes without).
-    _write_with_response = True
+    # Timing and framing of this route. Subclasses with their own command
+    # surface (the stair lift) replace it.
+    _route_profile: ClassVar[OkinNFrameProfile] = OKIMAT
 
     @property
-    def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
-        return OKIMAT_WRITE_CHAR_UUID
+    def profile(self) -> OkinNFrameProfile | None:
+        """This route's profile; ``None`` for a subclass with its own frame.
+
+        DOT boxes reuse these flows with a 40-bit frame (``okin_dot.py``), which
+        is not this 32-bit profile.
+        """
+        if type(self)._build_command is not OkinUuidController._build_command:
+            return None
+        return self._route_profile
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
@@ -346,27 +349,18 @@ class OkinUuidController(BedController):
     @property
     def supports_memory_presets(self) -> bool:
         """Return True if this remote supports memory presets."""
-        # Check if at least memory_1 is available for this remote variant
         return self._remote.memory_1 is not None
 
     @property
     def memory_slot_count(self) -> int:
-        """Return number of memory slots based on remote variant."""
-        count = 0
-        if self._remote.memory_1 is not None:
-            count = 1
-        if self._remote.memory_2 is not None:
-            count = 2
-        if self._remote.memory_3 is not None:
-            count = 3
-        if self._remote.memory_4 is not None:
-            count = 4
-        return count
+        """Return the highest memory slot this remote defines."""
+        remote = self._remote
+        slots = (remote.memory_1, remote.memory_2, remote.memory_3, remote.memory_4)
+        return max((slot for slot, key in enumerate(slots, 1) if key is not None), default=0)
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return True if this remote supports programming memory positions."""
-        # Remotes use a single memory_save command
+        """Return True if this remote has a memory save key."""
         return self._remote.memory_save is not None
 
     @property
@@ -379,60 +373,10 @@ class OkinUuidController(BedController):
         """Return False - only supports toggle, not discrete on/off."""
         return False
 
-    def _build_command(self, command_value: int) -> bytes:
-        """Build command bytes using build_okin_command: [0x04, 0x02, <4-byte>]."""
-        return build_okin_command(command_value)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError(_NOT_CONNECTED_MSG)
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing command to Okin UUID bed (%s): %s (repeat: %d, delay: %dms, response=%s)",
-            self.control_characteristic_uuid,
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-            self._write_with_response,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                return
-
-            try:
-                # Acquire BLE lock to prevent conflicts with concurrent position reads
-                async with self._ble_lock:
-                    await self.client.write_gatt_char(
-                        self.control_characteristic_uuid,
-                        command,
-                        response=self._write_with_response,
-                    )
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
-
-    async def start_notify(
-        self, callback: Callable[[str, float], None] | None = None
-    ) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for position notifications.
 
         OKIN beds report position via BLE notifications on characteristic FFE4.
-        Data format: bytes 3-4 = head raw (LE), bytes 5-6 = foot raw (LE)
         Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
         """
         self._notify_callback = callback
@@ -447,13 +391,9 @@ class OkinUuidController(BedController):
         )
 
         try:
-            await self.client.start_notify(
-                OKIN_POSITION_NOTIFY_CHAR_UUID,
-                self._handle_position_notification,
-            )
+            await self.client.start_notify(codec.POSITION_UUID, self._handle_position_notification)
             _LOGGER.info(
-                "Position notifications active for Okin UUID bed (UUID: %s)",
-                OKIN_POSITION_NOTIFY_CHAR_UUID,
+                "Position notifications active for Okin UUID bed (UUID: %s)", codec.POSITION_UUID
             )
         except BleakError as err:
             _LOGGER.debug(
@@ -463,40 +403,25 @@ class OkinUuidController(BedController):
             )
 
     def _handle_position_notification(self, _: BleakGATTCharacteristic, data: bytearray) -> None:
-        """Handle position notification data from OKIN controller.
+        """Handle a position notification (see ``codec.parse_position``).
 
-        Data format (7+ bytes):
-        - Bytes 0-2: Unknown (possibly status/header)
-        - Bytes 3-4: Head position (little-endian uint16)
-        - Bytes 5-6: Foot position (little-endian uint16)
-
-        Position values are normalized:
-        - Head: 0-16000 raw -> 0-60 degrees
-        - Foot: 0-12000 raw -> 0-45 degrees
+        Head 0-16000 raw maps to 0-60 degrees and foot 0-12000 raw to 0-45.
         """
-        self.forward_raw_notification(OKIN_POSITION_NOTIFY_CHAR_UUID, bytes(data))
+        self.forward_raw_notification(codec.POSITION_UUID, bytes(data))
 
-        if len(data) < 7:
-            _LOGGER.debug(
-                "Received invalid position data: expected 7+ bytes, got %d",
-                len(data),
-            )
+        positions = codec.parse_position(bytes(data))
+        if positions is None:
+            _LOGGER.debug("Received invalid position data: expected 7+ bytes, got %d", len(data))
             return
 
         _LOGGER.debug("Okin UUID position notification: %s", data.hex())
-
-        # Extract head position (bytes 3-4, little-endian)
-        head_raw = data[3] | (data[4] << 8)
-        head_angle = round((head_raw / OKIN_HEAD_MAX_RAW) * OKIN_HEAD_MAX_ANGLE, 1)
-        # Clamp to max angle
-        head_angle = min(head_angle, OKIN_HEAD_MAX_ANGLE)
-
-        # Extract foot position (bytes 5-6, little-endian)
-        foot_raw = data[5] | (data[6] << 8)
-        foot_angle = round((foot_raw / OKIN_FOOT_MAX_RAW) * OKIN_FOOT_MAX_ANGLE, 1)
-        # Clamp to max angle
-        foot_angle = min(foot_angle, OKIN_FOOT_MAX_ANGLE)
-
+        head_raw, foot_raw = positions
+        head_angle = min(
+            round((head_raw / OKIN_HEAD_MAX_RAW) * OKIN_HEAD_MAX_ANGLE, 1), OKIN_HEAD_MAX_ANGLE
+        )
+        foot_angle = min(
+            round((foot_raw / OKIN_FOOT_MAX_RAW) * OKIN_FOOT_MAX_ANGLE, 1), OKIN_FOOT_MAX_ANGLE
+        )
         _LOGGER.debug(
             "Okin UUID position: head=%d raw (%.1f deg), foot=%d raw (%.1f deg)",
             head_raw,
@@ -506,10 +431,8 @@ class OkinUuidController(BedController):
         )
 
         if self._notify_callback:
-            # Map to standard position names used by the integration
-            # "back" is the primary head/back motor
+            # "back" is the primary head/back motor, "legs" the foot/legs motor.
             self._notify_callback("back", head_angle)
-            # "legs" is the primary foot/legs motor
             self._notify_callback("legs", foot_angle)
 
     async def stop_notify(self) -> None:
@@ -518,7 +441,7 @@ class OkinUuidController(BedController):
             return
 
         try:
-            await self.client.stop_notify(OKIN_POSITION_NOTIFY_CHAR_UUID)
+            await self.client.stop_notify(codec.POSITION_UUID)
             _LOGGER.debug("Stopped position notifications for Okin UUID bed")
         except BleakError:
             pass
@@ -526,70 +449,36 @@ class OkinUuidController(BedController):
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read current position data.
 
-        Note: OKIN beds typically use notifications rather than reads for
-        position data. This method attempts a read but may not work on all beds.
+        OKIN beds typically use notifications rather than reads for position
+        data. This method attempts a read but may not work on all beds.
         """
         if self.client is None or not self.client.is_connected:
             _LOGGER.debug("Cannot read positions: not connected")
             return
 
         try:
-            # Acquire BLE lock to prevent conflicts with concurrent writes
             async with self._ble_lock:
-                data = await self.client.read_gatt_char(OKIN_POSITION_NOTIFY_CHAR_UUID)
+                data = await self.client.read_gatt_char(codec.POSITION_UUID)
             if data:
                 _LOGGER.debug("Read Okin UUID position data: %s", data.hex())
                 self._handle_position_notification(0, bytearray(data))  # type: ignore[arg-type]
         except BleakError as err:
             _LOGGER.debug("Could not read position data: %s", err)
 
-    def _get_move_command(self) -> int:
-        """Calculate the combined motor movement command.
+    async def _move_motor(self, motor: str, command_value: int | None) -> None:
+        """Hold a motor key, or release it with ``None``.
 
-        Sums all active motor command values to create a combined command.
-        This allows multiple motors to move simultaneously when their
-        command values are set in _motor_state.
-
+        Active motors' keys are summed into one command word, so motors held
+        together move together. Stopping one motor removes only its key; STOP
+        follows only when no other motor is still held.
         Reference: https://github.com/richardhopton/smartbed-mqtt/pull/66
         """
-        command = 0
-        state = self._motor_state
-
-        # Sum all active motor commands
-        if "head" in state:
-            command += state["head"]
-        if "back" in state:
-            command += state["back"]
-        if "legs" in state:
-            command += state["legs"]
-        if "feet" in state:
-            command += state["feet"]
-
-        return command
-
-    async def _move_motor(self, motor: str, command_value: int | None) -> None:
-        """Move a motor with a specific command value or stop it.
-
-        Args:
-            motor: Motor name ('head', 'back', 'legs', 'feet')
-            command_value: The command code to send, or None to stop the motor.
-
-        This method updates the motor state and sends the combined command
-        for all active motors. When command_value is None (stop), only this
-        motor is removed from state, allowing other motors to continue.
-        """
-        # Update motor state
         if command_value is None or command_value == 0:
-            # Stop this motor - remove from state
             self._motor_state.pop(motor, None)
         else:
-            # Set this motor's command value
             self._motor_state[motor] = command_value
 
-        # Calculate combined command for all active motors
-        combined_command = self._get_move_command()
-
-        # Use configurable pulse settings from coordinator
+        combined_command = sum(self._motor_state.values())
         pulse_count = getattr(self._coordinator, "motor_pulse_count", 25)
         pulse_delay = getattr(self._coordinator, "motor_pulse_delay_ms", 200)
 
@@ -601,19 +490,13 @@ class OkinUuidController(BedController):
                     repeat_delay_ms=pulse_delay,
                 )
         finally:
-            # Cleanup: always clear motor state and send stop if no motors active
             self._motor_state.pop(motor, None)
-
-            # Send stop command only if no other motors are active
             if not self._motor_state:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
+                await self._send_stop()
 
-    # Motor control methods - Head. When the remote has a dedicated head/tilt
-    # motor (M1 keycodes), the head controls drive it; otherwise head is the
-    # usual synonym for the primary back motor on 2-motor remotes.
+    # When the remote has a dedicated head/tilt motor (M1 keycodes), the head
+    # controls drive it; otherwise head is the usual synonym for the primary
+    # back motor on 2-motor remotes.
     async def move_head_up(self) -> None:
         """Move head up (dedicated head/tilt motor, or back on 2-motor remotes)."""
         if self._remote.head_up is not None:
@@ -635,195 +518,119 @@ class OkinUuidController(BedController):
         else:
             await self.move_back_stop()
 
-    async def move_back_up(self) -> None:
-        """Move back up."""
-        if self._remote.back_up is None:
-            _LOGGER.debug("Back motor not available on remote %s", self._variant)
+    async def _move_defined(self, motor: str, keycode: int | None) -> None:
+        if keycode is None:
+            _LOGGER.debug("%s motor not available on remote %s", motor.title(), self._variant)
             return
-        await self._move_motor("back", self._remote.back_up)
+        await self._move_motor(motor, keycode)
+
+    async def move_back_up(self) -> None:
+        await self._move_defined("back", self._remote.back_up)
 
     async def move_back_down(self) -> None:
-        """Move back down."""
-        if self._remote.back_down is None:
-            _LOGGER.debug("Back motor not available on remote %s", self._variant)
-            return
-        await self._move_motor("back", self._remote.back_down)
+        await self._move_defined("back", self._remote.back_down)
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self._move_motor("back", None)
 
-    # Motor control methods - Legs
     async def move_legs_up(self) -> None:
-        """Move legs up."""
-        if self._remote.legs_up is None:
-            _LOGGER.debug("Legs motor not available on remote %s", self._variant)
-            return
-        await self._move_motor("legs", self._remote.legs_up)
+        await self._move_defined("legs", self._remote.legs_up)
 
     async def move_legs_down(self) -> None:
-        """Move legs down."""
-        if self._remote.legs_down is None:
-            _LOGGER.debug("Legs motor not available on remote %s", self._variant)
-            return
-        await self._move_motor("legs", self._remote.legs_down)
+        await self._move_defined("legs", self._remote.legs_down)
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
         await self._move_motor("legs", None)
 
-    # Motor control methods - Feet (93332 only, others map to legs)
+    # Feet: a separate motor on some remotes; others map feet to legs.
     async def move_feet_up(self) -> None:
-        """Move feet up."""
         if self._remote.feet_up is not None:
             await self._move_motor("feet", self._remote.feet_up)
         else:
-            # Fall back to legs for remotes without separate feet motor
             await self.move_legs_up()
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
         if self._remote.feet_down is not None:
             await self._move_motor("feet", self._remote.feet_down)
         else:
             await self.move_legs_down()
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         if self._remote.feet_up is not None:
             await self._move_motor("feet", None)
         else:
             await self.move_legs_stop()
 
-    # Motor control methods - Tilt/Head (93329, 93332 only)
+    # Tilt: the dedicated head motor, on remotes that have one.
     async def move_tilt_up(self) -> None:
-        """Move tilt/head up (93329, 93332 only)."""
         if self._remote.head_up is not None:
             await self._move_motor("head", self._remote.head_up)
         else:
             _LOGGER.debug("Tilt motor not available on remote %s", self._variant)
 
     async def move_tilt_down(self) -> None:
-        """Move tilt/head down (93329, 93332 only)."""
         if self._remote.head_down is not None:
             await self._move_motor("head", self._remote.head_down)
         else:
             _LOGGER.debug("Tilt motor not available on remote %s", self._variant)
 
     async def move_tilt_stop(self) -> None:
-        """Stop tilt motor."""
         if self._remote.head_up is not None:
             await self._move_motor("head", None)
 
     async def stop_all(self) -> None:
         """Stop all motors."""
         self._motor_state = {}
-        await self.write_command(
-            self._build_command(0),
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
-    # Preset methods
+    async def _press(self, keycode: int | None, tap: Tap | None, name: str) -> None:
+        """Send a remote key as a fixed burst and its STOP, if the remote has it."""
+        if keycode is None or tap is None:
+            _LOGGER.debug("%s not available on remote %s", name, self._variant)
+            return
+        await self._tap_then_stop(keycode, tap, name)
+
     @property
     def supports_preset_flat(self) -> bool:
         """Return True only when this remote defines a flat/home command."""
         return self._remote.flat is not None
 
     async def preset_flat(self) -> None:
-        """Go to flat position."""
-        flat = self._remote.flat
-        if flat is None:
-            _LOGGER.debug("Flat preset not available on remote %s", self._variant)
-            return
-        try:
-            await self.write_command(
-                self._build_command(flat),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug(
-                    "Failed to send STOP command during preset_flat cleanup", exc_info=True
-                )
+        await self._press(self._remote.flat, self._route_profile.recall, "Flat preset")
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
-        commands = {
-            1: self._remote.memory_1,
-            2: self._remote.memory_2,
-            3: self._remote.memory_3,
-            4: self._remote.memory_4,
-        }
-        command = commands.get(memory_num)
-        if command is not None:
-            try:
-                await self.write_command(
-                    self._build_command(command),
-                    repeat_count=100,
-                    repeat_delay_ms=300,
-                )
-            finally:
-                try:
-                    await self.write_command(
-                        self._build_command(0),
-                        cancel_event=asyncio.Event(),
-                    )
-                except (TimeoutError, BleakError):
-                    _LOGGER.debug(
-                        "Failed to send STOP command during preset_memory cleanup", exc_info=True
-                    )
-        else:
+        remote = self._remote
+        command = {1: remote.memory_1, 2: remote.memory_2, 3: remote.memory_3, 4: remote.memory_4}
+        keycode = command.get(memory_num)
+        if keycode is None:
             _LOGGER.warning("Memory %d not available on remote %s", memory_num, self._variant)
-
-    async def _execute_command(
-        self,
-        cmd: int | OkinUuidComplexCommand,
-        default_count: int,
-        default_delay_ms: int,
-    ) -> None:
-        """Execute a command with appropriate timing.
-
-        Handles both simple int commands (using default timing) and
-        OkinUuidComplexCommand objects (using their embedded timing).
-        """
-        if isinstance(cmd, OkinUuidComplexCommand):
-            await self.write_command(
-                self._build_command(cmd.data),
-                repeat_count=cmd.count,
-                repeat_delay_ms=cmd.wait_time,
-            )
-        else:
-            await self.write_command(
-                self._build_command(cmd),
-                repeat_count=default_count,
-                repeat_delay_ms=default_delay_ms,
-            )
+            return
+        await self._press(keycode, self._route_profile.recall, f"Memory {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory.
+        """Program the current position.
 
-        Note: These remotes use a single memory_save command that saves to the
-        last-used memory slot. The memory_num parameter is logged but the actual
-        slot saved depends on the remote's internal state.
+        These remotes use one memory save key that saves to the last-used
+        slot, so ``memory_num`` is only logged.
         """
         cmd = self._remote.memory_save
-        if cmd is not None:
-            _LOGGER.debug(
-                "Saving to memory slot %d on remote %s (remote determines actual slot)",
-                memory_num,
-                self._variant,
-            )
-            await self._execute_command(cmd, default_count=10, default_delay_ms=200)
-        else:
+        save = self._route_profile.memory_save
+        if cmd is None or save is None:
             _LOGGER.warning("Memory save not available on remote %s", self._variant)
+            return
+        _LOGGER.debug(
+            "Saving to memory slot %d on remote %s (remote determines actual slot)",
+            memory_num,
+            self._variant,
+        )
+        if isinstance(cmd, OkinUuidComplexCommand):
+            # The handset's own MemoSave hold timing.
+            save = Tap(repeats=cmd.count, repeat_ms=cmd.wait_time)
+            cmd = cmd.data
+        await self.write_command(
+            self._build_command(cmd), repeat_count=save.repeats, repeat_delay_ms=save.repeat_ms
+        )
 
-    # Light methods
     async def lights_on(self) -> None:
         """Turn on under-bed lights (via toggle - no discrete control)."""
         await self.lights_toggle()
@@ -833,23 +640,17 @@ class OkinUuidController(BedController):
         await self.lights_toggle()
 
     async def lights_toggle(self) -> None:
-        """Toggle under-bed lights."""
+        """Toggle under-bed lights with one press.
+
+        Repeating the key causes visible flashing and can end in "off".
+        """
         if self._remote.toggle_lights is None:
             _LOGGER.debug("Under-bed light not available on remote %s", self._variant)
             return
-        await self._execute_command(
-            # Most Okin UUID remotes treat under-bed lights as a single toggle press.
-            # Repeating the command causes visible flashing and can end in "off".
-            self._remote.toggle_lights,
-            default_count=1,
-            default_delay_ms=100,
-        )
+        await self.write_command(self._build_command(self._remote.toggle_lights))
 
-    # ------------------------------------------------------------------
-    # Massage (config-driven; keycodes come from the per-remote table, not
-    # from the Keeson protocol). Only remotes whose handset actually exposes
-    # massage keys advertise these capabilities.
-    # ------------------------------------------------------------------
+    # Massage keycodes come from the per-remote table. Only remotes whose
+    # handset exposes massage keys advertise these capabilities.
     @property
     def _massage(self) -> dict[str, int]:
         return self._remote.massage or {}
@@ -897,35 +698,27 @@ class OkinUuidController(BedController):
         await self.write_command(self._build_command(code))
 
     async def massage_toggle(self) -> None:
-        """Start/toggle massage (all zones)."""
         await self._massage_press("all")
 
     async def massage_off(self) -> None:
-        """Stop massage."""
         await self._massage_press("stop")
 
     async def massage_head_toggle(self) -> None:
-        """Toggle head-zone massage."""
         await self._massage_press("head_toggle")
 
     async def massage_foot_toggle(self) -> None:
-        """Toggle foot-zone massage."""
         await self._massage_press("foot_toggle")
 
     async def massage_head_up(self) -> None:
-        """Increase head massage intensity."""
         await self._massage_press("head_up")
 
     async def massage_head_down(self) -> None:
-        """Decrease head massage intensity."""
         await self._massage_press("head_down")
 
     async def massage_foot_up(self) -> None:
-        """Increase foot massage intensity."""
         await self._massage_press("foot_up")
 
     async def massage_foot_down(self) -> None:
-        """Decrease foot massage intensity."""
         await self._massage_press("foot_down")
 
     async def massage_mode_step(self) -> None:
@@ -946,37 +739,18 @@ class OkinUuidController(BedController):
         self._massage_mode_index += 1
         await self._massage_press(mode)
 
-    # ------------------------------------------------------------------
-    # Sync / child lock / zero-gravity (config-driven extras)
-    # ------------------------------------------------------------------
     @property
     def supports_sync(self) -> bool:
         """Return True if the remote can re-sync both sides of a split base."""
         return self._remote.sync is not None
 
     async def sync_positions(self) -> None:
-        """Re-synchronise both sides of a split base (held command)."""
-        if self._remote.sync is None:
-            _LOGGER.debug("Sync not available on remote %s", self._variant)
-            return
-        # The handset streams this for ~6s and releases with keycode 0, like
-        # every other held key; mirror that as a long hold followed by STOP.
-        try:
-            await self.write_command(
-                self._build_command(self._remote.sync),
-                repeat_count=60,
-                repeat_delay_ms=100,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug(
-                    "Failed to send STOP command during sync cleanup", exc_info=True
-                )
+        """Re-synchronise both sides of a split base.
+
+        The handset streams this key for ~6 s and releases with STOP, like
+        every other held key.
+        """
+        await self._press(self._remote.sync, self._route_profile.long_press, "Sync")
 
     @property
     def supports_child_lock(self) -> bool:
@@ -985,25 +759,7 @@ class OkinUuidController(BedController):
 
     async def child_lock_toggle(self) -> None:
         """Toggle the handset child lock (held command)."""
-        if self._remote.child_lock is None:
-            _LOGGER.debug("Child lock not available on remote %s", self._variant)
-            return
-        try:
-            await self.write_command(
-                self._build_command(self._remote.child_lock),
-                repeat_count=60,
-                repeat_delay_ms=100,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug(
-                    "Failed to send STOP command during child lock cleanup", exc_info=True
-                )
+        await self._press(self._remote.child_lock, self._route_profile.long_press, "Child lock")
 
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -1011,26 +767,7 @@ class OkinUuidController(BedController):
         return self._remote.zero_gravity is not None
 
     async def preset_zero_g(self) -> None:
-        """Go to the zero-gravity preset."""
-        if self._remote.zero_gravity is None:
-            _LOGGER.debug("Zero-gravity not available on remote %s", self._variant)
-            return
-        try:
-            await self.write_command(
-                self._build_command(self._remote.zero_gravity),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug(
-                    "Failed to send STOP command during preset_zero_g cleanup", exc_info=True
-                )
+        await self._press(self._remote.zero_gravity, self._route_profile.recall, "Zero-gravity")
 
     @property
     def _anti_snore_keycode(self) -> int | None:
@@ -1050,24 +787,4 @@ class OkinUuidController(BedController):
         return self._anti_snore_keycode is not None
 
     async def preset_anti_snore(self) -> None:
-        """Go to the anti-snore (or quiet-sleep) preset."""
-        keycode = self._anti_snore_keycode
-        if keycode is None:
-            _LOGGER.debug("Anti-snore not available on remote %s", self._variant)
-            return
-        try:
-            await self.write_command(
-                self._build_command(keycode),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug(
-                    "Failed to send STOP command during preset_anti_snore cleanup", exc_info=True
-                )
+        await self._press(self._anti_snore_keycode, self._route_profile.recall, "Anti-snore")

@@ -1,47 +1,21 @@
-"""DewertOkin/Okin 6-byte bed controller implementation.
+"""DewertOkin bed controller over the Okin N-frame codec.
 
-Reverse engineering by Richard Hopton (smartbed-mqtt).
+Reverse engineering by Richard Hopton (smartbed-mqtt). Brands: DewertOkin (A H
+Beard, HankookGallery), detected by device name rather than service UUID.
 
-This controller handles beds that use the Okin 6-byte protocol via the shared Okin
-write characteristic.
-Known brands using this protocol:
-- DewertOkin (A H Beard, HankookGallery)
-
-Protocol details:
-    Write characteristic: 62741525-52f9-8864-b1ab-3b3a8d65950b
-    Address type: Random
-    Command format: 6-byte Okin frame [0x04, 0x02, <4-byte-command-big-endian>]
-    See okin_protocol.py for shared frame building functions.
-
-Motor timing:
-    Pulse width: Single BLE write per pulse
-    Inter-pulse delay: 50ms for continuous movement
-    Repeat count: 25 pulses for typical motor travel
-    Stop command: Send STOP (0x000000) to halt motors
-
-Preset timing:
-    Preset commands move to stored positions automatically
-    Duration: Variable based on distance to target (typically 10-30 seconds)
-    No debounce required between preset commands
-
-Position feedback: Not supported
-    These beds do not report motor positions.
-    The 4-byte command payload is output-only (motor commands, not position data).
-
-Detection: By device name patterns ("dewertokin", "dewert", "a h beard", "hankook"),
-not by service UUID.
+Older notes described these beds as handle-based, but handles vary by device and
+firmware, so the controller writes to the stable Okin write characteristic and
+Bleak resolves the live handle. Command words and timing are the ``DEWERTOKIN``
+profile (``profiles/okin_nframe.py``). These beds report no positions.
 """
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
-from ..const import OKIMAT_WRITE_CHAR_UUID
-from .base import BedController
+from ..profiles.okin_nframe import DEWERTOKIN
+from .okin_nframe import OkinNFrameController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -49,56 +23,19 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class OkinHandleCommands:
-    """Okin 6-byte command constants."""
+class OkinHandleController(OkinNFrameController):
+    """Head and feet motors, presets, two memories, massage and a light toggle."""
 
-    # Presets
-    FLAT = bytes.fromhex("040210000000")
-    ZERO_G = bytes.fromhex("040200004000")
-    TV = bytes.fromhex("040200003000")
-    QUIET_SLEEP = bytes.fromhex("040200008000")
-    MEMORY_1 = bytes.fromhex("040200001000")
-    MEMORY_2 = bytes.fromhex("040200002000")
-
-    # Motor controls
-    HEAD_UP = bytes.fromhex("040200000001")
-    HEAD_DOWN = bytes.fromhex("040200000002")
-    FOOT_UP = bytes.fromhex("040200000004")
-    FOOT_DOWN = bytes.fromhex("040200000008")
-
-    # Massage
-    WAVE_MASSAGE = bytes.fromhex("040280000000")
-    HEAD_MASSAGE = bytes.fromhex("040200000800")
-    FOOT_MASSAGE = bytes.fromhex("040200000400")
-    MASSAGE_OFF = bytes.fromhex("040202000000")
-
-    # Lights
-    UNDERLIGHT = bytes.fromhex("040200020000")
-
-    # Stop/keepalive
-    STOP = bytes.fromhex("040200000000")
-
-
-class OkinHandleController(BedController):
-    """Controller for beds using the DewertOkin/Okin 6-byte protocol.
-
-    Older notes described these beds as handle-based, but handles vary by device
-    and firmware. Use the stable Okin write characteristic UUID so Bleak resolves
-    the current handle from live GATT services.
-    They support motor control, presets, massage, and under-bed lighting.
-    """
+    profile = DEWERTOKIN
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the Okin handle controller."""
+        """Initialize the DewertOkin controller."""
         super().__init__(coordinator)
         _LOGGER.debug("OkinHandleController initialized")
 
-    @property
-    def control_characteristic_uuid(self) -> str:
-        """Return the Okin write characteristic UUID."""
-        return OKIMAT_WRITE_CHAR_UUID
+    def _key(self, name: str) -> bytes:
+        return self._build_command(self.profile.keys[name])
 
-    # Capability properties
     @property
     def supports_preset_zero_g(self) -> bool:
         return True
@@ -113,209 +50,113 @@ class OkinHandleController(BedController):
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - these beds support under-bed lighting."""
         return True
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return False - only supports toggle, not discrete on/off."""
+        """The light is a toggle key only."""
         return False
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - these beds support memory presets (slots 1-2)."""
         return True
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 2 - these beds support memory slots 1-2."""
-        return 2
+        return self.profile.memory_slots
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - these beds don't support programming memory positions via BLE."""
+        """There is no memory programming key."""
         return False
 
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed using the live Okin write characteristic."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing command to DewertOkin/Okin characteristic %s: %s "
-            "(repeat: %d, delay: %dms, response=True)",
-            OKIMAT_WRITE_CHAR_UUID,
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                return
-
-            try:
-                async with self._ble_lock:
-                    await self.client.write_gatt_char(
-                        OKIMAT_WRITE_CHAR_UUID,
-                        command,
-                        response=True,
-                    )
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
-
-    async def _send_stop(self) -> None:
-        """Send STOP command with fresh cancel event."""
-        await self.write_command(OkinHandleCommands.STOP, cancel_event=asyncio.Event())
-
-    # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up."""
-        await self._move_with_stop(OkinHandleCommands.HEAD_UP)
+        await self._move_with_stop(self._key("head_up"))
 
     async def move_head_down(self) -> None:
-        """Move head down."""
-        await self._move_with_stop(OkinHandleCommands.HEAD_DOWN)
+        await self._move_with_stop(self._key("head_down"))
 
     async def move_head_stop(self) -> None:
-        """Stop head motor."""
-        await self.write_command(
-            OkinHandleCommands.STOP,
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     async def move_back_up(self) -> None:
-        """Move back up (same as head)."""
         await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        """Move back down (same as head)."""
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up (same as feet)."""
-        await self._move_with_stop(OkinHandleCommands.FOOT_UP)
+        await self._move_with_stop(self._key("feet_up"))
 
     async def move_legs_down(self) -> None:
-        """Move legs down (same as feet)."""
-        await self._move_with_stop(OkinHandleCommands.FOOT_DOWN)
+        await self._move_with_stop(self._key("feet_down"))
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
-        await self.write_command(
-            OkinHandleCommands.STOP,
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
-        await self._move_with_stop(OkinHandleCommands.FOOT_UP)
+        await self.move_legs_up()
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
-        await self._move_with_stop(OkinHandleCommands.FOOT_DOWN)
+        await self.move_legs_down()
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
-        await self.write_command(
-            OkinHandleCommands.STOP,
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
-        await self.write_command(
-            OkinHandleCommands.STOP,
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
-    # Preset methods
+    async def _preset(self, name: str) -> None:
+        recall = self.profile.recall
+        assert recall is not None
+        await self._preset_with_stop(self._key(name), recall.repeats, recall.repeat_ms)
+
     async def preset_flat(self) -> None:
-        """Go to flat position."""
-        await self._preset_with_stop(OkinHandleCommands.FLAT)
+        await self._preset("flat")
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
-        commands = {
-            1: OkinHandleCommands.MEMORY_1,
-            2: OkinHandleCommands.MEMORY_2,
-        }
-        if command := commands.get(memory_num):
-            await self._preset_with_stop(command)
+        if 1 <= memory_num <= self.profile.memory_slots:
+            await self._preset(f"memory_{memory_num}")
         else:
             _LOGGER.warning("Okin handle beds only support memory presets 1 and 2")
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported)."""
         _LOGGER.warning(
             "Okin handle beds don't support programming memory presets via BLE (requested slot: %d)",
             memory_num,
         )
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
-        await self._preset_with_stop(OkinHandleCommands.ZERO_G)
+        await self._preset("zero_g")
 
     async def preset_tv(self) -> None:
-        """Go to TV position."""
-        await self._preset_with_stop(OkinHandleCommands.TV)
+        await self._preset("tv")
 
     async def preset_anti_snore(self) -> None:
-        """Go to quiet sleep/anti-snore position."""
-        await self._preset_with_stop(OkinHandleCommands.QUIET_SLEEP)
+        await self._preset("anti_snore")
 
-    # Light methods
     async def lights_toggle(self) -> None:
-        """Toggle under-bed lights."""
-        await self.write_command(OkinHandleCommands.UNDERLIGHT)
+        await self.write_command(self._key("light"))
 
     async def lights_on(self) -> None:
-        """Turn lights on.
-
-        Note: The Okin protocol only supports toggle, so this sends a toggle command.
-        Calling lights_on() when lights are already on will turn them off.
-        """
+        """Toggle: calling this while the light is on turns it off."""
         await self.lights_toggle()
 
     async def lights_off(self) -> None:
-        """Turn lights off.
-
-        Note: The Okin protocol only supports toggle, so this sends a toggle command.
-        Calling lights_off() when lights are already off will turn them on.
-        """
+        """Toggle: calling this while the light is off turns it on."""
         await self.lights_toggle()
 
-    # Massage methods
     async def massage_toggle(self) -> None:
-        """Toggle wave massage."""
-        await self.write_command(OkinHandleCommands.WAVE_MASSAGE)
+        await self.write_command(self._key("massage_wave"))
 
     async def massage_off(self) -> None:
-        """Turn massage off."""
-        await self.write_command(OkinHandleCommands.MASSAGE_OFF)
+        await self.write_command(self._key("massage_off"))
 
     async def massage_head_toggle(self) -> None:
-        """Toggle head massage."""
-        await self.write_command(OkinHandleCommands.HEAD_MASSAGE)
+        await self.write_command(self._key("massage_head"))
 
     async def massage_foot_toggle(self) -> None:
-        """Toggle foot massage."""
-        await self.write_command(OkinHandleCommands.FOOT_MASSAGE)
+        await self.write_command(self._key("massage_foot"))

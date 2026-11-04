@@ -8,7 +8,7 @@
 
 - Beds controlled with the SIMMONS app (Android package `com.okin.simmons`), regular and inclined bed types
 - OKIN- and SmartBed-named receivers; these names are shared with other apps
-- Other `Simmons*` beds without this app follow [DewertOkin](dewertokin.md)
+- Other `Simmons*` beds without this app follow [DewertOkin](okin-nframe.md#dewertokin)
 
 ## Apps
 

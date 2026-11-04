@@ -271,7 +271,7 @@ Unknown product ids fall back to a fully-featured profile.
 
 The motor and massage keycodes overlap with Keeson's, but the preset ladder,
 repeat behaviour and release semantics do **not** - see
-[Leggett & Platt Okin](leggett-okin.md) for the protocol as it was actually
+[Leggett & Platt Okin](okin-nframe.md#leggett-okin-family) for the protocol as it was actually
 recovered from the vendor apps, including the memory ladder, the two-stage
 memory store, and the second (checksummed) frame format used by older control
 boxes.

@@ -17,11 +17,12 @@ from custom_components.adjustable_bed.beds.leggett_gen2 import (
     LeggettGen2Controller,
 )
 from custom_components.adjustable_bed.beds.leggett_okin import (
-    LeggettOkinCommands,
     LeggettOkinController,
-    parse_leggett_okin_feedback,
 )
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
+from custom_components.adjustable_bed.codec.okin_nframe import (
+    parse_status as parse_leggett_okin_feedback,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_PLATT,
@@ -50,6 +51,7 @@ from custom_components.adjustable_bed.const import (
     requires_pairing_after_service_discovery,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.okin_nframe import LEGGETT_PROFILES
 
 
 @pytest.fixture
@@ -133,7 +135,7 @@ class TestLeggettOkinController:
         controller = self._controller_with_characteristics()
 
         # Okin format: [0x04, 0x02, ...int_bytes]
-        command = controller._build_command(LeggettOkinCommands.MOTOR_HEAD_UP)
+        command = controller._build_command(0x1)
 
         assert len(command) == 6
         assert command[:2] == bytes([0x04, 0x02])
@@ -164,12 +166,12 @@ class TestLeggettOkinController:
         """The write characteristic without 1721 selects the checksummed R0 frame."""
         controller = self._controller_with_characteristics(LEGGETT_OKIN_CHAR_UUID)
 
-        assert controller._build_command(LeggettOkinCommands.MOTOR_HEAD_UP) == bytes.fromhex(
+        assert controller._build_command(0x1) == bytes.fromhex(
             "e5fe160000000105"
         )
         assert controller._build_command(0) == bytes.fromhex("e5fe160000000006")
         assert controller._build_command(
-            LeggettOkinCommands.CONTROL_MODE_PRESS_AND_HOLD
+            0x08010000
         ) == bytes.fromhex("e5fe1608010000fd")
         assert controller.protocol_diagnostics["protocol_revision"] == 0
 
@@ -180,7 +182,7 @@ class TestLeggettOkinController:
             LEGGETT_OKIN_REVISION_SELECTOR_CHAR_UUID,
         )
 
-        assert controller._build_command(LeggettOkinCommands.MOTOR_HEAD_UP) == bytes.fromhex(
+        assert controller._build_command(0x1) == bytes.fromhex(
             "040200000001"
         )
         assert controller.protocol_diagnostics["protocol_revision"] == 1
@@ -343,13 +345,10 @@ class TestLeggettOkinController:
 
     async def test_store_keycode_is_never_a_recall(self):
         """0x10000 arms an overwrite and must not appear in the recall ladder."""
-        assert LeggettOkinCommands.MEMORY_STORE == 0x10000
-        assert LeggettOkinCommands.MEMORY_STORE not in {
-            LeggettOkinCommands.PRESET_MEMORY_1,
-            LeggettOkinCommands.PRESET_MEMORY_2,
-            LeggettOkinCommands.PRESET_MEMORY_3,
-            LeggettOkinCommands.PRESET_MEMORY_4,
-            LeggettOkinCommands.PRESET_ANTI_SNORE,
+        keys = LEGGETT_PROFILES["prodigy4"].keys
+        assert keys["memory_store"] == 0x10000
+        assert keys["memory_store"] not in {
+            keys[name] for name in ("memory_1", "memory_2", "memory_3", "memory_4", "anti_snore")
         }
 
     @pytest.mark.parametrize(
@@ -600,7 +599,7 @@ class TestLeggettOkinController:
         """0x200 is a constant the app never builds or writes, so it is not a command."""
         controller = self._controller_with_characteristics()
 
-        assert not hasattr(LeggettOkinCommands, "MASSAGE_TIMER_STEP")
+        assert 0x200 not in LEGGETT_PROFILES["prodigy4"].keys.values()
         assert not hasattr(controller, "massage_timer_step")
 
 

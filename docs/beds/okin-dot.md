@@ -11,7 +11,7 @@ descriptions) for receiver boxes that pair with the RF1058, RF34, and RF6707
 RF handsets.
 
 - The handset remote codes resolve through the same FurniMove backend as the
-  [Okimat](okimat.md) codes.
+  [Okimat](okin-nframe.md#okimat) codes.
 - The box itself is a CB24-family receiver: it exposes the Nordic UART service
   instead of the Okin `62741523` service and takes CB24-style 7-byte frames.
 
