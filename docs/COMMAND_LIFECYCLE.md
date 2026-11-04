@@ -107,6 +107,10 @@ keeps finite pulses. The device scheduler owns the lease:
   renewal cannot start motion.
 - One hold executes for at most the 30-second service ceiling in total. The
   lease ends it sooner when renewals stop.
+- The dashboard card holds through `timed_move` or `hold_control`, renewing
+  every 250 ms with a 750 ms lease. Release, unmount and a hidden page stop the
+  renewals and send the usual STOP. Entities advertise the hold with
+  `hold_lease_mode`; motors without it keep finite pulses.
 
 ## Useful regression scenarios
 

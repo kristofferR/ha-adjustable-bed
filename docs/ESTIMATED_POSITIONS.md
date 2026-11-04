@@ -34,6 +34,38 @@ its own STOP. Other beds may follow once that is established for their
 protocol. Beds with position feedback do not need it. Single-address paired
 beds are not supported.
 
+## Setting Up
+
+Open **Settings > Devices & services > Adjustable Bed**, select **Configure**,
+then **Estimated positions**. A paired bed has one entry per side, and each side
+is calibrated on its own.
+
+1. **Choose motors.** Tick the motors to estimate and confirm that you
+   understand positions are estimated. Motors whose protocol has no proven stop
+   are listed as not offered.
+2. **Bring the motor to flat.** Lower it with the card or the remote, or choose
+   **Lower it for me** and select **It is flat now** once it stops. Only you can
+   confirm flat.
+3. **Raise.** The motor moves up from flat. Select **Reached the top** the moment
+   it stops moving.
+4. **Lower.** The motor moves down. Select **Reached the bottom** the moment it
+   stops.
+5. Steps 2 to 4 repeat for every chosen motor.
+6. **Review.** The measured seconds are editable. Tapping adds a small delay, so
+   fine tune them here, or type times you measured with a stopwatch.
+
+Each time runs from the motor's first movement command. Every calibration
+movement stops by itself after 60 seconds, **Stop, something is wrong** stops
+it at once, and closing the dialog stops it too. Cancelling keeps your previous
+motors and times, but a motor you started measuring needs its reference set
+again, because it may have moved. Motors you just measured end flat, so their
+reference is set and they start at 0%, unless something moved them before you
+saved. Typed times alone set no reference: set it when the bed is flat.
+
+To recalibrate, open **Estimated positions** again and keep **Measure travel
+times now** ticked. Saved positions keep their percentages. To turn the feature
+off, clear every motor.
+
 ## States
 
 | State | Meaning | Entity state | Saved positions and sliders |
@@ -41,7 +73,7 @@ beds are not supported.
 | Tracking | Calibrated, the reference is set, and every move since went through the integration and finished | The percentage | Work |
 | Unconfirmed | An estimate restored after Home Assistant restarted. Nothing proves the bed is still there | `unknown`, with `last_estimate` | Paused |
 | Unknown | No trustworthy estimate | `unknown` | Paused |
-| Not calibrated | Enabled, but a travel time is missing | `unavailable` | Paused |
+| Not calibrated | Enabled, but a travel time is missing. Finish the calibration in Settings | `unavailable` | Paused |
 
 Hold-to-move up and down always works, in every state. It moves relative to
 where the bed is and needs no estimate. Pressing STOP during a move keeps the

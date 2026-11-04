@@ -28,6 +28,7 @@ async def _noop(_controller) -> None:
 async def test_cover_commands_use_physical_position_axis_resource() -> None:
     """Logical Keeson motor names must share their seek scheduler resource."""
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entity_side=None,
         device_info={},
         entity_translation_key=lambda key: key,
@@ -70,6 +71,7 @@ async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes(
         local_join_bt_mac=bytes.fromhex("102030405060"),
     )
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entry=SimpleNamespace(data={}, options={}),
         entity_side="left",
         device_info={},
@@ -111,6 +113,7 @@ def test_controller_hold_metadata_is_exposed_without_changing_other_cover_attrib
         )
     )
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entity_side="left",
         device_info={},
         entity_translation_key=lambda key: key,
@@ -130,6 +133,7 @@ def test_controller_hold_metadata_is_exposed_without_changing_other_cover_attrib
 
 def test_cover_without_controller_hold_does_not_publish_hold_metadata() -> None:
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entity_side=None,
         device_info={},
         entity_translation_key=lambda key: key,

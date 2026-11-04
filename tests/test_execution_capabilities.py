@@ -43,42 +43,64 @@ APP_ROUTES = {
 }
 DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
-# Richmat 6E (R1) profiles with stream evidence. BedTech, GM Motor and Casper
-# Base are blocked and declare nothing.
-RICHMAT_STREAM: dict[str, tuple[str, ...]] = {
-    **{
-        f"richmat_{framing}": ("rmc2",)
-        for framing in ("wilinke", "nordic", "prefix55", "prefixaa")
-    },
-    "richmat_mh_revive": ("revive", "row055"),
-    "richmat_mh_best_mattress": ("best", "row055"),
-    "richmat_mh_blvd_home": ("blvd", "row055"),
-    "richmat_mh_harmony": ("harmony", "row055"),
-    "richmat_mh_idealbed": ("ideal", "row055"),
-    "leggett_wilinke": ("lp2",),
-    "hjbed": ("row121",),
-}
-
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
-    **{f"RichmatProfile:{key}": {"hold": keys} for key, keys in RICHMAT_STREAM.items()},
+    # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
+    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
+    "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
+    "OkinNFrameProfile:prodigy4": {
+        "hold": ("p4", "leggett-disp", "#483c"),
+        # CU170 watchdog onset measured on hardware: 217-218 ms.
+        "sustain_ms": ("#368", "#483c", "#516c"),
+    },
+    "OkinNFrameProfile:useries": {"hold": ("useries", "leggett-disp")},
+    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
+    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
+    "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
+    "RichmatProfile:hjbed": {"hold": ("row121",)},
+    "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
+    "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
+    "RichmatProfile:richmat_mh_blvd_home": {"hold": ("blvd", "row055")},
+    "RichmatProfile:richmat_mh_harmony": {"hold": ("harmony", "row055")},
+    "RichmatProfile:richmat_mh_idealbed": {"hold": ("ideal", "row055")},
+    "RichmatProfile:richmat_mh_revive": {"hold": ("revive", "row055")},
+    "RichmatProfile:richmat_nordic": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_prefix55": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_prefixaa": {"hold": ("rmc2",)},
+    "RichmatProfile:richmat_wilinke": {"hold": ("rmc2",)},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
+_LEGGETT_STREAM = (
+    "OkinNFrameProfile:prodigy2l",
+    "OkinNFrameProfile:prodigy2",
+    "OkinNFrameProfile:useries",
+)
+_CUSTOMATIC = (
+    "OkinNFrameProfile:clarity",
+    "OkinNFrameProfile:jeromes",
+    "OkinNFrameProfile:remedy",
+)
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
+    "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
+    "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
+    "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
+    "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
     "profiles/richmat.py:<module>.RICHMAT": tuple(
-        f"RichmatProfile:{key}"
-        for key in RICHMAT_STREAM
-        if key.startswith("richmat_") and not key.startswith("richmat_mh_")
+        f"RichmatProfile:richmat_{framing}"
+        for framing in ("nordic", "prefix55", "prefixaa", "wilinke")
     ),
     "profiles/richmat.py:<module>.RICHMAT_MH": tuple(
-        f"RichmatProfile:{key}" for key in RICHMAT_STREAM if key.startswith("richmat_mh_")
+        f"RichmatProfile:richmat_mh_{app}"
+        for app in ("best_mattress", "blvd_home", "harmony", "idealbed", "revive")
     ),
-    "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
-    "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

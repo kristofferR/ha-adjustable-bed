@@ -49,6 +49,7 @@ testing status.
 | [Protocol codecs and app profiles](design/protocol-codecs.md) | The codec, profile and controller layers, family registration and the vector harness |
 | [Bluetooth discovery hints](design/discovery-hints.md) | Per-family hints, the generated manifest matchers and detection's first pass |
 | [Protocol inventory](design/protocol-inventory.md) | Every bed type's wire format, proven by encoding, and its byte-identical aliases |
+| [Profile ids and schema 5](design/profile-id.md) | The profile id each entry and paired side runs, its migration record and which aliases share one |
 | [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence and design |
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer and rollback |
@@ -94,7 +95,7 @@ sensor/report consumers and explicit safety/product exclusions.
 [Solace, Woosa Sleep, BedSense and Motion Bed](beds/ff_frame.md) share the FFFF frame codec
 guide, with the [MotionFlex ledger](beds/solace-disposition.md).
 
-[Ergomotion 4.0 setup and protocol](beds/ergomotion-4.md), including the
+[Ergomotion 4.0 setup and protocol](beds/keeson.md#ergomotion-40), including the
 [issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
 and opt-in P1 split-side controls.
 

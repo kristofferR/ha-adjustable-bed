@@ -144,9 +144,12 @@ def _okin_tap(tap: okin_profiles.Tap | None) -> str:
     return f"{sends}, {tap.releases} STOP" if tap.releases else f"{sends}, no STOP"
 
 
-def _okin_hold(hold: okin_profiles.Hold) -> tuple[str, str, str]:
+def _okin_hold(profile: okin_profiles.OkinNFrameProfile) -> tuple[str, str, str]:
+    hold = profile.hold
     refresh = f"{hold.repeat_ms} ms" if hold.repeat_ms else "entry pulse delay"
     repeats = str(hold.repeats) if hold.repeats else "entry pulse count"
+    if profile.execution.hold == "stream":
+        repeats += "; until release with a renewable hold"
     if not hold.releases:
         release = "none (refresh ends)"
     else:
@@ -198,7 +201,7 @@ def render_okin_nframe_profiles() -> str:
     hold = _table(
         ("Profile", "Hold refresh", "Repeats", "Release"),
         (
-            (profile.name, *_okin_hold(profile.hold))
+            (profile.name, *_okin_hold(profile))
             if profile.key not in _OKIN_OWN_MOTION
             else (profile.name, "n/a", "n/a", "moves with its own frames")
             for profile in profiles

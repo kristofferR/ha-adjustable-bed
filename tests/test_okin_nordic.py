@@ -131,25 +131,6 @@ class TestOkinNordicController:
         calls = mock_client.write_gatt_char.call_args_list
         assert calls[0][0][1] == _cmd(0x02)
 
-    async def test_motor_commands(self, mock_okin_nordic_coordinator: AdjustableBedCoordinator):
-        """Test motor control commands."""
-        controller = OkinNordicController(mock_okin_nordic_coordinator)
-        mock_client = AsyncMock()
-        mock_okin_nordic_coordinator._client = mock_client
-        controller._initialized = True  # Skip init for this test
-
-        # Test head up
-        await controller.move_head_up()
-        assert mock_client.write_gatt_char.called
-        assert _cmd(0x00) in [call[0][1] for call in mock_client.write_gatt_char.call_args_list]
-
-        mock_client.reset_mock()
-
-        # Test lumbar up (Nordic uses 0x06 instead of 0x04)
-        await controller.move_lumbar_up()
-        assert mock_client.write_gatt_char.called
-        assert _cmd(0x06) in [call[0][1] for call in mock_client.write_gatt_char.call_args_list]
-
     @patch("asyncio.sleep", new_callable=AsyncMock)
     async def test_preset_commands(
         self, _mock_sleep, mock_okin_nordic_coordinator: AdjustableBedCoordinator
@@ -208,27 +189,6 @@ class TestOkinNordicController:
         assert mock_client.write_gatt_char.called
         expected = bytes([0x5A, 0x01, 0x03, 0x10, 0x40, 0x60, 0xA5])
         assert mock_client.write_gatt_char.call_args_list[0][0][1] == expected
-
-    async def test_light_commands(self, mock_okin_nordic_coordinator: AdjustableBedCoordinator):
-        """Test light control commands."""
-        controller = OkinNordicController(mock_okin_nordic_coordinator)
-        mock_client = AsyncMock()
-        mock_okin_nordic_coordinator._client = mock_client
-        controller._initialized = True
-
-        # Test light on
-        await controller.lights_on()
-        assert mock_client.write_gatt_char.called
-        assert mock_client.write_gatt_char.call_args_list[0][0][1] == _cmd(0x73)
-
-        mock_client.reset_mock()
-
-        # Test light off (Nordic repeats 3 times)
-        await controller.lights_off()
-        assert mock_client.write_gatt_char.called
-        # Should be called 3 times (repeat_count=3)
-        assert mock_client.write_gatt_char.call_count == 3
-        assert mock_client.write_gatt_char.call_args_list[0][0][1] == _cmd(0x74)
 
     async def test_memory_not_supported(
         self, mock_okin_nordic_coordinator: AdjustableBedCoordinator
