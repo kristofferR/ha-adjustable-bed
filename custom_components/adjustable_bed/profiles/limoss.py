@@ -130,6 +130,9 @@ LEGACY: Final = LimossProfile(
 # Rendered app tables. Hidden cKey4 declarations and null cells are not actions.
 LIMOSS_REMOTE: Final = LimossProfile(
     key="limoss_remote",
+    # The app refreshes a held channel every tick until release, then sends
+    # the STOP burst (#483).
+    execution=ExecutionCapabilities(hold="stream"),
     counter="app",
     write_mode="property",
     tick_ms=80,
@@ -203,6 +206,8 @@ LIMOSS_REMOTE: Final = LimossProfile(
 _CHAIR: Final = (0x22, 0x23, 0x12, 0x13, 0x50, 0x51)
 FSM_RELAX: Final = LimossProfile(
     key="fsm_relax",
+    # Same held refresh and STOP burst, at this app's own tick (#483).
+    execution=ExecutionCapabilities(hold="stream"),
     counter="session",
     write_mode="without_response",
     tick_ms=60,

@@ -90,6 +90,8 @@ class Okin5AProfile:
     recall: Tap
     """Presets and memory recall. Bed profiles follow each with STOP; ELEVATE flat sends none."""
     stop: Tap = Tap()
+    hold_refresh_ms: int | None = None
+    """The app's refresh of a held key, for a renewable hold. None: no app evidence."""
     lights_off: Tap = Tap()
     light_cycle: bool = False
     """Expose the light-cycle button, which presses light on."""
@@ -206,8 +208,12 @@ OKIN_CB35: Final = Okin5AProfile(
 )
 # ELEVATE lifts: actuator 1 is head, actuator 2 is feet, both is their union.
 # Flat is a one-shot without STOP.
+# The M1X12 and M5X5 apps refresh a held key every 100 ms until release, then
+# send STOP once (#483).
 ELEVATE: Final = Okin5AProfile(
     key="star_elevate",
+    execution=ExecutionCapabilities(hold="stream"),
+    hold_refresh_ms=100,
     transport="nus",
     write_with_response=False,
     wake=(WAKE,),

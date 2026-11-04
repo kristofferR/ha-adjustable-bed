@@ -1323,7 +1323,42 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="ergomotion_4",
                 )
             )
+    # Good Vibe Sleep: products by gesture mix and native sides, the legacy
+    # single-byte link, and the two independent sleep sensors.
+    if "goodvibe" in const.SUPPORTED_BED_TYPES:
+        for profile, layout in GOODVIBE_ROUTES:
+            scenarios.append(
+                Scenario(
+                    id=f"goodvibe:{profile}" + ("" if layout == "goodvibe" else f":{layout}"),
+                    bed_type="goodvibe",
+                    protocol_variant=profile,
+                    layout_id=layout,
+                )
+            )
+    # eShine (com.okin.eshine): each explicit product over the UART layout.
+    if "eshine_okin" in const.SUPPORTED_BED_TYPES:
+        for profile in const.ESHINE_OKIN_PROFILES:
+            scenarios.append(
+                Scenario(
+                    id=f"eshine_okin:{profile}",
+                    bed_type="eshine_okin",
+                    protocol_variant=profile,
+                    layout_id="eshine_okin",
+                )
+            )
     return scenarios
+
+
+# Product key and stored layout. 6ERM mixes sustained, short and short-and-long
+# presses on one side; ACRN offers sides 0 and 1, BTRM also the native side 2.
+GOODVIBE_ROUTES: tuple[tuple[str, str], ...] = (
+    ("selector-0004", "goodvibe"),
+    ("selector-0004", "goodvibe_nordic"),
+    ("selector-0026", "goodvibe"),
+    ("selector-0095", "goodvibe"),
+    ("sleep_rm", "goodvibe_sleep"),
+    ("sleep_hj", "goodvibe_sleep"),
+)
 
 
 # A 19-byte status that reports the light on with colour 10 20 30, so the RGB

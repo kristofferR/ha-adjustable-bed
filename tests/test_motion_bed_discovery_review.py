@@ -75,7 +75,7 @@ async def test_manual_auto_cannot_submit_an_additional_shared_app_name(hass, nam
     flow._discovery_info = _make_service_info(name=name, service_uuids=[SOLACE_SERVICE_UUID])
     result = await flow.async_step_manual_config()
     marker = next(key for key in result["data_schema"].schema if key.schema == CONF_BED_TYPE)
-    assert marker.default() == BED_TYPE_AUTO_DETECT
+    assert result["data_schema"].schema[marker](marker.default()) == BED_TYPE_AUTO_DETECT
     result = await flow.async_step_manual_config({CONF_BED_TYPE: BED_TYPE_AUTO_DETECT})
     assert result["errors"] == {"base": "auto_detect_failed"}
 

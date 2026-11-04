@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterAll, afterEach, expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
 import type { HomeAssistant, MotorEntity } from "./types";
 import { bedEntitiesForDevice } from "./discovery";
@@ -18,6 +18,16 @@ const page = Object.assign(new EventTarget(), { visibilityState: "visible" });
 class KeyEvent extends Event {
   constructor(public key: string, public repeat = false, type = "keydown") { super(type, { bubbles: true, cancelable: true }); }
 }
+// This file's globals must not leak into other test files sharing the process.
+const previousGlobals = Object.fromEntries(
+  ["window", "KeyboardEvent", "document"].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
+);
+afterAll(() => {
+  for (const [name, descriptor] of Object.entries(previousGlobals)) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+    else Reflect.deleteProperty(globalThis, name);
+  }
+});
 Object.assign(globalThis, { window: browser, KeyboardEvent: KeyEvent });
 const { AdjustableBedCard } = await import("./adjustable-bed-card");
 Object.assign(globalThis, { document: page });
@@ -69,7 +79,7 @@ function fixture() {
     const entity_id = "button." + device + "_" + key;
     hass.entities[entity_id] = { entity_id, device_id: device, platform: "adjustable_bed", translation_key: key };
     hass.states[entity_id] = { entity_id, state: "unknown", last_changed: "", last_updated: "",
-      attributes: device === "pair" ? projections.compatible_both_button : {
+      attributes: device === "pair" ? { ...projections.compatible_both_button } : {
         held_control: "back_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
       } };
     const stop = "button." + device + "_stop";
@@ -205,7 +215,8 @@ function useCover(hass: HomeAssistant, device: string): void {
   const entity_id = "cover." + device + "_back";
   hass.entities[entity_id] = { entity_id, device_id: device, platform: "adjustable_bed", translation_key: "back" };
   hass.states[entity_id] = { entity_id, state: "open", last_changed: "", last_updated: "",
-    attributes: device === "left" ? projections.paired_left_cover : projections.standalone_cover };
+    // A copy: tests delete projection fields, which must not leak into others.
+    attributes: { ...(device === "left" ? projections.paired_left_cover : projections.standalone_cover) } };
 }
 
 test("real Python standalone cover metadata reaches the registered bounded card path", () => {

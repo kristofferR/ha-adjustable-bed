@@ -19,7 +19,7 @@ from homeassistant.components.bluetooth.const import (
     CONF_SOURCE_MODEL,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_SOURCE
+from homeassistant.const import CONF_ADDRESS, CONF_SOURCE
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
@@ -32,7 +32,10 @@ from .const import (
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
+    CONF_SIDE,
     DEVICE_INFO_CHARS,
     DOMAIN,
     SUPPORTED_BED_TYPES,
@@ -40,6 +43,7 @@ from .const import (
 )
 from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import format_mapping_payloads
+from .pairing import iter_children
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_pins_only, redact_sleep_number_sessions, redact_sleeptracker_sessions
 from .support_logs import async_setup_support_logs
@@ -59,7 +63,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_REPORT_VERSION = "2.5"
+_REPORT_VERSION = "2.6"
 _MAX_NEARBY_BLUETOOTH_DEVICES = 30
 _BLUETOOTH_DOMAIN = "bluetooth"
 _ESPHOME_DOMAIN = "esphome"
@@ -185,6 +189,7 @@ async def generate_support_bundle(
         },
         "system": _get_system_info(hass, integration_version),
         "integration": _get_integration_info(entry) if entry is not None else _empty_integration_info(address),
+        "profile": _build_profile_section(entry, address),
         "profile_recommendations": await async_profile_decision_history(hass, address),
         "device": diagnostics_report.device,
         "detection": diagnostics_report.detection,
@@ -924,6 +929,33 @@ def _build_raw_adapter_info(diagnostics_report: dict[str, Any]) -> dict[str, Any
         "actual": device.get("actual_source"),
         "available": device.get("visible_sources", []),
     }
+
+
+def _build_profile_section(entry: ConfigEntry | None, address: str) -> dict[str, Any] | None:
+    """Return the stored profile ids and the schema 5 migration record.
+
+    The record keeps the schema the entry came from and the saved fields each
+    id was derived from. A paired entry lists every side; ``targeted`` marks
+    the sides this bundle's address reaches (both, for a single-address pair).
+    """
+    if entry is None:
+        return None
+    section: dict[str, Any] = {
+        "schema_version": entry.version,
+        "schema_minor_version": entry.minor_version,
+        "profile_id": entry.data.get(CONF_PROFILE_ID),
+        "migration": entry.data.get(CONF_PROFILE_MIGRATION),
+    }
+    if children := iter_children(entry.data):
+        target = address.upper()
+        section["sides"] = {
+            str(child.get(CONF_SIDE)): {
+                "profile_id": child.get(CONF_PROFILE_ID),
+                "targeted": str(child.get(CONF_ADDRESS, "")).upper() == target,
+            }
+            for child in children
+        }
+    return section
 
 
 def _empty_integration_info(address: str) -> dict[str, Any]:
