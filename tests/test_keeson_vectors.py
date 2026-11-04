@@ -171,12 +171,8 @@ def _e6_census(key: str) -> set[bytes]:
         words |= _words_named(malouf.MaloufLegacyOkinController, malouf.MaloufCommands)
     elif key == "sleepys_box15":
         b15 = sleepys.SleepysBox15Commands
-        words |= _words_named(sleepys.SleepysBox15Controller, b15) - {
-            b15.FLAT_BYTE4,
-            b15.FLAT_BYTE6,
-            b15.ZERO_G_BYTE4,
-            b15.ZERO_G_BYTE6,
-        }
+        motors = ("HEAD_UP", "HEAD_DOWN", "FOOT_UP", "FOOT_DOWN", "LUMBAR_UP", "LUMBAR_DOWN")
+        words |= {getattr(b15, name) for name in motors}
         words |= {b15.FLAT_BYTE4 << 8 | b15.FLAT_BYTE6 << 24}
         words |= {b15.ZERO_G_BYTE4 << 8 | b15.ZERO_G_BYTE6 << 24}
     elif key == "scott_living":

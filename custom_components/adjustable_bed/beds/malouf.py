@@ -644,7 +644,7 @@ class MaloufLegacyOkinController(BedController):
 
     def _build_command(self, command_value: int) -> bytes:
         """Build a nine-byte E6 frame through the Keeson codec (side byte ``00``)."""
-        return keeson_profiles.encode(self.profile, command_value)
+        return keeson_profiles.encode(self.profile, command_value & 0xFFFFFFFF)
 
     async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
