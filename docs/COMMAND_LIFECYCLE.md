@@ -103,6 +103,30 @@ keeps finite pulses. The device scheduler owns the lease:
 - One hold executes for at most the 30-second service ceiling in total. The
   lease ends it sooner when renewals stop.
 
+## Merged stream for concurrent motors
+
+`serial_opaque` remains the default strategy. A controller whose app is proven
+to hold independent axes together (#516) lists those motors in
+`ExecutionCapabilities.concurrent`. A `timed_move`, renewable or not, on one of
+those motors joins a merged stream instead of a serial command, but only when
+every physical side of the call declares that motor; a one-address side view
+stays serialized.
+
+- One streamer per device owns the wire as a single `CommandKind.STREAM`
+  intent, so there is still exactly one writer. Each tick the controller
+  composes every live member into its frames.
+- A member on a motor that already streams replaces it. A member that ends,
+  expires or is replaced gets its own cleanup while the others keep moving.
+  The last member out runs the profile release, and its call returns after it.
+- A motor-scoped STOP ends only its member. A side or bed-wide STOP, a
+  disconnect or unload ends every member at the stop epoch, and a later member
+  waits for that STOP to finish before a new streamer starts.
+- An ordinary command on a streamed motor, such as a preset, replaces the
+  whole stream, as it replaces a serial move.
+- A cleanup or release failure ends the stream and is reported to the members
+  it ended. A renewable member follows the lease rules above; renewal moves its
+  deadline without a frame.
+
 ## Useful regression scenarios
 
 Use the existing coordinator, controller-contract, scheduler, paired, and timed

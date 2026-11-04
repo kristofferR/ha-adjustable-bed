@@ -12,6 +12,14 @@ deadline without touching the wire. When the deadline passes, the scheduler
 cancels the hold through its own cancel event, so the controller runs the same
 cleanup a STOP or replacement would. A generation that has ended is never
 admitted or renewed again, and leases live only in memory.
+
+The merged-stream strategy (#516) is the one exception to opaque operations.
+It is used only for motors a controller declares in
+``ExecutionCapabilities.concurrent``. One streamer per device owns the wire as
+a single ``CommandKind.STREAM`` intent, and holds and timed moves on disjoint
+motors join it as members. Each tick the controller composes the live members
+into its frames; a member that ends gets its own cleanup, and the last one out
+runs the profile release.
 """
 
 from __future__ import annotations
@@ -25,7 +33,7 @@ from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any, Final
+from typing import Any, Final, Protocol
 from uuid import uuid4
 
 ALL_COMMAND_RESOURCES: Final = frozenset({"*"})
@@ -43,6 +51,7 @@ class CommandKind(StrEnum):
     GROUP = "group"
     STOP = "stop"
     HOLD = "hold"
+    STREAM = "stream"
 
 
 class CommandState(StrEnum):
@@ -119,8 +128,208 @@ class _LeaseRecord:
     resources: frozenset[str]
     deadline: float
     handle: CommandHandle | None = None
+    member: StreamMember | None = None
     ended: bool = False
     timer: asyncio.TimerHandle | None = None
+
+
+@dataclass(slots=True, eq=False)
+class StreamMember:
+    """One motor's held or timed motion inside a merged stream (#516)."""
+
+    motor: str
+    """The controller's motor key, for composing frames."""
+    resource: str
+    """The scheduler resource this member owns; one member per resource."""
+    action: str
+    """The direction or control being held."""
+    deadline: float
+    """Event-loop time at which the member ends unless its lease is renewed."""
+    duration_s: float | None = None
+    """A timed move's budget, counted from its first written tick, like the
+    serial path's budget after connection. ``deadline`` applies until then."""
+    lease: HoldLease | None = None
+    ceiling: float | None = None
+    """Event-loop time no renewal can extend the member past."""
+    outcome: CommandOutcome | None = None
+    error: BaseException | None = None
+    done: asyncio.Event = field(default_factory=asyncio.Event)
+
+
+class StreamDriver(Protocol):
+    """What a merged stream needs from a controller that composes members."""
+
+    @property
+    def stream_tick_s(self) -> float:
+        """Refresh interval of the composed frames."""
+        ...
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        """Write one composed refresh carrying every live member."""
+        ...
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        """Run one ending member's own cleanup while ``remaining`` keep moving."""
+        ...
+
+    async def release_stream(self) -> None:
+        """Run the profile release after the last member has ended."""
+        ...
+
+
+StreamRunner = Callable[[Callable[[StreamDriver], Awaitable[None]]], Awaitable[None]]
+"""Runs the stream body with the live controller, inside the device's wire lane."""
+
+
+class _MergedStream:
+    """One streamer that owns the wire for members on disjoint motors."""
+
+    def __init__(self, scheduler: DeviceCommandScheduler, resources: frozenset[str]) -> None:
+        self.scheduler = scheduler
+        self.resources = resources
+        self.members: dict[str, StreamMember] = {}
+        self.ending: deque[StreamMember] = deque()
+        self.handle: CommandHandle | None = None
+        self.membership_changed = False
+        self.wake = asyncio.Event()
+        self.closing = False
+        self.awaiting_release: list[StreamMember] = []
+
+    @property
+    def accepting(self) -> bool:
+        handle = self.handle
+        return (
+            handle is not None
+            and not self.closing
+            and not handle.future.done()
+            and not handle.context.cancel_event.is_set()
+        )
+
+    def join(self, member: StreamMember) -> None:
+        previous = self.members.get(member.resource)
+        if previous is not None:
+            self.retire(previous, CommandOutcome.REPLACED)
+        self.members[member.resource] = member
+        self.membership_changed = True
+        self.wake.set()
+
+    def retire(self, member: StreamMember, outcome: CommandOutcome) -> None:
+        """Remove a live member; its cleanup runs on the streamer's next pass."""
+        if self.members.get(member.resource) is not member:
+            return
+        del self.members[member.resource]
+        member.outcome = outcome
+        self.ending.append(member)
+        self.scheduler._end_member_lease(member)
+        self.membership_changed = True
+        self.wake.set()
+
+    def abandon(self, outcome: CommandOutcome) -> None:
+        """Resolve members of a stream that never wrote anything."""
+        for member in (*self.members.values(), *self.ending):
+            member.outcome = member.outcome or outcome
+            self.scheduler._end_member_lease(member)
+            member.done.set()
+        self.members.clear()
+        self.ending.clear()
+        self.scheduler._forget_stream(self)
+
+    async def run(self, context: CommandContext, runner: StreamRunner) -> None:
+        try:
+            await runner(lambda driver: self._stream(context, driver))
+        finally:
+            # Covers a runner that failed before the body ran.
+            reason = context.cancel_reason or CommandOutcome.FAILED
+            self.abandon(reason)
+
+    async def _stream(self, context: CommandContext, driver: StreamDriver) -> None:
+        loop = asyncio.get_running_loop()
+        next_tick = loop.time()
+        failure: BaseException | None = None
+        try:
+            while True:
+                now = loop.time()
+                for member in tuple(self.members.values()):
+                    if member.deadline <= now:
+                        self.retire(member, CommandOutcome.EXPIRED)
+                await self._clean_up(driver)
+                if not self.members or context.cancel_event.is_set():
+                    break
+                self.wake.clear()
+                if self.membership_changed or loop.time() >= next_tick:
+                    self.membership_changed = False
+                    members = tuple(self.members.values())
+                    await driver.write_stream_tick(members)
+                    now = loop.time()
+                    next_tick = now + driver.stream_tick_s
+                    for member in members:
+                        if member.duration_s is not None:
+                            member.deadline = now + member.duration_s
+                            member.duration_s = None
+                if self.membership_changed:
+                    continue
+                earliest = min(member.deadline for member in self.members.values())
+                timeout = max(0.0, min(next_tick, earliest) - loop.time())
+                with contextlib.suppress(TimeoutError):
+                    async with asyncio.timeout(timeout):
+                        await _first_set(self.wake, context.cancel_event)
+        except BaseException as err:
+            failure = err
+            raise
+        finally:
+            # STOP, replacement, shutdown or a failure: every member ends here,
+            # each with its own cleanup, then the profile release. New members
+            # start a fresh stream behind this one.
+            self.closing = True
+            outcome = (
+                CommandOutcome.FAILED
+                if failure is not None and not isinstance(failure, asyncio.CancelledError)
+                else context.cancel_reason or CommandOutcome.STOPPED
+            )
+            for member in tuple(self.members.values()):
+                self.retire(member, outcome)
+            try:
+                await self._clean_up(driver)
+            finally:
+                try:
+                    await driver.release_stream()
+                except BaseException as err:
+                    for member in self.awaiting_release:
+                        member.error = member.error or err
+                        member.outcome = CommandOutcome.FAILED
+                    raise
+                finally:
+                    # The last members out return after the release, as a
+                    # serial move returns after its STOP.
+                    for member in self.awaiting_release:
+                        member.done.set()
+
+    async def _clean_up(self, driver: StreamDriver) -> None:
+        while self.ending:
+            member = self.ending.popleft()
+            try:
+                await driver.end_stream_member(member, tuple(self.members.values()))
+            except BaseException as err:
+                member.error = err
+                member.outcome = CommandOutcome.FAILED
+                raise
+            finally:
+                if self.members:
+                    member.done.set()
+                else:
+                    self.awaiting_release.append(member)
+
+
+async def _first_set(*events: asyncio.Event) -> None:
+    waiters = [asyncio.ensure_future(event.wait()) for event in events]
+    try:
+        await asyncio.wait(waiters, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for waiter in waiters:
+            waiter.cancel()
+        await asyncio.gather(*waiters, return_exceptions=True)
 
 
 @dataclass(slots=True)
@@ -229,6 +438,7 @@ class CommandHandle:
     ready: asyncio.Event = field(default_factory=asyncio.Event)
     commit: asyncio.Event = field(default_factory=asyncio.Event)
     lease_record: _LeaseRecord | None = None
+    stream: _MergedStream | None = None
 
 
 _CURRENT_COMMAND_CONTEXT: ContextVar[CommandContext | None] = ContextVar(
@@ -253,6 +463,14 @@ def command_resources(*resources: str) -> frozenset[str]:
     """Normalize a resource declaration, defaulting to the whole command link."""
     normalized = frozenset(resource for resource in resources if resource)
     return normalized or ALL_COMMAND_RESOURCES
+
+
+def _clamp(deadline: float, ceiling: float | None) -> float:
+    return deadline if ceiling is None else min(deadline, ceiling)
+
+
+def _strategy(handle: CommandHandle) -> str:
+    return "merged_stream" if handle.stream is not None else "serial_opaque"
 
 
 def _resources_overlap(left: Collection[str], right: Collection[str]) -> bool:
@@ -294,6 +512,7 @@ class DeviceCommandScheduler:
         self._stop_barrier.set()
         self._closed = False
         self._leases: OrderedDict[tuple[str, frozenset[str]], _LeaseRecord] = OrderedDict()
+        self._streams: dict[frozenset[str], _MergedStream] = {}
 
     @property
     def token(self) -> object:
@@ -348,7 +567,7 @@ class DeviceCommandScheduler:
             "kind": handle.intent.kind.value,
             "group_id": handle.intent.group_id,
             "resources": sorted(handle.intent.resources),
-            "scheduler_strategy": self.strategy_name,
+            "scheduler_strategy": _strategy(handle),
             "stop_epoch": handle.context.admitted_stop_epoch,
             "state": handle.state.value,
             "admitted_at": handle.admitted_at.isoformat(),
@@ -427,25 +646,132 @@ class DeviceCommandScheduler:
                     return live
                 if handle.future.done():
                     return handle
-            replaces_active = False
-            if intent.cancel_running:
-                active = self._active
-                if active is not None and self._handles_conflict(active, handle):
-                    handle.context.preempted_contexts = (active.context,)
-                replaces_active = self._replace_conflicts_locked(handle)
-            # A replacement for the operation currently owning the link must be
-            # next after that operation's cleanup. Otherwise an older,
-            # unrelated prepared group can sit in front of a motor STOP/reverse
-            # and prevent the replacement from ever reaching the active motor.
-            if replaces_active:
-                self._queue.appendleft(handle)
-            else:
-                self._queue.append(handle)
-            if self._worker is None or self._worker.done():
-                self._worker = asyncio.create_task(
-                    self._run(), name=f"adjustable_bed_commands_{self._name}"
-                )
+            self._admit_locked(handle)
         return handle
+
+    def _admit_locked(self, handle: CommandHandle) -> None:
+        replaces_active = False
+        if handle.intent.cancel_running:
+            active = self._active
+            if active is not None and self._handles_conflict(active, handle):
+                handle.context.preempted_contexts = (active.context,)
+            replaces_active = self._replace_conflicts_locked(handle)
+        # A replacement for the operation currently owning the link must be
+        # next after that operation's cleanup. Otherwise an older,
+        # unrelated prepared group can sit in front of a motor STOP/reverse
+        # and prevent the replacement from ever reaching the active motor.
+        if replaces_active:
+            self._queue.appendleft(handle)
+        else:
+            self._queue.append(handle)
+        if self._worker is None or self._worker.done():
+            self._worker = asyncio.create_task(
+                self._run(), name=f"adjustable_bed_commands_{self._name}"
+            )
+
+    # ---------------------------------------------------------- merged stream
+    async def execute_stream_member(
+        self,
+        member: StreamMember,
+        resources: Collection[str],
+        runner: StreamRunner,
+        *,
+        expected_stop_epoch: int | None = None,
+    ) -> CommandOutcome | None:
+        """Join ``member`` to the live stream over ``resources``, or start one.
+
+        ``resources`` are the controller's concurrent motors. A member on a
+        motor that already streams replaces it. Returns the member's outcome,
+        or None when a lease renewed the live member instead; raises the
+        member's cleanup failure.
+        """
+        stream_resources = command_resources(*resources)
+        if member.resource not in stream_resources:
+            raise ValueError(f"{member.resource} is not a concurrent resource")
+        async with self._lock:
+            if self._closed:
+                raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+            if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
+                return CommandOutcome.STOPPED
+            if member.lease is not None:
+                bound = self._bind_member_lease(member)
+                if bound == "renewed":
+                    return None
+                if bound == "expired":
+                    return CommandOutcome.EXPIRED
+            stream = self._streams.get(stream_resources)
+            if stream is None or not stream.accepting:
+                stream = _MergedStream(self, stream_resources)
+                self._streams[stream_resources] = stream
+
+                async def operation(context: CommandContext) -> None:
+                    await stream.run(context, runner)
+
+                handle = self._new_handle(
+                    CommandIntent(operation, resources=stream_resources, kind=CommandKind.STREAM),
+                    prepared=False,
+                )
+                handle.stream = stream
+                stream.handle = handle
+                stream.join(member)
+                self._admit_locked(handle)
+            else:
+                stream.join(member)
+        try:
+            await member.done.wait()
+        except asyncio.CancelledError:
+            stream.retire(member, CommandOutcome.CALLER_CANCELLED)
+            raise
+        if member.error is not None:
+            raise member.error
+        return member.outcome
+
+    def _bind_member_lease(self, member: StreamMember) -> str:
+        """Bind a member to its lease: "bound", "renewed" (a live hold) or "expired"."""
+        assert member.lease is not None
+        key = (member.lease.owner, frozenset({member.resource}))
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, member.lease)
+        if claim is HoldClaim.STALE:
+            raise StaleHoldLease(
+                f"Hold generation {member.lease.generation} of {member.lease.owner!r} has ended"
+            )
+        if claim is HoldClaim.RENEW and record is not None and (
+            record.member is not None or record.handle is not None
+        ):
+            self._set_lease_deadline(record, member.lease)
+            return "renewed"
+        if record is None or claim is HoldClaim.START:
+            record = self._new_lease_record(key, member.lease)
+        if record.timer is not None:
+            # The streamer enforces member deadlines itself.
+            record.timer.cancel()
+            record.timer = None
+        if record.deadline <= asyncio.get_running_loop().time():
+            # Reserved, then waited out its lease before admission.
+            self._end_lease(record)
+            return "expired"
+        record.member = member
+        member.deadline = _clamp(record.deadline, member.ceiling)
+        return "bound"
+
+    def _end_member_lease(self, member: StreamMember) -> None:
+        if member.lease is None:
+            return
+        record = self._leases.get((member.lease.owner, frozenset({member.resource})))
+        if record is not None and record.member is member:
+            self._end_lease(record)
+
+    def _forget_stream(self, stream: _MergedStream) -> None:
+        if self._streams.get(stream.resources) is stream:
+            del self._streams[stream.resources]
+
+    def _stop_stream_members(self, resources: Collection[str]) -> None:
+        """End only the members a motor-scoped STOP names."""
+        for stream in tuple(self._streams.values()):
+            for member in tuple(stream.members.values()):
+                if _resources_overlap((member.resource,), resources):
+                    stream.retire(member, CommandOutcome.STOPPED)
 
     def admit_stop(
         self,
@@ -614,12 +940,22 @@ class DeviceCommandScheduler:
         self._stop_barrier.clear()
         self._stop_epoch += 1
         self._end_leases_overlapping(resources)
+        # A motor-scoped STOP ends only its stream member; a side or bed-wide
+        # STOP cancels the whole streamer below.
+        wide = self._is_wide(resources)
+        if not wide:
+            self._stop_stream_members(resources)
         self._cancel_matching(
             resources,
             outcome=CommandOutcome.STOPPED,
             invalidated_stop_epoch=self._stop_epoch,
+            spare_streams=not wide,
         )
         return self._stop_epoch
+
+    @staticmethod
+    def _is_wide(resources: Collection[str]) -> bool:
+        return any(item == "*" or item.endswith(":*") for item in resources)
 
     def finish_stop(self, stop_epoch: int) -> None:
         """Release commands only after the newest STOP operation finishes."""
@@ -698,6 +1034,14 @@ class DeviceCommandScheduler:
         for handle in (self._active, *self._queue):
             if handle is not None and handle.lease_record is not None:
                 self._expire_record(handle.lease_record, outcome)
+        for stream in tuple(self._streams.values()):
+            handle = stream.handle
+            if handle is not None and not handle.future.done():
+                handle.context.cancel_reason = outcome
+                handle.context.cancel_event.set()
+                if handle in self._queue:
+                    self._queue.remove(handle)
+                    self._finish_locked(handle, outcome)
 
     def _classify_lease(self, record: _LeaseRecord | None, lease: HoldLease) -> HoldClaim:
         if (
@@ -715,6 +1059,7 @@ class DeviceCommandScheduler:
             or record.ended
             or record.action != lease.action
             or (record.handle is not None and record.handle.context.cancel_event.is_set())
+            or (record.member is not None and record.member.outcome is not None)
         ):
             return HoldClaim.STALE
         return HoldClaim.RENEW
@@ -750,6 +1095,18 @@ class DeviceCommandScheduler:
         record.deadline = loop.time() + lease.duration_s
         if record.timer is not None:
             record.timer.cancel()
+            record.timer = None
+        if record.member is not None:
+            # Wake the streamer to recompute its wait; no frame is written.
+            record.member.deadline = _clamp(record.deadline, record.member.ceiling)
+            stream = next(
+                (s for s in self._streams.values() if s.members.get(record.member.resource)
+                 is record.member),
+                None,
+            )
+            if stream is not None:
+                stream.wake.set()
+            return
         record.timer = loop.call_at(record.deadline, self._on_lease_deadline, record)
         if record.handle is not None:
             record.handle.context.hold_deadline = record.deadline
@@ -763,6 +1120,10 @@ class DeviceCommandScheduler:
         """End a lease and cancel its hold; the controller's cleanup still runs."""
         handle = record.handle
         self._end_lease(record)
+        if record.member is not None:
+            for stream in tuple(self._streams.values()):
+                stream.retire(record.member, outcome)
+            return
         if handle is None or handle.future.done():
             return
         handle.context.cancel_reason = outcome
@@ -848,7 +1209,9 @@ class DeviceCommandScheduler:
         replaces_active = False
         if active is not None and self._handles_conflict(active, incoming):
             replaces_active = True
-            active.context.cancel_reason = CommandOutcome.REPLACED
+            # A streamer already ending at a STOP keeps that reason for its members.
+            if active.stream is None or not active.context.cancel_event.is_set():
+                active.context.cancel_reason = CommandOutcome.REPLACED
             active.context.cancel_event.set()
 
         for queued in tuple(self._queue):
@@ -876,14 +1239,21 @@ class DeviceCommandScheduler:
         *,
         outcome: CommandOutcome,
         invalidated_stop_epoch: int | None = None,
+        spare_streams: bool = False,
     ) -> None:
         active = self._active
-        if active is not None and _resources_overlap(active.intent.resources, resources):
+        if (
+            active is not None
+            and _resources_overlap(active.intent.resources, resources)
+            and not (spare_streams and active.stream is not None)
+        ):
             active.context.cancel_reason = outcome
             active.context.cancel_event.set()
             active.invalidated_stop_epoch = invalidated_stop_epoch
         for queued in tuple(self._queue):
-            if not _resources_overlap(queued.intent.resources, resources):
+            if not _resources_overlap(queued.intent.resources, resources) or (
+                spare_streams and queued.stream is not None
+            ):
                 continue
             self._queue.remove(queued)
             queued.context.cancel_reason = outcome
@@ -1047,6 +1417,8 @@ class DeviceCommandScheduler:
             return
         if handle.lease_record is not None:
             self._end_lease(handle.lease_record)
+        if handle.stream is not None and handle.started_at is None:
+            handle.stream.abandon(outcome)
         if invalidated_stop_epoch is not None:
             handle.invalidated_stop_epoch = invalidated_stop_epoch
         finished_at = datetime.now(UTC)
@@ -1073,7 +1445,7 @@ class DeviceCommandScheduler:
                 kind=handle.intent.kind,
                 group_id=handle.intent.group_id,
                 resources=tuple(sorted(handle.intent.resources)),
-                scheduler_strategy=self.strategy_name,
+                scheduler_strategy=_strategy(handle),
                 stop_epoch=handle.context.admitted_stop_epoch,
                 invalidated_stop_epoch=handle.invalidated_stop_epoch,
                 admitted_at=handle.admitted_at,

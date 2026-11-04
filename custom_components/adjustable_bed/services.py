@@ -2387,8 +2387,33 @@ async def _async_timed_move(
         await _release_preflighted(preflighted)
         raise
 
+    # #516: merge into one stream only when every physical side declares this
+    # motor concurrent (the paired intersection). A one-address side view
+    # keeps its sides serialized.
+    physical = [
+        target for coordinator, side in targets for target in _command_targets(coordinator, side)
+    ]
+    streamed = all(
+        not isinstance(target, SingleAddressSideCoordinator)
+        and (resources := target.stream_resources()) is not None
+        and plans[_plan_key(target)][3] in resources
+        for target in physical
+    )
+
     async def move(target: BedChild) -> None:
         command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
+        if streamed:
+            assert not isinstance(target, SingleAddressSideCoordinator)
+            await target.async_execute_stream_member(
+                motor=motor,
+                resource=resource,
+                action=direction,
+                duration_s=lease.duration_s if lease is not None else duration_ms / 1000,
+                ceiling_s=duration_ms / 1000 if lease is not None else None,
+                lease=lease,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+            )
+            return
         if lease is not None:
             await target.async_execute_controller_command(
                 command,

@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..casper_base_protocol import Request as CasperBaseRequest
+    from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
     from ..gmmotor_requests import Request as GmmotorRequest
     from ..hjbed_requests import Request as HJBedRequest
@@ -477,6 +478,27 @@ class BedController(ABC):
         if isinstance(execution, ExecutionCapabilities):
             return execution
         return NO_EXECUTION_CAPABILITIES
+
+    # Merged stream (#516). A controller that declares ``execution.concurrent``
+    # composes its live members; the others never receive these calls.
+    @property
+    def stream_tick_s(self) -> float:
+        """Refresh interval of a merged stream's composed frames."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        """Write one composed refresh carrying every live member."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        """Run one ending member's own cleanup while ``remaining`` keep moving."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
+
+    async def release_stream(self) -> None:
+        """Run the profile release after the last stream member ended."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
 
     @property
     def auto_stops_on_idle(self) -> bool:
