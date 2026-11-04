@@ -17,7 +17,9 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..codec import keeson as codec
 from ..const import GLIDEAWAY_MOTION_MODELS
+from ..profiles import keeson as keeson_profiles
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -71,32 +73,16 @@ MASSAGE: Final = {
 LIGHT: Final = 0x00020000
 
 
-def frame(body: bytes) -> bytes:
-    """Append the complement of the full byte sum, including the header."""
-    return body + bytes(((~sum(body)) & 0xFF,))
-
-
 def command_frame(mask: int) -> bytes:
-    """The only reachable normal parameter is zero."""
-    return frame(b"\xe6\xfe\x16" + mask.to_bytes(4, "little") + b"\x00")
+    """The nine-byte E6 frame; the only reachable side parameter is zero."""
+    return keeson_profiles.encode(keeson_profiles.GLIDEAWAY_MOTION, mask)
 
 
 def rtc_frame(now: datetime) -> bytes:
     """Retain the shipped year/month/day/hour offsets, including midnight FF."""
-    return frame(
-        bytes(
-            (
-                0xE7,
-                0x80,
-                0x01,
-                (now.year - 1900) & 255,
-                now.month - 1,
-                now.day - 1,
-                (now.hour - 1) & 255,
-                now.minute,
-                now.second,
-            )
-        )
+    year = (now.year - 1900) & 255
+    return codec.clock_fields(
+        (year, now.month - 1, now.day - 1, (now.hour - 1) & 255, now.minute, now.second)
     )
 
 
@@ -114,7 +100,7 @@ def alarm_frame(enabled: bool, hour: int, minute: int, wake: str, now: datetime)
         fields = bytes((hour, minute, 1 << bit, WAKE_MODES[wake]))
     else:
         fields = bytes(4)
-    return frame(b"\xed\x80\x03" + fields + bytes(8))
+    return codec.checked(b"\xed\x80\x03" + fields + bytes(8))
 
 
 class GlideawayMotionController(BedController):
@@ -122,6 +108,7 @@ class GlideawayMotionController(BedController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, model: str | None) -> None:
         super().__init__(coordinator)
+        self.profile = keeson_profiles.GLIDEAWAY_MOTION
         if model is None or model not in GLIDEAWAY_MOTION_MODELS:
             raise ValueError("Choose Motion 400, 450, 500 or 600 from the Glideaway app")
         self.model = model
@@ -460,9 +447,9 @@ class GlideawayMotionController(BedController):
         await self.write_command(packet)
 
     async def query_alarm(self) -> None:
-        await self.write_command(bytes.fromhex("e28003009a"))
+        await self.write_command(codec.ALARM_QUERY)
         await asyncio.sleep(0.2)
-        await self.write_command(bytes.fromhex("e28003009a"))
+        await self.write_command(codec.ALARM_QUERY)
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:

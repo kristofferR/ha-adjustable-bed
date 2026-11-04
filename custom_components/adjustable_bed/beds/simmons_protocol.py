@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Final, Literal
 
+from ..codec import keeson as keeson_codec
+from ..profiles import keeson as keeson_profiles
+
 Protocol = Literal["okin", "smartbed"]
 AlarmMode = Literal["custom_mode", "flat", "anti_snore"]
 
@@ -83,15 +86,15 @@ def control_frame(protocol: Protocol, action: str) -> bytes:
     """Return the control frame for an app action."""
     mask = MASKS[action]
     if protocol == "okin" and action not in INCLINED_ACTIONS:
-        return checked([0xE6, 0xFE, 0x16, *mask.to_bytes(4, "little"), 0x00])
+        return keeson_profiles.encode(keeson_profiles.SIMMONS_OKIN, mask)
     return bytes((0x05, 0x02)) + mask.to_bytes(4, "big") + b"\x00"
 
 
 def clock_frame(protocol: Protocol, now: datetime) -> bytes:
     """Return the local clock sync frame sent when the control page links."""
-    fields = [now.year - 1900, now.month - 1, now.day, now.hour, now.minute, now.second]
     if protocol == "okin":
-        return checked([0xE7, 0x80, 0x01, *fields])
+        return keeson_codec.clock(now)
+    fields = [now.year - 1900, now.month - 1, now.day, now.hour, now.minute, now.second]
     # Dart DateTime.weekday: Monday 1 through Sunday 7.
     return wire([0x07, 0x04, *fields, now.isoweekday()])
 
@@ -99,7 +102,7 @@ def clock_frame(protocol: Protocol, now: datetime) -> bytes:
 def query_frames(protocol: Protocol) -> tuple[bytes, ...]:
     """Return one manager query: both records (OKIN) or slot 1 then slot 2."""
     if protocol == "okin":
-        return (checked([0xE1, 0x80, 0x03]),)
+        return (keeson_codec.ALARM_RECORDS_QUERY,)
     return (bytes((0x00, 0xC0)), bytes((0x00, 0xD0)))
 
 

@@ -452,6 +452,18 @@ AVANTI_BASES: Final = replace(_ORE, key="avanti_bases")
 BEDSENSE_BASES: Final = replace(_ORE, key="bedsense_bases")
 DYNASTY_BASES: Final = replace(_ORE, key="dynasty_bases")
 MAXCOIL_UNA: Final = replace(_ORE, key="maxcoil_una")
+# Bed types whose controllers keep their key tables, sessions and timing, over the
+# nine-byte E6 frame. Only the frame is profile data here.
+_E6: Final = KeesonProfile(key="e6", header=0xE6, side=0, hold=None)
+GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion")  # row068
+MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin")
+SLEEPYS_BOX15: Final = replace(_E6, key="sleepys_box15")
+SCOTT_LIVING: Final = replace(_E6, key="scott_living", side=1)
+# SIMMONS (row049) sends these frames when the name starts with "okin".
+SIMMONS_OKIN: Final = replace(_E6, key="simmons_okin")
+# AdjustaMattress (row067): model P1 sends E6 frames, P2 big-endian E5 frames.
+ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress")
+ADJUSTAMATTRESS_P2: Final = KeesonProfile(key="adjustamattress_p2", order="big", hold=None)
 
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
@@ -485,6 +497,13 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         BEDSENSE_BASES,
         DYNASTY_BASES,
         MAXCOIL_UNA,
+        GLIDEAWAY_MOTION,
+        MALOUF_LEGACY_OKIN,
+        SLEEPYS_BOX15,
+        SCOTT_LIVING,
+        SIMMONS_OKIN,
+        ADJUSTAMATTRESS,
+        ADJUSTAMATTRESS_P2,
     )
 }
 

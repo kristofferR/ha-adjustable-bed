@@ -2,10 +2,8 @@
 
 Reverse engineering from com.keeson.scottlivingrelease APK.
 
-Scott Living uses a 9-byte Keeson variant with inverted sum checksum.
-Packet format: [0xE6, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, side, checksum]
-
-The side byte is always 0x01 in this implementation.
+Scott Living uses the nine-byte Keeson E6 frame with side byte 0x01
+(``profiles/keeson.py`` SCOTT_LIVING).
 """
 
 from __future__ import annotations
@@ -22,6 +20,7 @@ from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
 )
+from ..profiles import keeson as keeson_profiles
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -77,6 +76,7 @@ class ScottLivingController(BedController):
             coordinator: The AdjustableBedCoordinator instance
         """
         super().__init__(coordinator)
+        self.profile = keeson_profiles.SCOTT_LIVING
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
 
@@ -140,23 +140,8 @@ class ScottLivingController(BedController):
         return True
 
     def _build_command(self, key: int) -> bytes:
-        """Build a 9-byte command packet from a key value.
-
-        Format: [0xE6, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, side, checksum]
-        Checksum: (~sum(bytes 0-7)) & 0xFF
-        """
-        # Convert key to command bytes using bit positions
-        cmd0 = key & 0xFF
-        cmd1 = (key >> 8) & 0xFF
-        cmd2 = (key >> 16) & 0xFF
-        cmd3 = (key >> 24) & 0xFF
-        side = 0x01  # Always side 1 in this app
-
-        header = [0xE6, 0xFE, 0x16]
-        data = header + [cmd0, cmd1, cmd2, cmd3, side]
-        checksum = (~sum(data)) & 0xFF
-        data.append(checksum)
-        return bytes(data)
+        """Build a nine-byte E6 frame through the Keeson codec (side byte ``01``)."""
+        return keeson_profiles.encode(self.profile, key)
 
     async def write_command(
         self,

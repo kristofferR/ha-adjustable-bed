@@ -12,12 +12,14 @@ until that family's codec exists (#759). Which carrier, header, byte order and
 words an app uses belongs to its profile (``profiles/keeson.py``).
 
 The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
-``E1 80`` alarm dismissal, ``EF 02`` rename) end with the same checksum.
+``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``EF 02`` rename) end with the
+same checksum.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
@@ -158,14 +160,28 @@ def position_target(head: int, foot: int) -> bytes:
     )
 
 
-def clock(now: datetime) -> bytes:
-    """Encode the ``E7 80 01`` clock frame: year minus 1900, zero-based month, day, time."""
-    fields = ((now.year - 1900) & 0xFF, now.month - 1, now.day, now.hour, now.minute, now.second)
+def clock_fields(fields: Sequence[int]) -> bytes:
+    """Encode the ``E7 80 01`` clock frame from six date and time bytes.
+
+    Apps differ in how they derive the bytes (month and day bases, hour offset).
+    """
+    if len(fields) != 6:
+        raise ValueError("The clock frame carries six date and time bytes")
     return checked(bytes((0xE7, 0x80, 0x01, *fields)))
+
+
+def clock(now: datetime) -> bytes:
+    """Clock frame with year minus 1900, zero-based month, then day and time as they are."""
+    year = (now.year - 1900) & 0xFF
+    return clock_fields((year, now.month - 1, now.day, now.hour, now.minute, now.second))
 
 
 # Dismisses a ringing wake alarm.
 ALARM_DISMISS: Final = checked(b"\xe1\x80\x04")
+# Ask for the stored alarm records: E2 80 (Glideaway Motion, AdjustaMattress P1)
+# and E1 80 03 (SIMMONS OKIN, both records at once).
+ALARM_QUERY: Final = checked(b"\xe2\x80\x03\x00")
+ALARM_RECORDS_QUERY: Final = checked(b"\xe1\x80\x03")
 
 
 @dataclass(frozen=True)

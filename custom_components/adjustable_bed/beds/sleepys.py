@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..const import KEESON_BASE_WRITE_CHAR_UUID, SLEEPYS_BOX24_WRITE_CHAR_UUID
+from ..profiles import keeson as keeson_profiles
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -29,13 +30,9 @@ _LOGGER = logging.getLogger(__name__)
 class SleepysBox15Commands:
     """BOX15 protocol command values (SMI-decoded from blutter output).
 
-    9-byte packets with checksum:
-    [0xE6, 0xFE, 0x16, motor_cmd, byte4, 0x00, byte6, 0x00, checksum]
-
-    After SMI decode, this is identical to Keeson OKIN variant format.
+    Nine-byte Keeson E6 frames (``profiles/keeson.py`` SLEEPYS_BOX15): the motor
+    command is the key word's first byte, the preset bytes its second and fourth.
     """
-
-    HEADER = bytes([0xE6, 0xFE, 0x16])
 
     # Motor commands (byte 3) - SMI decoded (stored_value >> 1)
     STOP = 0x00
@@ -74,18 +71,6 @@ class SleepysBox24Commands:
     ZERO_G = 0x60
 
 
-def _calculate_box15_checksum(data: bytes) -> int:
-    """Calculate BOX15 checksum (inverted 8-bit sum).
-
-    Args:
-        data: Bytes to checksum (should be 8 bytes)
-
-    Returns:
-        Checksum byte (one's complement of sum)
-    """
-    return (~sum(data)) & 0xFF
-
-
 class SleepysBox15Controller(BedController):
     """Controller for Sleepy's Elite beds using BOX15 protocol.
 
@@ -100,6 +85,7 @@ class SleepysBox15Controller(BedController):
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Sleepy's BOX15 controller."""
         super().__init__(coordinator)
+        self.profile = keeson_profiles.SLEEPYS_BOX15
         _LOGGER.debug("SleepysBox15Controller initialized")
 
     @property
@@ -132,40 +118,12 @@ class SleepysBox15Controller(BedController):
         return False
 
     def _build_motor_command(self, motor_cmd: int) -> bytes:
-        """Build a 9-byte motor command packet.
-
-        Args:
-            motor_cmd: Motor command byte (e.g., HEAD_UP=0x02)
-
-        Returns:
-            9-byte command packet with checksum
-        """
-        data = bytearray(8)
-        data[0:3] = SleepysBox15Commands.HEADER
-        data[3] = motor_cmd
-        # bytes 4-7 are zeros for motor commands
-        checksum = _calculate_box15_checksum(bytes(data))
-        return bytes(data) + bytes([checksum])
+        """Build a nine-byte E6 frame with the motor byte first."""
+        return keeson_profiles.encode(self.profile, motor_cmd)
 
     def _build_preset_command(self, byte4: int, byte6: int) -> bytes:
-        """Build a 9-byte preset command packet.
-
-        Args:
-            byte4: Preset data for byte position 4
-            byte6: Preset data for byte position 6
-
-        Returns:
-            9-byte command packet with checksum
-        """
-        data = bytearray(8)
-        data[0:3] = SleepysBox15Commands.HEADER
-        data[3] = 0x00  # No motor command for presets
-        data[4] = byte4
-        # data[5] = 0x00
-        data[6] = byte6
-        # data[7] = 0x00
-        checksum = _calculate_box15_checksum(bytes(data))
-        return bytes(data) + bytes([checksum])
+        """Build a nine-byte E6 frame with the preset bytes at positions 4 and 6."""
+        return keeson_profiles.encode(self.profile, byte4 << 8 | byte6 << 24)
 
     async def _move_with_stop(self, motor_cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""

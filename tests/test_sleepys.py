@@ -16,7 +16,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.sleepys import (
     SleepysBox15Commands,
     SleepysBox24Commands,
-    _calculate_box15_checksum,
 )
 from custom_components.adjustable_bed.beds.sleepys_box25 import (
     Box25Commands,
@@ -24,6 +23,7 @@ from custom_components.adjustable_bed.beds.sleepys_box25 import (
     SleepysBox25LegacyController,
     _translate_star_to_legacy,
 )
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -150,11 +150,6 @@ def mock_sleepys_box25_config_entry(
 class TestSleepysBox15Commands:
     """Test BOX15 command constants."""
 
-    def test_header_is_3_bytes(self):
-        """Header should be exactly 3 bytes."""
-        assert len(SleepysBox15Commands.HEADER) == 3
-        assert bytes([0xE6, 0xFE, 0x16]) == SleepysBox15Commands.HEADER
-
     def test_motor_command_values(self):
         """Verify motor command values."""
         assert SleepysBox15Commands.STOP == 0x00
@@ -208,20 +203,20 @@ class TestBox15Checksum:
         data = bytes([0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00])
         data_sum = sum(data) & 0xFF
         expected_checksum = (~data_sum) & 0xFF
-        assert _calculate_box15_checksum(data) == expected_checksum
+        assert codec.checksum(data) == expected_checksum
 
     def test_checksum_head_up_command(self):
         """Verify checksum for HEAD_UP command."""
         # [0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00]
         data = bytes([0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 + 0x01 = 0x195 -> 0x95, inverted = ~0x95 = 0x6A
         assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x01)) & 0xFF
 
     def test_checksum_stop_command(self):
         """Verify checksum for STOP command."""
         data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 = 0x194 -> 0x94, inverted = ~0x94 = 0x6B
         assert checksum == (~(0xE6 + 0xFE + 0x16)) & 0xFF
 
@@ -229,7 +224,7 @@ class TestBox15Checksum:
         """Verify checksum for FLAT preset command."""
         # [0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x08, 0x00]
         data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x08, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 + 0x08 = 0x19C -> 0x9C, inverted = ~0x9C = 0x63
         assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x08)) & 0xFF
 
@@ -237,7 +232,7 @@ class TestBox15Checksum:
         """Verify checksum for ZERO_G preset command."""
         # [0xE6, 0xFE, 0x16, 0x00, 0x10, 0x00, 0x00, 0x00]
         data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x10, 0x00, 0x00, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 + 0x10 = 0x1A4 -> 0xA4, inverted = ~0xA4 = 0x5B
         assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x10)) & 0xFF
 
@@ -350,7 +345,7 @@ class TestSleepysBox15CommandFormat:
         await coordinator.async_connect()
 
         command = coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_UP)
-        assert command[0:3] == SleepysBox15Commands.HEADER
+        assert command[0:3] == b"\xe6\xfe\x16"
 
     async def test_motor_command_byte3_is_motor_cmd(
         self,
@@ -389,7 +384,7 @@ class TestSleepysBox15CommandFormat:
         await coordinator.async_connect()
 
         command = coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_DOWN)
-        expected_checksum = _calculate_box15_checksum(command[0:8])
+        expected_checksum = codec.checksum(command[0:8])
         assert command[8] == expected_checksum
 
     async def test_preset_command_is_9_bytes(
@@ -422,7 +417,7 @@ class TestSleepysBox15CommandFormat:
             SleepysBox15Commands.ZERO_G_BYTE4,
             SleepysBox15Commands.ZERO_G_BYTE6,
         )
-        assert command[0:3] == SleepysBox15Commands.HEADER
+        assert command[0:3] == b"\xe6\xfe\x16"
 
     async def test_preset_command_byte3_is_zero(
         self,
@@ -471,7 +466,7 @@ class TestSleepysBox15CommandFormat:
             SleepysBox15Commands.ZERO_G_BYTE4,
             SleepysBox15Commands.ZERO_G_BYTE6,
         )
-        expected_checksum = _calculate_box15_checksum(command[0:8])
+        expected_checksum = codec.checksum(command[0:8])
         assert command[8] == expected_checksum
 
 
@@ -1123,7 +1118,7 @@ class TestSleepysProtocolDifferences:
 
         box15_cmd = box15_coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_UP)
         # BOX15 checksum is in last byte
-        expected_checksum = _calculate_box15_checksum(box15_cmd[0:8])
+        expected_checksum = codec.checksum(box15_cmd[0:8])
         assert box15_cmd[8] == expected_checksum
 
         # BOX24 has no checksum - last byte is the command itself
@@ -1154,7 +1149,6 @@ class TestSleepysProtocolDifferences:
 
     def test_different_headers(self):
         """BOX15 and BOX24 use different header bytes."""
-        assert bytes([0xE6, 0xFE, 0x16]) == SleepysBox15Commands.HEADER
         assert bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20]) == SleepysBox24Commands.HEADER
 
     def test_different_foot_command_values(self):

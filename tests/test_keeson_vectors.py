@@ -2,12 +2,23 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import inspect
+import re
 from typing import Any, cast
 
 import pytest
 
-from custom_components.adjustable_bed.beds import innova, keeson_okin_apps, ore_comfort_bed
+from custom_components.adjustable_bed.beds import adjustamattress_protocol as adjustamattress
+from custom_components.adjustable_bed.beds import (
+    glideaway_motion,
+    innova,
+    keeson_okin_apps,
+    malouf,
+    ore_comfort_bed,
+    scott_living,
+    sleepys,
+)
+from custom_components.adjustable_bed.beds import simmons_protocol as simmons
 from custom_components.adjustable_bed.beds.cluster033 import AppController
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import BED_TYPE_KEESON, KEESON_VARIANTS, VARIANT_AUTO
@@ -19,8 +30,21 @@ from custom_components.adjustable_bed.profiles.keeson import SinoCommands as S
 from tests.keeson_vectors import FROZEN_FRAMES
 from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
 
+# Controllers that keep their own key tables; only the frame is profile data.
+E6_CONTROLLERS = frozenset(
+    {
+        "glideaway_motion",
+        "malouf_legacy_okin",
+        "sleepys_box15",
+        "scott_living",
+        "simmons_okin",
+        "adjustamattress",
+        "adjustamattress_p2",
+    }
+)
 APP_REPORTED = frozenset(
     {
+        *E6_CONTROLLERS,
         "adjustable_lite",
         "adjustable_lite_ksbt03c",
         "restonic_a",
@@ -32,7 +56,10 @@ APP_REPORTED = frozenset(
         *(app for app in ore_comfort_bed.ORE_COMFORT_BED_APPS),
     }
 )
-_MOTORS = {"head": (K.MOTOR_HEAD_UP, K.MOTOR_HEAD_DOWN), "feet": (K.MOTOR_FEET_UP, K.MOTOR_FEET_DOWN)}
+_MOTORS = {
+    "head": (K.MOTOR_HEAD_UP, K.MOTOR_HEAD_DOWN),
+    "feet": (K.MOTOR_FEET_UP, K.MOTOR_FEET_DOWN),
+}
 _STEP_MASSAGE = (K.MASSAGE_HEAD_UP, K.MASSAGE_HEAD_DOWN, K.MASSAGE_FOOT_UP, K.MASSAGE_FOOT_DOWN)
 
 
@@ -41,7 +68,12 @@ def _decode(data: bytes) -> bytes:
     if data[:3] in (b"\xe5\xfe\x16", b"\xe6\xfe\x16"):
         side = data[7] if len(data) == 9 else None
         return codec.frame(int.from_bytes(data[3:7], "big"), header=data[0], order="big", side=side)
-    if data in (codec.STATUS_QUERY, codec.ALARM_DISMISS):
+    if data in (
+        codec.STATUS_QUERY,
+        codec.ALARM_DISMISS,
+        codec.ALARM_QUERY,
+        codec.ALARM_RECORDS_QUERY,
+    ):
         return data
     if data[:2] == b"\xef\x02":
         return codec.rename(data[2:17].rstrip(b"\x00"))
@@ -49,8 +81,7 @@ def _decode(data: bytes) -> bytes:
         pulses = int.from_bytes(data[3:5], "little"), int.from_bytes(data[5:7], "little")
         return codec.position_target(*pulses)
     if data[:3] == b"\xe7\x80\x01":
-        year, month, day, hour, minute, second = data[3:9]
-        return codec.clock(datetime(1900 + year, month + 1, day, hour, minute, second))
+        return codec.clock_fields(data[3:9])
     if data[:1] == b"{":
         return data  # JSON text: covered by the census, which builds it through the codec.
     if len(data) == 6:
@@ -121,18 +152,71 @@ def _keeson_census(profile: KeesonProfile, *, exposed: bool) -> set[bytes]:
     return frames
 
 
+def _words_named(controller: type, table: type) -> set[int]:
+    """Words of ``table`` that ``controller``'s source refers to."""
+    names = set(re.findall(rf"{table.__name__}\.([A-Z0-9_]+)", inspect.getsource(controller)))
+    return {getattr(table, name) for name in names}
+
+
+def _e6_census(key: str) -> set[bytes]:
+    """Key frames the E6 controllers send from their own tables."""
+    profile = profiles.PROFILES[key]
+    words = {codec.RELEASE}
+    if key == "glideaway_motion":
+        gm = glideaway_motion
+        words |= {word for pair in gm.AXES.values() for word in pair}
+        words |= {*gm.PRESETS.values(), *gm.MASSAGE.values(), gm.LIGHT}
+        return {profiles.encode(profile, word) for word in words} | {codec.ALARM_QUERY}
+    if key == "malouf_legacy_okin":
+        words |= _words_named(malouf.MaloufLegacyOkinController, malouf.MaloufCommands)
+    elif key == "sleepys_box15":
+        b15 = sleepys.SleepysBox15Commands
+        words |= _words_named(sleepys.SleepysBox15Controller, b15) - {
+            b15.FLAT_BYTE4,
+            b15.FLAT_BYTE6,
+            b15.ZERO_G_BYTE4,
+            b15.ZERO_G_BYTE6,
+        }
+        words |= {b15.FLAT_BYTE4 << 8 | b15.FLAT_BYTE6 << 24}
+        words |= {b15.ZERO_G_BYTE4 << 8 | b15.ZERO_G_BYTE6 << 24}
+    elif key == "scott_living":
+        words |= _words_named(scott_living.ScottLivingController, scott_living.ScottLivingCommands)
+    elif key == "simmons_okin":
+        frames = {simmons.control_frame("okin", action) for action in simmons.MASKS}
+        frames = {frame for frame in frames if frame[0] == profile.header}
+        return frames | set(simmons.query_frames("okin"))
+    else:
+        model = "P1" if key == "adjustamattress" else "P2"
+        am = adjustamattress
+        actions = (*am.MOVEMENT, *am.PRESETS, *am.CYCLIC, *am.TIMERS, *am.DEDICATED)
+        frames = {am.frame(model, action) for action in (*actions, "queryMassage")}
+        return {frame for frame in frames if frame and frame[0] in (0xE5, 0xE6)}
+    return {profiles.encode(profile, word) for word in words}
+
+
 def _app_census(profile: KeesonProfile) -> set[bytes]:
     """Frames the INNOVA, Okin and ORE app controllers send from their key tables."""
+    if profile.key in E6_CONTROLLERS:
+        return _e6_census(profile.key)
     words = {codec.RELEASE}
     if profile is profiles.INNOVA:
         words |= {*innova._COMMON_HELD.values()}
         words |= {word for layout in innova._LAYOUT_HELD.values() for word in layout.values()}
         words |= {*profile.presets.values(), K.TOGGLE_LIGHTS, *_STEP_MASSAGE}
-        words |= {innova.COMBINED_UP, innova.COMBINED_DOWN, innova.MASSAGE_LEVEL, innova.MASSAGE_TIMER}
+        words |= {
+            innova.COMBINED_UP,
+            innova.COMBINED_DOWN,
+            innova.MASSAGE_LEVEL,
+            innova.MASSAGE_TIMER,
+        }
         renames = {innova.innova_rename_frame(name) for name in ("A", "BED")}
         return {profiles.encode(profile, word) for word in words} | renames
     if profile.key in ("simon_li", "okin_seating"):
-        table = keeson_okin_apps.SIMON_KEYS if profile is profiles.SIMON_LI else keeson_okin_apps.SEATING_KEYS
+        table = (
+            keeson_okin_apps.SIMON_KEYS
+            if profile is profiles.SIMON_LI
+            else keeson_okin_apps.SEATING_KEYS
+        )
         words |= set(table.values())
     elif profile is profiles.HEAL_EVERY_NIGHT:
         apps = keeson_okin_apps
@@ -144,7 +228,12 @@ def _app_census(profile: KeesonProfile) -> set[bytes]:
         words |= {apps.HEAL_WAVE + level - 1 for level in range(1, apps.HEAL_WAVE_MAX + 1)}
     else:
         ore = ore_comfort_bed
-        words |= {word for axes in ore.LAYOUTS.values() for _k, _t, up, down in axes for word in (up, down)}
+        words |= {
+            word
+            for axes in ore.LAYOUTS.values()
+            for _k, _t, up, down in axes
+            for word in (up, down)
+        }
         words |= {ore.RECALL_ZERO_G, ore.RECALL_FLAT, *ore.RECALL_MEMORY.values()}
         words |= {ore.SAVE_ZERO_G, ore.SAVE_FLAT, *ore.SAVE_MEMORY.values()}
         words |= {ore.LIGHT_ON, ore.LIGHT_OFF, *ore.MASSAGE_TIMER.values()}
@@ -192,6 +281,7 @@ def test_profile_sends_only_frozen_frames(key: str) -> None:
     frozen = {bytes.fromhex(literal) for literal in FROZEN_FRAMES[key]}
     if key in APP_REPORTED:
         app_controller = key in ("innova", "simon_li", "okin_seating", "heal_every_night")
+        app_controller |= key in E6_CONTROLLERS
         app_controller |= key in ore_comfort_bed.ORE_COMFORT_BED_APPS
         census = _app_census(profile) if app_controller else _keeson_census(profile, exposed=True)
         assert {frame.hex() for frame in census - frozen} == set()

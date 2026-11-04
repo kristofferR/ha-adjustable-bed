@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
+from ..profiles import keeson as keeson_profiles
+
 Model = Literal["P1", "P2", "P3", "P4"]
 MODELS: tuple[Model, ...] = ("P1", "P2", "P3", "P4")
 LAYOUTS = (
@@ -120,7 +122,7 @@ def frame(
         return bytes((5, 2, 0, 0, 0, LIFTS[action], 0))
     if action in DEDICATED:
         prefix, code = DEDICATED[action]
-        return _summed([229, 254, 22, prefix, 0, 0, code])
+        return keeson_profiles.encode(keeson_profiles.ADJUSTAMATTRESS_P2, prefix << 24 | code)
     if action in ("setAlarm", "queryAlarm", "setCurrentTime"):
         if now is None:
             raise ValueError("Clock commands require local time")
@@ -183,7 +185,7 @@ def frame(
         return b"\x00\xb0" if model == "P4" else None
     if action in ("queryMassage", "queryMassageOnce"):
         return (
-            _summed([230, 254, 22, 3, 0, 0, 0, 0])
+            keeson_profiles.encode(keeson_profiles.ADJUSTAMATTRESS, 3)
             if model == "P1"
             else None
             if model == "P2"
@@ -227,13 +229,16 @@ def frame(
             payload[index] = value
         elif action not in TIMERS:
             raise ValueError(f"Unknown action {action}")
-        return _summed([230, 254, 22, *payload])
+        # Payload bytes 0-3 are the little-endian key word; the side byte stays 0.
+        word = int.from_bytes(bytes(payload[:4]), "little")
+        return keeson_profiles.encode(keeson_profiles.ADJUSTAMATTRESS, word)
     if model == "P2":
+        p2 = keeson_profiles.ADJUSTAMATTRESS_P2
         if action in MOVEMENT:
-            return _summed([229, 254, 22, 0, 0, 0, MOVEMENT[action]])
+            return keeson_profiles.encode(p2, MOVEMENT[action])
         if action in PRESETS or action in TIMERS:
             code = PRESETS[action] if action in PRESETS else 65 + TIMERS.index(action)
-            return _summed([229, 254, 22, 1, 0, 0, code])
+            return keeson_profiles.encode(p2, 1 << 24 | code)
         if action == "underbedLighting":
             return None  # Retained-frame replay is excluded from HA control.
     payload = [0] * 5
