@@ -41,6 +41,7 @@ from ..alarm_table import (
 from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
+from ..command_scheduler import current_command_context
 from ..const import (
     POSITION_CHECK_INTERVAL,
     POSITION_STALL_COUNT,
@@ -48,7 +49,7 @@ from ..const import (
     POSITION_TOLERANCE,
 )
 from ..diagnostic_payloads import format_payload
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
 
 _LOGGER = logging.getLogger(__name__)
@@ -477,6 +478,24 @@ class BedController(ABC):
         if isinstance(execution, ExecutionCapabilities):
             return execution
         return NO_EXECUTION_CAPABILITIES
+
+    def leased_hold_refreshes(self, repeat_ms: int) -> int | None:
+        """Refreshes of an open-ended leased hold at the app's own interval (#483).
+
+        ``None`` unless the running command carries a hold lease and this
+        controller declares a streamed hold; callers then keep their finite
+        pulses. Within a lease the count spans the hold ceiling at
+        ``repeat_ms``. The lease ends the loop first, through its cancel event.
+        """
+        context = current_command_context()
+        if (
+            context is None
+            or context.lease is None
+            or context.cancel_event is not self._coordinator.cancel_command
+            or self.execution.hold != "stream"
+        ):
+            return None
+        return HOLD_CEILING_MS // repeat_ms + 1
 
     @property
     def auto_stops_on_idle(self) -> bool:
