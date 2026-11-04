@@ -153,7 +153,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | **Distinct protocols** | | | | | |
 | `svane` (Svane Remote: `auto` P1 and `svane_remote_jmc` P2) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP. The app selects P2 when the device name contains `JMC`; hold and concurrent declared on both routes, whose timed moves run on the merged stream |
 | `jensen` | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control; hold declared |
-| `svane` (`jensen_linon`) | S stream | U | U | jensen, jensen-disp | 800 ms refresh; STOP to head then foot; combined motion alternates as one control; not declared with the rest of `svane` |
+| `svane` (`jensen_linon`) | S stream | U | U | jensen, jensen-disp | 800 ms refresh; STOP to head then foot; combined motion alternates as one control; hold declared |
 | `linak` (all routes) | S stream | U | U | linak-iot, linak-lp, linak-mem, linak-guide | two-section moves are fixed opcodes; one bed-wide release; speed is reported, not commanded; hold declared |
 | `octo` (standard) | S stream | U | U | octo | 100 ms delayed global STOP; hold declared on the standard controller only |
 | `octo` (`star2`) | B | B | B | none | no accepted artifact; `auto_stops_on_idle` rests on community reverse engineering |
