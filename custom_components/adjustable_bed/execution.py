@@ -18,6 +18,8 @@ HoldMode = Literal["stream", "latched"]
 HOLD_MODES: Final[frozenset[str]] = frozenset({"stream", "latched"})
 MAX_HOLD_MS: Final = 30_000
 """Longest one renewable hold runs in total, however often it is renewed."""
+LATCHED_MAX_HOLD_MS: Final = 10_000
+"""Ceiling of a latched hold, whose bed keeps moving until STOP arrives."""
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -52,6 +54,13 @@ class ExecutionCapabilities:
             raise ValueError("concurrent motion needs at least two motor resources")
 
     @property
+    def hold_ceiling_ms(self) -> int | None:
+        """Longest one renewable hold may run; None when no hold is declared."""
+        if self.hold is None:
+            return None
+        return LATCHED_MAX_HOLD_MS if self.hold == "latched" else MAX_HOLD_MS
+
+    @property
     def declared(self) -> frozenset[str]:
         """Names of the capabilities this value declares, for evidence checks."""
         return frozenset(
@@ -68,13 +77,13 @@ class ExecutionCapabilities:
 NO_EXECUTION_CAPABILITIES: Final = ExecutionCapabilities()
 
 
-def leased_hold_ms(press_ms: int) -> int:
+def leased_hold_ms(press_ms: int, ceiling_ms: int = MAX_HOLD_MS) -> int:
     """How long one press holds: ``press_ms``, or the hold ceiling under a lease.
 
     A renewable hold (#483) runs until its lease ends, never past the ceiling.
     """
     context = current_command_context()
-    return MAX_HOLD_MS if context is not None and context.lease is not None else press_ms
+    return ceiling_ms if context is not None and context.lease is not None else press_ms
 
 
 def leased_pulses(refresh_ms: int) -> tuple[int, int] | None:

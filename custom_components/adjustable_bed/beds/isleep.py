@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..const import KAIDI_NOTIFY_CHAR_UUID, KAIDI_WRITE_CHAR_UUID, SIDE_LEFT, SIDE_RIGHT
+from ..execution import ExecutionCapabilities
 from ..isleep_profile import validate_isleep_profile
 from ..kaidi_protocol import format_kaidi_node_address
 from .base import BedController, ControllerButtonSpec, MotorControlSpec
@@ -113,6 +114,11 @@ class IsleepController(BedController):
         self._patterns = [0, 0, 0]
         self._timers = [0, 0, 0]
         self._strengths = [{"head": 0, "foot": 0} for _ in range(3)]
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """One start per press, then a per-axis release (#483)."""
+        return ExecutionCapabilities(hold="latched")
 
     @property
     def control_characteristic_uuid(self) -> str:

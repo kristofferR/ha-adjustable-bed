@@ -24,6 +24,7 @@ from bleak.exc import BleakError
 
 from ..app_session import app_session
 from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -151,6 +152,11 @@ class RemacroController(BedController):
     # ------------------------------------------------------------------
     # Profile
     # ------------------------------------------------------------------
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """One press write, then the paired STOP at release (#483)."""
+        return ExecutionCapabilities(hold="latched")
 
     @property
     def _led_level(self) -> int:

@@ -35,6 +35,7 @@ from ..const import (
     KAIDI_BROADCAST_VADDR,
     KAIDI_JOIN_PASSWORD,
     KAIDI_NOTIFY_CHAR_UUID,
+    KAIDI_VARIANT_FLOYD,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
@@ -44,6 +45,7 @@ from ..const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..kaidi_protocol import extract_kaidi_advertisement, format_kaidi_node_address
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -497,6 +499,13 @@ class KaidiController(BedController):
     # ------------------------------------------------------------------
     # Product family helpers
     # ------------------------------------------------------------------
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """One start per press, then a per-axis release (#483). Floyd has no complete report."""
+        if self._variant == KAIDI_VARIANT_FLOYD:
+            return NO_EXECUTION_CAPABILITIES
+        return ExecutionCapabilities(hold="latched")
 
     @property
     def _product_family(self) -> KaidiProductFamily:

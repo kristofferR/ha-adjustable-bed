@@ -176,7 +176,8 @@ A direct command being accepted is not confirmation that the target was reached.
 
 `timed_move` and `hold_control` accept two optional fields, `hold_owner` and
 `hold_generation`, that turn the call into a renewable hold on beds whose app
-is proven to stream a held key until release. Other beds reject the fields
+is proven to hold a key until release, by streaming it or by one start frame
+and a STOP. Other beds reject the fields
 before anything moves, and a call without them behaves exactly as before.
 
 | Field | Meaning |
@@ -196,7 +197,10 @@ interrupts it, when the link drops, or when the integration unloads. Calls
 naming an ended generation, an older generation, or a different motion under
 the same generation are refused, so a late renewal can never restart motion.
 Nothing is replayed after a reconnect or restart. One hold never streams
-longer than 30 seconds in total, however often it is renewed. A renewable
+longer than 30 seconds in total, however often it is renewed. Latched beds
+(Solace, BedSense, Motion Bed, Reverie, Kaidi, iSleep and Remacro) keep moving
+after one start frame until STOP arrives, so their holds stop after 10 seconds
+in total. A renewable
 hold targets one bed or paired bed per call; on a paired bed both sides must
 declare the same hold mode, and one renewal renews both sides.
 

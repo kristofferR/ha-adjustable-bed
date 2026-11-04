@@ -63,6 +63,19 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "timotion_ahf": {"hold": ('ahf',)},
     "vibradorm_app": {"hold": ('diamant', 'werkmeister', 'vmat')},
     "vmatbasic": {"hold": ('vmatbasic',)},
+    # Latched (FFFF frame and distinct protocols): one start, STOP at release.
+    # Solace's S4-Y and unidentified routes and Kaidi's Floyd have no report.
+    "SolaceProfile:common": {"hold": ("homekobo", "dianqi")},
+    "SolaceProfile:home_k1": {"hold": ("homekobo",)},
+    "SolaceProfile:home_k2": {"hold": ("homekobo",)},
+    "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
+    "SolaceProfile:woosa": {"hold": ("woosa",)},
+    "BedSenseProfile:bedsense": {"hold": ("bedsense",)},
+    "MotionBedProfile:motion_bed": {"hold": ("blackdianqi",)},
+    "reverie": {"hold": ("reverie", "row041")},
+    "kaidi": {"hold": ("kaidi",)},
+    "isleep": {"hold": ("kaidi",)},
+    "remacro": {"hold": ("brick", "jewmes", "slumber", "row050")},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
@@ -95,6 +108,23 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/vibradorm_app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
     "beds/vmatbasic.py:<module>.VMatBasicController": ("vmatbasic",),
     "beds/vmatbasic.py:<module>.VMatBasicController.execution": ("vmatbasic",),
+    "profiles/ff_frame.py:<module>.SOLACE_PROFILES": (
+        "SolaceProfile:common",
+        "SolaceProfile:home_k1",
+        "SolaceProfile:home_k2",
+        "SolaceProfile:motion_flex",
+        "SolaceProfile:woosa",
+    ),
+    "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
+    "profiles/ff_frame.py:<module>.MOTION_BED": ("MotionBedProfile:motion_bed",),
+    "beds/reverie.py:<module>.ReverieController": ("reverie",),
+    "beds/reverie.py:<module>.ReverieController.execution": ("reverie",),
+    "beds/kaidi.py:<module>.KaidiController": ("kaidi",),
+    "beds/kaidi.py:<module>.KaidiController.execution": ("kaidi",),
+    "beds/isleep.py:<module>.IsleepController": ("isleep",),
+    "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
+    "beds/remacro.py:<module>.RemacroController": ("remacro",),
+    "beds/remacro.py:<module>.RemacroController.execution": ("remacro",),
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
