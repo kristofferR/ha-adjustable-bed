@@ -91,3 +91,5 @@ hardware evidence.
 [Ergomotion 4.0 setup and protocol](beds/ergomotion-4.md), including the
 [issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
 and opt-in P1 split-side controls.
+
+[eShine E2000/E3000/E3100/E5000 protocol and setup](beds/eshine-okin.md), with the complete [row122 disposition ledger](apk-analysis/dispositions/row122-eshine.md).

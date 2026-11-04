@@ -38,6 +38,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -134,6 +135,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
+    ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
     GOODVIBE_PROFILES,
     HJBED_PROFILES,
@@ -604,6 +606,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
+    BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",
     BED_TYPE_ESHINE: "Eshine app (E6000)",
     BED_TYPE_RICHMAT_REVIVE: "Revive Control app (Richmat)",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "Best Mattress app (Richmat)",
@@ -701,6 +704,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
+    **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
     **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
@@ -1270,6 +1274,19 @@ def _detect_bed_type_with_app_candidates(service_info: BluetoothServiceInfoBleak
         if any(role.service.lower() in advertised_services for role in TRANSPORTS.values()):
             result.confidence = min(result.confidence, 0.65)
         result.signals.append("name:starcode_abm5_4_app_candidate")
+    if "Smartbed" in (service_info.name or ""):
+        # App candidate only. Shared names cannot identify the product selector.
+        if result.bed_type is None:
+            if not any(signal.startswith("excluded:") for signal in result.signals):
+                return DetectionResult(
+                    bed_type=BED_TYPE_ESHINE_OKIN, confidence=0.3,
+                    signals=[*result.signals, "name:eshine_okin_app_candidate"],
+                )
+        elif result.bed_type != BED_TYPE_ESHINE_OKIN:
+            result.ambiguous_types = list(dict.fromkeys([
+                *(result.ambiguous_types or ()), BED_TYPE_ESHINE_OKIN,
+            ]))
+            result.signals.append("name:eshine_okin_app_candidate")
     if any(keyword in (service_info.name or "") for keyword in HJBED_SCAN_KEYWORDS):
         if result.bed_type is None:
             if not any(signal.startswith("excluded:") for signal in result.signals):

@@ -249,6 +249,8 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key === "eshine_okin_massage") { (bed.massage.states ??= []).push(id); break; }
+        if (key === "eshine_okin_alarm") { bed.utilityStates?.push(id); break; }
         if (key.startsWith("goodvibe_")) { bed.utilityStates?.push(id); break; }
         if (key.startsWith("doublesleep_")) {
           if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
@@ -439,6 +441,10 @@ export function bedEntitiesForDevice(
           // A single-address left view keys "Inclined left" without a second suffix.
           presetMap.set(key, id);
         } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms" || key === "glideaway_motion_query_alarm" || key === "bf_query_alarm") {
+          bed.utility.push(id);
+        } else if (key.startsWith("eshine_okin_massage_")) {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("eshine_okin_")) {
           bed.utility.push(id);
         } else if (key.startsWith("eshine_massage_")) {
           bed.massage.buttons.push(id);

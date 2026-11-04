@@ -3072,6 +3072,30 @@
       },
       "goodvibe_release": {
         "name": "Release held control"
+      },
+      "eshine_okin_flat_zero_g": {
+        "name": "Flat + Zero Gravity"
+      },
+      "eshine_okin_query_state": {
+        "name": "Refresh bed state"
+      },
+      "eshine_okin_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "eshine_okin_sync_clock": {
+        "name": "Synchronize bed clock"
+      },
+      "eshine_okin_massage_on": {
+        "name": "Massage on"
+      },
+      "eshine_okin_massage_head_strength": {
+        "name": "Head massage strength"
+      },
+      "eshine_okin_massage_foot_strength": {
+        "name": "Foot massage strength"
+      },
+      "eshine_okin_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "cover": {
@@ -4843,6 +4867,12 @@
       },
       "goodvibe_l_occupancy": {
         "name": "Left occupancy"
+      },
+      "eshine_okin_massage": {
+        "name": "Massage state"
+      },
+      "eshine_okin_alarm": {
+        "name": "Alarm state"
       }
     },
     "light": {
@@ -7973,6 +8003,27 @@
         "report_type": {
           "name": "Report type",
           "description": "Day is 1, month is 2."
+        }
+      }
+    },
+    "eshine_set_alarm": {
+      "name": "Set eShine alarm",
+      "description": "Set or disable the next-occurrence local alarm for the E2000/E3000/E3100/E5000 eShine app profile. E2000 supports Zero Gravity and Flat.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "wake_mode": {
+          "name": "Wake action"
         }
       }
     }

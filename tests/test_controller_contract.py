@@ -239,6 +239,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
         return await create_controller(coordinator, bed_type, None, client)
     if bed_type == const.BED_TYPE_GOODVIBE:
         return await create_controller(coordinator, bed_type, "selector-0001", client)
+    if bed_type == const.BED_TYPE_ESHINE_OKIN:
+        return await create_controller(coordinator, bed_type, "eshine_e5000", client)
     if bed_type == const.BED_TYPE_HJBED:
         return await create_controller(coordinator, bed_type, "hj_bedbjrn", client)
     if bed_type == const.BED_TYPE_DOUBLESLEEP:

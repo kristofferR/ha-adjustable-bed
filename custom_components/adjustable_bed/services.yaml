@@ -2838,3 +2838,31 @@ goodvibe:
           options:
           - '1'
           - '2'
+
+eshine_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    wake_mode:
+      default: zero_g
+      selector:
+        select:
+          options:
+            - zero_g
+            - flat
+            - massage
