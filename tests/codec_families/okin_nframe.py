@@ -1,4 +1,4 @@
-"""O1 Okin N-frame: the 32-, 40- and 96-bit routes; the 64-bit routes are pending."""
+"""O1 Okin N-frame: every command-word width (32, 40, 64 and 96 bits)."""
 
 from __future__ import annotations
 
@@ -9,8 +9,6 @@ from custom_components.adjustable_bed.profiles.okin_nframe import OkinNFrameProf
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.okin_nframe_vectors import FIELD_FRAMES, FROZEN_FRAMES, GATEWAY_FRAMES
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS
-
-_O1 = "#745 O1 Okin N-frame"
 
 
 def _variant(key: str, bed_type: str) -> str | None:
@@ -23,6 +21,9 @@ def _variant(key: str, bed_type: str) -> str | None:
         # CST profile keys are the product variants; Z-Series keys name the page.
         const.BED_TYPE_OKIN_CST: key,
         const.BED_TYPE_ZSERIES: key.removeprefix("zseries_"),
+        const.BED_TYPE_OKIN_64BIT: key.removeprefix("okin_64bit_"),
+        # Adjustable bed (Lumbar) profile keys are its protocol variants.
+        const.BED_TYPE_ADJUSTABLE_LUMBAR: key,
     }.get(bed_type)
 
 
@@ -30,6 +31,7 @@ FAMILY = CodecFamily(
     profiles={OkinNFrameProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
+            "adjustable_lumbar",
             "customatic_clarity",
             "customatic_jeromes",
             "customatic_remedy",
@@ -39,6 +41,7 @@ FAMILY = CodecFamily(
             "leggett_okin",
             "leggett_platt",
             "okimat",
+            "okin_64bit",
             "okin_cb24",
             "okin_cst",
             "okin_dot",
@@ -58,13 +61,6 @@ FAMILY = CodecFamily(
             tuple(const.LEGGETT_APP_PROFILES),
         ),
     },
-    pending=dict.fromkeys(
-        (
-            "adjustable_lumbar",
-            "okin_64bit",
-        ),
-        _O1,
-    ),
     guide=CodecGuide(
         path="docs/beds/okin-nframe.md",
         spelled=spelled_frames(

@@ -31,6 +31,8 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         *profiles.STARCODE_ABM5_4_PROFILES.values(),
         *profiles.CST_PROFILES.values(),
         *profiles.BEDDING_PROFILES.values(),
+        *profiles.OKIN_64BIT_PROFILES.values(),
+        *profiles.ADJUSTABLE_LUMBAR_PROFILES.values(),
     )
 }
 # Routes without a report on disk: their census must equal the pre-v5 frames.
@@ -41,6 +43,8 @@ LEGACY = {
     "okin_dot",
     "okin_cb24",
     "sleepys_box25",
+    "okin_64bit_nordic",
+    "okin_64bit_custom",
     *(p.key for p in profiles.STARCODE_ABM5_4_PROFILES.values()),
 }
 
@@ -75,8 +79,8 @@ def _census(profile: profiles.OkinNFrameProfile) -> set[str]:
         words.add(0)
     if profile.width == 5:
         frames = {codec.frame40(word, s).hex() for word in words for s in profile.selectors}
-    elif profile.width == 12:
-        frames = {codec.frame(word, 12).hex() for word in words}
+    elif profile.width in (8, 12):
+        frames = {codec.frame(word, profile.width).hex() for word in words}
     else:
         frames = {codec.frame(word).hex() for word in words}
     frames |= {codec.frame(word, 8).hex() for word in profile.long_keys.values()}
@@ -170,3 +174,25 @@ def test_frame_widths_and_word_ranges():
             codec.frame(word, width)
     with pytest.raises(ValueError):
         codec.word_of(bytes.fromhex("05020000000001"))
+
+
+HOLD_PROFILES = sorted(key for key, profile in PROFILES.items() if profile.execution.hold)
+
+
+def test_hold_declarations_are_leggett_and_customatic():
+    assert set(HOLD_PROFILES) == {
+        *profiles.LEGGETT_PROFILES,
+        *profiles.CUSTOMATIC_PROFILES,
+    }
+
+
+@pytest.mark.parametrize("key", HOLD_PROFILES)
+def test_held_and_release_frames_are_frozen(key):
+    """A renewable hold streams only frozen motor frames, then the frozen zero word."""
+    profile = PROFILES[key]
+    words = {profile.keys[f"{axis}_{d}"] for axis in profile.axes for d in ("up", "down")} | {0}
+    frames = {codec.frame(word).hex() for word in words}
+    if profile.envelope == "revision_selector":
+        frames |= {codec.gateway_frame(word).hex() for word in words}
+    assert frames <= FROZEN_FRAMES[key]
+    assert profile.hold.releases

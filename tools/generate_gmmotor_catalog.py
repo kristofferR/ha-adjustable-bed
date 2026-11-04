@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 from pprint import pformat
@@ -221,15 +222,12 @@ def generate(report: Path) -> None:
     )
     path = ROOT / "custom_components/adjustable_bed/gmmotor_catalog.py"
     path.write_text(text)
-    manifest_path = ROOT / "custom_components/adjustable_bed/manifest.json"
-    manifest = json.loads(manifest_path.read_text())
-    # HA requires a literal name prefix. Callback/manual selection still uses
-    # the source substring rule when an advertisement reaches the integration.
-    for keyword in (*scan_names, "RM-", "HJ-"):
-        matcher = {"local_name": keyword + "*"}
-        if matcher not in manifest["bluetooth"]:
-            manifest["bluetooth"].append(matcher)
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    # SCAN_KEYWORDS feeds the GM discovery hints; regenerate the manifest's
+    # matchers from them so a dropped keyword leaves no stale matcher.
+    sys.path.insert(0, str(ROOT))
+    from scripts.generate_bluetooth_matchers import main as generate_matchers
+
+    generate_matchers([])
     print(
         json.dumps(
             {

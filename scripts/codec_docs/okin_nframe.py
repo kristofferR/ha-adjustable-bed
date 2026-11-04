@@ -123,6 +123,8 @@ _OKIN_GROUPS = {
     ),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
+    "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
+    "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
 }
 
 
@@ -142,9 +144,12 @@ def _okin_tap(tap: okin_profiles.Tap | None) -> str:
     return f"{sends}, {tap.releases} STOP" if tap.releases else f"{sends}, no STOP"
 
 
-def _okin_hold(hold: okin_profiles.Hold) -> tuple[str, str, str]:
+def _okin_hold(profile: okin_profiles.OkinNFrameProfile) -> tuple[str, str, str]:
+    hold = profile.hold
     refresh = f"{hold.repeat_ms} ms" if hold.repeat_ms else "entry pulse delay"
     repeats = str(hold.repeats) if hold.repeats else "entry pulse count"
+    if profile.execution.hold == "stream":
+        repeats += "; until release with a renewable hold"
     if not hold.releases:
         release = "none (refresh ends)"
     else:
@@ -196,7 +201,7 @@ def render_okin_nframe_profiles() -> str:
     hold = _table(
         ("Profile", "Hold refresh", "Repeats", "Release"),
         (
-            (profile.name, *_okin_hold(profile.hold))
+            (profile.name, *_okin_hold(profile))
             if profile.key not in _OKIN_OWN_MOTION
             else (profile.name, "n/a", "n/a", "moves with its own frames")
             for profile in profiles
@@ -223,7 +228,8 @@ def render_okin_nframe_profiles() -> str:
                 + (" (or the handset's hold)" if not profile.keys else ""),
                 _okin_tap(profile.long_press),
                 _okin_tap(profile.tap)
-                if not profile.keys or "light" in profile.keys or "massage_off" in profile.keys
+                if not profile.keys
+                or any(key.startswith(("light", "massage")) for key in profile.keys)
                 else "n/a",
                 _okin_tap(profile.control_mode),
             )
@@ -380,6 +386,12 @@ def render_okin_nframe_keys() -> str:
         "#### OKIN Bedding app keys",
         _okin_key_table(_OKIN_GROUPS["OKIN Bedding apps"], envelope=False),
         "Each app's literal action table, by the app's action names.",
+        "#### Okin 64-Bit keys",
+        _okin_key_table(_OKIN_GROUPS["Okin 64-Bit"], envelope=False),
+        "#### Adjustable bed (Lumbar) keys",
+        _okin_key_table(_OKIN_GROUPS["Adjustable bed (Lumbar)"], envelope=False),
+        "The 25_42_02 and 36_33_04a tables share these words; 35_22_01 sends StarCode "
+        "`5A` frames, listed in its profile.",
     )
 
 

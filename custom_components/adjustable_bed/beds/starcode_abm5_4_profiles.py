@@ -177,7 +177,9 @@ def constructor_selector(name: str) -> str:
 
 
 def scan_matches(name: str | None) -> bool:
-    return bool(name) and name.lower().startswith("star")
+    from ..discovery_hints.starcode import SCAN
+
+    return bool(name) and SCAN.matches_name(name)
 
 
 def manufacturer_selector(text: str) -> str:
