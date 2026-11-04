@@ -23,6 +23,7 @@ from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.execution import (
@@ -231,6 +232,22 @@ async def test_every_controller_declaration_has_evidence(bed_type: str) -> None:
         identity = bed_type
     assert identity in EVIDENCE, f"{identity} declares {sorted(execution.declared)}"
     assert set(EVIDENCE[identity]) == execution.declared, identity
+
+
+STREAM_HOOKS = ("stream_tick_s", "write_stream_tick", "end_stream_member", "release_stream")
+
+
+@pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
+async def test_concurrent_declaration_implements_the_stream_hooks(bed_type: str) -> None:
+    """A controller that merges motors must compose its own frames (#516)."""
+    controller = await _create_controller_for_bed_type(bed_type)
+    if not controller.execution.concurrent:
+        return
+    for hook in STREAM_HOOKS:
+        assert getattr(type(controller), hook) is not getattr(BedController, hook), (
+            bed_type,
+            hook,
+        )
 
 
 async def test_evidence_rows_match_live_declarations() -> None:
