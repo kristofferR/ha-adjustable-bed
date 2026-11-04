@@ -612,3 +612,32 @@ async def test_stream_newcomer_starts_with_the_reduced_frame_and_survives_stop(
     # 4 s up (20 %) then 1 s down (10 %).
     assert bed.motors["back"].percent == pytest.approx(10.0)
     assert bed.motors["back"].moves_since_reference == 2
+
+
+async def test_failed_reduced_frame_leaves_its_newcomer_unknown(
+    hass: HomeAssistant, clock: Clock
+) -> None:
+    from custom_components.adjustable_bed.command_scheduler import StreamMember
+
+    manager = await calibrated(hass)
+    bed = manager.beds[LEFT]
+    ctrl = controller(hass, LEFT)
+    ctrl.stream_tick_s = 0.1
+    ctrl.write_stream_tick = AsyncMock()
+    ctrl.end_stream_member = AsyncMock(side_effect=BleakError("reduced frame lost"))
+    ctrl.release_stream = AsyncMock()
+    stream = pe.track_stream(hass, ctrl)
+    back = StreamMember(motor="back", resource="motor:back", action="up", deadline=0.0)
+    legs = StreamMember(motor="legs", resource="motor:legs", action="up", deadline=0.0)
+
+    await stream.write_stream_tick((back,))
+    clock.now += 1.0
+    # ``legs`` joined since the last tick; its first frame is the one that fails.
+    with pytest.raises(BleakError):
+        await stream.end_stream_member(back, (legs,))
+    clock.now += 0.5
+    ctrl.end_stream_member.side_effect = None
+    await stream.end_stream_member(legs, ())
+    await stream.release_stream()
+    assert bed.motors["back"].state is EstimateState.UNKNOWN
+    assert bed.motors["legs"].state is EstimateState.UNKNOWN

@@ -745,14 +745,16 @@ class _TrackedStream:
     def stream_tick_s(self) -> float:
         return self._driver.stream_tick_s
 
-    def _begin(self, members: tuple[StreamMember, ...]) -> None:
+    def _begin(self, members: tuple[StreamMember, ...]) -> list[StreamMember]:
+        """Start timing the members not yet moving; return those it started."""
         started = _clock()
+        begun: list[StreamMember] = []
         for member in members:
             if member in self._moves:
                 continue
             bed = _bed_for_controller(self._driver)
             if bed is None or not bed.motors:
-                return
+                return begun
             motors = _estimated_motors(self._driver, member.motor)
             if motors is None:
                 bed.invalidate(EstimateReason.UNTRACKED_MOVE)
@@ -760,6 +762,8 @@ class _TrackedStream:
             selected = tuple(motor for motor in motors if motor in bed.motors)
             if selected:
                 self._moves[member] = (bed, bed.begin_move(selected), started)
+                begun.append(member)
+        return begun
 
     def _end(self, member: StreamMember, *, failed: bool = False) -> None:
         move = self._moves.pop(member, None)
@@ -785,14 +789,16 @@ class _TrackedStream:
     ) -> None:
         # The reduced frame carries the remaining members, including any that
         # joined since the last tick.
-        self._begin(remaining)
+        begun = self._begin(remaining)
         try:
             await self._driver.end_stream_member(member, remaining)
         except asyncio.CancelledError:
             self._finish(member, remaining)
             raise
         except BaseException:
-            self._end(member, failed=True)
+            # Neither the departing member's stop nor a newcomer's start is known.
+            for failed in (member, *begun):
+                self._end(failed, failed=True)
             raise
         self._finish(member, remaining)
 
