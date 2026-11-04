@@ -35,27 +35,24 @@ profiles = pytest.mark.parametrize("runtime", ["multi", "jmc"], indirect=True)
 
 
 async def _move(hass, motor: str, duration_ms: int) -> None:
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(runtime_coordinator(hass), SIDE_BOTH)], []),
-    ):
-        await hass.services.async_call(
-            DOMAIN,
-            "timed_move",
-            {"device_id": "bed", "motor": motor, "direction": "up", "duration_ms": duration_ms},
-            blocking=True,
-        )
-
-
-def runtime_coordinator(hass):
-    return hass.data["svane_test_coordinator"]
+    await hass.services.async_call(
+        DOMAIN,
+        "timed_move",
+        {"device_id": "bed", "motor": motor, "direction": "up", "duration_ms": duration_ms},
+        blocking=True,
+    )
 
 
 @pytest.fixture
 def bed(hass, runtime):  # noqa: F811
     coordinator, controller = runtime
-    hass.data["svane_test_coordinator"] = coordinator
-    return hass, coordinator, controller
+    # One patch for the whole test: concurrent calls entering and leaving their
+    # own patches could restore each other's and leak it into the next test.
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(coordinator, SIDE_BOTH)], []),
+    ):
+        yield hass, coordinator, controller
 
 
 async def _until(controller: SvaneController, frame: tuple[str, str, str]) -> None:
@@ -106,13 +103,9 @@ async def test_release_axis_ends_only_that_axis(bed) -> None:
     head = asyncio.create_task(_move(hass, "back", 700))
     feet = asyncio.create_task(_move(hass, "legs", 5000))
     await _until(controller, P1_FEET if controller.profile == "multi" else P2_BOTH)
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    ):
-        await hass.services.async_call(
-            DOMAIN, "svane_release_axis", {"device_id": "bed", "motor": "feet"}, blocking=True
-        )
+    await hass.services.async_call(
+        DOMAIN, "svane_release_axis", {"device_id": "bed", "motor": "feet"}, blocking=True
+    )
     await asyncio.wait_for(feet, 1)
     count = len(written(controller))
     await asyncio.sleep(0.25)
@@ -128,11 +121,7 @@ async def test_stop_during_interleaving_releases_every_axis(bed) -> None:
     hass, coordinator, controller = bed
     moves = asyncio.gather(_move(hass, "back", 5000), _move(hass, "legs", 5000))
     await _until(controller, P1_FEET if controller.profile == "multi" else P2_BOTH)
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    ):
-        await hass.services.async_call(DOMAIN, "stop_all", {"device_id": "bed"}, blocking=True)
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": "bed"}, blocking=True)
     await asyncio.wait_for(moves, 2)
     frames = _frames(controller)
     if controller.profile == "multi":
