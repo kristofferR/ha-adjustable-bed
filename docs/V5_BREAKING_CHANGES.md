@@ -129,9 +129,9 @@ row's evidence.
 | `stream` | Keeson: the K1 profiles with stream evidence, such as Ergomotion, Serta, Restonic, INNOVA, the ORE apps, SBI, Cool Base, Glideaway Motion and AdjustaMattress P1/P2, plus every cluster033 app layout and every Ergomotion 4.0 style ([#819](https://github.com/kristofferR/ha-adjustable-bed/pull/819)) |
 | `stream` | Richmat: every `richmat` remote-code route, the Richmat MH apps, L&P MlRM, HJBed, and RMControl products whose motor controls all sustain ([#822](https://github.com/kristofferR/ha-adjustable-bed/pull/822)) |
 | `stream` | Malouf and Lucid apps and the Malouf new and legacy Okin routes ([#823](https://github.com/kristofferR/ha-adjustable-bed/pull/823)); Limoss Remote and FSM Relax ([#802](https://github.com/kristofferR/ha-adjustable-bed/pull/802)); Okin 5A ELEVATE ([#813](https://github.com/kristofferR/ha-adjustable-bed/pull/813)) |
-| `stream` | Linak, OCTO Standard, eShine, the eShine E2000/E3000/E3100/E5000 app, TiMOTION AHF, the Vibradorm app profiles, V-MAT Basic, StarCode M1X12 and M5X5, L&P Gen2, Jensen JMC400, FurniMove and the Sleepy's Elite app ([#815](https://github.com/kristofferR/ha-adjustable-bed/pull/815), [#831](https://github.com/kristofferR/ha-adjustable-bed/pull/831)); Svane Remote on both its routes ([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)) |
+| `stream` | Linak, OCTO Standard, eShine, the eShine E2000/E3000/E3100/E5000 app, TiMOTION AHF, the Vibradorm app profiles, V-MAT Basic, StarCode M1X12 and M5X5, L&P Gen2, Jensen JMC400, FurniMove and the Sleepy's Elite app ([#815](https://github.com/kristofferR/ha-adjustable-bed/pull/815), [#831](https://github.com/kristofferR/ha-adjustable-bed/pull/831)); Svane Remote on both its routes ([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)); Jensen LinOn, the Svane `jensen_linon` route ([#843](https://github.com/kristofferR/ha-adjustable-bed/pull/843)) |
 | `latched` | Solace name routes (HomeKobo, Sealy MotionFlex and Sweet Night, not legacy S4-Y or unidentified names) and Woosa Sleep, BedSense, Reverie, Kaidi (except Floyd and dual-seat beds), iSleep and Remacro ([#821](https://github.com/kristofferR/ha-adjustable-bed/pull/821)) |
-| None | Every other bed and route keeps the finite pulses it used in 4.x. These include routes the evidence does not cover (Comfort Motion and legacy Jiecang, BedTech, AdjustaMattress P3/P4, legacy Limoss, generic Vibradorm, Nectar and Mattress Firm on Okin 5A, `okimat`), routes with nothing a lease could renew (L&P legacy, Motion Bed, dual-seat Kaidi), routes without a complete report (Kaidi Floyd, Solace S4-Y, OCTO Star2), Jensen LinOn (still landing) and Good Vibe Sleep, which streams only some of its controls |
+| None | Every other bed and route keeps the finite pulses it used in 4.x. These include routes the evidence does not cover (Comfort Motion and legacy Jiecang, BedTech, AdjustaMattress P3/P4, legacy Limoss, generic Vibradorm, Nectar and Mattress Firm on Okin 5A, `okimat`), routes with nothing a lease could renew (L&P legacy, Motion Bed, dual-seat Kaidi), routes without a complete report (Kaidi Floyd, Solace S4-Y, OCTO Star2), and Good Vibe Sleep, which streams only some of its controls |
 
 **Dashboard card renewal.** The card renews a lease every 250 ms with a 750 ms
 lease, but only for entities that carry `hold_lease_mode`. Every other control
@@ -229,12 +229,16 @@ name (`custom_components.adjustable_bed.coordinator`), so no behavior is
 intended to change.
 
 **Wire behavior.** The wire snapshot records the bytes, order and timing every
-bed type sends for every scripted command. Since it was added, one recorded
-timing changed, and the other updates only added scenarios:
+bed type sends for every scripted command. Since it was added, two recorded
+timings changed, and the other updates only added scenarios:
 
 - `jiecang`, `comfort_motion`: a STOP during a move sends its release at once
   instead of at the next refresh slot. Frames and their order are unchanged
   ([#750](https://github.com/kristofferR/ha-adjustable-bed/pull/750)).
+- `svane` (Jensen LinOn route): a STOP during a held move reaches the bed at
+  once instead of after the rest of its 800 ms refresh interval. Bytes and
+  characteristics are unchanged
+  ([#843](https://github.com/kristofferR/ha-adjustable-bed/pull/843)).
 - `leggett_okin`, `leggett_platt` (default and `okin` routes): a new
   `release_stream` scenario, which sends the existing four-zero release
   ([#814](https://github.com/kristofferR/ha-adjustable-bed/pull/814)).
@@ -346,8 +350,6 @@ they land.
   Customatic and Star, Remacro, Reverie and Sleep Number.
 - Setup questions and owned options declared by profiles
   ([#779](https://github.com/kristofferR/ha-adjustable-bed/issues/779)).
-- The renewable hold for Jensen LinOn beds, the Svane `jensen_linon` route
-  ([#843](https://github.com/kristofferR/ha-adjustable-bed/pull/843)).
 
 ## Rollback
 
