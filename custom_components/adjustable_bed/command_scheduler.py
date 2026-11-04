@@ -5,6 +5,13 @@ them, scopes replacement to the resources they control, and provides an atomic
 prepare/commit gate for paired coordinators, but it never slices or interleaves
 protocol coroutines. Protocol-specific concurrency can be added behind a
 different execution strategy once its wire behaviour is proven.
+
+A held intent (``CommandKind.HOLD``, #483) also carries a lease: an owner, a
+generation and a monotonic deadline. Renewing a live lease replaces its
+deadline without touching the wire. When the deadline passes, the scheduler
+cancels the hold through its own cancel event, so the controller runs the same
+cleanup a STOP or replacement would. A generation that has ended is never
+admitted or renewed again, and leases live only in memory.
 """
 
 from __future__ import annotations
@@ -12,7 +19,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
-from collections import deque
+from collections import OrderedDict, deque
 from collections.abc import Awaitable, Callable, Collection
 from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
@@ -23,6 +30,9 @@ from uuid import uuid4
 
 ALL_COMMAND_RESOURCES: Final = frozenset({"*"})
 MAX_RECENT_COMMAND_RECORDS: Final = 20
+# Ended lease generations are remembered so a late renewal cannot restart a
+# hold. Live and reserved leases are never evicted.
+MAX_HOLD_LEASE_RECORDS: Final = 128
 
 
 class CommandKind(StrEnum):
@@ -32,6 +42,7 @@ class CommandKind(StrEnum):
     SEEK = "seek"
     GROUP = "group"
     STOP = "stop"
+    HOLD = "hold"
 
 
 class CommandState(StrEnum):
@@ -56,10 +67,60 @@ class CommandOutcome(StrEnum):
     SHUTDOWN = "shutdown"
     TIMEOUT = "timeout"
     FAILED = "failed"
+    EXPIRED = "expired"
+    DISCONNECTED = "disconnected"
 
 
 class PreparedCommandInvalidated(RuntimeError):
     """Raised when a linked command loses its reservation before completion."""
+
+
+class StaleHoldLease(RuntimeError):
+    """Raised when a hold names a generation that has ended or been superseded."""
+
+
+class HoldClaim(StrEnum):
+    """What a hold lease request may do on one device."""
+
+    RENEW = "renew"
+    """A live or reserved lease of this generation takes the new deadline."""
+    START = "start"
+    """No live lease of this generation exists; a new hold may be admitted."""
+    STALE = "stale"
+    """The generation has ended, was superseded, or names another action."""
+
+
+@dataclass(frozen=True, slots=True)
+class HoldLease:
+    """One caller's claim on a held motion, renewable until it ends."""
+
+    owner: str
+    generation: int
+    action: str
+    """The held motion within the resources, such as a direction or control."""
+    duration_s: float
+    """How long the hold lasts after this request unless renewed again."""
+
+    def __post_init__(self) -> None:
+        if not self.owner or not self.action:
+            raise ValueError("A hold lease needs an owner and an action")
+        if isinstance(self.generation, bool) or self.generation < 0:
+            raise ValueError("A hold lease generation must be a non-negative integer")
+        if not self.duration_s > 0:
+            raise ValueError("A hold lease must last a positive duration")
+
+
+@dataclass(slots=True, eq=False)
+class _LeaseRecord:
+    """Scheduler-side state of one owner's lease on one resource set."""
+
+    generation: int
+    action: str
+    resources: frozenset[str]
+    deadline: float
+    handle: CommandHandle | None = None
+    ended: bool = False
+    timer: asyncio.TimerHandle | None = None
 
 
 @dataclass(slots=True)
@@ -83,6 +144,9 @@ class CommandContext:
     cleanup_stop_sent: bool = False
     active: bool = True
     defer_disconnect: bool = False
+    lease: HoldLease | None = None
+    hold_deadline: float | None = None
+    """Event-loop time at which a held command's lease expires, if any."""
 
 
 CommandOperation = Callable[[CommandContext], Awaitable[None]]
@@ -100,7 +164,12 @@ class CommandIntent:
     group_id: str | None = None
     pulse_count: int | None = None
     pulse_delay_ms: int | None = None
+    lease: HoldLease | None = None
     intent_id: str = field(default_factory=lambda: uuid4().hex)
+
+    def __post_init__(self) -> None:
+        if (self.lease is None) != (self.kind is not CommandKind.HOLD):
+            raise ValueError("A HOLD intent carries a lease, and only a HOLD intent does")
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,6 +228,7 @@ class CommandHandle:
     invalidated_stop_epoch: int | None = None
     ready: asyncio.Event = field(default_factory=asyncio.Event)
     commit: asyncio.Event = field(default_factory=asyncio.Event)
+    lease_record: _LeaseRecord | None = None
 
 
 _CURRENT_COMMAND_CONTEXT: ContextVar[CommandContext | None] = ContextVar(
@@ -223,6 +293,7 @@ class DeviceCommandScheduler:
         self._stop_barrier = asyncio.Event()
         self._stop_barrier.set()
         self._closed = False
+        self._leases: OrderedDict[tuple[str, frozenset[str]], _LeaseRecord] = OrderedDict()
 
     @property
     def token(self) -> object:
@@ -292,13 +363,27 @@ class DeviceCommandScheduler:
                 if handle.started_monotonic is not None
                 else None
             ),
+            "hold_generation": (
+                handle.context.lease.generation if handle.context.lease is not None else None
+            ),
+            "hold_remaining_seconds": (
+                round(handle.context.hold_deadline - asyncio.get_running_loop().time(), 3)
+                if handle.context.hold_deadline is not None
+                else None
+            ),
         }
 
     async def execute(
         self, intent: CommandIntent, *, expected_stop_epoch: int | None = None
     ) -> None:
-        """Admit an ordinary intent and wait for its terminal result."""
+        """Admit an ordinary intent and wait for its terminal result.
+
+        A HOLD intent whose lease renews the live hold returns at once: the
+        live hold keeps running with the new deadline.
+        """
         handle = await self.enqueue(intent, expected_stop_epoch=expected_stop_epoch)
+        if handle.intent is not intent:
+            return
         try:
             await asyncio.shield(handle.future)
         except asyncio.CancelledError:
@@ -312,7 +397,14 @@ class DeviceCommandScheduler:
         prepared: bool = False,
         expected_stop_epoch: int | None = None,
     ) -> CommandHandle:
-        """Admit an intent and return its handle without waiting for execution."""
+        """Admit an intent and return its handle without waiting for execution.
+
+        A HOLD intent that renews a live hold of its generation returns that
+        live handle instead; one naming an ended generation raises
+        ``StaleHoldLease``.
+        """
+        if intent.lease is not None and prepared:
+            raise ValueError("A held command cannot join a prepared group")
         handle = self._new_handle(
             intent,
             prepared=prepared,
@@ -329,6 +421,12 @@ class DeviceCommandScheduler:
                     invalidated_stop_epoch=self._stop_epoch,
                 )
                 return handle
+            if intent.lease is not None:
+                live = self._bind_lease_locked(handle, intent.lease)
+                if live is not None:
+                    return live
+                if handle.future.done():
+                    return handle
             replaces_active = False
             if intent.cancel_running:
                 active = self._active
@@ -438,6 +536,7 @@ class DeviceCommandScheduler:
             resources=intent.resources,
             pulse_count=intent.pulse_count,
             pulse_delay_ms=intent.pulse_delay_ms,
+            lease=intent.lease,
         )
         handle = CommandHandle(
             intent=intent,
@@ -513,6 +612,7 @@ class DeviceCommandScheduler:
         """Invalidate matching work and advance the monotonic STOP epoch."""
         self._stop_barrier.clear()
         self._stop_epoch += 1
+        self._end_leases_overlapping(resources)
         self._cancel_matching(
             resources,
             outcome=CommandOutcome.STOPPED,
@@ -530,6 +630,8 @@ class DeviceCommandScheduler:
         self._closed = True
         self._stop_barrier.set()
         self._stop_epoch += 1
+        for record in self._leases.values():
+            self._end_lease(record)
         self._cancel_matching(
             ALL_COMMAND_RESOURCES,
             outcome=CommandOutcome.SHUTDOWN,
@@ -552,6 +654,146 @@ class DeviceCommandScheduler:
             except asyncio.CancelledError:
                 await stop_drain
                 raise
+
+    # ------------------------------------------------------------ hold leases
+    def claim_hold(
+        self, lease: HoldLease, resources: Collection[str], *, reserve: bool = True
+    ) -> HoldClaim:
+        """Classify a hold request without awaiting, and apply it.
+
+        ``RENEW`` replaces the live or reserved lease's deadline and writes no
+        frame. ``START`` reserves the generation (unless ``reserve`` is False)
+        so concurrent requests renew the reservation and a STOP before
+        admission ends it. ``STALE`` changes nothing.
+        """
+        if self._closed:
+            return HoldClaim.STALE
+        normalized = command_resources(*resources)
+        key = (lease.owner, normalized)
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, lease)
+        if claim is HoldClaim.RENEW and record is not None:
+            self._set_lease_deadline(record, lease)
+        elif claim is HoldClaim.START and reserve:
+            self._new_lease_record(key, lease)
+        return claim
+
+    def release_hold_claim(self, lease: HoldLease, resources: Collection[str]) -> None:
+        """End a reservation that was never admitted, for example after preflight failed."""
+        record = self._leases.get((lease.owner, command_resources(*resources)))
+        if (
+            record is not None
+            and record.generation == lease.generation
+            and record.handle is None
+        ):
+            self._end_lease(record)
+
+    def end_holds(self, outcome: CommandOutcome) -> None:
+        """End every hold and reservation now, without replay, for example on disconnect."""
+        for record in tuple(self._leases.values()):
+            self._expire_record(record, outcome)
+
+    @staticmethod
+    def _classify_lease(record: _LeaseRecord | None, lease: HoldLease) -> HoldClaim:
+        if record is None or lease.generation > record.generation:
+            return HoldClaim.START
+        if (
+            lease.generation < record.generation
+            or record.ended
+            or record.action != lease.action
+            or (record.handle is not None and record.handle.context.cancel_event.is_set())
+        ):
+            return HoldClaim.STALE
+        return HoldClaim.RENEW
+
+    def _new_lease_record(
+        self, key: tuple[str, frozenset[str]], lease: HoldLease
+    ) -> _LeaseRecord:
+        previous = self._leases.pop(key, None)
+        if previous is not None and previous.handle is None:
+            # A newer generation supersedes an unadmitted reservation. A live
+            # hold is replaced through ordinary resource conflict on admission.
+            self._end_lease(previous)
+        record = _LeaseRecord(
+            generation=lease.generation,
+            action=lease.action,
+            resources=key[1],
+            deadline=0.0,
+        )
+        self._leases[key] = record
+        self._set_lease_deadline(record, lease)
+        self._prune_leases()
+        return record
+
+    def _prune_leases(self) -> None:
+        excess = len(self._leases) - MAX_HOLD_LEASE_RECORDS
+        if excess <= 0:
+            return
+        for key in [key for key, record in self._leases.items() if record.ended][:excess]:
+            del self._leases[key]
+
+    def _set_lease_deadline(self, record: _LeaseRecord, lease: HoldLease) -> None:
+        loop = asyncio.get_running_loop()
+        record.deadline = loop.time() + lease.duration_s
+        if record.timer is not None:
+            record.timer.cancel()
+        record.timer = loop.call_at(record.deadline, self._on_lease_deadline, record)
+        if record.handle is not None:
+            record.handle.context.hold_deadline = record.deadline
+
+    def _on_lease_deadline(self, record: _LeaseRecord) -> None:
+        record.timer = None
+        if not record.ended:
+            self._expire_record(record, CommandOutcome.EXPIRED)
+
+    def _expire_record(self, record: _LeaseRecord, outcome: CommandOutcome) -> None:
+        """End a lease and cancel its hold; the controller's cleanup still runs."""
+        handle = record.handle
+        self._end_lease(record)
+        if handle is None or handle.future.done():
+            return
+        handle.context.cancel_reason = outcome
+        handle.context.cancel_event.set()
+        if handle in self._queue:
+            self._queue.remove(handle)
+            self._finish_locked(handle, outcome)
+
+    def _end_lease(self, record: _LeaseRecord) -> None:
+        record.ended = True
+        if record.timer is not None:
+            record.timer.cancel()
+            record.timer = None
+
+    def _end_leases_overlapping(self, resources: Collection[str]) -> None:
+        """A STOP ends reservations it overlaps, so their admission cannot follow it."""
+        for record in tuple(self._leases.values()):
+            if record.handle is None and _resources_overlap(record.resources, resources):
+                self._end_lease(record)
+
+    def _bind_lease_locked(
+        self, handle: CommandHandle, lease: HoldLease
+    ) -> CommandHandle | None:
+        """Attach an admitted hold to its lease, or renew the live one."""
+        key = (lease.owner, handle.intent.resources)
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, lease)
+        if claim is HoldClaim.STALE:
+            raise StaleHoldLease(
+                f"Hold generation {lease.generation} of {lease.owner!r} has ended"
+            )
+        if claim is HoldClaim.RENEW and record is not None and record.handle is not None:
+            self._set_lease_deadline(record, lease)
+            return record.handle
+        if record is None or claim is HoldClaim.START:
+            record = self._new_lease_record(key, lease)
+        record.handle = handle
+        handle.lease_record = record
+        handle.context.hold_deadline = record.deadline
+        if record.deadline <= asyncio.get_running_loop().time():
+            # Reserved, then waited out its lease before admission.
+            self._end_lease(record)
+            self._finish_locked(handle, CommandOutcome.EXPIRED)
+        return None
 
     def _replace_conflicts_locked(self, incoming: CommandHandle) -> bool:
         """Cancel conflicts and report whether the active handle was replaced."""
@@ -756,6 +998,8 @@ class DeviceCommandScheduler:
     ) -> None:
         if handle.finished_at is not None:
             return
+        if handle.lease_record is not None:
+            self._end_lease(handle.lease_record)
         if invalidated_stop_epoch is not None:
             handle.invalidated_stop_epoch = invalidated_stop_epoch
         finished_at = datetime.now(UTC)

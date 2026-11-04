@@ -172,6 +172,46 @@ partially completed move.
 
 A direct command being accepted is not confirmation that the target was reached.
 
+### Renewable holds
+
+`timed_move` and `hold_control` accept two optional fields, `hold_owner` and
+`hold_generation`, that turn the call into a renewable hold on beds whose app
+is proven to stream a held key until release. Other beds reject the fields
+before anything moves, and a call without them behaves exactly as before.
+
+| Field | Meaning |
+|-------|---------|
+| `hold_owner` | Who holds, for example one card instance (1–64 characters) |
+| `hold_generation` | Number of this press. Use a new, higher number for each press |
+
+The call's duration is the lease: 100–30000 ms (`duration_ms`) or 0.1–30
+seconds (`duration`). The bed keeps moving while calls naming the same owner,
+generation, motor and direction (or control) arrive within the lease. Each
+renewal replaces the deadline outright, so a shorter lease shortens the hold.
+A renewal writes nothing to the bed and returns at once. When the lease runs
+out, the bed sends its usual release or STOP.
+
+A generation ends when its lease expires, when STOP or a replacement move
+interrupts it, when the link drops, or when the integration unloads. Calls
+naming an ended generation, an older generation, or a different motion under
+the same generation are refused, so a late renewal can never restart motion.
+Nothing is replayed after a reconnect or restart. One hold never streams
+longer than 30 seconds in total, however often it is renewed. A renewable
+hold targets one bed or paired bed per call; on a paired bed both sides must
+declare the same hold mode, and one renewal renews both sides.
+
+```yaml
+# Repeat every 250 ms while a button is held; send stop_all on release.
+action: adjustable_bed.timed_move
+data:
+  device_id: abc123
+  motor: back
+  direction: up
+  duration_ms: 750
+  hold_owner: bedroom-card
+  hold_generation: 42
+```
+
 ### Reverie composite actions
 
 `reverie_set_comfort` accepts a `comfort` object with optional `head_position`,
