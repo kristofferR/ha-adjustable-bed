@@ -32,7 +32,7 @@ FFE4_NOTIFY: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 
 # The inclined builders never check the protocol: they always emit the
 # SmartBed frame, even when the OKIN response write mode is selected.
-INCLINED_ACTIONS: Final = frozenset({"inclined_left", "inclined_middle", "inclined_right"})
+INCLINED_ACTIONS: Final = SIMMONS_PROFILES["okin"].plain_keys
 
 ALARM_MODES: Final[tuple[AlarmMode, ...]] = ("custom_mode", "flat", "anti_snore")
 _ALARM_TYPES: Final[dict[Protocol, tuple[int, int, int]]] = {

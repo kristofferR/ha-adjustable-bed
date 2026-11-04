@@ -10,7 +10,6 @@ from custom_components.adjustable_bed.beds.okin_uuid import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
 )
-from custom_components.adjustable_bed.beds.simmons_protocol import INCLINED_ACTIONS
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
@@ -80,9 +79,8 @@ def _census(profile: profiles.OkinNFrameProfile) -> set[str]:
     if profile.envelope == "revision_selector":
         frames |= {codec.gateway_frame(word).hex() for word in words}
     if profile.envelope == "keeson_e6":
-        # Only the inclined keys keep the plain frame on this route.
-        plain = {profile.keys[action] for action in INCLINED_ACTIONS}
-        wrapped = {0} | {w for a, w in profile.keys.items() if a not in INCLINED_ACTIONS}
+        plain = {profile.keys[action] for action in profile.plain_keys}
+        wrapped = {0} | {w for a, w in profile.keys.items() if a not in profile.plain_keys}
         frames = {codec.frame40(word).hex() for word in plain} | {
             keeson.frame(word, header=0xE6, side=0).hex() for word in wrapped
         }

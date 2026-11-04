@@ -81,8 +81,10 @@ class OkinNFrameProfile:
     """How the route picks the plain frame or the RF-Gateway envelope.
 
     ``keeson_e6`` routes carry the same 32-bit word in a Keeson E6 frame
-    (``codec/keeson.py``) instead of an N-frame.
+    (``codec/keeson.py``) instead of an N-frame, except for ``plain_keys``.
     """
+    plain_keys: frozenset[str] = frozenset()
+    """Keys a ``keeson_e6`` route still sends as plain N-frames."""
     axes: tuple[str, ...] = ()
     """Motor axes in the app's order. Empty: the handset's remote table decides."""
     keys: Mapping[str, int] = field(default_factory=lambda: MappingProxyType({}))
@@ -465,9 +467,10 @@ def _simmons(key: str, name: str, *, okin: bool) -> OkinNFrameProfile:
         width=5,
         # OKIN names use Android's default acknowledged write.
         write="response" if okin else "no_response",
-        # The inclined keys always travel as the plain 40-bit frame.
         envelope="keeson_e6" if okin else "plain",
-        axes=("head", "legs"),
+        # The app's inclined builders never check the protocol.
+        plain_keys=frozenset({"inclined_left", "inclined_middle", "inclined_right"}),
+        axes=("back", "legs"),
         keys=_SIMMONS_KEYS,
         # Every control, held or tapped, ends with two STOPs 100 and 400 ms
         # after its release.
@@ -629,6 +632,11 @@ _ABM_MASSAGE: Final = {
 }
 _ABM_LIGHT_TOGGLE: Final = {"underbedLighting": 0x0002000000000000}
 _ABM_SWITCHES: Final = ("turnonUnderbedLighting", "turnoffUnderbedLighting")
+STARCODE_ABM5_4_REFRESH_MS: Final = 100
+"""The app's one control timer: held keys refresh every 100 ms, then STOP."""
+STARCODE_ABM5_4_FLAT_HOLD_MS: Final = 600
+STARCODE_ABM5_4_SAVE_HOLD_MS: Final = 6000
+"""Saves and reset hold their key through the app's six-second confirmation."""
 
 
 def _abm(
@@ -644,8 +652,8 @@ def _abm(
         axes=("head", "foot"),
         keys=MappingProxyType(dict(keys)),
         long_keys=MappingProxyType(dict(long_keys)),
-        # Holds and their STOP are the controller's session; ``stop`` is a key.
-        hold=Hold(repeat_ms=None, releases=0),
+        # BOX15 and BOX1220 move and stop with their own frames.
+        hold=Hold(repeat_ms=STARCODE_ABM5_4_REFRESH_MS, releases=1 if "stop" in keys else 0),
         memory_slots=1,
     )
 
