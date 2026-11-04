@@ -66,6 +66,18 @@ To recalibrate, open **Estimated positions** again and keep **Measure travel
 times now** ticked. Saved positions keep their percentages. To turn the feature
 off, clear every motor.
 
+## Physical Validation
+
+Hardware status: unverified. Proven offline: tests cover the timing arithmetic
+in both directions, STOP and cancellation, failed writes and lost links,
+invalidation by presets and **I used the remote**, restoring after a restart or reload,
+saved positions, recall, lowering to flat, independent paired sides and every
+calibration step, including a real OCTO Standard entry. Needs real-bed reports
+on OCTO Standard and Richmat beds: how close a recall lands to the saved
+position, how fast the estimate drifts over many short moves, and whether
+calibrating by tapping is accurate enough. Report the target, what the bed
+actually did and your calibrated times in the v5 beta feedback issue.
+
 ## States
 
 | State | Meaning | Entity state | Saved positions and sliders |

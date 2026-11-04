@@ -361,8 +361,27 @@ behavior; an unsupported value is rejected before admission.
   cleanup failure, and a non-opted controller staying serialized.
 - **Paired.** Intersection, combined renewal, and one side's STOP leaving the
   other side's lease intact.
-- Hardware stays deferred to beta users. Taudris offered to validate Leggett
-  Okin.
+- Hardware stays deferred to beta users; see
+  [Physical validation](#physical-validation).
+
+## Physical validation
+
+Deferred for the v5 beta ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)).
+
+- **Proven offline.** The accepted app reports prove which frames each
+  candidate app composes, releases and stops with. The merged stream's
+  scheduler tests (membership, partial release, STOP and the serialized
+  fallback) arrive with it. The only hardware evidence is the Leggett Okin
+  CU170 watchdog measurement.
+- **Needs real-bed reports.** For each candidate as its declaration lands: that
+  two held motors move together without stutter, that releasing one leaves the
+  other moving, that STOP halts both at once, and what the bed does when the
+  link drops mid-chord. The last one matters most for Customatic and Svane (see
+  [#516 above](#516-independent-axes-per-axis-release-and-stop)). Taudris offered
+  to validate Leggett Okin.
+
+The merged stream (#795) is not in the current beta; until it lands, every bed
+keeps serialized motors.
 
 ## Decisions for the maintainer
 
