@@ -82,7 +82,8 @@ custom_components/adjustable_bed/
 ├── controller_factory.py # Factory for creating bed controller instances
 ├── entity.py             # Base entity class
 ├── entity_runtime.py     # Typed standalone and paired entity runtime interfaces
-├── paired_coordinator.py # Parent/side routing and combined operation cleanup
+├── paired_coordinator.py # Paired facade, logical side views and entity runtimes
+├── paired_topology.py    # Topology strategies: admission, locking, switching, STOP fan-out
 ├── paired_registry.py    # Device/entity ownership transfer and rollback
 ├── paired_devices.py     # Native parent/child devices and service targeting
 ├── codec/                # Wire codecs: one module per proven wire format
@@ -125,8 +126,10 @@ custom_components/adjustable_bed/
 - Preset methods: `preset_memory()`, `program_memory()`
 - Optional features: `lights_on()`, `massage_toggle()`, etc.
 
-**Paired beds** (`paired_coordinator.py`, `paired_registry.py`, `paired_devices.py`):
+**Paired beds** (`paired_coordinator.py`, `paired_topology.py`, `paired_registry.py`, `paired_devices.py`):
 - Config-entry schema version 4 supports standalone and paired entries
+- `PairedBedCoordinator` is a facade over one topology strategy: concurrent two-link,
+  sequential two-link, or single-link side-aware
 - One parent device with native Left/Right children, for both one-address and two-address pairs
 - Conversion and unpair preserve side entity/device identities through registry ownership transactions
 - Child service targets retain their side; conflicting explicit side requests are rejected

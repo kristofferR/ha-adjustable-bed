@@ -76,4 +76,4 @@ verified new IDs to your input file before fetching.
   Flat=0x08000000. They are emitted with `protocol: "dot"` (driving the
   `okin_dot` bed type and `OKIN_DOT_VARIANTS`) and are kept out of the
   csv-inherit pool so standard codes never inherit DOT keycodes. See
-  `docs/beds/okin-dot.md`.
+  `docs/beds/okin-nframe.md#okin-dot`.

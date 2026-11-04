@@ -2,7 +2,7 @@
 
 The accepted Android app `com.okin.simmons` 1.12.9 (99) is a complete 20-APK Flutter XAPK with two reachable packet formats on one write gateway. The comparison accounts for **114 discovery items: 86 IMPLEMENTED, 0 ALREADY_IMPLEMENTED, 28 EXCLUDED**, including all 40 command rows. Rows overlap evidence coverage and are not distinct physical features. Hardware is unverified (STATIC VERIFIED / HARDWARE UNVERIFIED).
 
-The public contract is [SIMMONS app](../../beds/simmons.md). It is a new explicit profile; the shared OKIN FFE, CB24, Keeson and Richmat routes that can also reach these receivers keep their separately sourced behavior.
+The public contract is [SIMMONS app](../../beds/okin-nframe.md#simmons). It is a new explicit profile; the shared OKIN FFE, CB24, Keeson and Richmat routes that can also reach these receivers keep their separately sourced behavior.
 
 ## Exact accepted authority
 

@@ -13,6 +13,13 @@ from bleak.exc import BleakError
 
 from ..command_scheduler import copy_context_without_command
 from ..const import CONF_BLE_DEVICE_NAME
+from ..profiles.okin_nframe import (
+    STARCODE_ABM5_4_FLAT_HOLD_MS,
+    STARCODE_ABM5_4_PROFILES,
+    STARCODE_ABM5_4_REFRESH_MS,
+    STARCODE_ABM5_4_SAVE_HOLD_MS,
+    OkinNFrameProfile,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -101,6 +108,11 @@ async def _brightness(controller: BedController, value: float) -> None:
 
 class StarcodeAbm5_4Controller(BedController):
     """C builds/parses, D selects roles/write mode, U consumes state/releases."""
+
+    @property
+    def profile(self) -> OkinNFrameProfile | None:
+        """The command selector's key profile; ``None`` for BOX25_STAR's StarCode."""
+        return STARCODE_ABM5_4_PROFILES.get(self.command_selector)
 
     def __init__(
         self,
@@ -264,11 +276,12 @@ class StarcodeAbm5_4Controller(BedController):
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Use the app's native held refresh cadence, retaining the repeat count."""
-        return self._coordinator.motor_pulse_count, 100
+        return self._coordinator.motor_pulse_count, STARCODE_ABM5_4_REFRESH_MS
 
     def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
         """Movement handlers use count times 100 ms as the entire held duration."""
-        return max(1, (duration_ms + 99) // 100)
+        refresh = STARCODE_ABM5_4_REFRESH_MS
+        return max(1, (duration_ms + refresh - 1) // refresh)
 
     @property
     def auto_stops_on_idle(self) -> bool:
@@ -492,7 +505,7 @@ class StarcodeAbm5_4Controller(BedController):
                     characteristic_handle=role.handle,
                     response=write_response,
                     repeat_count=1,
-                    repeat_delay_ms=100,
+                    repeat_delay_ms=STARCODE_ABM5_4_REFRESH_MS,
                     command_origin="app_control",
                     controller_class=type(self).__name__,
                 )
@@ -556,7 +569,8 @@ class StarcodeAbm5_4Controller(BedController):
                 remaining = deadline - asyncio.get_running_loop().time()
                 if remaining <= 0:
                     break
-                delay = min(max(0.0, started + 0.1 - asyncio.get_running_loop().time()), remaining)
+                tick = STARCODE_ABM5_4_REFRESH_MS / 1000
+                delay = min(max(0.0, started + tick - asyncio.get_running_loop().time()), remaining)
                 if delay and not await self._wait(delay, event):
                     break
         finally:
@@ -619,13 +633,13 @@ class StarcodeAbm5_4Controller(BedController):
         elif control in _PRESETS:
             await self._stream(
                 _PRESETS[control],
-                600 if control == "flat" else duration_ms,
+                STARCODE_ABM5_4_FLAT_HOLD_MS if control == "flat" else duration_ms,
                 release="preset",
             )
         elif control.startswith("save_"):
             await self._stream(
                 _SAVES[control[5:]],
-                6000,
+                STARCODE_ABM5_4_SAVE_HOLD_MS,
                 release="stop" if control == "save_memory_1" else "preset",
             )
         else:
@@ -648,7 +662,7 @@ class StarcodeAbm5_4Controller(BedController):
         elif action == "massage_release":
             await self.release_massage()
         elif action in ("union_up", "union_down"):
-            await self.hold_control(action, self._coordinator.motor_pulse_count * 100)
+            await self.hold_control(action, self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
         elif action == "light_on":
             await self.lights_on()
         elif action == "light_off":
@@ -656,9 +670,9 @@ class StarcodeAbm5_4Controller(BedController):
         elif action in ("light_plus", "light_minus"):
             await self._light_step(1 if action == "light_plus" else -1)
         elif action == "reset":
-            await self._stream("resetMemory", 6000, release="preset")
+            await self._stream("resetMemory", STARCODE_ABM5_4_SAVE_HOLD_MS, release="preset")
         elif action.startswith("save_") and action[5:] in _SAVES:
-            await self._stream(_SAVES[action[5:]], 6000, release="preset")
+            await self._stream(_SAVES[action[5:]], STARCODE_ABM5_4_SAVE_HOLD_MS, release="preset")
         else:
             raise ValueError("Unreachable app action")
 
@@ -771,35 +785,35 @@ class StarcodeAbm5_4Controller(BedController):
         await self._once("footStrengthReduce", massage_release=True)
 
     async def massage_wave_next(self) -> None:
-        await self.hold_control("wave_up", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("wave_up", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def massage_wave_previous(self) -> None:
-        await self.hold_control("wave_down", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("wave_down", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def preset_flat(self) -> None:
-        await self.hold_control("flat", 600)
+        await self.hold_control("flat", STARCODE_ABM5_4_FLAT_HOLD_MS)
 
     async def preset_zero_g(self) -> None:
-        await self.hold_control("zero_g", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("zero_g", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def preset_tv(self) -> None:
-        await self.hold_control("tv", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("tv", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def preset_lounge(self) -> None:
-        await self.hold_control("lounge", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("lounge", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def preset_anti_snore(self) -> None:
-        await self.hold_control("anti_snore", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("anti_snore", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def preset_memory(self, memory_num: int = 1) -> None:
         if memory_num != 1:
             raise ValueError("Both app memory images recall only Memory A")
-        await self.hold_control("memory_1", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("memory_1", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def program_memory(self, memory_num: int = 1) -> None:
         if memory_num != 1:
             raise ValueError("Only Memory A save is reachable")
-        await self._stream("saveM1", 6000, release="stop")
+        await self._stream("saveM1", STARCODE_ABM5_4_SAVE_HOLD_MS, release="stop")
 
     async def stop_all(self) -> None:
         await self.stop()
@@ -823,10 +837,10 @@ class StarcodeAbm5_4Controller(BedController):
         await self.stop()
 
     async def move_head_up(self) -> None:
-        await self.hold_control("head_up", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("head_up", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def move_head_down(self) -> None:
-        await self.hold_control("head_down", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("head_down", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def move_back_up(self) -> None:
         await self.move_head_up()
@@ -835,10 +849,10 @@ class StarcodeAbm5_4Controller(BedController):
         await self.move_head_down()
 
     async def move_legs_up(self) -> None:
-        await self.hold_control("foot_up", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("foot_up", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def move_legs_down(self) -> None:
-        await self.hold_control("foot_down", self._coordinator.motor_pulse_count * 100)
+        await self.hold_control("foot_down", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     def _retain_ui_state(self) -> None:
         if self._coordinator.address != self._owner_address:

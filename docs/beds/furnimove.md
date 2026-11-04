@@ -119,7 +119,7 @@ five-row offline table `00000`.
 ### Select the app as well as the handset
 
 This catalog is also the keycode source for the 86 handsets that the
-[Okin UUID](okin-nframe.md#okimat) and [Okin DOT](okin-dot.md) bed types list. Their
+[Okin UUID](okin-nframe.md#okimat) and [Okin DOT](okin-nframe.md#okin-dot) bed types list. Their
 earlier backend capture matched it byte for byte, including memory-save
 timing, so those bed types now derive the keycodes from here. Shared keycodes
 do not establish the same bonding or feedback requirements. Explicit FurniMove
