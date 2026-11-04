@@ -95,6 +95,20 @@ replaces a BLE controller, including when quick handoff is explicitly enabled.
 Changing product or restarting HA starts a fresh app view. Live capability
 replies are still obtained separately for each connection.
 
+### Home Assistant setup
+
+Choose **GM Control**, its exact product/configuration and the app bed side.
+Standard and split-head catalogs remain distinct. Remote pickers and QR codes
+require the resulting concrete product; shared services cannot select it.
+Product-owned controls use their exact labels and gestures, without generic
+motor-count or inferred-axis settings. FWRM/WFRM select a dedicated desk route.
+
+**GM Control MM sleep module** and **GM Control SXB sleep module** are separate
+Bluetooth entries. Each physical address owns its session, and a paired bed
+retains each receiver's product and wire side. **Pair sides** for one address
+requires the selected product's actual side choices. This guide
+covers commands, raw state and static-only status.
+
 ## Commands
 
 The named buttons come from the selected catalog. The card displays them as

@@ -89,6 +89,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    # Keeson E5/E6 (#483): the K1 profiles and apps that stream a held key.
     **{f"KeesonProfile:{key}": {"hold": keys} for key, keys in KEESON_STREAM.items()},
     **{
         f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
@@ -99,12 +100,34 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         f"AppProfile:ergomotion_4@{style}": {"hold": ("hump", "issue558")}
         for style in ERGOMOTION_4_STYLES
     },
+    # Okin N-frame (#483): Leggett Okin and Customatic stream a held key.
+    "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
+    "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
+    "OkinNFrameProfile:prodigy4": {
+        "hold": ("p4", "leggett-disp", "#483c"),
+        # CU170 watchdog onset measured on hardware: 217-218 ms.
+        "sustain_ms": ("#368", "#483c", "#516c"),
+    },
+    "OkinNFrameProfile:useries": {"hold": ("useries", "leggett-disp")},
+    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
+    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
+    "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
 }
 
 # Source site -> the EVIDENCE identities it declares. A site is
 # "<path under custom_components/adjustable_bed>:<enclosing name>". Runtime
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
+_LEGGETT_STREAM = (
+    "OkinNFrameProfile:prodigy2l",
+    "OkinNFrameProfile:prodigy2",
+    "OkinNFrameProfile:useries",
+)
+_CUSTOMATIC = (
+    "OkinNFrameProfile:clarity",
+    "OkinNFrameProfile:jeromes",
+    "OkinNFrameProfile:remedy",
+)
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     **{
         f"profiles/keeson.py:<module>.{key.upper()}": (f"KeesonProfile:{key}",)
@@ -118,6 +141,11 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/keeson.py:<module>.ergomotion_4_profile": tuple(
         f"AppProfile:ergomotion_4@{style}" for style in sorted(ERGOMOTION_4_STYLES)
     ),
+    "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
+    "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
+    "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
+    "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"

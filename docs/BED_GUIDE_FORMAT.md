@@ -93,6 +93,7 @@ Features) so the reference check applies, then splits into codec and profile par
 ## Choosing a profile
 <!-- generated:<family>-profiles -->   <!-- summary, timing, layouts, startup -->
 <!-- /generated -->
+### Aliases          <!-- byte-identical bed types kept for existing entries -->
 
 ## Wire codec
 ### Transports         <!-- generated from the codec's transport table -->

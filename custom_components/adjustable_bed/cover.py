@@ -26,7 +26,7 @@ from .const import (
     DOMAIN,
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
-from .entity import AdjustableBedEntity
+from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
@@ -377,6 +377,11 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose bounded hold metadata to the existing card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        attributes.update(
+            hold_lease_attributes(
+                [self._coordinator.capability_controller], self.entity_description.key
+            )
+        )
         hold = self.entity_description.hold
         if hold is not None:
             attributes.update(
