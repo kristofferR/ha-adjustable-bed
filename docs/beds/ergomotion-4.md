@@ -95,6 +95,10 @@ entry also offers the option. Auto is excluded from the menu because it may
 resolve to an incompatible JSON or P2 profile at connection time. Choose the
 new explicit app profile to use the complete 3.7 controls instead.
 
+Legacy Keeson/Ergomotion feedback has no side ownership, so side-control mode
+disables position feedback and position seeking. Movement controls remain
+available. Restoring standalone controls restores the saved feedback setting.
+
 The Android 3.7 settings radio stores A/B, but its P1 builder only recognizes
 Left/Right. Those A/B values incorrectly produce side byte `00`. HA deliberately
 uses the proven Left=`02` and Right=`01` builder branches, never that app defect.

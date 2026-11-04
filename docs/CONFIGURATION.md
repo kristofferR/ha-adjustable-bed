@@ -1008,6 +1008,11 @@ bed type also supports it. Auto and P2/JSON/OEM profiles are ineligible. Revert
 side controls before changing to a profile without a side field. Existing
 standalone profiles and entities retain their behavior.
 
+Legacy Keeson/Ergomotion position feedback cannot identify a side. Side-control
+mode disables position sliders, sensors and position seeking for these profiles;
+movement controls remain available. Restoring standalone controls restores the
+stored position-feedback preference.
+
 HA uses the app builder's Left=`02` and Right=`01` branches. The Android app's
 A/B radio labels do not establish physical orientation and contain a selector
 mismatch. Confirm the halves with the real bed after beta/release. For two

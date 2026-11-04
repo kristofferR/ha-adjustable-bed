@@ -246,7 +246,7 @@ class AppController(BedController):
             ),
         )
 
-    async def _wait(self, milliseconds: int, *, cleanup: bool = False) -> bool:
+    async def _wait(self, milliseconds: float, *, cleanup: bool = False) -> bool:
         """Return true when cancelled; never leave a disconnected session waiting."""
         if self._session_cancel.is_set():
             return True

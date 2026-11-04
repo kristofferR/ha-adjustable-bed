@@ -6,6 +6,7 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 from zoneinfo import ZoneInfo
 
@@ -40,6 +41,16 @@ FIXTURES = Path(__file__).parent / "fixtures/ergomotion4"
 VECTORS = json.loads((FIXTURES / "test-vectors.json").read_text())
 CASES = json.loads((FIXTURES / "commands.json").read_text())
 CATALOG = json.loads((FIXTURES / "catalog.json").read_text())
+
+
+@pytest.fixture
+def hold_clock(monkeypatch):
+    clock = SimpleNamespace(milliseconds=0.0)
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.ergomotion4.monotonic",
+        lambda: clock.milliseconds / 1000,
+    )
+    return clock
 
 
 def coordinator(product="H", **data):
@@ -108,7 +119,7 @@ def test_p2_unsupported_key_does_not_become_arbitrary_command():
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["id"])
-async def test_artifact_command_sequences(case):
+async def test_artifact_command_sequences(case, hold_clock):
     extra = {}
     if case["product"] == "custom":
         # The accepted union includes simple-foot and singleton-head gates
@@ -124,6 +135,7 @@ async def test_artifact_command_sequences(case):
 
     async def wait(milliseconds, **_kwargs):
         trace.append(["wait", milliseconds])
+        hold_clock.milliseconds += milliseconds
         return False
 
     coord.client.write_gatt_char.side_effect = write
@@ -292,6 +304,36 @@ async def test_cancelled_hold_releases_original_side_on_fresh_event():
     ctrl._wait.side_effect = disconnect
     await ctrl.bind_side("right").hold_control("c054", 1000)
     assert packets(coord) == [bytes.fromhex("e6fe16010000000103")]
+
+
+@pytest.mark.parametrize("ordinary_press", (False, True))
+@pytest.mark.parametrize("write_ms", (0, 100, 175, 1100))
+async def test_hold_deadline_includes_transport_time(hold_clock, ordinary_press, write_ms):
+    ctrl, coord = await ready()
+    coord.motor_pulse_count = 10
+    writes = []
+
+    async def write(_char, payload, **_kwargs):
+        writes.append((hold_clock.milliseconds, bytes(payload).hex()))
+        hold_clock.milliseconds += write_ms
+
+    async def wait(milliseconds, **_kwargs):
+        hold_clock.milliseconds += milliseconds
+        return False
+
+    coord.client.write_gatt_char.side_effect = write
+    ctrl._wait.side_effect = wait
+    bound = ctrl.bind_side("left")
+    if ordinary_press:
+        await bound._run_action("c054")
+    else:
+        await bound.hold_control("c054", 1000)
+
+    assert all(at < 1000 for at, _ in writes[:-1])
+    assert {payload for _, payload in writes[:-1]} == {"e6fe16010000000202"}
+    assert writes[-1] == (max(1000, write_ms), "e6fe16000000000203")
+    # Release begins at the deadline, or as soon as an in-flight write returns.
+    assert len(writes) == {0: 11, 100: 6, 175: 5, 1100: 2}[write_ms]
 
 
 async def test_failed_pulse_still_attempts_release():
@@ -532,7 +574,7 @@ def test_discovery_ledger_has_complete_coverage_and_resolvable_proofs():
             assert symbol.split(".")[-1] in names, reference
 
 
-async def test_native_paired_runtime_routes_left_right_and_both_on_one_connection(hass):
+async def test_native_paired_runtime_routes_left_right_and_both_on_one_connection(hass, hold_clock):
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
@@ -553,7 +595,11 @@ async def test_native_paired_runtime_routes_left_right_and_both_on_one_connectio
     inner = AdjustableBedCoordinator(hass, entry)
     inner._client = coordinator().client
     ctrl = Ergomotion4Controller(inner)
-    ctrl._wait = AsyncMock(return_value=False)
+    async def wait(milliseconds, **_kwargs):
+        hold_clock.milliseconds += milliseconds
+        return False
+
+    ctrl._wait = AsyncMock(side_effect=wait)
     await ctrl.start_notify()
     inner._controller = inner._offline_controller = ctrl
     inner._ready = True
@@ -579,6 +625,59 @@ async def test_native_paired_runtime_routes_left_right_and_both_on_one_connectio
     finally:
         inner._cancel_disconnect_timer()
         await inner._command_scheduler.async_shutdown()
+
+
+@pytest.mark.parametrize("bed_type,variant", (("ergomotion", "auto"), ("keeson", "ergomotion")))
+@pytest.mark.parametrize("stored_preference", (False, None))
+async def test_legacy_split_suppresses_unscoped_positions(hass, bed_type, variant, stored_preference):
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import DOMAIN
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.cover import _cover_entities_for
+    from custom_components.adjustable_bed.number import _position_number_specs
+    from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
+    from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
+
+    original = {
+        "address": "AA:BB:CC:DD:EE:FF",
+        "bed_type": bed_type,
+        "protocol_variant": variant,
+        "name": "Split",
+    }
+    if stored_preference is not None:
+        original["disable_angle_sensing"] = stored_preference
+    data = build_single_address_pair_entry_data(original, name="Split")
+    entry = MockConfigEntry(domain=DOMAIN, data=data, version=4)
+    entry.add_to_hass(hass)
+    inner = AdjustableBedCoordinator(hass, entry)
+    ctrl = KeesonController(inner, variant="ergomotion")
+    inner._controller = inner._offline_controller = ctrl
+    pair = SingleAddressPairedCoordinator(hass, entry, inner)
+    assert inner.disable_angle_sensing is True
+    inner._apply_runtime_bed_type_correction(bed_type)
+    assert inner.disable_angle_sensing is True
+    assert entry.data.get("disable_angle_sensing") is stored_preference
+    inner._position_data.update(back=42.0, legs=17.0)
+    for side in (*pair.children.values(), pair._single_both):
+        updates = []
+        side.register_position_callback(updates.append)
+        side._sync_position_state()
+        assert side.disable_angle_sensing is True
+        assert side.position_data == {}
+        assert updates == []
+        assert _position_number_specs(side) == ()
+        covers = _cover_entities_for(hass, side)
+        assert covers
+        assert all(cover.current_cover_position is None for cover in covers)
+
+    with patch.object(ctrl, "start_notify", new_callable=AsyncMock) as notify:
+        await inner.async_start_notify()
+        notify.assert_not_awaited()
+
+    # Restoring standalone controls keeps the user's feedback preference.
+    standalone = AdjustableBedCoordinator(hass, MockConfigEntry(domain=DOMAIN, data=original))
+    assert standalone.disable_angle_sensing is (stored_preference is None)
 
 
 def _reported_light(ctrl, enabled):

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from time import monotonic
 from typing import TYPE_CHECKING, cast
 
 from ..alarm_table import AlarmTableScheduleSpec
@@ -508,13 +509,12 @@ class Ergomotion4Controller(AppController):
         self._ready()
         session = self._session_cancel
         try:
-            elapsed = 0
-            while elapsed < duration_ms and not self._coordinator.cancel_command.is_set():
+            deadline = monotonic() * 1000 + duration_ms
+            while monotonic() * 1000 < deadline and not self._coordinator.cancel_command.is_set():
                 await self._steps(action.steps)
-                step = min(100, duration_ms - elapsed)
-                if await self._wait(step):
+                remaining = deadline - monotonic() * 1000
+                if remaining <= 0 or await self._wait(min(100, remaining)):
                     break
-                elapsed += step
         finally:
             if session is self._session_cancel and not session.is_set():
                 await self._steps(action.release, cleanup=True)
