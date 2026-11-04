@@ -143,3 +143,20 @@ async def test_rmcontrol_sustain_press_refreshes_until_the_lease_ends(leased: bo
     assert held.kwargs == {"repeat_count": expected, "repeat_delay_ms": 100}
     assert release.args == (bytes.fromhex("6e 01 00 6e dd"),)
     assert {held.args[0].hex(), release.args[0].hex()} <= FROZEN_FRAMES["richmat_wilinke"]
+
+
+@pytest.mark.parametrize(("product", "hold"), [("A0RM", "stream"), ("OWRM", None), ("OVRM", None)])
+def test_rmcontrol_declares_a_hold_only_for_sustain_press_motors(
+    product: str, hold: str | None
+) -> None:
+    """Short-press products send one frame and STOP, so a lease could not sustain them."""
+    import asyncio
+    from unittest.mock import MagicMock
+
+    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+
+    coordinator = MagicMock()
+    coordinator.cancel_command = asyncio.Event()
+    controller = RmcontrolController(coordinator, product, is_wilinke=True)
+    assert controller.motor_control_specs
+    assert controller.execution.hold == hold

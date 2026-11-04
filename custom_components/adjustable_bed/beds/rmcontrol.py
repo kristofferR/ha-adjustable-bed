@@ -12,13 +12,14 @@ import logging
 import re
 from collections.abc import Callable, Mapping
 from datetime import datetime
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Final, Literal, cast
 
 from bleak import BleakClient
 from homeassistant.util import dt as dt_util
 
 from ..codec import richmat as codec
 from ..const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..richmat_profiles import RichmatAction, get_product_profile
 from ..rmcontrol_protocol import (
     Notification,
@@ -57,6 +58,14 @@ _CAPABILITY_TIMEOUT = 5.0
 # The app's serialized queue: writes, sustain repeats and release at least this far apart.
 WRITE_SPACING_MS = 100
 _PREFIX = "deviceFunctionItem"
+# The catalog actions behind each motor control.
+_MOTOR_ACTIONS: Final = {
+    "head": ("HeadUp", "HeadDown"),
+    "feet": ("FootUp", "FootDown"),
+    "pillow": ("PillowUp", "PillowDown"),
+    "lumbar": ("LumberUp", "LumberDown"),
+    "head_feet": ("HeadAndFootUp", "HeadAndFootDown"),
+}
 _LOCAL_ACTIONS = frozenset(
     _PREFIX + name
     for name in ("None", "Memory", "MlilyMenu", "PhoneLight", "Clock", "Voice", "Logo")
@@ -344,18 +353,27 @@ class RmcontrolController(RichmatController):
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        pairs = {
-            "head": ("HeadUp", "HeadDown"),
-            "feet": ("FootUp", "FootDown"),
-            "pillow": ("PillowUp", "PillowDown"),
-            "lumbar": ("LumberUp", "LumberDown"),
-            "head_feet": ("HeadAndFootUp", "HeadAndFootDown"),
-        }
         return tuple(
             spec
             for spec in super().motor_control_specs
-            if all(self._has(n) for n in pairs[spec.key])
+            if all(self._has(n) for n in _MOTOR_ACTIONS[spec.key])
         )
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """Hold until release only where every motor control is a sustain press (#483).
+
+        A short-press product sends one frame and STOP, so a lease could not
+        sustain its motion.
+        """
+        specs = self.motor_control_specs
+        if specs and all(
+            (action := self._lookup(name)) is not None and action.operate == "sustainPress"
+            for spec in specs
+            for name in _MOTOR_ACTIONS[spec.key]
+        ):
+            return super().execution
+        return NO_EXECUTION_CAPABILITIES
 
     @property
     def supports_motor_control(self) -> bool:

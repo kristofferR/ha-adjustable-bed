@@ -86,6 +86,11 @@ _CUSTOMATIC = (
     "OkinNFrameProfile:remedy",
 )
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    # RMControl narrows its framing's declaration to sustain-press products.
+    "beds/rmcontrol.py:<module>.RmcontrolController": (
+        "RichmatProfile:richmat_nordic",
+        "RichmatProfile:richmat_wilinke",
+    ),
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
     "profiles/okin_nframe.py:<module>._leggett": (*_LEGGETT_STREAM, "OkinNFrameProfile:prodigy4"),
