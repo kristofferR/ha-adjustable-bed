@@ -1496,6 +1496,12 @@ and [complete ledger](../apk-analysis/dispositions/row121-hjbed.json).
 
 ## Notes
 
+### Profile ids and aliases
+
+`richmat_best_mattress:model_bfrm` and `richmat_blvd_home:model_bfrm` send the
+same bytes but keep separate [profile id](../design/profile-id.md#aliases)s: they are one model in two apps,
+each its own bed type with its own setup label.
+
 ### Analysis provenance
 
 - RMControl: [implementation ledger](../apk-analysis/row018-rmcontrol-implementation.md)

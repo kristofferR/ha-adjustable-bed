@@ -80,6 +80,7 @@ custom_components/adjustable_bed/
 ├── const.py              # Constants, UUIDs, bed type definitions, feature flags
 ├── detection.py          # Bed type auto-detection from BLE services/names
 ├── controller_factory.py # Factory for creating bed controller instances
+├── profile_id.py         # Schema 5 profile id: resolver, migration and setup sync
 ├── entity.py             # Base entity class
 ├── entity_runtime.py     # Typed standalone and paired entity runtime interfaces
 ├── paired_coordinator.py # Paired facade, logical side views and entity runtimes
@@ -127,7 +128,8 @@ custom_components/adjustable_bed/
 - Optional features: `lights_on()`, `massage_toggle()`, etc.
 
 **Paired beds** (`paired_coordinator.py`, `paired_topology.py`, `paired_registry.py`, `paired_devices.py`):
-- Config-entry schema version 4 supports standalone and paired entries
+- Config-entry schema version 5 supports standalone and paired entries; each entry
+  and paired side stores a profile id ([design](docs/design/profile-id.md))
 - `PairedBedCoordinator` is a facade over one topology strategy: concurrent two-link,
   sequential two-link, or single-link side-aware
 - One parent device with native Left/Right children, for both one-address and two-address pairs

@@ -1244,6 +1244,12 @@ hardware checks are in the
 
 ## Notes
 
+### Profile ids and aliases
+
+`comfort_motion` and `jiecang` send the same bytes but keep separate
+[profile id](../design/profile-id.md#aliases)s: the app profile review (Repairs) lists the LOGICDATA app for
+`comfort_motion` only, and the device manufacturer differs.
+
 ### Analysis provenance
 
 - The discovery ledgers hold the evidence and dispositions; this guide holds the

@@ -3120,6 +3120,17 @@ default cadence to the matching profile. Any pulse count or delay that a user
 customized remains authoritative. Dedicated Ergomotion, Serta, and OKIN FFE bed
 types store their own defaults and are left unchanged.
 
+### Profile ids and aliases
+
+Byte-identical routes keep separate [profile id](../design/profile-id.md#aliases)s until their setup fields,
+capabilities, entities and Repairs are proven equal too:
+
+| Routes | Why they stay separate |
+|--------|------------------------|
+| `ergomotion`, `keeson:ergomotion` | Only `ergomotion` creates its entities before the first connection; the device manufacturer differs |
+| `serta`, `keeson:serta` | Only `serta` creates its entities before the first connection; the device manufacturer differs |
+| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Avanti Bases hides more generic setup fields, AMERICANSTAR and Avanti keep the motor count per side, and each app has its own setup label |
+
 ### Analysis provenance
 
 - Adjustable Lite 1.0.2 (5): [row051](../apk-analysis/dispositions/row051-adjustable-lite.md).

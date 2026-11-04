@@ -544,6 +544,16 @@ migration. Its commands and timing are in the
 - Generic `OKIN-XXXXXX` names require user confirmation because several Okin
   protocols share the same advertised UUID.
 
+### Profile ids and aliases
+
+Byte-identical routes keep separate [profile id](../design/profile-id.md#aliases)s until their setup fields,
+capabilities, entities and Repairs are proven equal too:
+
+| Routes | Why they stay separate |
+|--------|------------------------|
+| `nectar`, `okin_7byte` | `nectar` is a legacy bed type setup no longer offers; the device manufacturer differs |
+| `mattressfirm`, `okin_nordic` | `mattressfirm` is a legacy bed type setup no longer offers; the device manufacturer differs |
+
 ### Analysis provenance
 
 - **Nectar:** MaximumWorf's

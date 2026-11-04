@@ -4053,6 +4053,18 @@ Other Okin formats, which share roots but not frames: [Nectar](okin-5a.md#nectar
 [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family) for
 detection priority and troubleshooting.
 
+### Profile ids and aliases
+
+Byte-identical routes keep separate [profile id](../design/profile-id.md#aliases)s until their setup fields,
+capabilities, entities and Repairs are proven equal too:
+
+| Routes | Why they stay separate |
+|--------|------------------------|
+| `okimat`, `okin_uuid` | `okimat` is a legacy bed type setup no longer offers; the device manufacturer differs |
+| `dewertokin`, `okin_handle` | The app profile review (Repairs) covers `dewertokin` only; setup offers only `okin_handle`; the device manufacturer differs |
+| `leggett_okin`, `leggett_platt`, `leggett_platt:okin` | Setup offers only `leggett_okin`; `leggett_platt` without a variant picks its controller from GATT at connect |
+| `leggett_gen2`, `leggett_platt:gen2` | Setup offers only `leggett_gen2` |
+
 ### Analysis provenance
 
 - **Customatic:** accepted, frozen COMPLETE/FULL analyses of the three 1.0.1

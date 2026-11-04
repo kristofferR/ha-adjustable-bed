@@ -335,6 +335,12 @@ CONF_SIDE: Final = "side"
 # cleared once the review is answered or the route changes.
 CONF_PROFILE_REVIEW_PENDING: Final = "profile_review_pending"
 
+# Schema 5: the profile id the entry (or one paired side) runs, derived from the
+# saved bed type, variant and app key (see profile_id.py), and the record the
+# schema 5 migration left for diagnostics.
+CONF_PROFILE_ID: Final = "profile_id"
+CONF_PROFILE_MIGRATION: Final = "profile_migration"
+
 # pair_mode values: one shared BLE link vs two separate per-side links.
 PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"
 PAIR_MODE_SEPARATE_ADDRESS: Final = "separate_address"
