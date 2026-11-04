@@ -105,7 +105,6 @@ async def test_device_manufacturer_differs(
         ("nectar", "okin_7byte"),
         ("mattressfirm", "okin_nordic"),
         ("leggett_platt", "leggett_okin"),
-        ("leggett_platt", "leggett_gen2"),
     ],
 )
 def test_legacy_bed_types_are_not_offered_in_setup(legacy: str, offered: str) -> None:

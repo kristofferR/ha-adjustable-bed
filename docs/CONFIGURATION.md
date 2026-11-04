@@ -65,8 +65,9 @@ or from the bed's repair. Today this covers the
 [Vibradorm family](beds/vibradorm.md#guided-setup-and-migration), the
 [Jiecang family](beds/jiecang.md#home-assistant-setup), the
 [Okin family](beds/okin-nframe.md#home-assistant-setup), the
-[Keeson family](beds/keeson.md#home-assistant-setup) and the
-[Solace family](beds/ff_frame.md#home-assistant-setup); more families follow.
+[Keeson family](beds/keeson.md#home-assistant-setup), the
+[Solace family](beds/ff_frame.md#home-assistant-setup) and the
+[Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup); more families follow.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.

@@ -453,16 +453,6 @@
           "name": "Name for the combined bed"
         }
       },
-      "leggett_app": {
-        "title": "Leggett app profile",
-        "description": "Choose the app that matches this bed before continuing Bluetooth pairing.",
-        "data": {
-          "leggett_app_profile": "Leggett app profile"
-        },
-        "data_description": {
-          "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged."
-        }
-      },
       "logicdata_app": {
         "title": "Logicdata bed app and layout",
         "description": "Choose the app, command family and physical controls that match this bed. SimplicityFrame entries keep their existing protocol.",
@@ -882,6 +872,13 @@
         "description": "Choose the layout the BedSense app shows, or keep the layout from the bed's Bluetooth name.",
         "data": {
           "protocol_variant": "Layout"
+        }
+      },
+      "leggett_family": {
+        "title": "Which app or remote controls this bed?",
+        "description": "Each Leggett & Platt app has its own layout, and the bed's name doesn't tell them apart. Choose the app you use on your phone, or the remote if you don't use one. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or remote"
         }
       },
       "jiecang_legacy": {
@@ -9116,6 +9113,20 @@
         "motion_bed": "Motion Bed app",
         "bedsense": "BedSense app",
         "keep": "I don't know: keep the detected controls"
+      }
+    },
+    "leggett_family_choice": {
+      "options": {
+        "prodigy_ce": "Prodigy CE (Prodigy 4) app: back, feet, pillow and lumbar",
+        "prodigy2": "Prodigy 2 app: back, feet and pillow",
+        "prodigy2l": "Prodigy 2L app: back, feet and lumbar",
+        "useries": "U Series app: back, feet and pillow",
+        "lp_control_okin": "LP Control app with an LP BED receiver",
+        "lp_control_gen2": "LP Control app with an LP Comfort Connect base",
+        "lp_app_mlrm": "L&P Adjustable Base app with an MlRM base",
+        "lp_app_qrrm": "L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2)",
+        "lp_legacy": "L&P Adjustable Base legacy app (2.2.1)",
+        "keep": "I don't know: keep the current controls"
       }
     }
   }
