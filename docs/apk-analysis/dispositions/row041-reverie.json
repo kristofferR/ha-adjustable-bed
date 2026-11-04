@@ -3863,7 +3863,7 @@
         "source_ownership": null
       },
       "candidate_code_refs": [
-        "custom_components/adjustable_bed/services.py::handle_reverie_pairlink_alarm_comfort",
+        "custom_components/adjustable_bed/reverie_services.py::handle_reverie_pairlink_alarm_comfort",
         "custom_components/adjustable_bed/beds/reverie_pairlink.py::ReveriePairlinkController.prepare_comfort"
       ],
       "focused_test_refs": [
@@ -4038,8 +4038,8 @@
         "source_ownership": null
       },
       "candidate_code_refs": [
-        "custom_components/adjustable_bed/services.py::handle_reverie_run_routine",
-        "custom_components/adjustable_bed/services.py::handle_reverie_set_comfort",
+        "custom_components/adjustable_bed/reverie_services.py::handle_reverie_run_routine",
+        "custom_components/adjustable_bed/reverie_services.py::handle_reverie_set_comfort",
         "custom_components/adjustable_bed/beds/reverie_pairlink.py::ReveriePairlinkController.async_start_routine"
       ],
       "focused_test_refs": [
@@ -40880,7 +40880,7 @@
         }
       },
       "candidate_code_refs": [
-        "custom_components/adjustable_bed/services.py::handle_reverie_pairlink_alarm_comfort",
+        "custom_components/adjustable_bed/reverie_services.py::handle_reverie_pairlink_alarm_comfort",
         "custom_components/adjustable_bed/beds/reverie_pairlink.py::ReveriePairlinkController.prepare_comfort"
       ],
       "focused_test_refs": [
@@ -40997,8 +40997,8 @@
         }
       },
       "candidate_code_refs": [
-        "custom_components/adjustable_bed/services.py::handle_reverie_run_routine",
-        "custom_components/adjustable_bed/services.py::handle_reverie_set_comfort",
+        "custom_components/adjustable_bed/reverie_services.py::handle_reverie_run_routine",
+        "custom_components/adjustable_bed/reverie_services.py::handle_reverie_set_comfort",
         "custom_components/adjustable_bed/beds/reverie_pairlink.py::ReveriePairlinkController.async_start_routine"
       ],
       "focused_test_refs": [
@@ -71087,7 +71087,7 @@
         "id": "P4-R07",
         "candidate_state": "ADDRESSED_PENDING_DISTINCT_REVIEW",
         "code_refs": [
-          "custom_components/adjustable_bed/services.py::_execute_prepared_reverie_comfort",
+          "custom_components/adjustable_bed/reverie_services.py::_execute_prepared_reverie_comfort",
           "custom_components/adjustable_bed/beds/reverie_pairlink.py::ReveriePairlinkController.prepare_comfort",
           "custom_components/adjustable_bed/beds/reverie_pairlink.py::ReveriePairlinkController.comfort_plan_is_current"
         ],
@@ -71696,7 +71696,7 @@
         ],
         "code_refs": [
           "custom_components/adjustable_bed/services.py::_prepare_reverie_comfort_targets",
-          "custom_components/adjustable_bed/services.py::_execute_prepared_reverie_comfort",
+          "custom_components/adjustable_bed/reverie_services.py::_execute_prepared_reverie_comfort",
           "custom_components/adjustable_bed/beds/reverie_pairlink.py::ReveriePairlinkController.prepare_comfort"
         ],
         "focused_test_refs": [

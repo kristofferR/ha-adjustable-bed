@@ -156,10 +156,16 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
         stack.enter_context(
             patch.object(coordinator, "save_app_state", MagicMock(), create=True)
         )
-        stack.enter_context(
+        resolve = stack.enter_context(
             patch(
                 "custom_components.adjustable_bed.services._resolve_sided_targets",
                 return_value=([(coordinator, "both")], []),
+            )
+        )
+        stack.enter_context(
+            patch(
+                "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+                new=resolve,
             )
         )
         yield Bed(hass, coordinator, controller, writes)
@@ -261,7 +267,7 @@ async def test_an_undeclared_profile_refuses_a_lease_before_writing(bed: Bed) ->
 
 async def test_a_renewed_hold_is_one_tracked_movement(bed: Bed) -> None:
     """Renewals extend the running command, so position estimates see one move."""
-    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed import limoss_remote_services, services
 
     runs: list[str] = []
     track = services.track_held_control
@@ -275,7 +281,10 @@ async def test_a_renewed_hold_is_one_tracked_movement(bed: Bed) -> None:
 
         return run
 
-    with patch.object(services, "track_held_control", spy):
+    with (
+        patch.object(services, "track_held_control", spy),
+        patch.object(limoss_remote_services, "track_held_control", spy),
+    ):
         start = asyncio.create_task(_hold(bed, 6))
         await _started(bed)
         for _ in range(3):

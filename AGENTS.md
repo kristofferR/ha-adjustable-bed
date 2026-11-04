@@ -74,7 +74,8 @@ Key modules (not an exhaustive listing — check the folder for the rest):
 ```text
 custom_components/adjustable_bed/
 ├── __init__.py           # Integration setup, migration and platform loading
-├── services.py           # Action schemas, handlers and registration
+├── services.py           # Generic actions, shared target resolution and admission
+├── <family>_services.py  # One family's actions, schemas and registration
 ├── config_flow.py        # Device discovery and setup wizard
 ├── coordinator.py        # BLE connection management (central hub)
 ├── const.py              # Constants, UUIDs, bed type definitions, feature flags
@@ -319,8 +320,10 @@ a two-address pair.
 ## Services
 
 The complete public action index is [Actions and Automations](docs/SERVICES.md).
-`services.yaml` defines the UI fields; `services.py` registers and validates them,
-with dedicated RMControl and Sleep Number handlers. Memory actions accept slots
+`services.yaml` defines the UI fields. `services.py` holds the generic actions,
+target resolution and preflight admission, and calls each family module's
+register function; a family's own actions live in its `<family>_services.py`
+(for example `reverie_services.py` or `sleep_number_services.py`). Memory actions accept slots
 1–6 subject to controller capabilities. `set_positions` validates all requested
 targets before executing the ordered movement. Control actions support paired
 side routing; support capture requires one physical target.

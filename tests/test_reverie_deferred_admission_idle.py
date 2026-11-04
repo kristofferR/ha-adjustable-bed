@@ -72,6 +72,9 @@ async def test_later_deferred_target_respects_stop_before_dispatch(
         return ([(selected[device], "both") for device in devices], [])
 
     monkeypatch.setattr("custom_components.adjustable_bed.services._resolve_sided_targets", resolve)
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.reverie_services._resolve_sided_targets", resolve
+    )
     await async_register_services(hass)
     data = {}
     if action == "reverie_run_routine":

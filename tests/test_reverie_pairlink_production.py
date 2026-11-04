@@ -51,7 +51,7 @@ from custom_components.adjustable_bed.const import (
     PAIRLINK_ROLE_CENTRAL,
     PAIRLINK_ROLE_PERIPHERAL,
 )
-from custom_components.adjustable_bed.services import (
+from custom_components.adjustable_bed.reverie_services import (
     SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT,
     SERVICE_REVERIE_SET_COMFORT,
 )
