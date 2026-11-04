@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 from ..app_session import app_session
+from ..execution import ExecutionCapabilities
 from . import vmatbasic_protocol as protocol
 from .base import (
     BedController,
@@ -125,6 +126,11 @@ class VMatBasicController(BedController):
         if self._intent.palette not in protocol.PALETTE_OPTIONS:
             raise ValueError("Invalid session palette")
         protocol.integer(self._intent.brightness, 0, 100)
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion until release, then sends STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -403,19 +409,19 @@ class VMatBasicController(BedController):
         await self.stop_all()
 
     async def move_back_up(self) -> None:
-        await self.hold_control("back_up", 1000)
+        await self.hold_control("back_up", self.leased_hold_ms(1000))
 
     async def move_back_down(self) -> None:
-        await self.hold_control("back_down", 1000)
+        await self.hold_control("back_down", self.leased_hold_ms(1000))
 
     async def move_back_stop(self) -> None:
         await self.stop_all()
 
     async def move_legs_up(self) -> None:
-        await self.hold_control("legs_up", 1000)
+        await self.hold_control("legs_up", self.leased_hold_ms(1000))
 
     async def move_legs_down(self) -> None:
-        await self.hold_control("legs_down", 1000)
+        await self.hold_control("legs_down", self.leased_hold_ms(1000))
 
     async def move_legs_stop(self) -> None:
         await self.stop_all()

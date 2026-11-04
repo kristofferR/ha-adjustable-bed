@@ -103,7 +103,12 @@ from .paired_coordinator import (
 )
 from .paired_devices import side_identifier
 from .pairing import is_paired, iter_children, pair_member_addresses
-from .position_estimate import invalidate_on_command, track_held_control, track_motor_command
+from .position_estimate import (
+    invalidate_on_command,
+    track_held_control,
+    track_motor_command,
+    track_stream_member,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerMotorHoldSpec, SideBoundController
@@ -2017,6 +2022,7 @@ async def _timed_move_plan(
         controller = await _validation_controller(parent, coordinator, preflighted)
         if hold_lease:
             _require_hold_execution(coordinator, controller)
+            duration_ms = _hold_ceiling(controller, duration_ms)
 
         motor_specs = {
             spec.key: spec
@@ -2213,6 +2219,11 @@ def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease |
     )
 
 
+def _hold_ceiling(controller: BedController | SideBoundController, duration_ms: int) -> int:
+    """Bound a renewable hold by its mode's ceiling: latched beds move until STOP."""
+    return min(duration_ms, controller.execution.hold_ceiling_ms or duration_ms)
+
+
 def _require_hold_execution(
     target: BedChild, controller: BedController | SideBoundController
 ) -> None:
@@ -2383,8 +2394,52 @@ async def _async_timed_move(
         await _release_preflighted(preflighted)
         raise
 
+    # #516: merge into one stream only on a standalone bed whose controller
+    # declares this motor concurrent. Paired topologies run each side inside a
+    # prepared reservation, where a streamer cannot start, so they stay serial.
+    physical = [
+        target for coordinator, side in targets for target in _command_targets(coordinator, side)
+    ]
+    streamed = not any(
+        isinstance(coordinator, PairedBedCoordinator) for coordinator, _ in targets
+    ) and all(
+        not isinstance(target, SingleAddressSideCoordinator)
+        and (resources := target.stream_resources()) is not None
+        and plans[_plan_key(target)][3] in resources
+        for target in physical
+    )
+
     async def move(target: BedChild) -> None:
         command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
+        if streamed:
+            assert not isinstance(target, SingleAddressSideCoordinator)
+            svane_admission = svane_admissions.get(_plan_key(target))
+            if svane_admission is not None and svane_admission.released(
+                "head" if motor == "back" else "feet"
+            ):
+                # svane_release_axis arrived during preflight: admit no motion,
+                # and give the link preflight opened its normal idle disconnect.
+                if target.is_connected:
+                    with contextlib.suppress(Exception):
+                        await target.async_ensure_connected(reset_timer=True)
+                return
+            # Timed from the member's first write to its retirement, like the
+            # serial move's own span; a renewal never starts a new move.
+            tracker = track_stream_member(
+                getattr(target, "hass", None), target.capability_controller, motor, direction
+            )
+            await target.async_execute_stream_member(
+                motor=motor,
+                resource=resource,
+                action=direction,
+                duration_s=lease.duration_s if lease is not None else duration_ms / 1000,
+                ceiling_s=duration_ms / 1000 if lease is not None else None,
+                lease=lease,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+                on_wire=tracker.started if tracker is not None else None,
+                on_left=tracker.finished if tracker is not None else None,
+            )
+            return
         if lease is not None:
             await target.async_execute_controller_command(
                 command,
@@ -3159,7 +3214,9 @@ async def _hold_targets(
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController | SideBoundController) -> None:
-        await controller.hold_control(control, duration_ms)
+        await controller.hold_control(
+            control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
+        )
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
@@ -3537,6 +3594,14 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
             controllers.append(controller)
     for controller in controllers:
         controller.request_svane_axis_release(call.data[ATTR_MOTOR])
+    # A streamed timed move (#516) on that axis ends alone; the other keeps going.
+    from .coordinator import AdjustableBedCoordinator
+
+    resource = "motor:back" if call.data[ATTR_MOTOR] == "head" else "motor:legs"
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            if isinstance(target, AdjustableBedCoordinator):
+                target.stop_stream_member(resource)
 
 
 async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:

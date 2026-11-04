@@ -34,6 +34,7 @@ from ..const import (
     OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_STAR2_CHAR_UUID,
 )
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -505,6 +506,11 @@ class OctoController(BedController, OctoPacketCodec):
             "configured" if pin else "not configured",
             ", from capability snapshot" if capability_snapshot else "",
         )
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app streams held motion until release, then sends STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return discovered capabilities as a JSON-serialisable snapshot to

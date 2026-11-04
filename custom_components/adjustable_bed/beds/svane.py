@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..command_scheduler import current_command_context
+from ..execution import ExecutionCapabilities
 from ..svane_state import SvaneProfile, SvaneSession, integer
 from .base import (
     BedController,
@@ -26,6 +28,7 @@ from .base import (
 )
 
 if TYPE_CHECKING:
+    from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +52,20 @@ MOTIONS: dict[str, tuple[bool | None, bool | None]] = {
     "head_down_feet_up": (False, True),
     "head_down_feet_down": (False, False),
 }
+
+
+SVANE_EXECUTION: Final = ExecutionCapabilities(
+    hold="stream", concurrent=frozenset({"motor:back", "motor:legs"})
+)
+"""Svane Remote streams a held axis until release and holds head and feet together.
+
+P1 refreshes each axis's own direction role and releases one role; P2 composes
+one mask, omits a released axis and ends with its global STOP (svane, #516).
+"""
+STREAM_TICK_S: Final = 0.1
+"""The app's 100 ms pass, and the 100 ms between head and feet within one."""
+_STREAM_SLACK_S: Final = 0.005
+"""Event-loop wakeups land a little early; a write that close to due is due."""
 
 
 class SvaneCommands:
@@ -99,6 +116,12 @@ class SvaneHoldAdmission:
     session: SvaneSession
     release_epochs: tuple[int, int]
 
+    def released(self, axis: str) -> bool:
+        """Whether ``axis`` was released after this boundary was captured."""
+        index = ("head", "feet").index(axis)
+        current = (self.session.head_release_epoch, self.session.feet_release_epoch)[index]
+        return current > self.release_epochs[index]
+
     @contextmanager
     def activate(self, controller: BedController) -> Iterator[None]:
         if not isinstance(controller, SvaneController) or controller.session is not self.session:
@@ -139,6 +162,7 @@ class SvaneController(BedController):
         self._active_feet: bool | None = None
         self._pending_release: set[str] = set()
         self._wake = asyncio.Event()
+        self._reset_stream()
         self._device_info_task: asyncio.Task[None] | None = None
         self._publish_intent()
         self.forward_controller_state_updates(dict(self.session.observations))
@@ -691,6 +715,127 @@ class SvaneController(BedController):
         finally:
             self._active_head = self._active_feet = None
             await self._release(tuple(self._started))
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        return SVANE_EXECUTION
+
+    # Merged stream (#516). The controller keeps the app's own pass timing,
+    # whenever the stream calls: P1 head (or P2's combined mask) starts each
+    # pass and feet follows 100 ms later; a pass with feet lasts 200 ms, and
+    # feet alone waits 100 ms before each write. A newly added head is written
+    # at once, as a press is. ``stream_tick_s`` is the time from this tick's
+    # start to the next due write: the stream schedules ticks from their start.
+    @property
+    def stream_tick_s(self) -> float:
+        return max(0.0, self._stream_next_at - self._stream_tick_at)
+
+    @staticmethod
+    def _stream_axes(members: tuple[StreamMember, ...]) -> tuple[bool | None, bool | None]:
+        axes: dict[str, bool] = {}
+        for member in members:
+            if member.motor not in ("back", "legs") or member.action not in ("up", "down"):
+                raise ValueError(f"Unknown Svane motion {member.motor} {member.action}")
+            axes[member.motor] = member.action == "up"
+        return axes.get("back"), axes.get("legs")
+
+    async def _start_role(self, service: str, char: str, data: bytes) -> None:
+        self._started.add((service, char))
+        await self._write(service, char, data)
+
+    def _stream_due(
+        self, head_m: StreamMember | None, feet_m: StreamMember | None, now: float
+    ) -> tuple[float, float]:
+        """When head and feet are next due; ``inf`` for an absent axis.
+
+        Times are write completions: the app waits its interval after work.
+        Each axis also waits one interval after the other's last write, even
+        once that axis has left, so no refresh follows another too closely.
+        """
+        last_head, last_feet = self._stream_last
+        head_due = feet_due = math.inf
+        if head_m is not None:
+            if head_m not in self._stream_written or last_head is None:
+                head_due = now
+            else:
+                head_due = last_head + (2 if feet_m is not None else 1) * STREAM_TICK_S
+                if last_feet is not None:
+                    head_due = max(head_due, last_feet + STREAM_TICK_S)
+        if feet_m is not None:
+            if feet_m not in self._stream_written or last_feet is None:
+                # The app sleeps one interval before feet.
+                seen = self._stream_seen.setdefault(feet_m, now)
+                feet_due = seen + STREAM_TICK_S
+            else:
+                feet_due = last_feet + 2 * STREAM_TICK_S
+            if last_head is not None:
+                feet_due = max(feet_due, last_head + STREAM_TICK_S)
+        return head_due, feet_due
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        loop = asyncio.get_running_loop()
+        head, feet = self._stream_axes(members)
+        head_m = next((m for m in members if m.motor == "back"), None)
+        feet_m = next((m for m in members if m.motor == "legs"), None)
+        now = self._stream_tick_at = loop.time()
+        if self.profile == "jmc" and head_m is not None:
+            # P2 combined: one mask per 100 ms pass, no feet sleep.
+            fresh = any(m not in self._stream_written for m in members)
+            last = self._stream_last[0]
+            if fresh or last is None or now >= last + STREAM_TICK_S - _STREAM_SLACK_S:
+                # Recorded as the write begins: an interrupted write may still
+                # have reached the bed, so its axes count as moving.
+                self._stream_written.update(members)
+                await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
+                done = loop.time()
+                self._stream_last = (done, done)
+            last = self._stream_last[0]
+            assert last is not None
+            self._stream_next_at = last + STREAM_TICK_S
+            return
+        head_due, _ = self._stream_due(head_m, feet_m, now)
+        if head_m is not None and now >= head_due - _STREAM_SLACK_S:
+            self._stream_written.add(head_m)
+            await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
+            self._stream_last = (loop.time(), self._stream_last[1])
+        _, feet_due = self._stream_due(head_m, feet_m, loop.time())
+        if feet_m is not None and loop.time() >= feet_due - _STREAM_SLACK_S:
+            self._stream_written.add(feet_m)
+            if self.profile == "jmc":
+                await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(None, feet))
+            else:
+                await self._start_role(FEET, UP if feet else DOWN, SvaneCommands.MOTOR_MOVE)
+            self._stream_last = (self._stream_last[0], loop.time())
+        self._stream_next_at = min(self._stream_due(head_m, feet_m, loop.time()))
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        if self.profile == "jmc":
+            # The mask drops the released axis; the last one out gets the
+            # global STOP in ``release_stream``. It carries only axes already
+            # written, so a newcomer starts with its own timed tick.
+            if remaining:
+                moving = tuple(m for m in remaining if m in self._stream_written)
+                mask = SvaneCommands.motion(*self._stream_axes(moving))
+                await self._start_role(OLD, OLD_CHAR, mask)
+                done = asyncio.get_running_loop().time()
+                self._stream_last = (done, done)
+            return
+        # P1 has no global STOP: release the member's own direction role.
+        service = HEAD if member.motor == "back" else FEET
+        await self._release(tuple(role for role in self._started if role[0] == service))
+
+    async def release_stream(self) -> None:
+        self._reset_stream()
+        await self._release(tuple(self._started))
+
+    def _reset_stream(self) -> None:
+        self._stream_written: set[StreamMember] = set()
+        self._stream_seen: dict[StreamMember, float] = {}
+        self._stream_last: tuple[float | None, float | None] = (None, None)
+        self._stream_next_at = 0.0
+        self._stream_tick_at = 0.0
 
     async def _release(self, roles: tuple[tuple[str, str], ...]) -> None:
         if self.profile == "jmc":

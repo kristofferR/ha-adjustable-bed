@@ -13,7 +13,13 @@ from custom_components.adjustable_bed.beds.okin_uuid import (
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
-from tests.okin_nframe_vectors import FIELD_FRAMES, FROZEN_FRAMES, GATEWAY_FRAMES, SETUP_FRAMES
+from tests.okin_nframe_vectors import (
+    COMPOSED_FRAMES,
+    FIELD_FRAMES,
+    FROZEN_FRAMES,
+    GATEWAY_FRAMES,
+    SETUP_FRAMES,
+)
 
 PROFILES: dict[str, profiles.OkinNFrameProfile] = {
     profile.key: profile
@@ -100,7 +106,9 @@ def _census(profile: profiles.OkinNFrameProfile) -> set[str]:
     [
         (profile, literal)
         for profile, frames in FROZEN_FRAMES.items()
-        for literal in sorted(frames | FIELD_FRAMES.get(profile, frozenset()))
+        for literal in sorted(
+            frames | FIELD_FRAMES.get(profile, frozenset()) | COMPOSED_FRAMES.get(profile, frozenset())
+        )
     ],
 )
 def test_frozen_frame_round_trips_through_codec(profile, literal):
@@ -179,20 +187,44 @@ def test_frame_widths_and_word_ranges():
 HOLD_PROFILES = sorted(key for key, profile in PROFILES.items() if profile.execution.hold)
 
 
-def test_hold_declarations_are_leggett_and_customatic():
+def test_hold_declarations_follow_the_evidence_matrix():
+    """Stream-supported rows only; DewertOkin, CB24, DOT, 64-bit and SleepEase are blocked."""
     assert set(HOLD_PROFILES) == {
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,
+        *(p.key for p in profiles.CST_PROFILES.values()),
+        *(p.key for p in profiles.BEDDING_PROFILES.values()),
+        *(p.key for p in profiles.SIMMONS_PROFILES.values()),
+        *(p.key for p in profiles.STARCODE_ABM5_4_PROFILES.values()),
+        *(p.key for p in profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
     }
 
 
 @pytest.mark.parametrize("key", HOLD_PROFILES)
 def test_held_and_release_frames_are_frozen(key):
-    """A renewable hold streams only frozen motor frames, then the frozen zero word."""
+    """A renewable hold streams only frozen key frames, then the frozen release."""
     profile = PROFILES[key]
-    words = {profile.keys[f"{axis}_{d}"] for axis in profile.axes for d in ("up", "down")} | {0}
-    frames = {codec.frame(word).hex() for word in words}
+    frozen = FROZEN_FRAMES[key] | FIELD_FRAMES.get(key, frozenset())
+    # Every key, motors included, framed as this route frames it, and the zero
+    # release word wherever the profile releases with STOP frames.
+    assert _census(profile) <= frozen
     if profile.envelope == "revision_selector":
-        frames |= {codec.gateway_frame(word).hex() for word in words}
-    assert frames <= FROZEN_FRAMES[key]
-    assert profile.hold.releases
+        words = {profile.keys[f"{a}_{d}"] for a in profile.axes for d in ("up", "down")} | {0}
+        assert {codec.gateway_frame(word).hex() for word in words} <= frozen
+
+
+def test_composed_chords_partial_release_and_zero_are_frozen():
+    """#516: each concurrent profile's representative composed, reduced and release frames."""
+    prodigy = profiles.LEGGETT_PROFILES["prodigy4"]
+    chord = prodigy.keys["head_up"] | prodigy.keys["feet_up"]
+    assert {codec.frame(chord).hex(), codec.gateway_frame(chord).hex()} <= COMPOSED_FRAMES[
+        "prodigy4"
+    ]
+    for key in ("prodigy4", "useries"):
+        profile = profiles.LEGGETT_PROFILES[key]
+        assert codec.frame(profile.keys["head_up"]).hex() in FROZEN_FRAMES[key]
+        assert codec.STOP.hex() in FROZEN_FRAMES[key]
+    assert {key for key, profile in PROFILES.items() if profile.execution.concurrent} == {
+        "prodigy4",
+        "useries",
+    }

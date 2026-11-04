@@ -436,7 +436,8 @@ class SolaceController(BedController):
             try:
                 await asyncio.wait_for(
                     self._coordinator.cancel_command.wait(),
-                    timeout=self._MOVEMENT_SAFETY_TIMEOUT,
+                    timeout=self.leased_hold_ms(round(self._MOVEMENT_SAFETY_TIMEOUT * 1000))
+                    / 1000,
                 )
             except TimeoutError:
                 pass  # Normal: completed full movement duration

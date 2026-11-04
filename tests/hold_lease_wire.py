@@ -11,11 +11,12 @@ task and then sends ``stop_all``. Timing is exact, and no real timer is awaited.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import importlib.util
 import json
 import sys
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable, Iterator, Mapping
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Literal
 
@@ -26,6 +27,7 @@ from custom_components.adjustable_bed.command_scheduler import (
     CommandOutcome,
     HoldLease,
 )
+from custom_components.adjustable_bed.execution import HOLD_CEILING_MS
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "wire_snapshot.py"
 End = Literal["expire", "stop"]
@@ -40,6 +42,19 @@ def _tool() -> Any:
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
     return module
+
+
+@contextlib.contextmanager
+def virtual_clock() -> Iterator[Any]:
+    """The harness's virtual clock alone, for scheduler tests with fake drivers.
+
+    ``asyncio`` sleeps, waits, timeouts and the loop's clock and timers run on
+    it; the clock advances only to the earliest pending deadline.
+    """
+    tool = _tool()
+    clock = tool.FakeClock()
+    with tool.virtual_time(clock):
+        yield clock
 
 
 @dataclass(frozen=True)
@@ -69,13 +84,29 @@ async def leased_hold(
     end_after_s: float,
     end: End,
     leased: bool = True,
+    entry_data: Mapping[str, Any] | None = None,
+    variant: str | None = None,
+    timed_move: bool = False,
 ) -> HeldWire:
-    """Hold ``move`` on scenario ``scenario_id`` and end it after ``end_after_s``."""
+    """Hold ``move`` on scenario ``scenario_id`` and end it after ``end_after_s``.
+
+    ``entry_data`` and ``variant`` reach a route the snapshot has no scenario
+    for, on that scenario's GATT layout. ``timed_move`` gives the command the
+    pulse plan a leased ``timed_move`` gives it: repeats at the controller's
+    own interval for the whole hold ceiling.
+    """
     from freezegun import freeze_time
 
     tool = _tool()
     scenarios = {scenario.id: scenario for scenario in tool.build_scenarios()}
     scenario = scenarios[scenario_id]
+    if entry_data or variant:
+        scenario = replace(
+            scenario,
+            entry_data={**scenario.entry_data, **(entry_data or {})},
+            protocol_variant=variant or scenario.protocol_variant,
+            layout_id=scenario.layout_id or scenario.id,
+        )
     layouts = json.loads(tool.LAYOUTS_PATH.read_text())
     layout = layouts[scenario.layout_id or scenario.id]
     if scenario.properties is not None:
@@ -105,6 +136,15 @@ async def leased_hold(
                     if leased
                     else None,
                 )
+                if timed_move:
+                    _count, delay_ms = controller.motor_pulse_settings()
+                    context.pulse_delay_ms = delay_ms
+                    context.pulse_count = controller.timed_move_repeat_count(
+                        HOLD_CEILING_MS, delay_ms
+                    )
+                    # The real coordinator reads these from the command context.
+                    coordinator.motor_pulse_count = context.pulse_count
+                    coordinator.motor_pulse_delay_ms = delay_ms
                 recorder.events.clear()
                 clock.begin_phase()
                 token = _CURRENT_COMMAND_CONTEXT.set(context)
@@ -119,7 +159,13 @@ async def leased_hold(
                     # The scheduler's expiry: the cancel event alone.
                     context.cancel_reason = CommandOutcome.EXPIRED
                     cancel.set()
-                    await asyncio.wait_for(task, 10)
+                    try:
+                        await asyncio.wait_for(task, 10)
+                    except asyncio.CancelledError:
+                        # A controller may raise on its cancel event, as the
+                        # scheduler accepts; only a real cancellation propagates.
+                        if not task.cancelled():
+                            raise
                 else:
                     context.cancel_reason = CommandOutcome.STOPPED
                     cancel.set()
@@ -129,7 +175,7 @@ async def leased_hold(
                 # Let delayed release frames go out.
                 await asyncio.sleep(tool.DRAIN_WINDOW_S)
                 pulse_count = coordinator.motor_pulse_count
-                profile_key = getattr(controller.profile, "key", "")
+                profile_key = getattr(getattr(controller, "profile", None), "key", "")
                 events = [
                     (index, Write(round(at * 1000), data))
                     for index, (at, _uuid, kind, data) in enumerate(recorder.events)

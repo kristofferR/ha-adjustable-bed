@@ -87,7 +87,7 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 | Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
-| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Held motors combine |
+| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
 | Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
 | Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
@@ -113,6 +113,7 @@ The 40-bit profiles:
 | Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ Per selector |
 | Alarms and clock | ❌ | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ |
 | Single-address sides | ✅ Legacy CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hold until release | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
 | BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 The 96-bit profiles:
@@ -125,6 +126,7 @@ The 96-bit profiles:
 | Massage | ⚠️ Per product | ✅ Head, foot, mode, timer, waves, off | ✅ Head, foot, mode, timer, waves, off | ✅ Toggle, mode, timer; zones or intensity per page |
 | Under-bed lights | ✅ Every product except Resident | ✅ Toggle, on, off | ✅ Toggle, on, off | ✅ Toggle |
 | Alarm and clock | ❌ | ❌ | ❌ | ✅ CST13/CST14 receivers |
+| Hold until release | ✅ | ✅ | ✅ | ✅ |
 | BLE pairing | ⚠️ Most products | ❌ | ❌ | ❌ |
 
 The 64-bit profiles:
@@ -136,6 +138,7 @@ The 64-bit profiles:
 | Memory presets | ✅ Two recalls, no save | ✅ Named saves by a 6 s hold |
 | Massage | ✅ Toggle, intensity, wave mode | ✅ Waves, intensity, stop, check |
 | Under-bed lights | ✅ Toggle, on, off | ✅ Toggle |
+| Hold until release | ❌ | ✅ |
 | BLE pairing | ❌ | ❌ |
 
 ## Choosing a profile
@@ -242,33 +245,33 @@ are unchanged.
 | U Series | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
 | OKIN SmartBed CB24 | entry pulse delay | entry pulse count | 1 STOP |
 | DewertOkin DOT handset table | entry pulse delay | entry pulse count | 1 STOP |
-| SIMMONS SmartBed names | 300 ms | entry pulse count | 2 STOP at 300 ms, 100 ms after the last write |
-| SIMMONS OKIN names | 300 ms | entry pulse count | 2 STOP at 300 ms, 100 ms after the last write |
+| SIMMONS SmartBed names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
+| SIMMONS OKIN names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
 | OKIN SleepEase | 300 ms | entry pulse count | 1 STOP |
 | Sleepy's Elite legacy CB25 | entry pulse delay | entry pulse count | 1 STOP |
-| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | 100 ms | entry pulse count | 1 STOP |
-| AdjustableM5X4 BOX3633 | 100 ms | entry pulse count | 1 STOP |
-| AdjustableM5X4 BOX25 | 100 ms | entry pulse count | 1 STOP |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| AdjustableM5X4 BOX3633 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| AdjustableM5X4 BOX25 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | AdjustableM5X4 BOX15 | n/a | n/a | moves with its own frames |
 | AdjustableM5X4 BOX1220 | n/a | n/a | moves with its own frames |
-| Rize Sanctuary | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Resident | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Aviada | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Bob | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize Contempo | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize II Carefree | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize II Clarity | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Rize MF900 | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Support | entry pulse delay | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Nectar Move | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Jordan's Serenity | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Jordan's Tranquil | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Customatic Z-230 | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
-| Customatic Z-280 | 100 ms | entry pulse count | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Sanctuary | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Resident | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Aviada | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Bob | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Contempo | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize II Carefree | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize II Clarity | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize MF900 | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Support | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Nectar Move | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Jordan's Serenity | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
-| Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count | 2 STOP at 300 ms |
-| Adjustable bed (Lumbar) 25_42_02 | 100 ms | entry pulse count | 2 STOP at 300 ms |
+| Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
+| Adjustable bed (Lumbar) 25_42_02 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 
 Entry pulse settings are the configured motor pulse count and delay.
 
@@ -1514,6 +1517,13 @@ See the [timing tables](#hold-and-release-timing).
   100 ms until the lease runs out or a Stop arrives, then the four zero frames
   follow. On Prodigy CE's CU170 box, motion stops 217 to 218 ms after the last
   frame (measured in #368 and #516), so a lost link cannot leave a motor running.
+- Prodigy CE and U Series combine held keys (#516). `timed_move` calls on
+  different motors, renewable or not, run together: each 100 ms frame carries
+  the OR of every moving motor's key. When one motor ends, the next frame drops
+  its key and the others keep moving; the four zero frames follow only when the
+  last motor ends. A motor's own Stop ends only that motor, while Stop All ends
+  them all. Prodigy 2 and 2L keep one motor at a time: their reports do not
+  prove that one key can be released while another stays held.
 
 #### Notifications
 

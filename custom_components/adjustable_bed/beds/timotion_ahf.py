@@ -24,6 +24,7 @@ from ..const import (
     TIMOTION_AHF_SERVICE_UUID,
     TIMOTION_AHF_WRITE_CHAR_UUID,
 )
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -132,6 +133,11 @@ class TiMOTIONAhfController(BedController):
         self._status_error: str | None = None
         self._feature_mask: int | None = None
         self._lamp_display_code: int | None = None
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held controls every 100 ms, then three neutral frames (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -365,6 +371,13 @@ class TiMOTIONAhfController(BedController):
                     raise
         finally:
             await self._send_stop()
+
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """A renewable hold refreshes at the app's interval; finite pulses keep the entry's."""
+        refresh = round(_CONTROL_REPEAT_DELAY_SECONDS * 1000)
+        if (count := self.leased_hold_refreshes(refresh)) is not None:
+            return count, refresh
+        return super().motor_pulse_settings()
 
     def _monotonic(self) -> float:
         """Return the event-loop clock used to bound a held action."""

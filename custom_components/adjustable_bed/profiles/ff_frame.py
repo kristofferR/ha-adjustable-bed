@@ -143,6 +143,8 @@ SOLACE_PROFILES: Final[dict[str, SolaceProfile]] = {
         # HomeKobo and Sweet Night route these names; neither proves optional hardware.
         SolaceProfile(
             key="common",
+            # One start frame, then STOP at release (#483).
+            execution=ExecutionCapabilities(hold="latched"),
             axes=("back", "legs"),
             presets=True,
             memory_slots=2,
@@ -153,6 +155,8 @@ SOLACE_PROFILES: Final[dict[str, SolaceProfile]] = {
         ),
         SolaceProfile(
             key="home_k1",
+            # One start frame, then STOP at release (#483).
+            execution=ExecutionCapabilities(hold="latched"),
             axes=("back", "legs", "head", "hip"),
             presets=True,
             memory_slots=2,
@@ -165,6 +169,8 @@ SOLACE_PROFILES: Final[dict[str, SolaceProfile]] = {
         ),
         SolaceProfile(
             key="home_k2",
+            # One start frame, then STOP at release (#483).
+            execution=ExecutionCapabilities(hold="latched"),
             axes=("back", "legs", "head", "lumbar"),
             presets=True,
             memory_slots=2,
@@ -176,6 +182,8 @@ SOLACE_PROFILES: Final[dict[str, SolaceProfile]] = {
         ),
         SolaceProfile(
             key="motion_flex",
+            # One start frame, then STOP at release (#483).
+            execution=ExecutionCapabilities(hold="latched"),
             axes=("back", "legs"),
             presets=True,
             memory_slots=2,
@@ -191,6 +199,8 @@ SOLACE_PROFILES: Final[dict[str, SolaceProfile]] = {
         ),
         SolaceProfile(
             key="woosa",
+            # One start frame, then STOP at release (#483).
+            execution=ExecutionCapabilities(hold="latched"),
             axes=("back", "legs"),
             presets=True,
             memory_slots=1,
@@ -508,6 +518,8 @@ BEDSENSE_MEMORY_RULES: Final = (
 
 BEDSENSE: Final = BedSenseProfile(
     key="bedsense",
+    # One start write, then the pause frame at release (#483).
+    execution=ExecutionCapabilities(hold="latched"),
     layouts={
         1: ("back", "waist", "back_and_leg", "legs"),
         2: ("back", "waist", "head", "legs"),

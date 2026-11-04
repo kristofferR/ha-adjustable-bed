@@ -30,7 +30,8 @@ used the package `com.produktide.svane.svaneremote`.
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ (2 app axes: head/backrest and feet/seat+footrest) |
-| Combined movement | ✅ (four head/feet combinations) |
+| Combined movement | ✅ (four head/feet combinations; separate `timed_move` calls on head and feet run together) |
+| Hold until release | ✅ (renewable `timed_move`) |
 | Position Feedback | ❌ (opaque raw bytes as diagnostics only; no angles or sliders) |
 | Memory Presets | ✅ (2 host slots: Read and TV) |
 | Svane Position | ✅ (one-shot; Flat, Zero-G or Anti-Snore meaning unproven) |
@@ -203,9 +204,12 @@ position, save position, recall position and flatten.
   another 100 ms after work.
 - These are held refreshes, not a source fixed repeat count.
 - Ordinary cover actions use a bounded one-second host duration.
-- Generic `timed_move` uses its active task-local pulse plan to keep the selected
-  axis active through the caller's elapsed ceiling, with the same native cadence
-  and cleanup.
+- Generic `timed_move` streams the selected axis (#516) for the caller's
+  elapsed ceiling, with the same native cadence and cleanup. Calls on head and
+  feet run together: P1 refreshes head at the start of each 100 ms pass and feet
+  100 ms into it; P2 sends one mask carrying both. A renewable hold lease
+  ([Renewable holds](../SERVICES.md#renewable-holds)) keeps an axis moving until
+  the lease runs out.
 - All selected targets validate before dispatch, including the existing
   delayed-feet minimum; the explicit service accepts 0.1–60 seconds. Feet-only
   actions and P1 combinations require more than 0.1 seconds.
@@ -222,7 +226,11 @@ position, save position, recall position and flatten.
   `1234/1111`. Explicit STOP sends this frame even when no held role is tracked,
   including during or after a memory recall.
 - Releasing one axis while the other remains active removes its mask and
-  continues the remaining refresh without an immediate global STOP.
+  continues the remaining refresh without an immediate global STOP. When two
+  `timed_move` calls stream together, the axis that ends first gets its own
+  release: P1 sends `0000` to its started role, P2 sends the mask without it.
+  The last axis out gets the normal release: P1 its role's `0000`, P2 the
+  global STOP. `svane_release_axis` and a cover's own Stop end only that axis.
 - Cancellation and an explicit axis release remain normal exit paths.
 - Cancellation, failed writes and controller detach attempt the actual movement
   releases independently of the cancelled event.

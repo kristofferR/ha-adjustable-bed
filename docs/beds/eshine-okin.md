@@ -31,6 +31,7 @@
 | Local Clock / Alarm | ✅ Zero Gravity / Flat | ✅ Zero Gravity / Flat / Massage | ✅ Same |
 | Single-address Split / Coupling | ❌ | ❌ | ❌ |
 | HA two-address pair | ✅ Independent sides | ✅ Independent sides | ✅ Independent sides |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, STOP 200 ms after the lease ends) | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, STOP 200 ms after the lease ends) | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, STOP 200 ms after the lease ends) |
 
 ## Protocol Details
 

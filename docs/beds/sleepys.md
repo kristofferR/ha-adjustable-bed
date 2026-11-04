@@ -71,6 +71,10 @@ Other Sleepy's profiles keep their existing generic `2A29`/`2A24` behavior.
 | `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the proven safe common app surface; the conditional navigation-race position slider is excluded |
 | `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | App light, massage, timer-code, and voice actions |
 
+Held movement and held app actions accept a
+[renewable hold](../SERVICES.md#renewable-holds): the app's 100 ms refresh
+continues until the lease runs out, then the selector STOP follows.
+
 The profile exposes proven head, feet, lumbar, and selector-supported neck
 movement, the app's preset and memory actions, position refresh, and eligible
 light/massage actions. Position target values and unlabelled state fields keep
@@ -162,6 +166,7 @@ verified on a bed.
 | Under-Bed Lights | ❌ | ❌ | ✅ (RGB color, on/off and level 0-6; legacy CB25: on/off and level) |
 | Massage | ❌ | ❌ | ✅ (toggle/off, 3 wave modes, timer) |
 | Massage Intensity | ❌ | ❌ | ✅ (head/foot steps and combined level 0-7) |
+| Hold until release | ❌ | ❌ | ✅ (both dialects; renewable `timed_move`) |
 
 ## Protocol Details
 
@@ -459,6 +464,10 @@ From app disassembly:
 - **Stop Required:** Yes, explicit stop after motor release
 - **BOX25 Star normal write mode:** write without response
 - **BOX25 Star wake:** one write with response before notifications, no app delay
+- **BOX25 renewable hold:** on both BOX25 dialects, `timed_move` accepts a
+  renewable hold lease ([Renewable holds](../SERVICES.md#renewable-holds)); the
+  motor key refreshes until the lease runs out or a Stop arrives, then the STOP
+  frame follows.
 
 ## Detection
 

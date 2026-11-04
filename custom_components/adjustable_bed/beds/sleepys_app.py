@@ -20,6 +20,7 @@ from ..const import (
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
     SLEEPYS_ELITE_SELECTORS,
 )
+from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -198,6 +199,11 @@ class SleepysEliteAppController(BedController):
         self._light_color_code = 1
         self._targets: dict[int, int] = {}
         self._last_notify_error: str | None = None
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held motion every 100 ms, then sends its selector STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:

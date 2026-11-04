@@ -48,6 +48,13 @@ class ExecutionCapabilities:
             raise ValueError("concurrent motion needs at least two motor resources")
 
     @property
+    def hold_ceiling_ms(self) -> int | None:
+        """Longest one renewable hold may run; None when no hold is declared."""
+        if self.hold is None:
+            return None
+        return LATCHED_HOLD_CEILING_MS if self.hold == "latched" else HOLD_CEILING_MS
+
+    @property
     def declared(self) -> frozenset[str]:
         """Names of the capabilities this value declares, for evidence checks."""
         return frozenset(
@@ -67,3 +74,5 @@ STREAM_HOLD: Final = ExecutionCapabilities(hold="stream")
 
 HOLD_CEILING_MS: Final = 30_000
 """The longest one renewable hold streams, however often its lease is renewed."""
+LATCHED_HOLD_CEILING_MS: Final = 10_000
+"""Ceiling of a latched hold, whose bed keeps moving until STOP arrives."""

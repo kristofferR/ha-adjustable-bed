@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..execution import ExecutionCapabilities
 from ..vibradorm_app_state import (
     VibradormAppFloorIntent,
     VibradormAppMassageIntent,
@@ -605,6 +606,11 @@ class VibradormAppController(BedController):
                 self.forward_controller_state_update(f"vibradorm_app_mood_{key}", value)
 
     @property
+    def execution(self) -> ExecutionCapabilities:
+        """The apps refresh held motion every 100 ms, then send STOP (#483)."""
+        return ExecutionCapabilities(hold="stream")
+
+    @property
     def _floor_level(self) -> int:
         return self._floor_intent.level
 
@@ -1179,37 +1185,37 @@ class VibradormAppController(BedController):
             await self._cleanup_preserving_error()
 
     async def move_head_up(self) -> None:
-        await self.hold_control("head_up", 1000)
+        await self.hold_control("head_up", self.leased_hold_ms(1000))
 
     async def move_head_down(self) -> None:
-        await self.hold_control("head_down", 1000)
+        await self.hold_control("head_down", self.leased_hold_ms(1000))
 
     async def move_head_stop(self) -> None:
         await self.stop_all()
 
     async def move_back_up(self) -> None:
-        await self.hold_control("back_up", 1000)
+        await self.hold_control("back_up", self.leased_hold_ms(1000))
 
     async def move_back_down(self) -> None:
-        await self.hold_control("back_down", 1000)
+        await self.hold_control("back_down", self.leased_hold_ms(1000))
 
     async def move_back_stop(self) -> None:
         await self.stop_all()
 
     async def move_legs_up(self) -> None:
-        await self.hold_control("legs_up", 1000)
+        await self.hold_control("legs_up", self.leased_hold_ms(1000))
 
     async def move_legs_down(self) -> None:
-        await self.hold_control("legs_down", 1000)
+        await self.hold_control("legs_down", self.leased_hold_ms(1000))
 
     async def move_legs_stop(self) -> None:
         await self.stop_all()
 
     async def move_feet_up(self) -> None:
-        await self.hold_control("feet_up", 1000)
+        await self.hold_control("feet_up", self.leased_hold_ms(1000))
 
     async def move_feet_down(self) -> None:
-        await self.hold_control("feet_down", 1000)
+        await self.hold_control("feet_down", self.leased_hold_ms(1000))
 
     async def move_feet_stop(self) -> None:
         await self.stop_all()

@@ -36,6 +36,7 @@
 | Simultaneous movement | ✅ (`adjustable_bed.furnimove_move_simultaneously`) |
 | Rename | ✅ (`adjustable_bed.rename`) |
 | Bonding | ⚠️ (advisory background bond request; never required) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then the handset's release) |
 
 ## Protocol Details
 

@@ -31,6 +31,7 @@ from bleak.exc import BleakError
 
 from ..codec import okin_nframe as codec
 from ..const import NORDIC_UART_WRITE_CHAR_UUID
+from ..execution import STREAM_HOLD, ExecutionCapabilities
 from ..profiles.okin_nframe import (
     SLEEPYS_BOX25_LEGACY,
     SLEEPYS_BOX25_RECALL,
@@ -151,6 +152,11 @@ class SleepysBox25Controller(BedController):
     _HEAD_MAX_ANGLE: float = 100.0
     _FEET_MAX_ANGLE: float = 100.0
     _LUMBAR_MAX_ANGLE: float = 100.0
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The Sleepy's app refreshes a held motor key until release on both dialects (#483)."""
+        return STREAM_HOLD
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the BOX25 Star controller."""

@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..casper_base_protocol import Request as CasperBaseRequest
+    from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
     from ..gmmotor_requests import Request as GmmotorRequest
     from ..goodvibe_services import Request as GoodVibeRequest
@@ -484,6 +485,27 @@ class BedController(ABC):
             return execution
         return NO_EXECUTION_CAPABILITIES
 
+    # Merged stream (#516). A controller that declares ``execution.concurrent``
+    # composes its live members; the others never receive these calls.
+    @property
+    def stream_tick_s(self) -> float:
+        """Refresh interval of a merged stream's composed frames."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        """Write one composed refresh carrying every live member."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        """Run one ending member's own cleanup while ``remaining`` keep moving."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
+
+    async def release_stream(self) -> None:
+        """Run the profile release after the last stream member ended."""
+        raise NotImplementedError("This controller does not compose concurrent motors")
+
     def leased_hold_refreshes(self, repeat_ms: int) -> int | None:
         """Refreshes of an open-ended leased hold at the app's own interval (#483).
 
@@ -501,6 +523,23 @@ class BedController(ABC):
         ):
             return None
         return HOLD_CEILING_MS // repeat_ms + 1
+
+    def leased_hold_ms(self, press_ms: int) -> int:
+        """How long one press holds: ``press_ms``, or the hold ceiling under a lease (#483).
+
+        A controller whose press is a fixed-length held control uses this so a
+        renewable hold runs until its lease ends, through its cancel event.
+        Outside a lease, or without a declared hold, the press keeps its length.
+        """
+        context = current_command_context()
+        if (
+            context is None
+            or context.lease is None
+            or context.cancel_event is not self._coordinator.cancel_command
+            or (ceiling := self.execution.hold_ceiling_ms) is None
+        ):
+            return press_ms
+        return ceiling
 
     @property
     def auto_stops_on_idle(self) -> bool:
