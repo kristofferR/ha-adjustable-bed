@@ -584,6 +584,13 @@ export class MotorHold {
     if (this._tapDirection !== null && this._motor) this.end(this._motor);
   }
 
+  // Ends a tap move without a STOP, when the hold already ended or a command
+  // the card sends next replaces it: a STOP could cancel that command. The
+  // lease lapses and a finite pulse ends by itself.
+  retireTap(): void {
+    if (this._tapDirection !== null) this._reset();
+  }
+
   private _targetScope(target: HoldTarget | undefined): string[] {
     if (!target) return [];
     const sides = target.side === "left" || target.side === "right"
@@ -632,8 +639,8 @@ export class MotorHold {
         this.timers.clearTimeout(this._renewTimer);
         this._renewTimer = undefined;
       }
-      // A tap move has no press left to release.
-      this.endTap();
+      // The backend ended the hold with its own release, or replaced it.
+      this.retireTap();
     };
     const starting = this.actions.lease?.(motor, dir, lease);
     if (!starting) return;
@@ -689,8 +696,8 @@ export class MotorHold {
       // The bed rejected the command (usually a dropped BLE link). Stop
       // hammering it; the user can press again.
     } finally {
-      // A tap move has no press left to release, so it ends with its pulses.
-      if (generation === this._generation) this.endTap();
+      // A tap move ends with its pulses; the last one stopped by itself.
+      if (generation === this._generation) this.retireTap();
     }
   }
 

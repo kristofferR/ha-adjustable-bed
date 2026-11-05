@@ -537,4 +537,20 @@ test("tap to move: a click starts the motor, the next click on any arrow stops i
     { domain: "cover", service: "stop_cover", data: { entity_id: "cover.legs" } },
   ]);
   expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
+
+  // A preset replaces a tap move; a STOP from the card could cancel it.
+  handler(api._motorDirection(back, "up", "button.pair_stop"), "@click")(new Event("click"));
+  (card as unknown as { _press(id: string): void })._press("button.flat");
+  expect(calls.slice(8)).toEqual([
+    { domain: "button", service: "press", data: { entity_id: "button.flat" } },
+  ]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
+
+  // Holding Enter repeats native clicks; only the first keypress may toggle.
+  const keydown = handler(api._motorDirection(back, "up", "button.pair_stop"), "@keydown");
+  const first = new KeyEvent("Enter");
+  const repeat = new KeyEvent("Enter", true);
+  keydown(first);
+  keydown(repeat);
+  expect([first.defaultPrevented, repeat.defaultPrevented]).toEqual([false, true]);
 });

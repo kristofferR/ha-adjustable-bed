@@ -399,15 +399,16 @@ test("a tap move stops after 30 s however long its renewals succeed", () => {
   expect(hold.tapMoving).toBe(false);
 });
 
-test("a tap move ends when the bed ends or refuses its hold", async () => {
-  // The backend's ceiling, a STOP from elsewhere, or a lost connection.
+test("a tap move the bed ends or refuses ends without a STOP of its own", async () => {
+  // The backend's ceiling, a replacing command, or a lost connection. The
+  // backend already released the hold, and a STOP could cancel a replacement.
   const ended = rig();
   ended.hold.tap(leasedCover, "up");
   ended.timers.advance(250);
   ended.bed.end();
   await tick();
   expect(ended.hold.tapMoving).toBe(false);
-  expect(ended.events).toEqual(["cover-stop:cover.back"]);
+  expect(ended.events).toEqual([]);
 
   const refused = rig();
   refused.bed.refuseRenewals = true;
@@ -417,6 +418,7 @@ test("a tap move ends when the bed ends or refuses its hold", async () => {
   expect(refused.hold.tapMoving).toBe(false);
   refused.timers.advance(1000);
   expect(refused.bed.calls).toHaveLength(2);
+  expect(refused.events).toEqual([]);
 });
 
 test("a key or pointer release does not end a tap move", () => {
@@ -430,7 +432,7 @@ test("a key or pointer release does not end a tap move", () => {
   expect(bed.moving).toBe(true);
 });
 
-test("a tap without a declared hold repeats pulses until one fails", async () => {
+test("a tap without a declared hold repeats finite pulses until one fails", async () => {
   const timers = new FakeTimers();
   const events: string[] = [];
   let sent = 0;
@@ -444,7 +446,8 @@ test("a tap without a declared hold repeats pulses until one fails", async () =>
   }, timers);
   hold.tap({ key: "legs", cover: "cover.legs" }, "up");
   await tick();
-  expect(events).toEqual(["pulse:legs:up", "pulse:legs:up", "pulse:legs:up", "stop:cover.legs"]);
+  // Each pulse stops by itself, so the failed one needs no STOP.
+  expect(events).toEqual(["pulse:legs:up", "pulse:legs:up", "pulse:legs:up"]);
   expect(hold.tapMoving).toBe(false);
 });
 

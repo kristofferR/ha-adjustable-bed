@@ -1222,6 +1222,10 @@ export class AdjustableBedCard extends LitElement {
         <button class="cg-btn tap ${moving ? "moving" : ""}"
           aria-label=${localize(this.hass, `action.${direction}`)}
           aria-pressed=${moving ? "true" : "false"}
+          @keydown=${(e: KeyboardEvent) => {
+            // A held Enter repeats native clicks; one keypress is one tap.
+            if (e.repeat && (e.key === "Enter" || e.key === " ")) e.preventDefault();
+          }}
           @click=${() => this._tapMove(m, direction, stopId, stopScope, remainingStopIds)}
           ?disabled=${disabled && !moving}
         ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
@@ -2250,6 +2254,8 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _press(entityId: string): void {
+    // A preset or other command replaces a tap move; a STOP could cancel it.
+    this._hold.retireTap();
     this._call("button", "press", entityId);
   }
 

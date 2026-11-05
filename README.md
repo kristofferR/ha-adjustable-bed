@@ -280,6 +280,8 @@ arrow or Stop stops it, and never starts another motor. Movement also stops:
 
 - after at most 30 seconds, or 10 seconds on beds that keep moving after one
   start command (`latched` holds);
+- when you press a preset, memory or other button on the card, which takes over
+  from the movement;
 - when you hide the page, switch apps, navigate away, remove the card or switch
   the side tab of a paired bed;
 - when the browser, phone or network disappears. A bed with a renewable hold
