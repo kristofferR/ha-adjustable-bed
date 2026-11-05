@@ -162,10 +162,10 @@ async def test_an_app_already_chosen_is_not_asked_again(hass, bed_type, step):
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == bed_type
 
 
-async def test_a_form_drawn_again_for_the_jordans_row_still_asks_the_app(hass):
+async def test_choosing_the_jordans_row_on_a_form_preselected_for_another_app_asks(hass):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
-    # The form was drawn for AdjustableM5X4, which hides fields Serenity shows.
+    # The form was preselected for AdjustableM5X4; the user picked the Jordan's row.
     flow._selected_bed_type = const.BED_TYPE_STARCODE_ABM5_4
     info = MagicMock()
     info.name = "OKIN-003444"
@@ -179,7 +179,7 @@ async def test_a_form_drawn_again_for_the_jordans_row_still_asks_the_app(hass):
     submitted = {CONF_ADDRESS: ADDRESS, CONF_NAME: "Bed", const.CONF_BED_TYPE: const.BED_TYPE_SERENITY}
     result = await flow.async_step_manual_entry(dict(submitted))
     if result["step_id"] == "manual_entry":
-        # Drawn again for the chosen row; submitting it is not choosing an app.
+        # A form shown again for the chosen row is not an app choice either.
         result = await flow.async_step_manual_entry(dict(submitted))
     assert result["step_id"] == "jordans_family"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:

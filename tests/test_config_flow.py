@@ -173,6 +173,7 @@ from custom_components.adjustable_bed.setup_operation import (
     OperationResult,
     SetupAction,
 )
+from tests.form_helpers import shown_markers
 
 
 def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
@@ -1649,7 +1650,7 @@ class TestBluetoothDiscoveryFlow:
             if marker.schema == CONF_OCTO_MOTOR_COUNT_OVERRIDE
         )
         assert override_marker.default() == "auto"
-        assert all(marker.schema != CONF_MOTOR_COUNT for marker in result["data_schema"].schema)
+        assert CONF_MOTOR_COUNT not in shown_markers(result)
 
     async def test_octo_star2_discovery_uses_field_verified_pulse_defaults(
         self,
@@ -3071,7 +3072,7 @@ class TestManualFlow:
             )
 
         assert result["step_id"] == "manual_entry"
-        markers = {marker.schema: marker for marker in result["data_schema"].schema}
+        markers = shown_markers(result)
         assert CONF_MOTOR_COUNT not in markers
         assert CONF_HAS_MASSAGE not in markers
         # The count bounds each HA movement; the app fixes the refresh interval.
@@ -3098,12 +3099,10 @@ class TestManualFlow:
     async def test_manual_entry_malouf_collects_layout(
         self, hass: HomeAssistant, enable_custom_integrations
     ):
-        """Picking a Malouf protocol from the dropdown collects layout/memory slots.
+        """Picking a Malouf protocol on the manual form reveals its layout fields.
 
-        The manual-MAC form is built without a pre-selected bed type, so the Malouf
-        layout/memory fields aren't shown inline. Selecting a Malouf protocol must
-        route to a follow-up step that collects them instead of silently persisting
-        the default layout (regression: Hi-Lo / four-motor users lost those controls).
+        Regression: Hi-Lo and four-motor users lost those controls when the
+        default layout was saved silently.
         """
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
@@ -3118,8 +3117,10 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        # Submit the manual-entry form with a Malouf protocol but no layout fields
-        # (they were never rendered because the bed type wasn't pre-selected).
+        assert CONF_MALOUF_LAYOUT not in shown_markers(result)
+        assert CONF_MALOUF_LAYOUT in shown_markers(
+            result, **{CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN}
+        )
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             user_input={
@@ -3130,26 +3131,18 @@ class TestManualFlow:
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
+                CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
+                CONF_MALOUF_MEMORY_SLOTS: 2,
             },
         )
 
-        # Confirm the selected protocol's connection default before collecting
-        # the protocol-specific layout.
+        # The selected protocol's connection default is confirmed last.
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "disconnect_after_command"
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
-        )
-        assert result["step_id"] == "manual_malouf"
-
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                user_input={
-                    CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
-                    CONF_MALOUF_MEMORY_SLOTS: 2,
-                },
+                user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -3874,11 +3867,10 @@ class TestOptionsFlow:
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
         flow.context = {}
-        flow._manual_data = {CONF_BED_TYPE: BED_TYPE_OCTO}
 
-        result = await flow.async_step_manual_octo()
+        result = await flow.async_step_manual_entry()
 
-        markers = {marker.schema: marker for marker in result["data_schema"].schema}
+        markers = shown_markers(result, **{CONF_BED_TYPE: BED_TYPE_OCTO})
         assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
         assert CONF_MOTOR_COUNT not in markers
 
@@ -4089,7 +4081,7 @@ class TestOptionsFlow:
             initial["flow_id"], user_input={CONF_BED_TYPE: choice}
         )
         assert rebuilt["type"] == FlowResultType.FORM
-        markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+        markers = shown_markers(rebuilt)
         assert CONF_MOTOR_COUNT not in markers
         assert CONF_HAS_MASSAGE not in markers
         assert CONF_DISABLE_ANGLE_SENSING not in markers
