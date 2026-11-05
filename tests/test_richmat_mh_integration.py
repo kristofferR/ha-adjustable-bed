@@ -231,7 +231,6 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
         CONF_PAIR_ID,
         CONF_PAIR_MEMBER_ADDRESSES,
         CONF_PAIR_MODE,
-        CONF_PAIR_SCHEMA_VERSION,
         CONF_PREFERRED_ADAPTER,
         CONF_PROTOCOL_VARIANT,
         CONF_SIDE,
@@ -260,7 +259,6 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
         data={
             CONF_PAIR_ID: "pair_revive",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-            CONF_PAIR_SCHEMA_VERSION: 1,
             CONF_BED_TYPE: "richmat_revive",
             CONF_NAME: "Revive Pair",
             CONF_PREFERRED_ADAPTER: "auto",

@@ -327,7 +327,6 @@ CONF_PAIR_ID: Final = "pair_id"
 CONF_PAIR_MODE: Final = "pair_mode"
 CONF_PAIR_CHILDREN: Final = "pair_children"
 CONF_PAIR_MEMBER_ADDRESSES: Final = "pair_member_addresses"
-CONF_PAIR_SCHEMA_VERSION: Final = "pair_schema_version"
 # Per-child descriptor key for which physical side the child drives.
 CONF_SIDE: Final = "side"
 
@@ -381,9 +380,6 @@ TIMED_MOVE_MOTOR_OPTIONS: Final = (
 
 # The two physical sides, in stable order (left first, right second).
 PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
-
-# Internal forward-compat marker for the paired-entry data shape within v4.
-PAIR_SCHEMA_VERSION: Final = 1
 
 # How the two sides' BLE links are driven. ``auto``/``concurrent`` let each
 # independent receiver retain its own connection policy. Explicit ``sequential``
@@ -1792,15 +1788,16 @@ OKIN_CST_VARIANT_SUPPORT: Final = "cst_support"
 OKIN_CST_VARIANT_NECTAR_MOVE: Final = "cst_nectar_move"
 OKIN_CST_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (MF900 profile)",
-    OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary",
-    OKIN_CST_VARIANT_RESIDENT: "Rize Resident",
-    OKIN_CST_VARIANT_AVIADA: "Rize Aviada",
-    OKIN_CST_VARIANT_BOB: "Rize Bob",
-    OKIN_CST_VARIANT_CONTEMPO: "Rize Contempo",
-    OKIN_CST_VARIANT_CAREFREE: "Rize II Carefree",
-    OKIN_CST_VARIANT_CLARITY: "Rize II Clarity",
-    OKIN_CST_VARIANT_MF900: "Rize MF900 / Mattress Firm 900-O",
-    OKIN_CST_VARIANT_SUPPORT: "Support",
+    # Each product is named by the app its accepted report identifies.
+    OKIN_CST_VARIANT_SANCTUARY: "Jordan's Sanctuary - O app (Rize Sanctuary)",
+    OKIN_CST_VARIANT_RESIDENT: "Resident Adjustable Bed app (Rize Resident)",
+    OKIN_CST_VARIANT_AVIADA: "Rize Aviada - O app (Rize Aviada)",
+    OKIN_CST_VARIANT_BOB: "POWER BOB ULTRA-O app (Rize Bob)",
+    OKIN_CST_VARIANT_CONTEMPO: "Rize Contemporary III - O app (Rize Contempo)",
+    OKIN_CST_VARIANT_CAREFREE: "Carefree app (Rize II Carefree)",
+    OKIN_CST_VARIANT_CLARITY: "Rize Clarity II - O app (Rize II Clarity)",
+    OKIN_CST_VARIANT_MF900: "MFirm 900 - O app (Rize MF900 / Mattress Firm 900-O)",
+    OKIN_CST_VARIANT_SUPPORT: "Support 挺你 科技調整床 app (Support)",
     OKIN_CST_VARIANT_NECTAR_MOVE: "Nectar Move",
 }
 OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(

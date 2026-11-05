@@ -817,6 +817,13 @@
           "choice": "App"
         }
       },
+      "remacro_family": {
+        "title": "Which store app controls this bed?",
+        "description": "Slumberland, The Brick and Jerome's run the same controller, and nothing the bed advertises names the app. Choose the app you use on your phone. Only the apps that list this bed's model are offered. Model the bed advertises: **{model}**.",
+        "data": {
+          "choice": "App"
+        }
+      },
       "jiecang_legacy": {
         "title": "Motors on this bed",
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
@@ -853,7 +860,6 @@
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
       "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
       "reconfigure_not_supported": "This setup has no guided reconfigure flow. Use Configure to change its settings.",
-      "reconfigure_successful": "The change was saved and the bed reloaded with its new controls. To switch back, open Reconfigure again.",
       "migration_entry_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
       "migration_kept": "Your current setup was kept. You won't be asked again for this setup unless a new app becomes available for it.",
       "migration_unchanged": "Your answer matches the current setup, so nothing was changed.",
@@ -8952,6 +8958,13 @@
               "action": "Profile choice"
             }
           },
+          "managed": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep current profile, here or in the guided change, dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
           "paired": {
             "title": "Review the profile for {target}",
             "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
@@ -8965,7 +8978,8 @@
         },
         "abort": {
           "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
-          "review_started": "Continue in settings. Nothing changes until you submit them."
+          "review_started": "Continue in settings. Nothing changes until you submit them.",
+          "guided_change_started": "Continue in the guided change. Nothing changes until you apply it."
         }
       }
     },
@@ -8976,6 +8990,13 @@
           "init": {
             "title": "Review the profile for {name}",
             "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "managed": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep current profile, here or in the guided change, dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
@@ -8993,7 +9014,8 @@
         },
         "abort": {
           "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
-          "review_started": "Continue in settings. Nothing changes until you submit them."
+          "review_started": "Continue in settings. Nothing changes until you submit them.",
+          "guided_change_started": "Continue in the guided change. Nothing changes until you apply it."
         }
       }
     },
@@ -9193,6 +9215,13 @@
         "m5x4": "AdjustableM5X4 app",
         "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
         "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed"
+      }
+    },
+    "remacro_family_choice": {
+      "options": {
+        "slumberland": "Slumberland app",
+        "the_brick": "The Brick app",
+        "jeromes": "Jerome's app"
       }
     },
     "malouf_family_choice": {

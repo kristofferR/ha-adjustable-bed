@@ -555,7 +555,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
-    BED_TYPE_OKIN_CST: "Okin CST (Rize product profiles, 14-byte dual-field)",
+    BED_TYPE_OKIN_CST: (
+        "Okin CST: MFirm 900 - O, Jordan's Sanctuary - O, Resident Adjustable Bed, "
+        "Rize Aviada - O, POWER BOB ULTRA-O, Rize Contemporary III - O, Carefree, "
+        "Rize Clarity II - O and Support 挺你 科技調整床 apps"
+    ),
     BED_TYPE_OKIN_RF_ECO_BT: "OKIN Smart Remote / RF ECO BT single actuator",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2 (LP Control app, LP Comfort Connect)",
@@ -743,6 +747,7 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_STARCODE_ABM5_4: (
         "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
     ),
+    BED_TYPE_REMACRO: "Remacro: Slumberland, The Brick and Jerome's apps",
 }
 
 
@@ -780,6 +785,9 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B),
         (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230),
         (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
+        # The Remacro apps are answers of the Remacro question.
+        (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK),
+        (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES),
     }
 )
 # Configure still accepts a hidden app row by its value, as a repair submits it.

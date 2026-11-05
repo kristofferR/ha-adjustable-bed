@@ -323,6 +323,7 @@ from .const import (
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
+    OKIN_CST_VARIANTS,
     OKIN_DOT_FURNIMOVE_VARIANTS,
     ORE_COMFORT_BED_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -333,6 +334,8 @@ from .const import (
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     PRODUCT_TYPES,
+    REMACRO_VARIANT_JEROMES,
+    REMACRO_VARIANT_THE_BRICK,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
@@ -1427,6 +1430,9 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
     **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
     **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
+    # A new Okin CST bed answers the Okin question with its apps first; CST is
+    # not a guided family, so an existing entry keeps Configure.
+    BED_TYPE_OKIN_CST: "okin_family",
     **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
     **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
     **dict.fromkeys(LEGGETT_FAMILY.bed_types, "leggett_family"),
@@ -1448,6 +1454,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_LP_LEGACY: "profile_questions",
     **dict.fromkeys(CUSTOMATIC_FAMILY.bed_types, "customatic_family"),
     **dict.fromkeys(JORDANS_FAMILY.bed_types, "jordans_family"),
+    BED_TYPE_REMACRO: "remacro_family",
     **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
     **dict.fromkeys(MALOUF_FAMILY.bed_types, "malouf_family"),
 }
@@ -2382,6 +2389,13 @@ _OKIN_ROUTE_LABELS: Final[dict[str, str]] = {
     "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
 }
 _OKIN_KEEP_LABEL: Final = "I don't know: keep the detected controls"
+# The Okin CST products, each the route of the app its accepted report names
+# (cluster 011, Nectar Move).
+_OKIN_CST_APPS: Final[dict[str, str]] = {
+    f"{BED_TYPE_OKIN_CST}:{variant}": variant
+    for variant in OKIN_CST_VARIANTS
+    if variant != VARIANT_AUTO
+}
 
 
 def _route_and_motors_schema(
@@ -2504,6 +2518,13 @@ _STARCODE_APPS: Final[dict[str, _AppAnswer]] = {
     "m5x4": (BED_TYPE_STARCODE_ABM5_4, None, "starcode_app"),
     "m5x5": (BED_TYPE_STARCODE_M5X5, None, "starcode_m5x5"),
     "m1x12": (BED_TYPE_STARCODE_M1X12, None, "starcode_m1x12"),
+}
+# The Remacro question's answers: the variant that selects each store app.
+_REMACRO_APPS: Final[dict[str, str]] = {
+    # Auto is the Slumberland app, as in v4.0.2.
+    "slumberland": VARIANT_AUTO,
+    "the_brick": REMACRO_VARIANT_THE_BRICK,
+    "jeromes": REMACRO_VARIANT_JEROMES,
 }
 # Each app family's picker row, by the routes behind it. The first answer is the row.
 _APP_FAMILY_ROWS: Final[dict[str, str]] = {
@@ -2889,6 +2910,7 @@ _FAMILY_STEPS: Final = frozenset(
         "customatic_family",
         "jordans_family",
         "malouf_family",
+        "remacro_family",
     }
 )
 APP_SETTINGS_BED_TYPES: Final = (
@@ -2952,9 +2974,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
     # version 3 marks older entries for the one-time app profile review. v5
     # stores the profile id each entry runs (profile_id.py); setup derives it
-    # for new entries.
+    # for new entries. Minor version 2 drops the obsolete keys recorded in
+    # docs/design/config-keys.md.
     VERSION = 5
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -3225,9 +3248,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Leave the saved entry untouched and record the explicit Keep."""
         if not self._migration_unchanged():
             return self.async_abort(reason="migration_entry_changed")
+        from .profile_recommendations import async_keep_reviewed_profile
         from .profile_review import async_keep_current_profile
 
-        async_keep_current_profile(self.hass, self._get_reconfigure_entry())
+        entry = self._get_reconfigure_entry()
+        async_keep_current_profile(self.hass, entry)
+        await async_keep_reviewed_profile(self.hass, entry, self.flow_id)
         return self.async_abort(reason="migration_kept")
 
     async def async_step_vibradorm(
@@ -3464,9 +3490,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_abort(reason="migration_unchanged")
         self._record_selected_app_intent(data)
         result = self.async_update_and_abort(entry, data=data, options=options)
+        from .profile_recommendations import (
+            async_complete_profile_review,
+            async_confirm_profile_review,
+        )
         from .profile_review import async_clear_profile_review_issue
 
         async_clear_profile_review_issue(self.hass, entry.entry_id)
+        # A profile recommendation that opened this change is answered by it.
+        await async_confirm_profile_review(self.hass, entry, self.flow_id, {**data, **options})
+        async_complete_profile_review(self.hass, entry, self.flow_id)
         if entry.state in (ConfigEntryState.SETUP_ERROR, ConfigEntryState.SETUP_RETRY):
             self.hass.config_entries.async_schedule_reload(entry.entry_id)
         return result
@@ -3602,9 +3635,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data[CONF_BED_TYPE],
                 data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
             )
+            if self._migration is None and (
+                self._okin_incoming in APP_VARIANT_CHOICES
+                or self._okin_incoming[0] == BED_TYPE_OKIN_CST
+                and self._okin_incoming[1] in _OKIN_CST_APPS.values()
+            ):
+                # An app row, such as Nectar Move, or an explicit CST product
+                # already answered the question.
+                return await self._async_finish_family_route()
         incoming, incoming_variant = self._okin_incoming
         # The apps the app review suggests for this route stay one answer away.
         apps = related_app_choices(incoming, incoming_variant)
+        # A detected or chosen Okin CST bed is offered its own apps first.
+        cst_apps = _OKIN_CST_APPS if incoming == BED_TYPE_OKIN_CST else {}
         # A FurniMove row or gateway chose no handset, so there is nothing to keep.
         can_keep = self._migration is not None or incoming != BED_TYPE_FURNIMOVE
         choice = (user_input or {}).get("choice")
@@ -3613,6 +3656,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self.async_step_migration_keep()
             if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
                 return await self.async_step_profile_questions()
+            return await self._async_finish_family_route()
+        if choice in cst_apps:
+            self._select_family_route(BED_TYPE_OKIN_CST, cst_apps[choice])
             return await self._async_finish_family_route()
         if choice in _OKIN_ROUTES or choice in apps:
             bed_type, variant = (
@@ -3637,12 +3683,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
                 data[CONF_MOTOR_COUNT] = 1
             return await self._async_finish_family_route()
-        options = [
+        routes = [
+            SelectOptionDict(value=key, label=label) for key, label in _OKIN_ROUTE_LABELS.items()
+        ]
+        app_options = [
             *(
-                SelectOptionDict(value=key, label=label)
-                for key, label in _OKIN_ROUTE_LABELS.items()
+                SelectOptionDict(value=key, label=OKIN_CST_VARIANTS[variant])
+                for key, variant in cst_apps.items()
             ),
             *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
+        ]
+        options = [
+            # The detected family's apps come first, then the other Okin answers.
+            *([*app_options, *routes] if cst_apps else [*routes, *app_options]),
             *([SelectOptionDict(value="keep", label=_OKIN_KEEP_LABEL)] if can_keep else []),
         ]
         return self.async_show_form(
@@ -4017,6 +4070,66 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Ask which StarCode app runs the bed, then that app's own settings."""
         return await self._async_app_family("starcode_family", _STARCODE_APPS, user_input)
+
+    async def async_step_remacro_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which store app runs a Remacro bed, offering the apps that list its model.
+
+        The advertisement picks the model, never the app. A model no app lists,
+        or none seen yet, runs the fallback controls on any app.
+        """
+        from .beds.remacro_protocol import (
+            MODELS,
+            advertised_model_id,
+            app_for_variant,
+            apps_listing,
+        )
+
+        assert self._manual_data is not None
+        data = self._manual_data
+        manufacturer_data = remacro_manufacturer_data(
+            self.hass,
+            data[CONF_ADDRESS],
+            self._discovery_info.manufacturer_data if self._discovery_info is not None else None,
+        )
+        model_id = advertised_model_id(manufacturer_data)
+        listing = apps_listing(model_id)
+        apps = [
+            key
+            for key, variant in _REMACRO_APPS.items()
+            if not listing or app_for_variant(variant) in listing
+        ]
+        choice = (user_input or {}).get("choice")
+        if isinstance(choice, str) and choice in apps:
+            # The bed type stays; only the app changes, so the form's settings stay.
+            data[CONF_PROTOCOL_VARIANT] = _REMACRO_APPS[choice]
+            self._manual_data = self._maybe_add_advertisement_metadata(
+                data, manufacturer_data=manufacturer_data
+            )
+            return await self._async_finish_family_route()
+        model = (
+            "none seen yet"
+            if model_id is None
+            else MODELS[model_id].name
+            if model_id in MODELS
+            else f"company ID {model_id}"
+        )
+        return self.async_show_form(
+            step_id="remacro_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=apps,
+                            translation_key="remacro_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"model": model},
+        )
 
     async def _async_app_family(
         self, step_id: str, apps: Mapping[str, _AppAnswer], user_input: dict[str, Any] | None

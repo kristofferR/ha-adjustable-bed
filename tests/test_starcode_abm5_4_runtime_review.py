@@ -256,7 +256,6 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
             {
                 const.CONF_PAIR_ID: "app-adoption-pair",
                 const.CONF_PAIR_MODE: const.PAIR_MODE_SEPARATE_ADDRESS,
-                const.CONF_PAIR_SCHEMA_VERSION: 1,
                 const.CONF_PAIR_MEMBER_ADDRESSES: [left, right],
                 const.CONF_PAIR_CHILDREN: [
                     {**data, CONF_ADDRESS: address, CONF_NAME: side, const.CONF_SIDE: side}

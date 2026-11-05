@@ -291,9 +291,9 @@ framing and actions. Do not interchange the command sets.
   advertisements and Device Information are not sufficient to choose it.
 - The `62741523-...` OKIN service, `90311623-...` CSS service, and Nordic DFU
   service `00001530-...` are not sufficient by themselves to identify CST
-  because RF ECO BT stair actuators share that GATT inventory. Choose **Okin
-  CST (Rize product profiles, 14-byte dual-field)** only when the known base or
-  app identity also corroborates CST. Device Information model `MEGAMAT MBZ`
+  because RF ECO BT stair actuators share that GATT inventory. Choose the
+  **Okin CST** row, which names its apps, only when the known base or app
+  identity also corroborates CST. Device Information model `MEGAMAT MBZ`
   identifies RF ECO BT instead.
 - Or configure bed type `nectar` manually (a legacy alias of the `okin_7byte`
   profile).

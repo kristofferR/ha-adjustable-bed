@@ -56,6 +56,7 @@ testing status.
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer and rollback |
 | [Guided setup changes](design/guided-setup-changes.md) | Staged app and layout changes, Repairs, Keep and the paired split rules |
 | [Setup questions](design/setup-questions.md) | Profile-declared setup questions, owned generic fields and the generic setup step |
+| [Config keys](design/config-keys.md) | Every saved `CONF_*` key: its class, writer and reader, and the keys schema 5.2 drops |
 
 ## Protocol Research
 
