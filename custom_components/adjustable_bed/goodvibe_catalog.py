@@ -1,7 +1,6 @@
 """Good Vibe Sleep 2.0.1/code20103 current product getters and exact controls.
 
 Derived exclusively from accepted row116 evidence. Hardware unverified.
-Source/field bindings and exclusions: docs/apk-analysis/dispositions/row116-goodvibe.*.
 All 12 byte alternatives per action are checked against independent artifact vectors.
 """
 

@@ -2,8 +2,8 @@
 
 Every value here comes from the accepted cluster-002 / row 050 artifacts:
 ``com.cheers.slumber`` 1.0 (2), ``com.cheers.brick`` 1.0 (3) and
-``com.cheers.jewmes`` 1.202112141512 (20). See
-``docs/apk-analysis/dispositions/row050-remacro.md``. Hardware is unverified.
+``com.cheers.jewmes`` 1.202112141512 (20), APK Protocol Audit row 050.
+Hardware is unverified.
 
 The apps select a model only by the lowest manufacturer-specific-data company
 ID in the advertisement; names, payload bytes and RSSI are never consulted.

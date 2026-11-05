@@ -628,8 +628,8 @@ Configure's bed-type list, which then asks the app, packet family and layout.
 - Writable name roles are rediscovered per connection; G2 alone cannot reuse an
   old G1 name handle.
 - Write response mode comes from the discovered characteristic properties.
-- Comfort Motion sends only its frozen frames and the raw rename (see the
-  [ledger](../apk-analysis/dispositions/row115-comfort-motion.md)).
+- Comfort Motion sends only its frozen frames and the raw rename (APK Protocol
+  Audit row115).
 
 #### Controls
 
@@ -717,9 +717,8 @@ not change HA's local device name.
 
 #### Evidence
 
-The [discovery ledger (row115)](../apk-analysis/dispositions/row115-comfort-motion.md)
-holds the accepted report, every disposition and exclusion, and the test
-references. Physical actuator effects, ATT properties, release effects, mode
+APK Protocol Audit row115 holds the accepted report, every disposition and
+exclusion. Physical actuator effects, ATT properties, release effects, mode
 names and rename persistence remain validation for real users after beta or
 release; maintainers need not acquire a bed.
 
@@ -864,9 +863,8 @@ preset replaces the memory recall.
 
 #### Evidence
 
-- ERGOBALANCE and Dream Motion: the
-  [cluster-004 disposition](jiecang-app-disposition.md).
-- Dream Motion HD: the [row105 discovery ledger](dreamhd-disposition.md).
+- ERGOBALANCE and Dream Motion: APK Protocol Audit cluster-004.
+- Dream Motion HD: APK Protocol Audit row105.
 
 ### ERGOBALANCE (Dreamask)
 
@@ -887,7 +885,7 @@ See the [generated tables](#hold-and-release-timing).
 
 #### Evidence
 
-The [cluster-004 disposition](jiecang-app-disposition.md).
+APK Protocol Audit cluster-004.
 
 ### Dream Motion (Dreamotion)
 
@@ -908,7 +906,7 @@ See the [generated tables](#hold-and-release-timing).
 
 #### Evidence
 
-The [cluster-004 disposition](jiecang-app-disposition.md).
+APK Protocol Audit cluster-004.
 
 ### Dream Motion HD
 
@@ -988,7 +986,7 @@ queries, without a light-status query.
 
 #### Evidence
 
-The [row105 discovery ledger](dreamhd-disposition.md).
+APK Protocol Audit row105.
 
 ### LOGICDATA app family
 
@@ -1263,9 +1261,9 @@ being answered. The tablet decodes neither clock nor alarm replies.
 
 #### Evidence
 
-Both profiles send only their frozen frames. Dispositions, phone/tablet
-differences, report hashes and exclusions are in the
-[cluster-006 ledger](logicdata-app-disposition.md).
+Both profiles send only their frozen frames. APK Protocol Audit cluster-006
+records the dispositions, phone/tablet differences, report hashes and
+exclusions.
 
 ### Sleep Smart Air Mattress (bed)
 
@@ -1343,21 +1341,17 @@ No positions, firmware, model or calibration are reported.
 
 #### Evidence
 
-Sleep Smart sends only its frozen frames. Dispositions, exclusions and deferred
-hardware checks are in the
-[row053 ledger](../apk-analysis/dispositions/row053-logicdata-sleep-smart.md).
+Sleep Smart sends only its frozen frames. APK Protocol Audit row053 records the
+dispositions, exclusions and deferred hardware checks.
 
 ## Notes
 
 ### Analysis provenance
 
-- The discovery ledgers hold the evidence and dispositions; this guide holds the
-  results in reference form:
-  [Comfort Motion (row115)](../apk-analysis/dispositions/row115-comfort-motion.md),
-  [ERGOBALANCE and Dream Motion (cluster-004)](jiecang-app-disposition.md),
-  [Dream Motion HD (row105)](dreamhd-disposition.md),
-  [MOTIONrelax phone and tablet (cluster-006)](logicdata-app-disposition.md),
-  [Sleep Smart (row053)](../apk-analysis/dispositions/row053-logicdata-sleep-smart.md).
+- The machine-local audit ledgers hold the evidence and dispositions; this guide
+  holds the results in reference form: Comfort Motion (row115), ERGOBALANCE and
+  Dream Motion (cluster-004), Dream Motion HD (row105), MOTIONrelax phone and
+  tablet (cluster-006) and Sleep Smart (row053).
 - Packages: `com.jiecang.app.android.jiecangbed` 2.2.1 (28),
   `com.jiecang.dreamask.app.android.bed` 1.0.8 (8),
   `com.jiecang.dreamotion.app.android.bed` 1.0.5 (11) and

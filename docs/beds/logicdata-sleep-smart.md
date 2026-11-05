@@ -112,8 +112,7 @@ Names use the app's edit-field alphabet (`0-9`, `a-z`, `A-Z`, `ä`, `ö`, `ü`,
   the accepted APK Protocol Audit report for this version.
 - Bed frames, startup and timing are generated from `profiles/logicdata.py` in
   the [Jiecang codec guide](jiecang.md#logicdata-app-family).
-- The comparison ledger is
-  [row053](../apk-analysis/dispositions/row053-logicdata-sleep-smart.md).
+- Audit: APK Protocol Audit row053.
 
 ### Deferred hardware checks
 

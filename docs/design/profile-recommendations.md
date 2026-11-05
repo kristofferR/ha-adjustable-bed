@@ -7,8 +7,8 @@ entries and paired beds. It reuses the existing advertisement detector and the
 known app choices in `profile_review.py`. It never opens a connection, probes a
 command, reads another characteristic, or switches protocols to test a hypothesis.
 No detection predicate or bed protocol changes are introduced by this feature.
-The [closed-issue audit](profile-recommendation-issue-audit.md) records historical
-selection failures and the evidence available to assess them.
+A closed-issue audit, kept machine-local with the other audit records, assessed
+historical selection failures against the evidence available for each.
 
 ## Assessment
 
@@ -209,8 +209,8 @@ accepted `REPORT.SHA256` hash is
 `39a64e7895b238a518498a671a37ae686252b8a68156ecf8a6b261ddb610050d`;
 `analysis.json` hash is
 `43073da1665399a64c146aa32e2040c91f3cd9e53850a212591e37ab03e0ced1`.
-The frozen report manifest was verified before reuse. See the existing
-[row054 dispositions](../apk-analysis/dispositions/row054-adjustable-lumbar.md).
+The frozen report manifest was verified before reuse, against the existing row054
+dispositions.
 No APK was reanalyzed, no audit acceptance was changed, and no queue unit was
 advanced by this notification feature.
 

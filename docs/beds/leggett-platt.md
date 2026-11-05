@@ -1,6 +1,6 @@
 # Leggett & Platt
 
-**Status:** ✅ Tested for Gen2 LP Comfort Connect pairing and motor movement; other variants and features need more testing
+**Status:** ⚠️ Partially tested (Gen2 LP Comfort Connect pairing and movement in [discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) and [#385](https://github.com/kristofferR/ha-adjustable-bed/issues/385); the QRRM Richmat route's presets in [#504](https://github.com/kristofferR/ha-adjustable-bed/issues/504); other variants and features need more testing)
 
 [Discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) confirms that a Prodigy LBR with an LP Comfort Connect 209-M001 controller was auto-detected, bonded through an ESPHome Bluetooth proxy, and moved with tested commands. The reporter has not yet checked every motor, preset, massage and lighting control, or long-term connection stability.
 

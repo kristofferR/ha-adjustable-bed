@@ -1,7 +1,7 @@
 """Eshine row106 artifact vectors, safe parsing and HA control surfaces.
 
-Derived integration tests, not the raw APK Protocol Audit report. Evidence and
-intentional safety differences: docs/apk-analysis/dispositions/row106-eshine.md.
+Derived integration tests, not the raw APK Protocol Audit report (row106), which
+also records the intentional safety differences.
 """
 
 from __future__ import annotations

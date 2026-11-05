@@ -7,7 +7,7 @@
 ## Known Models
 
 - Choose the exact product or remote shown in Good Vibe Sleep. Shared Bluetooth services do not identify a model.
-- The shipped catalog supplies 848 admitted normal-product/configuration choices and 27 remote/image aliases. The [complete profile index](../apk-analysis/dispositions/row116-goodvibe/inventory.csv) retains every accepted selector, including excluded selectors.
+- The shipped [catalog](../../custom_components/adjustable_bed/goodvibe_catalog.py) supplies 848 admitted normal-product/configuration choices and 27 remote/image aliases. The row116 audit retains every accepted selector, including excluded selectors.
 - Independent sleep sensors use case-sensitive `RM-` (type 1) or `HJ-` (type 2) name prefixes. Add the sensor's own Bluetooth address with the corresponding sleep profile.
 - FWRM and WFRM are desk products and are excluded.
 
@@ -61,7 +61,7 @@ The additional service is live BLE support. Its enum name does not turn it into 
 
 ### Packet Format
 
-Normal generic frames are `6e 01 side operand sum8`, except exact special query prefixes. The legacy service emits only the operand. Short, long and legacy-short operands are distinct per descriptor. Each is listed in the [complete command table](../apk-analysis/dispositions/row116-goodvibe/commands.csv).
+Normal generic frames are `6e 01 side operand sum8`, except exact special query prefixes. The legacy service emits only the operand. Short, long and legacy-short operands are distinct per descriptor. Each is listed in the [catalog](../../custom_components/adjustable_bed/goodvibe_catalog.py).
 
 Settings records are `6e 20 len domain command operation data sum8`, where `len` counts the whole frame. The [Richmat codec](richmat.md) builds the same command, light, colour and countdown frames byte for byte, but places `len` before `20` in its records. Good Vibe therefore stays a standalone controller rather than a Richmat profile.
 
@@ -87,7 +87,7 @@ The source app has no app-owned PIN, challenge, encryption or bond request. This
 
 ### Motor Control, Presets, Memory and Massage
 
-The [complete command table](../apk-analysis/dispositions/row116-goodvibe/commands.csv) contains every accepted command ID, exact framed/legacy alternatives, source owner and implementation disposition. The [catalog](../../custom_components/adjustable_bed/goodvibe_catalog.py) contains 1,393 current layout/alarm action definitions and five controls constructed inside the Y6RM menu. Controls retain their app labels without assigning a physical motor to a name alone.
+The row116 audit's command table contains every accepted command ID, exact framed/legacy alternatives, source owner and implementation disposition. The [catalog](../../custom_components/adjustable_bed/goodvibe_catalog.py) contains 1,393 current layout/alarm action definitions and five controls constructed inside the Y6RM menu. Controls retain their app labels without assigning a physical motor to a name alone.
 
 | Command | Bytes | Description |
 |---------|-------|-------------|
@@ -184,4 +184,4 @@ Use `adjustable_bed.goodvibe` for these settings and queries. The action validat
 
 Hardware, ATT delivery, firmware acceptance and physiological interpretation remain unverified. Real users may validate them after beta/release; maintainer hardware acquisition is not required.
 
-See the [discovery and implementation ledger](../apk-analysis/dispositions/row116-goodvibe.md) for source bindings, hashes, exclusions and audit limits.
+APK Protocol Audit row116 records the source bindings, hashes, exclusions and audit limits.

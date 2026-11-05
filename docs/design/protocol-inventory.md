@@ -394,8 +394,8 @@ options.
 APK status letters: `C` = workspace report `COMPLETE`, `P` = `PARTIAL`, `B` = `BLOCKED`.
 The status is the `status` field of the frozen `analysis.json` in the machine-local
 report workspace; **acceptance** is tracked in #447/#436 and is not claimed here.
-"ledger rowNNN" names a disposition ledger under `docs/apk-analysis/dispositions/`
-with no matching workspace report. Package versions are taken from workspace names.
+"ledger rowNNN" names a machine-local disposition ledger with no matching
+workspace report. Package versions are taken from workspace names.
 No report content is copied here.
 
 | Bed type | Owned config keys (CONF_*, beyond the generic fields) | APK report(s): package, version, workspace status |

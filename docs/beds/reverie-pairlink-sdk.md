@@ -177,11 +177,9 @@ write is suspended. Physical teardown still invalidates queued work.
 
 ## Notes
 
-Hardware delivery remains unverified. Source scope, release adoption and root
-source overlays are recorded in the
-[disposition crosswalk](../apk-analysis/dispositions/row041-reverie.md#guide-evidence-and-scope-notes).
+Hardware delivery remains unverified. The row041 audit records the source
+scope, release adoption and root source overlays.
 
 ### Analysis provenance
 
 - Package `com.reverie.reverie`, version 3.3.3.8, accepted row041 audit.
-- [Evidence and exact dispositions](../apk-analysis/dispositions/row041-reverie.md).

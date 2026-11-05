@@ -13,14 +13,10 @@ import pytest
 
 BEDS = Path(__file__).resolve().parents[1] / "docs" / "beds"
 
-# Discovery ledgers (*-disposition.md) and the Sleep Number action reference are other doc types.
+# The Sleep Number action reference is another doc type.
 _NOT_GUIDES = {"sleep-number-services.md"}
 
-GUIDES = sorted(
-    p
-    for p in BEDS.glob("*.md")
-    if not p.name.endswith("-disposition.md") and p.name not in _NOT_GUIDES
-)
+GUIDES = sorted(p for p in BEDS.glob("*.md") if p.name not in _NOT_GUIDES)
 
 _REQUIRED = {
     "status line": re.compile(r"^\*\*Status:\*\* (✅|❓|⚠️)", re.M),

@@ -154,8 +154,7 @@ positions, battery readings, a capability query or proof that an alarm is set.
 ### Analysis provenance
 
 The implementation uses the accepted APK Protocol Audit report for queue
-row019. See [the complete implementation disposition](lp-legacy-disposition.md)
-for catalog coverage, excluded application-only behavior and the frozen
-evidence identity. Raw APKs and analysis remain machine-local. Physical
+row019, whose disposition records the catalog coverage, excluded
+application-only behavior and the frozen evidence identity. Raw APKs and analysis remain machine-local. Physical
 confirmation is deferred to users with the corresponding bed after a beta or
 release; it is separate from static protocol verification.

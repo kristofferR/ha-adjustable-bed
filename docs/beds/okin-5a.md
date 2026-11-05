@@ -548,9 +548,7 @@ Its app-proven group behavior is carried over:
 
 #### Evidence
 
-The [AdjustableM5X5 dispositions](../apk-analysis/row005-dispositions.md) and the
-[M1X12 implementation ledger](starcode-m1x12-implementation-ledger.json) cover the
-frozen COMPLETE reports for `com.starcode.adjustablem1x12` 1.1.3 and
+The AdjustableM5X5 (row005) and M1X12 audits cover the frozen COMPLETE reports for `com.starcode.adjustablem1x12` 1.1.3 and
 `com.starcode.abm5_5` 1.2.3. ELEVATE sends only its frozen frames. Command
 direction and multi-device fan-out await real-hardware checks.
 

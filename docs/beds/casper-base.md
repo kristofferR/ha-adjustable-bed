@@ -450,8 +450,8 @@ alarm records and malformed-packet errors.
 - Artifact set SHA-256:
   `2d21d42c17a7b5ae60c2403ff3654d80993e6d09f879cfe666c6d58270123f8b`
   (independent audit ACCEPT).
-- The [row101 disposition ledger](../apk-analysis/dispositions/row101-casper-base.md)
-  records exact accepted seals, every discovery, implementation/test references
-  and all exclusions; its [machine-readable form](../apk-analysis/dispositions/row101-casper-base.json)
-  holds every entry.
+- The row101 audit records exact accepted seals, every discovery,
+  implementation/test references and all exclusions. Its entries are the
+  [ledger fixture](../../tests/fixtures/casper_base/ledger.json) that
+  `tests/test_casper_base_ledger.py` checks.
 - Raw APKs, extraction, reports and audits remain local and ignored.

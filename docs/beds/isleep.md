@@ -169,8 +169,8 @@ Choose **ISleep app (Kaidi, com.kaidi_test4)** and confirm its product ID, signe
 room ID and advertised actuator descriptor. The profile owns layout, massage,
 feedback and movement timing. A two-address pair keeps these settings per side.
 Adopt existing rooms explicitly; enrollment of fresh mode09 devices is a
-separate device action. HA never resets an existing room. See the
-[row064 ledger](../apk-analysis/dispositions/row064-isleep.md).
+separate device action. HA never resets an existing room (APK Protocol Audit
+row064).
 
 ## Paired beds
 
@@ -318,5 +318,4 @@ lanes; products without one-address sides always send the Left / single column.
 | Accepted report (`report-revision-sol-002`) | `d00ec6709a9cfd53c7e254590e95fb9ee21151db47e35eb1a10ceeb47a2198f1` |
 | Independent audit (`audit-sol-round03`, ACCEPT) | `fe33a01ce0a19ee55c172310f5344b5d5c5e18befcd65cd91bacad992d751fde` |
 
-- The [comparison ledger](../apk-analysis/dispositions/row064-isleep.md)
-  records every command, variant, session path and exclusion.
+- The row064 comparison ledger, kept machine-local, records every command, variant, session path and exclusion.

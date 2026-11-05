@@ -1,7 +1,7 @@
 """com.okin.eshine 1.1.8 wire values, independent of the E6000 app.
 
-Accepted row122 evidence and deliberate malformed-input corrections are recorded
-in docs/apk-analysis/dispositions/row122-eshine.md.
+Evidence: APK Protocol Audit row 122, with deliberate malformed-input
+corrections.
 """
 
 from __future__ import annotations

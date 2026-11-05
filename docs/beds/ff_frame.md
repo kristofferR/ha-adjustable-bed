@@ -1,6 +1,6 @@
 # FFFF frame (Solace, Woosa Sleep, BedSense, Motion Bed)
 
-**Status:** ⚠️ Partially tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed; the other profiles are APK-verified with hardware unverified)
+**Status:** ⚠️ Partially tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles are APK-verified with hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Bonopaws and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -568,8 +568,8 @@ See [Timing](#timing). Presets are single writes without STOP.
 #### Evidence
 
 MotionFlex, HomeKobo and Sweet Night send only their frozen frames; Legacy S4-Y
-and Unverified send exactly the pre-v5 controller's frames. The
-[MotionFlex ledger](solace-disposition.md) holds the dispositions. Useful
+and Unverified send exactly the pre-v5 controller's frames. The cluster 008
+audit holds the dispositions. Useful
 captures after release: one movement start and STOP per route, the five startup
 status replies, Flat and one named preset per route, and Sweet Night's Memory 2
 short press.
@@ -578,7 +578,7 @@ short press.
 
 **App:** [Woosa Sleep](https://play.google.com/store/apps/details?id=com.sn.woosa) 1.1.9 (13), `com.sn.woosa`
 
-**Status:** ⚠️ Partially tested ([the reporter confirmed working controls](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-5982450770) with v4.0.1 after selecting Woosa)
+**Status:** ✅ Tested ([the reporter confirmed working controls](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-5982450770) with v4.0.1 after selecting Woosa, and [everything but the unused alarm](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-6610197925) later)
 
 Behaves as the [Solace name routes](#solace-name-routes), except as below.
 
@@ -650,8 +650,8 @@ prove the hardware executed it.
 
 #### Evidence
 
-Woosa Sleep sends only its frozen frames. The [Woosa ledger](woosa-disposition.md)
-holds the dispositions. Useful captures after release: leg down versus Flat, the
+Woosa Sleep sends only its frozen frames. Its audit (issue #606) holds the
+dispositions. Useful captures after release: leg down versus Flat, the
 four preset save and recall paths, brightness, clock and alarm, and runtime GATT
 properties.
 
@@ -822,8 +822,7 @@ See [Timing](#timing). Memory queries go in slot order 3, 4, 1, 2, 5
 #### Evidence
 
 BedSense sends exactly its frozen command table, including the C018 anomaly. The
-[row108 ledger](../apk-analysis/dispositions/row108-bedsense.md) holds the
-dispositions. Useful captures after release: GATT roles and properties, memory
+row108 audit holds the dispositions. Useful captures after release: GATT roles and properties, memory
 replies, lift hold versus click, background taps, massage and light durations.
 
 ### Motion Bed
@@ -1034,19 +1033,18 @@ before any write; persistent changes need `confirmed: true`.
 
 #### Evidence
 
-Motion Bed sends only its frozen frames. The
-[unit 032 dispositions](../apk-analysis/dispositions/032-motion-bed.md) hold the
+Motion Bed sends only its frozen frames. The unit 032 audit holds the
 dispositions, including the excluded Wi-Fi provisioning and cloud controls.
 
 ## Notes
 
 ### Analysis provenance
 
-| Profile | Report | Ledger |
-|---------|--------|--------|
-| Solace MotionFlex, HomeKobo, Sweet Night | Accepted APK Protocol Audit reports, cluster 008 | [MotionFlex](solace-disposition.md) |
-| Woosa Sleep | `com.sn.woosa` 1.1.9 (13), artifact-set SHA-256 `21778ac636d9fed83d7809d0dd47521deb2b2e25d24867bf3e2458740c47b217`, accepted `REPORT.SHA256` digest `995677ce2204b2f8255b5a47f9b7c597928255d636e2f50ba1aff3cdfcf70851` ([issue #606](https://github.com/kristofferR/ha-adjustable-bed/issues/606)) | [Woosa Sleep](woosa-disposition.md) |
-| BedSense | `com.fenmenbielei.bedsense` 1.8 (18), row108 | [row108](../apk-analysis/dispositions/row108-bedsense.md) |
-| Motion Bed | `com.sn.blackdianqi` 1.24 (34), XAPK SHA-256 `76449cb37440907b6933c5dfb36a1a5ec5b737756f44db5a9629a654f9f3e6a3` | [unit 032](../apk-analysis/dispositions/032-motion-bed.md) |
+| Profile | Report | Audit |
+|---------|--------|-------|
+| Solace MotionFlex, HomeKobo, Sweet Night | Accepted APK Protocol Audit reports, cluster 008 | cluster 008 |
+| Woosa Sleep | `com.sn.woosa` 1.1.9 (13), artifact-set SHA-256 `21778ac636d9fed83d7809d0dd47521deb2b2e25d24867bf3e2458740c47b217`, accepted `REPORT.SHA256` digest `995677ce2204b2f8255b5a47f9b7c597928255d636e2f50ba1aff3cdfcf70851` ([issue #606](https://github.com/kristofferR/ha-adjustable-bed/issues/606)) | Woosa Sleep |
+| BedSense | `com.fenmenbielei.bedsense` 1.8 (18), row108 | row108 |
+| Motion Bed | `com.sn.blackdianqi` 1.24 (34), XAPK SHA-256 `76449cb37440907b6933c5dfb36a1a5ec5b737756f44db5a9629a654f9f3e6a3` | unit 032 |
 
 Raw APKs, decompilation and reports stay machine-local.

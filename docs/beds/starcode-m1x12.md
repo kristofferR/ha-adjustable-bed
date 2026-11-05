@@ -314,5 +314,5 @@ integration.
 
 - This implementation follows accepted artifact evidence, including the frozen
   report SHA-256 `ed4d010495b70c6ceb31ef7c2f896b872e67b95b14e44c6f8844bc9f46ff6ae1`.
-- The full 970-ID mapping, including all exclusions, is in the
-  [M1X12 implementation ledger](starcode-m1x12-implementation-ledger.json).
+- The machine-local M1X12 implementation ledger holds the full 970-ID mapping,
+  including all exclusions.

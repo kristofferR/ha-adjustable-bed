@@ -1,6 +1,6 @@
 """HJBed 2.1.2 exact selectable profiles and static details.
 
-Source identity, exclusions and complete bindings: docs/apk-analysis/dispositions/row121-hjbed.*.
+Source identity, exclusions and complete bindings: APK Protocol Audit row 121.
 Generated from accepted report 88ce24aebae0; hardware unverified.
 """
 

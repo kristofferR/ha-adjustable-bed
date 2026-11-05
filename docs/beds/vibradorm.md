@@ -282,5 +282,4 @@ support in another app profile.
 
 - [GitHub Issue #162](https://github.com/kristofferR/ha-adjustable-bed/issues/162)
 - [GitHub Issue #403](https://github.com/kristofferR/ha-adjustable-bed/issues/403)
-- [Accepted Caresse / Werkmeister dispositions](../apk-analysis/row031-dispositions.md)
-- [Accepted VMAT dispositions](vmat-dispositions.json)
+- Accepted Caresse / Werkmeister audit (row031) and VMAT audit

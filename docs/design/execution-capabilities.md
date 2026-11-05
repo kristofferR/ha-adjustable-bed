@@ -55,11 +55,11 @@ row.
 
 A report's status is the `status` of the frozen `analysis.json` in the latest
 non-rejected workspace (see [Evidence keys](#evidence-keys)). Acceptance is
-tracked in #447 and in the disposition ledgers. A later scoped-repair workspace
+tracked in #447 and in the machine-local disposition ledgers. A later scoped-repair workspace
 that froze `PARTIAL` (Ergo Slim, Tempur AU) does not downgrade its accepted base
 report; cluster033 acceptance is recorded in #447. The accepted Leggett Prodigy
 CE and U Series reports live in `report/final/` and `final-report/`, as the
-[Leggett ledger](../beds/leggett-app-disposition.md) records; the July Prodigy
+Leggett app ledger records; the July Prodigy
 CE build is a different artifact and is not used.
 
 ## Evidence matrix
@@ -732,27 +732,28 @@ Report workspaces are machine-local under
 | werkmeister | `de.vibradorm.werkmeister` | 0.2 | COMPLETE | `de.vibradorm.werkmeister-0.2-2026-09-30-isolated-001/report/` |
 | woosa | `com.sn.woosa` | 1.1.9 | COMPLETE | `com.sn.woosa-1.1.9-20260923/report/` |
 
-Ledgers, guides and issues:
+Ledgers, guides and issues. An audit ledger is a machine-local record kept with
+its APK Protocol Audit report, named here by its file stem:
 
 | Key | Source |
 |---|---|
 | #368 | [368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) |
 | #483c | [483](https://github.com/kristofferR/ha-adjustable-bed/issues/483) |
 | #516c | [516](https://github.com/kristofferR/ha-adjustable-bed/issues/516) |
-| fm157 | [157-furnimove.md](../apk-analysis/dispositions/157-furnimove.md) |
-| issue558 | [issue558-ergomotion4.md](../apk-analysis/dispositions/issue558-ergomotion4.md) |
-| jensen-disp | [jensen-disposition.md](../beds/jensen-disposition.md) |
-| leggett-disp | [leggett-app-disposition.md](../beds/leggett-app-disposition.md) |
+| fm157 | audit ledger `157-furnimove` |
+| issue558 | audit ledger `issue558-ergomotion4` |
+| jensen-disp | audit ledger `jensen-disposition` |
+| leggett-disp | audit ledger `leggett-app-disposition` |
 | linak-guide | [linak.md](../beds/linak.md) |
 | motosleep-guide | [motosleep.md](../beds/motosleep.md#command-timing) |
-| row023 | [row023-malouf-lucid.md](../apk-analysis/dispositions/row023-malouf-lucid.md) |
-| row028 | [row028-customatic.md](../apk-analysis/dispositions/row028-customatic.md) |
-| row041 | [row041-reverie.md](../apk-analysis/dispositions/row041-reverie.md) |
-| row042 | [row042-nectar-motion.md](../apk-analysis/dispositions/row042-nectar-motion.md) |
-| row050 | [row050-remacro.md](../apk-analysis/dispositions/row050-remacro.md) |
-| row055 | [row055-richmat-cluster.md](../apk-analysis/dispositions/row055-richmat-cluster.md) |
-| row066 | [row066-classic-richmat-apps.md](../apk-analysis/dispositions/row066-classic-richmat-apps.md) |
-| row067 | [row067-adjustamattress.md](../apk-analysis/dispositions/row067-adjustamattress.md) |
-| row121 | [row121-hjbed.md](../apk-analysis/dispositions/row121-hjbed.md) |
-| row126 | [row126-hush-base.md](../apk-analysis/dispositions/row126-hush-base.md) |
+| row023 | audit ledger `row023-malouf-lucid` |
+| row028 | audit ledger `row028-customatic` |
+| row041 | audit ledger `row041-reverie` |
+| row042 | audit ledger `row042-nectar-motion` |
+| row050 | audit ledger `row050-remacro` |
+| row055 | audit ledger `row055-richmat-cluster` |
+| row066 | audit ledger `row066-classic-richmat-apps` |
+| row067 | audit ledger `row067-adjustamattress` |
+| row121 | audit ledger `row121-hjbed` |
+| row126 | audit ledger `row126-hush-base` |
 | svane-guide | [svane.md](../beds/svane.md) |

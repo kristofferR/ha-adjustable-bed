@@ -15,7 +15,7 @@ from the latest continuation of each shard:
 Two s01 builder vectors exercise library selectors the Hush route never sends,
 the mattress check ``5E 1A 00 01`` and the motor angle query ``6E 9A 30 01``,
 so they are not frozen. The ledger is
-``docs/apk-analysis/dispositions/row126-hush-base.json``.
+``tests/fixtures/hush_ledger.json``.
 """
 
 from __future__ import annotations
