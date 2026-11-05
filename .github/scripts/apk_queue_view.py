@@ -76,6 +76,9 @@ def _refs(text: str) -> str:
 
 def unit(cells: list[str], family: str, listing: str) -> str:
     order, analysis, work, route, implementation = cells
+    # A cluster's work cell reads "`cluster-NNN` · its apps".
+    code, _, apps = work.partition(" · ")
+    apps_html = f'<span class="apps">{html.escape(apps)}</span>' if apps else ""
     state = implementation.split(" · ", 1)[0]
     statuses = _MEMBER_STATUS.findall(listing)
     accepted = sum(status in ("done", "accepted") for status in statuses)
@@ -84,7 +87,8 @@ def unit(cells: list[str], family: str, listing: str) -> str:
         f'<details class="unit" data-status="{ANALYSIS_CLASS[analysis]}">'
         f'<summary><span class="rank">{html.escape(order)}</span>'
         f'<span class="chip {ANALYSIS_CLASS[analysis]}">{html.escape(analysis)}</span>'
-        f'<span class="work"><code>{html.escape(work.strip("`"))}</code><small>{route_text}</small></span>'
+        f'<span class="work"><code>{html.escape(code.strip("`"))}</code>{apps_html}'
+        f"<small>{route_text}</small></span>"
         f'<span class="members">{accepted}/{len(statuses)} accepted</span>'
         f'<span class="impl {IMPLEMENTATION_CLASS.get(state, "queued")}">{inline(implementation)}</span>'
         f"</summary>{listing}</details>"
@@ -107,7 +111,7 @@ color:var(--text);font:inherit;margin:4px 0 12px}
 .unit summary{display:grid;grid-template-columns:44px 110px minmax(0,1.3fr) 92px minmax(0,1.7fr);
 gap:10px;align-items:center;padding:9px 12px;cursor:pointer;list-style:none}
 .unit summary::-webkit-details-marker{display:none}.rank{color:var(--muted);font-variant-numeric:tabular-nums}
-.work code{display:block;overflow-wrap:anywhere}.work small,.members{color:var(--muted);font-size:13px}
+.work code{display:block;overflow-wrap:anywhere}.apps{display:block;font-size:14px}.work small,.members{color:var(--muted);font-size:13px}
 .chip{font-size:12px;font-weight:600;border:1px solid currentColor;border-radius:999px;padding:1px 8px;
 justify-self:start}
 .done{color:var(--done)}.active{color:var(--active)}.partial{color:var(--partial)}.queued{color:var(--queued)}
