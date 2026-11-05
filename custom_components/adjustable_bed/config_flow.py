@@ -6130,6 +6130,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         if not self._all_ble_devices and not self._retrying_devices:
             _LOGGER.info("No BLE devices found in either scanner view, showing manual entry form")
+            if self._selected_bed_type is None:
+                # Nothing to pick, so the address is typed after the app question.
+                self._app_after_device = "manual_entry"
+                return await self.async_step_select_app()
             return await self.async_step_manual_entry()
 
         # Sort devices: named devices first (alphabetically), then MAC-only/unnamed

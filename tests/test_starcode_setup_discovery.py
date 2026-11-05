@@ -19,7 +19,7 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from tests.form_helpers import suggested
+from tests.form_helpers import answer_app, suggested
 from tests.test_config_flow import _advance_only_progress, _fake_connected_client, _patch_gate
 
 _APP_PROBE_ROLES = {
@@ -85,6 +85,7 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_ADDRESS: "manual"}
         )
+        result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
         assert result["step_id"] == "manual_entry"
     else:
         result = await hass.config_entries.flow.async_init(
@@ -427,6 +428,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     assert result["step_id"] == "manual_entry"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
@@ -642,6 +644,7 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         user_input={
@@ -736,6 +739,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         user_input={
@@ -837,6 +841,7 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         user_input={

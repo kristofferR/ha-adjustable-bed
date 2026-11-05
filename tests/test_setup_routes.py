@@ -29,7 +29,7 @@ from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_BROADCAST,
     KaidiAdvertisement,
 )
-from tests.form_helpers import shown_markers
+from tests.form_helpers import answer_app, shown_markers
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -38,7 +38,8 @@ def _fields(result) -> set[str]:
     return {str(marker.schema) for marker in result["data_schema"].schema}
 
 
-async def _manual_entry(hass):
+async def _manual_entry(hass, app: str):
+    """Reach the typed-address form, answering the app question with ``app``."""
     with patch(
         "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
         return_value=[],
@@ -46,9 +47,10 @@ async def _manual_entry(hass):
         result = await hass.config_entries.flow.async_init(
             const.DOMAIN, context={"source": SOURCE_USER}
         )
-        return await hass.config_entries.flow.async_configure(
+        result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_ADDRESS: "manual"}
         )
+        return await answer_app(hass, result, app)
 
 
 def test_routes_are_the_familys_own_and_exclude_its_apps():
@@ -70,7 +72,7 @@ def test_routes_are_the_familys_own_and_exclude_its_apps():
 
 
 async def test_fresh_forms_have_no_global_variant_field(hass, enable_custom_integrations):
-    result = await _manual_entry(hass)
+    result = await _manual_entry(hass, const.BED_TYPE_SOLACE)
     assert result["step_id"] == "manual_entry"
     assert const.CONF_PROTOCOL_VARIANT not in shown_markers(result)
     assert "advanced" not in shown_markers(result)
@@ -81,19 +83,24 @@ async def test_fresh_forms_have_no_global_variant_field(hass, enable_custom_inte
 
 
 async def test_generic_choice_asks_only_its_own_routes(hass, enable_custom_integrations):
-    result = await _manual_entry(hass)
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_OKIN_CB24, CONF_NAME: "Bed"},
-    )
-    assert result["step_id"] == "route"
-    section = result["data_schema"].schema["advanced"]
+    # The app question drew the form for CB24, so its routes are the form's own
+    # collapsed Advanced section.
+    result = await _manual_entry(hass, const.BED_TYPE_OKIN_CB24)
+    section = result["data_schema"].schema[
+        next(marker for marker in result["data_schema"].schema if marker == "advanced")
+    ]
     assert section.options == {"collapsed": True}
     options = section.schema.schema[const.CONF_PROTOCOL_VARIANT].config["options"]
     assert [option["value"] for option in options] == list(_setup_routes(const.BED_TYPE_OKIN_CB24))
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: "cb27"}}
+            result["flow_id"],
+            {
+                CONF_ADDRESS: ADDRESS,
+                const.CONF_BED_TYPE: const.BED_TYPE_OKIN_CB24,
+                CONF_NAME: "Bed",
+                "advanced": {const.CONF_PROTOCOL_VARIANT: "cb27"},
+            },
         )
         if result.get("step_id") == "disconnect_after_command":
             result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
@@ -115,8 +122,8 @@ def test_okin_cst_asks_its_app_instead_of_a_route_list():
 
 
 async def test_the_app_entry_decides_its_route(hass, enable_custom_integrations):
-    result = await _manual_entry(hass)
     choice = f"{const.BED_TYPE_KEESON}:{const.KEESON_VARIANT_INNOVA}"
+    result = await _manual_entry(hass, choice)
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: choice}
@@ -396,7 +403,7 @@ async def test_kaidi_app_rows_keep_the_advertised_mesh_metadata(
 ):
     """Picking a Kaidi app by its label still caches the room, target and product."""
     label = {option["value"]: option["label"] for option in get_bed_type_options()}[choice]
-    result = await _manual_entry(hass)
+    result = await _manual_entry(hass, choice)
     advertisement = KaidiAdvertisement(
         adv_type=KAIDI_ADV_TYPE_BROADCAST,
         room_id=0x12345678,
@@ -446,7 +453,7 @@ async def test_an_app_model_is_asked_when_its_name_rule_cannot_run(
     hass, enable_custom_integrations
 ):
     """A manual entry knows no Bluetooth name, so the app's Auto rule is refused."""
-    result = await _manual_entry(hass)
+    result = await _manual_entry(hass, const.BED_TYPE_RICHMAT)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT}
     )
