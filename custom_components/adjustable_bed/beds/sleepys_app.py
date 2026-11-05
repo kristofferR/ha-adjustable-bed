@@ -1429,3 +1429,19 @@ def _status_fields(raw: bytes) -> dict[str, _ParsedValue]:
         "field_0x7b": field_7b,
         "field_0x67": field_83 != 0,
     }
+
+
+def require_selector_route(client: object, selector: str) -> None:
+    """Raise ConnectionError unless the link has the selector's setup and response targets.
+
+    Every connection resolves both before the app's first command, so a guided
+    change checks exactly what the runtime will require.
+    """
+    route = ROUTES[("keepConnect", selector)]
+    SleepysEliteAppController._characteristic(  # noqa: SLF001 - the controller's own lookup
+        client, route.write_service, route.write_characteristic
+    )
+    service_uuid, characteristic_uuid = route.notify_target.split("/", 1)
+    SleepysEliteAppController._characteristic(  # noqa: SLF001
+        client, service_uuid, characteristic_uuid
+    )
