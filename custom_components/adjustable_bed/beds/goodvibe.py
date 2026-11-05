@@ -784,8 +784,7 @@ class GoodVibeController(BedController):
             raise ValueError("Use the configuration action for this local menu")
         gesture, memory = self._effective_gesture(action)
         context = current_command_context()
-        leased = context is not None and context.lease is not None
-        if leased and gesture != "sustainPress":
+        if gesture != "sustainPress" and context is not None and context.lease is not None:
             # Admission checks the scope too; memory mode may change after it.
             raise ValueError("This control does not support renewable holds")
         side, link = self._side(), self._current_link()
@@ -834,12 +833,7 @@ class GoodVibeController(BedController):
             try:
                 if gesture == "sustainPress":
                     remaining = duration
-                    # A lease's ceiling is clock time, however long each write takes.
-                    loop = asyncio.get_running_loop()
-                    ceiling = loop.time() + duration / 1000 if leased else None
                     while remaining >= 100 and await self._delay(100):
-                        if ceiling is not None and loop.time() > ceiling:
-                            break
                         await send()
                         remaining -= 100
                 elif gesture in ("longPress", "shortAndLongPress"):

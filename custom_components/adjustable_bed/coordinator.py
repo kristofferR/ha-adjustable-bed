@@ -190,6 +190,7 @@ from .detection import (
     is_mac_like_name,
     is_okimat_bed_model,
 )
+from .execution import HOLD_CEILING_MS
 from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 from .pairing import (
     filter_child_options,
@@ -2434,6 +2435,16 @@ class AdjustableBedCoordinator(
                     )
 
                 try:
+                    context = current_command_context()
+                    if (
+                        context is not None
+                        and context.lease is not None
+                        and context.scheduler_token is self._command_scheduler.token
+                    ):
+                        # A leased hold's ceiling is clock time from here, after
+                        # connecting, whatever each of its writes takes (#483).
+                        ceiling_ms = controller.execution.hold_ceiling_ms or HOLD_CEILING_MS
+                        self._command_scheduler.bound_hold(context, ceiling_ms / 1000)
                     operation_task = asyncio.create_task(operation_fn(controller))
                     if preemptible:
                         result = await self._async_wait_for_controller_operation(
