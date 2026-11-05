@@ -182,7 +182,8 @@ and saved positions. Their actions (`save_position`, `recall_position`,
 `timed_move` and `hold_control` accept two optional fields, `hold_owner` and
 `hold_generation`, that turn the call into a renewable hold on beds whose app
 is proven to hold a key until release, by streaming it or by one start frame
-and a STOP. Other beds reject the fields
+and a STOP. Other beds, and controls a bed's app does not hold this way (such
+as Good Vibe Sleep's short, long and short-and-long presses), reject the fields
 before anything moves, and a call without them behaves exactly as before.
 
 | Field | Meaning |

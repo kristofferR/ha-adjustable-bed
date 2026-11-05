@@ -1439,10 +1439,16 @@ def _hold_ceiling(controller: BedController | SideBoundController, duration_ms: 
 
 
 def _require_hold_execution(
-    target: BedChild, controller: BedController | SideBoundController
+    target: BedChild,
+    controller: BedController | SideBoundController,
+    control: str | None = None,
 ) -> None:
-    """Allow a lease only on a controller that declares an open-ended hold."""
-    if controller.execution.hold is None:
+    """Allow a lease only where the controller declares an open-ended hold.
+
+    ``control`` names a ``hold_control`` control; None is a motor route. A hold
+    scoped to some controls refuses the others exactly as an undeclared one.
+    """
+    if controller.execution.hold_for(control) is None:
         raise ServiceValidationError(
             f"Device '{target.name}' does not support renewable holds"
         )
@@ -1970,7 +1976,7 @@ async def _hold_targets(
     def check(target: BedChild, controller: BedController | SideBoundController) -> None:
         _require_held_control(target, controller, control)
         if lease is not None:
-            _require_hold_execution(target, controller)
+            _require_hold_execution(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
 
     admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
