@@ -262,6 +262,71 @@ async def test_fitting_the_form_keeps_every_app_entrys_route(hass, choice):
 
 
 @pytest.mark.parametrize(
+    "key",
+    sorted(
+        key
+        for key in APP_VARIANT_CHOICES
+        if key[0] in {option["value"] for option in get_bed_type_options()}
+    ),
+)
+def test_a_generic_row_never_inherits_the_app_entry_it_replaces(key):
+    """A form drawn for an app entry, then switched to its bed type's own row."""
+    bed_type, app_variant = key
+    submitted = {const.CONF_BED_TYPE: bed_type}
+    _apply_setup_bed_type_choice(submitted, bed_type, app_variant)
+    assert (bed_type, submitted[const.CONF_PROTOCOL_VARIANT]) not in APP_VARIANT_CHOICES
+
+
+@pytest.mark.parametrize(
+    ("index", "bed_type", "variant"),
+    [
+        (0, const.BED_TYPE_KAIDI, const.VARIANT_AUTO),
+        (1, const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD),
+        (2, const.BED_TYPE_ISLEEP, const.VARIANT_AUTO),
+    ],
+)
+async def test_kaidi_brand_lists_each_app(
+    hass, enable_custom_integrations, index, bed_type, variant
+):
+    with patch(
+        "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+        return_value=[],
+    ):
+        result = await hass.config_entries.flow.async_init(
+            const.DOMAIN, context={"source": SOURCE_USER}
+        )
+        for step_input in (
+            {CONF_ADDRESS: "select_by_brand"},
+            {"actuator_brand": "kaidi"},
+            {"variant": str(index)},
+        ):
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], step_input)
+    assert result["step_id"] == "manual_entry"
+    with (
+        patch(
+            "custom_components.adjustable_bed.config_flow.resolve_kaidi_advertisement",
+            return_value=None,
+        ),
+        patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ADDRESS: ADDRESS, CONF_NAME: "Kaidi Bed"}
+        )
+        if result.get("step_id") == "route":
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: const.VARIANT_AUTO}}
+            )
+        if result.get("step_id") == "isleep":
+            # The ISleep app step asks for its product and room, as shown.
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], result["data_schema"]({})
+            )
+    assert result["type"] is FlowResultType.CREATE_ENTRY, result
+    data = result["data"]
+    assert (data[const.CONF_BED_TYPE], data[const.CONF_PROTOCOL_VARIANT]) == (bed_type, variant)
+
+
+@pytest.mark.parametrize(
     ("choice", "product_id", "resolved"),
     [
         (const.BED_TYPE_KAIDI, 136, const.KAIDI_VARIANT_SEAT_1),
