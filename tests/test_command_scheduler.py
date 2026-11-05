@@ -602,3 +602,50 @@ async def test_repeated_scoped_cancellation_keeps_distinct_generation_and_latest
     scheduler.finish_stop(epoch)
     await asyncio.wait_for(other.future, 1)
     await scheduler.async_shutdown()
+
+
+@pytest.mark.parametrize(
+    ("holder", "stop", "preempted"),
+    [
+        # Another motor of the bed: the STOP needs the one writer at once (#516).
+        ("motor:back", "motor:legs", True),
+        ("side:left:motor:back", "side:left:motor:legs", True),
+        # Not motion, or the other side of a one-address pair: never pre-empted.
+        ("lighting", "motor:legs", False),
+        ("configuration", "motor:legs", False),
+        ("side:right:motor:back", "side:left:motor:legs", False),
+    ],
+)
+async def test_motor_stop_preempts_motion_holding_the_writer(
+    holder: str, stop: str, preempted: bool
+) -> None:
+    scheduler = DeviceCommandScheduler("preempt")
+    started = asyncio.Event()
+    release = asyncio.Event()
+    seen: list[CommandOutcome | None] = []
+
+    async def hold(context) -> None:
+        started.set()
+        waiters = {
+            asyncio.ensure_future(context.cancel_event.wait()),
+            asyncio.ensure_future(release.wait()),
+        }
+        await asyncio.wait(waiters, return_when=asyncio.FIRST_COMPLETED)
+        for waiter in waiters:
+            waiter.cancel()
+        await asyncio.gather(*waiters, return_exceptions=True)
+        seen.append(context.cancel_reason)
+
+    held = asyncio.create_task(
+        scheduler.execute(CommandIntent(hold, resources=command_resources(holder)))
+    )
+    await started.wait()
+
+    async def stop_operation(context) -> None:
+        return
+
+    stop_task = scheduler.admit_stop(stop_operation, command_resources(stop))
+    await stop_task
+    release.set()
+    await held
+    assert seen == [CommandOutcome.STOPPED if preempted else None]

@@ -30,6 +30,7 @@ from .base import (
 )
 
 if TYPE_CHECKING:
+    from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -183,7 +184,6 @@ class CustomaticController(BedController):
                 close_fn=POSITION_AXIS_COMMANDS[axis][1],
                 stop_fn=POSITION_AXIS_COMMANDS[axis][2],
                 max_angle=45 if axis == "legs" else 68,
-                scheduler_resource="*",
             )
             for axis in self.simultaneous_movement_axes
         )
@@ -350,6 +350,39 @@ class CustomaticController(BedController):
 
     async def stop_all(self) -> None:
         await self.write_command(codec.STOP, cancel_event=asyncio.Event())
+
+    # Merged stream (#516): every app ORs the held motor keys into one shared
+    # mask on its 120 ms refresh, and a released motor's bit leaves the mask.
+    @property
+    def stream_tick_s(self) -> float:
+        return CUSTOMATIC_REFRESH_MS / 1000
+
+    def _stream_mask(self, members: tuple[StreamMember, ...]) -> int:
+        mask = 0
+        for member in members:
+            key = f"{member.motor}_{member.action}"
+            if key not in CUSTOMATIC_MOTOR_KEYS or key not in self.profile.keys:
+                raise ValueError(f"{self.profile.name} has no {key} control")
+            mask |= self.profile.keys[key]
+        return mask
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        await self.write_command(codec.frame(self._stream_mask(members)))
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        # The app keeps streaming the reduced mask; writing it now stops the
+        # released motor sooner. It carries only members a tick has started,
+        # and the last member out leaves its release to ``release_stream``.
+        if remaining:
+            started = tuple(m for m in remaining if m.wire_started is not None)
+            await self.write_command(
+                codec.frame(self._stream_mask(started)), cancel_event=asyncio.Event()
+            )
+
+    async def release_stream(self) -> None:
+        await self._release_motion()
 
     async def preset_flat(self) -> None:
         # Jerome's fresh Flat sends its alternate frame three times.

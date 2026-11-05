@@ -9,26 +9,6 @@
           "address": "Bed or setup method"
         }
       },
-      "select_actuator": {
-        "title": "Select Actuator Brand",
-        "description": "Check the label on your bed's actuator (motor) or remote control for the brand name.",
-        "data": {
-          "actuator_brand": "Actuator brand"
-        },
-        "data_description": {
-          "actuator_brand": "Select the brand shown on your bed's motor or remote. Common brands include Okin, Richmat, Keeson, Linak, and Leggett & Platt."
-        }
-      },
-      "select_variant": {
-        "title": "Select {actuator} Variant",
-        "description": "Choose the variant that matches your bed. Check your Bluetooth device name in your phone's Bluetooth settings for hints.",
-        "data": {
-          "variant": "Variant"
-        },
-        "data_description": {
-          "variant": "Different beds use different protocols. The hints describe what the Bluetooth device name typically looks like for each variant."
-        }
-      },
       "bluetooth_disambiguate": {
         "title": "Select Bed Type",
         "description": "Multiple bed types use the same Bluetooth identifier as **{name} ({address})**.\n\nSelect which type matches your bed:",
@@ -829,10 +809,18 @@
       },
       "select_app": {
         "title": "Which app controls this bed?",
-        "description": "Choose the app you use on your phone, or the remote if you don't use an app. Type to search apps, remotes and brands. If yours isn't listed, the last choice lists the motor brands.",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. Type to search apps, remotes and brands. If yours isn't listed, the last choice asks which brand is on the bed.",
         "data": {
           "bed_type": "App or remote",
           "not_listed": "My app isn't listed, or I don't know"
+        }
+      },
+      "select_family": {
+        "title": "Which brand is on the bed?",
+        "description": "Look at the label on the motor box, the remote or the base. Each row names the apps it covers. If none of these fit, choose **Not sure**.",
+        "data": {
+          "bed_type": "Brand or family",
+          "not_sure": "Not sure: run diagnostics or browse unsupported devices"
         }
       }
     },

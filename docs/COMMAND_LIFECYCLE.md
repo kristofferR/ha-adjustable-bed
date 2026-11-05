@@ -135,9 +135,17 @@ a prepared reservation, where a streamer cannot start.
   expires or is replaced gets its own cleanup while the others keep moving.
   The last member out runs the profile release, and its call returns after it.
 - A motor-scoped STOP, including a cover's own Stop, ends only its member,
-  even while the stream still waits for the link. A side or bed-wide STOP, a
-  disconnect or unload ends every member at the stop epoch, and a later member
-  waits for that STOP to finish before a new streamer starts.
+  even while the stream still waits for the link. The member's cleanup goes
+  out next, before any further tick. A side or bed-wide STOP, a disconnect or
+  unload ends every member at the stop epoch, and a later member waits for that
+  STOP to finish before a new streamer starts.
+- A STOP never waits behind another motor's command. A standalone cover's own
+  Stop is a motor-scoped STOP admission that pre-empts whatever motion holds
+  the writer on that bed, a serial move on another motor included: the write
+  in flight and that command's own cleanup finish, then the STOP's frames go
+  out, ahead of anything queued. Commands on other resources, such as lighting
+  or configuration, are not pre-empted, and neither is the other side of a
+  one-address pair. Paired topologies keep their own side Stop routing.
 - An ordinary command on a streamed motor, such as a preset, replaces the
   whole stream, as it replaces a serial move.
 - A cleanup or release failure ends the stream and is reported to the members
@@ -156,7 +164,8 @@ of idle after release. Keep raw device logs private.
 Controller-declared motor holds also bound ordinary native cover actions. The
 cover uses the existing one-second caller pulse and the declared start/release
 policy; assistive card activation uses the same bounded movement service.
-Motor-specific cover Stops invalidate only an overlapping axis. Declared
-side-wide cover Stops and bed Stops retain their physical side scope.
+A motor-specific cover Stop ends only its own axis's work, but pre-empts
+motion on another axis that holds the writer. Declared side-wide cover Stops
+end every motor's work, and bed Stops retain their physical side scope.
 Activation-key endings handled by a row do not reach the unscoped window release
 fallback.

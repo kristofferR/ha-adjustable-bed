@@ -73,9 +73,9 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `leggett_okin`, `leggett_platt` (Prodigy 2) | S stream | B | U | p2, leggett-disp | blocked by evidence (rechecked): the report says multiple active keys are ORed, but its only release is the zero word; per-key release while another key stays held is not stated |
 | `leggett_okin`, `leggett_platt` (Prodigy 2L) | S stream | B | U | p2l, leggett-disp | blocked by evidence (rechecked): the report never states that held keys compose, and its release sets key zero |
 | `leggett_platt` (`okin`) | S stream (no release frame) | U | U | universal | okin six-byte key route: refresh ends the hold, no per-axis or global STOP |
-| `customatic_clarity` | S stream | S | U | clarity, row028 | shared OR mask; partial release keeps the reduced mask |
-| `customatic_jeromes` | S stream | S | U | jeromes, row028 | same |
-| `customatic_remedy` | S stream | S | U | remedy, row028 | same |
+| `customatic_clarity` | S stream | S | U | clarity, row028 | shared OR mask; partial release keeps the reduced mask; hold and concurrent (back, legs) declared |
+| `customatic_jeromes` | S stream | S | U | jeromes, row028 | same; hold and concurrent (back, legs) declared |
+| `customatic_remedy` | S stream | S | U | remedy, row028 | same, including lumbar; hold and concurrent (back, legs, lumbar) declared |
 | `okin_cst` (all routes) | S stream | U | U | resident, sanctuary, aviada, bob, contempo, carefree, iiclarity, mf900, support | only recognized masks; motor chords never composed |
 | `okimat` | S stream | U | U | glory, support, resident | same apps as Okin CST; see observation 3 |
 | `customatic_zseries` | S stream | U | U | glory | recognized masks only |
@@ -230,15 +230,19 @@ below keeps it and adds the missing facts beside it, as Taudris proposed in #483
 | `customatic_clarity`, `_jeromes`, `_remedy` | Held motor masks OR into one shared mask | Partial release clears one bit; the reduced mask keeps streaming | Zero mask after the final release | clarity, jeromes, remedy, row028 |
 | `svane` (Svane Remote) | P2 composes a head and feet mask; P1 refreshes per-role characteristics | P2 drops the released axis from the mask; P1 releases that role | P2 global STOP frame | svane, [svane.md](../beds/svane.md#release) |
 
-**Customatic stays serialized for now.** Its app evidence proves composition,
-but every Customatic motor cover shares the bed-wide `*` scheduler resource,
-because its zero mask releases every motor: a Stop on one cover preempts a move
-on another at once. The merged stream composes only distinct per-motor
-resources, and with per-motor resources a cover Stop on one motor would queue
-behind a serial move on another instead of preempting it. A per-motor Stop
-must never wait behind another cover's move, so Customatic keeps `*` and
-declares no `concurrent` until a motor-scoped Stop can preempt whatever holds
-the writer, as today's bed-wide Stop does.
+**Customatic composes on the merged stream.** Clarity, Jerome's and Remedy
+declare every motor their app holds concurrent: back and legs, and lumbar on
+Remedy. Clarity's lumbar is a dead variant in its report and is not declared,
+and Customatic Z-Series sends recognized masks only (`U` above). Each tick is
+the OR of the live motors' keys on the app's 120 ms lane, a released motor's
+bit leaves the next frame at once, and the last motor out gets the app's zero
+write 100 ms after the release. HA keeps its one-lane adaptation: it does not
+replay the app's duplicate phase-offset chains. The motors now have per-motor
+scheduler resources, which kept Customatic serialized until a motor-scoped
+Stop could pre-empt whatever holds the writer, as a bed-wide Stop does. It
+now can (see [Scheduler and coordinator](#scheduler-and-coordinator)): a
+cover's Stop on one motor still pre-empts a serial move on another at once,
+and inside the stream it ends only its own motor.
 
 Disconnect safety is unconditional only for Leggett Okin CU170, where motion
 needs a fresh frame within the watchdog. For Customatic and Svane, a dropped
@@ -426,6 +430,20 @@ STOP before any later member is admitted. One
 writer means no extra BLE concurrency. None of the candidates reports motor
 positions, so seeks join later; holds and timed moves come first.
 
+**STOP pre-emption.** A STOP never waits behind another motor's command. A
+motor-scoped STOP admission (`DeviceCommandScheduler.admit_stop`, which a
+standalone cover's own Stop uses) pre-empts whatever motion holds the writer
+in its bed or side: any active command on `motor:*` of that namespace, not only
+the stopped motor. The in-flight write and that command's own cleanup finish,
+then the STOP's frames go out, ahead of anything queued behind the STOP epoch.
+A merged stream that owns the stopped motor keeps the writer and ends only that
+member, with its cleanup next, before any further tick. Commands on other
+resources (lighting, configuration) and the other side of a one-address pair
+are never pre-empted. A declared side-wide cover Stop is a `motor:*` STOP that
+ends every motor's work, the stream included. Uncontended, a cover Stop writes
+exactly what it wrote before. Paired topologies keep their own side Stop
+routing.
+
 **#591.** When a candidate exists, the cover advertises
 `execution.speeds` as `supported_speeds`. An omitted speed keeps today's
 behavior; an unsupported value is rejected before admission.
@@ -456,7 +474,11 @@ behavior; an unsupported value is rejected before admission.
   releases; STOP preempts renewal; a stale generation is refused; disconnect,
   unload and shutdown do not replay. For the merged stream: every member appears
   each tick, replacing one member leaves the other, STOP during interleaving,
-  cleanup failure, and a non-opted controller staying serialized.
+  cleanup failure, and a non-opted controller staying serialized. On every
+  opted-in family (`tests/test_merged_stream_families.py`), an unload or a
+  shutdown that cancels every task ends both streaming motors with the
+  family's release, and a motor replaced faster than the refresh never delays
+  the other's refreshes.
 - **Paired.** Intersection, combined renewal, and one side's STOP leaving the
   other side's lease intact.
 - Hardware stays deferred to beta users; see
