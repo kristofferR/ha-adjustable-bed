@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.hold_lease_wire import virtual_clock
 
 
 def _mcr_address_from_mac(address: str) -> int:
@@ -954,14 +955,7 @@ async def test_pump_cleanup_uses_fresh_token(controller):
     assert controller._async_read_pump_status.await_args.kwargs["cancel_event"] is token
 
 
-async def test_busy_pump_cleanup_deadline_releases_request_state(controller, monkeypatch):
-    from custom_components.adjustable_bed.beds import sleep_number_mcr
-
-    original_sleep = asyncio.sleep
-
-    async def advance_poll(_delay):
-        await original_sleep(0)
-
+async def test_busy_pump_cleanup_deadline_releases_request_state(controller):
     def reply_busy(raw, *, cancel_event=None):
         request = controller._parse_frame(raw)
         response = controller._build_frame(
@@ -974,12 +968,14 @@ async def test_busy_pump_cleanup_deadline_releases_request_state(controller, mon
         )
         controller._handle_mcr_notification(None, bytearray(response))
 
-    monkeypatch.setattr(sleep_number_mcr, "_PUMP_CLEANUP_TIMEOUT_SECONDS", 0.01)
-    monkeypatch.setattr(sleep_number_mcr.asyncio, "sleep", advance_poll)
     controller._async_write_frame = AsyncMock(side_effect=reply_busy)
-    with pytest.raises(TimeoutError, match="Could not confirm.*pump stopped"):
+    # The real 10 s deadline and 0.5 s polls, on virtual time: the deadline ends a
+    # pump that keeps reporting busy, never wall-clock scheduling.
+    with virtual_clock() as clock, pytest.raises(TimeoutError, match="Could not confirm.*pump stopped"):
         await controller._idle_pump_after_cancel()
+    assert clock.now == pytest.approx(10)
     assert controller._state["pump_adjusting"] is True
+    # The stop request, then status reads until the deadline.
     assert controller._async_write_frame.await_count > 1
     assert controller._outstanding_request_key is None
     assert controller._outstanding_node is None

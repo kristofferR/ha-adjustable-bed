@@ -286,7 +286,9 @@ async def test_an_mh_app_from_the_brand_list_reaches_its_model_question(
     flow._selected_bed_type = const.BED_TYPE_RICHMAT_REVIVE
     flow._brand_app_choice = const.BED_TYPE_RICHMAT_REVIVE
     form = await flow.async_step_manual_entry()
-    submission = form["data_schema"]({CONF_ADDRESS: ADDRESS})
+    schema = form["data_schema"]
+    assert schema is not None
+    submission = schema({CONF_ADDRESS: ADDRESS})
     with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
         result = await flow.async_step_manual_entry(submission)
         while result["step_id"] == "disconnect_after_command":

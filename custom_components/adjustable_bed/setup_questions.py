@@ -61,6 +61,7 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -1395,6 +1396,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for bed_type in RICHMAT_MH_BED_TYPES
     },
+    # A Fuzion entry controls one side; a standalone BAM/MCR entry exposes both,
+    # so only Fuzion asks. Auto keeps the left side, as before.
+    BED_TYPE_SLEEP_NUMBER: _asking(
+        BED_TYPE_SLEEP_NUMBER,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_SLEEP_NUMBER), "auto"),
+        ),
+    ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,
