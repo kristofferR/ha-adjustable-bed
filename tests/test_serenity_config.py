@@ -19,7 +19,11 @@ from custom_components.adjustable_bed.const import (
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import _create_from_registry
-from custom_components.adjustable_bed.detection import detect_bed_type, get_bed_type_options
+from custom_components.adjustable_bed.detection import (
+    bed_type_label,
+    detect_bed_type,
+    get_bed_type_options,
+)
 from tests.form_helpers import shown_markers
 from tests.test_controller_contract import _FactoryCoordinator
 
@@ -39,8 +43,10 @@ async def test_explicit_profile_builds_fixed_controls_without_live_advertisement
         next(option for option in get_bed_type_options() if option["value"] == BED_TYPE_SERENITY)[
             "label"
         ]
-        == "Jordan's Serenity app"
+        == "Jordan's: Serenity and Tranquil apps"
     )
+    # A saved entry keeps its own app's label.
+    assert bed_type_label(BED_TYPE_SERENITY) == "Jordan's Serenity app"
 
 
 @pytest.mark.parametrize("old_count", [1, 2, 3, 4])
@@ -177,6 +183,8 @@ async def test_switching_to_the_app_ignores_fields_it_sets_itself(hass, step):
             CONF_MOTOR_PULSE_DELAY_MS: "300",
         }
     )
+    # The Jordan's row asks which app.
+    await flow.async_step_jordans_family({"choice": "serenity"})
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_MOTOR_COUNT], saved[CONF_MOTOR_PULSE_DELAY_MS]) == (2, 100)
 

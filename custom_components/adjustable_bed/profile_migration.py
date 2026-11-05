@@ -44,6 +44,9 @@ from homeassistant.helpers.translation import async_get_translations
 from .const import (
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
+    BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_JEROMES,
+    BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JIECANG,
@@ -58,15 +61,18 @@ from .const import (
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_FURNIMOVE_REMOTE,
     CONF_JIECANG_APP_LAYOUT,
@@ -215,6 +221,33 @@ SLEEPYS_FAMILY: Final = ManagedFamily(
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _SLEEPYS_ROUTES,
 )
 
+_CUSTOMATIC_ROUTES: Final = frozenset(
+    {
+        BED_TYPE_CUSTOMATIC_CLARITY,
+        BED_TYPE_CUSTOMATIC_JEROMES,
+        BED_TYPE_CUSTOMATIC_REMEDY,
+        BED_TYPE_ZSERIES,
+    }
+)
+# Each Customatic app writes its one exact command characteristic, and the
+# Z-Series app the OKIN bedding apps' command characteristic, so a change checks
+# the link first. The variant is the Z-Series model.
+CUSTOMATIC_FAMILY: Final = ManagedFamily(
+    key="customatic_family",
+    bed_types=_CUSTOMATIC_ROUTES,
+    route_keys=(CONF_PROTOCOL_VARIANT,),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) in _CUSTOMATIC_ROUTES,
+)
+
+_JORDANS_ROUTES: Final = frozenset({BED_TYPE_SERENITY, BED_TYPE_TRANQUIL})
+# Both Jordan's apps write the OKIN bedding apps' command characteristic.
+JORDANS_FAMILY: Final = ManagedFamily(
+    key="jordans_family",
+    bed_types=_JORDANS_ROUTES,
+    route_keys=(),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) in _JORDANS_ROUTES,
+)
+
 MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     VIBRADORM_FAMILY,
     JIECANG_FAMILY,
@@ -223,6 +256,8 @@ MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     SOLACE_FAMILY,
     LEGGETT_FAMILY,
     SLEEPYS_FAMILY,
+    CUSTOMATIC_FAMILY,
+    JORDANS_FAMILY,
 )
 
 

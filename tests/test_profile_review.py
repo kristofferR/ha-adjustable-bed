@@ -460,15 +460,16 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
 def test_every_offered_app_is_a_selectable_profile() -> None:
     selectable = {option["value"] for option in get_bed_type_options()}
     offered = {choice for route in _ROUTE_APPS for choice in route.choices}
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_VIBRADORM,
-        BED_TYPE_VIBRADORM_APP,
-        BED_TYPE_VMATBASIC,
+    from custom_components.adjustable_bed.const import BED_TYPE_VIBRADORM
+    from custom_components.adjustable_bed.detection import (
+        FAMILY_STEP_ROUTES,
+        HIDDEN_APP_CHOICES,
     )
 
     assert BED_TYPE_VIBRADORM in selectable
-    # The family steps reach these: Vibradorm's apps and Restonic BT's remote B.
-    assert offered - {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC, "keeson:restonic_b"} <= selectable
+    # Family steps reach the rest, and Configure accepts them by ID as a repair
+    # submits them.
+    assert offered <= selectable | FAMILY_STEP_ROUTES | HIDDEN_APP_CHOICES
     # FurniMove's own repairs cover the routes its handsets used.
     assert not any(choice.startswith(BED_TYPE_FURNIMOVE) for choice in offered)
     # Why a paired bed is split first: no offered app keeps paired controls.

@@ -81,8 +81,9 @@ or from the bed's repair. Today this covers the
 [Okin family](beds/okin-nframe.md#home-assistant-setup), the
 [Keeson family](beds/keeson.md#home-assistant-setup), the
 [Solace family](beds/ff_frame.md#home-assistant-setup), the
-[Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup) and the
-[Sleepy's Elite family](beds/sleepys.md#home-assistant-setup); more families follow.
+[Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup), the
+[Sleepy's Elite family](beds/sleepys.md#home-assistant-setup) and the
+[Customatic and Jordan's apps](beds/okin-nframe.md#customatic-family); more families follow.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.
@@ -333,9 +334,9 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | 1500 Tilt Base (Rondure) | `rondure` | 25 | 50 ms |
 | AdjustaMattress app (seven product layouts) | `adjustamattress` | 5 | 200 ms |
 | Comfort Enhancements app (choose MC2/MC3/MC4/MC5) | `comfort_enhancements` | 5 | 200 ms |
-| Customatic Clarity app | `customatic_clarity` | 8 | 120 ms |
+| Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
-| Customatic Remedy app | `customatic_remedy` | 8 | 120 ms |
+| Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
 | eShine app (E2000 / E3000 / E3100 / E5000) | `eshine_okin` | 10 | 300 ms |
 | FSM Relax app (explicit chair/bed profile) | `fsm_relax` | 10 | 60 ms |
 | Jensen (JMC400, LinON Entry) | `jensen` | 4 | 300 ms |
@@ -555,7 +556,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout and local light/massage presence, with the transport under **Advanced**. Comfort Motion supports three layouts and G1/G2 only. Layouts, transports and default timing per profile are in the [generated profile tables](beds/jiecang.md#choosing-a-profile). |
 | LOGICDATA | [MOTIONrelax](beds/jiecang.md#motionrelax-phone-and-tablet): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed): bed layout and series, or [separate air pump](beds/logicdata-sleep-smart.md). |
 | Malouf / Lucid | [Base apps](beds/malouf.md#malouf-base--lucid-base-family): app, exact model, transport and primary/secondary role. |
-| Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family), [Z-Series](beds/okin-nframe.md#customatic-z-series), [Serenity](beds/okin-nframe.md#jordans-serenity), [Tranquil](beds/okin-nframe.md#jordans-tranquil): select the matching app and model. |
+| Customatic / Jordan's | One question per brand: [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family) or [Z-Series](beds/okin-nframe.md#customatic-z-series) with its model; [Serenity](beds/okin-nframe.md#jordans-serenity) or [Tranquil](beds/okin-nframe.md#jordans-tranquil). Change an existing bed's app with **Reconfigure**. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
 | Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | Answer the [Okin question](beds/okin-nframe.md#home-assistant-setup) with **FurniMove / OKIN Smart Remote app**, then the [exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
@@ -563,7 +564,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/keeson.md#adjustamattress). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
-| AdjustableM5X4 / M5X5 | [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
+| StarCode apps | One question for the app, then its own settings. Configure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
 | Limoss | [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. |
 | FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/limoss.md#fsm-relax). |
