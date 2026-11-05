@@ -59,9 +59,7 @@ from .const import (
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
-    BED_TYPE_SLEEPYS_BOX15,
-    BED_TYPE_SLEEPYS_BOX24,
-    BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -649,27 +647,8 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "sleepys": {
         "display": "Sleepy's",
-        "description": "Sleepy's Elite adjustable bases",
-        "variants": [
-            {
-                "type": BED_TYPE_SLEEPYS_BOX15,
-                "label": "BOX15 (9-byte)",
-                "description": "Sleepy's Elite with BOX15 protocol",
-                "hint": "Try this first if unsure",
-            },
-            {
-                "type": BED_TYPE_SLEEPYS_BOX24,
-                "label": "BOX24 (7-byte)",
-                "description": "Sleepy's Elite with BOX24 protocol",
-                "hint": "Try BOX15 first, use this if it doesn't work",
-            },
-            {
-                "type": BED_TYPE_SLEEPYS_BOX25,
-                "label": "BOX25 Star (full-featured)",
-                "description": "Sleepy's Elite with BOX25 Star controller (lights, massage, positions)",
-                "hint": "Device name starts with 'Star'",
-            },
-        ],
+        "description": "MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers",
+        "variants": None,  # The family step asks for the app or receiver.
     },
     "solace": {
         "display": "Solace",
@@ -688,6 +667,7 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,
     "richmat": BED_TYPE_RICHMAT,
+    "sleepys": BED_TYPE_SLEEPYS_ELITE_APP,
     "solace": BED_TYPE_SOLACE,
 }
 

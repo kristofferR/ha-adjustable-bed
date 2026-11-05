@@ -357,6 +357,12 @@ def _review_target(
     return _Review(tuple(choices))
 
 
+def suggested_apps(hass: HomeAssistant, data: Mapping[str, Any]) -> list[str]:
+    """Return the app choices the review offers one physical bed's route."""
+    review = _review_target(hass, data)
+    return [choice for choice in review.choices if choice != review.drift]
+
+
 def _targets(entry_data: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     """Return the configuration of each physical bed the entry controls."""
     if not is_paired(entry_data):
