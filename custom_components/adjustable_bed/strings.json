@@ -1065,7 +1065,7 @@
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "connection_profile": "Balanced is faster to connect. Reliable uses longer timeouts and backoff for flaky beds.",
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "protocol_variant": "Change the protocol variant if the bed isn't responding correctly. For a Keeson, Solace or Leggett & Platt bed, change the app or route through Reconfigure in the entry's three-dot menu instead; Configure refuses it here.",
+          "protocol_variant": "Change the protocol variant if the bed isn't responding correctly. If Configure refuses the change, change the app or route through Reconfigure in the entry's three-dot menu.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",

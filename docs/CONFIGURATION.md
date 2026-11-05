@@ -30,11 +30,11 @@ asks for, such as motor count and massage support.
 
 - The bed-type list is searchable: type part of an app, brand or controller
   name. A discovered bed starts on the detected row.
-- The Vibradorm, Jiecang, Okin, Keeson, Solace and Leggett & Platt families
-  each have one row. After it, or when discovery finds one of their beds, setup
-  asks which app or remote controls the bed, because a bed's name and Bluetooth
-  services do not tell these apps apart. When detection found a route, the
-  question's keep answer saves it.
+- For a family with a [guided change](#changing-the-app-or-layout-of-an-existing-bed),
+  choosing its row, or a discovered bed of that family, asks which app or
+  remote controls the bed, because a bed's name and Bluetooth services do not
+  tell these apps apart. When detection found a route, the question's keep
+  answer saves it.
 - An app row sets its own route. A bed type with several receiver routes lists
   them in a collapsed **Advanced: receiver route** section, or in a short
   **Receiver route** step (see [Protocol Variants](#protocol-variants)).
@@ -117,10 +117,9 @@ another profile works better.
 **Review profile settings** opens Configure. A clear suggestion shows its settings;
 an ambiguous match keeps your current selection so you can check your app, physical
 remote and product. Nothing changes until you submit settings. Closing them keeps
-your profile. Saving this review confirms your selection. Within the Vibradorm,
-Jiecang, Okin, Keeson, Solace and Leggett & Platt families, Configure refuses an
-app or route change; make it through
-[Reconfigure](#changing-the-app-or-layout-of-an-existing-bed).
+your profile. Saving this review confirms your selection. Within a family with
+a [guided change](#changing-the-app-or-layout-of-an-existing-bed), Configure refuses an app or route change; make it
+through **Reconfigure**.
 
 **Keep current profile** (or Ignore) dismisses the assessment across restarts and
 updates. Only a materially different profile or candidate set may ask again.
@@ -388,10 +387,9 @@ lists only that bed type's own labelled routes. An app chosen from the bed-type
 list sets its route itself. For a discovered or preselected bed the routes sit
 in a collapsed **Advanced: receiver route** section of the form; choosing
 another bed type with several routes adds a short route step. Configure lists
-the routes of the saved bed type. For the Vibradorm, Jiecang, Okin, Keeson,
-Solace and Leggett & Platt families, the app question chooses the route and
-Configure refuses a route change; use
-[Reconfigure](#changing-the-app-or-layout-of-an-existing-bed). Additional
+the routes of the saved bed type. In a family with a
+[guided change](#changing-the-app-or-layout-of-an-existing-bed), the app question chooses the route and Configure
+refuses a route change; use **Reconfigure**. Additional
 controller-specific choices are documented here:
 
 | Bed type | Choices covered by its guide |

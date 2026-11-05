@@ -51,11 +51,10 @@ that bed type:
   AdjustableM5X4, AdjustableM5X5, LOGICDATA Sleep Smart), or a change
   **Configure** would refuse, are not applied here. The repair opens
   **Configure** with the app selected.
-- For the Vibradorm, Jiecang, Okin, Keeson, Solace and Leggett & Platt
-  families, the repair offers
-  [the guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
-  or **Keep current configuration** instead, because **Configure** refuses
-  their app and route changes.
+- A family with a
+  [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+  is offered that guided change or **Keep current configuration** instead,
+  because **Configure** refuses its app and route changes.
 - **Keep current configuration** if the bed already works. The repair comes
   back only if a later release adds an app for that setup that you have not
   been shown.
@@ -390,7 +389,7 @@ Home Assistant command reconnects automatically.
 2. OEM bed using different manufacturer's controller
 
 **Solutions:**
-1. **Change settings:** Open **Configure → Change settings** and correct **Bed type** and **Protocol variant** using the matching protocol guide. Keep the existing entry and its entity history. Within the Vibradorm, Jiecang, Okin, Keeson, Solace or Leggett & Platt family, Configure refuses an app or route change: use **Reconfigure** from the entry's three-dot menu instead ([Changing the app or layout](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+1. **Change settings:** Open **Configure → Change settings** and correct **Bed type** and **Protocol variant** using the matching protocol guide. Keep the existing entry and its entity history. Within a family with a [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed), Configure refuses an app or route change: use **Reconfigure** from the entry's three-dot menu instead.
 2. **Capture evidence if uncertain:** Generate a support bundle. A retail brand or a shared service UUID alone may not distinguish the protocols.
 3. **Paired entries:** Some profile changes require splitting the pair and configuring each side separately before combining again.
 

@@ -171,8 +171,8 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 4. **Configure Settings**
    - **Bed type**: Type part of your app, brand or controller name to search the
-     list. For a Vibradorm, Jiecang, Okin, Keeson, Solace or Leggett & Platt
-     bed, setup then asks which app or remote controls it; see
+     list. For a family with a guided change, such as Okin, Keeson or
+     Leggett & Platt, setup then asks which app or remote controls the bed; see
      [Initial Setup](CONFIGURATION.md#initial-setup)
    - **Name**: Friendly name for your bed
    - **Motor Count**: See below
