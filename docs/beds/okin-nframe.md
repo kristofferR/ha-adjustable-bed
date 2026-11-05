@@ -1,6 +1,6 @@
 # Okin N-frame
 
-**Status:** ⚠️ Mixed: Okimat and the RF ECO BT stair lift are tested; Prodigy CE / CU170 is hardware-tested in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368); DewertOkin, Customatic, the other Leggett profiles and the 40-bit profiles need testing. Each profile states its own status.
+**Status:** ⚠️ Mixed: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), david_nagy, corne, PT, MarcusW and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -1643,7 +1643,7 @@ instead of lumbar.
 
 **App:** [Prodigy CE / Prodigy 4](https://play.google.com/store/apps/details?id=com.leggett.prodigy4) 1.2.0 (18), `com.leggett.prodigy4`
 
-**Status:** ⚠️ Hardware-tested on CU170 in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368)
+**Status:** ✅ Tested on two CU170 controllers in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) (movement, Flat, presets and the light); recall of saved favorites is not yet confirmed
 
 Behaves as [Prodigy 2L](#prodigy-2l), with head, feet, pillow and lumbar, except
 as below.
@@ -1737,7 +1737,7 @@ Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
 **App:** [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi), `com.okin.bedding.smartbedwifi`
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
 
 #### Setup
 
@@ -3234,7 +3234,7 @@ public-domain rejection tests; no accepted evidence or exclusion is rewritten.
 
 **Apps:** the Rize, MFirm 900, Support and Nectar Motion apps in [Apps](#apps)
 
-**Status:** ❓ Needs testing (static analysis complete; hardware validation pending)
+**Status:** ⚠️ Partially tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
 
 **Android:** all ten analyzed packages are Android apps. The nine cluster 011
 artifact hashes are listed under [Analysis provenance](#cst-analysis-provenance).
@@ -4384,7 +4384,7 @@ Mattress Firm Nordic packets with this protocol.
 
 **App:** [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33), `com.okin.bedding.adjustablelumbar`
 
-**Status:** ❓ Needs testing (static-verified only, **hardware unverified**)
+**Status:** ⚠️ Partially tested (a BOX25 Star control box ran this profile's controls, memory included, before 4.1.0 in [#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670); the current profile is static-verified only)
 
 Select **Adjustable bed (Lumbar) app** manually when the bed uses the Android
 app `com.okin.bedding.adjustablelumbar` (shown as "Adjustable bed(Lumbar)").

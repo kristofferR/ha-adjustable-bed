@@ -1,6 +1,6 @@
 # Sleep Number
 
-**Status:** ⚠️ Partially tested (supported; the expanded BLE controls below are based on the SleepIQ 5.4.11 application, and physical validation of the new behavior remains pending)
+**Status:** ✅ Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the expanded BLE controls below are based on the SleepIQ 5.4.11 application, and physical validation of the new behavior remains pending
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) with protocol detail and field testing from [@homer-aty](https://github.com/homer-aty) and [@JonGilmore](https://github.com/JonGilmore)
 

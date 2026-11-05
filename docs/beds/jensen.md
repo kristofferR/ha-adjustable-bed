@@ -1,8 +1,8 @@
 # Jensen
 
-**Status:** ✅ Tested on JMC400 (motion, position reports, massage); JMC400 lights,
-fan and memory recall, and every LinOn control, are implemented from app
-evidence and await user confirmation.
+**Status:** ✅ Tested on JMC400 (motion, position reports, massage and memory
+recall, [#146](https://github.com/kristofferR/ha-adjustable-bed/issues/146) and [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)); JMC400 lights and fan, and every LinOn control,
+are implemented from app evidence and await user confirmation.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

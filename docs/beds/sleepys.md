@@ -1,6 +1,6 @@
 # Sleepy's Elite (MFRM)
 
-**Status:** ❓ Needs testing (protocol implemented; hardware unverified)
+**Status:** ⚠️ Partially tested (BOX25 STAR receivers work in [#413](https://github.com/kristofferR/ha-adjustable-bed/issues/413), [#617](https://github.com/kristofferR/ha-adjustable-bed/issues/617) and [#702](https://github.com/kristofferR/ha-adjustable-bed/issues/702); BOX15, BOX24 and the Sleepy's Elite app profile need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [SethCalkins](https://github.com/SethCalkins) (BOX25 Star, ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed))
 

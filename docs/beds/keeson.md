@@ -1,6 +1,6 @@
 # Keeson
 
-**Status:** ✅ Tested (Base, KSBT and Ergomotion routes; the app profiles are APK-verified with hardware unverified)
+**Status:** ✅ Tested (Base, KSBT, KSBT03C, Ergomotion, Sino / BetterLiving and Cool Base routes; Adjustable Lite partly; the other app profiles are APK-verified with hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [MangoScango](https://github.com/MangoScango)
 
@@ -642,7 +642,7 @@ bed type stores its own default cadence, which is kept as configured.
 
 ### Sino and BetterLiving
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested (a BetterLiving bed in [#229](https://github.com/kristofferR/ha-adjustable-bed/issues/229); a Dynasty Bases DM9000 on the older `ore` alias in [#180](https://github.com/kristofferR/ha-adjustable-bed/issues/180))
 
 #### Setup
 
@@ -696,7 +696,7 @@ burst until an on-air capture provides a device-independent interval.
 
 ### KSBT family
 
-**Status:** ✅ Tested (KSBT); ❓ Needs testing (KSBT03C, KSBT03CR, KSBT04C)
+**Status:** ✅ Tested (KSBT on an Ergomotion Rio 6.0 in [#297](https://github.com/kristofferR/ha-adjustable-bed/issues/297); KSBT03C on an Ergomotion Rio 5.0 in [#408](https://github.com/kristofferR/ha-adjustable-bed/issues/408)); ❓ Needs testing (KSBT03CR, KSBT04C)
 
 Profiles: KSBT, KSBT03C, KSBT03CR and KSBT04C.
 
@@ -822,7 +822,7 @@ profile does not subscribe.
 
 **App:** [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) 1.0.2 (5), `com.keeson.adjustablelite`
 
-**Status:** ❓ Needs testing (clean-room analysis complete; hardware unverified)
+**Status:** ⚠️ Partially tested (two Keeson MC232SC / KSSF05C beds in [#669](https://github.com/kristofferR/ha-adjustable-bed/issues/669); their TV, Lounge and Anti-Snore presets are tracked in [#681](https://github.com/kristofferR/ha-adjustable-bed/issues/681))
 
 #### Setup
 
@@ -2554,7 +2554,7 @@ For split-king beds, configure the protocol variant:
 
 ### Cool Base
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested (a DewertOkin bed on this route in [discussion #341](https://github.com/kristofferR/ha-adjustable-bed/discussions/341))
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

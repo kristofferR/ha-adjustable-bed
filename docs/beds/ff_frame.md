@@ -1,6 +1,6 @@
 # FFFF frame (Solace, Woosa Sleep, BedSense, Motion Bed)
 
-**Status:** ⚠️ Partially tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed; the other profiles are APK-verified with hardware unverified)
+**Status:** ⚠️ Partially tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles are APK-verified with hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Bonopaws and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -578,7 +578,7 @@ short press.
 
 **App:** [Woosa Sleep](https://play.google.com/store/apps/details?id=com.sn.woosa) 1.1.9 (13), `com.sn.woosa`
 
-**Status:** ⚠️ Partially tested ([the reporter confirmed working controls](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-5982450770) with v4.0.1 after selecting Woosa)
+**Status:** ✅ Tested ([the reporter confirmed working controls](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-5982450770) with v4.0.1 after selecting Woosa, and [everything but the unused alarm](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-6610197925) later)
 
 Behaves as the [Solace name routes](#solace-name-routes), except as below.
 

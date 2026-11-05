@@ -1,6 +1,6 @@
 # OCTO Smart Control
 
-**Status:** ⚠️ Partially tested (2-4 motor bed receivers field-tested; the one-motor RTV TV lift and OCTO Smart Control 1.03.02 behavior are APK-verified, hardware unverified)
+**Status:** ⚠️ Partially tested (Standard 2-4 motor receivers work in [#73](https://github.com/kristofferR/ha-adjustable-bed/issues/73), [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440) and [#499](https://github.com/kristofferR/ha-adjustable-bed/issues/499), and a Star2 DA1458X in [#510](https://github.com/kristofferR/ha-adjustable-bed/issues/510); an RTV TV lift was reported working in [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440); OCTO Smart Control 1.03.02 behavior is APK-verified, hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
 

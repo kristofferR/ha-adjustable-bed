@@ -1,6 +1,6 @@
 # FurniMove / OKIN Smart Remote
 
-**Status:** ❓ Needs testing (APK and production API behavior verified; hardware validation pending)
+**Status:** ⚠️ Partially tested (back and legs work on an RF ECO BT receiver with handset 12234 in [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556); the receiver in [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633) does not move yet; other handsets and features need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
