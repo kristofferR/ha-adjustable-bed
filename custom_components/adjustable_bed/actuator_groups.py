@@ -1,7 +1,8 @@
-"""Actuator group definitions for two-tier bed selection.
+"""Actuator group definitions behind setup's brand list.
 
-This module organizes bed types into user-friendly groups based on actuator brand,
-making it easier for users to select the correct bed type during setup.
+This module organizes bed types into groups by actuator brand. Setup's
+"Which brand is on the bed?" list shows each group's family rows, or the
+group's own rows when it has no family question.
 """
 
 from __future__ import annotations

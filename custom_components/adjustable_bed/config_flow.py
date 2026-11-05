@@ -1068,14 +1068,15 @@ _APP_NOT_LISTED: Final = "not_listed"
 _FAMILY_NOT_SURE: Final = "not_sure"
 
 
-def _family_rows() -> list[tuple[str, str]]:
+def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
     """Return the brand list's rows, as (choice, label), from the bed-type list.
 
     Each brand group gives the rows that open a family question, as the list
     shows its routes; a group with one bed type gives that row, and a group
-    with no family question gives its own rows.
+    with no family question gives its own rows. A ``detected`` route keeps its
+    place under its family's row, as in the app question.
     """
-    listed = {choice: label for label, choice in _bed_type_selector(None).rows().items()}
+    listed = {choice: label for label, choice in _bed_type_selector(detected).rows().items()}
     by_label = {label: choice for choice, label in listed.items()}
 
     def row_for(choice: str) -> str | None:
@@ -4570,10 +4571,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._logicdata_incoming: str | None = None
         self._jensen_incoming: tuple[str, str] | None = None
         self._app_family_incoming: str | None = None
-        # For two-tier actuator selection
+        # The bed-type row the app question or the brand list chose.
         self._selected_bed_type: str | None = None
-        # The app the user picked from a brand's app list. A refitted form also
-        # sets _selected_bed_type, so only this one means an app was chosen.
         # The step that continues once the app is chosen, when the device came first.
         self._app_after_device: Literal["manual_config", "manual_entry"] | None = None
         self._selected_protocol_variant: str | None = None
@@ -6025,9 +6024,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             "step.select_family.data.not_sure",
             "Not sure: run diagnostics or browse unsupported devices",
         )
+        # A device picked first keeps its confidently detected route.
+        detected = (
+            _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
+            if self._app_after_device == "manual_config" and self._discovery_info is not None
+            else None
+        )
         picker = _SearchableSelect(
             [
-                *(SelectOptionDict(value=choice, label=label) for choice, label in _family_rows()),
+                *(
+                    SelectOptionDict(value=choice, label=label)
+                    for choice, label in _family_rows(detected)
+                ),
                 SelectOptionDict(value=_FAMILY_NOT_SURE, label=not_sure),
             ]
         )
@@ -6347,7 +6355,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if discovery_source not in adapters:
             discovery_source = ADAPTER_AUTO
 
-        # A brand picked in the two-tier selection is the editable default.
+        # The row the app question or brand list chose is the editable default.
         # Without one, "Auto-detect" comes first so the user isn't dropped onto
         # the first alphabetical protocol and forced to guess (issue #385).
         auto_label = (
@@ -6615,7 +6623,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
-        # A bed type picked in the two-tier selection is the editable default.
+        # The row the app question or brand list chose is the editable default.
         bed_type_marker, bed_type_select = _bed_type_field(vol.Required, shown_choice)
         schema_dict: dict[vol.Marker, Any] = {
             vol.Required(CONF_ADDRESS): str,

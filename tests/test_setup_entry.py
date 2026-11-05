@@ -255,3 +255,25 @@ async def test_a_brand_opens_its_familys_question(hass, enable_custom_integratio
             },
         )
     assert result["step_id"] == "okin_family"
+
+
+async def test_a_detected_route_survives_the_brand_list(
+    hass, enable_custom_integrations, mock_bluetooth_service_info
+):
+    """A device picked first keeps its detected route under its family's row."""
+    from unittest.mock import MagicMock
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": SOURCE_USER}
+    flow._discovery_info = mock_bluetooth_service_info
+    flow._app_after_device = "manual_config"
+    with patch(
+        "custom_components.adjustable_bed.config_flow.detect_bed_type_detailed",
+        return_value=MagicMock(),
+    ), patch(
+        "custom_components.adjustable_bed.config_flow._confident_auto_detect",
+        return_value=const.BED_TYPE_OKIN_UUID,
+    ):
+        result = await flow.async_step_select_family()
+    assert const.BED_TYPE_OKIN_UUID in app_rows(result).values()
+    assert const.BED_TYPE_FURNIMOVE not in app_rows(result).values()

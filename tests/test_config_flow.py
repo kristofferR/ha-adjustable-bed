@@ -3056,7 +3056,7 @@ class TestManualFlow:
         assert result["data"][CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
         assert result["data"][CONF_MOTOR_COUNT] == 2
 
-    async def test_two_tier_okin_choice_sets_up_nectar_move(
+    async def test_app_question_sets_up_nectar_move(
         self, hass: HomeAssistant, enable_custom_integrations
     ) -> None:
         """The app is findable by name in the app question."""

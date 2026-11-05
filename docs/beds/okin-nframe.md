@@ -1312,8 +1312,8 @@ command characteristic, and **Configure** no longer changes the app.
 | Z-Series app with the Z-230 or Z-280 model | [Z-Series](#customatic-z-series), that model's page |
 
 The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
-[Tranquil](#jordans-tranquil). An app picked from a brand's app list is not
-asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
+[Tranquil](#jordans-tranquil). An app's own row in the app question, such as
+Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
 characteristic; Z-Series, Serenity and Tranquil check their command and
 notification characteristics.
 
