@@ -836,3 +836,20 @@ async def test_exact_native_bond_skips_first_information_and_pair_rpc(hass):
     authenticated.assert_not_awaited()
     client.pair.assert_not_awaited()
     client.disconnect.assert_awaited_once()
+
+
+async def test_enabling_restored_saves_the_floor_level_answered_on_the_same_form(hass):
+    from homeassistant.data_entry_flow import _strip_hidden_fields
+
+    flow = AdjustableBedConfigFlow()
+    flow.context = {}
+    flow.hass = hass
+    flow._manual_data = app_data(**{const.CONF_VIBRADORM_FLOOR_DEFAULT: 6})
+    form = await flow.async_step_profile_questions()
+    submission = {const.CONF_VIBRADORM_RESTORED: True, const.CONF_VIBRADORM_FLOOR_DEFAULT: 3}
+    # As Home Assistant validates it: hidden fields stripped, then the schema.
+    schema, submission = _strip_hidden_fields(form["data_schema"], submission)
+    with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
+        await flow.async_step_profile_questions(schema(submission))
+    pairing.assert_awaited_once()
+    assert flow._manual_data[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 3
