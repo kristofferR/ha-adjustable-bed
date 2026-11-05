@@ -51,8 +51,10 @@ that bed type:
   AdjustableM5X4, AdjustableM5X5, LOGICDATA Sleep Smart), or a change
   **Configure** would refuse, are not applied here. The repair opens
   **Configure** with the app selected.
-- A family with a guided change, such as Vibradorm and V-MAT Basic, opens
-  [the guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed).
+- A family with a
+  [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+  is offered that guided change or **Keep current configuration** instead,
+  because **Configure** refuses its app and route changes.
 - **Keep current configuration** if the bed already works. The repair comes
   back only if a later release adds an app for that setup that you have not
   been shown.
@@ -72,9 +74,9 @@ start with, `base-i5`; they are Cool Base beds.
 
 | Bed type set up before 4.1.0 | Apps offered |
 |------------------------------|--------------|
-| Keeson (Auto or Base variant) | Adjustable Lite (Auto only), Simon Li, Heal Every Night, OKIN-Seating, INNOVA, MaxCoil Una, Dynasty Bases, Bedsense Bases, Restonic BT A/B, SIMMONS |
+| Keeson (Auto or Base variant) | Adjustable Lite (Auto only), Simon Li, Heal Every Night, OKIN-Seating, Avanti Bases, INNOVA, AMERICANSTAR, MaxCoil Una, Dynasty Bases, Bedsense Bases, Restonic BT A/B, SIMMONS |
 | Keeson (KSBT variant) | Adjustable Lite |
-| Keeson (Sino variant) | Simon Li, Heal Every Night, OKIN-Seating, INNOVA, MaxCoil Una, Dynasty Bases, Bedsense Bases |
+| Keeson (Sino variant) | Simon Li, Heal Every Night, OKIN-Seating, Avanti Bases, INNOVA, AMERICANSTAR, MaxCoil Una, Dynasty Bases, Bedsense Bases |
 | Okin ORE | INNOVA, Dynasty Bases |
 | Cool Base | Restonic BT A/B |
 | Okimat / Okin UUID | Jordan's Serenity, Jordan's Tranquil, Customatic Z-Series (Z-230, Z-280), Adjustable bed (Lumbar) |
@@ -274,8 +276,10 @@ show why browser JavaScript failed to load.
 
 **Solutions:**
 1. **Try a different variant:** Go to integration options and try a different protocol variant
-   - Keeson: Try "base" vs "ksbt"
-   - Leggett & Platt: Try "gen2" vs "okin"
+   - Keeson and Leggett & Platt: open **Reconfigure** from the entry's three-dot
+     menu and answer the app question again; **Configure** refuses a route change
+     for these families (see [Keeson](#keeson-variant-selection) and
+     [Leggett & Platt](#leggett--platt-variant-selection) below)
    - Richmat: Try "nordic" vs "wilinke"
 2. **Reconnect:** Press the "Connect" button or restart the integration
 3. **Check diagnostics:** Download diagnostics and verify the controller type matches your bed
@@ -385,25 +389,34 @@ Home Assistant command reconnects automatically.
 2. OEM bed using different manufacturer's controller
 
 **Solutions:**
-1. **Change settings:** Open **Configure → Change settings** and correct **Bed type** and **Protocol variant** using the matching protocol guide. Keep the existing entry and its entity history.
+1. **Change settings:** Open **Configure → Change settings** and correct **Bed type** and **Protocol variant** using the matching protocol guide. Keep the existing entry and its entity history. Within a family with a [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed), Configure refuses an app or route change: use **Reconfigure** from the entry's three-dot menu instead.
 2. **Capture evidence if uncertain:** Generate a support bundle. A retail brand or a shared service UUID alone may not distinguish the protocols.
 3. **Paired entries:** Some profile changes require splitting the pair and configuring each side separately before combining again.
 
 ### Keeson Variant Selection
 
-| Symptom | Try This Variant |
-|---------|------------------|
-| Member's Mark, Purple, ErgoMotion BaseI4/BaseI5 beds | Base (BaseI4/BaseI5) |
-| Older Keeson beds or `KSBT03*` / `KSBT04*` Nordic UART beds | KSBT |
-| Commands partially work | Try the other variant |
+Open **Reconfigure** and answer the
+[Keeson question](beds/keeson.md#home-assistant-setup) with the app you use:
+
+| Bed | Answer |
+|-----|--------|
+| Member's Mark or Purple Smart Base | **Purple Smart Base, Member's Mark or Linx / Juna Sleep**, then which one |
+| A BaseI4/BaseI5 remote, or a `KSBT03*` / `KSBT04*` Nordic UART bed, without an app | **No app: another Keeson remote route**, then Base or KSBT to match |
+| Commands partially work on a remote route | The same answer with the other route |
 
 ### Leggett & Platt Variant Selection
 
-| Symptom | Try This Variant |
-|---------|------------------|
-| Most L&P beds, text-based commands | Gen2 |
-| Pairing required, Okin remote | Okin |
-| RGB lighting available | Gen2 (only one with RGB) |
+Each L&P app has its own layout, and the bed's name does not tell them apart.
+Open **Reconfigure** and answer the
+[L&P question](beds/leggett-platt.md#home-assistant-setup) with the app you use:
+
+| App you use | Route |
+|-------------|-------|
+| Prodigy CE, Prodigy 2, Prodigy 2L or U Series | Okin, with that app's layout; requires pairing |
+| LP Control with an LP BED receiver | Okin, with the default layout; requires pairing |
+| LP Control with an LP Comfort Connect base | Gen2; requires pairing |
+| L&P Adjustable Base app with an MlRM base | MlRM |
+| L&P Adjustable Base app with a QRRM remote | Richmat with the L&P QRRM remote |
 
 ### Richmat Variant Selection
 
