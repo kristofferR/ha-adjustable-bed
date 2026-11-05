@@ -315,10 +315,17 @@ async def test_the_final_settings_keep_every_app_entrys_route(hass, choice):
 
 
 @pytest.mark.parametrize(
-    "bed_type", sorted({bed_type for bed_type, _variant in APP_VARIANT_CHOICES})
+    "bed_type",
+    sorted(
+        {bed_type for bed_type, _variant in APP_VARIANT_CHOICES}
+        - const.VARIANT_REQUIRED_BED_TYPES
+    ),
 )
 def test_a_generic_row_never_starts_on_an_app_entrys_route(bed_type):
-    """A bed type's own row starts on its own route, never one of its apps'."""
+    """A bed type's own row starts on its own route, never one of its apps'.
+
+    A bed type that runs only as one of its apps has no row of its own.
+    """
     assert (bed_type, _default_setup_route(bed_type)) not in APP_VARIANT_CHOICES
 
 

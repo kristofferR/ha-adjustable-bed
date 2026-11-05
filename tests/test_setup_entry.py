@@ -398,3 +398,52 @@ async def test_the_vibradorm_question_offers_another_app(hass, mock_bluetooth_se
     assert list(select_options(result, "app"))[-1] == "another"
     result = await flow.async_step_vibradorm({"app": "another"})
     assert result["step_id"] == "select_app"
+
+
+@pytest.mark.parametrize("bed_type", sorted(const.VARIANT_REQUIRED_BED_TYPES))
+async def test_a_bed_type_that_runs_only_as_an_app_offers_its_apps(
+    hass, mock_bluetooth_service_info, bed_type
+):
+    """A discovered bed of such a type is never offered a route it cannot save."""
+    from custom_components.adjustable_bed.config_flow import _default_setup_route
+    from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+
+    assert is_valid_variant_for_bed_type(bed_type, _default_setup_route(bed_type))
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._discovery_info = mock_bluetooth_service_info
+    flow._disambiguated_bed_type = bed_type
+    result = await flow.async_step_bluetooth_confirm()
+    if result["step_id"] != "bluetooth_confirm":
+        return  # Its family asks the question.
+    marker = next(marker for marker in result["data_schema"].schema if marker == const.CONF_BED_TYPE)
+    picker = result["data_schema"].schema[marker]
+    choices = set(picker.rows().values()) if hasattr(picker, "rows") else {
+        option["value"] for option in picker.config["options"]
+    }
+    if len(choices) > 2:
+        # Its apps are its rows, and none is guessed.
+        assert bed_type not in choices
+        assert suggested(result, const.CONF_BED_TYPE) is None
+
+
+async def test_untouched_timing_follows_a_route_chosen_under_advanced(hass):
+    """The form is drawn for the staged route; another route takes its own timing."""
+    from custom_components.adjustable_bed.const import get_motor_pulse_defaults
+    from tests.form_helpers import form_answers
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._selected_bed_type = const.BED_TYPE_LINAK
+    form = await flow.async_step_manual_entry({CONF_ADDRESS: ADDRESS})
+    answers = form_answers(form)
+    answers["advanced"] = {const.CONF_PROTOCOL_VARIANT: const.LINAK_VARIANT_PERFORMANCE}
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_finish_settings(answers)
+    saved = finish.call_args.args[0]
+    assert (saved[const.CONF_MOTOR_PULSE_COUNT], saved[const.CONF_MOTOR_PULSE_DELAY_MS]) == (
+        get_motor_pulse_defaults(const.BED_TYPE_LINAK, const.LINAK_VARIANT_PERFORMANCE)
+    )
+    assert get_motor_pulse_defaults(const.BED_TYPE_LINAK, const.LINAK_VARIANT_PERFORMANCE) != (
+        get_motor_pulse_defaults(const.BED_TYPE_LINAK, const.VARIANT_AUTO)
+    )

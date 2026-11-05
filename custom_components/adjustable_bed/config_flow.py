@@ -340,6 +340,7 @@ from .const import (
     SVANE_VARIANT_JMC,
     SVANE_VARIANTS,
     VARIANT_AUTO,
+    VARIANT_REQUIRED_BED_TYPES,
     VIBRADORM_APP_CONFIG_KEYS,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
     VIBRADORM_APP_PROFILES,
@@ -1002,17 +1003,27 @@ _LIST_ROWS: Final = 12
 
 
 def _bed_type_rows(route: str) -> dict[str, str]:
-    """Return a route's bed-type list rows, label to choice: its own and its apps'."""
+    """Return a route's bed-type list rows, label to choice: its own and its apps'.
+
+    A bed type that runs only as one of its apps offers just the apps.
+    """
     bed_type, _variant = resolve_bed_type_choice(route)
-    return {
+    rows = {
         label: choice
         for label, choice in _bed_type_selector(route).rows().items()
         if resolve_bed_type_choice(choice)[0] == bed_type
     }
+    if bed_type in VARIANT_REQUIRED_BED_TYPES and any(choice != bed_type for choice in rows.values()):
+        rows = {label: choice for label, choice in rows.items() if choice != bed_type}
+    return rows
 
 
 def _default_setup_route(bed_type: str) -> str:
     """Return the route a new bed starts on when its row names none."""
+    if bed_type in VARIANT_REQUIRED_BED_TYPES:
+        apps = [variant for app_bed_type, variant in APP_VARIANT_CHOICES if app_bed_type == bed_type]
+        if apps:
+            return apps[0]
     routes = _setup_routes(bed_type)
     return VARIANT_AUTO if VARIANT_AUTO in routes or not routes else next(iter(routes))
 
@@ -4979,6 +4990,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._unasked_route = None
             bed_type, variant = resolve_bed_type_choice(choice)
             return await self._async_start_new_bed(bed_type, variant)
+        if route not in {option["value"] for option in options} or (
+            resolve_bed_type_choice(route)[0] in VARIANT_REQUIRED_BED_TYPES and len(options) > 2
+        ):
+            # A bed type that runs only as one of its apps suggests none of them.
+            route = None
         default = picker.shown(route) if isinstance(picker, _SearchableSelect) else route
         if detection.confidence < 0.7 and detection.ambiguous_types:
             detection_note = await self._get_config_translation(
@@ -4987,9 +5003,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
         else:
             detection_note = ""
+        marker = (
+            vol.Required(CONF_BED_TYPE, default=default)
+            if default is not None
+            else vol.Required(CONF_BED_TYPE)
+        )
         return self.async_show_form(
             step_id="bluetooth_confirm",
-            data_schema=vol.Schema({vol.Required(CONF_BED_TYPE, default=default): picker}),
+            data_schema=vol.Schema({marker: picker}),
             description_placeholders={
                 "name": self._discovery_info.name or "Unknown",
                 "address": self._discovery_info.address.upper(),
@@ -5127,12 +5148,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is not None:
             submitted = {**user_input, **(user_input.get("timing") or {})}
             chosen = (user_input.get("advanced") or {}).get(CONF_PROTOCOL_VARIANT)
+            drawn = variant
             if len(routes) >= 2 and chosen in routes:
                 variant = chosen
-            entry, errors = self._new_bed_entry(submitted, variant, hidden, signals)
+            entry, errors = self._new_bed_entry(submitted, variant, hidden, signals, drawn)
             if not errors:
                 self._final_settings_pending = False
                 self._manual_data = entry
+                if self._operation is not None:
+                    # A probe an app step began shows the final name and adapter.
+                    self._pending_entry = entry
+                    self._async_start_probe_operation()
                 if self._final_settings_then == "verify":
                     return await self._finish_with_verify(entry, entry[CONF_NAME])
                 return await self._async_finish_family_route()
@@ -5251,25 +5277,35 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         variant: str,
         hidden: Collection[str],
         signals: list[str] | None,
+        drawn_variant: str,
     ) -> tuple[dict[str, Any], dict[str, str]]:
-        """Return the new bed's entry from its staged route and final settings, and errors."""
+        """Return the new bed's entry from its staged route and final settings, and errors.
+
+        The form was drawn for ``drawn_variant``; a timing value left as drawn
+        follows a route chosen in its Advanced section instead.
+        """
         assert self._manual_data is not None
         data = self._manual_data
         bed_type: str = data[CONF_BED_TYPE]
         errors: dict[str, str] = {}
         # A client that ignores the form cannot answer what the route sets itself.
         submitted = {key: value for key, value in submitted.items() if key not in hidden}
-        pulse = dict(
-            zip(
-                (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS),
-                get_motor_pulse_defaults(bed_type, variant, signals),
-                strict=True,
-            )
+        keys = (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
+        pulse = dict(zip(keys, get_motor_pulse_defaults(bed_type, variant, signals), strict=True))
+        drawn = dict(
+            zip(keys, get_motor_pulse_defaults(bed_type, drawn_variant, signals), strict=True)
         )
-        for key in pulse:
+        changed = False
+        for key in keys:
+            shown = data.get(key, drawn[key])
             value = submitted.get(key)
+            if value in (None, "") or str(value) == str(shown):
+                # Left as drawn: the staged value, or the chosen route's own default.
+                pulse[key] = int(shown) if variant == drawn_variant else pulse[key]
+                continue
+            changed = True
             try:
-                pulse[key] = int(value) if value not in (None, "") else int(data.get(key, pulse[key]))
+                pulse[key] = int(value)
             except ValueError, TypeError:
                 errors[key] = "invalid_number"
         if not errors and _invalid_pulse_count(bed_type, pulse[CONF_MOTOR_PULSE_COUNT]):
@@ -5295,11 +5331,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ):
             errors[CONF_PROTOCOL_VARIANT] = variant_error
         errors.update(_bed_specific_errors(submitted, bed_type))
-        # Timing the user changed is theirs; a value left as shown keeps its source.
-        changed = any(
-            key in submitted and str(submitted[key]) != str(data.get(key, pulse[key]))
-            for key in pulse
-        )
         entry: dict[str, Any] = {
             **data,
             CONF_NAME: submitted.get(CONF_NAME) or data.get(CONF_NAME, "Adjustable Bed"),
@@ -5319,7 +5350,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
             **pulse,
             # The user saw these, so a protocol migration must not treat them as
-            # generated defaults, unless a route the app chose set them.
+            # generated defaults, unless a route the app chose set them. Timing
+            # the user changed is theirs.
             CONF_MOTOR_PULSE_USER_SET: changed or data.get(CONF_MOTOR_PULSE_USER_SET, True),
             CONF_DISCONNECT_AFTER_COMMAND: bool(
                 submitted.get(
