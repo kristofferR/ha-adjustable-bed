@@ -52,6 +52,8 @@ from .const import (
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
@@ -836,6 +838,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             ),
         ),
     ),
+    # The Reverie question confirms the receiver; the model the app shows sets
+    # the controls of either one.
+    **{
+        bed_type: _asking(
+            bed_type, questions=(Question(CONF_PROTOCOL_VARIANT, _routes(bed_type), "auto"),)
+        )
+        for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
+    },
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,

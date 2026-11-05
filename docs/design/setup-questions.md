@@ -96,7 +96,7 @@ recorded here as each family converts:
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `reverie_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
@@ -119,6 +119,7 @@ recorded here as each family converts:
 | `sleepys_elite_app` | Control box selector; the BOX25 selectors derive massage and position feedback. |
 | `sleepys_box15`, `sleepys_box24` | Motor count. |
 | `sleepys_box25` | Massage, and the packet dialect (Advanced). |
+| `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.
