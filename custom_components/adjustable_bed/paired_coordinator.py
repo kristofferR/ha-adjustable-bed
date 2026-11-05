@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
     BED_TYPE_KEESON,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -1024,7 +1025,7 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
         inner: AdjustableBedCoordinator,
     ) -> None:
         self._single_inner = inner
-        self._single_native_both = entry.data.get(CONF_BED_TYPE) != BED_TYPE_SLEEP_NUMBER
+        self._single_native_both = entry.data.get(CONF_BED_TYPE) not in {BED_TYPE_SLEEP_NUMBER, BED_TYPE_MOTOMOTION}
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_GMMOTOR:
             from .gmmotor_profiles import load_profile
 

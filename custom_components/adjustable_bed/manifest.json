@@ -417,6 +417,12 @@
       "local_name": "BED-*"
     },
     {
+      "local_name": "BEDFRM*"
+    },
+    {
+      "local_name": "BEDJET_BF*"
+    },
+    {
       "local_name": "BERM*"
     },
     {
@@ -460,6 +466,10 @@
     },
     {
       "local_name": "BSRM*"
+    },
+    {
+      "local_name": "BT201*",
+      "connectable": true
     },
     {
       "local_name": "BTRM*"
@@ -1754,6 +1764,10 @@
       "local_name": "MMRM*"
     },
     {
+      "local_name": "MOTO*",
+      "connectable": true
+    },
+    {
       "local_name": "MOTOB*"
     },
     {
@@ -2010,6 +2024,10 @@
     },
     {
       "local_name": "SLEEPSTAR*"
+    },
+    {
+      "local_name": "SOFA*",
+      "connectable": true
     },
     {
       "local_name": "STAR*"

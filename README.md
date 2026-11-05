@@ -112,6 +112,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-nframe.md#okin-64-bit) | NORA_CON / NORACON Mattress Firm controllers |
 | 🧪 [Good Vibe Sleep](docs/beds/goodvibe.md) | Exact app catalog, remote aliases and independent RM-/HJ- sleep sensors; hardware unverified |
+| 🧪 [MotoMotion](docs/beds/motomotion.md) | 13 panel classes, independent name flags, local postures and ASCII/binary music; hardware unverified |
 | 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
 | 🧪 [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified; separate from the legacy Okin ORE (A5 5A) bed type |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
@@ -160,6 +161,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [FurniMove / OKIN Smart Remote](docs/beds/furnimove.md) | App handset layouts, including RF ECO BT adjustable-bed receivers |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-nframe.md#rf-eco-bt-stair-lift) | Elda BTH / MEGAMAT staircase actuator |
 | ✅ [Okin DOT](docs/beds/okin-nframe.md#okin-dot) | DewertOkin RF34/RF6707 handset beds (new RF1058 setups use FurniMove) |
+| ✅ [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | BedJet PowerLayer adjustable frame (not the BedJet climate unit) |
 
 ✅ means supported by the integration. 🧪 marks app behavior implemented from
 accepted artifact evidence while hardware remains unverified. ⚠️ marks partial

@@ -194,6 +194,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `doublesleep` | Saved app model, seeded from the platform name, and the BLE driver. |
 | `sleeptracker` | Foundation, app layout, unit number, snapshot side, restricted session and processor type; a lumbar layout derives the third motor. |
 | `motion_bed` | Exact Bluetooth name, seeded from the advertisement; restored profile and retained preset and movement layouts. `normalize` stores Auto as no retained layout. |
+| `motomotion` | Exact Bluetooth name, seeded from the advertisement and checked as the app checks it; it selects the panel and feature flags. Owns every generic field; fixes massage and angle sensing off. |
 | `malouf_app@malouf`, `malouf_app@lucid` | Model (the chosen app's picker, plus a saved model it no longer lists), primary/secondary role and transport (Advanced). Fixes angle sensing off; `normalize` drops a model the picker did not offer. |
 | `malouf_app` | The app too, with every app's models, for an entry switched in from another bed type with Configure's bed-type list; the app and model are checked together on save. |
 | `malouf_new_okin`, `malouf_legacy_okin` | Motor count, layout and memory positions. |

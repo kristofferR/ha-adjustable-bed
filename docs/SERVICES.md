@@ -464,6 +464,7 @@ enable additional commands.
 | Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat.md#richmat-mh-apps) |
 | Classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | `richmat_classic` ([operations](#classic-richmat-app-settings)) | [Classic Richmat apps](beds/richmat.md#classic-richmat-apps) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
+| MotoMotion app | `motomotion` (local users and postures: save, select, delete, recall, reset and fine-tune) | [MotoMotion](beds/motomotion.md) |
 
 Controller alarm actions program the bed itself, rather than creating a Home
 Assistant automation.

@@ -6,6 +6,7 @@ import json
 from fnmatch import fnmatchcase
 from pathlib import Path
 
+import pytest
 from homeassistant.components.bluetooth.match import IntegrationMatcher
 
 
@@ -143,3 +144,32 @@ def test_eshine_uart_advertisements_reach_discovery_without_product_inference() 
         detected = detect_bed_type_detailed(info)
         assert BED_TYPE_ESHINE_OKIN in [detected.bed_type, *(detected.ambiguous_types or ())]
         assert not any("eshine_e" in signal for signal in detected.signals)
+
+
+@pytest.mark.parametrize(
+    ("name", "services"),
+    [
+        ("SOFA000001SC00M", []),
+        ("BT2010000", []),
+        ("MOTO00000100000", []),
+        ("xSOFA00001SC00M", ["0000ffe0-0000-1000-8000-00805f9b34fb"]),
+        ("xBT201000", ["0000fff0-0000-1000-8000-00805f9b34fb"]),
+        ("xMOTO0000100000", ["0000ffe0-0000-1000-8000-00805f9b34fb"]),
+    ],
+)
+def test_motomotion_host_hints_preserve_explicit_app_choice(name, services) -> None:
+    from custom_components.adjustable_bed.const import BED_TYPE_MOTOMOTION, DOMAIN
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from tests.test_detection import _make_service_info
+
+    manifest = json.loads(
+        (Path(__file__).parents[1] / "custom_components/adjustable_bed/manifest.json").read_text()
+    )
+    matcher = IntegrationMatcher([{"domain": DOMAIN, **entry} for entry in manifest["bluetooth"]])
+    matcher.async_setup()
+    info = _make_service_info(name=name, service_uuids=services)
+    info.connectable = True
+    assert DOMAIN in matcher.match_domains(info)
+    detected = detect_bed_type_detailed(info)
+    assert BED_TYPE_MOTOMOTION in [detected.bed_type, *(detected.ambiguous_types or ())]
+    assert "name:motomotion_app_candidate" in detected.signals

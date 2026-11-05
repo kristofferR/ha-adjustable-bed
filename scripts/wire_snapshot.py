@@ -1113,6 +1113,9 @@ LIMOSS_REMOTE_CAPABILITIES = {
 TIMOTION_STATUS = "9d" + "00" * 14
 
 
+# MotoMotion names: panel One, panel Five with sides and massage, panel Six
+# with users and heat.
+MOTOMOTION_NAMES = ("SOFA000001MC00H", "SOFA000005S00FM", "SOFA000006AD00H")
 # Room 0x12345678, vaddr 0x01020304; ``%s`` is the product ID byte.
 KAIDI_BROADCAST = "c0ff0278563412ffeeddccbbaa0000%s0100a004030201"
 # A node ping answer from AA:BB:CC:DD:EE:FF with vaddr 0x01020304.
@@ -1171,6 +1174,10 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == const.BED_TYPE_MOTION_BED:
         # The app's identity is the exact advertised name.
         data[const.CONF_BLE_DEVICE_NAME] = "QMS-IQ"
+    if bed_type == const.BED_TYPE_MOTOMOTION:
+        # The exact name selects the panel: here panel One.
+        data[const.CONF_BLE_DEVICE_NAME] = MOTOMOTION_NAMES[0]
+        kwargs = {"device_name": MOTOMOTION_NAMES[0]}
     if bed_type == const.BED_TYPE_DOUBLESLEEP:
         data[const.CONF_PRODUCT_TYPE] = "3"
     if bed_type == const.BED_TYPE_LIMOSS_REMOTE:
@@ -1363,6 +1370,18 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout},
                     layout_id=layout_id,
+                )
+            )
+    # MotoMotion: the panels whose controls differ from the default one.
+    if const.BED_TYPE_MOTOMOTION in const.SUPPORTED_BED_TYPES:
+        for name in MOTOMOTION_NAMES[1:]:
+            scenarios.append(
+                Scenario(
+                    id=f"{const.BED_TYPE_MOTOMOTION}:{name}",
+                    bed_type=const.BED_TYPE_MOTOMOTION,
+                    entry_data={const.CONF_BLE_DEVICE_NAME: name},
+                    factory_kwargs={"device_name": name},
+                    layout_id=const.BED_TYPE_MOTOMOTION,
                 )
             )
     # eShine (com.okin.eshine): each explicit product over the UART layout.
