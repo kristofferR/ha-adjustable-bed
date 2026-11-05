@@ -75,7 +75,7 @@ Sleep JSON uses insertion-ordered `id`, `cmd`, `val` and UTF-8 encoding:
 
 ## Detection / Setup
 
-1. Choose Good Vibe Sleep and the exact app product/configuration or remote alias. Name matches offer app hints and do not replace another identified receiver.
+1. Choose the **Good Vibe Sleep app** row, then search its product question for the exact app product/configuration or remote alias. A product the app's own name rule reads from the Bluetooth name is suggested, never chosen for you. Name matches offer app hints and do not replace another identified receiver.
 2. Choose the Home Assistant Bluetooth adapter or proxy that reaches that physical address.
 3. Add each independent sleep device separately, selecting type 1 or type 2. A normal product's `sleep_advertisement_name` status attribute can identify the app's requested sensor name.
 

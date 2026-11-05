@@ -131,15 +131,10 @@ def test_nectar_move_is_an_explicit_bed_choice(
 ) -> None:
     choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
     choices = {option["value"] for option in get_bed_type_options()}
-    group_choices = ACTUATOR_GROUPS["okin"]["variants"]
-    assert group_choices is not None
 
     assert choice in choices
     assert resolve_bed_type_choice(choice) == (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
-    assert any(
-        item.get("variant") == OKIN_CST_VARIANT_NECTAR_MOVE and item["label"] == "Nectar Move app"
-        for item in group_choices
-    )
+    assert (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE) in ACTUATOR_GROUPS["okin"]
     assert bed_type_choice(BED_TYPE_OKIN_CST, VARIANT_AUTO) == BED_TYPE_OKIN_CST
     auto_detect = detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin)
     assert BED_TYPE_OKIN_CST in auto_detect.ambiguous_types

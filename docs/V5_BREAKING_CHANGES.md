@@ -299,6 +299,12 @@ Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pu
 - Fresh setup no longer shows a separate protocol variant field. An app entry
   always sets its own route. A bed type with several receiver routes lists them
   in a collapsed **Advanced: receiver route** section of the final settings.
+- A row of a family names its family after a dot, such as **Heal Every Night
+  app · Keeson**, and a family's own row lists its apps the same way. The
+  routes named after an Okin protocol leave the app list: discovery, the brand
+  list and Configure still offer them. Good Vibe Sleep's 877 product rows and
+  HJBed's 43 become one row each, which asks the exact product in a searchable
+  list. Saved entries keep their bed type, product and ID.
 - The bed type list is searchable by label, including app names such as
   MotoSleep / Power Bob. Compatibility IDs such as `okimat` and `dewertokin`
   show friendly labels, and **Configure** adds "(saved as `<id>`)".

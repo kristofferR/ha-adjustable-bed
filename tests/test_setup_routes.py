@@ -461,7 +461,7 @@ def test_every_picker_label_maps_back_to_one_choice():
     assert len(labels) == len(set(labels))
 
 
-@pytest.mark.parametrize("bed_type", [const.BED_TYPE_GOODVIBE, const.BED_TYPE_ESHINE_OKIN])
+@pytest.mark.parametrize("bed_type", [const.BED_TYPE_ESHINE_OKIN])
 def test_product_apps_choose_their_route_from_the_app_entry(bed_type):
     """Each product is its own app entry: no global variant and no route step."""
     assert _setup_routes(bed_type) == {}

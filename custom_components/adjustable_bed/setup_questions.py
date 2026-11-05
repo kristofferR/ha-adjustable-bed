@@ -144,7 +144,9 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
+    GOODVIBE_PROFILES,
     HAS_LIGHT_DEFAULTS,
+    HJBED_PROFILES,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
@@ -319,7 +321,7 @@ class Question:
     question is neither required nor saved. ``staged_when`` limits when a
     staged answer is the default, for a value the profile set itself rather than
     the user. ``validator`` replaces the one the choices imply, for a range or a
-    format.
+    format. A ``searchable`` question's choices are a picker searched by label.
     """
 
     key: str
@@ -330,6 +332,8 @@ class Question:
     when: FieldCondition | list[FieldCondition] | None = None
     staged_when: FieldCondition | None = None
     validator: Any = None
+    # A long list of choices is a picker the user can search by label.
+    searchable: bool = False
 
     def asked(self, data: Mapping[str, Any]) -> bool:
         """Return True when the condition holds for these answers."""
@@ -893,6 +897,18 @@ def _gmmotor_errors(data: Mapping[str, Any]) -> dict[str, str]:
     if {"left": 0, "right": 1, "both": 2}.get(data.get(CONF_GMMOTOR_SIDE, "left")) not in profile.sides:
         return {CONF_GMMOTOR_SIDE: "gmmotor_side"}
     return {}
+
+
+def _goodvibe_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """The product the app's own name rule suggests, never over a chosen one."""
+    from .goodvibe_discovery import suggested_profile
+
+    if data.get(CONF_PROTOCOL_VARIANT) in GOODVIBE_PROFILES or discovered is None:
+        return dict(data)
+    suggested = suggested_profile(discovered.name)
+    return {**data, CONF_PROTOCOL_VARIANT: suggested} if suggested else dict(data)
 
 
 def _isleep_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
@@ -1607,6 +1623,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     f"{BED_TYPE_COMFORT_ENHANCEMENTS}:mc3": _asking(
         BED_TYPE_COMFORT_ENHANCEMENTS,
         owns={**_BASE[BED_TYPE_COMFORT_ENHANCEMENTS].owns, CONF_HAS_MASSAGE: False},
+    ),
+    # The app's product sets every control, so its one row asks it.
+    BED_TYPE_GOODVIBE: _asking(
+        BED_TYPE_GOODVIBE,
+        questions=(Question(CONF_PROTOCOL_VARIANT, GOODVIBE_PROFILES, searchable=True),),
+        seed=_goodvibe_seed,
+    ),
+    BED_TYPE_HJBED: _asking(
+        BED_TYPE_HJBED,
+        questions=(Question(CONF_PROTOCOL_VARIANT, HJBED_PROFILES, searchable=True),),
     ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(

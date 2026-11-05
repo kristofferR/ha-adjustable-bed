@@ -49,10 +49,7 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.loader import IntegrationNotFound, async_get_integration
 from homeassistant.setup import async_setup_component
 
-from .actuator_groups import (
-    ACTUATOR_GROUPS,
-    SINGLE_TYPE_GROUPS,
-)
+from .actuator_groups import ACTUATOR_GROUPS
 from .adapter import (
     discover_services,
     find_service_info_by_address,
@@ -368,8 +365,12 @@ from .const import (
 )
 from .detection import (
     APP_VARIANT_CHOICES,
+    FAMILY_ROW_SEPARATOR,
+    FAMILY_ROWS,
     FAMILY_STEP_ROUTES,
     HIDDEN_APP_CHOICES,
+    PRODUCT_QUESTION_BED_TYPES,
+    PROTOCOL_ROUTES,
     bed_type_choice,
     bed_type_label,
     detect_bed_type,
@@ -866,18 +867,21 @@ def _bed_type_selector(
     default: str | None, *, show_saved_id: bool = False
 ) -> _SearchableSelect:
     """Return the bed-type selector, keeping a default the list does not offer."""
-    options = get_bed_type_options()
+    options = [_with_family(option) for option in get_bed_type_options()]
     if show_saved_id:
         # The StarCode and Richmat apps and the Reverie and Sleep Number
         # receivers have no guided change, and another bed type reaches the
         # Jensen JMC400 route only here, so Configure lists each by its own
-        # label; setup asks behind the family row.
+        # label; setup asks behind the family row. Configure lists the
+        # protocol-named routes the same way.
         unguided = {
             *(bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()),
             *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
             *(bed_type for bed_type, _service in _SLEEP_NUMBER_ROUTES.values()),
             *RICHMAT_MH_BED_TYPES,
             BED_TYPE_JENSEN,
+            # Protocol-named routes are off the setup list but stay selectable.
+            *PROTOCOL_ROUTES,
         }
         # The classic Richmat apps are app rows, each with the app's own label.
         unguided_apps = {
@@ -1020,8 +1024,11 @@ def _bed_type_rows(route: str) -> dict[str, str]:
 
 
 def _default_setup_route(bed_type: str) -> str:
-    """Return the route a new bed starts on when its row names none."""
-    if bed_type in VARIANT_REQUIRED_BED_TYPES:
+    """Return the route a new bed starts on when its row names none.
+
+    A row that asks its app's product starts on none, so nothing is guessed.
+    """
+    if bed_type in VARIANT_REQUIRED_BED_TYPES and bed_type not in PRODUCT_QUESTION_BED_TYPES:
         apps = [variant for app_bed_type, variant in APP_VARIANT_CHOICES if app_bed_type == bed_type]
         if apps:
             return apps[0]
@@ -1061,8 +1068,9 @@ def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
 
     Each brand group gives the rows that open a family question, as the list
     shows its routes; a group with one bed type gives that row, and a group
-    with no family question gives its own rows. A ``detected`` route keeps its
-    place under its family's row, as in the app question.
+    with no family question gives its own rows. Its protocol-named routes,
+    which the app question does not list, are rows too. A ``detected`` route
+    keeps its place under its family's row, as in the app question.
     """
     listed = {choice: label for label, choice in _bed_type_selector(detected).rows().items()}
     by_label = {label: choice for choice, label in listed.items()}
@@ -1074,26 +1082,24 @@ def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
         return by_label.get(str(_bed_type_selector(choice).shown(choice)))
 
     rows: dict[str, str] = {}
-    for key, group in ACTUATOR_GROUPS.items():
-        variants = group["variants"]
-        if variants is None:
-            picks = [row_for(SINGLE_TYPE_GROUPS[key])]
-        else:
-            routes = [
-                row_for(bed_type_choice(variant["type"], variant.get("variant")))
-                for variant in variants
-            ]
-            families = [
-                route
-                for route in routes
-                if route is not None
-                and route in _APP_SETUP_STEPS
-                and _APP_SETUP_STEPS[route] in _FAMILY_STEPS
-            ]
-            picks = families or routes
-        for choice in picks:
+    for routes in ACTUATOR_GROUPS.values():
+        choices = [row_for(bed_type_choice(bed_type, variant)) for bed_type, variant in routes]
+        families = [
+            choice
+            for choice in choices
+            if choice is not None
+            and choice in _APP_SETUP_STEPS
+            and _APP_SETUP_STEPS[choice] in _FAMILY_STEPS
+        ]
+        for choice in families or choices:
             if choice is not None:
-                rows.setdefault(choice, listed[choice])
+                # The brand comes first: "<family>: <apps>".
+                family, apps = FAMILY_ROWS.get(choice, (None, ""))
+                rows.setdefault(choice, f"{family}: {apps}" if family else listed[choice])
+        # The protocol-named routes are off the app question; the brand list keeps them.
+        for bed_type, _variant in routes:
+            if bed_type in PROTOCOL_ROUTES:
+                rows.setdefault(bed_type, bed_type_label(bed_type))
     return sorted(rows.items(), key=lambda row: row[1].lower())
 
 
@@ -1104,8 +1110,9 @@ def _family_name(info: BluetoothServiceInfoBleak) -> str:
     models>)", so the part before the colon or parenthesis names the family.
     """
     bed_type = detect_bed_type(info) or BED_TYPE_DIAGNOSTIC
-    label = str(_bed_type_selector(bed_type).shown(bed_type))
-    return label.split(": ", 1)[0].split(" (", 1)[0]
+    if (family := _row_family(bed_type)) is not None:
+        return family
+    return bed_type_label(bed_type).split(" (", 1)[0]
 
 
 def _bed_type_field(
@@ -1378,6 +1385,8 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     # Declared questions only: the app is its variant, chosen from the bed-type list.
     BED_TYPE_CLUSTER018: "profile_questions",
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
+    # One row each asks the app's exact product.
+    **dict.fromkeys(PRODUCT_QUESTION_BED_TYPES, "profile_questions"),
     BED_TYPE_VIBRADORM: "vibradorm",
     # The LOGICDATA question asks the app, and for Sleep Smart the bed base or pump.
     **dict.fromkeys(
@@ -2377,14 +2386,29 @@ def _question_field(
     marker_type = (
         data_entry_flow.Required if default is REQUIRED else data_entry_flow.Optional
     )
+    options = question.options(data)
+    picker = (
+        _SearchableSelect(
+            [SelectOptionDict(value=str(key), label=label) for key, label in options.items()]
+        )
+        if question.searchable and options
+        else None
+    )
     marker = marker_type(
         question.key,
-        default=vol.UNDEFINED if default in (REQUIRED, OPTIONAL) else default,
+        default=(
+            vol.UNDEFINED
+            if default in (REQUIRED, OPTIONAL)
+            else picker.shown(default)
+            if picker is not None
+            else default
+        ),
         visible=question.when if visible else None,
     )
+    if picker is not None:
+        return marker, picker
     if question.validator is not None:
         return marker, question.validator
-    options = question.options(data)
     if question.text:
         return marker, str
     if options is None:
@@ -2573,6 +2597,25 @@ _FAMILY_STEPS: Final = frozenset(
 )
 # Steps that ask which app runs the bed: a discovered bed's first question.
 _APP_QUESTION_STEPS: Final = _FAMILY_STEPS | {"vibradorm", "logicdata_family", "starcode_family"}
+# Each family question's name, from its family row.
+_FAMILY_NAMES: Final[dict[str, str]] = {
+    _APP_SETUP_STEPS[bed_type]: family for bed_type, (family, _apps) in FAMILY_ROWS.items()
+}
+
+
+def _row_family(choice: str) -> str | None:
+    """Return the family of a bed-type list row: the family its journey asks."""
+    bed_type, _variant = resolve_bed_type_choice(choice)
+    step = _APP_SETUP_STEPS.get(bed_type)
+    return _FAMILY_NAMES.get(step) if step is not None else None
+
+
+def _with_family(option: SelectOptionDict) -> SelectOptionDict:
+    """Label a family member's row "<app> · <family>"; a family row already is."""
+    if option["value"] in FAMILY_ROWS or (family := _row_family(option["value"])) is None:
+        return option
+    app = option["label"].removesuffix(f" ({family})")
+    return SelectOptionDict(value=option["value"], label=f"{app}{FAMILY_ROW_SEPARATOR}{family}")
 APP_SETTINGS_BED_TYPES: Final = (
     frozenset(
         bed_type for bed_type, step in _APP_SETUP_STEPS.items() if step not in _FAMILY_STEPS

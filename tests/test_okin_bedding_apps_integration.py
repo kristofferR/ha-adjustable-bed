@@ -13,7 +13,7 @@ import pytest
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.adjustable_bed.actuator_groups import get_actuator_group_for_bed_type
+from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     _motor_count_options,
@@ -48,9 +48,9 @@ from tests.test_okin_bedding_apps import tranquil, written, zseries
 
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 LABELS = {
-    (BED_TYPE_TRANQUIL, None): ("tranquil", ("okin", "Jordan's Tranquil app"), 2),
-    (BED_TYPE_ZSERIES, "z230"): ("zseries_z230", ("customatic", "Z-Series (Z-230)"), 1),
-    (BED_TYPE_ZSERIES, "z280"): ("zseries_z280", ("customatic", "Z-Series (Z-230)"), 2),
+    (BED_TYPE_TRANQUIL, None): ("tranquil", "okin", 2),
+    (BED_TYPE_ZSERIES, "z230"): ("zseries_z230", "customatic", 1),
+    (BED_TYPE_ZSERIES, "z280"): ("zseries_z280", "customatic", 2),
 }
 
 
@@ -61,7 +61,7 @@ async def test_explicit_profile_is_offline_constructible_and_never_auto_detected
     assert controller is not None
     assert controller.protocol_diagnostics["cst_profile"] == profile
     assert controller.memory_slot_count == slots
-    assert get_actuator_group_for_bed_type(bed_type) == group
+    assert actuator_group_for(bed_type) == group
     # Behind its family's row, which names the app.
     assert bed_type_choice(bed_type, variant) in FAMILY_STEP_ROUTES | HIDDEN_APP_CHOICES
     assert any(

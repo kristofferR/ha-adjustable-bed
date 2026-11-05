@@ -215,9 +215,15 @@ async def test_the_brand_list_names_families_and_their_apps(hass, enable_custom_
         const.BED_TYPE_SVANE,
         const.BED_TYPE_LINAK,
     } <= choices
-    # An app's own row and a protocol row stay in the app question's full list.
+    # An app's own row stays in the app question's full list.
     assert "keeson:heal_every_night" not in choices
-    assert const.BED_TYPE_OKIN_HANDLE not in choices
+    # A protocol-named route is off the app question, so the brand list keeps it.
+    from custom_components.adjustable_bed.detection import PROTOCOL_ROUTES
+
+    assert choices >= PROTOCOL_ROUTES
+    # Each family row names its brand first.
+    okin = next(label for label, choice in rows.items() if choice == const.BED_TYPE_FURNIMOVE)
+    assert okin.startswith("Okin: ")
     assert list(rows)[-1] == _STRINGS["config"]["step"]["select_family"]["data"]["not_sure"]
 
 
@@ -417,9 +423,13 @@ async def test_a_bed_type_that_runs_only_as_an_app_offers_its_apps(
 ):
     """A discovered bed of such a type is never offered a route it cannot save."""
     from custom_components.adjustable_bed.config_flow import _default_setup_route
+    from custom_components.adjustable_bed.detection import PRODUCT_QUESTION_BED_TYPES
     from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 
-    assert is_valid_variant_for_bed_type(bed_type, _default_setup_route(bed_type))
+    # A row that asks its product starts on none; another starts on a saveable route.
+    assert is_valid_variant_for_bed_type(bed_type, _default_setup_route(bed_type)) is (
+        bed_type not in PRODUCT_QUESTION_BED_TYPES
+    )
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info

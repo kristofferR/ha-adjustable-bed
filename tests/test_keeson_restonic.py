@@ -520,7 +520,7 @@ async def test_profiles_are_selected_only_explicitly(coordinator):
         assert explicit._variant == variant
         assert variant in KEESON_VARIANTS
         assert any(
-            option["variant"] == variant for option in ACTUATOR_GROUPS["keeson"]["variants"] or ()
+            route_variant == variant for _bed_type, route_variant in ACTUATOR_GROUPS["keeson"]
         )
 
 

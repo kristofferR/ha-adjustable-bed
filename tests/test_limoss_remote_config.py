@@ -277,7 +277,7 @@ async def test_a_pair_receiver_finishes_its_off_bursts_before_saving(
 
 def test_limoss_group_requires_explicit_app_or_legacy_selection():
     """The brand opens the Limoss question, which offers both apps and the generic controls."""
-    from custom_components.adjustable_bed.actuator_groups import get_bed_type_for_group
+    from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
     from custom_components.adjustable_bed.config_flow import _LIMOSS_APPS
     from custom_components.adjustable_bed.const import (
         BED_TYPE_FSM_RELAX,
@@ -285,7 +285,7 @@ def test_limoss_group_requires_explicit_app_or_legacy_selection():
         BED_TYPE_LIMOSS_REMOTE,
     )
 
-    assert get_bed_type_for_group("limoss") == BED_TYPE_LIMOSS
+    assert ACTUATOR_GROUPS["limoss"] == ((BED_TYPE_LIMOSS, None),)
     assert {bed_type for bed_type, _variant, _step in _LIMOSS_APPS.values()} == {
         BED_TYPE_LIMOSS,
         BED_TYPE_LIMOSS_REMOTE,

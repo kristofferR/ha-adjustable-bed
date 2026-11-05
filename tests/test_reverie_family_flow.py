@@ -6,7 +6,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import SINGLE_TYPE_GROUPS
+from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     _bed_type_selector,
@@ -42,7 +42,7 @@ def test_one_row_for_both_receivers_and_pairlink_keeps_its_own():
     assert const.BED_TYPE_REVERIE not in rows
     assert const.BED_TYPE_REVERIE_PAIRLINK in rows
     # The brand opens the same question instead of a try-this-first list.
-    assert SINGLE_TYPE_GROUPS["reverie"] == const.BED_TYPE_REVERIE_NIGHTSTAND
+    assert ACTUATOR_GROUPS["reverie"] == ((const.BED_TYPE_REVERIE_NIGHTSTAND, None),)
     # A detected Protocol 108 bed shows the family row; a saved one keeps its label.
     shown = _bed_type_selector(const.BED_TYPE_REVERIE).shown(const.BED_TYPE_REVERIE)
     assert shown == label

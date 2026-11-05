@@ -8,7 +8,7 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import SINGLE_TYPE_GROUPS
+from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import require_logicdata_route
 from custom_components.adjustable_bed.detection import get_bed_type_options
@@ -59,17 +59,17 @@ def test_one_row_names_every_app_and_finds_each_by_name():
         assert [value for value, row in rows.items() if app.lower() in row.lower()] == [
             const.BED_TYPE_LOGICDATA_APP
         ], app
-    assert label.startswith("LOGICDATA:")
+    assert label.endswith(" · LOGICDATA")
     # SimplicityFrame and the pump are answers of the question, not rows of their own.
     assert not {const.BED_TYPE_LOGICDATA, const.BED_TYPE_LOGICDATA_AIR_PUMP} & set(rows)
-    assert SINGLE_TYPE_GROUPS["logicdata"] == const.BED_TYPE_LOGICDATA_APP
+    assert ACTUATOR_GROUPS["logicdata"] == ((const.BED_TYPE_LOGICDATA_APP, None),)
 
 
 def test_a_detected_simplicityframe_is_shown_as_the_family_row():
     from custom_components.adjustable_bed.config_flow import _bed_type_selector
 
     label = _bed_type_selector(const.BED_TYPE_LOGICDATA).shown(const.BED_TYPE_LOGICDATA)
-    assert label.startswith("LOGICDATA:")
+    assert label.endswith(" · LOGICDATA")
 
 
 async def test_the_family_row_asks_the_app_and_has_nothing_to_keep(hass):

@@ -739,54 +739,89 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_FSM_RELAX,
     }
 )
-# A family row whose picker label names every route behind it; saved entries
-# keep their own route's label.
-_FAMILY_ROW_LABELS: Final[dict[str, str]] = {
+# Each family's one row: the family, and the apps and routes behind it. The
+# picker shows "<apps> · <family>"; saved entries keep their own route's label.
+FAMILY_ROWS: Final[dict[str, tuple[str, str]]] = {
     BED_TYPE_FURNIMOVE: (
-        "Okin: FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes"
+        "Okin",
+        "FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes",
     ),
     BED_TYPE_LEGGETT_OKIN: (
-        "Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and "
-        "L&P Adjustable Base apps"
+        "Leggett & Platt",
+        "Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and L&P Adjustable Base apps",
     ),
     BED_TYPE_SLEEPYS_ELITE_APP: (
-        "Sleepy's Elite: MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers"
+        "Sleepy's Elite",
+        "MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers",
     ),
     BED_TYPE_MALOUF_APP: (
-        "Malouf / Lucid: Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers"
+        "Malouf / Lucid",
+        "Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers",
     ),
     BED_TYPE_CUSTOMATIC_CLARITY: (
-        "Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps"
+        "Customatic",
+        "Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps",
     ),
-    BED_TYPE_SERENITY: "Jordan's: Serenity and Tranquil apps",
+    BED_TYPE_SERENITY: ("Jordan's", "Serenity and Tranquil apps"),
     BED_TYPE_LOGICDATA_APP: (
-        "LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and "
-        "Sleep Smart Air Mattress apps"
+        "LOGICDATA",
+        (
+            "SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and Sleep Smart Air "
+            "Mattress apps"
+        ),
     ),
     BED_TYPE_SVANE: (
-        "Jensen / Svane: Jensen Adjustable Sleep app (JMC400 and LinOn beds) and "
-        "Svane Remote app"
+        "Jensen / Svane",
+        "Jensen Adjustable Sleep app (JMC400 and LinOn beds) and Svane Remote app",
     ),
     BED_TYPE_STARCODE_ABM5_4: (
-        "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
+        "StarCode",
+        "AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps",
     ),
-    BED_TYPE_REMACRO: "Remacro: Slumberland, The Brick and Jerome's apps",
+    BED_TYPE_REMACRO: ("Remacro", "Slumberland, The Brick and Jerome's apps"),
     BED_TYPE_REVERIE_NIGHTSTAND: (
-        "Reverie: Nightstand app, Protocol 110 and Protocol 108 receivers"
+        "Reverie",
+        "Nightstand app, Protocol 110 and Protocol 108 receivers",
     ),
     BED_TYPE_RICHMAT: (
-        "Richmat: RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
-        "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction "
-        "and SVEN & SON apps, and Richmat remotes"
+        "Richmat",
+        (
+            "RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, Avocado Eco "
+            "Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction and SVEN & SON "
+            "apps, and Richmat remotes"
+        ),
     ),
     BED_TYPE_SLEEP_NUMBER: (
-        "Sleep Number: SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR "
-        "(i8, 360 FlexFit 2) bases"
+        "Sleep Number",
+        "SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases",
     ),
     BED_TYPE_LIMOSS: (
-        "Limoss / Stawett: Limoss Remote and FSM Relax apps, Stawett and older Limoss controls"
+        "Limoss / Stawett",
+        "Limoss Remote and FSM Relax apps, Stawett and older Limoss controls",
     ),
+    BED_TYPE_KEESON: (
+        "Keeson",
+        "Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, some Ergomotion Sync beds",
+    ),
+    BED_TYPE_SOLACE: ("Solace", "HomeKobo, Sealy MotionFlex and Sweet Night apps"),
+    BED_TYPE_JIECANG_APP: (
+        "Jiecang",
+        (
+            "ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps, Glide and Lierda"
+            " remotes"
+        ),
+    ),
+    BED_TYPE_VIBRADORM: ("Vibradorm", "VMAT, Caresse Diamant, Werkmeister, V-MAT Basic"),
 }
+FAMILY_ROW_SEPARATOR: Final = " · "
+
+
+def family_row_label(bed_type: str) -> str | None:
+    """Return a family row's picker label, "<apps> · <family>", or None."""
+    if (row := FAMILY_ROWS.get(bed_type)) is None:
+        return None
+    family, apps = row
+    return f"{apps}{FAMILY_ROW_SEPARATOR}{family}"
 
 
 def bed_type_label(bed_type: str | None) -> str:
@@ -832,23 +867,46 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES),
         # The classic Richmat apps are answers of the Richmat question.
         *((BED_TYPE_CLUSTER018, app) for app in CLUSTER018_APPS),
+        # The Good Vibe Sleep products and HJBed products are answers of
+        # their app's own question, behind one row each.
+        *((BED_TYPE_GOODVIBE, product) for product in GOODVIBE_PROFILES),
+        *((BED_TYPE_HJBED, product) for product in HJBED_PROFILES),
     }
 )
 # Configure still accepts a hidden app row by its value, as a repair submits it.
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
+# Bed types whose one row asks for the product, although each product is an app entry.
+PRODUCT_QUESTION_BED_TYPES: Final = frozenset({BED_TYPE_GOODVIBE, BED_TYPE_HJBED})
+# Routes named after their protocol, not an app or brand. They stay off the
+# bed-type list and are reached through detection, the brand list and Configure.
+PROTOCOL_ROUTES: Final = frozenset(
+    {
+        BED_TYPE_OKIN_64BIT,
+        BED_TYPE_OKIN_7BYTE,
+        BED_TYPE_OKIN_CB24,
+        BED_TYPE_OKIN_CB35,
+        BED_TYPE_OKIN_FFE,
+        BED_TYPE_OKIN_HANDLE,
+        BED_TYPE_OKIN_NORDIC,
+        BED_TYPE_OKIN_ORE,
+    }
+)
 
 
 def get_bed_type_options() -> list[SelectOptionDict]:
     """Get bed type and app choices sorted alphabetically by label.
 
     A bed type whose variant has no automatic choice is offered only through
-    its app entries. The Vibradorm, Jiecang and Okin families each have one row
-    that opens their family step; the routes behind it stay selectable there.
+    its app entries, unless its row asks for the product. Each family has one
+    row that opens its family step; the routes behind it stay selectable there.
+    Protocol-named routes are not listed.
     """
     choices = {
-        bed_type: _FAMILY_ROW_LABELS.get(bed_type, label)
+        bed_type: family_row_label(bed_type) or label
         for bed_type, label in BED_TYPE_DISPLAY_NAMES.items()
-        if bed_type not in VARIANT_REQUIRED_BED_TYPES and bed_type not in FAMILY_STEP_ROUTES
+        if (bed_type not in VARIANT_REQUIRED_BED_TYPES or bed_type in PRODUCT_QUESTION_BED_TYPES)
+        and bed_type not in FAMILY_STEP_ROUTES
+        and bed_type not in PROTOCOL_ROUTES
     }
     choices.update(
         {
