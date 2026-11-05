@@ -451,7 +451,8 @@
           "motion_bed_preset": "Retained preset layout",
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
-          "disable_angle_sensing": "Disable angle sensing"
+          "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -493,7 +494,8 @@
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app."
         },
         "sections": {
           "advanced": {
@@ -1204,7 +1206,8 @@
           "motion_bed_preset": "Retained preset layout",
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
-          "disable_angle_sensing": "Disable angle sensing"
+          "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1244,7 +1247,8 @@
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app."
         }
       },
       "right_settings": {
@@ -1303,7 +1307,8 @@
           "motion_bed_preset": "Retained preset layout",
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
-          "disable_angle_sensing": "Disable angle sensing"
+          "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1343,7 +1348,8 @@
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app."
         }
       },
       "change_app": {

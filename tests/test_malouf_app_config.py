@@ -164,7 +164,28 @@ async def test_switching_another_bed_type_to_the_app_asks_app_and_model(hass):
     assert schema is not None
     with pytest.raises(vol.Invalid, match="required key"):
         schema({})
+    # One form asks the app and model together, so it offers every app's models.
+    keys = {marker.schema for marker in schema.schema}
+    assert {CONF_MALOUF_APP_PROFILE, CONF_MALOUF_APP_MODEL} <= keys
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
+    # A model the chosen app does not list is refused on save.
+    result = await flow.async_step_settings(
+        {CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "S755"}
+    )
+    assert result["errors"] == {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow.async_step_settings(
+            {CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "Premium"}
+        )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_MALOUF_APP
+    assert (entry.data[CONF_MALOUF_APP_PROFILE], entry.data[CONF_MALOUF_APP_MODEL]) == (
+        "lucid",
+        "Premium",
+    )
+    assert entry.data[CONF_MALOUF_APP_PRIMARY] is True
+    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
 
 async def test_a_receiver_entry_changes_to_the_app_in_reconfigure(hass):
