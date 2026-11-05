@@ -78,7 +78,7 @@
           "transport_actual_differs": "Path differed from the prediction"
         },
         "data_description": {
-          "bed_type": "Auto-detected bed type. Change if detection was incorrect. Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
+          "bed_type": "Auto-detected bed type. Change it if detection was incorrect. Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
@@ -155,7 +155,7 @@
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
         },
         "data_description": {
-          "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
+          "bed_type": "Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
           "malouf_memory_slots": "Number of memory buttons on the physical remote.",
@@ -198,7 +198,7 @@
         },
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
-          "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
+          "bed_type": "Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
           "malouf_memory_slots": "Number of memory buttons on the physical remote.",
@@ -1070,7 +1070,7 @@
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "connection_profile": "Balanced is faster to connect. Reliable uses longer timeouts and backoff for flaky beds.",
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "protocol_variant": "Change the protocol variant if the bed isn't responding correctly. For beds used with the Woosa Sleep app, select Solace and the woosa variant. Shared QMS-MQ and QMS2 Bluetooth names do not identify the app.",
+          "protocol_variant": "Change the protocol variant if the bed isn't responding correctly. If Configure refuses the change, change the app or route through Reconfigure in the entry's three-dot menu.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",

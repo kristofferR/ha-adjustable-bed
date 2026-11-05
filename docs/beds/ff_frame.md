@@ -64,8 +64,9 @@ not identify which app's layout a bed implements.
 ## Choosing a profile
 
 - **Solace** (bed type `solace`, variant `auto`) picks the narrowest route its
-  Bluetooth name proves (see [Solace name routes](#solace-name-routes)). Select
-  protocol variant `woosa` for beds that use the Woosa Sleep app.
+  Bluetooth name proves (see [Solace name routes](#solace-name-routes)). For
+  beds that use the Woosa Sleep app, answer **Woosa Sleep app** (variant
+  `woosa`) in the [Solace question](#home-assistant-setup).
 - **BedSense** (bed type `bedsense`) is an explicit choice; its layout comes from
   the Bluetooth name or a `bedsense_1` to `bedsense_9` variant.
 - **Motion Bed** (bed type `motion_bed`) is an explicit choice that follows the
