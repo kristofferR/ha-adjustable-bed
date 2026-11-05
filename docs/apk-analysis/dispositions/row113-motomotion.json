@@ -61,9 +61,9 @@
   "behavior_groups": {
     "packets": {
       "code": [
-        "custom_components/adjustable_bed/motomotion_protocol.py::ascii_command",
-        "custom_components/adjustable_bed/motomotion_protocol.py::binary_command",
-        "custom_components/adjustable_bed/motomotion_protocol.py::Position.to_bytes"
+        "custom_components/adjustable_bed/codec/motomotion.py::ascii_command",
+        "custom_components/adjustable_bed/codec/motomotion.py::binary_command",
+        "custom_components/adjustable_bed/codec/motomotion.py::Position.to_bytes"
       ],
       "tests": [
         "tests/test_motomotion.py::test_ascii_vectors",
@@ -130,7 +130,7 @@
       "code": [
         "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.select",
         "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.set_number",
-        "custom_components/adjustable_bed/motomotion_protocol.py::music_command"
+        "custom_components/adjustable_bed/codec/motomotion.py::music_command"
       ],
       "tests": [
         "tests/test_motomotion.py::test_number_and_select_callbacks_are_callable",
@@ -171,8 +171,8 @@
     },
     "profiles": {
       "code": [
-        "custom_components/adjustable_bed/motomotion_profile.py::Profile",
-        "custom_components/adjustable_bed/motomotion_profile.py::eligible",
+        "custom_components/adjustable_bed/profiles/motomotion.py::Profile",
+        "custom_components/adjustable_bed/profiles/motomotion.py::eligible",
         "custom_components/adjustable_bed/setup_questions.py::_motomotion_errors",
         "custom_components/adjustable_bed/controller_factory.py::create_controller",
         "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.memory_slot_count",
@@ -7568,8 +7568,8 @@
     ],
     "contract": "The shipped Dart String.length and String[] use UTF-16 code units. Scan-length admission, panel/flag selection and the11/16 receive branch share that indexing; supplementary characters do not shift the selected command or CM/LR branch.",
     "code": [
-      "custom_components/adjustable_bed/motomotion_profile.py::name_length",
-      "custom_components/adjustable_bed/motomotion_profile.py::name_character",
+      "custom_components/adjustable_bed/profiles/motomotion.py::name_length",
+      "custom_components/adjustable_bed/profiles/motomotion.py::name_character",
       "custom_components/adjustable_bed/motomotion_state.py::State.parse"
     ],
     "tests": [

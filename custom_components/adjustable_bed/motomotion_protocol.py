@@ -1,32 +1,13 @@
-"""MotoMotion 3.1.9 packet and numeric rules, from the accepted row113 artifact."""
+"""MotoMotion 3.1.9 numeric rules, from the accepted row113 artifact.
+
+The frames these values go into are built by ``codec/motomotion.py``.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import reduce
 from math import ceil, floor, isnan
-from operator import xor
 
-
-def ascii_command(command: int, parameter: int = 0) -> bytes:
-    digits = str(command) + str(parameter)
-    if not digits.isascii() or not digits.isdecimal():
-        raise ValueError("MotoMotion ASCII fields must be nonnegative decimal integers")
-    checksum = reduce(xor, (ord(c) - 48 for c in digits), 0)
-    return f"$#{command:05d}{parameter:05d}{checksum:05d}R\r".encode("ascii")
-
-
-def binary_command(command: int, parameter: int = 0) -> bytes:
-    if command < 0:
-        raise ValueError("Negative MotoMotion command")
-    body = (command & 65535).to_bytes(2, "big") + (parameter & 65535).to_bytes(2, "big")
-    return b"$#" + body + bytes((reduce(xor, body), 65, 13))
-
-
-def music_command(letter: str, value: float) -> bytes:
-    if letter not in ("M", "T", "B", "V"):
-        raise ValueError("Unknown music channel")
-    return f"$#{letter}{int(value):02d}\r".encode("ascii")
+from .codec.motomotion import Position, u16
 
 
 def decimal(token: str) -> int:
@@ -66,29 +47,6 @@ def light_cycle(value: str, known: bool) -> int:
 def color_parameters(rgb: tuple[int, int, int]) -> tuple[int, ...]:
     values = tuple(floor(c / 255 * 120) for c in rgb)
     return tuple(0 if c < 10 else c for c in values)
-
-
-def u16(value: int) -> int:
-    return min(65535, max(0, value))
-
-
-@dataclass(frozen=True)
-class Position:
-    head: int
-    base: int
-    back: int
-    lumbar: int
-    tilt: int
-
-    def to_bytes(self) -> bytes:
-        return (
-            b"AIOK"
-            + b"".join(
-                u16(v).to_bytes(2, "big")
-                for v in (self.head, self.lumbar, self.back, self.base, self.tilt)
-            )
-            + b"R\r"
-        )
 
 
 def round_away(value: float) -> int:

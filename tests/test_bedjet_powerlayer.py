@@ -13,13 +13,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.bedjet_powerlayer import (
-    _FOOT_ANGLE_TABLE,
-    _HEAD_ANGLE_TABLE,
-    BedJetPowerLayerController,
-    PowerLayerButton,
-    raw_count_to_angle,
-)
+from custom_components.adjustable_bed.beds.bedjet_powerlayer import BedJetPowerLayerController
+from custom_components.adjustable_bed.codec import bedjet_powerlayer as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDJET_POWERLAYER,
     BEDJET_ADVERTISED_SERVICE_UUID,
@@ -36,6 +31,16 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type
+from custom_components.adjustable_bed.profiles.bedjet_powerlayer import (
+    FOOT_ANGLE_TABLE as _FOOT_ANGLE_TABLE,
+)
+from custom_components.adjustable_bed.profiles.bedjet_powerlayer import (
+    HEAD_ANGLE_TABLE as _HEAD_ANGLE_TABLE,
+)
+from custom_components.adjustable_bed.profiles.bedjet_powerlayer import (
+    POWERLAYER,
+    raw_count_to_angle,
+)
 
 # Captured 20-byte status frame with the frame flat: bytes 12-13 hold the head
 # count (78, which the remote showed as 1 degree) and bytes 14-15 the foot count.
@@ -92,26 +97,25 @@ class TestPowerLayerCommandEncoding:
     """Commands are a BUTTON opcode followed by a remote key."""
 
     @pytest.mark.parametrize(
-        ("button", "expected"),
+        ("control", "expected"),
         [
-            (PowerLayerButton.HEAD_UP, b"\x01\x02"),
-            (PowerLayerButton.HEAD_DOWN, b"\x01\x03"),
-            (PowerLayerButton.FOOT_UP, b"\x01\x04"),
-            (PowerLayerButton.FOOT_DOWN, b"\x01\x05"),
-            (PowerLayerButton.FLAT, b"\x01\x10"),
-            (PowerLayerButton.SNORE, b"\x01\x11"),
-            (PowerLayerButton.ZERO_G, b"\x01\x12"),
-            (PowerLayerButton.TV, b"\x01\x13"),
-            (PowerLayerButton.M1, b"\x01\x20"),
-            (PowerLayerButton.M2, b"\x01\x21"),
-            (PowerLayerButton.M3, b"\x01\x22"),
+            ("head_up", b"\x01\x02"),
+            ("head_down", b"\x01\x03"),
+            ("foot_up", b"\x01\x04"),
+            ("foot_down", b"\x01\x05"),
+            ("flat", b"\x01\x10"),
+            ("anti_snore", b"\x01\x11"),
+            ("zero_g", b"\x01\x12"),
+            ("tv", b"\x01\x13"),
+            ("memory_1", b"\x01\x20"),
+            ("memory_2", b"\x01\x21"),
+            ("memory_3", b"\x01\x22"),
         ],
     )
-    def test_build_command(self, button: int, expected: bytes) -> None:
+    def test_build_command(self, control: str, expected: bytes) -> None:
         """Every key is encoded as a two-byte BUTTON command."""
-        controller = BedJetPowerLayerController(MagicMock())
-
-        assert controller._build_command(button) == expected
+        assert POWERLAYER.frames[control] == expected
+        assert codec.command(expected[1]) == expected
 
 
 class TestPowerLayerAngleCalibration:

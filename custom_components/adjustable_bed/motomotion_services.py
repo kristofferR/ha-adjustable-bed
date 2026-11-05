@@ -11,8 +11,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from .beds.base import BedController, SideBoundController
+from .codec.motomotion import Position
 from .const import DOMAIN
-from .motomotion_protocol import Position
 from .motomotion_requests import Request
 from .services import (
     SIDE_FIELD,

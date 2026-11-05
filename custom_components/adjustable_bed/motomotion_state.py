@@ -6,8 +6,8 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from .motomotion_profile import name_character
 from .motomotion_protocol import decimal
+from .profiles.motomotion import name_character
 
 
 @dataclass(frozen=True)

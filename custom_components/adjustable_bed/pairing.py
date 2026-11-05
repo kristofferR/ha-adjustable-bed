@@ -177,7 +177,7 @@ def supports_single_address_pairing(
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
     if bed_type == BED_TYPE_MOTOMOTION:
-        from .motomotion_profile import Profile
+        from .profiles.motomotion import Profile
 
         try:
             return Profile(ble_device_name or "").sides

@@ -13,14 +13,14 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.motomotion import MotoMotionController
-from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
-from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motomotion_protocol import (
+from custom_components.adjustable_bed.codec.motomotion import (
     Position,
     ascii_command,
     binary_command,
-    posture,
 )
+from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.motomotion_protocol import posture
 
 
 def runtime(hass, name="SOFA000001A000H", address="AA:BB:CC:DD:EE:13"):
@@ -401,7 +401,7 @@ async def test_public_memory_buttons_and_actions_send_exact_panel_packets(
     from homeassistant.helpers import device_registry as dr
 
     from custom_components.adjustable_bed import button, services
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
     c, ctrl = await loaded_runtime(hass, name, mock_bleak_client)
     hass.data.setdefault(DOMAIN, {})[c.entry.entry_id] = c
@@ -488,7 +488,7 @@ async def test_panel_a_public_memory_is_not_created_or_admitted(
 async def test_single_address_parent_holds_and_stop_fan_out_exact_side_packets(
     hass, protocol_clock
 ):
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
     from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
 
@@ -533,7 +533,7 @@ async def test_home_release_button_cancels_held_refresh_without_extra_stop(hass,
 
     from custom_components.adjustable_bed.beds import motomotion as bed
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
     c, ctrl = await connected_runtime(hass, "SOFA000001MC00M")
     started = asyncio.Event()
@@ -590,7 +590,7 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
 ):
     from custom_components.adjustable_bed import button
     from custom_components.adjustable_bed.beds import motomotion as bed
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
     c, ctrl = await connected_runtime(hass, "SOFA000001MCE0M")
     if key.startswith("preset_"):
@@ -789,7 +789,7 @@ async def loaded_runtime(hass, name, client):
 async def test_selected_right_survives_idle_disconnect_and_real_controller_replacement(
     hass, protocol_clock, mock_bleak_client, mock_coordinator_connected, enable_custom_integrations
 ):
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
     from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
     from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
@@ -917,7 +917,7 @@ async def test_manual_discovery_keeps_substring_candidates_without_advertised_se
     hass, mock_coordinator_connected
 ):
     from custom_components.adjustable_bed import config_flow
-    from custom_components.adjustable_bed.motomotion_profile import Profile
+    from custom_components.adjustable_bed.profiles.motomotion import Profile
     from tests.test_detection import _make_service_info
 
     names = ["xSOFA00001SC00M", "xBT201000", "xMOTO0000100000"]
@@ -1089,7 +1089,7 @@ async def test_invalid_optional_intent_cannot_reset_valid_right_side(
 
 
 async def test_working_intent_address_and_exact_profile_isolation(hass):
-    from custom_components.adjustable_bed.motomotion_protocol import Position
+    from custom_components.adjustable_bed.codec.motomotion import Position
     from custom_components.adjustable_bed.motomotion_requests import Request
 
     name = "SOFA000001A000H"

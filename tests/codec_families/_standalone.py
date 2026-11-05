@@ -8,7 +8,6 @@ fixed per-key vectors. It is not a profile over a codec family.
 from __future__ import annotations
 
 STANDALONE: dict[str, str] = {
-    "bedjet_powerlayer": "own wire format",
     "casper_base": "own wire format",
     "casper_remote": "remote without bed commands",
     "casper_sleep_mm": "sleep sensor without bed commands",
@@ -34,7 +33,6 @@ STANDALONE: dict[str, str] = {
     "linak": "own wire format",
     "logicdata": "own wire format",
     "logicdata_air_pump": "own wire format",
-    "motomotion": "own wire format",
     "motosleep": "own wire format",
     "octo": "own wire format",
     "okin_ore": "own wire format",

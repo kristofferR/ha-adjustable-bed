@@ -1387,7 +1387,7 @@ def _detect_bed_type_with_app_candidates(
         result.signals.append("name:cluster018_app_candidate")
     # A MotoMotion name rule only adds an app candidate: the app reads the exact
     # local name, and shared prefixes do not identify its panel.
-    from .motomotion_profile import eligible as motomotion_eligible
+    from .profiles.motomotion import eligible as motomotion_eligible
 
     if motomotion_eligible(service_info.name):
         if result.bed_type is None and not any(signal.startswith("excluded:") for signal in result.signals):

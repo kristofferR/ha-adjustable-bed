@@ -1,6 +1,13 @@
-"""Independent advertisement-name domains from MotoMotion 3.1.9."""
+"""The MotoMotion 3.1.9 app as a profile over ``codec/motomotion.py``.
+
+The app has one profile. Its exact Bluetooth name selects the panel and the
+independent feature flags, each read from a name position as the app reads it.
+"""
 
 from dataclasses import dataclass
+from typing import ClassVar
+
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 PANELS = {
     "1": "One",
@@ -41,9 +48,21 @@ def eligible(name: str | None) -> bool:
     )
 
 
+# The app's one profile key; the name's panel and flags are its settings.
+PROFILE_KEY = "motomotion"
+
+
 @dataclass(frozen=True)
 class Profile:
     name: str
+    # No hold yet: the held controls need a per-control scope
+    # (docs/design/execution-capabilities.md).
+    execution: ClassVar[ExecutionCapabilities] = NO_EXECUTION_CAPABILITIES
+
+    @property
+    def key(self) -> str:
+        return PROFILE_KEY
+
 
     def __post_init__(self) -> None:
         if not eligible(self.name):

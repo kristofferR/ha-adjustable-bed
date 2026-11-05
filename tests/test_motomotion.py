@@ -9,19 +9,21 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.beds import motomotion as bed
-from custom_components.adjustable_bed.motomotion_profile import Profile, eligible
-from custom_components.adjustable_bed.motomotion_protocol import (
+from custom_components.adjustable_bed.codec.motomotion import (
     Position,
     ascii_command,
     binary_command,
+    music_command,
+)
+from custom_components.adjustable_bed.motomotion_protocol import (
     decimal,
     light_cycle,
-    music_command,
     posture,
     rgb_total,
 )
 from custom_components.adjustable_bed.motomotion_requests import Request
 from custom_components.adjustable_bed.motomotion_state import State
+from custom_components.adjustable_bed.profiles.motomotion import Profile, eligible
 
 
 @pytest.fixture

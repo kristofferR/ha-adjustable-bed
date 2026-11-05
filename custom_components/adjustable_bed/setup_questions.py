@@ -1036,7 +1036,7 @@ def _motion_bed_seed(
 
 def _motomotion_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """The app reads its panel and feature flags from the exact Bluetooth name."""
-    from .motomotion_profile import Profile
+    from .profiles.motomotion import Profile
 
     try:
         Profile(str(data.get(CONF_BLE_DEVICE_NAME, "")))

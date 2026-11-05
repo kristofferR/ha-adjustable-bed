@@ -5,28 +5,12 @@ peripheral from the BedJet climate blower, even though both advertise the same
 1000 service: only the frame exposes the 1001 GATT service, and only after a
 connection is established.
 
-Protocol
---------
-Commands are two bytes written to the command characteristic::
-
-    [0x01, <button>]
-
-0x01 is the only command opcode the frame accepts; the second byte selects a
-remote key. The protocol defines no STOP frame. A movement key runs the motor
-for roughly 1.3 seconds and the frame then stops on its own, so holding a
-movement means re-sending the key before that watchdog expires and releasing
-means letting the refresh end. ``auto_stops_on_idle`` reports this so the
-integration never invents a stop write.
-
-Status arrives as a 20-byte frame on the status characteristic, both readable
-and notifying. Bytes 12-13 are the head position and bytes 14-15 the foot
-position, each a big-endian raw actuator count.
-
-Evidence
---------
-GATT layout, command opcodes and key values are ported from the MIT-licensed
-``powerlayer`` branch of https://github.com/natekspencer/ha-bedjet
-(``custom_components/bedjet/pybedjet/powerlayer.py`` and ``const.py``).
+The frames come from ``codec/bedjet_powerlayer.py``, and the keys, calibration
+and travel limits from ``profiles/bedjet_powerlayer.py``. A movement key runs
+the motor for roughly 1.3 seconds and the frame then stops on its own, so
+holding a movement means re-sending the key before that watchdog expires and
+releasing means letting the refresh end. ``auto_stops_on_idle`` reports this so
+the integration never invents a stop write.
 
 The status layout, the ~1.3s movement watchdog and the raw-to-degree
 calibration are derived from a PowerLayer owner's captures and remote
@@ -38,28 +22,19 @@ comparisons in https://github.com/natekspencer/ha-bedjet/issues/49:
 * Across writes that were isolated by at least 2.8s, a single write produced
   1.18-1.41s of motion (median 1.34s head, 1.28s foot) and about 0.5 degrees of
   travel.
-* The degree tables below come from that owner reading the BedJet LCD remote's
-  own degree display against the reported counts, so they carry roughly one
-  degree of unit-to-unit tolerance.
 """
 
 from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..const import (
-    BEDJET_POWERLAYER_COMMAND_CHAR_UUID,
-    BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
-    BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
-    BEDJET_POWERLAYER_NAME_CHAR_UUID,
-    BEDJET_POWERLAYER_SERVICE_UUID,
-    BEDJET_POWERLAYER_STATUS_CHAR_UUID,
-)
+from ..codec import bedjet_powerlayer as codec
+from ..profiles.bedjet_powerlayer import POWERLAYER, PowerLayerProfile, raw_count_to_angle
 from .base import (
     POSITION_UNIT_DEGREES,
     BedController,
@@ -72,91 +47,18 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_STATUS_FRAME_LENGTH: Final = 20
-_HEAD_RAW_SLICE: Final = slice(12, 14)
-_FOOT_RAW_SLICE: Final = slice(14, 16)
-
-
-class PowerLayerCommand:
-    """PowerLayer command opcodes."""
-
-    BUTTON: Final = 0x01
-
-
-class PowerLayerButton:
-    """PowerLayer remote keys carried by a BUTTON command."""
-
-    HEAD_UP: Final = 0x02
-    HEAD_DOWN: Final = 0x03
-    FOOT_UP: Final = 0x04
-    FOOT_DOWN: Final = 0x05
-
-    FLAT: Final = 0x10
-    SNORE: Final = 0x11
-    ZERO_G: Final = 0x12
-    TV: Final = 0x13
-
-    M1: Final = 0x20
-    M2: Final = 0x21
-    M3: Final = 0x22
-
-
-# Raw actuator count -> degrees shown on the BedJet LCD remote. Interpolated
-# between points and clamped outside them. The head table starts above zero
-# because the captured frame rested at a nonzero count when flat.
-# fmt: off
-_HEAD_ANGLE_TABLE: Final[tuple[tuple[int, float], ...]] = (
-    (32, 0), (119, 1), (154, 2), (185, 3), (270, 4), (336, 5),
-    (419, 6), (454, 7), (495, 8), (583, 9), (666, 10), (695, 11),
-    (783, 12), (851, 13), (950, 14), (989, 15), (1087, 16), (1116, 17),
-    (1150, 18), (1178, 19), (1204, 20), (1248, 21), (1274, 22), (1309, 23),
-    (1335, 24), (1361, 25), (1410, 26), (1447, 27), (1480, 28), (1507, 29),
-    (1542, 30), (1596, 31), (1633, 32), (1660, 33), (1697, 34), (1725, 35),
-    (1762, 36), (1825, 37), (1869, 38), (1896, 39), (1923, 40), (1973, 41),
-    (2040, 42), (2050, 43), (2117, 44), (2145, 45), (2207, 46), (2232, 47),
-    (2307, 48), (2343, 49), (2370, 50), (2426, 51), (2463, 52), (2526, 53),
-    (2563, 54), (2599, 55), (2635, 56), (2690, 57), (2728, 58), (2783, 59),
-    (2820, 60), (2883, 61), (2919, 62), (2971, 63), (3026, 64), (3055, 65),
-    (3115, 66), (3151, 67), (3196, 68), (3223, 69), (3259, 70), (3312, 71),
-    (3347, 72), (3390, 73),
-)
-
-_FOOT_ANGLE_TABLE: Final[tuple[tuple[int, float], ...]] = (
-    (0, 0), (34, 1), (66, 2), (85, 3), (103, 4), (125, 5),
-    (163, 6), (189, 7), (216, 8), (242, 9), (269, 10), (306, 11),
-    (346, 12), (374, 13), (403, 14), (439, 15), (468, 16), (525, 17),
-    (568, 18), (606, 19), (639, 20), (644, 21), (719, 22), (785, 23),
-    (823, 24), (862, 25), (923, 26), (982, 27), (1028, 28), (1068, 29),
-    (1097, 30), (1163, 31), (1201, 32), (1238, 33), (1276, 34), (1323, 35),
-    (1364, 36), (1404, 37), (1461, 38), (1489, 39), (1549, 40), (1561, 41),
-    (1600, 42), (1627, 43), (1664, 44), (1692, 45), (1708, 46), (1741, 47),
-)
-# fmt: on
-
-
-def raw_count_to_angle(raw: int, table: tuple[tuple[int, float], ...]) -> float:
-    """Convert a raw actuator count to degrees using a calibration table."""
-    if raw <= table[0][0]:
-        return table[0][1]
-    if raw >= table[-1][0]:
-        return table[-1][1]
-    for (low_raw, low_deg), (high_raw, high_deg) in zip(table, table[1:], strict=False):
-        if low_raw <= raw <= high_raw:
-            span = high_raw - low_raw
-            if span == 0:
-                return high_deg
-            return round(low_deg + (raw - low_raw) * (high_deg - low_deg) / span, 1)
-    return table[-1][1]
-
 
 class BedJetPowerLayerController(BedController):
     """Controller for the BedJet PowerLayer adjustable frame."""
 
     _write_with_response = False
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, profile: PowerLayerProfile = POWERLAYER
+    ) -> None:
         """Initialize the PowerLayer controller."""
         super().__init__(coordinator)
+        self.profile = profile
         self._notifications_started = False
         self._head_angle: float | None = None
         self._foot_angle: float | None = None
@@ -165,7 +67,7 @@ class BedJetPowerLayerController(BedController):
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the command characteristic UUID."""
-        return BEDJET_POWERLAYER_COMMAND_CHAR_UUID
+        return codec.TRANSPORT.command_uuid
 
     @property
     def auto_stops_on_idle(self) -> bool:
@@ -204,7 +106,7 @@ class BedJetPowerLayerController(BedController):
     @property
     def memory_slot_count(self) -> int:
         """Return 3 - the remote exposes M1, M2 and M3."""
-        return 3
+        return len(self.profile.memory)
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -219,10 +121,10 @@ class BedJetPowerLayerController(BedController):
     def motor_max_angles(self) -> dict[str, float]:
         """Return the PowerLayer's measured travel limits."""
         return {
-            "back": BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
-            "head": BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
-            "legs": BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
-            "feet": BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
+            "back": self.profile.head_max_angle,
+            "head": self.profile.head_max_angle,
+            "legs": self.profile.foot_max_angle,
+            "feet": self.profile.foot_max_angle,
         }
 
     @property
@@ -231,12 +133,12 @@ class BedJetPowerLayerController(BedController):
         return (
             build_position_number_spec(
                 "back",
-                max_value=BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
+                max_value=self.profile.head_max_angle,
                 unit=POSITION_UNIT_DEGREES,
             ),
             build_position_number_spec(
                 "legs",
-                max_value=BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
+                max_value=self.profile.foot_max_angle,
                 unit=POSITION_UNIT_DEGREES,
             ),
         )
@@ -250,10 +152,6 @@ class BedJetPowerLayerController(BedController):
             "foot_angle": self._foot_angle,
         }
 
-    def _build_command(self, button: int) -> bytes:
-        """Build a two-byte BUTTON command."""
-        return bytes((PowerLayerCommand.BUTTON, button))
-
     async def async_discover_capabilities(self) -> None:
         """Confirm the connected peripheral is a frame and read its name.
 
@@ -265,21 +163,21 @@ class BedJetPowerLayerController(BedController):
             return
 
         if client.services is not None and (
-            client.services.get_service(BEDJET_POWERLAYER_SERVICE_UUID) is None
+            client.services.get_service(codec.TRANSPORT.service_uuid) is None
         ):
             _LOGGER.warning(
                 "Connected BedJet device at %s does not expose the PowerLayer service %s. "
                 "This is most likely a BedJet climate unit, which this integration "
                 "does not control",
                 self._coordinator.address,
-                BEDJET_POWERLAYER_SERVICE_UUID,
+                codec.TRANSPORT.service_uuid,
             )
             self.log_discovered_services(level=logging.INFO)
             return
 
         try:
             async with self._ble_lock:
-                data = await client.read_gatt_char(BEDJET_POWERLAYER_NAME_CHAR_UUID)
+                data = await client.read_gatt_char(codec.TRANSPORT.name_uuid)
         except BleakError as err:
             _LOGGER.debug("Could not read PowerLayer frame name: %s", err)
             return
@@ -301,7 +199,7 @@ class BedJetPowerLayerController(BedController):
         try:
             async with self._ble_lock:
                 await client.start_notify(
-                    BEDJET_POWERLAYER_STATUS_CHAR_UUID,
+                    codec.TRANSPORT.status_uuid,
                     self._handle_status_notification,
                 )
         except BleakError as err:
@@ -311,7 +209,7 @@ class BedJetPowerLayerController(BedController):
         self._notifications_started = True
         _LOGGER.debug(
             "PowerLayer position notifications active on %s",
-            BEDJET_POWERLAYER_STATUS_CHAR_UUID,
+            codec.TRANSPORT.status_uuid,
         )
 
     async def stop_notify(self) -> None:
@@ -324,7 +222,7 @@ class BedJetPowerLayerController(BedController):
 
         try:
             async with self._ble_lock:
-                await client.stop_notify(BEDJET_POWERLAYER_STATUS_CHAR_UUID)
+                await client.stop_notify(codec.TRANSPORT.status_uuid)
         except BleakError:
             _LOGGER.debug("Failed to stop PowerLayer notifications", exc_info=True)
         finally:
@@ -340,21 +238,21 @@ class BedJetPowerLayerController(BedController):
     ) -> None:
         """Decode head and foot positions from a status frame."""
         payload = bytes(data)
-        self.forward_raw_notification(BEDJET_POWERLAYER_STATUS_CHAR_UUID, payload)
+        self.forward_raw_notification(codec.TRANSPORT.status_uuid, payload)
 
-        if len(payload) < _STATUS_FRAME_LENGTH:
+        counts = codec.positions(payload)
+        if counts is None:
             _LOGGER.debug(
                 "Ignoring short PowerLayer status frame: expected %d bytes, got %d (%s)",
-                _STATUS_FRAME_LENGTH,
+                codec.STATUS_LENGTH,
                 len(payload),
                 payload.hex(),
             )
             return
 
-        head_raw = int.from_bytes(payload[_HEAD_RAW_SLICE], "big")
-        foot_raw = int.from_bytes(payload[_FOOT_RAW_SLICE], "big")
-        head_angle = raw_count_to_angle(head_raw, _HEAD_ANGLE_TABLE)
-        foot_angle = raw_count_to_angle(foot_raw, _FOOT_ANGLE_TABLE)
+        head_raw, foot_raw = counts
+        head_angle = raw_count_to_angle(head_raw, self.profile.head_angles)
+        foot_angle = raw_count_to_angle(foot_raw, self.profile.foot_angles)
 
         self._head_angle = head_angle
         self._foot_angle = foot_angle
@@ -379,7 +277,7 @@ class BedJetPowerLayerController(BedController):
 
         try:
             async with self._ble_lock:
-                data = await client.read_gatt_char(BEDJET_POWERLAYER_STATUS_CHAR_UUID)
+                data = await client.read_gatt_char(codec.TRANSPORT.status_uuid)
         except BleakError as err:
             _LOGGER.debug("Could not read PowerLayer status: %s", err)
             return
@@ -396,26 +294,26 @@ class BedJetPowerLayerController(BedController):
         """
         _LOGGER.debug("PowerLayer release: no STOP frame exists, motors halt once writes cease")
 
-    async def _move(self, button: int) -> None:
+    async def _move(self, control: str) -> None:
         """Hold a movement key for the configured press, then release."""
-        await self._move_with_stop(self._build_command(button))
+        await self._move_with_stop(codec.command(self.profile.movement[control]))
 
-    async def _send_once(self, button: int) -> None:
+    async def _send_once(self, key: int) -> None:
         """Send a latched key once.
 
         Presets and memory recalls are not watchdogged: the frame drives to the
         stored position on a single write, so repeating would re-trigger them.
         """
-        await self.write_command(self._build_command(button))
+        await self.write_command(codec.command(key))
 
     # Motor control
     async def move_back_up(self) -> None:
         """Raise the head section."""
-        await self._move(PowerLayerButton.HEAD_UP)
+        await self._move("head_up")
 
     async def move_back_down(self) -> None:
         """Lower the head section."""
-        await self._move(PowerLayerButton.HEAD_DOWN)
+        await self._move("head_down")
 
     async def move_back_stop(self) -> None:
         """Release the head section."""
@@ -435,11 +333,11 @@ class BedJetPowerLayerController(BedController):
 
     async def move_legs_up(self) -> None:
         """Raise the foot section."""
-        await self._move(PowerLayerButton.FOOT_UP)
+        await self._move("foot_up")
 
     async def move_legs_down(self) -> None:
         """Lower the foot section."""
-        await self._move(PowerLayerButton.FOOT_DOWN)
+        await self._move("foot_down")
 
     async def move_legs_stop(self) -> None:
         """Release the foot section."""
@@ -464,31 +362,26 @@ class BedJetPowerLayerController(BedController):
     # Presets
     async def preset_flat(self) -> None:
         """Return the frame to flat."""
-        await self._send_once(PowerLayerButton.FLAT)
+        await self._send_once(self.profile.presets["flat"])
 
     async def preset_zero_g(self) -> None:
         """Recall the zero-gravity position."""
-        await self._send_once(PowerLayerButton.ZERO_G)
+        await self._send_once(self.profile.presets["zero_g"])
 
     async def preset_anti_snore(self) -> None:
         """Recall the anti-snore position."""
-        await self._send_once(PowerLayerButton.SNORE)
+        await self._send_once(self.profile.presets["anti_snore"])
 
     async def preset_tv(self) -> None:
         """Recall the TV position."""
-        await self._send_once(PowerLayerButton.TV)
+        await self._send_once(self.profile.presets["tv"])
 
     async def preset_memory(self, memory_num: int) -> None:
         """Recall a stored memory position."""
-        buttons = {
-            1: PowerLayerButton.M1,
-            2: PowerLayerButton.M2,
-            3: PowerLayerButton.M3,
-        }
-        button = buttons.get(memory_num)
-        if button is None:
+        key = self.profile.memory.get(memory_num)
+        if key is None:
             raise ValueError("The PowerLayer remote only stores memory slots 1-3")
-        await self._send_once(button)
+        await self._send_once(key)
 
     async def program_memory(self, memory_num: int) -> None:
         """Reject programming - the frame exposes no save command."""

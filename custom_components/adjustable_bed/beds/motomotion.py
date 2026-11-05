@@ -11,21 +11,13 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING
 
+from ..codec import motomotion as codec
+from ..codec.motomotion import Position, ascii_command, binary_command, music_command
 from ..const import CONF_BLE_DEVICE_NAME
-from ..motomotion_profile import Profile
-from ..motomotion_protocol import (
-    Position,
-    ascii_command,
-    binary_command,
-    color_parameters,
-    decimal,
-    light_cycle,
-    music_command,
-    posture,
-    rgb_total,
-)
+from ..motomotion_protocol import color_parameters, decimal, light_cycle, posture, rgb_total
 from ..motomotion_requests import Request
 from ..motomotion_state import Comfort, State
+from ..profiles.motomotion import Profile
 from .base import (
     CONTROLLER_GESTURE_RELEASE,
     BedController,
@@ -507,7 +499,7 @@ class MotoMotionController(BedController):
             # Manufacturer status 01 is the app's binding request, not an OS bond.
             manufacturer = self._manufacturer
             if binding is not None and manufacturer[:1] == b"\x01":
-                code = bytes(secrets.randbelow(255) for _ in range(8))
+                code = codec.binding_code(secrets.randbelow(255) for _ in range(8))
                 self._bind_code = code.hex()
                 self._coordinator.save_app_state(
                     self
@@ -871,7 +863,7 @@ class MotoMotionController(BedController):
         elif key == "rgb_apply":
             await self._color()
         elif key == "timer_apply":
-            await self.write_command(b"$z")
+            await self.write_command(codec.TIMER_PREFIX)
             if await self._wait(0.05, self._coordinator.cancel_command):
                 await self._ascii(32999, self._timer)
         elif key.startswith("music_"):
@@ -906,7 +898,7 @@ class MotoMotionController(BedController):
                 ):
                     raise ConnectionError("MotoMotion unbind session changed")
                 self._coordinator.record_command_trace(
-                    payload={"hex": b"$#005001234500004R\r".hex()},
+                    payload={"hex": codec.UNPAIR.hex()},
                     characteristic_uuid=unpair.uuid,
                     characteristic_handle=unpair.handle,
                     response=False,
@@ -915,7 +907,7 @@ class MotoMotionController(BedController):
                     command_origin="motomotion_unbind",
                     controller_class=type(self).__name__,
                 )
-                await session[0].write_gatt_char(unpair, b"$#005001234500004R\r", response=False)
+                await session[0].write_gatt_char(unpair, codec.UNPAIR, response=False)
             try:
                 await asyncio.sleep(1)
             finally:
