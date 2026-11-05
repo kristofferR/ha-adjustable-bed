@@ -309,3 +309,39 @@ async def test_row_copy_counts_java_utf16_units_without_overflow(hass, monkeypat
     assert packet[:2] == b"\xef\x02" and len(packet) == 18
     assert packet[2:17] == ("😀" * 7 + "A").encode("utf-8")[:15]
     assert packet[-1] == (~sum(packet[:-1])) & 255
+
+
+async def test_standalone_cover_stop_keeps_its_zero_after_a_local_edit(hass, monkeypatch):
+    """A cover's own Stop is a motor-scoped STOP admission (#516). It still sends
+    the remote zero after a local target edit; only the bed-wide STOP that
+    ends the edit is acknowledged by its target write."""
+    coordinator, ctrl, client = await target(hass, monkeypatch)
+    editing_started = asyncio.Event()
+
+    async def wait(_ms, *, cleanup=False):
+        editing_started.set()
+        await coordinator.cancel_command.wait()
+        return True
+
+    monkeypatch.setattr(ctrl, "_wait", wait)
+    covers = {c.entity_description.key: c for c in _cover_entities_for(hass, coordinator)}
+    head = next(c for key, c in covers.items() if c._motor_resource == "motor:back")
+    monkeypatch.setattr(head, "async_write_ha_state", lambda: None)
+
+    async def edit(controller):
+        await controller.hold_control("head_target_up", 60000)
+
+    for stop, expected in (
+        (lambda: head.async_stop_cover(), [LOCAL, ZERO]),
+        (lambda: coordinator.async_stop_command(), [LOCAL]),
+    ):
+        client.write_gatt_char.reset_mock()
+        editing_started.clear()
+        editing = asyncio.create_task(
+            coordinator.async_execute_controller_command(edit, resource="motor:back")
+        )
+        await asyncio.wait_for(editing_started.wait(), 2)
+        await asyncio.wait_for(stop(), 2)
+        await asyncio.wait_for(editing, 2)
+        assert frames(client) == expected
+        assert ctrl._local_release_stop is None

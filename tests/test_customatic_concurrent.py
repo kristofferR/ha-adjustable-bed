@@ -327,3 +327,23 @@ async def test_cancelling_the_stop_caller_keeps_the_stop(make_bed, clock) -> Non
     # The STOP outlived its caller: the move's release, then its own zero.
     assert [data for _at, data in bed.since(requested)] == [ZERO, ZERO]
 
+
+
+async def test_stop_all_during_a_member_cleanup_sends_no_further_motion(make_bed, clock) -> None:
+    """A whole-stream STOP between two members' cleanups ends the rest at once."""
+    bed = make_bed("remedy")
+    remedy = CUSTOMATIC_PROFILES["remedy"].keys
+    all_up = codec.frame(remedy["back_up"] | remedy["legs_up"] | remedy["lumbar_up"]).hex()
+    lumbar = codec.frame(remedy["lumbar_up"]).hex()
+    moves = [asyncio.create_task(bed.move(motor, 5000)) for motor in ("back", "legs", "lumbar")]
+    await bed.until(all_up, count=2)
+    await bed.stop_motor("back")
+    await bed.stop_motor("legs")
+    # Back's cleanup writes the reduced mask; Stop all lands during that write.
+    await bed.until(lumbar)
+    requested = bed.mark()
+    await bed.coordinator.async_stop_command()
+    await asyncio.gather(*moves)
+
+    # Legs' cleanup must not write lumbar again: only the release and the STOP.
+    assert [data for _at, data in bed.since(requested)] == [ZERO, ZERO]

@@ -489,6 +489,12 @@ class _MergedStream:
         """Run every ending member's cleanup, then raise the first failure."""
         first_error: BaseException | None = None
         while self.ending:
+            handle = self.handle
+            if handle is not None and handle.context.cancel_event.is_set():
+                # STOP, replacement or shutdown ends every member: no reduced
+                # frame may carry a motor that is about to stop.
+                for live in tuple(self.members.values()):
+                    self.retire(live, handle.context.cancel_reason or CommandOutcome.STOPPED)
             if not self.members:
                 # Last ones out: newcomers queue behind this release instead
                 # of joining while it is under way.

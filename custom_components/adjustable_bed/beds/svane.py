@@ -751,6 +751,9 @@ class SvaneController(BedController):
         Times are write completions: the app waits its interval after work.
         Each axis also waits one interval after the other's last write, even
         once that axis has left, so no refresh follows another too closely.
+        A head press is the exception both ways: it is written at once, and it
+        never pushes feet's refresh back, so repeated presses cannot starve
+        feet (#516).
         """
         last_head, last_feet = self._stream_last
         head_due = feet_due = math.inf
@@ -768,7 +771,7 @@ class SvaneController(BedController):
                 feet_due = seen + STREAM_TICK_S
             else:
                 feet_due = last_feet + 2 * STREAM_TICK_S
-            if last_head is not None:
+            if last_head is not None and not self._stream_head_pressed:
                 feet_due = max(feet_due, last_head + STREAM_TICK_S)
         return head_due, feet_due
 
@@ -795,9 +798,11 @@ class SvaneController(BedController):
             return
         head_due, _ = self._stream_due(head_m, feet_m, now)
         if head_m is not None and now >= head_due - _STREAM_SLACK_S:
+            pressed = head_m not in self._stream_written
             self._stream_written.add(head_m)
             await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
             self._stream_last = (loop.time(), self._stream_last[1])
+            self._stream_head_pressed = pressed
         _, feet_due = self._stream_due(head_m, feet_m, loop.time())
         if feet_m is not None and loop.time() >= feet_due - _STREAM_SLACK_S:
             self._stream_written.add(feet_m)
@@ -834,6 +839,7 @@ class SvaneController(BedController):
         self._stream_written: set[StreamMember] = set()
         self._stream_seen: dict[StreamMember, float] = {}
         self._stream_last: tuple[float | None, float | None] = (None, None)
+        self._stream_head_pressed = False
         self._stream_next_at = 0.0
         self._stream_tick_at = 0.0
 

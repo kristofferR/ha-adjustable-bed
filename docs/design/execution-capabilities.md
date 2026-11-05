@@ -472,7 +472,11 @@ behavior; an unsupported value is rejected before admission.
   releases; STOP preempts renewal; a stale generation is refused; disconnect,
   unload and shutdown do not replay. For the merged stream: every member appears
   each tick, replacing one member leaves the other, STOP during interleaving,
-  cleanup failure, and a non-opted controller staying serialized.
+  cleanup failure, and a non-opted controller staying serialized. On every
+  opted-in family (`tests/test_merged_stream_families.py`), an unload or a
+  shutdown that cancels every task ends both streaming motors with the
+  family's release, and a motor replaced faster than the refresh never delays
+  the other's refreshes.
 - **Paired.** Intersection, combined renewal, and one side's STOP leaving the
   other side's lease intact.
 - Hardware stays deferred to beta users; see
