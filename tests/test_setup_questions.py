@@ -4,10 +4,16 @@ import json
 import re
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
-from custom_components.adjustable_bed.config_flow import _configure_questions
+from custom_components.adjustable_bed.config_flow import (
+    AdjustableBedOptionsFlow,
+    _configure_questions,
+)
 from custom_components.adjustable_bed.setup_questions import (
     GENERIC_FIELDS,
     REQUIRED,
@@ -16,6 +22,7 @@ from custom_components.adjustable_bed.setup_questions import (
     setup_profile,
     setup_profile_for,
 )
+from tests.test_sleepys_family_flow import entry_for
 
 _STRINGS = json.loads(
     (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
@@ -159,7 +166,7 @@ def test_a_saved_route_new_setups_do_not_offer_stays_selectable():
 
 
 async def test_whole_number_answers_are_coerced_from_select_text(hass):
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import AsyncMock
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 
@@ -235,3 +242,53 @@ def test_an_unanswered_required_question_stays_required():
     legacy = SETUP_PROFILES[const.BED_TYPE_LEGGETT_LP_LEGACY]
     write = legacy.questions[2]
     assert write.default_for(legacy.staged({}, {})) is REQUIRED
+
+
+_NO_MASSAGE = {
+    "furnimove": {
+        const.CONF_BED_TYPE: const.BED_TYPE_FURNIMOVE,
+        const.CONF_FURNIMOVE_REMOTE: "80599",
+    },
+    "mc3": {
+        const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENTS,
+        const.CONF_PROTOCOL_VARIANT: "mc3",
+    },
+    "box24": {
+        const.CONF_BED_TYPE: const.BED_TYPE_SLEEPYS_ELITE_APP,
+        const.CONF_SLEEPYS_ELITE_SELECTOR: "BOX24",
+    },
+}
+
+
+@pytest.mark.parametrize("layout", _NO_MASSAGE)
+async def test_configure_cannot_turn_massage_on_without_a_massage_page(hass, layout):
+    """The profile owns Massage, so Configure hides it and saves it off (#787)."""
+    entry = entry_for(
+        hass, {**_NO_MASSAGE[layout], const.CONF_MOTOR_COUNT: 2, const.CONF_HAS_MASSAGE: True}
+    )
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow._async_options_form(None, step_id="settings")
+    assert const.CONF_HAS_MASSAGE not in {marker.schema for marker in form["data_schema"].schema}
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        await flow._async_options_form({}, step_id="settings")
+    assert entry.data[const.CONF_HAS_MASSAGE] is False
+
+
+async def test_configure_turns_massage_off_when_switching_to_mc3(hass):
+    entry = entry_for(
+        hass,
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_LINAK,
+            const.CONF_MOTOR_COUNT: 2,
+            const.CONF_HAS_MASSAGE: True,
+        },
+    )
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    await flow._async_options_form(
+        {const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENTS}, step_id="settings"
+    )
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        await flow._async_options_form({const.CONF_PROTOCOL_VARIANT: "mc3"}, step_id="settings")
+    assert entry.data[const.CONF_HAS_MASSAGE] is False
