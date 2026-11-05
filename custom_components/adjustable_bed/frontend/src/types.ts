@@ -2,6 +2,7 @@
 // custom-card-helpers so the bundle stays small and dependency-light.
 
 export interface HassEntityAttributes {
+  friendly_name?: string;
   icon?: string;
   current_position?: number;
   rgb_color?: [number, number, number];
@@ -52,7 +53,8 @@ export interface HomeAssistant {
   locale: { language: string };
   language: string;
   themes: unknown;
-  formatEntityName(
+  // Available from Home Assistant 2026.11.
+  formatEntityName?(
     stateObj: HassEntity,
     name?: string | EntityNameItem | EntityNameItem[],
     options?: { separator?: string },

@@ -1,7 +1,7 @@
 // Display names from Home Assistant's entity naming model (2026.11): an entity
 // is named once, and its device supplies the context. The card header already
 // names the bed and each paired pane names its side, so labels inside the card
-// show only the entity's own name, never the composed friendly name.
+// show only the entity's own name. Older HA versions use the legacy fallback.
 import type { HomeAssistant } from "./types";
 
 export function deviceName(
@@ -20,8 +20,14 @@ export function entityLabel(
   fallback: string = entityId,
 ): string {
   const stateObj = hass?.states[entityId];
-  const name = stateObj
-    ? hass!.formatEntityName(stateObj, { type: "entity" })
-    : hass?.entities[entityId]?.name;
+  if (stateObj && hass?.formatEntityName) {
+    return hass.formatEntityName(stateObj, { type: "entity" }) || fallback;
+  }
+  const entry = hass?.entities[entityId];
+  const name = stateObj?.attributes.friendly_name || entry?.name;
+  const device = deviceName(hass, entry?.device_id);
+  if (name && device && name.startsWith(`${device} `)) {
+    return name.slice(device.length + 1) || fallback;
+  }
   return name || fallback;
 }
