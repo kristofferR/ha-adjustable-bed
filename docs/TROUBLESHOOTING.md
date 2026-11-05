@@ -132,8 +132,11 @@ To go back:
    under **Settings > Marketplace** and choose **Exclude pre-releases** in its
    three-dots menu.
 
-Report the problem that made you go back in the v5 beta feedback issue, with the
-beta number and, if you still have them, diagnostics or a support bundle from v5.
+Report the problem that made you go back in the
+[v5 beta feedback issue](https://github.com/kristofferR/ha-adjustable-bed/issues/914),
+with the beta number and, if you still have them, diagnostics or a support
+bundle from v5. The same issue is linked from the notification a v5 beta shows
+once, 24 hours after you install it.
 
 ## Dashboard Card Missing or Configuration Error
 
