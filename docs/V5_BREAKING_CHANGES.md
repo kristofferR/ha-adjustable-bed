@@ -123,8 +123,9 @@ These are additions. Existing entities keep their names, states and attributes.
 **Renewable hold leases ([#483](https://github.com/kristofferR/ha-adjustable-bed/issues/483)).**
 `timed_move` and `hold_control` can carry a lease that keeps a held motor
 moving while calls renew it, and that ends with the bed's usual release or STOP
-when renewals stop. Without `hold_owner` and `hold_generation` both actions run
-exactly as before. A bed declares a hold only where its app is proven to hold a
+when renewals stop. Without `hold_owner` and `hold_generation` both calls stay
+finite, as in 4.x, though **Concurrent motors** below still applies to
+`timed_move`. A bed declares a hold only where its app is proven to hold a
 key until release, either by streaming it (`stream`) or by one start frame and
 a STOP (`latched`). One stream hold ends after 30 s in total and one latched
 hold after 10 s, however often it is renewed. See
