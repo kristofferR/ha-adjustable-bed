@@ -162,3 +162,37 @@ async def test_configure_sends_an_app_change_to_the_guided_change(hass):
     )
     assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LIMOSS
+
+
+async def test_a_save_during_the_off_commands_is_never_overwritten(
+    hass, enable_custom_integrations
+):
+    entry = entry_for(
+        hass,
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE,
+            const.CONF_PRODUCT_TYPE: "bed",
+            const.CONF_HAS_LIGHT: True,
+        },
+    )
+    manager = hass.config_entries.flow
+    result = await reconfigure(hass, entry)
+    result = await manager.async_configure(result["flow_id"], {"choice": "generic"})
+    assert result["step_id"] == "migration_confirm"
+
+    async def turn_off(*_args) -> bool:
+        # Configure saves another setting while the OFF commands run.
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, const.CONF_IDLE_DISCONNECT_SECONDS: 90}
+        )
+        return True
+
+    with patch(
+        "custom_components.adjustable_bed.config_flow._async_turn_off_limoss_remote_features",
+        new=turn_off,
+    ):
+        result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    assert result["reason"] == "migration_entry_changed"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LIMOSS_REMOTE
+    assert entry.data[const.CONF_IDLE_DISCONNECT_SECONDS] == 90
+

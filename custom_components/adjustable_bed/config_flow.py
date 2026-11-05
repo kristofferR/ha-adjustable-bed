@@ -3332,6 +3332,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._async_show_migration_confirm(
                 errors={"base": "limoss_remote_feature_update_failed"}
             )
+        if kept is not None and not self._migration_unchanged():
+            # Another save landed while the OFF commands ran; never overwrite it.
+            return self.async_abort(reason="migration_entry_changed")
         self._record_selected_app_intent(data)
         result = self.async_update_and_abort(entry, data=data, options=options)
         from .profile_recommendations import (
