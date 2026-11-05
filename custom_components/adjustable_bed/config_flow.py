@@ -9863,6 +9863,10 @@ class AdjustableBedOptionsFlow(
 
             bed_type = requested_bed_type
             stale_profile_keys: frozenset[str] = frozenset()
+            # What the declared profile sets itself, such as the generic fields it
+            # owns. A paired save keeps only shown fields that changed, so these
+            # are applied separately.
+            profile_settled: dict[str, Any] = {}
             if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
                 pairlink_errors = _validate_pairlink_option_values(
                     self.hass,
@@ -10041,7 +10045,8 @@ class AdjustableBedOptionsFlow(
                 user_input.update(
                     {key: value for key, value in app_data.items() if before.get(key) != value}
                 )
-                user_input.update(declared.settled(app_data))
+                profile_settled = declared.settled(app_data)
+                user_input.update(profile_settled)
                 # What normalizing dropped, such as retained settings an answer no
                 # longer allows or an Auto choice stored as no value, leaves the
                 # saved entry too, even when the form submitted it.
@@ -10300,7 +10305,15 @@ class AdjustableBedOptionsFlow(
                     for key, value in user_input.items()
                     if key in shown and shown[key] != value
                 }
-                changed = {**self._pending_changed_data, **current_changed}
+                changed = {
+                    **self._pending_changed_data,
+                    **current_changed,
+                    **{
+                        key: value
+                        for key, value in profile_settled.items()
+                        if self.config_entry.data.get(key) != value
+                    },
+                }
                 new_data = {**self.config_entry.data, **changed}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True

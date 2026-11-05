@@ -1168,3 +1168,40 @@ async def test_muted_music_survives_idle_before_next_wide_mode_packet(
     else:
         assert mock_bleak_client.write_gatt_char.await_args.args[1] == b"$#M00\r$#T10\r$#B05\r$#V05\r"
     await hass.config_entries.async_unload(c.entry.entry_id)
+
+
+async def test_configure_switch_of_a_single_address_pair_applies_the_profile(hass):
+    """The declaration's owned fields reach a paired save, which keeps only shown changes."""
+    from unittest.mock import patch
+
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
+
+    single = {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:14",
+        CONF_NAME: "Chair",
+        CONF_BED_TYPE: "keeson",
+        "protocol_variant": "base",
+        "motor_count": 2,
+        "has_massage": True,
+        "disable_angle_sensing": False,
+        "motor_pulse_user_set": True,
+    }
+    entry = MockConfigEntry(
+        domain=DOMAIN, data=build_single_address_pair_entry_data(single, name="Chair")
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow.async_step_settings({CONF_BED_TYPE: "motomotion"})
+    assert form["type"] == FlowResultType.FORM
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow.async_step_settings({CONF_BLE_DEVICE_NAME: "SOFA000001S000M"})
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_BED_TYPE] == "motomotion"
+    assert entry.data[CONF_BLE_DEVICE_NAME] == "SOFA000001S000M"
+    assert entry.data["has_massage"] is False
+    assert entry.data["disable_angle_sensing"] is True
+    assert entry.data["motor_pulse_user_set"] is False
