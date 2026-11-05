@@ -151,7 +151,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
-    BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
+    # The layout, handset or control box decides one side's massage (#787).
+    BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile(
+        "Comfort Enhancements", frozenset({CONF_HAS_MASSAGE}), variant_owned=True
+    ),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
     BED_TYPE_CLUSTER018: SideProfile("Classic Richmat apps", variant_owned=True),
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
@@ -171,7 +174,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         ),
     ),
     BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote"),
-    BED_TYPE_FURNIMOVE: SideProfile("FurniMove"),
+    BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_HAS_MASSAGE})),
     BED_TYPE_LOGICDATA_APP: SideProfile("Logicdata bed app"),
     # The family step picks the app, so no question asks its key.
     BED_TYPE_JIECANG_APP: SideProfile(
@@ -185,7 +188,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     ),
     BED_TYPE_DOUBLESLEEP: SideProfile("OKIN SleepEase"),
     BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed"),
-    BED_TYPE_SLEEPYS_ELITE_APP: SideProfile("Sleepy's Elite app"),
+    BED_TYPE_SLEEPYS_ELITE_APP: SideProfile("Sleepy's Elite app", frozenset({CONF_HAS_MASSAGE})),
     BED_TYPE_MOTION_BED: SideProfile("Motion Bed"),
     BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", STARCODE_APP_CONFIG_KEYS),
     BED_TYPE_STARCODE_M5X5: SideProfile(

@@ -577,7 +577,10 @@ class TestCoverEntities:
         entity_id = cover_entities[0]
 
         coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
-        coordinator.async_execute_controller_command = AsyncMock(side_effect=RuntimeError("boom"))
+        # The Stop is a STOP admission that runs the motor's stop as a command does.
+        coordinator._async_execute_controller_operation = AsyncMock(
+            side_effect=RuntimeError("boom")
+        )
 
         with pytest.raises(RuntimeError, match="boom"):
             await hass.services.async_call(

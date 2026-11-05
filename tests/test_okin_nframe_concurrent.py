@@ -346,3 +346,40 @@ async def test_a_newcomer_starts_with_a_tick_not_a_cleanup_frame(
         assert feet_percent / 100 * 10.0 == pytest.approx(0.3)
     finally:
         await pe.async_unload_position_estimates(hass, entry_id)
+
+
+async def test_a_motor_stop_preempts_another_motors_serial_move(make_runtime, clock) -> None:
+    """A cover Stop never waits behind another cover's serial pulses (#516).
+
+    Before STOP pre-emption, this feet Stop queued behind the head burst and
+    its first zero word went out about 0.86 s after the request.
+    """
+    hass, coordinator, frames = make_runtime("prodigy4")
+    stamps: list[tuple[int, str]] = []
+    client = coordinator._client
+    write = client.write_gatt_char
+
+    async def slow_write(characteristic: object, payload: bytes, **kwargs: object) -> None:
+        stamps.append((round(clock.time() * 1000), bytes(payload).hex()))
+        await asyncio.sleep(0.007)
+        await write(characteristic, payload, **kwargs)
+
+    client.write_gatt_char = slow_write
+    specs = {spec.key: spec for spec in coordinator._controller.motor_control_specs}
+    move = asyncio.create_task(
+        coordinator.async_execute_controller_command(specs["head"].open_fn, resource="motor:head")
+    )
+    async with asyncio.timeout(2):
+        while len(stamps) < 4:
+            await asyncio.sleep(0.001)
+    # The fourth head refresh is on the wire.
+    requested, count = round(clock.time() * 1000), len(stamps)
+    await coordinator.async_stop_motor(specs["feet"].stop_fn, "motor:feet")
+    await move
+
+    after = [(at - requested, data) for at, data in stamps[count:]]
+    # No further refresh: head's release, then feet's own, both zero words,
+    # the first within one write's latency.
+    assert {data for _at, data in after} == {ZERO}
+    assert after[0][0] <= 7
+    assert len(after) == 2 * profiles.LEGGETT_HOLD.releases

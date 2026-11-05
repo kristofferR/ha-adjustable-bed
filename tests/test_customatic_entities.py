@@ -148,7 +148,10 @@ async def test_cross_axis_cover_stop_preempts_shared_mask_with_production_schedu
 
     client.write_gatt_char.side_effect = write
     covers = {cover.entity_description.key: cover for cover in _cover_entities_for(hass, coordinator)}
-    assert all(cover._motor_resource == "*" for cover in covers.values())
+    assert {key: cover._motor_resource for key, cover in covers.items()} == {
+        "back": "motor:back",
+        "legs": "motor:legs",
+    }
     with (
         patch.object(coordinator, "_async_prepare_controller_operation", AsyncMock(return_value=source)),
         patch.object(coordinator, "_async_finish_controller_operation", AsyncMock()),

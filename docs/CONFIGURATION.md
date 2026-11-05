@@ -30,7 +30,9 @@ The first screen lists the discovered beds, each named with its family, then:
 
 - **Set up by app or remote** asks which app controls the bed: one searchable
   list of the apps, remotes and brands in the bed-type list. Its last answer,
-  **My app isn't listed, or I don't know**, opens the list of motor brands.
+  **My app isn't listed, or I don't know**, asks which brand is on the bed:
+  each family, named with its apps, then opens its own question, and **Not
+  sure** runs diagnostics.
   You then pick the Bluetooth device, or type its address.
 - **Pick any Bluetooth device** lets you choose any device first, then asks the
   same app question. A confidently detected bed suggests its own row.

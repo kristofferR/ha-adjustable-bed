@@ -17,7 +17,7 @@ what each beta ships.
 ## Contents
 
 - [Before You Upgrade](#before-you-upgrade)
-- [Config Entry Migration (Schema 5.2)](#config-entry-migration-schema-52)
+- [Config Entry Migration (Schema 5.3)](#config-entry-migration-schema-53)
 - [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities)
 - [New Entities, Attributes and Actions](#new-entities-attributes-and-actions)
 - [Behavior Changes](#behavior-changes)
@@ -48,10 +48,10 @@ entry, migration retry without a restart, and faster Bluetooth wake-up.
 To stop receiving betas, choose **Exclude pre-releases** in the same menu. An
 installed beta stays until a newer stable version is out.
 
-## Config Entry Migration (Schema 5.2)
+## Config Entry Migration (Schema 5.3)
 
 On the first start, every config entry at schema 4 or older migrates to schema
-5, minor version 2. Earlier 4.x steps still run first for entries that missed
+5, minor version 3. Earlier 4.x steps still run first for entries that missed
 them. The schema 5 step stores the profile id each entry runs, which is the one
 name for the route its bed type, protocol variant and app key used to select
 together. The [profile id design note](design/profile-id.md) describes the
@@ -63,22 +63,26 @@ format.
 | `protocol_variant` | Unchanged |
 | App keys (`jiecang_app_profile`, `leggett_app_profile`, `logicdata_app_profile`, `malouf_app_profile`, `vibradorm_app_profile`) | Unchanged |
 | `pair_schema_version`, and a per-entry copy of `disable_discovery` | **Dropped** by the 5.2 step, from data, options, each paired side and the original settings a side restores on unpair. Nothing reads them: the discovery toggle is saved integration-wide |
+| `has_massage` | **Turned off** by the 5.3 step on the three layouts that have no massage: a FurniMove handset without massage rows, Comfort Enhancements MC3, and a Sleepy's Elite app control box other than BOX25. The step reads the same profile data a new setup uses, for a standalone entry, each paired side and the original settings a side restores on unpair. Every other layout keeps its saved value. These layouts now keep Massage per side of a pair, so a paired entry with one of them moves an old shared Massage option into the sides it reached; each side keeps the value it ran with. This removes their massage buttons; see [Removed Massage Buttons](#removed-massage-buttons) |
 | Every other saved field and option | Unchanged |
-| Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id` and loses the dropped keys above |
+| Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id`, loses the dropped keys above and has Massage turned off on the layouts above |
 | `profile_id` | **Added.** Derived from the saved fields above, for example `keeson:sino` or `jiecang_app@dreamask`. A paired side's id comes from that side's own settings and never from the parent |
-| `profile_migration` | **Added.** A record of the migration: `from_version`, `from_minor_version`, `resolver_version`, the new `profile_id`, the saved `fields` it was derived from and, for a paired entry, the same for each side under `sides`. When the 5.2 step drops a key, `dropped_keys` lists it by where it was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so on) |
-| Schema version | Becomes 5.2 |
+| `profile_migration` | **Added.** A record of the migration: `from_version`, `from_minor_version`, `resolver_version`, the new `profile_id`, the saved `fields` it was derived from and, for a paired entry, the same for each side under `sides`. When the 5.2 step drops a key, `dropped_keys` lists it by where it was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so on). When the 5.3 step turns Massage off, `massage_off` lists where the same way (`data`, `data.left`, `data.left.origin_data`) |
+| Schema version | Becomes 5.3 |
 
 The migration changes no entry, device or entity identity, so dashboards,
-automations and actions keep their targets. Entries created on v5 have a
+automations and actions keep their targets. The only entities it removes are
+the [massage buttons](#removed-massage-buttons) of the three layouts above.
+Entries created on v5 have a
 `profile_id` but no `profile_migration`. Every later setup re-derives the stored
 ids from the saved fields, so **Configure**, **Reconfigure**, Repairs and
 pairing changes keep them current.
 
-A v5 beta entry already at 5.1 runs only the 5.2 step, and gains a
-`profile_migration` record only if that step drops a key. Like the rest of
-schema 5, the 5.2 step is one way. The [config key audit](design/config-keys.md)
-records every saved key and why these two are obsolete.
+A v5 beta entry already at 5.1 or 5.2 runs only the steps after it, and gains
+a `profile_migration` record only if one of them drops a key or turns Massage
+off. Like the rest of schema 5, these steps are one way. The
+[config key audit](design/config-keys.md) records every saved key, why the two
+dropped keys are obsolete and why the 5.3 step turns Massage off.
 
 The migration record appears in two places:
 
@@ -90,10 +94,11 @@ The migration record appears in two places:
 
 ## Removed or Renamed Options, Bed Types and Entities
 
-**None** that changes behavior. No bed type, option, action, action field,
-entity or unique ID is removed or renamed in v5, and no saved config key a
-setting reads is removed. Schema 5.2 drops two stored keys nothing reads (see
-[the migration](#config-entry-migration-schema-52)). The comparison covered
+**One removal: the massage buttons of three layouts without massage** (see
+below). No bed type, option, action or action field is removed or renamed in
+v5, no other entity or unique ID is removed or renamed, and no saved config key
+a setting reads is removed. Schema 5.2 drops two stored keys nothing reads (see
+[the migration](#config-entry-migration-schema-53)). The comparison covered
 `const.py`, `config_flow.py`, `strings.json`, `translations/en.json`,
 `services.yaml` and every entity platform between `main` and `v5`. Byte-identical aliases such as
 `okimat` and `okin_uuid` keep their own bed type and their own profile id; the
@@ -115,6 +120,30 @@ apps (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior,
 [#825](https://github.com/kristofferR/ha-adjustable-bed/pull/825)) arrived on
 `main` after 4.3.0 and are included too, with their layout asked on the profile
 setup step.
+
+### Removed Massage Buttons
+
+Three layouts have no massage, yet 4.x showed massage buttons on them when
+Massage was enabled in the entry's settings. Pressing one raised an error,
+except FurniMove's **Massage: Off**, which sent nothing
+([#787](https://github.com/kristofferR/ha-adjustable-bed/issues/787)). New v5
+setups take Massage from the layout, and the
+[5.3 step](#config-entry-migration-schema-53) turns it off on saved entries
+with these layouts, so their massage buttons are removed:
+
+| Layout | Removed buttons |
+|--------|-----------------|
+| FurniMove, a handset without massage rows | **Massage: Off**, **Toggle**, **Intensity Up**, **Intensity Down**, **Head Toggle**, **Head Up**, **Head Down**, **Foot Toggle**, **Foot Up**, **Foot Down** |
+| Comfort Enhancements MC3 | **Massage: Off**, **Head Toggle**, **Foot Toggle**, **Mode** |
+| Sleepy's Elite app, a control box other than BOX25 | **Massage: Off**, **Toggle** |
+
+The step deletes them from the entity registry during the upgrade, so none is
+left behind as unavailable, even when the bed is out of reach. On a paired bed
+it deletes the side's buttons and the both-sides buttons that need that side.
+Remove these buttons from dashboards, automations and scripts: none of them
+moved the bed. Configure no longer offers Massage on these layouts. Every
+other layout, including a FurniMove handset with massage rows, BOX25 and the
+other Comfort Enhancements layouts, keeps its massage controls.
 
 ## New Entities, Attributes and Actions
 
@@ -176,13 +205,23 @@ replaced the first. This covers Leggett Okin Prodigy CE (head, feet, pillow and
 lumbar) and U Series (head, feet and pillow)
 ([#814](https://github.com/kristofferR/ha-adjustable-bed/pull/814)), and Svane
 Remote head and feet on both its routes
-([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)). Every
-`timed_move` on these motors joins the stream, even a single move. A motor's own
-Stop ends only that motor. Paired beds, `hold_control` and every other bed stay
-serialized, including Leggett Okin Prodigy 2 and 2L
-([#835](https://github.com/kristofferR/ha-adjustable-bed/pull/835)), and
-Customatic, whose concurrent motors are still under review. See the
+([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)), and the
+Customatic Clarity and Jerome's (back and legs) and Remedy (back, legs and
+lumbar) apps. Every `timed_move` on these motors joins the stream, even a single
+move. A motor's own Stop ends only that motor. Paired beds, `hold_control` and
+every other bed stay serialized, including Leggett Okin Prodigy 2 and 2L
+([#835](https://github.com/kristofferR/ha-adjustable-bed/pull/835)) and
+Customatic Z-Series. See the
 [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
+
+**A cover's Stop never waits behind another motor.** On a standalone bed, a
+cover's own Stop now pre-empts a move on another motor of the same bed: that
+move ends with its own release, then the Stop's frames go out. In 4.x the Stop
+queued behind the other motor's pulses, about a second on a Leggett Okin bed.
+Customatic covers now have one scheduler resource per motor; before, any
+Customatic cover action replaced a move on another motor, and now a second
+motor's cover move queues behind the first, as on other beds. A declared
+side-wide cover Stop ends every motor's work.
 
 **Calibrated position estimates ([#601](https://github.com/kristofferR/ha-adjustable-bed/issues/601)).**
 Opt-in, per motor, for OCTO Standard and the Richmat remote-code profiles. A
@@ -232,7 +271,9 @@ Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pu
 - The first screen offers **Set up by app or remote** instead of **Select by
   actuator brand**, and **Pick any Bluetooth device** instead of **Show all BLE
   devices**. Both ask which app controls the bed, from the same searchable list
-  as the bed-type field; the brand list is the app question's last answer.
+  as the bed-type field. The app question's last answer asks which brand is
+  on the bed, listing each family with its apps instead of the former brand
+  and variant steps, plus **Not sure** for diagnostics.
   Discovered beds are named with their family.
 
 - Setup is one form for every bed-type row. A bed type's own fields, such as

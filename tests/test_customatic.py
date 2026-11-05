@@ -160,7 +160,8 @@ def test_exact_profile_capabilities(
 ) -> None:
     controller = make_controller(profile)
     assert tuple(spec.key for spec in controller.motor_control_specs) == axes
-    assert all(spec.scheduler_resource == "*" for spec in controller.motor_control_specs)
+    # Per-motor resources, so held motors can share the merged stream (#516).
+    assert all(spec.scheduler_resource is None for spec in controller.motor_control_specs)
     assert controller.simultaneous_movement_axes == axes
     assert len(controller.held_control_options) == option_count
     assert controller.supports_held_control
