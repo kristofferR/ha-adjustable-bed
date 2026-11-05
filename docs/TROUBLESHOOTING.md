@@ -260,7 +260,7 @@ show why browser JavaScript failed to load.
 **Solutions:**
 1. **Verify BLE advertising:** Use a BLE scanner app to confirm the bed is visible
 2. **Check MAC address:** Verify the MAC address matches what's shown in your BLE scanner
-3. **Try manual configuration:** If auto-discovery doesn't find the bed, use **Settings** → **Devices & Services** → **Add Integration** → **Adjustable Bed** and choose **"Select by actuator brand"** or **"Show all BLE devices"**
+3. **Try manual configuration:** If auto-discovery doesn't find the bed, use **Settings** → **Devices & Services** → **Add Integration** → **Adjustable Bed** and choose **"Set up by app or remote"** or **"Pick any Bluetooth device"**
 
 ---
 
