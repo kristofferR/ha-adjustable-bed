@@ -130,13 +130,13 @@ async def test_migration_marks_only_routes_that_gained_app_profiles(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 2)
+    assert (entry.version, entry.minor_version) == (5, 3)
     assert entry.data.get(CONF_PROFILE_REVIEW_PENDING) == mark
 
 
 async def test_entries_created_now_are_never_marked(hass: HomeAssistant) -> None:
     """Entries created at 4.3 or later are never marked."""
-    assert (AdjustableBedConfigFlow.VERSION, AdjustableBedConfigFlow.MINOR_VERSION) == (5, 2)
+    assert (AdjustableBedConfigFlow.VERSION, AdjustableBedConfigFlow.MINOR_VERSION) == (5, 3)
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},
@@ -349,8 +349,8 @@ async def test_switching_to_a_route_with_its_own_apps_does_not_ask_again(
         flow_id = handoff["next_flow"][1]
         result = await manager.async_configure(flow_id, {"choice": "coolbase"})
         assert result["step_id"] == "migration_confirm"
-        result = await manager.async_configure(flow_id, {"confirm": True})
-        assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+        assert result["reason"] == "migration_applied"
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_COOLBASE
         async_refresh_profile_review_issue(hass, entry)
 

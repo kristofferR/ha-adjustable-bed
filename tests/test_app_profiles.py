@@ -109,6 +109,40 @@ def test_a_sides_own_setting_is_refused() -> None:
     assert fsm is not None and CONF_PRODUCT_TYPE in fsm.keys
 
 
+def test_every_declared_question_belongs_to_its_side() -> None:
+    """Each receiver answers its route's questions, so none is shared across a pair (#745).
+
+    INNOVA's 2M, 3M and 4M screen is one receiver's, as Avanti's always was.
+    """
+    from custom_components.adjustable_bed.pairing import side_owned_profile_fields
+    from custom_components.adjustable_bed.profile_id import profile_route
+    from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
+
+    for key, profile in SETUP_PROFILES.items():
+        route = profile_route(key)
+        if per_side_profile(route.bed_type, route.variant) is None:
+            continue
+        owned = side_owned_profile_fields(
+            {CONF_BED_TYPE: route.bed_type, CONF_PROTOCOL_VARIANT: route.variant}
+        )
+        assert {question.key for question in profile.questions} <= owned, key
+    sides = [(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)] * 2
+    assert _per_side_refusal(sides[0], sides, {CONF_MOTOR_COUNT: 4}) == (CONF_MOTOR_COUNT, "INNOVA")
+
+
+def test_the_side_table_lists_only_what_no_question_asks() -> None:
+    """The hand-kept table holds what the declarations cannot say, so it cannot drift."""
+    from custom_components.adjustable_bed import app_profiles
+
+    tables = [
+        *((bed_type, None, side) for bed_type, side in app_profiles._BY_BED_TYPE.items()),
+        *((bed, variant, side) for (bed, variant), side in app_profiles._BY_VARIANT.items()),
+    ]
+    for bed_type, variant, side in tables:
+        asked = app_profiles._declared_questions(bed_type, variant)
+        assert not side.keys & asked, (bed_type, variant, sorted(side.keys & asked))
+
+
 def test_reverie_protocol_models_and_pairlink_credentials_are_side_owned() -> None:
     for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
         profile = per_side_profile(bed_type, None)

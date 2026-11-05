@@ -82,6 +82,33 @@ returns.
   `strings.json` label in `profile_questions` (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
 
+## Per-side settings
+
+A two-address pair joins two receivers, and each may run another profile.
+`per_side_profile` in `app_profiles.py` names the settings that belong to one
+of them: the shared Configure form refuses to change them, and each receiver's
+own step sets them. Every question a route's declarations ask, under any app,
+is one of them, since that step asks and saves each receiver's answers. They
+are derived, never listed again.
+
+The table in `app_profiles.py` stays hand-kept for what the declarations cannot
+say ([#745](https://github.com/kristofferR/ha-adjustable-bed/issues/745)):
+
+- **Which routes are per side.** An app or product belongs to one bed, so the
+  shared form may not move either side to, from or between such routes. Generic
+  receivers such as the Okin remotes, Vibradorm or Jensen ask questions too, yet
+  a pair of them may change together. A declaration says what a route asks, not
+  whether its route is one bed's app.
+- **The label** the refusal names, and whether every variant of the bed type is
+  a side's own choice (`variant_owned`).
+- **Settings no question asks:** a detected product type or Bluetooth name,
+  values an action saves (such as the Serta MP memory targets), the motors and
+  massage a model, handset, layout or control box derives, and the app key a
+  family step picks.
+
+`tests/test_app_profiles.py` checks that every declared question belongs to its
+side and that the table repeats none of them.
+
 ## The new-bed journey
 
 A new bed is set up in one order (#676 direction A):
@@ -153,9 +180,10 @@ These steps serve every bed type or route, so no profile owns them.
 | `profile_questions` | The declared questions |
 | `bluetooth_pairing`, `manual_pairing`, `pairing_replace_confirm`, `pairing_progress`, `pairing_result` | Bonding |
 | `setup_progress`, `verify_connection` | Connection check and capability checklist |
+| `keep_detected`, `keep_back`, `keep_continue` | Keep on a new bed: what the detected controls are, their pairing, and the way to an app later |
 | `pair_beds` | Combine two beds |
 | `diagnostic`, `diagnostic_confirm`, `diagnostic_manual` | Browse an unsupported device |
-| `reconfigure`, `migration_split`, `migration_keep`, `migration_confirm` | The [guided change](guided-setup-changes.md) |
+| `reconfigure`, `migration_split`, `migration_keep`, `migration_check`, `migration_pairing`, `migration_check_failed`, `migration_confirm` | The [guided change](guided-setup-changes.md) |
 
 ### Configure
 
@@ -190,6 +218,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `doublesleep` | Saved app model, seeded from the platform name, and the BLE driver. |
 | `sleeptracker` | Foundation, app layout, unit number, snapshot side, restricted session and processor type; a lumbar layout derives the third motor. |
 | `motion_bed` | Exact Bluetooth name, seeded from the advertisement; restored profile and retained preset and movement layouts. `normalize` stores Auto as no retained layout. |
+| `motomotion` | Exact Bluetooth name, seeded from the advertisement and checked as the app checks it; it selects the panel and feature flags. Owns every generic field; fixes massage and angle sensing off. |
 | `malouf_app@malouf`, `malouf_app@lucid` | Model (the chosen app's picker, plus a saved model it no longer lists), primary/secondary role and transport (Advanced). Fixes angle sensing off; `normalize` drops a model the picker did not offer. |
 | `malouf_app` | The app too, with every app's models, for an entry switched in from another bed type with Configure's bed-type list; the app and model are checked together on save. |
 | `malouf_new_okin`, `malouf_legacy_okin` | Motor count, layout and memory positions. |

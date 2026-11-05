@@ -117,8 +117,8 @@ async def test_generic_entry_changes_to_remote_after_checking_its_characteristic
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
         assert entry.data == before
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LIMOSS_REMOTE
     assert entry.data[const.CONF_PRODUCT_TYPE] == "chair"
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
@@ -138,8 +138,7 @@ async def test_remote_change_is_refused_without_the_notifying_characteristic(
             result["flow_id"], {const.CONF_PRODUCT_TYPE: "bed"}
         )
         result = await finish_check(hass, result)
-        assert result["step_id"] != "migration_confirm"
-        assert result.get("errors")
+        assert result["step_id"] == "migration_check_failed"
         manager.async_abort(result["flow_id"])
     assert entry.data == before
 
@@ -191,7 +190,7 @@ async def test_a_save_during_the_off_commands_is_never_overwritten(
         "custom_components.adjustable_bed.config_flow._async_turn_off_limoss_remote_features",
         new=turn_off,
     ):
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
     assert result["reason"] == "migration_entry_changed"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LIMOSS_REMOTE
     assert entry.data[const.CONF_IDLE_DISCONNECT_SECONDS] == 90

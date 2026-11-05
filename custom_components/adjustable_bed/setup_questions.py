@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -253,6 +254,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_VIBRADORM_APP: _APP_DEFINED,
     BED_TYPE_VMATBASIC: _APP_DEFINED,
     BED_TYPE_MOTION_BED: _APP_DEFINED,
+    BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
     BED_TYPE_SLEEPYS_ELITE_APP: _APP_DEFINED,
@@ -1032,6 +1034,17 @@ def _motion_bed_seed(
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
 
 
+def _motomotion_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """The app reads its panel and feature flags from the exact Bluetooth name."""
+    from .profiles.motomotion import Profile
+
+    try:
+        Profile(str(data.get(CONF_BLE_DEVICE_NAME, "")))
+    except (ValueError, TypeError):
+        return {CONF_BLE_DEVICE_NAME: "motomotion_profile"}
+    return {}
+
+
 def _motion_bed_choices(layouts: tuple[str, ...]) -> Mapping[Any, str]:
     return {layout: layout for layout in ("auto", *layouts)}
 
@@ -1590,6 +1603,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
     ),
+    # MC3 has no massage page; the other layouts' controllers turn massage on.
+    f"{BED_TYPE_COMFORT_ENHANCEMENTS}:mc3": _asking(
+        BED_TYPE_COMFORT_ENHANCEMENTS,
+        owns={**_BASE[BED_TYPE_COMFORT_ENHANCEMENTS].owns, CONF_HAS_MASSAGE: False},
+    ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,
@@ -1702,6 +1720,25 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
     ),
+    # The exact Bluetooth name selects MotoMotion's panel and its independent
+    # feature flags; the app's own controls replace massage and angle sensing.
+    BED_TYPE_MOTOMOTION: _asking(
+        BED_TYPE_MOTOMOTION,
+        owns={
+            **_BASE[BED_TYPE_MOTOMOTION].owns,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+        },
+        questions=(
+            Question(
+                CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True
+            ),
+        ),
+        validate=_motomotion_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_motion_bed_seed,
+        title=lambda _data: "MotoMotion",
+    ),
 }
 
 
@@ -1734,6 +1771,23 @@ def setup_profile_for(data: Mapping[str, Any]) -> SetupProfile | None:
     key = app_profile_key(bed_type, variant)
     app = data.get(key) if key is not None else None
     return setup_profile(bed_type, variant, app if isinstance(app, str) else None)
+
+
+def profile_massage(data: Mapping[str, Any]) -> bool | None:
+    """Return the massage a saved route's profile settles, or None if it leaves it open.
+
+    This is the value setup and Configure save for the profile, from its fixed
+    owned fields and what it derives from the saved answers. Data the profile
+    cannot read, such as an unknown handset, settles nothing.
+    """
+    profile = setup_profile_for(data)
+    if profile is None:
+        return None
+    try:
+        massage = profile.settled(data).get(CONF_HAS_MASSAGE)
+    except KeyError, ValueError:
+        return None
+    return massage if isinstance(massage, bool) else None
 
 
 def owned_fields(bed_type: str | None, variant: str | None) -> frozenset[str]:

@@ -182,7 +182,7 @@ async def test_app_switch_in_the_family_step_discards_old_app_fields(hass, optio
         assert entry.data == old
         flow._migration_verified = True
         await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
-        finished = await flow.async_step_migration_confirm({"confirm": True})
+        finished = await flow.async_step_migration_confirm({"action": "apply"})
         assert finished["type"] == FlowResultType.ABORT
         updated = entry.data
     else:
@@ -775,7 +775,7 @@ async def test_guided_retained_setup_persists_literal_remote_and_independent_fea
     assert entry.data[const.CONF_VIBRADORM_CONTROL_TYPE] == "2"
     flow._migration_verified = True
     await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
-    result = await flow.async_step_migration_confirm({"confirm": True})
+    result = await flow.async_step_migration_confirm({"action": "apply"})
     assert result["type"] == FlowResultType.ABORT
     assert entry.data[const.CONF_VIBRADORM_CONTROL_TYPE] == control
     assert entry.data[const.CONF_VIBRADORM_RGB] is True

@@ -83,6 +83,8 @@ async def test_a_detected_simplicityframe_is_kept_and_still_pairs(hass):
     assert choices(result)[-1] == "keep"
     # The row's form was drawn for the apps, so SimplicityFrame asks its motors.
     result = await flow.async_step_logicdata_family({"choice": "keep"})
+    assert result["step_id"] == "keep_detected"
+    result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
     with patch.object(
         flow, "async_step_manual_pairing", new=AsyncMock(return_value={"step_id": "pair"})
@@ -143,8 +145,8 @@ async def test_phone_entry_changes_to_the_tablet_after_checking_its_transport(
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
         assert entry.data[const.CONF_LOGICDATA_APP_PROFILE] == "phone"
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_LOGICDATA_APP_PROFILE] == "tablet"
     assert entry.data[const.CONF_LOGICDATA_APP_LAYOUT] == "standard_4"
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
@@ -169,8 +171,7 @@ async def test_app_change_is_refused_when_the_link_lacks_its_transport(
             {const.CONF_LOGICDATA_APP_FAMILY: "p1", const.CONF_LOGICDATA_APP_LAYOUT: "standard_2"},
         )
         result = await finish_check(hass, result)
-        assert result["step_id"] != "migration_confirm"
-        assert result.get("errors")
+        assert result["step_id"] == "migration_check_failed"
         manager.async_abort(result["flow_id"])
     assert entry.data == before
 
@@ -268,8 +269,8 @@ async def test_the_comfort_motion_review_continues_into_the_logicdata_question(
         assert result["step_id"] == "migration_confirm"
         # Nothing is answered before the change is confirmed.
         assert _issue(hass, entry) is not None
-        result = await manager.async_configure(flow_id, {"confirm": True})
-        assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+        assert result["reason"] == "migration_applied"
         async_refresh_profile_review_issue(hass, entry)
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LOGICDATA_APP
     assert entry.data[const.CONF_LOGICDATA_APP_PROFILE] == "sleep_smart"

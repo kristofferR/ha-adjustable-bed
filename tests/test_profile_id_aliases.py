@@ -147,11 +147,8 @@ def test_ore_app_routes_differ_in_setup_fields() -> None:
     side = {route: per_side_profile("keeson", route) for route in routes}
     # Avanti Bases hides more generic fields than the other four.
     assert hidden["avanti_bases"] != hidden["americanstar"] == hidden["maxcoil_una"]
-    # AMERICANSTAR and Avanti keep the motor count per side; the others do not.
-    assert {route for route, profile in side.items() if profile and profile.keys} == {
-        "americanstar",
-        "avanti_bases",
-    }
+    # Every app's 2M, 3M or 4M screen is one receiver's motor count (#745).
+    assert all(profile and profile.keys == {"motor_count"} for profile in side.values())
     # Each is its own app: setup names it in the picker and in per-side errors.
     assert len({profile.label for profile in side.values() if profile}) == len(routes)
     labels = {option["value"]: option["label"] for option in get_bed_type_options()}

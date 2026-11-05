@@ -70,8 +70,12 @@ when it has the `write` property, otherwise write-without-response.
 
 ## Detection / Setup
 
-Choose **L&P Adjustable Base (legacy app)** during manual setup, then select the
-exact remote code and packet mode.
+Choose the **L&P Adjustable Base (legacy app)** row, or answer **L&P Adjustable
+Base legacy app (2.2.1)** in the
+[L&P question](leggett-platt.md#home-assistant-setup), then select the exact
+remote code and packet mode. An existing legacy entry reaches the other L&P
+routes through the same question in **Reconfigure**; **Configure** still changes
+its own settings.
 
 - Configure the bed's write characteristic UUID and, when known, its response
   characteristic UUID. These must come from the device's GATT information or a

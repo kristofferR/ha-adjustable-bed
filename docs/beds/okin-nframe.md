@@ -89,7 +89,7 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 | Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
-| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
+| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ `customatic_move_simultaneously`, and `timed_move` calls on different motors run together | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
 | Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
 | Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
@@ -1040,8 +1040,10 @@ FurniMove app profile lacks.
 > [!NOTE]
 > Six codes that share the handset backend use a different transport and frame
 > ("DOT PROTOCOL" / RF1058 / RF34 / RF6707: 90167, 91983, 93558, 97450, 97544,
-> 98035). They are the separate [Okin DOT](#okin-dot) bed type: if that number
-> is printed on your remote, select "Okin DOT" instead of Okimat.
+> 98035). They are the separate [Okin DOT](#okin-dot) bed type. If 97450, 97544
+> or 98035 is printed on your remote, answer **No app: DOT remote (RF34 or
+> RF6707)** in the [Okin question](#home-assistant-setup) instead of the Okimat
+> handset code; the RF1058 codes belong to the FurniMove answer.
 
 #### Timing
 
@@ -1354,16 +1356,25 @@ See the [Customatic table](#customatic-keys).
 #### Timing
 
 See the [timing tables](#hold-and-release-timing). Explicit Stop sends the zero
-mask immediately.
+mask at once, after the own release of any move it pre-empts.
 
 - Cleanup runs after cancellation and outside the requested movement deadline.
   HA's duration is an elapsed-time ceiling for the refresh, so no extra refresh
   follows the deadline.
 - The configured pulse count applies to ordinary cover actions; the interval
   stays the app's.
-- All motor covers of one physical bed share the global scheduler resource,
-  because zero releases every motor: a Stop from any axis preempts movement on
-  another. Two-address paired children keep separate physical-side resources.
+- Each motor has its own scheduler resource. A Stop from any axis still
+  pre-empts a move on another axis at once (that move sends its own release,
+  then the zero mask), because a Stop never waits behind another motor's
+  command. Two-address paired children keep separate physical-side resources.
+- Each app ORs held motors into one mask and clears only a released motor's
+  bit (#516). `timed_move` calls on different motors, renewable or not, run
+  together: each 120 ms frame is the OR of every moving motor's key, for
+  example `04 02 00 00 00 05` for back and legs up. When one motor ends, the
+  next frame drops its bit at once and the others keep moving; the zero write
+  follows 100 ms after the last motor ends. A motor's own Stop ends only that
+  motor, while Stop All ends them all. HA uses one 120 ms lane instead of the
+  app's duplicate phase-offset chains.
 - Each app streams a held mask until release, so `timed_move` and
   `hold_control` accept a renewable hold lease
   ([Renewable holds](../SERVICES.md#renewable-holds)). The mask refreshes at
@@ -1844,8 +1855,11 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
 
 ##### Detection / Setup
 
-- If the code printed on your remote is **97450, 97544 or 98035**, select the
-  **Okin DOT** bed type and pick that code as the protocol variant.
+- If the code printed on your remote is **97450, 97544 or 98035**, choose the
+  **Okin** row and answer **No app: DOT remote (RF34 or RF6707)** in the
+  [Okin question](#home-assistant-setup), then pick that code. Okin DOT is not
+  a row of its own. An existing entry changes its code through
+  **Reconfigure**; Configure refuses a route or code change in the Okin family.
 - For **90167, 91983 or 93558**, new setups use the [FurniMove](furnimove.md)
   app profile instead: its pinned catalog covers those handsets and follows the
   app's per-control frame format. Existing Okin DOT entries with those codes
@@ -1855,7 +1869,8 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
   connected box has no Okin `62741525` characteristic but does expose Nordic
   UART, the integration promotes the entry to the Okin DOT bed type (persisted,
   which also drops the Okimat pairing requirement) and falls back to the default
-  DOT remote (`97450`) until a printed DOT code is selected. Standard Okimat
+  DOT remote (`97450`) until a printed DOT code is selected through
+  **Reconfigure**, under **No app: DOT remote (RF34 or RF6707)**. Standard Okimat
   keycodes are never wrapped in DOT frames.
 
 #### Controls
@@ -4087,8 +4102,9 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 
 ##### Detection / Setup
 
-- Select **Customatic Z-Series app (Z-230)** or **Customatic Z-Series app
-  (Z-280)** manually.
+- Choose the **Customatic** row and answer **Z-Series app with the Z-230
+  model** or **Z-280 model** in the [Customatic question](#customatic-family).
+  The Z-Series apps are not rows of their own.
 - Pick the model you chose on the app's selection screen; it is stored as
   protocol variant `z230` or `z280`, which has no automatic choice.
 - Shared OKIN names and GATT UUIDs do not identify the app or the model.

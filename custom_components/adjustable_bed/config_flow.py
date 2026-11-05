@@ -7,7 +7,7 @@ import contextlib
 import dataclasses
 import logging
 import sys
-from collections.abc import AsyncIterator, Callable, Collection, Iterable, Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable, Collection, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
@@ -138,6 +138,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
@@ -437,7 +438,7 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
-from .setup_questions import GENERIC_FIELDS, Question, SetupProfile
+from .setup_questions import GENERIC_FIELDS, Question, SetupProfile, setup_profile_for
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -468,7 +469,7 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_CLUSTER018, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_CLUSTER018, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -1403,6 +1404,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
             BED_TYPE_SLEEPTRACKER,
             BED_TYPE_ISLEEP,
             BED_TYPE_GMMOTOR,
+            BED_TYPE_MOTOMOTION,
         ),
         "profile_questions",
     ),
@@ -1430,7 +1432,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type != BED_TYPE_GMMOTOR
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION)
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
@@ -2633,9 +2635,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # version 3 marks older entries for the one-time app profile review. v5
     # stores the profile id each entry runs (profile_id.py); setup derives it
     # for new entries. Minor version 2 drops the obsolete keys recorded in
-    # docs/design/config-keys.md.
+    # docs/design/config-keys.md; minor version 3 turns Massage off on layouts
+    # whose profile has no massage.
     VERSION = 5
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -2685,6 +2688,72 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._manual_data = entry_data
         self._vibradorm_app_bluetooth_pairing = pairing_step == "bluetooth_pairing"
         return await getattr(self, f"async_step_{step}")()
+
+    async def _async_keep_detected(
+        self, step_id: str, resume: Callable[[], Awaitable[ConfigFlowResult]]
+    ) -> ConfigFlowResult:
+        """Say what Keep sets up on a new bed before setup continues."""
+        self._keep_detected = (step_id, resume)
+        return await self.async_step_keep_detected()
+
+    async def async_step_keep_detected(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Explain the kept route's generic controls, its pairing, and the way to an app."""
+        assert self._manual_data is not None
+        from .profile_review import route_label
+
+        data = self._manual_data
+
+        async def text(key: str, default: str) -> str:
+            return await _async_translation(
+                self.hass, "config", f"step.keep_detected.data_description.{key}", default
+            )
+
+        pairing = ""
+        if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
+            pairing = " " + await text("pairing", "It requires Bluetooth pairing.")
+        # Only a route with a guided change can choose its app in Reconfigure.
+        later = (
+            await text(
+                "later_reconfigure",
+                "To choose your app later, open **Reconfigure** from this entry's "
+                "three-dot menu. **Configure › Change app or layout** points there too.",
+            )
+            if reconfigure_family(data) is not None
+            else await text(
+                "later_configure",
+                "To choose your app later, change **Bed type** in **Configure › Change settings**.",
+            )
+        )
+        return self.async_show_menu(
+            step_id="keep_detected",
+            menu_options=["keep_back", "keep_continue"],
+            description_placeholders={
+                "name": data.get(CONF_NAME) or data[CONF_ADDRESS],
+                "route": route_label(data),
+                "pairing": pairing,
+                "later": later,
+            },
+        )
+
+    async def async_step_keep_back(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Return to the app question Keep was chosen on."""
+        assert self._keep_detected is not None
+        step_id, _resume = self._keep_detected
+        self._keep_detected = None
+        return await getattr(self, f"async_step_{step_id}")()
+
+    async def async_step_keep_continue(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Continue setup with the kept route."""
+        assert self._keep_detected is not None
+        _step_id, resume = self._keep_detected
+        self._keep_detected = None
+        return await resume()
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -2910,7 +2979,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def _async_show_migration_confirm(
         self, errors: dict[str, str] | None = None
     ) -> ConfigFlowResult:
-        """Review the staged change: added, removed and referenced controls."""
+        """Review the staged change: added, removed, reinterpreted and referenced controls."""
         assert self._pending_entry is not None
         entry = self._get_reconfigure_entry()
         changes = await async_control_changes(
@@ -2928,15 +2997,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return "\n".join(f"- {item}" for item in items) if items else none
 
         if changes.known:
+            renamed = await text("summary_reinterpreted", "{old} becomes {new}")
             summary = (
                 await text(
                     "summary_known",
                     "**Added:**\n{added}\n\n**Removed:**\n{removed}\n\n"
+                    "**Changes meaning:**\n{reinterpreted}\n\n"
                     "**Unchanged:** {unchanged} controls keep their entity IDs.",
                 )
             ).format(
                 added=bullets(changes.added),
                 removed=bullets(changes.removed),
+                reinterpreted=bullets(
+                    tuple(renamed.format(old=old, new=new) for old, new in changes.reinterpreted)
+                ),
                 unchanged=changes.unchanged,
             )
         else:
@@ -2954,7 +3028,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._migration is not None
         return self.async_show_form(
             step_id="migration_confirm",
-            data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+            # Apply and Keep are two equal answers, and neither is preselected.
+            data_schema=vol.Schema(
+                {
+                    vol.Required("action"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=["apply", "keep"],
+                            translation_key="migration_confirm_action",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
             errors=errors,
             description_placeholders={
                 "name": entry.title,
@@ -2970,13 +3055,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Commit the staged selection only against the unchanged snapshot."""
+        if (user_input or {}).get("action") == "keep":
+            return await self.async_step_migration_keep()
         if self._pending_entry is None or (
             self._migration_requires_check and not self._migration_verified
         ):
             return self.async_abort(reason="migration_verification_required")
         if not self._migration_unchanged():
             return self.async_abort(reason="migration_entry_changed")
-        if user_input is None or not user_input.get("confirm"):
+        if user_input is None or user_input.get("action") != "apply":
             return await self._async_show_migration_confirm()
         assert self._migration is not None
         entry = self._get_reconfigure_entry()
@@ -3013,7 +3100,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # Another save landed while the OFF commands ran; never overwrite it.
             return self.async_abort(reason="migration_entry_changed")
         self._record_selected_app_intent(data)
-        result = self.async_update_and_abort(entry, data=data, options=options)
+        self.hass.config_entries.async_update_entry(entry, data=data, options=options)
+        # The applied screen names the new setup and the way back.
+        result = self.async_abort(
+            reason="migration_applied",
+            description_placeholders={
+                "name": entry.title,
+                "selection": self._migration_selection_label({**data, **options}),
+                "current": self._migration_selection_label(
+                    {**self._migration.data, **self._migration.options}
+                ),
+            },
+        )
         from .profile_recommendations import (
             async_complete_profile_review,
             async_confirm_profile_review,
@@ -3056,7 +3154,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and can_keep:
             if guided:
                 return await self.async_step_migration_keep()
-            return await self._async_continue_logicdata_route()
+            return await self._async_keep_detected(
+                "logicdata_family", self._async_continue_logicdata_route
+            )
         if choice in answers:
             bed_type, app = _LOGICDATA_ROUTES[choice]
             if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_LOGICDATA_APP_PROFILE)):
@@ -3133,7 +3233,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if choice == "keep":
                 if self._migration is not None:
                     return await self.async_step_migration_keep()
-                return await self._async_finish_family_route()
+                return await self._async_keep_detected(
+                    "jiecang_family", self._async_finish_family_route
+                )
             same_app = (
                 data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP
                 and data.get(CONF_JIECANG_APP_PROFILE) == choice
@@ -3257,9 +3359,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and can_keep:
             if self._migration is not None:
                 return await self.async_step_migration_keep()
-            if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
-                return await self.async_step_profile_questions()
-            return await self._async_finish_family_route()
+            return await self._async_keep_detected(
+                "okin_family",
+                self.async_step_profile_questions
+                if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT)
+                else self._async_finish_family_route,
+            )
         if choice in cst_apps:
             self._select_family_route(BED_TYPE_OKIN_CST, cst_apps[choice])
             return await self._async_finish_family_route()
@@ -3340,7 +3445,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep":
             if self._migration is not None:
                 return await self.async_step_migration_keep()
-            return await self._async_finish_family_route()
+            return await self._async_keep_detected("keeson_family", self._async_finish_family_route)
         if choice in _KEESON_GROUPS:
             self._keeson_group = choice
             return await self.async_step_keeson_app()
@@ -3509,7 +3614,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep":
             if self._migration is not None:
                 return await self.async_step_migration_keep()
-            return await self._async_finish_family_route()
+            return await self._async_keep_detected("solace_family", self._async_finish_family_route)
         if choice == "name_route":
             self._select_family_route(BED_TYPE_SOLACE, VARIANT_AUTO)
             return await self._async_finish_family_route()
@@ -3564,7 +3669,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep":
             if self._migration is not None:
                 return await self.async_step_migration_keep()
-            return await self._async_finish_family_route()
+            return await self._async_keep_detected("leggett_family", self._async_finish_family_route)
         if choice in _LEGGETT_ROUTES:
             bed_type, extra = _LEGGETT_ROUTES[choice]
             variant: str | None = None
@@ -3700,7 +3805,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and can_keep:
             if self._migration is not None:
                 return await self.async_step_migration_keep()
-            return await self._async_continue_sleepys_route()
+            return await self._async_keep_detected(
+                "sleepys_family", self._async_continue_sleepys_route
+            )
         if choice in _SLEEPYS_ROUTES or choice in apps:
             bed_type, variant = (
                 (_SLEEPYS_ROUTES[choice], None)
@@ -3814,9 +3921,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if choice != "keep":
                 self._select_family_route(routes[choice][0], None)
             profile = setup_profile_for(self._manual_data)
-            if profile is not None and profile.questions:
-                return await self.async_step_profile_questions()
-            return await self._async_finish_family_route()
+            resume = (
+                self.async_step_profile_questions
+                if profile is not None and profile.questions
+                else self._async_finish_family_route
+            )
+            if choice == "keep" and self._migration is None:
+                return await self._async_keep_detected(step_id, resume)
+            return await resume()
         # A route detection or the saved setup chose stays one answer away.
         can_keep = incoming != next(iter(routes.values()))[0]
         return self.async_show_form(
@@ -4211,7 +4323,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and can_keep:
             if self._migration is not None:
                 return await self.async_step_migration_keep()
-            return await self.async_step_profile_questions()
+            return await self._async_keep_detected(
+                "malouf_family", self.async_step_profile_questions
+            )
         if isinstance(choice, str) and choice in _MALOUF_ROUTES:
             bed_type, app = _MALOUF_ROUTES[choice]
             if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_MALOUF_APP_PROFILE)):
@@ -4309,6 +4423,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # confirmation of a result the user never saw.
         self._verify_form_shown: bool = False
         self._octo_pin_form_shown: bool = False
+        # The result step whose guided-change check failed; the failure form
+        # hands its Try again or Keep back to it.
+        self._migration_failed_from: Literal["verify_connection", "pairing_result"] | None = None
+        # The family step a new bed's Keep came from, and how setup continues.
+        self._keep_detected: tuple[str, Callable[[], Awaitable[ConfigFlowResult]]] | None = None
         # Set when the user chose to replace an existing host bond rather than
         # pair on top of it.
         self._pairing_remove_record: LocalBondRecord | None = None
@@ -6596,11 +6715,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         operation #457 means when it says no attempt may leave the previous form
         apparently frozen.
         """
+        assert self._manual_data is not None
         return await self.async_run_operation_step(
-            step_id="pairing_progress",
+            # A guided change shows its own checklist: nothing is saved yet.
+            step_id="migration_pairing" if self._migration is not None else "pairing_progress",
             worker=self._async_pairing_worker,
             next_step_id="pairing_result",
+            description_placeholders=self._migration_check_placeholders(self._manual_data),
         )
+
+    async def async_step_migration_pairing(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Pair and check a guided change's staged route behind its checklist."""
+        return await self.async_step_pairing_progress(user_input)
 
     async def async_step_pairing_result(
         self, user_input: dict[str, Any] | None = None
@@ -6682,21 +6810,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data=entry_data,
             )
 
+        self._pairing_result_shown = True
+        if self._migration is not None and not succeeded:
+            return await self._async_show_migration_failure(
+                "pairing_result",
+                await self._async_pairing_outcome_note(result, evidence),
+                {"base": "vmat_bond_required"}
+                if native_bond_required and not native_bond_verified
+                else None,
+            )
         schema: dict[vol.Marker, Any] = {}
         if not succeeded:
             schema[vol.Required("action", default="retry")] = SelectSelector(
                 SelectSelectorConfig(
-                    options=["retry", "keep"]
-                    if self._migration is not None
-                    else ["retry"]
-                    if native_bond_required
-                    else ["retry", "finish"],
+                    options=["retry"] if native_bond_required else ["retry", "finish"],
                     mode=SelectSelectorMode.LIST,
                     translation_key="pairing_result_action",
                 )
             )
-
-        self._pairing_result_shown = True
         return self.async_show_form(
             step_id="pairing_result",
             data_schema=vol.Schema(schema),
@@ -7439,7 +7570,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if self._operation is None:
             self._async_start_probe_operation()
         return await self.async_run_operation_step(
-            step_id="setup_progress",
+            # A guided change shows its own checklist: nothing is saved yet.
+            step_id="migration_check" if self._migration is not None else "setup_progress",
             worker=self._async_probe_worker,
             next_step_id=(
                 "verify_octo_pin"
@@ -7447,6 +7579,90 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 and self._pending_entry.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
                 else "verify_connection"
             ),
+            description_placeholders=self._migration_check_placeholders(self._pending_entry),
+        )
+
+    async def async_step_migration_check(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Check a guided change's staged route behind its checklist."""
+        return await self.async_step_setup_progress(user_input)
+
+    def _migration_check_placeholders(self, staged: Mapping[str, Any]) -> dict[str, str]:
+        """Name the staged route on a guided change's check screens."""
+        if self._migration is None:
+            return {}
+        return {"selection": self._migration_selection_label(staged)}
+
+    async def _async_show_migration_failure(
+        self,
+        origin: Literal["verify_connection", "pairing_result"],
+        detail: str,
+        errors: dict[str, str] | None = None,
+    ) -> ConfigFlowResult:
+        """Say that a failed guided-change check saved nothing, then offer Try again or Keep."""
+        staged = self._pending_entry if origin == "verify_connection" else self._manual_data
+        assert staged is not None
+        self._migration_failed_from = origin
+        return self.async_show_form(
+            step_id="migration_check_failed",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("action", default="retry"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=["retry", "keep"],
+                            translation_key="migration_check_action",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            errors=errors or {},
+            description_placeholders={
+                "name": staged.get(CONF_NAME) or staged[CONF_ADDRESS],
+                "detail": detail,
+            },
+        )
+
+    async def async_step_migration_check_failed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Hand Try again or Keep back to the result step whose check failed."""
+        if self._migration_failed_from == "pairing_result":
+            return await self.async_step_pairing_result(user_input)
+        return await self.async_step_verify_connection(user_input)
+
+    async def _migration_probe_failure(self, report: CapabilityReport | None) -> str:
+        """Explain why a guided change's connection check did not pass."""
+        assert self._pending_entry is not None
+        if report is not None and report.freshness is FreshnessStatus.DEVICE_UNRESOLVED:
+            key, default = (
+                "unresolved",
+                "**{name}** is advertising, but Home Assistant couldn't open a connection "
+                "to it just now. This is usually momentary.",
+            )
+        elif report is not None and report.freshness not in (None, FreshnessStatus.FRESH):
+            key, default = (
+                "not_advertising",
+                "**{name}** hasn't advertised recently, so no connection was attempted. "
+                "Wake it with its remote, or move it closer to an adapter or proxy.",
+            )
+        else:
+            key, default = (
+                "failed",
+                "The check couldn't confirm that **{name}** works with **{selection}**: "
+                "the connection failed, or the receiver doesn't offer what "
+                "{selection} needs.",
+            )
+        text = await _async_translation(
+            self.hass,
+            "config",
+            f"step.migration_check_failed.data_description.reason_{key}",
+            default,
+        )
+        return text.format(
+            name=self._pending_entry.get(CONF_NAME) or self._pending_entry[CONF_ADDRESS],
+            selection=self._migration_selection_label(self._pending_entry),
         )
 
     async def _probe_capabilities(
@@ -7785,14 +8001,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._pending_entry is not None
 
         result = self.operation.result
-        report = result.payload if result is not None else None
-        if not isinstance(report, CapabilityReport):
+        probe = result.payload if result is not None else None
+        report = probe if isinstance(probe, CapabilityReport) else None
+        if report is None:
             # The operation state is gone (a direct call, or a flow restored
             # without it). Say so rather than running a blocking probe here:
             # this is the step that exists so that nothing blocks.
             report = CapabilityReport(freshness=FreshnessStatus.MISSING)
 
-        if self._migration is not None and not self._migration_verified:
+        if self._migration is not None:
+            if self._migration_verified:
+                # A passed check goes straight to the review: nothing is saved yet.
+                return await self._async_create_selected_app_entry(
+                    title=self._pending_title
+                    or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
+                    data=self._pending_entry,
+                )
             if (
                 user_input is not None
                 and self._verify_form_shown
@@ -7808,24 +8032,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
             self._verify_form_shown = True
-            return self.async_show_form(
-                step_id="verify_connection",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required("action", default="retry"): SelectSelector(
-                            SelectSelectorConfig(
-                                options=["retry", "keep"],
-                                translation_key="verify_action",
-                                mode=SelectSelectorMode.LIST,
-                            )
-                        )
-                    }
+            return await self._async_show_migration_failure(
+                "verify_connection",
+                await self._migration_probe_failure(
+                    probe if isinstance(probe, CapabilityReport) else None
                 ),
-                errors={"base": "migration_verification_required"},
-                description_placeholders={
-                    "name": self._pending_entry.get(CONF_NAME) or self._pending_entry[CONF_ADDRESS],
-                    "capabilities": await self._format_capabilities(report),
-                },
             )
 
         if user_input is not None and self._verify_form_shown:
@@ -8474,6 +8685,7 @@ class AdjustableBedOptionsFlow(
             data.get(CONF_PROTOCOL_VARIANT),
             resolved_variant=data.get(CONF_KAIDI_RESOLVED_VARIANT),
             product_type=data.get(CONF_PRODUCT_TYPE),
+            ble_device_name=data.get(CONF_BLE_DEVICE_NAME),
         ):
             menu_options.append("pair_sides")
         menu_options.extend(self.estimate_menu_options())
@@ -8748,8 +8960,10 @@ class AdjustableBedOptionsFlow(
         casper_not_connected = needs_casper_transport_proof and (
             runtime is None or not runtime.is_connected
         )
+        motomotion_unsupported = self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_MOTOMOTION and not supports_single_address_pairing(BED_TYPE_MOTOMOTION, ble_device_name=self.config_entry.data.get(CONF_BLE_DEVICE_NAME))
         if (
-            casper_not_connected
+            motomotion_unsupported
+            or casper_not_connected
             or (needs_casper_transport_proof and controller is None)
             or (
                 controller is not None
@@ -8762,7 +8976,7 @@ class AdjustableBedOptionsFlow(
                 errors={
                     "base": (
                         "casper_pairing_needs_connection"
-                        if casper_not_connected or controller is None
+                        if casper_not_connected or (needs_casper_transport_proof and controller is None)
                         else "single_address_pairing_unsupported"
                     )
                 },
@@ -9262,6 +9476,10 @@ class AdjustableBedOptionsFlow(
 
             bed_type = requested_bed_type
             stale_profile_keys: frozenset[str] = frozenset()
+            # What the declared profile sets itself, such as the generic fields it
+            # owns. A paired save keeps only shown fields that changed, so these
+            # are applied separately.
+            profile_settled: dict[str, Any] = {}
             if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
                 pairlink_errors = _validate_pairlink_option_values(
                     self.hass,
@@ -9440,11 +9658,19 @@ class AdjustableBedOptionsFlow(
                 user_input.update(
                     {key: value for key, value in app_data.items() if before.get(key) != value}
                 )
-                user_input.update(declared.settled(app_data))
+                profile_settled = declared.settled(app_data)
+                user_input.update(profile_settled)
                 # What normalizing dropped, such as retained settings an answer no
                 # longer allows or an Auto choice stored as no value, leaves the
                 # saved entry too, even when the form submitted it.
                 stale_profile_keys = frozenset(before) - frozenset(app_data)
+            elif not separate_address_pair and (
+                owner := setup_profile_for({**current_data, **user_input, CONF_BED_TYPE: bed_type})
+            ) is not None:
+                # A profile without questions still fixes the generic fields it
+                # owns, such as MC3's missing massage, even when an entry
+                # switches in from a bed type that had them on.
+                user_input.update(owner.fixed_values())
             if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
                 from .beds.starcode_abm5_4_profiles import SELECTORS
 
@@ -9571,6 +9797,7 @@ class AdjustableBedOptionsFlow(
                 ),
                 resolved_variant=current_data.get(CONF_KAIDI_RESOLVED_VARIANT),
                 product_type=user_input.get(CONF_PRODUCT_TYPE, current_data.get(CONF_PRODUCT_TYPE)),
+                ble_device_name=user_input.get(CONF_BLE_DEVICE_NAME, current_data.get(CONF_BLE_DEVICE_NAME)),
             ):
                 return self.async_show_form(
                     step_id=step_id,
@@ -9698,7 +9925,15 @@ class AdjustableBedOptionsFlow(
                     for key, value in user_input.items()
                     if key in shown and shown[key] != value
                 }
-                changed = {**self._pending_changed_data, **current_changed}
+                changed = {
+                    **self._pending_changed_data,
+                    **current_changed,
+                    **{
+                        key: value
+                        for key, value in profile_settled.items()
+                        if self.config_entry.data.get(key) != value
+                    },
+                }
                 new_data = {**self.config_entry.data, **changed}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True

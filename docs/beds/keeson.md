@@ -323,8 +323,8 @@ the variant to 10 pulses 100 ms apart, so they are not aliases.
 Each keeps its own [profile id](../design/profile-id.md#aliases). `ergomotion` and `serta` create their
 entities before the first connection and the `keeson` variants do not, and the
 device manufacturer differs. Among the ORE apps, Avanti Bases hides more generic
-setup fields, AMERICANSTAR and Avanti keep the motor count per side, and each
-app has its own setup label.
+setup fields, and each app has its own setup label. Every ORE and INNOVA app
+keeps its motor count (the app's 2M, 3M or 4M screen) per side of a pair.
 
 ## Wire codec
 
@@ -556,7 +556,7 @@ while retaining its established entity identity.
 #### Side controls
 
 The explicit **BaseI4/BaseI5** and **Ergomotion** variants, and the Ergomotion
-bed type, offer **Configure → Enable side controls** for a P1 receiver that
+bed type, offer **Enable Left / Right / Both controls** in **Configure** for a P1 receiver that
 reaches both halves through one Bluetooth address. This creates native Left and
 Right child devices and retains the parent's Both controls, sending the
 [side frames](#split-bed-side-byte). Auto is not eligible because it may
@@ -926,9 +926,12 @@ be confirmed on hardware by real users after a beta or release.
 
 #### Setup
 
-Select the `simon_li`, `heal_every_night` or `okin_seating` protocol variant.
-Detection: none. None of the apps filters its scan or reads a model, so add the
-seat or bed manually as a Keeson bed and pick the app. Each app controls one
+Answer **Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app** in the
+[Keeson question](#home-assistant-setup), then pick **Simon Li app (Keeson)**,
+**Heal Every Night app (Keeson)** or **OKIN-Seating app (Keeson)**. The choice is
+saved as protocol variant `simon_li`, `heal_every_night` or `okin_seating`.
+Detection: none. None of the apps filters its scan or reads a model, so Home
+Assistant never picks one for you. Each app controls one
 address, so add one entry per seat or bed. Their frames carry no side field. In a
 two-address pair, unpair the beds before changing to, from or between these
 profiles, so each side keeps its own app, and before changing the motor count
@@ -1065,7 +1068,9 @@ Heal massage and light semantics, and the GATT layout.
 
 #### Setup
 
-Select the `innova` (`INNOVA app`) protocol variant. Detection: none. The app
+Answer **Avanti, AMERICANSTAR, Bedsense Bases, INNOVA, MaxCoil Una or Dynasty
+app** in the [Keeson question](#home-assistant-setup), then pick **INNOVA app
+(Keeson)**; it is saved as protocol variant `innova`. Detection: none. The app
 scans without any name or service rule, so Auto never chooses it; `ORE-` names
 stay on the Base profile. Setup asks the screen picked in the app, which sets the
 motor count: 2 (2M), 3 (3M) or 4 (4M). For a two-address pair, split the pair before changing
@@ -1168,16 +1173,17 @@ timer cycling, and the lamp bit.
 #### Setup
 
 The app has two remote styles, chosen by the user in its settings (A is the
-default). Select the matching protocol variant: `restonic_a` (`Restonic BT
-app, remote A (6 buttons)`) or `restonic_b` (`Restonic BT app, remote B (10
-buttons)`). Neither is ever chosen automatically: the app accepts any device
+default). Answer **Restonic BT app** in the [Keeson question](#home-assistant-setup),
+then the remote style the app's settings show. It is saved as protocol variant `restonic_a` (remote A, 6
+buttons) or `restonic_b` (remote B, 10 buttons). Neither is ever chosen
+automatically: the app accepts any device
 name that starts with `base-i4` or `base-i5` (case-sensitive), and those names
 are shared with Member's Mark, Purple, Sleep Harmony and Cool Base, which use
 different cadences, releases or frames. How discovery offers such a bed:
 
 | Advertised name | Offered as | What a Restonic BT user does |
 |-----------------|------------|------------------------------|
-| `base-i4…` (with or without a dot) | Keeson, Auto (Base profile) | Choose the `restonic_a` or `restonic_b` protocol variant |
+| `base-i4…` (with or without a dot) | Keeson, Auto (Base profile) | Answer **Restonic BT app** in the [Keeson question](#home-assistant-setup), then the style |
 | `base-i5…` (any) | Cool Base | Answer **Restonic BT app** in the [Keeson question](#home-assistant-setup), then the style |
 
 Both styles write little-endian `E5` frames to FFE5 / FFE9 only. The app never
@@ -3291,16 +3297,22 @@ was found.
 
 ##### Ergomotion 4.0 detection and setup
 
-1. Add the device manually and choose **Ergomotion 4.0 app (explicit product)**.
+1. Answer **Ergomotion, Ergomotion 4.0 or Serta MP Remote app** in the
+   [Keeson question](#home-assistant-setup), then pick **Ergomotion 4.0 app
+   (explicit product)**.
 2. Select the exact product/layout shown by the app. Shared UUIDs and names
    never pick this profile or its product automatically.
-3. To control one P1 receiver's split sides, open **Configure → Enable side
-   controls**. Use the native Left and Right child devices, or the parent's
-   Both controls. Revert using Configure when needed. P2 products do not offer
-   this option. Revert side controls before changing from P1 to P2.
+3. To control one P1 receiver's split sides, open **Configure** and choose
+   **Enable Left / Right / Both controls**. Use the native Left and Right child
+   devices, or the parent's Both controls. Revert with **Restore standalone
+   controls** in Configure when needed. P2 products do not offer this option.
+   Restore standalone controls before changing from P1 to P2.
 
-For an existing Keeson entry, explicitly select **BaseI4/BaseI5** or
-**Ergomotion** before enabling side controls. An existing Ergomotion bed-type
+For an existing Keeson entry, select **BaseI4/BaseI5 (Member's Mark)** or
+**Ergomotion (with position feedback)** before enabling side controls. Do this
+through **Reconfigure** in the entry's three-dot menu, under the Keeson
+question's **No app: another Keeson remote route** answer; Configure refuses a
+Keeson route change. An existing Ergomotion bed-type
 entry also offers the option. Auto is excluded from the menu because it may
 resolve to an incompatible JSON or P2 profile at connection time. Choose the
 new explicit app profile to use the complete 3.7 controls instead.
@@ -3392,11 +3404,12 @@ the 21 frozen catalog products. Other catalog product accepts that product's
 exact name and ordered feature keys, without connecting to a vendor account.
 Motor pulse count bounds each held action at the app's fixed 100 ms cadence.
 
-For a P1 receiver with one address, **Configure → Enable side controls** adds
-Left/Right child devices and native Both controls. Existing Keeson entries can
-use this after explicitly selecting BaseI4/BaseI5 or Ergomotion; the Ergomotion
-bed type also supports it. Auto and P2/JSON/OEM profiles are ineligible. Revert
-side controls before changing to a profile without a side field. Existing
+For a P1 receiver with one address, **Enable Left / Right / Both controls** in
+**Configure** adds Left/Right child devices and native Both controls. Existing
+Keeson entries can use this after selecting BaseI4/BaseI5 or Ergomotion through
+**Reconfigure**; the Ergomotion bed type also supports it. Auto and
+P2/JSON/OEM profiles are ineligible. Choose **Restore standalone controls**
+before changing to a profile without a side field. Existing
 standalone profiles and entities retain their behavior.
 
 Legacy Keeson/Ergomotion position feedback cannot identify a side. Side-control
@@ -3833,7 +3846,7 @@ physical/parent target once when configuring shared state.
 | Clock | `E7 80 01 year_minus_1900 month_minus_1 day hour24 minute second checksum` | `sync_clock` action |
 | Weekly alarms | `ED 80 03` + 3 × `[hour minute weekday_bits wake]` + checksum | `configure_alarm_schedule` |
 | One-time alarms | `ED 80 02` + 3 × `[delta_hours delta_minutes delta_seconds wake]` + checksum | `configure_alarm_schedule` |
-| Wake vibration dismissal | `E1 80 04 9A`, once | Dismiss wake vibration button / `stop_wake_routine` |
+| Wake vibration dismissal | `E1 80 04 9A`, once | Dismiss wake vibration button |
 | Meditation start, M14 or Flex3 Massage | `04 02 48 00 00 00`, wait 200 ms, query ×3 | Start meditation button |
 | Meditation start, M21 or 20th Anniversary | `04 02 00 01 10 00`, wait 200 ms, query ×3 | Start meditation button |
 | Meditation stop | `04 02 08 00 00 00`, wait 200 ms, query ×3 | Stop meditation button |

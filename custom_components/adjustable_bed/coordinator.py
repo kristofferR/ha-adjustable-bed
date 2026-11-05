@@ -54,6 +54,7 @@ from .command_scheduler import (
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
@@ -96,6 +97,8 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
+    BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -1053,8 +1056,12 @@ class AdjustableBedCoordinator(
         if position_key in ("back", "head"):
             if self._bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
                 return REVERIE_BACK_MAX_ANGLE
+            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
+                return BEDJET_POWERLAYER_HEAD_MAX_ANGLE
             return self.back_max_angle
         if position_key in ("legs", "feet"):
+            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
+                return BEDJET_POWERLAYER_FOOT_MAX_ANGLE
             return self.legs_max_angle
         # Unknown motor, return back max as default
         return self.back_max_angle
@@ -2598,6 +2605,56 @@ class AdjustableBedCoordinator(
             return False
         self._command_scheduler.finish_stop(self._command_scheduler.request_stop(resources))
         return True
+
+    async def async_stop_motor(
+        self,
+        stop_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+        resource: str,
+        *,
+        stream_member: bool = True,
+    ) -> None:
+        """Stop a motor at once, never behind another motor's command (#516).
+
+        ``resource`` is the STOP's scope. With ``stream_member``, a live merged
+        stream that owns the motor ends only that member, and its cleanup runs
+        in the streamer. Otherwise this is a STOP admission: it pre-empts the
+        motion holding the writer, whichever motor of the bed that is, then
+        runs ``stop_fn`` as an ordinary command runs it.
+        """
+        if stream_member and self.stop_stream_member(resource):
+            return
+        if self._bed_type in STARCODE_GROUP_BED_TYPES:
+            from .starcode_accessory_group import cancel_group_operations
+
+            cancel_group_operations(self.hass, self.entry.entry_id)
+        # Keep preemptible non-scheduler work responsive, as every STOP does.
+        self._cancel_counter += 1
+        self._cancel_command.set()
+
+        async def stop_operation(_context: CommandContext) -> None:
+            await self._async_execute_controller_operation(
+                stop_fn,
+                cancel_running=False,
+                skip_disconnect=False,
+                raise_on_lock_cancel=False,
+                preemptible=True,
+                enable_position_polling=True,
+                read_positions_after_operation=True,
+                operation_name="motor stop",
+            )
+
+        stop_task = self._command_scheduler.admit_stop(
+            stop_operation, self._protocol_command_resources(command_resources(resource))
+        )
+        try:
+            await asyncio.shield(stop_task)
+        except asyncio.CancelledError:
+            # An admitted STOP outlives its caller, as a bed-wide STOP does.
+            try:
+                await stop_task
+            except Exception:
+                _LOGGER.exception("Motor STOP failed after its caller was cancelled")
+            raise
 
     async def async_execute_stream_member(
         self,

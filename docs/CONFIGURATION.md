@@ -42,7 +42,9 @@ The first screen lists the discovered beds, each named with its family, then:
 A discovered bed asks first which app or remote controls it, from its detected
 family: that family's own question, or the detected bed type's rows. **Another
 app or remote** opens the full app list for the same bed. The family question's
-**Keep** answer saves the detected route. Detection never picks an app by
+**Keep** answer saves the detected route, after a screen that says its controls
+are generic, whether it needs pairing, and that **Reconfigure** can choose the
+app later; its **Back** returns to the question. Detection never picks an app by
 itself, because a bed's name and Bluetooth services do not tell these apps
 apart. The Reverie and Sleep Number rows settle the receiver from the bed's
 advertised service, and ask only when it does not.
@@ -113,17 +115,29 @@ the Okin question for an Okin CST entry, and the L&P question for an L&P
 legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
 to that family's other routes; Configure still changes their own settings.
 
-1. Choose the app you use, then the layout or remote the app shows. **Keep
-   current setup** leaves the entry exactly as it is.
+1. Choose the app you use, then the layout or remote the app shows. The
+   question's keep answer leaves the entry exactly as it is. Its label depends
+   on the family: **I don't know: keep the current controls** (Jiecang, Leggett
+   & Platt), **I don't know: keep the detected controls** (Okin, Keeson, Solace,
+   Sleepy's Elite, Malouf / Lucid, LOGICDATA), **Keep the current app**
+   (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
+   Limoss) or **Keep current setup** (Vibradorm).
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
-   Home Assistant releases its connection and checks the chosen setup. Nothing
-   is saved yet.
-3. A review lists the controls that are added and removed, how many keep their
-   entity IDs, and the automations and scripts that use a removed control.
+   Home Assistant releases its connection and checks the chosen setup. The
+   check screen lists its steps. Nothing is saved yet.
+3. A review lists the controls that are added and removed, the kept controls
+   that change meaning (the same entity under another name), how many keep
+   their entity IDs, and the automations and scripts that use a removed
+   control.
 4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
+   The last screen names the new setup and the previous one; to switch back,
+   run **Reconfigure** again. **Keep current setup** is the other answer on the
+   review.
 
-A failed check, a closed window, **Keep current setup** or a concurrent edit
-leaves the saved setup unchanged and working. Choosing a label that resolves to
+A failed check shows **Nothing was changed** with **Try again** and **Keep
+current setup**. A failed check, a closed window, the keep answer, **Keep
+current setup** or a concurrent edit leaves the saved setup unchanged and
+working. Choosing a label that resolves to
 the saved setup changes nothing. A passed check does not prove the bed's
 physical layout or presets, so test the controls after applying a change.
 
@@ -139,7 +153,7 @@ app profile and side settings from before the beds were combined.
 Every configured bed is checked against the integration's existing Bluetooth
 identity and app-profile metadata. Under **Settings → System → Repairs**, Home
 Assistant may suggest **A better profile may be available**, or ask you to **Check
-the app or product profile** when several profiles fit. Weak or unknown identities
+the profile or protocol variant** when several profiles fit. Weak or unknown identities
 stay quiet. A shared Bluetooth service or a new app alone does not prove that
 another profile works better.
 
@@ -152,7 +166,7 @@ When every suggested profile belongs to the bed's family with a
 [guided change](#changing-the-app-or-layout-of-an-existing-bed), **Review
 profile settings** opens that guided change instead, because Configure refuses
 an app or route change within the family. Applying a change there confirms the
-review, and **Keep current setup** there keeps the current profile. Closing it
+review, and the question's keep answer there keeps the current profile. Closing it
 leaves the notice open. A suggestion of another bed type still opens Configure,
 which can make that change.
 
@@ -191,7 +205,7 @@ label wherever it appears:
 | **Enable light controls** (`has_light`) | Logicdata and Jiecang bed apps (default on), FSM Relax and Limoss Remote (default off) | Expose the app's light controls |
 | **Bed or chair** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
 | **Reverse motor channel 1–4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
-| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, AdjustableM5X5, Adjustable Comfort M1X12 | The unchanged advertised name that identifies the app profile |
+| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, MotoMotion, AdjustableM5X5, Adjustable Comfort M1X12 | The unchanged advertised name that identifies the app profile |
 
 Entries that stored `logicdata_app_has_light` or `jiecang_app_has_light` are
 migrated to `has_light` when the integration loads.
@@ -239,11 +253,11 @@ L600 is not a protocol name**: confirmed L600 hardware includes both OKIN CB24
 
 ## Toggle-Only Under-Bed Lights
 
-Beds whose existing light control is **Toggle light**, including Tempur/Keeson
-profiles without light-state feedback, also offer an optional **Under-bed lights**
-light entity. It is disabled by default because its on/off state is an estimate.
+Beds whose existing light control is the **Toggle Light** button, including
+Tempur/Keeson profiles without light-state feedback, also offer an optional
+**Under Bed Lights** light entity. It is disabled by default because its on/off state is an estimate.
 To enable it, open the bed's device page under **Settings → Devices & Services**,
-show disabled entities, select **Under-bed lights**, and enable it.
+show disabled entities, select **Under Bed Lights**, and enable it.
 
 On first use, set the physical light off with the remote before enabling the
 entity. Home Assistant initially assumes off and restores its last estimate on
@@ -253,7 +267,7 @@ Repeated on or off requests do not toggle the light again; a failed command
 leaves the estimate unchanged. The bed card uses the light once enabled.
 
 Home Assistant marks this entity's state as **assumed**. It cannot detect changes
-made with the physical remote, the manufacturer's app, the existing Toggle light
+made with the physical remote, the manufacturer's app, the existing Toggle Light
 button, or a hardware auto-off timer. Those changes can make its estimate wrong,
 and later on/off actions then rely on that incorrect estimate. Keep the existing
 toggle button if you need direct control without an estimated state. For a
@@ -609,6 +623,7 @@ that side, then combine them again.
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | StarCode apps | One question for the app, then its own settings. Configure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
+| MotoMotion | [The exact Bluetooth name](beds/motomotion.md#detection--setup), which selects the panel and its feature flags; preserve its case. |
 | Limoss | [One question](beds/limoss.md#home-assistant-setup) for the Limoss Remote or FSM Relax app, or the older controls. [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. Change an existing bed's app with **Reconfigure**. |
 | FSM Relax | Answer the [Limoss question](beds/limoss.md#home-assistant-setup) with the FSM Relax app, then its [bed/chair layout, light/massage, reversal settings and memory names](beds/limoss.md#fsm-relax). |
 | GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |
@@ -851,7 +866,7 @@ ordinary disconnect does not remove the side's controls. Beds with saved or
 offline-safe capabilities still support setup with one side unavailable.
 
 Existing side entity IDs, device IDs, names, areas, and history are retained when
-combining entries. To undo it, choose **Split paired bed** in the pair's options;
+combining entries. To undo it, choose **Split into two beds** in the pair's options;
 the side entries are restored and combined controls are removed. Update any
 automation that targeted the combined controls.
 

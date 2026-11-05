@@ -562,21 +562,29 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         # that started after this stop was called (rapid stop→move sequence)
         stop_generation = self._movement_generation
 
-        # A motor streaming with others (#516) ends alone; its cleanup runs in
-        # the streamer. A side-wide declared STOP keeps the ordinary path,
-        # which ends every member.
+        # A Stop never waits behind another motor's command (#516). A motor
+        # streaming with others ends alone, its cleanup in the streamer;
+        # otherwise the STOP pre-empts the motion holding the writer. A
+        # side-wide declared Stop ends every motor's work, the stream too.
         from .coordinator import AdjustableBedCoordinator
 
         hold = self.entity_description.hold
-        if (
-            isinstance(self._coordinator, AdjustableBedCoordinator)
-            and (hold is None or hold.stop_scope == "motor")
-            and self._coordinator.stop_stream_member(self._motor_resource)
-        ):
-            if self._movement_generation == stop_generation:
-                self._is_moving = False
-                self._move_direction = None
-                self.async_write_ha_state()
+        if isinstance(self._coordinator, AdjustableBedCoordinator):
+            motor_scoped = hold is None or hold.stop_scope == "motor"
+            try:
+                await self._coordinator.async_stop_motor(
+                    self.entity_description.stop_fn,
+                    self._motor_resource if motor_scoped else "motor:*",
+                    stream_member=motor_scoped,
+                )
+            except Exception:
+                _LOGGER.exception("Failed to stop cover %s", self.entity_description.key)
+                raise
+            finally:
+                if self._movement_generation == stop_generation:
+                    self._is_moving = False
+                    self._move_direction = None
+                    self.async_write_ha_state()
             return
 
         try:

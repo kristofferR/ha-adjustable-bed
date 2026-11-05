@@ -304,8 +304,19 @@ async def test_a_discovered_family_asks_its_question_with_another_app_and_keep(
     assert choices[-2:] == ["another", "keep"]
     for selector in ("okin_family_choice", "jensen_family_choice", "remacro_family_choice"):
         assert _STRINGS["selector"][selector]["options"]["another"]
+    # Keep explains what it sets up; Back returns to the same question.
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+    assert result["step_id"] == "keep_detected"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "keep_back"}
+    )
+    assert result["step_id"] == "okin_family"
+    assert list(select_options(result, "choice"))[-2:] == ["another", "keep"]
     # Keep saves the detected route, then its own questions and settings follow.
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "keep_continue"}
+    )
     flow = hass.config_entries.flow._progress[result["flow_id"]]
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIMAT
     assert result["step_id"] == "profile_questions"
@@ -447,3 +458,40 @@ async def test_untouched_timing_follows_a_route_chosen_under_advanced(hass):
     assert get_motor_pulse_defaults(const.BED_TYPE_LINAK, const.LINAK_VARIANT_PERFORMANCE) != (
         get_motor_pulse_defaults(const.BED_TYPE_LINAK, const.VARIANT_AUTO)
     )
+
+
+@pytest.mark.parametrize(
+    ("choice", "app"),
+    [
+        (const.BED_TYPE_MOTOMOTION, "MotoMotion"),
+        (const.BED_TYPE_BEDJET_POWERLAYER, "BedJet PowerLayer"),
+    ],
+)
+async def test_the_beds_from_main_are_in_the_app_question(
+    hass, enable_custom_integrations, choice, app
+):
+    result = await app_question(hass)
+    assert any(row == choice and app in label for label, row in app_rows(result).items())
+
+
+async def test_motomotion_from_the_app_question_asks_its_exact_name(
+    hass, enable_custom_integrations
+):
+    result = await _app_then_address(hass, const.BED_TYPE_MOTOMOTION)
+    assert result["step_id"] == "profile_questions"
+    assert const.CONF_BLE_DEVICE_NAME in {str(marker) for marker in result["data_schema"].schema}
+
+
+async def test_bedjet_powerlayer_from_the_app_question_finishes(hass, enable_custom_integrations):
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_setup",
+        new=AsyncMock(return_value=True),
+    ):
+        result = await _app_then_address(hass, const.BED_TYPE_BEDJET_POWERLAYER)
+        assert result["step_id"] == "finish_settings"
+        with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {CONF_NAME: "BedJet"}
+            )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_BEDJET_POWERLAYER

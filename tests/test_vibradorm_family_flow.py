@@ -228,16 +228,17 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
         bluetooth_patches(stack, client)
         result = await select_app(hass, entry, app)
         assert not result.get("errors")
-        assert result["step_id"] in ("pairing_result", "verify_connection")
-        assert entry.data == before and entry.options == options
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        if result["step_id"] == "pairing_result":
+            # A passed pairing shows its outcome; a passed check goes on to the review.
+            assert entry.data == before and entry.options == options
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
         assert result["step_id"] == "migration_confirm"
         assert entry.data == before and entry.options == options
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"confirm": True}
+            result["flow_id"], {"action": "apply"}
         )
     assert result["type"] == FlowResultType.ABORT
-    assert result["reason"] == "reconfigure_successful"
+    assert result["reason"] == "migration_applied"
     assert len(hass.config_entries.async_entries(const.DOMAIN)) == 1
     assert entry.unique_id == ADDRESS and entry.data[CONF_ADDRESS] == ADDRESS
     assert entry.data[const.CONF_BED_TYPE] == (
@@ -349,7 +350,7 @@ async def test_confirmation_rejects_concurrent_changes(hass, enable_custom_integ
         changed = {**getattr(entry, change), const.CONF_IDLE_DISCONNECT_SECONDS: 99}
         hass.config_entries.async_update_entry(entry, **{change: changed})
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"confirm": True}
+            result["flow_id"], {"action": "apply"}
         )
     assert result["reason"] == "migration_entry_changed"
     assert getattr(entry, change) == changed
@@ -386,7 +387,8 @@ async def test_no_scanner_cannot_skip_migration_verification(hass, enable_custom
         ) as probe,
     ):
         result = await select_app(hass, entry, "vmatbasic")
-        assert result["errors"] == {"base": "migration_verification_required"}
+        assert result["step_id"] == "migration_check_failed"
+        assert "hasn't advertised recently" in result["description_placeholders"]["detail"]
         assert result["data_schema"].schema["action"].config["options"] == ["retry", "keep"]
         hass.config_entries.flow.async_abort(result["flow_id"])
     probe.assert_awaited_once()
@@ -729,8 +731,8 @@ async def test_an_app_entry_moves_back_to_the_legacy_setup_through_reconfigure(
         result = await manager.async_configure(result["flow_id"])
         result = await manager.async_configure(result["flow_id"], {})
         assert result["step_id"] == "migration_confirm"
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
     assert (entry.data[const.CONF_MOTOR_COUNT], entry.data[const.CONF_HAS_MASSAGE]) == (3, True)
     assert const.CONF_VIBRADORM_APP_PROFILE not in entry.data

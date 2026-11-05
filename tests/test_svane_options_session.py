@@ -52,8 +52,8 @@ async def change_profile(hass, entry, variant):
         # LinOn asks its motor count; keep the staged one.
         result = await manager.async_configure(result["flow_id"], {})
     assert result["step_id"] == "migration_confirm", result
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful", result
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied", result
 
 
 async def controller_for_entry(hass, entry):

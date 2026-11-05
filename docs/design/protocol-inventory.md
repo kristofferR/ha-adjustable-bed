@@ -453,7 +453,7 @@ No report content is copied here.
 | `malouf_new_okin` | `malouf_layout`, `malouf_memory_slots` | com.lucid.bedbase 1.3.3 C |
 | `mattressfirm` |  | com.okin.bedding.rizemf900 1.1.2 C |
 | `motion_bed` | `ble_device_name`, `motion_bed_movement`, `motion_bed_preset`, `motion_bed_restored` | com.sn.blackdianqi 1.24 C (ledger 032) |
-| `motosleep` |  | com.HHC.MotoMotion 3.1.9 B |
+| `motosleep` |  | com.HHC.MotoSleep 5.1.5 C, com.HHC.PowerBob 2.0.3 C (not retained) |
 | `nectar` |  | com.okin.bedding.nectarmotion 1.0.1 C |
 | `octo` | `octo_motor_count_override`, `octo_pin` | de.octoactuators.octosmartcontrolapp 1.03.02 C |
 | `okimat` |  | com.okin.bedding.glory/support/rizeResident (C), smartbedwifi 2.4.2 P |
@@ -720,6 +720,13 @@ evidence the accepted reports do not hold, and say where they are recorded.
   its caller, where INNOVA's waits through any number. #785 makes Restonic wait too.
 - Jiecang family writes and L&P MlRM writes bypass support-bundle command traces.
   #786 records them.
+- `furnimove` (handsets without massage), `comfort_enhancements:mc3` and
+  `sleepys_elite_app` (non-BOX25 selectors) report `supports_massage` false, but
+  their override-detected massage button flags stay true, so Massage on showed
+  buttons that raise (FurniMove's massage off writes nothing). Their profiles
+  set Massage off, and schema 5.3 turns it off on saved entries and deletes
+  those buttons ([removed entities](../V5_BREAKING_CHANGES.md#removed-massage-buttons)).
+  The flags stay, so the wire snapshot still lists the calls as `gaps`.
 
 ### Matches the app
 
@@ -743,13 +750,6 @@ evidence the accepted reports do not hold, and say where they are recorded.
   route's family, timing, memory and transport, which differ from the apps
   ([details](../beds/jiecang.md#motionrelax-beds-on-this-route)). The fix
   belongs to the guided setup work in #676.
-- `furnimove` (handsets without massage), `comfort_enhancements:mc3` and
-  `sleepys_elite_app` (non-BOX25 selectors) report `supports_massage` false, but
-  their override-detected massage button flags stay true. With Massage enabled
-  in options, those buttons appear; pressing them raises, except FurniMove's
-  massage off, which writes nothing. The wire snapshot
-  lists them as `gaps`. Hiding them changes the entity set, so it needs a
-  decision first.
 - Direct calls to controls a profile does not expose still send a word its app
   never sends. Capability flags hide their entities:
   Keeson methods inherited by Adjustable Lite, Restonic, Simon Li, OKIN-Seating

@@ -285,7 +285,11 @@ async def _keep_family_route(hass: HomeAssistant, result: Any) -> Any:
     """Answer a discovered Jiecang bed's app question by keeping its detected route."""
     if result.get("step_id") != "jiecang_family":
         return result
-    return await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+    manager = hass.config_entries.flow
+    result = await manager.async_configure(result["flow_id"], {"choice": "keep"})
+    # The Keep screen explains the detected controls before setup continues.
+    assert result["step_id"] == "keep_detected"
+    return await manager.async_configure(result["flow_id"], {"next_step_id": "keep_continue"})
 
 
 async def _past_app_question(hass: HomeAssistant, result: Any) -> Any:
@@ -2541,6 +2545,11 @@ class TestBluetoothDiscoveryFlow:
         assert result["step_id"] == "okin_family"
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={"choice": "keep"}
+        )
+        assert result["step_id"] == "keep_detected"
+        assert result["description_placeholders"]["pairing"]
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={"next_step_id": "keep_continue"}
         )
         result = await _settings(hass, result, {CONF_NAME: "My CST Bed", CONF_MOTOR_COUNT: 3})
 

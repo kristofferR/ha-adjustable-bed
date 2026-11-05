@@ -75,7 +75,8 @@ so an option that changes the side's variant changes its id.
 ## Migration (4.x to 5.1)
 
 `async_migrate_entry` runs the earlier steps unchanged, then stamps version 5,
-minor version 1, before the [5.2 step](#migration-51-to-52). The step derives
+minor version 1, before the [5.2](#migration-51-to-52) and
+[5.3](#migration-52-to-53) steps. The step derives
 the ids and writes the record:
 
 ```json
@@ -110,6 +111,21 @@ was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so
 on), and creates the record for an entry made at 5.1 that has none. Nothing to
 drop leaves the entry's data and options unchanged. Keys the audit does not
 list are never touched.
+
+## Migration (5.2 to 5.3)
+
+The 5.3 step turns Massage off where the saved route's profile settles it off:
+a FurniMove handset without massage rows, `comfort_enhancements:mc3` and a
+`sleepys_elite_app` control box other than BOX25. It reads the profile through
+`profile_massage` in `setup_questions.py`, the same data setup uses, for entry
+data, each paired side's effective settings and each side's `origin_data`.
+These layouts own Massage per side from 5.3 on, so a pair with one of them
+first moves an old shared Massage option into the sides it reached and drops
+it; no side's effective value changes except the corrected ones. The step
+adds `massage_off` to the record by the same locations as `dropped_keys`, and
+deletes the massage buttons of each corrected entry or side from the entity
+registry, with the both-sides buttons of a corrected side. These are the only
+entities a schema 5 step removes ([why](config-keys.md#massage-off-in-schema-53)).
 
 ### Physical validation
 
@@ -166,7 +182,7 @@ non-wire difference per group:
 | `ergomotion`, `keeson:ergomotion`; `serta`, `keeson:serta` | Capabilities: only the bed types mint their controller and entities before the first connection. Device manufacturer: "Ergomotion" and "Serta" against "Keeson". |
 | `leggett_okin`, `leggett_platt`, `leggett_platt:okin` | Setup offers only `leggett_okin`. `leggett_platt` without a variant chooses its controller from GATT at connect. |
 | `leggett_gen2`, `leggett_platt:gen2` | Setup offers only `leggett_gen2`. |
-| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Setup fields: Avanti Bases hides more generic fields; AMERICANSTAR and Avanti keep the motor count per side. Each app has its own setup label. |
+| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Setup fields: Avanti Bases hides more generic fields. Each app has its own setup label. |
 | `richmat_best_mattress:model_bfrm`, `richmat_blvd_home:model_bfrm` | Two bed types built for different apps, with their own setup labels. |
 | `fsm_relax`, `fsm_relax:massage_light` | Already one id, `fsm_relax`: the light and massage flags are settings, not routes. |
 

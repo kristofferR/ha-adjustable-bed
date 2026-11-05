@@ -51,7 +51,9 @@ async def test_qms_bed_asks_the_app_and_keep_saves_the_name_route(hass):
     options = result["data_schema"].schema["choice"].config["options"]
     assert options == ["name_route", "woosa", "motion_bed", "bedsense", "keep"]
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_solace_family({"choice": "keep"})
+        kept = await flow.async_step_solace_family({"choice": "keep"})
+        assert kept["step_id"] == "keep_detected"
+        await flow.async_step_keep_continue()
     assert finish.call_args.args[0][const.CONF_PROTOCOL_VARIANT] == const.VARIANT_AUTO
 
 
@@ -93,8 +95,8 @@ async def test_woosa_entry_changes_back_to_the_name_route(hass, enable_custom_in
     result = await manager.async_configure(result["flow_id"], {"choice": "name_route"})
     assert result["step_id"] == "migration_confirm"
     assert entry.data == before
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == const.VARIANT_AUTO
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
 

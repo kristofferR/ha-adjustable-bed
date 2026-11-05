@@ -211,8 +211,8 @@ async def test_clarity_entry_changes_to_remedy_after_checking_its_command_endpoi
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
         assert entry.data == before
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_CUSTOMATIC_REMEDY
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
 
@@ -229,8 +229,7 @@ async def test_z_series_change_is_refused_without_the_apps_roles(
         result = await reconfigure(hass, entry)
         result = await manager.async_configure(result["flow_id"], {"choice": "zseries_z230"})
         result = await finish_check(hass, result)
-        assert result["step_id"] != "migration_confirm"
-        assert result.get("errors")
+        assert result["step_id"] == "migration_check_failed"
         manager.async_abort(result["flow_id"])
     assert entry.data == before
 
@@ -247,8 +246,8 @@ async def test_serenity_entry_changes_to_tranquil_after_checking_its_roles(
         result = await manager.async_configure(result["flow_id"], {"choice": "tranquil"})
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_TRANQUIL
 
 

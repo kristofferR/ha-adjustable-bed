@@ -141,8 +141,8 @@ async def test_a_jmc400_entry_changes_to_the_svane_app(hass, enable_custom_integ
     result = await manager.async_configure(result["flow_id"], {"choice": "svane_jmc400"})
     assert result["step_id"] == "migration_confirm"
     assert entry.data == before
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert (entry.data[const.CONF_BED_TYPE], entry.data[const.CONF_PROTOCOL_VARIANT]) == (
         const.BED_TYPE_SVANE,
         const.SVANE_VARIANT_JMC,

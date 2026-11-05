@@ -142,8 +142,8 @@ async def test_options_select_woosa_and_offline_reload(
     assert result["step_id"] == "solace_woosa"
     result = await manager.async_configure(result["flow_id"], {})
     assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[CONF_PROTOCOL_VARIANT] == SOLACE_VARIANT_WOOSA
 
     # A fresh coordinator after reload must retain the explicit app profile,

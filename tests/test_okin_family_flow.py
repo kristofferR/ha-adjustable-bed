@@ -100,7 +100,8 @@ async def finish_check(hass, result):
     assert result["type"] == FlowResultType.SHOW_PROGRESS
     await hass.async_block_till_done()
     result = await manager.async_configure(result["flow_id"])
-    if not result.get("errors"):
+    if result["step_id"] == "pairing_result":
+        # A passed pairing shows its outcome before the review.
         result = await manager.async_configure(result["flow_id"], {})
     return result
 
@@ -114,6 +115,8 @@ async def test_detected_receiver_offers_routes_review_apps_and_keep(hass):
     assert {"serenity", "tranquil", "adjustable_lumbar"} <= set(offered)
     assert offered[-1] == "keep"
     result = await flow.async_step_okin_family({"choice": "keep"})
+    assert result["step_id"] == "keep_detected"
+    result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_UUID
 
@@ -135,6 +138,8 @@ async def test_keep_detected_controls_collects_motors_without_changing_route(
     flow._manual_data[const.CONF_PROTOCOL_VARIANT] = variant
     before = dict(flow._manual_data)
     result = await flow.async_step_okin_family({"choice": "keep"})
+    assert result["step_id"] == "keep_detected"
+    result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
     assert result["data_schema"] is not None
     answers = result["data_schema"]({const.CONF_MOTOR_COUNT: str(motor_count)})
@@ -216,8 +221,8 @@ async def test_okin_uuid_entry_changes_to_furnimove_after_checking_its_endpoint(
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
         assert entry.data == before
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_FURNIMOVE
     assert entry.data[const.CONF_FURNIMOVE_REMOTE] == "82417"
     assert const.CONF_PROTOCOL_VARIANT not in entry.data
@@ -245,8 +250,8 @@ async def test_furnimove_handset_is_corrected_through_the_guided_change(
             result["flow_id"], {const.CONF_FURNIMOVE_REMOTE: "82417"}
         )
         result = await finish_check(hass, result)
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_FURNIMOVE_REMOTE] == "82417"
 
 
@@ -266,8 +271,7 @@ async def test_change_is_refused_when_the_link_lacks_the_routes_endpoint(
             result["flow_id"], {const.CONF_PROTOCOL_VARIANT: "auto", const.CONF_MOTOR_COUNT: 2}
         )
         result = await finish_check(hass, result)
-        assert result["step_id"] != "migration_confirm"
-        assert result.get("errors")
+        assert result["step_id"] == "migration_check_failed"
         manager.async_abort(result["flow_id"])
     assert entry.data == before
 
@@ -288,8 +292,8 @@ async def test_okimat_code_change_keeps_the_saved_id_and_needs_the_bond(
         assert result["step_id"] == "manual_pairing"
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIMAT
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == "62612"
     assert entry.data[const.CONF_MOTOR_COUNT] == 4
@@ -305,8 +309,8 @@ async def test_okin_entry_changes_to_a_review_app_like_configure_did(
     result = await reconfigure(hass, entry)
     result = await manager.async_configure(result["flow_id"], {"choice": "customatic_zseries:z230"})
     assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_ZSERIES
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == const.ZSERIES_VARIANT_Z230
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
@@ -397,7 +401,10 @@ async def test_cst_answer_saves_its_route(hass, choice, bed_type, variant):
     assert flow._manual_data is not None
     flow._manual_data[const.CONF_PROTOCOL_VARIANT] = const.VARIANT_AUTO
     with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
-        await flow.async_step_okin_family({"choice": choice})
+        result = await flow.async_step_okin_family({"choice": choice})
+        if choice == "keep":
+            assert result["step_id"] == "keep_detected"
+            await flow.async_step_keep_continue()
     finish.assert_awaited_once()
     assert flow._manual_data[const.CONF_BED_TYPE] == bed_type
     assert flow._manual_data.get(const.CONF_PROTOCOL_VARIANT) == variant
@@ -442,7 +449,7 @@ async def test_a_cst_entry_changes_to_an_okin_route_after_checking_its_endpoint(
         result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_DOT
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)

@@ -37,6 +37,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md) and [V-MAT Basic](beds/vmatbasic.md) remote-specific controls |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
+| [BedJet PowerLayer](beds/bedjet-powerlayer.md) | Head/foot movement, 4 presets, 3 memory recalls, calibrated degree feedback (frame only, not the BedJet climate unit) |
 | [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss.md#limoss-remote) and [FSM Relax](beds/limoss.md#fsm-relax) bed/chair layouts and local memories |
 | [Motion Bed app](beds/ff_frame.md#motion-bed) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
 | [Cool Base](beds/keeson.md#cool-base) | Keeson BaseI5 with fan control |
@@ -120,7 +121,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
   handles differ by device/firmware and must not be hardcoded
 - **Nordic UART**: Many newer beds use the Nordic UART service
 
-**If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type.
+**If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type. To move between the Okin family's own routes (FurniMove, Okimat or Okin UUID, DOT and RF ECO BT), use **Reconfigure** in the entry's three-dot menu instead; Configure refuses that change (see [Okin setup](beds/okin-nframe.md#home-assistant-setup)).
 
 **Shared identifiers:** Generic `OKIN-*` and receiver names can require a
 protocol-selection prompt. An `OKIN-BLE` name alone does not distinguish
@@ -140,7 +141,7 @@ for the current family-specific rules.
 **[Won't be supported, read reasons here](https://github.com/kristofferR/ha-adjustable-bed/issues/167).** This is a Bluetooth-only integration. WiFi and cloud beds require fundamentally different architecture and would be better served by a separate integration.
 
 Beds that won't be supported:
-- **Sleeptracker AI** — Tempur-Pedic Ergo, BeautyRest SmartMotion, Serta Motion (cloud-connected models)
+- **Sleeptracker-AI cloud features**: accounts, sleep data, Wi-Fi setup and other cloud services of Tempur-Pedic Ergo, BeautyRest SmartMotion and Serta Motion bases. The Tempur Sleeptracker-AI processor's direct Bluetooth controls on TEMPUR-Ergo ProSmart / ProSmart Air and ActiveBreeze beds are supported; see the [Sleeptracker processor guide](beds/sleeptracker.md)
 - **Logicdata eLift / desk controllers** — Uses local UDP/HTTP, not Bluetooth
 - **ErgoWifi** — Uses Xlink cloud platform
 
@@ -247,5 +248,6 @@ Community contributors who helped reverse-engineer specific protocols:
 | Vibradorm | [kristofferR](https://github.com/kristofferR) |
 | SUTA Smart Home | [kristofferR](https://github.com/kristofferR) |
 | TiMOTION AHF | [kristofferR](https://github.com/kristofferR) |
+| BedJet PowerLayer | [natekspencer](https://github.com/natekspencer/ha-bedjet) and [Tim-GitHub](https://github.com/Tim-GitHub) |
 | Mattress Firm 900 | [David Delahoz](https://github.com/daviddelahoz/BLEAdjustableBase) |
 | Nectar | [MaximumWorf](https://github.com/MaximumWorf/homeassistant-nectar) |
