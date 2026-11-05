@@ -3,10 +3,10 @@
     "flow_title": "{name} ({address})",
     "step": {
       "user": {
-        "title": "Select Adjustable Bed",
-        "description": "Select a discovered bed or choose how to add your bed.",
+        "title": "Add Adjustable Bed",
+        "description": "Select a discovered bed or choose how to add your bed. **Set up by app or remote** finds the app you use on your phone. **Pick any Bluetooth device** lets you choose the device first, then the app.",
         "data": {
-          "address": "Device"
+          "address": "Bed or setup method"
         }
       },
       "select_actuator": {
@@ -826,6 +826,14 @@
         "data": {
           "choice": "App"
         }
+      },
+      "select_app": {
+        "title": "Which app controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. Type to search apps, remotes and brands. If yours isn't listed, the last choice lists the motor brands.",
+        "data": {
+          "bed_type": "App or remote",
+          "not_listed": "My app isn't listed, or I don't know"
+        }
       }
     },
     "progress": {
@@ -1506,6 +1514,7 @@
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
       "single_address_pairing_unsupported": "This bed's current Bluetooth protocol does not expose paired-side controls.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
+      "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
       "logicdata_app_family_layout": "For MOTIONrelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
@@ -9454,6 +9463,15 @@
         "milemont": "Milemont app",
         "superior": "Superior app",
         "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code"
+      }
+    },
+    "setup_start": {
+      "options": {
+        "select_by_app": "Set up by app or remote",
+        "scan": "Scan again for beds",
+        "manual": "Pick any Bluetooth device",
+        "diagnostic": "Browse unsupported BLE devices",
+        "pair_beds": "Combine two beds into one (Dual Bed)"
       }
     }
   }
