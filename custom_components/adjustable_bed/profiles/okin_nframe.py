@@ -222,9 +222,6 @@ Memory holds end without a release frame (``releases`` applies to motors only).
 """
 CUSTOMATIC_APP_HOLD_MS: Final = 2700
 """The app's Saved/Reset confirmation threshold, not a hardware acknowledgement."""
-CUSTOMATIC_EXECUTION: Final = ExecutionCapabilities(hold="stream")
-"""Each app streams a held motor mask until release (clarity, jeromes, remedy, row028)."""
-
 
 def _customatic(
     key: str, name: str, bed_type: str, axes: tuple[str, ...], flat: int, flat_repeats: int
@@ -244,7 +241,12 @@ def _customatic(
         axes=axes,
         keys=MappingProxyType({**keys, "flat": flat}),
         hold=CUSTOMATIC_HOLD,
-        execution=CUSTOMATIC_EXECUTION,
+        # Each app streams a held motor mask until release, ORs held motors into
+        # one shared mask and clears only a released motor's bit (clarity,
+        # jeromes, remedy, row028).
+        execution=ExecutionCapabilities(
+            hold="stream", concurrent=frozenset(f"motor:{axis}" for axis in axes)
+        ),
         recall=Tap(repeats=flat_repeats),
     )
 
