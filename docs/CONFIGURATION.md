@@ -33,8 +33,8 @@ asks for, such as motor count and massage support.
 - For a family with a [guided change](#changing-the-app-or-layout-of-an-existing-bed),
   choosing its row, or a discovered bed of that family, asks which app or
   remote controls the bed, because a bed's name and Bluetooth services do not
-  tell these apps apart. When detection found a route, the question's keep
-  answer saves it.
+  tell these apps apart. Where offered, the question's keep answer saves the
+  detected route.
 - An app row sets its own route. A bed type with several receiver routes lists
   them in a collapsed **Advanced: receiver route** section, or in a short
   **Receiver route** step (see [Protocol Variants](#protocol-variants)).
