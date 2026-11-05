@@ -300,7 +300,6 @@ from .const import (
     LIMOSS_REMOTE_CONFIG_KEYS,
     MALOUF_APP_MODELS,
     MALOUF_APP_PROFILES,
-    MALOUF_APP_TRANSPORTS,
     MOTION_BED_CONFIG_KEYS,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
@@ -2463,87 +2462,6 @@ def _profile_answers(
         elif user_input and (default := question.default_for(data)) not in (REQUIRED, OPTIONAL):
             answers[question.key] = default
     return answers
-
-
-def _malouf_app_model_choices(
-    data: dict[str, Any], persisted_data: Mapping[str, Any] | None = None
-) -> dict[str, str]:
-    """Offer the app's picker plus only its already stored model."""
-    from .profiles.malouf import APP_PROFILES
-
-    profile = data.get(CONF_MALOUF_APP_PROFILE)
-    if not isinstance(profile, str):
-        return {}
-    app = APP_PROFILES.get(profile)
-    choices = {model: MALOUF_APP_MODELS[model] for model in (app.models if app else ())}
-    if persisted_data and persisted_data.get(CONF_MALOUF_APP_PROFILE) == profile:
-        stored_model = persisted_data.get(CONF_MALOUF_APP_MODEL)
-        if stored_model in MALOUF_APP_MODELS:
-            choices[stored_model] = MALOUF_APP_MODELS[stored_model]
-    return choices
-
-
-def _add_malouf_app_schema_fields(
-    schema: dict[vol.Marker, Any],
-    current_data: dict[str, Any] | None = None,
-    *,
-    persisted_data: Mapping[str, Any] | None = None,
-) -> None:
-    """Select the app and model independently from the connected GATT transport."""
-    current_data = current_data or {}
-    schema[
-        vol.Required(
-            CONF_MALOUF_APP_PROFILE,
-            default=current_data.get(CONF_MALOUF_APP_PROFILE, vol.UNDEFINED),
-        )
-    ] = vol.In(MALOUF_APP_PROFILES)
-    choices = _malouf_app_model_choices(current_data, persisted_data)
-    if not choices:
-        return
-    current_model = current_data.get(CONF_MALOUF_APP_MODEL)
-    schema[
-        vol.Required(
-            CONF_MALOUF_APP_MODEL,
-            default=current_model if current_model in choices else vol.UNDEFINED,
-        )
-    ] = vol.In(choices)
-    schema[
-        vol.Optional(
-            CONF_MALOUF_APP_TRANSPORT,
-            default=current_data.get(CONF_MALOUF_APP_TRANSPORT, "auto"),
-        )
-    ] = vol.In(MALOUF_APP_TRANSPORTS)
-    schema[
-        vol.Optional(
-            CONF_MALOUF_APP_PRIMARY,
-            default=current_data.get(CONF_MALOUF_APP_PRIMARY, True),
-        )
-    ] = bool
-
-
-def _malouf_app_switch_in(bed_type: str | None, saved: Mapping[str, Any]) -> bool:
-    """Return True when Configure moves an entry from another bed type to a Malouf app.
-
-    That change also chooses the app, so Configure asks it with its model; an
-    entry already on the Malouf family changes its app only in Reconfigure.
-    """
-    return bed_type == BED_TYPE_MALOUF_APP and saved.get(CONF_BED_TYPE) not in (
-        MALOUF_FAMILY.bed_types
-    )
-
-
-def _malouf_app_errors(
-    data: dict[str, Any], persisted_data: Mapping[str, Any] | None = None
-) -> dict[str, str]:
-    """Reject missing profile inputs instead of choosing a retail model by name."""
-    errors = {}
-    for key, choices in (
-        (CONF_MALOUF_APP_PROFILE, MALOUF_APP_PROFILES),
-        (CONF_MALOUF_APP_MODEL, _malouf_app_model_choices(data, persisted_data)),
-    ):
-        if data.get(key) not in choices:
-            errors[key] = "malouf_app_required"
-    return errors
 
 
 def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
@@ -9547,10 +9465,6 @@ class AdjustableBedOptionsFlow(
                 _add_starcode_lift_field(
                     schema_dict, current_data, self.hass, self.config_entry.entry_id
                 )
-            elif _malouf_app_switch_in(bed_type, self.config_entry.data):
-                _add_malouf_app_schema_fields(
-                    schema_dict, current_data, persisted_data=self.config_entry.data
-                )
             elif add_app_fields := _OPTIONS_APP_FIELDS.get(bed_type):
                 add_app_fields(schema_dict, current_data)
             elif (
@@ -9910,17 +9824,12 @@ class AdjustableBedOptionsFlow(
                             errors={CONF_LEGGETT_APP_PROFILE: "leggett_app_invalid_profile"},
                         )
                     user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
-            if (
-                not separate_address_pair
-                and not _malouf_app_switch_in(bed_type, self.config_entry.data)
-                and (
-                    declared := _configure_questions(
-                        {**current_data, CONF_BED_TYPE: bed_type},
-                        self.config_entry.data.get(CONF_BED_TYPE),
-                    )
+            if not separate_address_pair and (
+                declared := _configure_questions(
+                    {**current_data, CONF_BED_TYPE: bed_type},
+                    self.config_entry.data.get(CONF_BED_TYPE),
                 )
-                is not None
-            ):
+            ) is not None:
                 answers = _profile_answers(declared, user_input, current_data)
                 before = {**current_data, **user_input}
                 app_data = declared.staged(before, answers)
@@ -10057,26 +9966,6 @@ class AdjustableBedOptionsFlow(
                             CONF_MOTOR_PULSE_USER_SET: False,
                         }
                     )
-            if not separate_address_pair and _malouf_app_switch_in(
-                bed_type, self.config_entry.data
-            ):
-                requested_app = user_input.get(CONF_MALOUF_APP_PROFILE)
-                if requested_app in MALOUF_APP_PROFILES and requested_app != current_data.get(
-                    CONF_MALOUF_APP_PROFILE
-                ):
-                    self._remember_pending_changes(schema_dict, user_input)
-                    self._pending_data.update(user_input)
-                    if discovery_disabled_input is not None:
-                        self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
-                    return await self._async_options_form(None, step_id=step_id)
-                app_errors = _malouf_app_errors(
-                    {**current_data, **user_input}, self.config_entry.data
-                )
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
-                    )
-                user_input[CONF_DISABLE_ANGLE_SENSING] = True
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):

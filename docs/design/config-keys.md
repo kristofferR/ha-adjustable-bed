@@ -39,7 +39,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `jiecang_app_profile` | Profile | `jiecang_family` | `profile_id.py`, `beds/jiecang_app.py` |
 | `leggett_app_profile` | Profile | `leggett_family`, Configure | `profile_id.py`, `controller_factory.py` |
 | `logicdata_app_profile` | Profile | `logicdata_family`; a question of `logicdata_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
-| `malouf_app_profile` | Profile | `malouf_family`; Configure only when another bed type switches to the app | `profile_id.py`, `controller_factory.py` |
+| `malouf_app_profile` | Profile | `malouf_family`; a question of `malouf_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
 | `vibradorm_app_profile` | Profile | `vibradorm` family step | `profile_id.py`, `controller_factory.py`, `coordinator_bonds.py`, `coordinator_connection.py` |
 | `profile_id` | Internal | `profile_id.with_profile_ids` at migration and every setup | `coordinator.py`, diagnostics |
 | `address` (Home Assistant's `CONF_ADDRESS`) | Internal | Discovery or the typed address | Coordinator, device registry |

@@ -1084,6 +1084,39 @@ def _malouf_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
 
 
+def _every_malouf_model(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    """Every app's model picker, for a form that asks the app at the same time."""
+    from .profiles.malouf import APP_PROFILES
+
+    return {
+        model: MALOUF_APP_MODELS[model] for app in APP_PROFILES.values() for model in app.models
+    }
+
+
+def _malouf_switch_in_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Check the app and model chosen together, since one form asked both."""
+    from .profiles.malouf import APP_PROFILES
+
+    app = APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""))
+    if app is None:
+        return {CONF_MALOUF_APP_PROFILE: "malouf_app_required"}
+    if data.get(CONF_MALOUF_APP_MODEL) not in app.models:
+        return {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
+    return {}
+
+
+_MALOUF_APP_OWNS: Final[Mapping[str, Any]] = {
+    CONF_MOTOR_COUNT: SET_BY_PROFILE,
+    CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+    CONF_DISABLE_ANGLE_SENSING: True,
+}
+# The physical receiver's role and transport, asked after the model.
+_MALOUF_RECEIVER_QUESTIONS: Final = (
+    Question(CONF_MALOUF_APP_PRIMARY, default=True),
+    Question(CONF_MALOUF_APP_TRANSPORT, MALOUF_APP_TRANSPORTS, "auto", advanced=True),
+)
+
+
 def _reverie_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
 
@@ -1230,17 +1263,31 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     # The Malouf family step picks the app. Its model sets the controls, and the
     # role and transport belong to the one physical receiver; neither the model
     # nor a retail name identifies the hardware, so the model has no default.
+    **{
+        f"{BED_TYPE_MALOUF_APP}@{app}": _asking(
+            BED_TYPE_MALOUF_APP,
+            owns=_MALOUF_APP_OWNS,
+            title=lambda data: MALOUF_APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""), ""),
+            questions=(
+                Question(CONF_MALOUF_APP_MODEL, _malouf_models),
+                *_MALOUF_RECEIVER_QUESTIONS,
+            ),
+            normalize=_malouf_app_normalize,
+            validate=_malouf_app_errors,
+        )
+        for app in MALOUF_APP_PROFILES
+    },
+    # An entry Configure switches in from another bed type answers the app
+    # here too, with every app's models; the pair is checked on save.
     BED_TYPE_MALOUF_APP: _asking(
         BED_TYPE_MALOUF_APP,
-        owns={**_BASE[BED_TYPE_MALOUF_APP].owns, CONF_DISABLE_ANGLE_SENSING: True},
-        title=lambda data: MALOUF_APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""), ""),
+        owns=_MALOUF_APP_OWNS,
         questions=(
-            Question(CONF_MALOUF_APP_MODEL, _malouf_models),
-            Question(CONF_MALOUF_APP_PRIMARY, default=True),
-            Question(CONF_MALOUF_APP_TRANSPORT, MALOUF_APP_TRANSPORTS, "auto", advanced=True),
+            Question(CONF_MALOUF_APP_PROFILE, MALOUF_APP_PROFILES),
+            Question(CONF_MALOUF_APP_MODEL, _every_malouf_model),
+            *_MALOUF_RECEIVER_QUESTIONS,
         ),
-        normalize=_malouf_app_normalize,
-        validate=_malouf_app_errors,
+        validate=_malouf_switch_in_errors,
     ),
     # A receiver route's controls come from the physical remote, which neither
     # the protocol nor a retail name identifies.
