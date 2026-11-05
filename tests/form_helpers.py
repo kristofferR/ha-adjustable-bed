@@ -23,3 +23,23 @@ def shown_markers(result: Mapping[str, Any], **values: Any) -> dict[str, probati
     }
     hidden = get_hidden_fields(conditions, data)
     return {name: marker for name, marker in markers.items() if name not in hidden}
+
+
+def select_options(result: Mapping[str, Any], key: str) -> dict[str, str]:
+    """Return a form field's select options, value to label."""
+    marker = next(marker for marker in result["data_schema"].schema if marker == key)
+    selector = result["data_schema"].schema[marker]
+    return {option["value"]: option["label"] for option in selector.config["options"]}
+
+
+def suggested(result: Mapping[str, Any], key: str) -> Any:
+    """Return a form field's default, or None when it has none."""
+    marker = next(marker for marker in result["data_schema"].schema if marker == key)
+    return None if isinstance(marker.default, probatio.Undefined) else marker.default()
+
+
+async def answer_app(hass: Any, result: Mapping[str, Any], choice: str) -> Any:
+    """Answer the app question with a bed-type row, when the flow asks it."""
+    if result.get("step_id") != "select_app":
+        return result
+    return await hass.config_entries.flow.async_configure(result["flow_id"], {"bed_type": choice})

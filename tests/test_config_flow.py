@@ -174,7 +174,7 @@ from custom_components.adjustable_bed.setup_operation import (
     OperationResult,
     SetupAction,
 )
-from tests.form_helpers import shown_markers
+from tests.form_helpers import answer_app, select_options, shown_markers, suggested
 
 
 def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
@@ -2827,8 +2827,10 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: "manual"},
             )
+            # With no BLE device in range, the address is typed after the app question.
+            assert result["step_id"] == "select_app"
+            result = await answer_app(hass, result, BED_TYPE_LINAK)
 
-        # When no BLE devices, manual step redirects to manual_entry
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual_entry"
 
@@ -2902,6 +2904,12 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: mock_bluetooth_service_info_octo_rc2.address},
             )
+            # The app question follows the device and suggests the detected bed.
+            assert result["step_id"] == "select_app"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_BED_TYPE: suggested(result, CONF_BED_TYPE)},
+            )
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual_config"
@@ -2937,9 +2945,10 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: "manual"},
             )
+            result = await answer_app(hass, result, bed_type)
 
-        # Confirm Linak's recommended disconnect setting; ORE keeps the form's
-        # False default and creates its entry without a follow-up question.
+        # The app question drew the form for this bed type, so it shows the bed
+        # type's own disconnect default and no follow-up asks it again.
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
@@ -2953,14 +2962,10 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
-            if result.get("step_id") == "route":
-                result = await _answer_route(hass, result)
-            if disconnect_after_command:
-                assert result["step_id"] == "disconnect_after_command"
-                result = await hass.config_entries.flow.async_configure(
-                    result["flow_id"],
-                    user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
-                )
+            # The form was drawn for this bed type, so its routes were its own
+            # Advanced section and no route step follows.
+            assert result.get("step_id") != "route"
+            assert result.get("step_id") != "disconnect_after_command"
             result = await _advance_progress(hass, result)
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -2987,6 +2992,7 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: "manual"},
             )
+            result = await answer_app(hass, result, BED_TYPE_OKIN_CST)
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
@@ -3027,6 +3033,7 @@ class TestManualFlow:
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={CONF_ADDRESS: "manual"}
             )
+            result = await answer_app(hass, result, bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE))
 
         choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
@@ -3072,7 +3079,10 @@ class TestManualFlow:
                 context={"source": SOURCE_USER},
             )
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={CONF_ADDRESS: "select_by_brand"}
+                result["flow_id"], user_input={CONF_ADDRESS: "select_by_app"}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_BED_TYPE: "not_listed"}
             )
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={"actuator_brand": "okin"}
@@ -3126,6 +3136,7 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: "manual"},
             )
+            result = await answer_app(hass, result, BED_TYPE_MALOUF_APP)
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
@@ -3174,6 +3185,7 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: "manual"},
             )
+            result = await answer_app(hass, result, BED_TYPE_KAIDI)
 
         with (
             patch(
@@ -3200,7 +3212,9 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
-            result = await _answer_route(hass, result)
+            # The form was drawn for this bed type, so its routes were its own
+            # Advanced section and no route step follows.
+            assert result.get("step_id") != "route"
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_KAIDI_ROOM_ID] == 0x12345678
@@ -3227,6 +3241,7 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: "manual"},
             )
+            result = await answer_app(hass, result, BED_TYPE_LINAK)
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
@@ -3263,6 +3278,7 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: "manual"},
             )
+            result = await answer_app(hass, result, BED_TYPE_LINAK)
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
@@ -3277,12 +3293,9 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
-            result = await _answer_route(hass, result)
-            assert result["step_id"] == "disconnect_after_command"
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
-            )
+            # The form was drawn for this bed type, so its routes were its own
+            # Advanced section and no route step follows.
+            assert result.get("step_id") != "route"
             result = await _advance_progress(hass, result)
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -3444,7 +3457,7 @@ class TestUserFlow:
                 DOMAIN,
                 context={"source": SOURCE_USER},
             )
-            selector_options = next(iter(result["data_schema"].schema.values())).container
+            selector_options = select_options(result, CONF_ADDRESS)
             assert mock_bluetooth_service_info.address in selector_options
 
             result = await hass.config_entries.flow.async_configure(
@@ -3551,7 +3564,7 @@ class TestUserFlow:
             )
             retrying_option = f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
             assert result["type"] == FlowResultType.FORM
-            selector_options = next(iter(result["data_schema"].schema.values())).container
+            selector_options = select_options(result, CONF_ADDRESS)
             assert retrying_option in selector_options
             assert selector_options[retrying_option].startswith("Retrying Bed")
 
