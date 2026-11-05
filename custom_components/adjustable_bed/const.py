@@ -475,6 +475,7 @@ BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
 BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_CLUSTER018: Final = "richmat_classic_apps"
+BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
@@ -668,6 +669,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
     BED_TYPE_GOODVIBE,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
@@ -821,6 +823,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_MOTOMOTION,
         BED_TYPE_CLUSTER018,
         BED_TYPE_ERGOMOTION_4,
         *CLUSTER033_BED_TYPES,
@@ -3001,6 +3004,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_GOODVIBE,
+        BED_TYPE_MOTOMOTION,
         BED_TYPE_HJBED,
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_ISLEEP,

@@ -124,6 +124,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
@@ -425,7 +426,7 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {"richmat_classic_apps", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {"richmat_classic_apps", BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -879,6 +880,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
     BED_TYPE_JIECANG_APP: "jiecang_app",
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
+    BED_TYPE_MOTOMOTION: "motomotion",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_DOUBLESLEEP: "doublesleep",
     BED_TYPE_SLEEPTRACKER: "sleeptracker",
@@ -899,7 +901,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type != BED_TYPE_GMMOTOR
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION)
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
@@ -1344,6 +1346,19 @@ def _normalize_sleeptracker_data(data: dict[str, Any]) -> None:
     data[CONF_MOTOR_COUNT] = 3 if model.lumbar else 2
     data[CONF_HAS_MASSAGE] = True
     data[CONF_DISABLE_ANGLE_SENSING] = True
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+
+
+def _add_motomotion_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    schema[vol.Required(CONF_BLE_DEVICE_NAME, default=data.get(CONF_BLE_DEVICE_NAME, ""))] = str
+
+
+def _normalize_motomotion_data(data: dict[str, Any]) -> None:
+    from .motomotion_profile import Profile
+
+    Profile(data.get(CONF_BLE_DEVICE_NAME, ""))
+    data[CONF_DISABLE_ANGLE_SENSING] = True
+    data[CONF_HAS_MASSAGE] = False
     data[CONF_MOTOR_PULSE_USER_SET] = False
 
 
@@ -2248,6 +2263,7 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
     BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
     BED_TYPE_JIECANG_APP: _add_jiecang_app_schema_fields,
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
+    BED_TYPE_MOTOMOTION: _add_motomotion_schema_fields,
     BED_TYPE_MOTION_BED: _add_motion_bed_schema_fields,
     BED_TYPE_DOUBLESLEEP: _add_doublesleep_schema_fields,
     BED_TYPE_SLEEPTRACKER: _add_sleeptracker_schema_fields,
@@ -3069,6 +3085,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema(schema),
             errors=errors,
         )
+
+    async def async_step_motomotion(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Choose the exact app identity, independently of the HA display name."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                _normalize_motomotion_data(data)
+            except (ValueError, TypeError):
+                errors["base"] = "motomotion_profile"
+            else:
+                self._manual_data = data
+                return await self._finish_with_verify(data, data.get(CONF_NAME, "MotoMotion"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_motomotion_schema_fields(schema, data)
+        return self.async_show_form(step_id="motomotion", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_motion_bed(
         self, user_input: dict[str, Any] | None = None
@@ -8020,6 +8053,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.get(CONF_PROTOCOL_VARIANT),
             resolved_variant=data.get(CONF_KAIDI_RESOLVED_VARIANT),
             product_type=data.get(CONF_PRODUCT_TYPE),
+            ble_device_name=data.get(CONF_BLE_DEVICE_NAME),
         ):
             menu_options.append("pair_sides")
         if data.get(CONF_ADDRESS) or (
@@ -8233,8 +8267,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         casper_not_connected = needs_casper_transport_proof and (
             runtime is None or not runtime.is_connected
         )
+        motomotion_unsupported = self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_MOTOMOTION and not supports_single_address_pairing(BED_TYPE_MOTOMOTION, ble_device_name=self.config_entry.data.get(CONF_BLE_DEVICE_NAME))
         if (
-            casper_not_connected
+            motomotion_unsupported
+            or casper_not_connected
             or (needs_casper_transport_proof and controller is None)
             or (
                 controller is not None
@@ -8247,7 +8283,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 errors={
                     "base": (
                         "casper_pairing_needs_connection"
-                        if casper_not_connected or controller is None
+                        if casper_not_connected or (needs_casper_transport_proof and controller is None)
                         else "single_address_pairing_unsupported"
                     )
                 },
@@ -9041,6 +9077,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 except ValueError:
                     return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "cluster033_layout"})
                 user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_USER_SET)})
+            if bed_type == BED_TYPE_MOTOMOTION and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                try:
+                    _normalize_motomotion_data(app_data)
+                except (ValueError, TypeError):
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "motomotion_profile"})
+                user_input.update({key: app_data[key] for key in (CONF_BLE_DEVICE_NAME, CONF_DISABLE_ANGLE_SENSING, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_USER_SET)})
             if bed_type == BED_TYPE_MOTION_BED and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 app_errors = _motion_bed_errors(app_data)
@@ -9252,6 +9295,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 ),
                 resolved_variant=current_data.get(CONF_KAIDI_RESOLVED_VARIANT),
                 product_type=user_input.get(CONF_PRODUCT_TYPE, current_data.get(CONF_PRODUCT_TYPE)),
+                ble_device_name=user_input.get(CONF_BLE_DEVICE_NAME, current_data.get(CONF_BLE_DEVICE_NAME)),
             ):
                 return self.async_show_form(
                     step_id=step_id,
@@ -9423,6 +9467,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
                 if self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+                    if bed_type == BED_TYPE_MOTOMOTION:
+                        _normalize_motomotion_data(new_data)
                     if bed_type == BED_TYPE_MOTION_BED:
                         _normalize_motion_bed_data(new_data)
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
@@ -9459,6 +9505,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 new_data = {**self.config_entry.data, **self._pending_data, **user_input}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
+            if bed_type == BED_TYPE_MOTOMOTION and not separate_address_pair:
+                try:
+                    _normalize_motomotion_data(new_data)
+                except (ValueError, TypeError):
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "motomotion_profile"})
             if bed_type == BED_TYPE_MOTION_BED and not separate_address_pair:
                 _normalize_motion_bed_data(new_data)
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)

@@ -4634,6 +4634,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .goodvibe_services import async_register_goodvibe_services
     from .hjbed_services import async_register_hjbed_services
     from .motion_bed_services import async_register_motion_bed_services
+    from .motomotion_services import async_register_motomotion_services
     from .richmat_mh_services import async_register_richmat_mh_services
     from .rmcontrol_services import async_register_rmcontrol_services
     from .sleep_number_services import async_register_sleep_number_services
@@ -4645,6 +4646,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_gmmotor_services(hass)
     async_register_richmat_mh_services(hass)
     async_register_cluster018_services(hass)
+    async_register_motomotion_services(hass)
     async_register_hjbed_services(hass)
     async_register_goodvibe_services(hass)
     async_register_rmcontrol_services(hass)

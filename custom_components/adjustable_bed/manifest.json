@@ -2922,6 +2922,18 @@
     },
     {
       "local_name": "ZZRM*"
+    },
+    {
+      "local_name": "*SOFA*",
+      "connectable": true
+    },
+    {
+      "local_name": "*BT201*",
+      "connectable": true
+    },
+    {
+      "local_name": "*MOTO*",
+      "connectable": true
     }
   ],
   "categories": [

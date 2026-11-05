@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from .logicdata_app import LogicdataAppController as LogicdataAppController
     from .malouf_app import MaloufAppController as MaloufAppController
     from .motion_bed import MotionBedController as MotionBedController
+    from .motomotion import MotoMotionController as MotoMotionController
     from .motosleep import MotoSleepController as MotoSleepController
     from .octo import OctoController as OctoController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
@@ -112,6 +113,7 @@ if TYPE_CHECKING:
 
 _EXPORT_MODULES = {
     "GoodVibeController": "goodvibe",
+    "MotoMotionController": "motomotion",
     "HJBedController": "hjbed",
     "DoubleSleepController": "doublesleep",
     "GmmotorController": "gmmotor",
