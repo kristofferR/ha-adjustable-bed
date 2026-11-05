@@ -1151,6 +1151,31 @@ def _reverie_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     return REVERIE_MODEL_CHOICES
 
 
+def _reverie_angle_sensing() -> Question:
+    """Ask angle sensing only for a model whose app reads positions.
+
+    The model is asked on the same form, so the question follows that answer,
+    and a staged answer is the default only for a model that reads positions.
+    """
+    from .beds.reverie_profiles import REVERIE_MODEL_CHOICES, resolve_reverie_model
+
+    reports: FieldCondition = {
+        "field": CONF_PROTOCOL_VARIANT,
+        "operator": ConditionOperator.IN,
+        "value": [model for model in REVERIE_MODEL_CHOICES if resolve_reverie_model(model).positions],
+    }
+    return Question(CONF_DISABLE_ANGLE_SENSING, default=False, when=reports, staged_when=reports)
+
+
+def _reverie_quiet_model(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """A model whose app reads no positions never reads them."""
+    from .beds.reverie_profiles import resolve_reverie_model
+
+    if resolve_reverie_model(data.get(CONF_PROTOCOL_VARIANT)).positions:
+        return {}
+    return {CONF_DISABLE_ANGLE_SENSING: True}
+
+
 # The RMControl app's standing-desk products run a separate desk protocol.
 _RMCONTROL_DESKS: Final = frozenset({"FWRM", "WFRM"})
 # The app's command side; Home Assistant's paired sides route separately.
@@ -1491,15 +1516,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     # The Reverie question confirms the receiver; the model the app shows sets
     # the controls of either one. Nothing detects the model, so the app's own
     # list and its explicit Other fallback are offered, never an automatic one.
-    # Both receivers report positions; the family step resets angle sensing to
-    # the confirmed receiver's default, so each asks it.
+    # Both receivers report positions for most models; the family step resets
+    # angle sensing to the confirmed receiver's default, so each asks it for a
+    # model that reads positions.
     **{
         bed_type: _asking(
             bed_type,
             questions=(
                 Question(CONF_PROTOCOL_VARIANT, _reverie_models, "Other"),
-                *_angle_sensing(bed_type),
+                _reverie_angle_sensing(),
             ),
+            derive=_reverie_quiet_model,
         )
         for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
     },

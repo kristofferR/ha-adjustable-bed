@@ -20,14 +20,19 @@ from homeassistant.helpers.field_visibility import get_hidden_fields
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
     _FAMILY_STEPS,
+    _SETUP_ROUTE_EXCLUSIONS,
     AdjustableBedConfigFlow,
     _bed_type_selector,
     _motor_count_options,
 )
-from custom_components.adjustable_bed.const import resolve_explicit_bed_type
+from custom_components.adjustable_bed.const import (
+    disconnect_after_command_default_enabled,
+    resolve_explicit_bed_type,
+)
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import (
     bed_type_choice,
@@ -103,11 +108,16 @@ def _default(marker: vol.Marker) -> Any:
     return default() if callable(default) else default
 
 
-def _answers(result: dict[str, Any], attempt: int) -> dict[str, Any]:
-    """Defaults, or a listed answer for a required or refused field."""
+def _answers(
+    result: dict[str, Any], attempt: int, schema: vol.Schema | None = None
+) -> dict[str, Any]:
+    """Defaults, or a listed answer for a required or refused field, sections nested."""
     errors = result.get("errors") or {}
-    answers = {}
-    for marker, validator in _fields(result["data_schema"]).items():
+    answers: dict[str, Any] = {}
+    for marker, validator in (schema or result["data_schema"]).schema.items():
+        if isinstance(inner := getattr(validator, "schema", None), vol.Schema):
+            answers[marker.schema] = _answers(result, attempt, inner)
+            continue
         key, default = marker.schema, _default(marker)
         options = [option for option in _options(validator) if option != "auto"]
         if key in errors and options:
@@ -121,8 +131,14 @@ def _answers(result: dict[str, Any], attempt: int) -> dict[str, Any]:
     return answers
 
 
-async def _run(hass, row: str, path: list[Any], motor_count: int) -> dict[str, Any]:
-    """Set the row up with these route answers; return the saved route or the next choice."""
+async def _run(
+    hass, row: str, path: list[Any], motor_count: int, *, change_disconnect: bool | None = None
+) -> dict[str, Any]:
+    """Set the row up with these route answers; return the saved route or the next choice.
+
+    With ``change_disconnect``, the form also submits disconnect after each
+    command: as drawn, or changed from it.
+    """
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {"source": "user"}
     flow._async_transport_note = AsyncMock(return_value="")
@@ -146,7 +162,15 @@ async def _run(hass, row: str, path: list[Any], motor_count: int) -> dict[str, A
     }
     submitted = {key: value for key, value in submitted.items() if key not in _FIELDS or key in first}
     sentinels = {key: value for key, value in submitted.items() if key in _FIELDS}
-    flow._disconnect_choice_confirmed = True
+    drawn: bool | None = None
+    if change_disconnect is None:
+        flow._disconnect_choice_confirmed = True
+    else:
+        drawn = next(
+            _default(m) for m in form["data_schema"].schema
+            if m.schema == const.CONF_DISCONNECT_AFTER_COMMAND
+        )
+        submitted[const.CONF_DISCONNECT_AFTER_COMMAND] = drawn != change_disconnect
 
     def finish(data: dict[str, Any] | None = None, *_args: Any, **kwargs: Any) -> None:
         raise _Finished(kwargs.get("data") or data or flow._manual_data or {})
@@ -179,6 +203,7 @@ async def _run(hass, row: str, path: list[Any], motor_count: int) -> dict[str, A
             return {
                 "saved": saved,
                 "set": later | {key for key, value in sentinels.items() if saved.get(key) == value},
+                "drawn_disconnect": drawn,
             }
     # A step the answers above cannot satisfy: its profile must own every field.
     data = flow._manual_data or {}
@@ -390,3 +415,251 @@ async def test_an_entry_on_any_route_reaches_every_sibling_route(
         if missing := set(routes) - reached:
             gaps[route] = sorted(missing)
     assert not gaps, gaps
+
+
+@pytest.mark.parametrize("row", _starting_rows())
+@pytest.mark.parametrize("change", [False, True], ids=["left", "changed"])
+async def test_disconnect_after_command_follows_the_route_unless_changed(hass, row, change):
+    """Left as drawn it saves the chosen route's own default; a change is kept."""
+    gaps = {}
+    paths: list[list[Any]] = [[]]
+    while paths:
+        path = paths.pop()
+        result = await _run(hass, row, path, 3, change_disconnect=change)
+        if "choices" in result:
+            paths.extend([*path, choice] for choice in result["choices"])
+            continue
+        if (saved := result["saved"]) is None:
+            continue
+        drawn = result["drawn_disconnect"]
+        expected = not drawn if change else disconnect_after_command_default_enabled(
+            saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
+        )
+        if saved.get(const.CONF_DISCONNECT_AFTER_COMMAND) != expected:
+            gaps[" > ".join(map(str, path)) or "(row)"] = (_route(saved), expected)
+    assert not gaps, gaps
+
+
+def _brand_entries() -> list[tuple[str, int]]:
+    """Each brand-list entry naming an exact route that a family question offers."""
+    return [
+        (brand, index)
+        for brand, group in ACTUATOR_GROUPS.items()
+        for index, entry in enumerate(group["variants"] or ())
+        if entry.get("variant") and _APP_SETUP_STEPS.get(entry["type"]) in _ROUTE_STEPS
+    ]
+
+
+@pytest.mark.parametrize(("brand", "index"), _brand_entries())
+async def test_a_route_a_brand_list_names_is_not_asked_again(hass, brand, index):
+    """Naming the exact route in a brand list answers its family question, and its style."""
+    entry = ACTUATOR_GROUPS[brand]["variants"][index]
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": "user"}
+    flow._async_transport_note = AsyncMock(return_value="")
+    flow._disconnect_choice_confirmed = True
+    await flow.async_step_select_actuator({"actuator_brand": brand})
+    form = await flow.async_step_select_variant({"variant": str(index)})
+    assert form["step_id"] == "manual_entry"
+    marker = next(m for m in form["data_schema"].schema if m.schema == const.CONF_BED_TYPE)
+    row = form["data_schema"].schema[marker].rows()[_default(marker)]
+
+    def finish(data: dict[str, Any] | None = None, *_args: Any, **kwargs: Any) -> None:
+        raise _Finished(kwargs.get("data") or data or flow._manual_data or {})
+
+    with (
+        patch.object(flow, "_finish_with_verify", side_effect=finish),
+        patch.object(flow, "async_step_manual_pairing", side_effect=finish),
+        pytest.raises(_Finished) as finished,
+    ):
+        result = await flow.async_step_manual_entry(
+            {CONF_ADDRESS: ADDRESS, CONF_NAME: "Bed", const.CONF_BED_TYPE: row}
+        )
+        for attempt in range(4):
+            fields = {m.schema for m in _fields(result["data_schema"])}
+            assert result["step_id"] not in _ROUTE_STEPS, result["step_id"]
+            assert const.CONF_PROTOCOL_VARIANT not in fields, result["step_id"]
+            result = await getattr(flow, f"async_step_{result['step_id']}")(
+                _answers(result, attempt)
+            )
+    saved = finished.value.data
+    assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (
+        entry["type"],
+        entry["variant"],
+    )
+
+
+def _plain_rows() -> list[str]:
+    """Every row the generic form sets up without an app or family step."""
+    return sorted(
+        option["value"]
+        for option in get_bed_type_options()
+        if resolve_bed_type_choice(option["value"])[0] not in _APP_SETUP_STEPS
+    )
+
+
+@pytest.mark.parametrize("row", _plain_rows())
+@pytest.mark.parametrize("disable", [None, True], ids=["left", "disabled"])
+async def test_the_unpreselected_form_saves_each_beds_angle_sensing(hass, row, disable):
+    """Left as drawn it saves the bed's own default; a reporting bed can turn it off (#863)."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": "user"}
+    flow._async_transport_note = AsyncMock(return_value="")
+    flow._disconnect_choice_confirmed = True
+    form = await flow.async_step_manual_entry()
+    markers = {m.schema: m for m in form["data_schema"].schema}
+    sensing = markers[const.CONF_DISABLE_ANGLE_SENSING]
+    shown = sensing.schema not in get_hidden_fields(
+        {sensing.schema: getattr(sensing, "visible", None) or True}, {const.CONF_BED_TYPE: row}
+    )
+    bed_type, variant = resolve_bed_type_choice(row)
+    routes = (variant or const.VARIANT_AUTO, *(get_variants_for_bed_type(bed_type) or {}))
+    # Shown exactly where a route of the row reports positions.
+    assert shown == any(const.bed_type_has_position_feedback(bed_type, r) for r in routes)
+    submitted = {CONF_ADDRESS: ADDRESS, CONF_NAME: "Bed", const.CONF_BED_TYPE: row}
+    if shown:
+        submitted[const.CONF_DISABLE_ANGLE_SENSING] = _default(sensing) if disable is None else disable
+
+    def finish(data: dict[str, Any] | None = None, *_args: Any, **kwargs: Any) -> None:
+        raise _Finished(kwargs.get("data") or data or flow._manual_data or {})
+
+    with (
+        patch.object(flow, "_finish_with_verify", side_effect=finish),
+        patch.object(flow, "async_step_manual_pairing", side_effect=finish),
+        pytest.raises(_Finished) as finished,
+    ):
+        result = await flow.async_step_manual_entry(submitted)
+        for attempt in range(4):
+            result = await getattr(flow, f"async_step_{result['step_id']}")(
+                _answers(result, attempt)
+            )
+    saved = finished.value.data
+    reports = const.bed_type_has_position_feedback(
+        saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
+    )
+    expected = True if disable and shown else not reports
+    assert saved[const.CONF_DISABLE_ANGLE_SENSING] is expected
+
+
+# Bed types whose controller reads positions, on routes the integration does not
+# read them for by default (``bed_type_has_position_feedback`` is False), so
+# angle sensing starts disabled.
+_QUIET_BED_TYPES = (
+    const.BED_TYPE_COOLBASE,
+    const.BED_TYPE_DOUBLESLEEP,
+    const.BED_TYPE_FURNIMOVE,
+    const.BED_TYPE_ISLEEP,
+    const.BED_TYPE_KEESON,
+    const.BED_TYPE_LIMOSS_REMOTE,
+    const.BED_TYPE_OCTO,
+    const.BED_TYPE_OKIN_DOT,
+    const.BED_TYPE_OKIN_FFE,
+    const.BED_TYPE_OKIN_RF_ECO_BT,
+    const.BED_TYPE_REVERIE,
+    const.BED_TYPE_REVERIE_NIGHTSTAND,
+    const.BED_TYPE_SBI,
+    const.BED_TYPE_SCOTT_LIVING,
+    const.BED_TYPE_SERTA,
+    const.BED_TYPE_SLEEPTRACKER,
+    const.BED_TYPE_SLEEPYS_ELITE_APP,
+    const.BED_TYPE_STARCODE_ABM5_4,
+    const.BED_TYPE_SVANE,
+)
+
+
+def _routes_of(bed_type: str) -> list[str]:
+    return list(dict.fromkeys((const.VARIANT_AUTO, *(get_variants_for_bed_type(bed_type) or {}))))
+
+
+def _quiet_routes() -> list[tuple[str, str]]:
+    """Each route of a quiet bed type that a new setup can save."""
+    return [
+        (bed_type, variant)
+        for bed_type in _QUIET_BED_TYPES
+        for variant in _routes_of(bed_type)
+        if not const.bed_type_has_position_feedback(bed_type, variant)
+        and variant not in _SETUP_ROUTE_EXCLUSIONS.get(bed_type, ())
+    ]
+
+
+async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(hass):
+    from custom_components.adjustable_bed.beds.base import BedController
+    from tests.test_controller_contract import _create_controller_for_bed_type
+
+    found = set()
+    for bed_type in const.SUPPORTED_BED_TYPES:
+        controller = await _create_controller_for_bed_type(bed_type)
+        if type(controller).read_positions is not BedController.read_positions and any(
+            not const.bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type)
+        ):
+            found.add(bed_type)
+    assert found == set(_QUIET_BED_TYPES)
+
+
+@pytest.mark.parametrize(("bed_type", "variant"), _quiet_routes())
+async def test_an_untouched_setup_leaves_a_quiet_route_unread(hass, bed_type, variant):
+    """Left as drawn, every setup of the route saves angle sensing disabled."""
+    saved = []
+    paths: list[list[Any]] = [[]]
+    while paths:
+        path = paths.pop()
+        flow = AdjustableBedConfigFlow()
+        flow.hass, flow.context = hass, {"source": "user"}
+        flow._async_transport_note = AsyncMock(return_value="")
+        flow._disconnect_choice_confirmed = True
+        # Drawn for the route, as discovery or a brand list draws it.
+        flow._selected_bed_type, flow._selected_protocol_variant = bed_type, variant
+        form = await flow.async_step_manual_entry()
+        row = next(m for m in form["data_schema"].schema if m.schema == const.CONF_BED_TYPE)
+        choice = form["data_schema"].schema[row].rows()[_default(row)]
+        hidden = get_hidden_fields(
+            {m.schema: m.visible for m in form["data_schema"].schema if getattr(m, "visible", None)},
+            {const.CONF_BED_TYPE: choice},
+        )
+        # What the frontend submits for a form nobody changed.
+        submitted = {k: v for k, v in _answers(form, 0).items() if k not in hidden | {"advanced"}}
+        submitted.update({CONF_ADDRESS: ADDRESS, CONF_NAME: "Bed", const.CONF_BED_TYPE: choice})
+
+        def finish(
+            data: dict[str, Any] | None = None, *_args: Any, flow=flow, **kwargs: Any
+        ) -> None:
+            raise _Finished(kwargs.get("data") or data or flow._manual_data or {})
+
+        with (
+            patch.object(flow, "_finish_with_verify", side_effect=finish),
+            patch.object(flow, "async_step_manual_pairing", side_effect=finish),
+        ):
+            try:
+                result = await flow.async_step_manual_entry(submitted)
+                answered = 0
+                for attempt in range(8):
+                    answers = _answers(result, attempt)
+                    if variant in _options(
+                        next(
+                            (v for m, v in _fields(result["data_schema"]).items()
+                             if m.schema == const.CONF_PROTOCOL_VARIANT),
+                            None,
+                        )
+                    ):
+                        # The route's own pick, such as a remote code or model.
+                        answers.update({const.CONF_PROTOCOL_VARIANT: variant})
+                        if "advanced" in answers:
+                            answers["advanced"][const.CONF_PROTOCOL_VARIANT] = variant
+                    if (key := _ROUTE_STEPS.get(result["step_id"])) is not None:
+                        marker = next(m for m in _fields(result["data_schema"]) if m.schema == key)
+                        options = _options(_fields(result["data_schema"])[marker])
+                        if answered == len(path):
+                            paths.extend([*path, o] for o in (["keep"] if "keep" in options else options))
+                            break
+                        answers[key] = path[answered]
+                        answered += 1
+                    result = await getattr(flow, f"async_step_{result['step_id']}")(answers)
+            except _Finished as finished:
+                saved.append(finished.data)
+    routes = [
+        s for s in saved
+        if s[const.CONF_BED_TYPE] == bed_type
+        and (s.get(const.CONF_PROTOCOL_VARIANT) or const.VARIANT_AUTO) == variant
+    ]
+    assert routes, f"no untouched setup reached {bed_type}:{variant}"
+    assert all(s[const.CONF_DISABLE_ANGLE_SENSING] is True for s in routes), routes

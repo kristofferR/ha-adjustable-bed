@@ -263,6 +263,7 @@ feedback or change which commands a bed supports.
 
 - Turn this off to enable position feedback and sliders on supported controllers.
 - Turn it on if position monitoring interferes with the physical remote. The controller can still require notifications for authentication or other state.
+- Setup and Configure show it only for beds that can report positions.
 - Releasing the BLE link is separate: use Disconnect After Command or the Disconnect button to let a remote or app reconnect.
 
 **Position Mode**

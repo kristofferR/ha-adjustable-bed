@@ -53,6 +53,14 @@ returns.
 - Setup asks every declared question. A family step (see
   [Guided setup changes](guided-setup-changes.md)) chooses the app first, then
   hands the staged route to `profile_questions`.
+- A brand list that names an app, or an exact route, answers the family
+  question, so the question is not asked again. The choice is explicit, it
+  saves the same route as answering the question, and rows are named by app,
+  so a named app there is the same answer. This covers the Customatic,
+  Jordan's and StarCode app lists, the Richmat app profiles, and the Keeson
+  apps and remote routes, including the Restonic BT remote style. A brand
+  entry that names only a receiver, such as an Okin or L&P one, still leads to
+  the question, since the receiver does not decide the app.
 - A family row's form is drawn for one route, and the family step resets angle
   sensing and the pulse settings to the chosen route's defaults. A route the
   question can choose therefore declares each generic field its own old row
@@ -95,12 +103,23 @@ a native conditional field on the bed-type field, listing both each row's label
   absent for other rows. A Svane app row sets its own route.
 
 Defaults cannot follow a changed row. A field whose default depends on the bed
-type (motor count, angle sensing, pulse count and delay) that is left at the
-default it was drawn with saves the chosen profile's default instead; a value
-the user changed is kept. Angle sensing the form did not show for the chosen
-row saves that route's own default, so a question that asks it later starts
-there. Disconnect after each command asks again instead
-when the two defaults differ.
+type (motor count, pulse count and delay) that is left at the default it was
+drawn with saves the chosen profile's default instead; a value the user changed
+is kept. Disconnect after each command asks again instead when the two defaults
+differ, and when a family question then picks another route, an answer left as
+drawn takes that route's own default; a changed one is kept. Guided changes
+leave it alone, as Configure keeps an existing entry's value.
+
+**Disable angle sensing** shows only for rows with a route that reports
+positions, and starts off (positions are read): every such route's own default.
+Its key, label and meaning are those of Configure and the receiver steps; only
+its default and visibility differ by row. Turning it on is therefore always the
+user's change, and is kept, whichever row the form was drawn for. A route
+without position reports, or a row the form did not show it for, saves the
+route's own default, so a question that asks it later starts there. The
+controllers of some of those routes can read positions, such as Octo, SBI and
+the Reverie models without position reports, but the integration does not read
+them there, so an untouched setup leaves them unread.
 
 Configure conditions owned generic fields, and the L&P app field, on its route
 field the same way. It still redraws after a bed-type change, and after a route
@@ -182,7 +201,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `logicdata_app@phone`, `logicdata_app@tablet` | Command family; the layout for P1 only, since P2 is the middle layout its `normalize` sets; light; transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
 | `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
 | `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
-| `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant), and angle sensing. |
+| `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant), and angle sensing for a model whose app reads positions. The model is asked on the same form, so the question follows it; a model without position reports derives angle sensing disabled. |
 | `richmat` | The RMControl product, or None for the remote controls; the RMControl side when a product is chosen; otherwise the Richmat remote code; the packet dialect (Advanced). An RMControl product with a Prefix55 or PrefixAA dialect is refused on save. |
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | The app's model (the protocol variant), or Auto from the raw Bluetooth name; a name the app cannot resolve is refused on save. |
 | `sleep_number` | The side this Fuzion entry controls (the protocol variant), and angle sensing. |
