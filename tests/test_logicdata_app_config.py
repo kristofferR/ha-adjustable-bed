@@ -34,28 +34,25 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_service_info, step):
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_service_info, route):
     """A user selecting the app row must choose the app and its layout on every setup route."""
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")(
-        {
-            CONF_ADDRESS: "11:22:33:44:55:66",
-            CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
-            CONF_NAME: "App Bed",
-            CONF_MOTOR_COUNT: 2,
-            CONF_HAS_MASSAGE: True,
-            CONF_DISABLE_ANGLE_SENSING: False,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-            CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
+    settings = {
+        CONF_NAME: "App Bed",
+        CONF_MOTOR_COUNT: 2,
+        CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: False,
+        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_PREFERRED_ADAPTER: "auto",
+    }
+    result = await start_new_bed(flow, route, BED_TYPE_LOGICDATA_APP)
     assert result["step_id"] == "logicdata_family"
     result = await flow.async_step_logicdata_family({"choice": "phone"})
     assert result["step_id"] == "profile_questions"
@@ -69,7 +66,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
         "_finish_with_verify",
         new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
     ) as finish:
-        await flow.async_step_profile_questions(values)
+        result = await finish_new_bed(flow, await flow.async_step_profile_questions(values), settings)
     saved = finish.call_args.args[0]
     assert saved[CONF_LOGICDATA_APP_PROFILE] == "phone"
     assert saved[CONF_LOGICDATA_APP_LAYOUT] == "standard_3_split_upper"

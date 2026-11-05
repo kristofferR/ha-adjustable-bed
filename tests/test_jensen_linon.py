@@ -50,6 +50,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import is_jensen_linon_name
 from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
+from tests.form_helpers import finish_new_bed
 
 HEAD = SVANE_HEAD_SERVICE_UUID
 FOOT = SVANE_FEET_SERVICE_UUID
@@ -309,9 +310,8 @@ async def test_bluetooth_setup_stores_the_app_profile(
     flow._finish_with_verify = finish
     answers = {VARIANT_AUTO: "svane_bed", SVANE_VARIANT_JENSEN_LINON: "jensen_linon"}
 
-    result = await flow.async_step_bluetooth_confirm(
-        {CONF_BED_TYPE: BED_TYPE_SVANE, CONF_DISCONNECT_AFTER_COMMAND: False}
-    )
+    # A discovered Svane controller's first question is the Jensen / Svane one.
+    result = await flow.async_step_bluetooth_confirm()
     assert result["step_id"] == "jensen_family"
     choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
     if variant == VARIANT_AUTO:
@@ -321,7 +321,8 @@ async def test_bluetooth_setup_stores_the_app_profile(
     if expected == SVANE_VARIANT_JENSEN_LINON:
         # LinOn asks its motor count, the setting its old row showed.
         assert result["step_id"] == "profile_questions"
-        await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
+        result = await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
+    await finish_new_bed(flow, result, {CONF_DISCONNECT_AFTER_COMMAND: False})
 
     assert finish.await_args is not None
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected

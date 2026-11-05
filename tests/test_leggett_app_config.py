@@ -34,39 +34,30 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
 from custom_components.adjustable_bed.profile_migration import _async_preview_labels
+from tests.form_helpers import finish_new_bed, start_new_bed
 
 
 @pytest.mark.parametrize(
-    "step,pairing",
+    "route,pairing",
     [
-        ("manual_entry", "manual_pairing"),
-        ("manual_config", "manual_pairing"),
-        ("bluetooth_confirm", "bluetooth_pairing"),
+        ("typed", "manual_pairing"),
+        ("picked", "manual_pairing"),
+        ("discovered", "bluetooth_pairing"),
     ],
 )
 async def test_setup_collects_app_then_preserves_pairing(
-    hass, mock_bluetooth_service_info, step, pairing
+    hass, mock_bluetooth_service_info, route, pairing
 ):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")(
-        {
-            CONF_ADDRESS: "11:22:33:44:55:66",
-            CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
-            CONF_NAME: "Prodigy",
-            CONF_MOTOR_COUNT: 2,
-            CONF_HAS_MASSAGE: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-            CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
+    settings = {CONF_NAME: "Prodigy", CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISCONNECT_AFTER_COMMAND: False, CONF_PREFERRED_ADAPTER: "auto"}
+    result = await start_new_bed(flow, route, BED_TYPE_LEGGETT_OKIN)
     # The L&P question names each app, which picks its own layout.
     assert result["step_id"] == "leggett_family"
     with patch.object(flow, f"async_step_{pairing}", new=AsyncMock()) as resume:
-        await flow.async_step_leggett_family({"choice": "prodigy2l"})
+        await finish_new_bed(flow, await flow.async_step_leggett_family({"choice": "prodigy2l"}), settings)
     resume.assert_awaited_once_with()
     assert flow._manual_data[CONF_LEGGETT_APP_PROFILE] == "prodigy2l"
     assert flow._manual_data[CONF_MOTOR_COUNT] == 3

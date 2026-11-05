@@ -390,17 +390,13 @@ async def test_factory_and_manual_selection(hass, profile):
     assert isinstance(controller, EshineOkinController) and controller.profile == profile
     assert is_valid_variant_for_bed_type(BED_TYPE_ESHINE_OKIN, profile)
     assert not is_valid_variant_for_bed_type(BED_TYPE_ESHINE_OKIN, "auto")
+    from tests.form_helpers import finish_new_bed, start_new_bed
+
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:22",
-            CONF_BED_TYPE: f"eshine_okin:{profile}",
-            CONF_PROTOCOL_VARIANT: "auto",
-        }
-    )
+    result = await start_new_bed(flow, "typed", f"eshine_okin:{profile}", "AA:BB:CC:DD:EE:22")
+    await finish_new_bed(flow, result)
     saved = flow._finish_with_verify.await_args.args[0]
     assert saved[CONF_BED_TYPE] == BED_TYPE_ESHINE_OKIN
     assert saved[CONF_PROTOCOL_VARIANT] == profile

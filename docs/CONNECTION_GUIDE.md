@@ -171,18 +171,18 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
    - **Scan again for beds:** Request a fresh active scan from Home Assistant, then return to the discovered list
    - **Manual:** Choose **Set up by app or remote** (the app first) or **Pick any Bluetooth device** (the device first), then select the bed or enter its Bluetooth MAC address (format: `AA:BB:CC:DD:EE:FF`)
 
-4. **Configure Settings**
-   - **Bed type**: Type part of your app, brand or controller name to search the
-     list. For a family with a guided change, such as Okin, Keeson or
-     Leggett & Platt, setup then asks which app or remote controls the bed; see
+4. **Choose the app, then the settings**
+   - **App or remote**: A discovered bed asks which app or remote controls it,
+     from its detected family, with **Another app or remote** for the full
+     list. The full list is searchable: type part of your app, brand or
+     controller name. The app then asks its own questions; see
      [Initial Setup](CONFIGURATION.md#initial-setup)
    - **Name**: Friendly name for your bed
-   - **Motor Count**: See below
-   - **Has Massage**: Enable if your bed has massage
+   - **Motor Count** and **Has Massage**: Shown when the app does not set them; see below
    - **Advanced: receiver route** (only for bed types with several routes): Usually leave as Auto-detect
-   - **App/product profile** (where offered): Match the actual app or remote; see [profile settings](CONFIGURATION.md#app-and-product-profiles)
+   - **Advanced connection and timing**: Pulse count, pulse delay and idle timeout; usually leave as they are
 
-   The setup form also shows which Bluetooth path Home Assistant is likely to
+   The final settings also show which Bluetooth path Home Assistant is likely to
    use — a direct adapter on the Home Assistant host, or a Bluetooth proxy —
    along with the scanner name and signal strength. It is a prediction, not a
    promise: Home Assistant re-ranks every adapter and proxy at the moment it

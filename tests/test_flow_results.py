@@ -78,3 +78,47 @@ def test_no_flow_aborts_with_a_standard_reason_under_its_own_domain():
         and reason.value in HOMEASSISTANT_REASONS
     ]
     assert not own
+
+
+def test_no_string_has_leading_or_trailing_space():
+    """Hassfest refuses a string with surrounding whitespace, newlines included."""
+
+    def strings(node, path=""):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                yield from strings(value, f"{path}.{key}" if path else key)
+        elif isinstance(node, str):
+            yield path, node
+
+    for name in ("strings.json", "translations/en.json"):
+        data = json.loads((PACKAGE / name).read_text())
+        padded = [path for path, text in strings(data) if text != text.strip()]
+        assert not padded, (name, padded)
+
+
+def test_every_field_description_has_its_field_label():
+    """Hassfest refuses a ``data_description`` key that the step's ``data`` lacks."""
+
+    def flows(data):
+        yield "config", data.get("config", {})
+        yield "options", data.get("options", {})
+        for issue, body in data.get("issues", {}).items():
+            yield f"issues.{issue}.fix_flow", body.get("fix_flow", {})
+
+    for name in ("strings.json", "translations/en.json"):
+        data = json.loads((PACKAGE / name).read_text())
+        missing = []
+        for flow, body in flows(data):
+            for step_id, step in body.get("step", {}).items():
+                blocks = {step_id: step, **{
+                    f"{step_id}.sections.{key}": block
+                    for key, block in step.get("sections", {}).items()
+                }}
+                for where, block in blocks.items():
+                    labels = block.get("data", {})
+                    missing += [
+                        f"{flow}.step.{where}.data_description.{key}"
+                        for key in block.get("data_description", {})
+                        if key not in labels
+                    ]
+        assert not missing, (name, missing)

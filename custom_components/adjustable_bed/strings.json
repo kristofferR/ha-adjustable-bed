@@ -14,34 +14,37 @@
         "description": "Multiple bed types use the same Bluetooth identifier as **{name} ({address})**.\n\nSelect which type matches your bed:",
         "data": {
           "bed_type_choice": "Bed type",
-          "show_all_option": "Show all bed types..."
+          "show_all_option": "Another app or remote: search every app"
         },
         "data_description": {
           "bed_type_choice": "If unsure, try the first option - you can change this later in device settings."
         }
       },
       "bluetooth_confirm": {
-        "title": "Confirm Adjustable Bed",
-        "description": "Do you want to set up {name} ({address})?\n{detection_note}\n\n{transport}\n\n{report_note}",
+        "title": "Set up {name}?",
+        "description": "{name} ({address}) is a {family} bed. Choose the app you use on your phone, or the remote if you don't use an app.{detection_note}",
         "data": {
-          "bed_type": "Bed type",
+          "bed_type": "App or remote",
+          "another": "Another app or remote: search every app",
+          "uncertain": "Detection is not certain, so check that the app below is yours."
+        },
+        "data_description": {
+          "bed_type": "Your choice sets the bed's controls. You can change it later in Reconfigure."
+        }
+      },
+      "finish_settings": {
+        "title": "Finish setting up {name}",
+        "description": "{profile}{setup_note}\n\n{transport}{report_note}",
+        "data": {
           "name": "Name",
           "motor_count": "Number of motors",
-          "octo_motor_count_override": "OCTO motor count",
-          "malouf_layout": "Malouf/Lucid actuator layout",
-          "malouf_memory_slots": "Malouf/Lucid memory positions",
           "has_massage": "Has massage feature",
           "disable_angle_sensing": "Disable angle sensing",
-          "preferred_adapter": "Bluetooth adapter",
-          "richmat_remote": "Richmat remote",
-          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
-          "rmcontrol_side": "RMControl side",
-          "motor_pulse_count": "Motor pulse count",
-          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
-          "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
-          "auto_detect_option": "Auto-detect (recommended)",
+          "octo_motor_count_override": "OCTO motor count",
+          "cb24_bed_selection": "CB24 bed side",
+          "preferred_adapter": "Bluetooth adapter",
+          "disconnect_after_command": "Disconnect after each command",
           "transport_direct": "Transport: direct Bluetooth",
           "transport_proxy": "Transport: Bluetooth proxy",
           "transport_unknown": "Transport: Bluetooth",
@@ -54,25 +57,16 @@
           "transport_proxy_pairing_warning": "Pairing over a proxy",
           "transport_all_busy": "No free Bluetooth connections",
           "transport_actual": "Connected over",
-          "transport_actual_differs": "Path differed from the prediction",
-          "cb24_bed_selection": "CB24 bed side"
+          "transport_actual_differs": "Path differed from the prediction"
         },
         "data_description": {
-          "bed_type": "Auto-detected bed type. Change it if detection was incorrect. Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
-          "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
-          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts.",
+          "motor_count": "Number of physical actuators.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
-          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
-          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
-          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
-          "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
-          "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
+          "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "transport_direct": "Direct Bluetooth",
           "transport_proxy": "Bluetooth proxy",
           "transport_unknown": "Bluetooth",
@@ -85,8 +79,7 @@
           "transport_proxy_pairing_warning": "⚠️ This bed needs Bluetooth pairing, and pairing over a proxy stores the bond on the proxy rather than on Home Assistant. If you later move the bed to a different proxy or to a Home Assistant adapter, you will have to pair again. Home Assistant also cannot remove a bond that lives on a proxy.",
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
-          "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted})."
         },
         "sections": {
           "advanced": {
@@ -97,17 +90,20 @@
             "data_description": {
               "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
             }
+          },
+          "timing": {
+            "name": "Advanced connection and timing",
+            "data": {
+              "motor_pulse_count": "Motor pulse count",
+              "motor_pulse_delay_ms": "Motor pulse delay (ms)",
+              "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+            },
+            "data_description": {
+              "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
+              "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
+              "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+            }
           }
-        }
-      },
-      "disconnect_after_command": {
-        "title": "Choose connection behavior",
-        "description": "The selected bed type has a different recommended connection behavior. Confirm whether Home Assistant should disconnect after each command.",
-        "data": {
-          "disconnect_after_command": "Disconnect after each command"
-        },
-        "data_description": {
-          "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Leave disabled for beds that need to retain connection-scoped state."
         }
       },
       "manual": {
@@ -117,112 +113,14 @@
           "address": "Device"
         }
       },
-      "manual_config": {
-        "title": "Configure Bed - {name}",
-        "description": "Configure the bed at {address}.{setup_note}\n\n{transport}",
-        "data": {
-          "bed_type": "Bed type",
-          "name": "Name",
-          "motor_count": "Number of motors",
-          "malouf_layout": "Malouf/Lucid actuator layout",
-          "malouf_memory_slots": "Malouf/Lucid memory positions",
-          "has_massage": "Has massage feature",
-          "disable_angle_sensing": "Disable angle sensing",
-          "preferred_adapter": "Bluetooth adapter",
-          "motor_pulse_count": "Motor pulse count",
-          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
-          "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "octo_pin": "Octo PIN",
-          "octo_motor_count_override": "OCTO motor count",
-          "richmat_remote": "Richmat remote",
-          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
-          "rmcontrol_side": "RMControl side",
-          "cb24_bed_selection": "CB24 bed side"
-        },
-        "data_description": {
-          "bed_type": "Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
-          "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
-          "malouf_memory_slots": "Number of memory buttons on the physical remote.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
-          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
-          "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
-          "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
-          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
-          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
-          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
-        },
-        "sections": {
-          "advanced": {
-            "name": "Advanced: receiver route",
-            "data": {
-              "protocol_variant": "Route"
-            },
-            "data_description": {
-              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
-            }
-          }
-        }
-      },
       "manual_entry": {
-        "title": "Manual Configuration",
-        "description": "Enter the bed's Bluetooth address manually.\n\n{transport}",
+        "title": "Enter the Bluetooth address",
+        "description": "Enter the address of the bed's Bluetooth controller.",
         "data": {
-          "address": "Bluetooth address",
-          "bed_type": "Bed type",
-          "name": "Name",
-          "motor_count": "Number of motors",
-          "malouf_layout": "Malouf/Lucid actuator layout",
-          "malouf_memory_slots": "Malouf/Lucid memory positions",
-          "has_massage": "Has massage feature",
-          "disable_angle_sensing": "Disable angle sensing",
-          "preferred_adapter": "Bluetooth adapter",
-          "motor_pulse_count": "Motor pulse count",
-          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
-          "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "octo_pin": "Octo PIN",
-          "octo_motor_count_override": "OCTO motor count",
-          "richmat_remote": "Richmat remote",
-          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
-          "rmcontrol_side": "RMControl side",
-          "cb24_bed_selection": "CB24 bed side"
+          "address": "Bluetooth address"
         },
         "data_description": {
-          "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
-          "bed_type": "Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
-          "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
-          "malouf_memory_slots": "Number of memory buttons on the physical remote.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
-          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
-          "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
-          "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
-          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
-          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
-          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
-        },
-        "sections": {
-          "advanced": {
-            "name": "Advanced: receiver route",
-            "data": {
-              "protocol_variant": "Route"
-            },
-            "data_description": {
-              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
-            }
-          }
+          "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label)."
         }
       },
       "bluetooth_pairing": {
@@ -683,21 +581,6 @@
           "confirm": "I understand that the combined Left, Right and Both controls are removed"
         }
       },
-      "route": {
-        "title": "Receiver route",
-        "description": "**{bed}** supports more than one receiver route. Only routes this bed type supports are listed. Auto-detect, where offered, is right for most beds: change it only if setup with it fails or you know the route.",
-        "sections": {
-          "advanced": {
-            "name": "Advanced: receiver route",
-            "data": {
-              "protocol_variant": "Route"
-            },
-            "data_description": {
-              "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
-            }
-          }
-        }
-      },
       "jiecang_family": {
         "title": "Which app or remote controls this bed?",
         "description": "Choose the app you use on your phone, or the remote if you don't use an app. The bed's name and Bluetooth services don't identify the app. Current or detected route: **{current}**.",
@@ -917,7 +800,6 @@
       "octo_pairing_needs_connection": "An OCTO receiver still needs its controls checked before combining. Connect that receiver and try again. If both need checking, you can connect them one at a time; this wizard remembers each result. Star2 receivers use their configured layout and do not need this check.",
       "pairing_unsupported_entities": "One of these beds has extra controls (such as climate, lights, or selectors) that combining doesn't support yet. Those would be lost, so pairing is blocked for now.",
       "same_address": "Both selections point at the same bed (same Bluetooth address). Pick two different beds to combine.",
-      "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support.",
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
       "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
@@ -9485,6 +9367,7 @@
         "legacy_jiecang": "No app: Glide or Comfort Motion remote (legacy Jiecang controls)",
         "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
         "logicdata_app": "LOGICDATA app: MOTIONrelax, or the Sleep Smart Air Mattress bed base",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the current controls"
       }
     },
@@ -9494,6 +9377,7 @@
         "okin_uuid": "No app: Okimat or OKIN handset code (requires pairing)",
         "okin_dot": "No app: DOT remote (RF34 or RF6707)",
         "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected controls"
       }
     },
@@ -9507,6 +9391,7 @@
         "purple_base_json": "Purple Smart Base, Member's Mark or Linx / Juna Sleep",
         "coolbase": "Cool Base app (with fan)",
         "other_route": "No app: another Keeson remote route",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected controls"
       }
     },
@@ -9522,6 +9407,7 @@
         "woosa": "Woosa Sleep app",
         "motion_bed": "Motion Bed app",
         "bedsense": "BedSense app",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected controls"
       }
     },
@@ -9536,6 +9422,7 @@
         "lp_app_mlrm": "L&P Adjustable Base app with an MlRM base",
         "lp_app_qrrm": "L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2)",
         "lp_legacy": "L&P Adjustable Base legacy app (2.2.1)",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the current controls"
       }
     },
@@ -9545,6 +9432,7 @@
         "box25": "BOX25 receiver on the Nordic UART service",
         "box24": "BOX24 receiver on the OKIN 64-bit service",
         "box15": "BOX15 receiver on the FFE5 service",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected controls"
       }
     },
@@ -9555,6 +9443,7 @@
         "tablet": "MOTIONrelax tablet app",
         "sleep_smart": "Sleep Smart Air Mattress app: bed base",
         "sleep_smart_pump": "Sleep Smart Air Mattress app: air mattress pump (its own device)",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected controls"
       }
     },
@@ -9565,6 +9454,7 @@
         "remedy": "Remedy app (Rize Remedy): back, legs and lumbar, memory page and light",
         "zseries_z230": "Z-Series app with the Z-230 model",
         "zseries_z280": "Z-Series app with the Z-280 model",
+        "another": "Another app or remote: search every app",
         "keep": "Keep the current app"
       }
     },
@@ -9572,6 +9462,7 @@
       "options": {
         "serenity": "Jordan's Serenity app",
         "tranquil": "Jordan's Tranquil app",
+        "another": "Another app or remote: search every app",
         "keep": "Keep the current app"
       }
     },
@@ -9579,20 +9470,23 @@
       "options": {
         "m5x4": "AdjustableM5X4 app",
         "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
-        "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed"
+        "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed",
+        "another": "Another app or remote: search every app"
       }
     },
     "remacro_family_choice": {
       "options": {
         "slumberland": "Slumberland app",
         "the_brick": "The Brick app",
-        "jeromes": "Jerome's app"
+        "jeromes": "Jerome's app",
+        "another": "Another app or remote: search every app"
       }
     },
     "reverie_family_choice": {
       "options": {
         "protocol_110": "Protocol 110 receiver (Nightstand service)",
         "protocol_108": "Protocol 108 receiver (older service)",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected receiver"
       }
     },
@@ -9601,6 +9495,7 @@
         "limoss_remote": "Limoss Remote app: bed or chair layouts and eight local memories",
         "fsm_relax": "FSM Relax app: bed or chair profile with app-labelled controls",
         "generic": "No app: Stawett or older Limoss controls",
+        "another": "Another app or remote: search every app",
         "keep": "Keep the current controls"
       }
     },
@@ -9610,6 +9505,7 @@
         "lucid": "Lucid Base app: the model it lists",
         "nordic_uart": "Malouf or Lucid receiver on the Nordic UART service",
         "ffe5": "Malouf or Lucid receiver on the FFE5 service",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected controls"
       }
     },
@@ -9617,6 +9513,7 @@
       "options": {
         "fuzion": "Fuzion base: Climate 360, FlexFit or FlexFit Smart",
         "mcr": "Older BAM/MCR base: i8 or 360 FlexFit 2",
+        "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected transport"
       }
     },
@@ -9626,6 +9523,7 @@
         "jensen_linon": "Jensen Adjustable Sleep app with a LinOn bed named Adjustable Bed or Jensen Bed",
         "svane_bed": "Svane Remote app with a Svane Bed",
         "svane_jmc400": "Svane Remote app with a JMC400 bed",
+        "another": "Another app or remote: search every app",
         "keep": "Keep the current controls"
       }
     },
@@ -9642,7 +9540,8 @@
         "fortywinks": "Forty Winks app",
         "milemont": "Milemont app",
         "superior": "Superior app",
-        "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code"
+        "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code",
+        "another": "Another app or remote: search every app"
       }
     },
     "setup_start": {

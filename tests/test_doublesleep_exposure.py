@@ -21,34 +21,27 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_detailed,
 )
 from custom_components.adjustable_bed.doublesleep_services import build_request
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 from tests.test_doublesleep_controller import Bed
 
 
-@pytest.mark.parametrize("step", ("manual_entry", "manual_config", "bluetooth_confirm"))
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_all_setup_routes_collect_separate_saved_model_and_driver(
-    hass, mock_bluetooth_service_info, step
+    hass, mock_bluetooth_service_info, route
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, "async_step_" + step)(
-        {
-            "address": "AA:BB:CC:01:02:03",
-            "bed_type": const.BED_TYPE_DOUBLESLEEP,
-            "name": "SleepEase",
-            "motor_count": 2,
-            "has_massage": False,
-            "disable_angle_sensing": False,
-            "disconnect_after_command": False,
-            "preferred_adapter": "auto",
-        }
-    )
+    result = await start_new_bed(flow, route, const.BED_TYPE_DOUBLESLEEP, "AA:BB:CC:01:02:03")
     assert result["step_id"] == "profile_questions"
     values = result["data_schema"]({"product_type": "11136", "protocol_variant": "p2"})
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_profile_questions(values)
+        await finish_new_bed(
+            flow,
+            await flow.async_step_profile_questions(values),
+            {"name": "SleepEase", "disconnect_after_command": False},
+        )
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "11136" and saved["protocol_variant"] == "p2"
     assert saved["disable_angle_sensing"] and saved["motor_pulse_delay_ms"] == 300
