@@ -93,7 +93,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive, [OKIN FFE 13/15 series](docs/beds/keeson.md#okin-ffe); [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](docs/beds/keeson.md#ore-comfort-bed-profiles), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
 | 🧪 [Casper Base app](docs/beds/casper-base.md) | PRO / MAX, conditional stored products, separate MM/SXB sensors and RCRM remote; artifact-proven, hardware unverified |
 | 🧪 [GM Control app](docs/beds/gmmotor.md) | Exact product catalogs, FWRM/WFRM desks, separate MM/SXB sleep modules; hardware unverified |
-| ❓ [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](docs/beds/richmat.md#classic-richmat-apps) | Explicit app and four-character layout; separate package-local catalogs, direct BLE controls and settings; hardware unverified |
+| 🧪 [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](docs/beds/richmat.md#classic-richmat-apps) | Explicit app and four-character layout; separate package-local catalogs, direct BLE controls and settings; hardware unverified |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/richmat.md#rmcontrol), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat.md#richmat-mh-apps) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
@@ -103,21 +103,21 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers; [OKIN SmartBed CB24 / Amada](docs/beds/okin-nframe.md#okin-smartbed-cb24) |
 | ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) |
 | 🧪 [AdjustaMattress](docs/beds/keeson.md#adjustamattress) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
-| ⚠️ [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
+| 🧪 [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
 | ✅ Jordan's | [Serenity](docs/beds/okin-nframe.md#jordans-serenity), [Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) |
 | ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
 | ✅ [Adjustable bed (Lumbar)](docs/beds/okin-nframe.md#adjustable-bed-lumbar) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
-| ❓ [eShine E2000 / E3000 / E3100 / E5000](docs/beds/eshine-okin.md) | eShine app (`com.okin.eshine`), explicit products, held presets, massage/light feedback and local alarm (needs testing) |
-| ✅ [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
+| 🧪 [eShine E2000 / E3000 / E3100 / E5000](docs/beds/eshine-okin.md) | eShine app (`com.okin.eshine`), explicit products, held presets, massage/light feedback and local alarm (needs testing) |
+| 🧪 [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
 | ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
 | ✅ [Okin 64-Bit](docs/beds/okin-nframe.md#okin-64-bit) | NORA_CON / NORACON Mattress Firm controllers |
-| ❓ [Good Vibe Sleep](docs/beds/goodvibe.md) | Exact app catalog, remote aliases and independent RM-/HJ- sleep sensors; hardware unverified |
-| ❓ [MotoMotion](docs/beds/motomotion.md) | 13 panel classes, independent name flags, local postures and ASCII/binary music; hardware unverified |
+| 🧪 [Good Vibe Sleep](docs/beds/goodvibe.md) | Exact app catalog, remote aliases and independent RM-/HJ- sleep sensors; hardware unverified |
+| 🧪 [MotoMotion](docs/beds/motomotion.md) | 13 panel classes, independent name flags, local postures and ASCII/binary music; hardware unverified |
 | 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
-| ✅ [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified; separate from the legacy Okin ORE (A5 5A) bed type |
+| 🧪 [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified; separate from the legacy Okin ORE (A5 5A) bed type |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md); legacy ISleep entries |
-| 🔬 [ISleep](docs/beds/isleep.md) | Explicit com.kaidi_test4 1.6.3 profile, products 129–134, 142, 143 (artifact verified, hardware unverified) |
+| 🧪 [ISleep](docs/beds/isleep.md) | Explicit com.kaidi_test4 1.6.3 profile, products 129–134, 142, 143 (artifact verified, hardware unverified) |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett; [Limoss Remote](docs/beds/limoss.md#limoss-remote) bed and chair layouts |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | ✅ [Svane](docs/beds/svane.md) | Svane Remote, JMC400, Jensen LinOn |
@@ -130,7 +130,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | 🧪 [BedSense app](docs/beds/ff_frame.md#bedsense) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
 | 🧪 [OKIN SleepEase](docs/beds/okin-nframe.md#okin-sleepease) | DoubleSleep / XiaoBao and sensor-only XiaoBao Only; artifact-proven, hardware unverified |
-| 🧪 [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, hardware unverified |
+| ⚠️ [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, partly user-confirmed on an ActiveBreeze STS-60 |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's BOX15 / BOX24 / BOX25 and the explicit Sleepy's Elite app profile |
 | ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/okin-nframe.md#adjustablem5x4); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |
 | 🧪 [Adjustable Comfort M1X12 app](docs/beds/starcode-m1x12.md) | Explicit CB25, F23 or kneading app profile, with up to two explicitly configured M1X12 ELEVATE accessories |
@@ -164,8 +164,9 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | BedJet PowerLayer adjustable frame (not the BedJet climate unit) |
 
 ✅ means supported by the integration. 🧪 marks app behavior implemented from
-accepted artifact evidence while hardware remains unverified. Each linked guide
-records its testing status.
+accepted artifact evidence while hardware remains unverified. ⚠️ marks partial
+testing: real beds have confirmed some controls or models, not all. Each linked
+guide's Status line records which routes and profiles are tested.
 When setup asks for an app, model or remote, choose the one supplied with your
 bed. Grouping them here does not make their commands interchangeable.
 
