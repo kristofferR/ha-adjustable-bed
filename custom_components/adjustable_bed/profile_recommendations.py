@@ -494,7 +494,10 @@ class ProfileRecommendationWatch:
             recommendation is None
             or self.dismissed.get(recommendation.rule)
             # Keep on the app review already answered every choice offered here.
-            or set(recommendation.choices) <= kept_profile_choices(self.entry.data)
+            or (
+                bool(recommendation.choices)
+                and set(recommendation.choices) <= kept_profile_choices(self.entry.data)
+            )
         ):
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
