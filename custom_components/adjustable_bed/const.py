@@ -5,6 +5,7 @@ from enum import IntFlag
 from typing import Final, overload
 
 from . import casper_base_catalog as _casper_base_catalog
+from . import hush_catalog as _hush_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
 from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
@@ -533,7 +534,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", BED_TYPE_CLUSTER018}
+    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", "hush_base", BED_TYPE_CLUSTER018}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -546,6 +547,14 @@ BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.si
 BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
+BED_TYPE_HUSH_BASE: Final = "hush_base"
+BED_TYPE_HUSH_SLEEP_MM: Final = "hush_sleep_mm"
+BED_TYPE_HUSH_SLEEP_SXB: Final = "hush_sleep_sxb"
+HUSH_BASE_VARIANTS: Final = {
+    key: value[0] + ("" if 46 <= _hush_catalog.INDICES[key] <= 57 else " (restored profile)")
+    for key, value in _hush_catalog.PRODUCTS.items()
+}
+HUSH_BASE_SIDE_VARIANTS: Final = frozenset(key for key, value in _hush_catalog.PRODUCTS.items() if value[11])
 BED_TYPE_CASPER_BASE: Final = "casper_base"
 BED_TYPE_GMMOTOR: Final = "gmmotor"
 BED_TYPE_GMMOTOR_SLEEP_MM: Final = "gmmotor_sleep_mm"
@@ -711,7 +720,9 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BF,
     BED_TYPE_CHERISH,
     "casper_remote",
+    "hush_remote",
     BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
+    BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,
@@ -2978,7 +2989,9 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_BF,
         BED_TYPE_CHERISH,
         "casper_remote",
+        "hush_remote",
         BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
+        BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,

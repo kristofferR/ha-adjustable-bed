@@ -828,6 +828,7 @@ class BedController(ABC):
         wall_clock_pacing: bool = False,
         on_write: Callable[[], None] | None = None,
         characteristic: BleakGATTCharacteristic | None = None,
+        expected_client: BleakClient | None = None,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -857,6 +858,8 @@ class BedController(ABC):
                      before any repeat delay or cancellation can interrupt it.
             characteristic: Exact discovered destination when duplicate UUIDs
                      require a particular characteristic instance.
+            expected_client: Optional connection identity checked after acquiring
+                     the BLE lock, so queued writes cannot migrate on reconnect.
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -912,6 +915,8 @@ class BedController(ABC):
                     if effective_cancel is not None and effective_cancel.is_set():
                         return
                     client = self.client
+                    if expected_client is not None and client is not expected_client:
+                        raise ConnectionError("Command belongs to a previous BLE connection")
                     if client is None or not client.is_connected:
                         _LOGGER.error("Cannot write command: BLE client disconnected during write")
                         raise ConnectionError("Not connected to bed")
@@ -1850,6 +1855,10 @@ class BedController(ABC):
     @property
     def supports_sleeptracker_controls(self) -> bool:
         """Whether typed local Sleeptracker processor actions are available."""
+        return False
+
+    @property
+    def supports_hush_base_controls(self) -> bool:
         return False
 
     @property

@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from homeassistant.util import dt as dt_util
 
@@ -43,6 +43,11 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+type ProductSpec = tuple[
+    str, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...],
+    bool, bool, bool, bool, bool, bool,
+]
+
 
 def action_label(name: str) -> str:
     return (
@@ -65,12 +70,15 @@ async def invoke(
 class CasperBaseController(BedController):
     """Use selected product actions with live coherent service/characteristic pairing."""
 
+    product_catalog: ClassVar[Mapping[str, ProductSpec]] = PRODUCTS
+    action_catalog: ClassVar[Sequence[tuple[str, int, int | None]]] = ACTIONS
+
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator)
         selected = product
-        if selected not in PRODUCTS:
+        if selected not in self.product_catalog:
             raise ValueError("Choose an explicit Casper Base product profile")
-        self.product = PRODUCTS[selected]
+        self.product = self.product_catalog[selected]
         self.model = selected
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
@@ -133,7 +141,7 @@ class CasperBaseController(BedController):
     @property
     def actions(self) -> dict[str, tuple[int, int | None]]:
         return {
-            ACTIONS[i][0]: (ACTIONS[i][1], ACTIONS[i][2])
+            self.action_catalog[i][0]: (self.action_catalog[i][1], self.action_catalog[i][2])
             for group in self.product[1:6]
             for i in group
         }
@@ -170,7 +178,7 @@ class CasperBaseController(BedController):
             # Music page callbacks belong to its capability-gated page, not a product list.
             if self.product[8] and "music_available" in self.events and action.startswith("Music"):
                 item = next(
-                    ((short, long) for name, short, long in ACTIONS if name == action), None
+                    ((short, long) for name, short, long in self.action_catalog if name == action), None
                 )
         if item is None or (save and item[1] is None):
             raise ValueError("Action unavailable for the selected product")
@@ -250,7 +258,7 @@ class CasperBaseController(BedController):
                     )
                 )
         if self.product[8]:
-            for name, _, _ in ACTIONS:
+            for name, _, _ in self.action_catalog:
                 if name.startswith("Music"):
                     label = action_label(name)
                     specs.append(
@@ -306,12 +314,15 @@ class CasperBaseController(BedController):
         if self._write_char is None:
             raise ValueError("No supported writable Casper Base service")
         if self._notify_char is not None:
-            await self.client.start_notify(self._notify_char, self._on_notification)
+            await self.client.start_notify(self._notify_char, self._build_notification_callback())
         for name in ("exit_limit", "clock", "light", "music"):
             await self._send(special(name, single=self._single))
         if self.product[10]:
             await self._send(time_sync(dt_util.now()))
         self._publish()
+
+    def _build_notification_callback(self) -> Callable[[BleakGATTCharacteristic, bytearray], None]:
+        return self._on_notification
 
     async def stop_notify(self) -> None:
         if self.client and self.client.is_connected and self._notify_char:
@@ -396,8 +407,11 @@ class CasperBaseController(BedController):
         else:
             raise ValueError("Unknown Casper Base operation")
         if op in ("alarm", "repeat_alarm"):
-            if not any(ACTIONS[i][0] == request.mode for i in self.product[4]):
+            if not any(self.action_catalog[i][0] == request.mode for i in self.product[4]):
                 raise ValueError("Alarm position not listed for this product")
+
+    def alarm_opcode(self, mode: str) -> int:
+        return self.actions[mode][0]
 
     async def async_execute_casper_base_request(self, request: Request) -> None:
         r = request
@@ -437,7 +451,7 @@ class CasperBaseController(BedController):
         elif op == "alarm":
             now = dt_util.now()
             minutes = alarm_countdown(r.hour, r.minute, now)
-            packets = alarm_pair(minutes, self.actions[r.mode][0])
+            packets = alarm_pair(minutes, self.alarm_opcode(r.mode))
         elif op == "repeat_alarm":
             mask = sum(1 << (7 - day) for day in set(r.days)) | int(r.enabled)
             existing = next((alarm for alarm in self.alarms if alarm["id"] == r.slot), {})
@@ -445,7 +459,7 @@ class CasperBaseController(BedController):
             if type(reserved) is not int:
                 raise ValueError("Invalid stored alarm byte")
             packets = (
-                extra(5, 1, (r.slot, reserved, r.hour, r.minute, self.actions[r.mode][0], mask)),
+                extra(5, 1, (r.slot, reserved, r.hour, r.minute, self.alarm_opcode(r.mode), mask)),
             )
         elif op == "repeat_delete":
             packets = (extra(5, 2, (r.slot,)),)
