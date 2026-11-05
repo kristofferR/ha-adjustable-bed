@@ -14,7 +14,8 @@ from custom_components.adjustable_bed.beds.hush_sleep import (
     HushRemoteController,
     HushSleepController,
 )
-from custom_components.adjustable_bed.casper_base_protocol import Request, control
+from custom_components.adjustable_bed.casper_base_protocol import Request
+from custom_components.adjustable_bed.codec.casper import control
 from custom_components.adjustable_bed.const import HUSH_BASE_VARIANTS
 from custom_components.adjustable_bed.hush_catalog import ACTIONS, INDICES, PRODUCTS
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing

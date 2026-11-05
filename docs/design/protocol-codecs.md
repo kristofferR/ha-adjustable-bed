@@ -32,6 +32,7 @@ docstring names its routes and their evidence.
 | Malouf (O2 Okin-like Malouf frames) | `codec/malouf.py` | `profiles/malouf.py` | [Malouf](../beds/malouf.md) | `tests/malouf_vectors.py` |
 | MotoMotion `$#` frames (from `main`) | `codec/motomotion.py` | `profiles/motomotion.py` | [MotoMotion](../beds/motomotion.md) | `tests/motomotion_vectors.py` |
 | BedJet PowerLayer `01` keys (from `main`) | `codec/bedjet_powerlayer.py` | `profiles/bedjet_powerlayer.py` | [BedJet PowerLayer](../beds/bedjet-powerlayer.md) | `tests/bedjet_powerlayer_vectors.py` |
+| Casper 6E: Hush Base (from `main`) | `codec/casper.py` | `profiles/hush.py` | [Hush Base](../beds/hush-base.md) | `tests/hush_vectors.py` |
 
 Which bed types each family backs, and which are still pending, is in its
 registration module (see [Registering a family](#registering-a-family)).

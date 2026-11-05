@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.adjustable_bed.casper_base_protocol import extra
+from custom_components.adjustable_bed.codec.casper import extra
 from custom_components.adjustable_bed.hush_protocol import HushMainReceive, decode
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/hush_notifications.json").read_text())

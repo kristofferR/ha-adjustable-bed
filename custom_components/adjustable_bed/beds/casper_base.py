@@ -13,15 +13,17 @@ from homeassistant.util import dt as dt_util
 
 from ..casper_base_catalog import ACTIONS, PRODUCTS
 from ..casper_base_protocol import (
-    GATT,
     RGB_TIMERS,
     Event,
     MainReceive,
     Request,
     alarm_countdown,
+    decode_main,
+)
+from ..codec.casper import (
+    GATT,
     alarm_pair,
     control,
-    decode_main,
     extra,
     light_rgb,
     light_seconds,

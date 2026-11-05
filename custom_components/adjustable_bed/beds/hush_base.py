@@ -10,9 +10,11 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
-from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown, alarm_pair, control
+from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown
+from ..codec.casper import alarm_pair, control
 from ..hush_catalog import ACTIONS, PRODUCTS
 from ..hush_protocol import HushMainReceive, decode
+from ..profiles.hush import PROFILES
 from .base import ControllerButtonSpec
 from .casper_base import CasperBaseController
 
@@ -40,6 +42,7 @@ class HushBaseController(CasperBaseController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator, product=product)
+        self.profile = PROFILES[product]
         self._generation = 0
         self._operation_generation: ContextVar[int | None] = ContextVar(
             "hush_operation_generation", default=None

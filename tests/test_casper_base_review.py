@@ -18,7 +18,8 @@ from custom_components.adjustable_bed.beds.casper_sleep import (
     CasperRemoteController,
     CasperSleepController,
 )
-from custom_components.adjustable_bed.casper_base_protocol import Request, extra
+from custom_components.adjustable_bed.casper_base_protocol import Request
+from custom_components.adjustable_bed.codec.casper import extra
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
