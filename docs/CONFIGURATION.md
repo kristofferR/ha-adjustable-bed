@@ -90,7 +90,10 @@ or from the bed's repair. Today this covers the
 [Malouf / Lucid family](beds/malouf.md#malouf-base--lucid-base-family), the
 [LOGICDATA family](beds/logicdata.md#detection--setup), the
 [Jensen / Svane family](beds/jensen.md#home-assistant-setup) and the
-[Limoss family](beds/limoss.md#home-assistant-setup).
+[Limoss family](beds/limoss.md#home-assistant-setup). Reconfigure also asks
+the Okin question for an Okin CST entry, and the L&P question for an L&P
+legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
+to that family's other routes; Configure still changes their own settings.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.
