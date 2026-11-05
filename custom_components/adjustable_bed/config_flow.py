@@ -1520,6 +1520,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
             BED_TYPE_ISLEEP,
             BED_TYPE_GMMOTOR,
             BED_TYPE_MOTOMOTION,
+            "hush_base",
         ),
         "profile_questions",
     ),
