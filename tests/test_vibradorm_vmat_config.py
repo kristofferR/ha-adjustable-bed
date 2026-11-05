@@ -312,7 +312,7 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
         await flow.async_step_profile_questions(defaults)
     flow._migration_verified = True
     await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
-    finished = await flow.async_step_migration_confirm({"confirm": True})
+    finished = await flow.async_step_migration_confirm({"action": "apply"})
     assert finished["type"] == FlowResultType.ABORT
     assert entry.data[const.CONF_VIBRADORM_APP_PROFILE] == app
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in entry.data

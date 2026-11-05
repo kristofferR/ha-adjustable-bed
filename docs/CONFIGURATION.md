@@ -48,7 +48,8 @@ massage support. The form shows only the fields of the row you choose.
   choosing its row, or a discovered bed of that family, asks which app or
   remote controls the bed, because a bed's name and Bluetooth services do not
   tell these apps apart. Where offered, the question's keep answer saves the
-  detected route. The Okin CST, Remacro, Richmat and StarCode rows ask their
+  detected route, after a screen that says its controls are generic, whether
+  it needs pairing, and that **Reconfigure** can choose the app later. The Okin CST, Remacro, Richmat and StarCode rows ask their
   app the same way, and the Reverie and Sleep Number rows ask only when the
   bed's advertised service does not settle the receiver.
 - An app row sets its own route. A bed type with several receiver routes lists
@@ -118,14 +119,21 @@ to that family's other routes; Configure still changes their own settings.
    (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
    Limoss) or **Keep current setup** (Vibradorm).
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
-   Home Assistant releases its connection and checks the chosen setup. Nothing
-   is saved yet.
-3. A review lists the controls that are added and removed, how many keep their
-   entity IDs, and the automations and scripts that use a removed control.
+   Home Assistant releases its connection and checks the chosen setup. The
+   check screen lists its steps. Nothing is saved yet.
+3. A review lists the controls that are added and removed, the kept controls
+   that change meaning (the same entity under another name), how many keep
+   their entity IDs, and the automations and scripts that use a removed
+   control.
 4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
+   The last screen names the new setup and the previous one; to switch back,
+   run **Reconfigure** again. **Keep current setup** is the other answer on the
+   review.
 
-A failed check, a closed window, the keep answer, **Keep current setup** on a
-failed check, or a concurrent edit leaves the saved setup unchanged and working. Choosing a label that resolves to
+A failed check shows **Nothing was changed** with **Try again** and **Keep
+current setup**. A failed check, a closed window, the keep answer, **Keep
+current setup** or a concurrent edit leaves the saved setup unchanged and
+working. Choosing a label that resolves to
 the saved setup changes nothing. A passed check does not prove the bed's
 physical layout or presets, so test the controls after applying a change.
 

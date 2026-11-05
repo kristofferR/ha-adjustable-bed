@@ -139,7 +139,7 @@ async def test_a_product_change_keeps_only_the_new_products_answers(hass, option
         assert entry is not None and entry.data == data
         flow._migration_verified = True
         await flow._async_create_selected_app_entry(title="Basic", data=flow._manual_data)
-        completed = await flow.async_step_migration_confirm({"confirm": True})
+        completed = await flow.async_step_migration_confirm({"action": "apply"})
         assert completed["type"] == FlowResultType.ABORT
         assert entry.data[const.CONF_VMATBASIC_PROFILE] == new
         assert entry.data.get(const.CONF_VMATBASIC_FLOOR_LEVEL) == (None if new == "basic" else 1)

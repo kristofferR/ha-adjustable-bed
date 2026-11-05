@@ -433,6 +433,8 @@ class ControlChanges:
 
     added: tuple[str, ...] = ()
     removed: tuple[str, ...] = ()
+    # Kept entities whose name changes, so they mean something else: (old, new).
+    reinterpreted: tuple[tuple[str, str], ...] = ()
     unchanged: int = 0
     # Automations and scripts that reference a removed entity.
     references: tuple[str, ...] = ()
@@ -614,8 +616,10 @@ async def async_control_changes(
     """Compare the entry's controls with those of the staged configuration.
 
     Unique IDs are address-based, so a control the staged route keeps keeps its
-    entity, history and automations. Only the staged route's declared controls
-    are known before it connects; controls a bed reports later can differ.
+    entity, history and automations. A kept control whose name changes is
+    reinterpreted: the same entity now stands for another control. Only the
+    staged route's declared controls are known before it connects; controls a
+    bed reports later can differ.
     """
     staged_data = {key: value for key, value in staged.items() if key != CONF_NAME}
     staged_data[CONF_ADDRESS] = entry.data.get(CONF_ADDRESS, staged.get(CONF_ADDRESS))
@@ -630,11 +634,21 @@ async def async_control_changes(
         for unique_id in removed_ids
         if (entity_id := registry.async_get_entity_id(current[unique_id][0], DOMAIN, unique_id))
     ]
+    kept = current.keys() & target.keys()
+    reinterpreted = sorted(
+        (
+            (current[uid][1], target[uid][1])
+            for uid in kept
+            if current[uid][0] == target[uid][0] and current[uid][1] != target[uid][1]
+        ),
+        key=lambda names: names[0].lower(),
+    )
     return ControlChanges(
         added=tuple(
             sorted((target[uid][1] for uid in target.keys() - current.keys()), key=str.lower)
         ),
         removed=tuple(sorted((current[uid][1] for uid in removed_ids), key=str.lower)),
-        unchanged=len(current.keys() & target.keys()),
+        reinterpreted=tuple(reinterpreted),
+        unchanged=len(kept) - len(reinterpreted),
         references=_references(hass, removed_entities),
     )

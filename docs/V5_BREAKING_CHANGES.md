@@ -248,8 +248,8 @@ position is unknown or unconfirmed after a restart. See
 Setup now starts from the app or remote that controls the bed. A bed's name
 and Bluetooth services often cannot tell its apps apart, so many brands have
 one row that asks which app, remote or receiver runs the bed. **Keep** saves
-the route detection chose, where it chose one, or leaves an existing entry
-unchanged. Rows that left the top-level list are reached through the question
+the route detection chose, where it chose one, after a screen that explains
+its generic controls and any pairing, or leaves an existing entry unchanged. Rows that left the top-level list are reached through the question
 and keep their bed type and ID, and a saved entry shows its own route's label.
 
 | Family | What setup shows now |
@@ -337,8 +337,11 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
   does ([#886](https://github.com/kristofferR/ha-adjustable-bed/pull/886)).
 - **Reconfigure** asks the family question, checks the chosen setup on a
   released link where the family has endpoint or pairing requirements, and
-  lists the controls that are added and removed, with the automations and
-  scripts that use a removed control, before **Apply this change** saves it.
+  lists the controls that are added, removed or change meaning, with the
+  automations and scripts that use a removed control. The review offers
+  **Apply this change** and **Keep current setup** as equal answers, a failed
+  check says **Nothing was changed** and offers **Try again** or **Keep**, and
+  an applied change names the new setup and the way back.
   [Changing the app or layout](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
   describes the steps.
 - **Reconfigure** also reaches routes that had no way in ([#889](https://github.com/kristofferR/ha-adjustable-bed/pull/889)). An Okin

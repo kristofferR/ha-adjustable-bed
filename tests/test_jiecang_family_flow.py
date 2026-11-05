@@ -87,7 +87,9 @@ async def test_detected_legacy_route_can_be_kept_without_a_new_question(hass):
         const.BED_TYPE_COMFORT_MOTION
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jiecang_family({"choice": "keep"})
+        kept = await flow.async_step_jiecang_family({"choice": "keep"})
+        assert kept["step_id"] == "keep_detected"
+        await flow.async_step_keep_continue()
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == const.BED_TYPE_COMFORT_MOTION
 
 
@@ -127,12 +129,10 @@ async def test_legacy_entry_changes_to_an_app_after_checking_its_transport(
         assert result["type"] == FlowResultType.SHOW_PROGRESS
         await hass.async_block_till_done()
         result = await manager.async_configure(result["flow_id"])
-        assert not result.get("errors")
-        result = await manager.async_configure(result["flow_id"], {})
         assert result["step_id"] == "migration_confirm"
         assert entry.data == before
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_JIECANG_APP
     assert entry.data[const.CONF_JIECANG_APP_PROFILE] == "dreamotion"
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
@@ -156,8 +156,7 @@ async def test_app_change_is_refused_when_the_link_lacks_its_transport(
         )
         await hass.async_block_till_done()
         result = await manager.async_configure(result["flow_id"])
-        assert result["step_id"] != "migration_confirm"
-        assert result.get("errors")
+        assert result["step_id"] == "migration_check_failed"
         manager.async_abort(result["flow_id"])
     assert entry.data == before
 
@@ -186,8 +185,8 @@ async def test_app_entry_changes_to_a_remote_route_without_a_transport_check(
     assert result["step_id"] == "jiecang_legacy"
     result = await manager.async_configure(result["flow_id"], {const.CONF_MOTOR_COUNT: 4})
     assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == bed_type
     assert entry.data[const.CONF_MOTOR_COUNT] == 4
     assert not any(

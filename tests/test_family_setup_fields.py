@@ -184,6 +184,10 @@ async def _run(
             result = await flow.async_step_manual_entry(submitted)
             answered = 0
             for attempt in range(8):
+                if result["type"] == "menu" and result["step_id"] == "keep_detected":
+                    # Keep on a new bed first explains the detected controls.
+                    result = await flow.async_step_keep_continue()
+                    continue
                 assert result["type"] == "form", result
                 step = result["step_id"]
                 assert step != "manual_entry", (row, result.get("errors"))
@@ -633,6 +637,10 @@ async def test_an_untouched_setup_leaves_a_quiet_route_unread(hass, bed_type, va
                 result = await flow.async_step_manual_entry(submitted)
                 answered = 0
                 for attempt in range(8):
+                    if result["type"] == "menu" and result["step_id"] == "keep_detected":
+                        # Keep on a new bed first explains the detected controls.
+                        result = await flow.async_step_keep_continue()
+                        continue
                     answers = _answers(result, attempt)
                     if variant in _options(
                         next(

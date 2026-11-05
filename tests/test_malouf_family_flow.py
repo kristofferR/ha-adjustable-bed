@@ -83,6 +83,8 @@ async def test_a_detected_receiver_is_kept_with_its_layout(hass):
     result = await flow.async_step_malouf_family()
     assert choices(result)[-1] == "keep"
     result = await flow.async_step_malouf_family({"choice": "keep"})
+    assert result["step_id"] == "keep_detected"
+    result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_profile_questions(
@@ -148,8 +150,8 @@ async def test_receiver_entry_changes_to_the_app_after_checking_its_transport(
         assert result["step_id"] == "migration_confirm"
         assert result["description_placeholders"]["selection"] == "Malouf Base: S755"
         assert entry.data == before
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_MALOUF_APP
     assert entry.data[const.CONF_MALOUF_APP_MODEL] == "S755"
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
@@ -170,8 +172,7 @@ async def test_app_change_is_refused_when_the_transport_is_ambiguous(
             result["flow_id"], {const.CONF_MALOUF_APP_MODEL: "Premium"}
         )
         result = await finish_check(hass, result)
-        assert result["step_id"] != "migration_confirm"
-        assert result.get("errors")
+        assert result["step_id"] == "migration_check_failed"
         manager.async_abort(result["flow_id"])
     assert entry.data == before
 
@@ -269,7 +270,7 @@ async def _change_receiver_to_malouf_app(hass, client, name):
         )
         result = await finish_check(hass, result)
         if result["step_id"] == "migration_confirm":
-            result = await manager.async_configure(result["flow_id"], {"confirm": True})
+            result = await manager.async_configure(result["flow_id"], {"action": "apply"})
     return entry, result, changes
 
 
@@ -277,7 +278,7 @@ async def test_an_unnamed_bed_reads_as_okin_like_the_runtime(hass, enable_custom
     entry, result, _changes = await _change_receiver_to_malouf_app(
         hass, gatt_client(OKIN_NEW), None
     )
-    assert result["reason"] == "reconfigure_successful"
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_MALOUF_APP
 
 
@@ -287,7 +288,7 @@ async def test_the_confirm_step_lists_the_checked_transports_controls(
     entry, result, changes = await _change_receiver_to_malouf_app(
         hass, gatt_client(RICHMAT_FRAMED), "QRRM123"
     )
-    assert result["reason"] == "reconfigure_successful"
+    assert result["reason"] == "migration_applied"
     previewed = changes.await_args.args[2]
     assert previewed[const.CONF_MALOUF_APP_TRANSPORT] == "richmat_framed"
     # The entry keeps the automatic choice the user made.

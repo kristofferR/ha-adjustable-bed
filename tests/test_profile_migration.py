@@ -280,9 +280,9 @@ async def test_guided_change_saves_the_new_routes_profile_id(hass, enable_custom
         result = await select_app(hass, entry, "caresse")
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"confirm": True}
+            result["flow_id"], {"action": "apply"}
         )
-    assert result["reason"] == "reconfigure_successful"
+    assert result["reason"] == "migration_applied"
     # Derived from the new route, never copied from the staged saved setup.
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
     assert entry.data[const.CONF_PROFILE_ID] == f"{const.BED_TYPE_VIBRADORM_APP}@caresse"

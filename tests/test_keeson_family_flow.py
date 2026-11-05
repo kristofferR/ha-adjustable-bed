@@ -60,7 +60,9 @@ async def test_generic_row_asks_the_app_and_keep_saves_the_detected_route(hass):
     assert result["step_id"] == "keeson_family"
     assert options(result)[-1] == "keep"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_keeson_family({"choice": "keep"})
+        kept = await flow.async_step_keeson_family({"choice": "keep"})
+        assert kept["step_id"] == "keep_detected"
+        await flow.async_step_keep_continue()
     saved = finish.call_args.args[0]
     assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (
         const.BED_TYPE_KEESON,
@@ -160,8 +162,8 @@ async def test_cool_base_entry_changes_to_restonic_through_the_guided_change(
     )
     assert result["step_id"] == "migration_confirm"
     assert entry.data == before
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert (entry.data[const.CONF_BED_TYPE], entry.data[const.CONF_PROTOCOL_VARIANT]) == (
         const.BED_TYPE_KEESON,
         "restonic_b",
@@ -196,8 +198,8 @@ async def test_a_route_change_takes_configures_route_defaults(hass, enable_custo
     )
     assert sensing.default() is False
     result = await manager.async_configure(result["flow_id"], {})
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == const.KEESON_VARIANT_ERGOMOTION
     assert entry.data[const.CONF_DISABLE_ANGLE_SENSING] is False
 

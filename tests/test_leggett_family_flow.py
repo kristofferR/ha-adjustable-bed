@@ -63,7 +63,9 @@ async def test_detected_receiver_asks_the_app_and_keep_pairs_the_detected_route(
     assert options[:4] == ["prodigy_ce", "prodigy2", "prodigy2l", "useries"]
     assert options[-1] == "keep"
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-        await flow.async_step_leggett_family({"choice": "keep"})
+        kept = await flow.async_step_leggett_family({"choice": "keep"})
+        assert kept["step_id"] == "keep_detected"
+        await flow.async_step_keep_continue()
     pairing.assert_awaited_once()
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_OKIN
 
@@ -109,8 +111,8 @@ async def test_umbrella_entry_keeps_its_saved_id_through_a_bonded_change(
         assert result["step_id"] == "manual_pairing"
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_PLATT
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == const.LEGGETT_VARIANT_OKIN
     assert entry.data[const.CONF_LEGGETT_APP_PROFILE] == "prodigy2"
@@ -132,8 +134,8 @@ async def test_okin_entry_changes_to_the_mlrm_route_without_a_check(
     result = await reconfigure(hass, entry)
     result = await manager.async_configure(result["flow_id"], {"choice": "lp_app_mlrm"})
     assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_WILINKE
     assert const.CONF_LEGGETT_APP_PROFILE not in entry.data
 
@@ -153,8 +155,8 @@ async def test_lp_comfort_connect_change_leaves_its_bond_to_the_first_connection
     result = await manager.async_configure(result["flow_id"], {"choice": "lp_control_gen2"})
     # The box grants one connection per pairing window, so nothing pairs here.
     assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_GEN2
     assert const.CONF_LEGGETT_APP_PROFILE not in entry.data
 
@@ -194,8 +196,8 @@ async def test_an_lp_app_route_on_another_bed_type_changes_through_the_question(
     assert result["step_id"] == "leggett_family"
     result = await manager.async_configure(result["flow_id"], {"choice": "lp_app_mlrm"})
     assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_WILINKE
     # The previous route's own settings are gone.
     assert not (set(data) - {const.CONF_BED_TYPE}) & set(entry.data)

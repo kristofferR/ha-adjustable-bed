@@ -95,14 +95,13 @@ async def reconfigure(hass, entry):
 
 
 async def finish_check(hass, result):
-    """Run the connection check the staged route needs, then return its result."""
-    manager = hass.config_entries.flow
+    """Run the connection check the staged route needs, then return its result.
+
+    A passed check opens the review; a failed one says nothing was changed.
+    """
     assert result["type"] == FlowResultType.SHOW_PROGRESS
     await hass.async_block_till_done()
-    result = await manager.async_configure(result["flow_id"])
-    if not result.get("errors"):
-        result = await manager.async_configure(result["flow_id"], {})
-    return result
+    return await hass.config_entries.flow.async_configure(result["flow_id"])
 
 
 def test_one_row_names_the_app_and_every_receiver():
@@ -137,6 +136,8 @@ async def test_a_detected_receiver_is_kept_with_its_motor_count(hass):
     result = await flow.async_step_sleepys_family()
     assert choices(result)[-1] == "keep"
     result = await flow.async_step_sleepys_family({"choice": "keep"})
+    assert result["step_id"] == "keep_detected"
+    result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_profile_questions({const.CONF_MOTOR_COUNT: "3"})
@@ -190,8 +191,8 @@ async def test_receiver_entry_changes_to_the_app_after_checking_its_routes(
         assert result["step_id"] == "migration_confirm"
         assert result["description_placeholders"]["selection"].endswith(": BOX24")
         assert entry.data == before
-        result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_SLEEPYS_ELITE_APP
     assert entry.data[const.CONF_SLEEPYS_ELITE_SELECTOR] == "BOX24"
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
@@ -216,8 +217,7 @@ async def test_receiver_change_is_refused_when_the_link_lacks_its_endpoint(
         result = await manager.async_configure(result["flow_id"], {"choice": "box24"})
         result = await manager.async_configure(result["flow_id"], {const.CONF_MOTOR_COUNT: "2"})
         result = await finish_check(hass, result)
-        assert result["step_id"] != "migration_confirm"
-        assert result.get("errors")
+        assert result["step_id"] == "migration_check_failed"
         manager.async_abort(result["flow_id"])
     assert entry.data == before
 
