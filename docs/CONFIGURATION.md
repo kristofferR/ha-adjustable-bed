@@ -540,8 +540,11 @@ listed together below, with links to their profile sections.
 Existing entries keep their selection until you change it. Beds added before
 4.1.0 whose bed type gained app profiles are asked, through a repair, which
 app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
-For a two-address pair, settings belong to each physical bed. If the shared form
-refuses a change, split the pair, configure each side, then combine them again.
+For a two-address pair, settings belong to each physical bed. Each receiver's
+own app settings, such as its motor count, massage or light settings, are under
+**Configure → Change left receiver settings** or **Change right receiver
+settings**. To change a receiver's bed type or app, split the pair, configure
+that side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
@@ -781,8 +784,8 @@ sides; side-specific controls retain each side's own features.
 
 For two receivers, open **Configure → Change left receiver settings** or
 **Change right receiver settings** to adjust its adapter, connection profile,
-motor pulses, Disconnect After Command, and idle timeout. These changes apply
-only to the selected receiver, without splitting the bed. **Change settings**
+motor pulses, Disconnect After Command, idle timeout and its own app's settings.
+These changes apply only to the selected receiver, without splitting the bed. **Change settings**
 retains the shared form; changed values there apply to both receivers.
 The card's **Both** view also offers each receiver's Connect and Disconnect
 buttons next to its connection status.

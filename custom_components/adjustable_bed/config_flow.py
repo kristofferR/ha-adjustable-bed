@@ -9096,9 +9096,16 @@ class AdjustableBedOptionsFlow(
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             schema.update(_pairlink_settings_schema(self.hass, current))
         _hide_owned_generic_fields(schema, bed_type, variant)
+        # This receiver's own profile questions; the pair's shared form cannot
+        # ask them, because each side may run another profile.
+        questions = _configure_questions(current)
+        if questions is not None:
+            schema.update(_profile_question_schema(questions, current, advanced_section=False))
         errors: dict[str, str] = {}
         if user_input is not None:
             changes = dict(user_input)
+            # Settings this receiver's answers no longer allow leave it.
+            stale: frozenset[str] = frozenset()
             if bed_type == BED_TYPE_REVERIE_PAIRLINK:
                 errors.update(
                     _validate_pairlink_option_values(
@@ -9135,6 +9142,23 @@ class AdjustableBedOptionsFlow(
                     changes[CONF_PREFERRED_ADAPTER] = adapter
                 if changes.keys() & {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS}:
                     changes[CONF_MOTOR_PULSE_USER_SET] = True
+                if questions is not None:
+                    asked = {question.key for question in questions.questions}
+                    changes = {key: value for key, value in changes.items() if key not in asked}
+                    before = {**current, **changes}
+                    app_data = questions.staged(
+                        before, _profile_answers(questions, user_input, current)
+                    )
+                    if questions.validate:
+                        errors.update(questions.validate(app_data))
+                    # The answers, what normalizing corrected and the profile's
+                    # own settled values belong to this receiver only.
+                    changes.update(
+                        {key: value for key, value in app_data.items() if before.get(key) != value}
+                    )
+                    changes.update(questions.settled(app_data))
+                    stale = frozenset(current) - frozenset(app_data)
+            if not errors:
                 # Move shared overrides into both receivers before changing
                 # one side, keeping unrelated entry-level options intact.
                 options = inheritable_child_fields(self.config_entry.options)
@@ -9142,7 +9166,8 @@ class AdjustableBedOptionsFlow(
                     if options and get_child(data, receiver_side) is not None:
                         data = with_updated_child(data, receiver_side, options)
                 self.hass.config_entries.async_update_entry(
-                    self.config_entry, data=with_updated_child(data, side, changes)
+                    self.config_entry,
+                    data=with_updated_child(data, side, changes, remove=stale),
                 )
                 return self.async_create_entry(
                     title="",
