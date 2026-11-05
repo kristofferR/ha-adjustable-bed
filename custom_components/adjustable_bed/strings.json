@@ -9208,9 +9208,9 @@
     },
     "customatic_family_choice": {
       "options": {
-        "clarity": "Clarity app: back and legs, memory page and light",
+        "clarity": "Clarity app (Rize Clarity): back and legs, memory page and light",
         "jeromes": "Jerome's C app: back and legs, no memory page or light",
-        "remedy": "Remedy app: back, legs and lumbar, memory page and light",
+        "remedy": "Remedy app (Rize Remedy): back, legs and lumbar, memory page and light",
         "zseries_z230": "Z-Series app with the Z-230 model",
         "zseries_z280": "Z-Series app with the Z-280 model",
         "keep": "Keep the current app"

@@ -1257,6 +1257,8 @@ evidence. See the [FurniMove ledger](../apk-analysis/dispositions/157-furnimove.
 **Status:** ❓ Needs testing (APK-verified, physical operation unverified)
 
 The three apps share one frame, transport and timing; each is its own bed type.
+The Clarity and Remedy packages publish their apps as **Rize Clarity** and
+**Rize Remedy**, and setup lists those names too.
 
 | Profile | Package | Motors | Memory page | Light |
 |---|---|---|---|---|
@@ -1266,7 +1268,7 @@ The three apps share one frame, transport and timing; each is its own bed type.
 
 #### Setup
 
-Choose the **Customatic: Clarity, Jerome's C, Remedy and Z-Series apps** row
+Choose the **Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps** row
 (or the **Customatic apps** brand), then the app supplied with the bed: Clarity,
 Jerome's C, Remedy, or Z-Series with its model. Detection: none. For an existing
 bed, use the entry's **Reconfigure**; a change first checks the new app's
@@ -1293,9 +1295,9 @@ command characteristic, and **Configure** no longer changes the app.
 
 | Answer | Profile |
 |---|---|
-| Clarity app: back and legs, memory page and light | [Clarity](#customatic-clarity) |
+| Clarity app (Rize Clarity): back and legs, memory page and light | [Clarity](#customatic-clarity) |
 | Jerome's C app: back and legs, no memory page or light | [Jerome's](#customatic-jeromes) |
-| Remedy app: back, legs and lumbar, memory page and light | [Remedy](#customatic-remedy) |
+| Remedy app (Rize Remedy): back, legs and lumbar, memory page and light | [Remedy](#customatic-remedy) |
 | Z-Series app with the Z-230 or Z-280 model | [Z-Series](#customatic-z-series), that model's page |
 
 The Jordan's row asks the same way between [Serenity](#jordans-serenity) and

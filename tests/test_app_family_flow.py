@@ -68,7 +68,11 @@ def entry_for(hass, data) -> MockConfigEntry:
 def test_each_family_has_one_row_naming_its_apps():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     for row, apps in (
-        (const.BED_TYPE_CUSTOMATIC_CLARITY, ("Clarity", "Jerome's C", "Remedy", "Z-Series")),
+        (
+            const.BED_TYPE_CUSTOMATIC_CLARITY,
+            # The accepted reports name two of the apps Rize Clarity and Rize Remedy.
+            ("Clarity", "Rize Clarity", "Jerome's C", "Rize Remedy", "Z-Series"),
+        ),
         (const.BED_TYPE_SERENITY, ("Serenity", "Tranquil")),
         (const.BED_TYPE_STARCODE_ABM5_4, ("AdjustableM5X4", "AdjustableM5X5", "M1X12")),
     ):

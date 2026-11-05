@@ -167,11 +167,11 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "customatic": {
         "display": "Customatic apps",
-        "description": "Clarity, Jerome's C, Remedy and Z-Series app profiles",
+        "description": "Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps",
         "variants": [
             {
                 "type": BED_TYPE_CUSTOMATIC_CLARITY,
-                "label": "Clarity",
+                "label": "Clarity (Rize Clarity)",
                 "description": "Two motors, memory controls and light toggle",
                 "hint": "Choose the Clarity app shown on your phone.",
             },
@@ -183,7 +183,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             },
             {
                 "type": BED_TYPE_CUSTOMATIC_REMEDY,
-                "label": "Remedy",
+                "label": "Remedy (Rize Remedy)",
                 "description": "Back, legs and lumbar, memory controls and light toggle",
                 "hint": "Choose the Remedy app shown on your phone.",
             },

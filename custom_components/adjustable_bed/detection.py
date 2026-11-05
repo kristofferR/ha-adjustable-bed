@@ -537,9 +537,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT_BLVD_HOME: "Blvd Home app (Richmat)",
     BED_TYPE_RICHMAT_HARMONY: "HARMONY app (Richmat)",
     BED_TYPE_RICHMAT_IDEALBED: "Idealbed app (Richmat)",
-    BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app",
+    BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app (Rize Clarity)",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
-    BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app",
+    BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app (Rize Remedy)",
     # Protocol-based types (Okin family)
     BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
     BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid, requires pairing)",
@@ -731,7 +731,9 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_SLEEPYS_ELITE_APP: (
         "Sleepy's Elite: MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers"
     ),
-    BED_TYPE_CUSTOMATIC_CLARITY: "Customatic: Clarity, Jerome's C, Remedy and Z-Series apps",
+    BED_TYPE_CUSTOMATIC_CLARITY: (
+        "Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps"
+    ),
     BED_TYPE_SERENITY: "Jordan's: Serenity and Tranquil apps",
     BED_TYPE_STARCODE_ABM5_4: (
         "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
