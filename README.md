@@ -216,6 +216,9 @@ Your bed should auto-discover via Bluetooth. If not:
 
 To adjust settings after setup, click **Configure** (the gear icon) for the
 integration entry in Settings → Devices & Services, then **Change settings**.
+To change the app or layout of a Vibradorm, Jiecang, Okin, Keeson, Solace or
+Leggett & Platt bed, choose **Reconfigure** from the entry's three-dot menu
+instead; see [Changing the app or layout](docs/CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed).
 
 <details>
 <summary><b>Quick reference</b></summary>
@@ -224,7 +227,7 @@ integration entry in Settings → Devices & Services, then **Change settings**.
 |---------|-------------|
 | Motor Count | Layout for profiles that expose a configurable count; Standard OCTO follows its advertised count unless an explicit override is selected |
 | Has Massage | Enable if your bed has massage |
-| Protocol Variant | Usually auto-detected, override if needed |
+| Protocol Variant | Usually auto-detected, override if needed; the families above change it through **Reconfigure** |
 | Motor Pulse Settings | Fine-tune movement timing |
 | Disable Angle Sensing | Turn off for supported position feedback; turn on if monitoring conflicts with the remote |
 | Disconnect After Command | Release the connection one second after operations finish, where supported |
