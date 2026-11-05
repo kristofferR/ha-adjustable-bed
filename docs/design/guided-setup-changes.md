@@ -20,14 +20,24 @@ own questions and checks.
    (`ManagedFamily.requires_check`) must pass a connection check. The old
    runtime's transport is reserved under its normal locks for the check. A
    link that cannot be observed closed fails the check and stays owned until
-   it closes, so no second connection overlaps it.
+   it closes, so no second connection overlaps it. The check has its own
+   progress steps (`migration_check`, or `migration_pairing` for a family
+   that pairs), whose checklist says nothing is saved yet. A failed check
+   goes to `migration_check_failed`, never to setup's `verify_connection`,
+   whose "finish setup" wording would be wrong here; a passed check goes
+   straight to the review.
 4. **Review.** `async_control_changes` compares the entity set of the running
    route with the entity set the staged route declares offline, and names the
    automations and scripts that use a removed entity. Unique IDs are
-   address-based, so a kept control keeps its entity ID and history. Listing
-   the staged controls builds entities without saving the route and ignores
-   every registry write meanwhile.
-5. **Confirm.** Saving happens only against an unchanged snapshot.
+   address-based, so a kept control keeps its entity ID and history. A kept
+   entity whose name differs between the two sets is reinterpreted: it now
+   stands for another control. A behavior change behind an unchanged name is
+   not visible in the entity sets, so the review cannot list it. Listing the
+   staged controls builds entities without saving the route and ignores every
+   registry write meanwhile.
+5. **Confirm.** Apply and Keep are equal answers. Saving happens only against
+   an unchanged snapshot, and ends on `migration_applied`, which names the new
+   setup, the previous one and the way back.
 
 Keep, cancel, a failed check or a concurrent edit leave the saved entry
 unchanged and usable. An answer that resolves to the saved route (a label

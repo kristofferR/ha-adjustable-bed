@@ -453,7 +453,7 @@ No report content is copied here.
 | `malouf_new_okin` | `malouf_layout`, `malouf_memory_slots` | com.lucid.bedbase 1.3.3 C |
 | `mattressfirm` |  | com.okin.bedding.rizemf900 1.1.2 C |
 | `motion_bed` | `ble_device_name`, `motion_bed_movement`, `motion_bed_preset`, `motion_bed_restored` | com.sn.blackdianqi 1.24 C (ledger 032) |
-| `motosleep` |  | com.HHC.MotoMotion 3.1.9 B |
+| `motosleep` |  | com.HHC.MotoSleep 5.1.5 C, com.HHC.PowerBob 2.0.3 C (not retained) |
 | `nectar` |  | com.okin.bedding.nectarmotion 1.0.1 C |
 | `octo` | `octo_motor_count_override`, `octo_pin` | de.octoactuators.octosmartcontrolapp 1.03.02 C |
 | `okimat` |  | com.okin.bedding.glory/support/rizeResident (C), smartbedwifi 2.4.2 P |

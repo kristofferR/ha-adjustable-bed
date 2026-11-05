@@ -6,7 +6,9 @@
 - ``per_side_profile``: app settings that belong to one physical bed. The
   shared form of a two-address pair refuses to change them, or to change
   either side to, from or between such profiles; each side is configured
-  alone instead.
+  alone instead. Every question a route's declarations ask is one of them;
+  the table below adds what the declarations cannot say (see "Per-side
+  settings" in docs/design/setup-questions.md).
 
 A profile is keyed by bed type, or by bed type and protocol variant when the
 variant selects the app. A variant entry replaces the bed type's entry.
@@ -14,7 +16,8 @@ variant selects the app. A variant entry replaces the bed type's entry.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from functools import cache
 from typing import Final
 
 from .const import (
@@ -64,32 +67,16 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BLE_DEVICE_NAME,
-    CONF_CLUSTER018_THIRD_SERVICE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
-    CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
-    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_KAIDI_TARGET_VADDR,
     CONF_LEGGETT_APP_PROFILE,
-    CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_LAYOUT,
-    CONF_LOGICDATA_APP_PROFILE,
-    CONF_LOGICDATA_APP_TRANSPORT,
-    CONF_LP_LEGACY_MODE,
-    CONF_LP_LEGACY_MODEL,
-    CONF_LP_LEGACY_READ_UUID,
-    CONF_LP_LEGACY_WRITE_UUID,
-    CONF_MALOUF_APP_MODEL,
-    CONF_MALOUF_APP_PRIMARY,
-    CONF_MALOUF_APP_PROFILE,
-    CONF_MALOUF_APP_TRANSPORT,
     CONF_MOTOR_COUNT,
     CONF_PAIRLINK_HOME_ID,
     CONF_PAIRLINK_HOST_SOURCE,
@@ -99,11 +86,10 @@ from .const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
-    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
-    DOUBLESLEEP_CONFIG_KEYS,
+    CONF_VIBRADORM_APP_PROFILE,
     KAIDI_VARIANT_FLOYD,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
@@ -115,16 +101,11 @@ from .const import (
     KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_SIMON_LI,
     LEGGETT_VARIANT_OKIN,
-    LIMOSS_REMOTE_CONFIG_KEYS,
-    MOTION_BED_CONFIG_KEYS,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     RICHMAT_MH_BED_TYPES,
-    SLEEPTRACKER_CONFIG_KEYS,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_VARIANT_M1X12,
     STARCODE_APP_CONFIG_KEYS,
-    VIBRADORM_APP_CONFIG_KEYS,
-    VMATBASIC_CONFIG_KEYS,
 )
 from .profiles.keeson import SERTA_MEMORY_KEYS
 
@@ -142,14 +123,15 @@ class SideProfile:
 
     # Shown as {profile} in the "unpair first" error.
     label: str
-    # Settings stored for each side.
+    # Settings stored for each side that no setup question asks, such as a
+    # detected product or values an action saves. Declared questions are added.
     keys: frozenset[str] = frozenset()
     # True when every protocol variant of the bed type is a side's own choice.
     variant_owned: bool = False
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
-    "gmmotor": SideProfile("GM Control product", frozenset({CONF_PRODUCT_TYPE, "gmmotor_side", CONF_BLE_DEVICE_NAME})),
+    "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),
     "gmmotor_sleep_mm": SideProfile("GM Control MM sleep module"),
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
     BED_TYPE_BF: SideProfile("BF"),
@@ -175,15 +157,11 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Comfort Enhancements", frozenset({CONF_HAS_MASSAGE}), variant_owned=True
     ),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
-    BED_TYPE_CLUSTER018: SideProfile(
-        "Classic Richmat apps",
-        frozenset({CONF_PRODUCT_TYPE, CONF_CLUSTER018_THIRD_SERVICE}),
-        variant_owned=True,
-    ),
-    BED_TYPE_MOTOMOTION: SideProfile("MotoMotion", frozenset({CONF_BLE_DEVICE_NAME})),
+    BED_TYPE_CLUSTER018: SideProfile("Classic Richmat apps", variant_owned=True),
+    BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
-    BED_TYPE_ISLEEP: SideProfile("ISleep", frozenset({CONF_PRODUCT_TYPE, "kaidi_room_id", "kaidi_sofa_acu_no"})),
+    BED_TYPE_ISLEEP: SideProfile("ISleep"),
     BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     BED_TYPE_FSM_RELAX: SideProfile(
         "FSM Relax",
@@ -197,64 +175,23 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
             }
         ),
     ),
-    BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote", LIMOSS_REMOTE_CONFIG_KEYS),
-    BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_FURNIMOVE_REMOTE, CONF_HAS_MASSAGE})),
-    BED_TYPE_LOGICDATA_APP: SideProfile(
-        "Logicdata bed app",
-        frozenset(
-            {
-                CONF_LOGICDATA_APP_PROFILE,
-                CONF_LOGICDATA_APP_FAMILY,
-                CONF_LOGICDATA_APP_LAYOUT,
-                CONF_LOGICDATA_APP_TRANSPORT,
-                CONF_HAS_LIGHT,
-            }
-        ),
-    ),
+    BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote"),
+    BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_HAS_MASSAGE})),
+    BED_TYPE_LOGICDATA_APP: SideProfile("Logicdata bed app"),
+    # The family step picks the app, so no question asks its key.
     BED_TYPE_JIECANG_APP: SideProfile(
         "Jiecang / Comfort Motion app",
-        frozenset(
-            {
-                CONF_JIECANG_APP_PROFILE,
-                CONF_JIECANG_APP_LAYOUT,
-                CONF_JIECANG_APP_TRANSPORT,
-                CONF_HAS_LIGHT,
-                CONF_HAS_MASSAGE,
-            }
-        ),
+        frozenset({CONF_JIECANG_APP_PROFILE, CONF_HAS_MASSAGE}),
     ),
-    BED_TYPE_MALOUF_APP: SideProfile(
-        "Malouf / Lucid app",
-        frozenset(
-            {
-                CONF_MALOUF_APP_PROFILE,
-                CONF_MALOUF_APP_MODEL,
-                CONF_MALOUF_APP_TRANSPORT,
-                CONF_MALOUF_APP_PRIMARY,
-            }
-        ),
-    ),
-    BED_TYPE_LEGGETT_LP_LEGACY: SideProfile(
-        "L&P legacy app",
-        frozenset(
-            {
-                CONF_LP_LEGACY_MODEL,
-                CONF_LP_LEGACY_MODE,
-                CONF_LP_LEGACY_WRITE_UUID,
-                CONF_LP_LEGACY_READ_UUID,
-            }
-        ),
-    ),
+    BED_TYPE_MALOUF_APP: SideProfile("Malouf / Lucid app"),
+    BED_TYPE_LEGGETT_LP_LEGACY: SideProfile("L&P legacy app"),
     BED_TYPE_LEGGETT_OKIN: SideProfile(
         "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})
     ),
-    BED_TYPE_DOUBLESLEEP: SideProfile("OKIN SleepEase", DOUBLESLEEP_CONFIG_KEYS),
-    BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed", SLEEPTRACKER_CONFIG_KEYS),
-    BED_TYPE_SLEEPYS_ELITE_APP: SideProfile(
-        "Sleepy's Elite app",
-        frozenset({CONF_SLEEPYS_ELITE_SELECTOR, CONF_HAS_MASSAGE}),
-    ),
-    BED_TYPE_MOTION_BED: SideProfile("Motion Bed", MOTION_BED_CONFIG_KEYS | {CONF_BLE_DEVICE_NAME}),
+    BED_TYPE_DOUBLESLEEP: SideProfile("OKIN SleepEase"),
+    BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed"),
+    BED_TYPE_SLEEPYS_ELITE_APP: SideProfile("Sleepy's Elite app", frozenset({CONF_HAS_MASSAGE})),
+    BED_TYPE_MOTION_BED: SideProfile("Motion Bed"),
     BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", STARCODE_APP_CONFIG_KEYS),
     BED_TYPE_STARCODE_M5X5: SideProfile(
         "AdjustableM5X5",
@@ -264,10 +201,8 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Adjustable Comfort M1X12",
         frozenset({CONF_STARCODE_M1X12_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
     ),
-    BED_TYPE_VIBRADORM_APP: SideProfile(
-        "Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}
-    ),
-    BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic", VMATBASIC_CONFIG_KEYS),
+    BED_TYPE_VIBRADORM_APP: SideProfile("Vibradorm app", frozenset({CONF_VIBRADORM_APP_PROFILE})),
+    BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic"),
     BED_TYPE_ESHINE_OKIN: SideProfile("eShine E2000/E3000/E3100/E5000", variant_owned=True),
     BED_TYPE_ESHINE: SideProfile("Eshine E6000"),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
@@ -277,28 +212,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),
     BED_TYPE_REMACRO: SideProfile("Remacro app", variant_owned=True),
-    BED_TYPE_REVERIE: SideProfile(
-        "Reverie Protocol 108",
-        frozenset(
-            {
-                CONF_PROTOCOL_VARIANT,
-                CONF_MOTOR_COUNT,
-                CONF_HAS_MASSAGE,
-                CONF_DISABLE_ANGLE_SENSING,
-            }
-        ),
-    ),
-    BED_TYPE_REVERIE_NIGHTSTAND: SideProfile(
-        "Reverie Protocol 110",
-        frozenset(
-            {
-                CONF_PROTOCOL_VARIANT,
-                CONF_MOTOR_COUNT,
-                CONF_HAS_MASSAGE,
-                CONF_DISABLE_ANGLE_SENSING,
-            }
-        ),
-    ),
+    # The model sets the motors and massage; the model and angle sensing are asked.
+    BED_TYPE_REVERIE: SideProfile("Reverie Protocol 108", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE})),
+    # The model sets the motors and massage; the model and angle sensing are asked.
+    BED_TYPE_REVERIE_NIGHTSTAND: SideProfile("Reverie Protocol 110", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE})),
     BED_TYPE_REVERIE_PAIRLINK: SideProfile(
         "Reverie Pairlink R510L / Harmoniq",
         frozenset(
@@ -334,12 +251,8 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
         "Heal Every Night", frozenset({CONF_MOTOR_COUNT})
     ),
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): SideProfile("OKIN-Seating"),
-    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): SideProfile(
-        "Avanti Bases", frozenset({CONF_MOTOR_COUNT})
-    ),
-    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): SideProfile(
-        "AMERICANSTAR", frozenset({CONF_MOTOR_COUNT})
-    ),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): SideProfile("Avanti Bases"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): SideProfile("AMERICANSTAR"),
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): SideProfile("Bedsense Bases"),
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): SideProfile("INNOVA"),
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): SideProfile("MaxCoil Una"),
@@ -347,13 +260,40 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
 }
 
 
+@cache
 def per_side_profile(bed_type: str | None, variant: str | None) -> SideProfile | None:
-    """Return the per-side app profile of a bed type and variant, if any."""
+    """Return the per-side app profile of a bed type and variant, if any.
+
+    Its keys include every question the route's setup declarations ask, for
+    any app, since each receiver answers those for itself.
+    """
     if bed_type is None:
         return None
     if variant is not None and (bed_type, variant) in _BY_VARIANT:
-        return _BY_VARIANT[bed_type, variant]
-    return _BY_BED_TYPE.get(bed_type)
+        profile = _BY_VARIANT[bed_type, variant]
+    elif (found := _BY_BED_TYPE.get(bed_type)) is not None:
+        profile = found
+    else:
+        return None
+    return replace(profile, keys=profile.keys | _declared_questions(bed_type, variant))
+
+
+def _declared_questions(bed_type: str, variant: str | None) -> frozenset[str]:
+    """Return the questions a route's declarations ask, under every app they name."""
+    from .profile_id import profile_route
+    from .setup_questions import SETUP_PROFILES, setup_profile
+
+    apps = {None} | {
+        route.app_profile
+        for route in map(profile_route, SETUP_PROFILES)
+        if route.bed_type == bed_type
+    }
+    return frozenset(
+        question.key
+        for app in apps
+        if (profile := setup_profile(bed_type, variant, app)) is not None
+        for question in profile.questions
+    )
 
 
 def is_per_side_variant(bed_type: str | None, variant: str | None) -> bool:

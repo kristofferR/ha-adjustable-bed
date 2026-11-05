@@ -182,7 +182,7 @@ non-wire difference per group:
 | `ergomotion`, `keeson:ergomotion`; `serta`, `keeson:serta` | Capabilities: only the bed types mint their controller and entities before the first connection. Device manufacturer: "Ergomotion" and "Serta" against "Keeson". |
 | `leggett_okin`, `leggett_platt`, `leggett_platt:okin` | Setup offers only `leggett_okin`. `leggett_platt` without a variant chooses its controller from GATT at connect. |
 | `leggett_gen2`, `leggett_platt:gen2` | Setup offers only `leggett_gen2`. |
-| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Setup fields: Avanti Bases hides more generic fields; AMERICANSTAR and Avanti keep the motor count per side. Each app has its own setup label. |
+| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Setup fields: Avanti Bases hides more generic fields. Each app has its own setup label. |
 | `richmat_best_mattress:model_bfrm`, `richmat_blvd_home:model_bfrm` | Two bed types built for different apps, with their own setup labels. |
 | `fsm_relax`, `fsm_relax:massage_light` | Already one id, `fsm_relax`: the light and massage flags are settings, not routes. |
 

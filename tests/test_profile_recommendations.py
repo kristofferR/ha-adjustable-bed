@@ -1764,7 +1764,7 @@ async def test_a_saved_guided_change_answers_the_review(hass, enable_custom_inte
     )
     assert result["step_id"] == "migration_confirm"
     with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await hass.config_entries.flow.async_configure(flow_id, {"confirm": True})
+        result = await hass.config_entries.flow.async_configure(flow_id, {"action": "apply"})
     assert result["type"] == "abort"
     assert target.entry.data[CONF_PROTOCOL_VARIANT] == "ksbt"
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")

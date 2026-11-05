@@ -14,19 +14,19 @@ guides, the frozen vectors and the issues with their comments.
 ## Summary
 
 Totals count matrix rows: one per bed type, or per route or app profile where
-the evidence differs. There are 109 rows covering all 113 `SUPPORTED_BED_TYPES`.
+the evidence differs. There are 112 rows covering all 116 `SUPPORTED_BED_TYPES`.
 
 | Capability | Supported | Unsupported | Blocked |
 | --- | ---: | ---: | ---: |
-| #483 hold until release | 75 (66 stream, 3 stream without a release frame, 6 latched) | 2 | 32 |
-| #516 concurrent motors | 5 | 68 | 36 |
-| #591 native motor speed | 0 | 75 | 34 |
+| #483 hold until release | 78 (69 stream, 3 stream without a release frame, 6 latched) | 2 | 32 |
+| #516 concurrent motors | 5 | 71 | 36 |
+| #591 native motor speed | 0 | 78 | 34 |
 
 Rolled up by bed type (a bed type counts as supported when any route is, and as
-blocked when no route is supported and any route is blocked): hold 76 supported
+blocked when no route is supported and any route is blocked): hold 79 supported
 (4 of them also have a blocked route), 6 unsupported, 31 blocked; concurrent 6
-supported (2 of them also have a blocked route), 70 unsupported, 37 blocked;
-speed 0 supported, 76 unsupported, 37 blocked.
+supported (2 of them also have a blocked route), 73 unsupported, 37 blocked;
+speed 0 supported, 79 unsupported, 37 blocked.
 
 - **#516 candidates:** the Prodigy CE and U Series profiles of `leggett_okin`
   and `leggett_platt`, `customatic_clarity`, `customatic_jeromes`, `customatic_remedy`, and `svane`
@@ -136,7 +136,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | S stream | U | U | revive, best, blvd, harmony, ideal, row055 | KEEP rows repeat until removed, STOP after 120 ms; speed rows are massage |
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
 | `hjbed` | S stream | U | U | row121 | per-action recovered release |
-| `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | B | B | avocado, coaster, fortywinks, milemont, superior, row066 | keep buttons repeat every 150 ms tick (110 ms for TWRM and MLRM names) until UP, then release 50 ms later; hold declared per control, on the held controls that run the keep mode under the current selection (see [per-control scope](#per-control-hold-scope)). #516 and #591 not assessed yet |
+| `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | U | U | avocado, coaster, fortywinks, milemont, superior, row066 | keep buttons repeat every 150 ms tick (110 ms for TWRM and MLRM names) until UP, then release 50 ms later; hold declared per control, on the held controls that run the keep mode under the current selection (see [per-control scope](#per-control-hold-scope)). Each press replaces the sender's one shared command and the release frame ends it; combined motors are fixed keys; speed keys are massage (`com_msg_speed`) |
 | `bedtech` | B | B | B | bedtech | report PARTIAL |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
@@ -172,10 +172,10 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
-| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | B | B | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. #516 and #591 not assessed yet |
-| `goodvibe` | S stream | B | B | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). #516 and #591 not assessed yet |
+| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
+| `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
-| `motosleep` | B | B | B | moto | report BLOCKED |
+| `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
 | `motomotion` | S stream | B | B | motomotion, row113 | held motor keys refresh every 100 ms, first write after 100 ms, then send STOP three times 50 ms after release; memory recall refreshes the same way but stops only on `SOFA` names with index 12 `E`, and the shared Home control ends by stopping its refresh with no release frame. Not declared: the controls need a per-control scope (see [per-control scope](#per-control-hold-scope)) and their own review. #516 and #591 not assessed yet |
 | `bedjet_powerlayer` | B | B | B | none | no accepted app report: the commands and the self-stopping movement come from a community capture and the contributor's hardware, so the hold stays undeclared |
 | `sleep_number` | B | B | B | sleepiq | report PARTIAL |
@@ -292,9 +292,9 @@ motor speed:
 | Linak reference notifications | Reported actuator speed, read only |
 | Limoss queue speed | Transport write-slice classification |
 
-The 32 blocked rows are where a speed command could still appear once their
-reports complete, notably `gmmotor`, `motosleep`, `sleep_number` and
-`doublesleep`.
+The 34 blocked rows are where a speed command could still appear once their
+reports complete, notably `gmmotor`, `sleep_number` and `doublesleep`, or once
+`motosleep`'s complete reports, which were not retained, are available again.
 
 ## Design
 
@@ -557,8 +557,8 @@ Svane follows as its own PR.
 | **A. Defer #591 with this matrix as its assessment** (Recommended) | Matches #591's own exit; no empty abstraction | No speed feature in v5 unless a blocked report completes |
 | B. Ship the cover plumbing with no controller | Ready for a future candidate | Dead code, and untestable against vectors |
 
-Revisit when `gmmotor`, `motosleep`, `sleep_number` or `doublesleep` reports
-complete.
+Revisit when the `gmmotor`, `sleep_number` or `doublesleep` reports complete,
+or `motosleep`'s complete reports are available again.
 
 ## Implementation plan
 
@@ -671,14 +671,15 @@ Report workspaces are machine-local under
 | milemont | `com.richmat.milemont` | 1.0.4 | COMPLETE | `com.richmat.milemont-1.0.4-2026-11-03-bulk061-001/work/report-revision-sol-002/` |
 | minghua | `com.okin.minghua.R` | 1.0.1 | COMPLETE | `com.okin.minghua.R-1.0.1-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | motionflex | `com.sealy.motionflex` | 1.0.3 | COMPLETE | `com.sealy.motionflex-1.0.3-20260830/report/` |
-| moto | `com.HHC.MotoMotion` | 3.1.9 | BLOCKED | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/report/` |
 | motomotion | `com.HHC.MotoMotion` | 3.1.9 | COMPLETE | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/work/report-repair-sol-003/` |
+| motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
 | nectar | `com.okin.bedding.nectarmotion` | 1.0.1 | COMPLETE | `com.okin.bedding.nectarmotion-1.0.1-2026-10-26-39bdcafa-003/report/` |
 | octo | `de.octoactuators.octosmartcontrolapp` | 1.03.02 | COMPLETE | `de.octoactuators.octosmartcontrolapp-1.03.02-2026-10-26-39bdcafa-repair-001/report/` |
 | omazz | `com.sfd.Omazz` | 1.0.5 | COMPLETE | `com.sfd.Omazz-1.0.5-2026-10-26-39bdcafa-repair-001/report/` |
 | p2 | `com.leggett.prodigy2` | 2.2.0 | COMPLETE | `com.leggett.prodigy2-2.2.0-20260827/report/` |
 | p2l | `com.leggett.prodigy2L` | 1.2 | COMPLETE | `com.leggett.prodigy2L-1.2-20260827/report/` |
 | p4 | `com.leggett.prodigy4` | 1.2.0 | COMPLETE | `com.leggett.prodigy4-1.2.0-20260827/report/final/` |
+| powerbob | `com.HHC.PowerBob` | 2.0.3 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
 | remedy | `com.okin.bedding.customaticremedy` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticremedy-1.0.1-2026-08-30/report/` |
 | resident | `com.okin.bedding.rizeResident` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeResident-1.0.1-2026-08-30/report/` |
 | restonic | `com.keeson.restonicBT` | 1.2.0 | COMPLETE | `com.keeson.restonicBT-1.2.0-2026-10-02-queue-903926b6-20261002-058-002/report/` |
@@ -724,6 +725,7 @@ Ledgers, guides and issues:
 | jensen-disp | [jensen-disposition.md](../beds/jensen-disposition.md) |
 | leggett-disp | [leggett-app-disposition.md](../beds/leggett-app-disposition.md) |
 | linak-guide | [linak.md](../beds/linak.md) |
+| motosleep-guide | [motosleep.md](../beds/motosleep.md#command-timing) |
 | row023 | [row023-malouf-lucid.md](../apk-analysis/dispositions/row023-malouf-lucid.md) |
 | row028 | [row028-customatic.md](../apk-analysis/dispositions/row028-customatic.md) |
 | row041 | [row041-reverie.md](../apk-analysis/dispositions/row041-reverie.md) |

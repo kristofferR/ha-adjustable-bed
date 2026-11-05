@@ -620,17 +620,60 @@
         "title": "Review the change for {name}",
         "description": "**{current}** → **{selection}**\n\n{summary}\n\nThe device, its Bluetooth address and every kept control keep their IDs. Your current setup stays saved and running until you apply this change.\n\nA passed connection check does not prove your bed's physical layout or presets. Test the controls after applying the change.",
         "data": {
-          "confirm": "Apply this change",
+          "action": "Your choice",
           "summary_known": "Control changes",
           "summary_unknown": "Control changes",
+          "summary_reinterpreted": "Changes meaning",
           "summary_references": "Affected automations and scripts",
           "summary_none": "No controls"
         },
         "data_description": {
-          "summary_known": "**Added:**\n{added}\n\n**Removed:**\n{removed}\n\n**Unchanged:** {unchanged} controls keep their entity IDs.",
+          "summary_known": "**Added:**\n{added}\n\n**Removed:**\n{removed}\n\n**Changes meaning:**\n{reinterpreted}\n\n**Unchanged:** {unchanged} controls keep their entity IDs.",
           "summary_unknown": "The new controls are known only after the bed connects. Controls the new setup does not support are removed.",
+          "summary_reinterpreted": "{old} becomes {new}",
           "summary_references": "**Automations and scripts that use removed controls:**\n{references}",
           "summary_none": "None"
+        }
+      },
+      "migration_check": {
+        "title": "Checking {name}",
+        "description": "Checking that **{name}** can run **{selection}**:\n\n- Your saved setup stays as it is. If it changes meanwhile, this change stops.\n- {name} releases its Bluetooth connection while the check runs.\n- Connect and check that the receiver supports {selection}.\n- Close the test connection.\n\nNothing is saved yet."
+      },
+      "migration_pairing": {
+        "title": "Checking {name}",
+        "description": "Pairing **{name}** for **{selection}**:\n\n- Your saved setup stays as it is. If it changes meanwhile, this change stops.\n- {name} releases its Bluetooth connection while the check runs.\n- Connect, check that the receiver supports {selection}, then pair and verify the bond.\n- Close the test connection.\n\nNothing is saved yet."
+      },
+      "migration_check_failed": {
+        "title": "Nothing was changed",
+        "description": "{detail}\n\nYour current setup is still saved and running. You can try again or keep the current setup.",
+        "data": {
+          "action": "What next",
+          "reason_unresolved": "Bed not reachable just now",
+          "reason_not_advertising": "Bed not advertising",
+          "reason_failed": "Check failed"
+        },
+        "data_description": {
+          "reason_unresolved": "**{name}** is advertising, but Home Assistant couldn't open a connection to it just now. This is usually momentary.",
+          "reason_not_advertising": "**{name}** hasn't advertised recently, so no connection was attempted. Wake it with its remote, or move it closer to an adapter or proxy.",
+          "reason_failed": "The check couldn't confirm that **{name}** works with **{selection}**: the connection failed, or the receiver doesn't offer what {selection} needs."
+        }
+      },
+      "keep_detected": {
+        "title": "Keep the detected controls?",
+        "description": "**{name}** will use the detected **{route}** controls.{pairing} They are generic and may not match your app's layout.\n\n{later}",
+        "menu_options": {
+          "keep_back": "Back",
+          "keep_continue": "Continue"
+        },
+        "data": {
+          "pairing": "Pairing",
+          "later_reconfigure": "Later, with Reconfigure",
+          "later_configure": "Later, with Configure"
+        },
+        "data_description": {
+          "pairing": "It requires Bluetooth pairing.",
+          "later_reconfigure": "To choose your app later, open **Reconfigure** from this entry's three-dot menu. **Configure › Change app or layout** points there too.",
+          "later_configure": "To choose your app later, change **Bed type** in **Configure › Change settings**."
         }
       },
       "migration_split": {
@@ -847,6 +890,7 @@
       "reconfigure_not_supported": "This setup has no guided reconfigure flow. Use Configure to change its settings.",
       "migration_entry_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
       "migration_kept": "Your current setup was kept. You won't be asked again for this setup unless a new app becomes available for it.",
+      "migration_applied": "**{name} now uses {selection}**\n\nSaved. {name} reloads with these controls. Its previous setup was {current}.\n\nTo switch back, open **Reconfigure** from this entry's three-dot menu and choose the previous setup.",
       "migration_unchanged": "Your answer matches the current setup, so nothing was changed.",
       "migration_pair_split_started": "Restoring standalone beds. When it completes, open Reconfigure on the bed you want to change.",
       "migration_verification_required": "The selected setup was not verified. Your current configuration was kept."
@@ -921,7 +965,6 @@
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
-      "migration_verification_required": "The selected setup could not be verified or its connection could not be released. Retry, or keep your current setup.",
       "cluster018_layout": "Choose a layout shipped in the selected app.",
       "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name."
     }
@@ -9356,7 +9399,18 @@
     "verify_action": {
       "options": {
         "finish": "Finish setup anyway",
-        "retry": "Check again",
+        "retry": "Check again"
+      }
+    },
+    "migration_check_action": {
+      "options": {
+        "retry": "Try again",
+        "keep": "Keep current setup"
+      }
+    },
+    "migration_confirm_action": {
+      "options": {
+        "apply": "Apply this change",
         "keep": "Keep current setup"
       }
     },
@@ -9370,8 +9424,7 @@
     "pairing_result_action": {
       "options": {
         "retry": "Try again",
-        "finish": "Finish setup without pairing",
-        "keep": "Keep current setup"
+        "finish": "Finish setup without pairing"
       }
     },
     "furnimove_layout": {

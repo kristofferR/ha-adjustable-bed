@@ -349,8 +349,8 @@ async def test_switching_to_a_route_with_its_own_apps_does_not_ask_again(
         flow_id = handoff["next_flow"][1]
         result = await manager.async_configure(flow_id, {"choice": "coolbase"})
         assert result["step_id"] == "migration_confirm"
-        result = await manager.async_configure(flow_id, {"confirm": True})
-        assert result["reason"] == "reconfigure_successful"
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+        assert result["reason"] == "migration_applied"
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_COOLBASE
         async_refresh_profile_review_issue(hass, entry)
 
