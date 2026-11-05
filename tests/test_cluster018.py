@@ -151,6 +151,21 @@ async def test_cancelled_task_still_sends_fresh_release(instant):
     assert packets(coord) == ["6e01002493", "6e01006edd"]
 
 
+async def test_a_stop_during_the_final_release_delay_still_releases(instant, monkeypatch):
+    """A stop racing a held press's own release must not lose the release."""
+    ctrl, coord = controller(layout="6BRM")
+
+    async def wait(milliseconds, cancel):
+        # The held refresh waits 150 ms; the stop lands in the 50 ms release delay.
+        if milliseconds == 50:
+            cancel.set()
+        return not cancel.is_set()
+
+    monkeypatch.setattr(bed.Cluster018Controller, "_wait", staticmethod(wait))
+    await ctrl.execute_action(1, hold_ms=150)
+    assert packets(coord) == ["6e01002493", "6e01002493", "6e01006edd"]
+
+
 async def test_cancelled_save_cannot_shorten_the_next_save_threshold(instant, monkeypatch):
     ctrl, coord = controller(layout="A0RN")
     node = next(c.node for c in ctrl._controls if c.short == "58" and c.status == 3)
@@ -221,6 +236,29 @@ async def test_settings_queries_and_menu_gates(instant):
         ctrl.validate_cluster018_request(Request("aroma", aroma_values=(1, 1, 2)))
     ctrl._receive.feed(bytes.fromhex("6e1a000189"), app=ctrl.app, layout=ctrl.layout)
     ctrl.validate_cluster018_request(Request("aroma", aroma_values=(1, 1, 2)))
+
+
+async def test_proven_settings_rows_survive_a_reconnect_and_a_new_controller(instant, monkeypatch):
+    """With a disconnect between calls, a query's proven rows still gate the next call."""
+    from custom_components.adjustable_bed.cluster018_protocol import rgb
+
+    ctrl, _ = controller(layout="A0RN")
+    for reply in ("6e0e00037f", "6e1a000189"):
+        ctrl._receive.feed(bytes.fromhex(reply), app=ctrl.app, layout=ctrl.layout)
+    assert ctrl.persisted_app_state["menu"] == ["aroma", "light"]
+    replacement, coord = controller(layout="A0RN")
+    with pytest.raises(ValueError, match="menu"):
+        replacement.restore_persisted_app_state({**ctrl.persisted_app_state, "menu": ["wifi"]})
+    replacement.restore_persisted_app_state(ctrl.persisted_app_state)
+    selected = replacement._session
+    monkeypatch.setattr(bed, "select", lambda *_args, **_kwargs: selected)
+    replacement._session = None
+    await replacement.start_notify()
+    replacement.validate_cluster018_request(Request("aroma", aroma_values=(1, 1, 2)))
+    await replacement.async_execute_cluster018_request(Request("rgb", color=(255, 0, 0)))
+    assert packets(coord)[-1] == rgb(255, 0, 0).hex()
+    with pytest.raises(ValueError, match="capability"):
+        replacement.validate_cluster018_request(Request("cancel_alarm"))
 
 
 def test_capability_and_layout_alarm_gate():
