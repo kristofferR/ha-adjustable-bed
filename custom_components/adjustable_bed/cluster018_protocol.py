@@ -17,17 +17,37 @@ from .codec import richmat as codec
 
 Wire = Literal["RAW", "FRAMED"]
 
+# Source timing, in milliseconds.
+TICK_MS: Final = 150
+"""The ordinary worker tick."""
+FAST_TICK_MS: Final = 110
+"""The worker tick for TWRM and MLRM names, and a FRAMED link without a name."""
+FAST_TICK_NAMES: Final = ("TWRM", "MLRM")
+HELD_RELEASE_MS: Final = 50
+"""Release after a held control ends."""
+TAP_RELEASE_MS: Final = 150
+"""Release after a once or short press."""
+LONG_PRESS_MS: Final = 3000
+"""The default long-press threshold; a node can set its own."""
+STARTUP_MS: Final = 300
+"""FRAMED startup frame after notifications start."""
+ALARM_SPACING_MS: Final = 300
+QUERY_SPACING_MS: Final = 500
+SETTINGS_SPACING_MS: Final = 150
+"""Aroma writes and the RGB busy interval."""
+DESK_REFRESH_MS: Final = 200
+
 
 def worker_interval(name: str | None, wire: Wire) -> int:
     """The source startup name guards, without guessing after substring failure."""
     if name is None:
         if wire == "RAW":
             raise ValueError("The raw app sender requires a Bluetooth device name")
-        return 110
+        return FAST_TICK_MS
     if len(name.strip()) < 4:
         raise ValueError("The app sender requires at least four device-name characters")
     prefix = name.strip().upper()[:4]
-    return 110 if prefix in ("TWRM", "MLRM") else 150
+    return FAST_TICK_MS if prefix in FAST_TICK_NAMES else TICK_MS
 
 
 def decode_resource(value: str | None) -> bytes | None:
@@ -180,8 +200,8 @@ class Worker:
     count: int = 20
     counter: int = 0
     fired: bool = False
-    tick_ms: int = 150
-    total_ms: int = 3000
+    tick_ms: int = TICK_MS
+    total_ms: int = LONG_PRESS_MS
 
     def set_count(self, milliseconds: int) -> None:
         self.count = int(milliseconds / self.tick_ms)
@@ -197,7 +217,7 @@ class Worker:
         if mode == 0:
             self.mode = -1
             self.counter = 0
-            return (Emission(50, RELEASE),)
+            return (Emission(HELD_RELEASE_MS, RELEASE),)
         if mode == 1:
             return (Emission(0, self.payload),)
         if mode == 3:
@@ -211,7 +231,7 @@ class Worker:
             self.mode = -1
             result = () if mode == 4 and self.fired else (Emission(0, self.payload),)
             if mode in (2, 4):
-                result += (Emission(150, RELEASE),)
+                result += (Emission(TAP_RELEASE_MS, RELEASE),)
             if mode == 4:
                 self.counter = 0
                 self.fired = False

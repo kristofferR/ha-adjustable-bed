@@ -18,11 +18,19 @@ from ..cluster018_caller import RETAIN, Selection, effective_status, transition
 from ..cluster018_profiles import Control, controls, load_catalog
 from ..cluster018_protocol import (
     ALARM_QUERY,
+    ALARM_SPACING_MS,
     AROMA_QUERY,
     DESK_CONFIRM,
     DESK_QUERY,
+    DESK_REFRESH_MS,
+    HELD_RELEASE_MS,
     INITIALIZE,
     LAMP_QUERY,
+    QUERY_SPACING_MS,
+    SETTINGS_SPACING_MS,
+    STARTUP_MS,
+    TAP_RELEASE_MS,
+    TICK_MS,
     Worker,
     alarm,
     alarm_delay,
@@ -257,7 +265,7 @@ class Cluster018Controller(BedController):
                 # delayed, notification-conditioned FRAMED transport startup.
                 await self._send(DESK_QUERY)
             if session.wire == "FRAMED" and session.has_notifications:
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(STARTUP_MS / 1000)
                 await self._send(DESK_QUERY if self.layout in ("WFRM", "FWRM") else INITIALIZE)
         except BaseException:
             self._session = None
@@ -287,7 +295,7 @@ class Cluster018Controller(BedController):
         # actuator write or carry cached Android objects across connections.
         await session.client.write_gatt_char(session.write, packet, response=session.response)
 
-    async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = 150, cancel_event: asyncio.Event | None = None) -> None:
+    async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = TICK_MS, cancel_event: asyncio.Event | None = None) -> None:
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         for index in range(repeat_count):
             if cancel.is_set():
@@ -393,7 +401,7 @@ class Cluster018Controller(BedController):
             try:
                 if not completed:
                     self._worker.cancel()
-                    await self._release(50 if status == 1 else 150, mode=mode)
+                    await self._release(HELD_RELEASE_MS if status == 1 else TAP_RELEASE_MS, mode=mode)
             finally:
                 self._publish()
 
@@ -421,7 +429,7 @@ class Cluster018Controller(BedController):
         self._worker.cancel()
         if CONTROLLER_GESTURE_RELEASE.get():
             return
-        await self._release(50)
+        await self._release(HELD_RELEASE_MS)
 
     @staticmethod
     def _hidden(button: Control) -> bool:
@@ -579,7 +587,7 @@ class Cluster018Controller(BedController):
         op = request.operation
         if op == "query":
             frames = ([ALARM_QUERY] if any(c.alarm_clock is not None for c in self._controls) else []) + [LAMP_QUERY, AROMA_QUERY]
-            delay = 500
+            delay = QUERY_SPACING_MS
         elif op in ("alarm", "cancel_alarm"):
             now = dt_util.now()
             when = request.when
@@ -588,16 +596,16 @@ class Cluster018Controller(BedController):
             self._pending_alarm = request.action if op == "alarm" else None
             if op == "cancel_alarm":
                 self._preferences["alarm_selection"] = None
-            delay = 300
+            delay = ALARM_SPACING_MS
         elif op == "rgb":
             assert request.color is not None
-            frames, delay = [rgb(*request.color)], 150
+            frames, delay = [rgb(*request.color)], SETTINGS_SPACING_MS
         elif op in ("lamp_slider", "lamp_save"):
             assert request.minutes is not None
             frames, delay = [lamp_timer(request.minutes, save=op == "lamp_save")], 0
         elif op == "aroma":
             assert request.aroma_values is not None
-            frames, delay = [aroma(code, value) for code, value in zip((0x1B, 0x1C, 0x1D), request.aroma_values, strict=True)], 150
+            frames, delay = [aroma(code, value) for code, value in zip((0x1B, 0x1C, 0x1D), request.aroma_values, strict=True)], SETTINGS_SPACING_MS
         elif op == "massage_popup":
             assert request.popup is not None
             frames, delay = [massage_popup(request.popup)], 0
@@ -618,9 +626,9 @@ class Cluster018Controller(BedController):
             elapsed = 0
             while elapsed < request.duration_ms and not self._coordinator.cancel_command.is_set():
                 await self.write_command(packet)
-                if not await self._wait(200, self._coordinator.cancel_command):
+                if not await self._wait(DESK_REFRESH_MS, self._coordinator.cancel_command):
                     break
-                elapsed += 200
+                elapsed += DESK_REFRESH_MS
             # This separate worker ends its refresh on UP. No release frame is
             # defined for this path, unlike ordinary RichButton movement.
             return

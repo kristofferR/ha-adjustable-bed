@@ -461,6 +461,7 @@ enable additional commands.
 | Comfort Motion app | `jiecang_wake`, `jiecang_stop_wake`; use HA automations for scheduling | [Comfort Motion](beds/jiecang.md#comfort-motion-app) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/richmat.md#rmcontrol) |
 | Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat.md#richmat-mh-apps) |
+| Classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | `richmat_classic` ([operations](#classic-richmat-app-settings)) | [Classic Richmat apps](beds/richmat.md#classic-richmat-apps) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
 
 Controller alarm actions program the bed itself, rather than creating a Home
@@ -742,3 +743,4 @@ Alarm delay is until the next chosen local wall-clock time; the same minute
 means tomorrow. There is no inferred weekly schedule. Desk actions require
 FWRM/WFRM. App mode labels do not authorize one-address side pairing. Wi-Fi,
 cloud and bed network/group administration are excluded.
+See the [protocol guide](beds/richmat.md#classic-richmat-apps) for the frames.

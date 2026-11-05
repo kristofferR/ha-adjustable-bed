@@ -102,8 +102,8 @@ source/consumer mapping, including the separate source-correction overlay.
 | Domain | Implementation | Verification / remaining scope |
 |---|---|---|
 | Package-local XML/getter catalog | `cluster018_data/`, `cluster018_profiles.controls` | All 53,035 nodes retained; all 3,569 complete curated layout contracts match independently exported accepted CP/MS digests; no cross-member deduplication |
-| Package/layout selection | `cluster018_models`, setup `cluster018`, options normalizer | All 122 member-qualified aliases, manual length, precedence, scan admission and locale boundaries; separate complete model/capability contexts |
-| RAW versus FRAMED operands | `cluster018_caller`, `cluster018_protocol.control` | 740 accepted builder/parser vectors; separate legacy-long null and raw argument10 semantics |
+| Package/layout selection | `cluster018_models`, the `richmat_classic_apps` declaration in `setup_questions.py` (setup and Configure) | All 122 member-qualified aliases, manual length, precedence, scan admission and locale boundaries; separate complete model/capability contexts |
+| RAW versus FRAMED operands | `cluster018_caller`, `cluster018_protocol.control` over `codec/richmat.py` | 740 accepted builder/parser vectors; separate legacy-long null and raw argument10 semantics |
 | Event/selector/memory/Hold core | `cluster018_caller.transition` | All 222,684 branches: 5,121,940 discrete field comparisons; all 3,787,536 leaves of 70,824 contracts have exact supported/excluded scopes, including four explicitly source-corrected contracts |
 | Persistent worker | `cluster018_protocol.Worker` | All 12,480 complete retained source worker contexts (53 exact input/result cases with member references), 90 null boundaries, count setter and quick-release/E3RM histories |
 | Current-session transport | `cluster018_transport.select`, controller `start_notify` | Fixed ordered services, explicit third-service fallback including READ-only receive; separate immediate desk query and delayed FRAMED initializer; no stale-object reuse |
@@ -111,6 +111,13 @@ source/consumer mapping, including the separate source-correction overlay.
 | Settings | `richmat_classic` service and typed `Request` | Query, alarm/cancel, RGB, separate slider/Save timer units, aroma, massage popup/slider, persisted slider progress, desk controls; 60 member-specific slider resource cases |
 | Feedback | `cluster018_receive.ReceiveState` | Source prefix priority, length branches, oldPack, capability/observer/error gates; all 65,536 independent frozen JVM byte-pair records match all six numeric results bit-for-bit |
 | User surface | Native controller buttons/selects, state sensor and card utility buckets | English translations, service metadata and rebuilt frontend; 331 frontend tests pass |
+
+On v5 the same behavior runs on the Richmat 6E codec: each app is a
+`RichmatProfile` (`profiles/richmat.py`, `RICHMAT_CLASSIC`), every frame is built
+by `codec/richmat.py`, and the profiles' frozen vectors in
+`tests/richmat_vectors.py` are the five accepted reports' sent frames. The
+protocol guide is the [Classic Richmat apps](../../beds/richmat.md#classic-richmat-apps)
+section of the Richmat codec guide.
 
 `discovery-dispositions.REVIEW-CANDIDATE.jsonl.gz` conserves all 128,189 primary
 records and all 124,435 original endpoint references. The proposed totals are

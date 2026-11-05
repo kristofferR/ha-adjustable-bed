@@ -101,7 +101,11 @@ describes each change. Every saved ID still loads unchanged.
 v5 includes every bed type in 4.3.0. Good Vibe Sleep and the eShine E2000,
 E3000/E3100 and E5000 app arrived through
 [#816](https://github.com/kristofferR/ha-adjustable-bed/pull/816), and every
-scripted command on them sends the same bytes as on `main`.
+scripted command on them sends the same bytes as on `main`. The classic Richmat
+apps (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior,
+[#825](https://github.com/kristofferR/ha-adjustable-bed/pull/825)) arrived on
+`main` after 4.3.0 and are included too, with their layout asked on the profile
+setup step.
 
 ## New Entities, Attributes and Actions
 
@@ -336,6 +340,7 @@ return 404.
 | `beds/omazz-adjusto-iii.md` | [Keeson: Omazz Adjusto III](beds/keeson.md#omazz-adjusto-iii) |
 | `beds/ore-comfort-bed.md` | [Keeson: ORE comfort-bed profiles](beds/keeson.md#ore-comfort-bed-profiles) |
 | `beds/q-plus-adjustable-remote.md` | [Keeson: Q-Plus Adjustable Remote](beds/keeson.md#q-plus-adjustable-remote) |
+| `beds/richmat-classic-apps.md` | [Richmat: Classic Richmat apps](beds/richmat.md#classic-richmat-apps) |
 | `beds/richmat-mh.md` | [Richmat: Richmat MH apps](beds/richmat.md#richmat-mh-apps) |
 | `beds/rmcontrol.md` | [Richmat: RMControl](beds/richmat.md#rmcontrol) |
 | `beds/rondure.md` | [Keeson: Rondure](beds/keeson.md#rondure) |
