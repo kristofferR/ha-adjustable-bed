@@ -535,9 +535,7 @@ def test_discovery_ledger_has_complete_coverage_and_resolvable_proofs():
     from collections import Counter
 
     root = Path(__file__).parents[1]
-    ledger = json.loads(
-        (root / "docs/apk-analysis/dispositions/issue558-ergomotion4.json").read_text()
-    )
+    ledger = json.loads((FIXTURES / "ledger.json").read_text())
     items = ledger["items"]
     assert len(items) == ledger["counts"]["total_items"] == 892
     assert len({i["id"] for i in items}) == len(items)

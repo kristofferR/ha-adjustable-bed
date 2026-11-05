@@ -1263,7 +1263,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "6e01006edd",
         }
     ),
-    # HJBed 2.1.2 row121: wire fields of docs/apk-analysis/dispositions/row121-hjbed.json, frames pinned in tests/test_hjbed.py,
+    # HJBed 2.1.2 row121: wire fields of the accepted ledger, frames pinned in tests/test_hjbed.py,
     # and the builder examples in the guide (light 600 s, RGB 11/22/33, clock sync 2026-11-03 12:00 +01:00)
     "hjbed": frozenset(
         {

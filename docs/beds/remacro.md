@@ -6,7 +6,7 @@
 
 Remacro is the SynData protocol used by three store-branded Android apps from
 the same developer. The integration follows the accepted row 050 analyses of
-all three ([disposition ledger](../apk-analysis/dispositions/row050-remacro.md)).
+all three.
 No physical bed has confirmed these controls yet.
 
 ## Known Models

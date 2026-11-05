@@ -501,7 +501,6 @@ commands; action and memory counts preserve captured ordering and aliases.
   tables captured on 2026-09-30.
 - The clean-room report passed independent acceptance before the integration
   comparison.
-- [The discovery ledger](../apk-analysis/dispositions/157-furnimove.md) records
-  every implemented behavior and exclusion.
+- The audit (unit 157) records every implemented behavior and exclusion.
 - Ref [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633) and
   [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556).

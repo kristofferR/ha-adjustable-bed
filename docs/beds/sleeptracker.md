@@ -393,5 +393,4 @@ missing static evidence or a requirement for the maintainer to obtain a bed.
   Wave Form One and lumbar movement on releases through 4.2.4 in
   [issue #693](https://github.com/kristofferR/ha-adjustable-bed/issues/693).
   Other hardware behavior remains unverified.
-- The [S02 discovery ledger](../apk-analysis/dispositions/S02-sleeptracker.md)
-  records every accepted discovery and implementation disposition.
+- The S02 audit records every accepted discovery and implementation disposition.

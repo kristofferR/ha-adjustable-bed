@@ -181,5 +181,5 @@ Binding status uses manufacturer ID 1465 (`0x05b9`): empty data is unbound, lead
 - Frozen XAPK SHA-256: `b1a590b6f24c8d4f5b8dfd10293b5266b4d0a95abd3a04f27786524bfd6accc2`.
 - Separate APK-member-set SHA-256: `a354614e81258f020f5207de3b3f85393535beedb8f1028e3dc2aa6221e60522`. These identify different things.
 - Five-APK arm64-v8a/en/fr/mdpi delivery only. Public Play metadata establishes versionName only, not versionCode, signer or exact delivery. Same-version replacement and other device/region deliveries are not excluded. Acquisition source-stamp and application signer digests were separated by the accepted audit.
-- [Per-item discovery ledger](../apk-analysis/dispositions/row113-motomotion.json) records report/audit seals, all command and candidate mappings, corrections and exclusions. Raw artifacts, decompilation and audit reports remain local.
+- The row113 audit ledger records report/audit seals, all command and candidate mappings, corrections and exclusions. Its item coverage is the [ledger fixture](../../tests/fixtures/motomotion_ledger.json) the tests check. Raw artifacts, decompilation and audit reports remain local.
 - ATT acceptance, actual firmware responses and physical effects need real-user validation after beta/release. No maintainer hardware check is required to complete the static implementation.

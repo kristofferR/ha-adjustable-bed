@@ -129,8 +129,8 @@ attempts in the internal route table; no payload bytes or platform acceptance
 are inferred for them, and they do not create public massage controls.
 
 Current caller policy, its accepted addendum/audit hashes, and the selector
-classification correction are indexed additively in the [row003 disposition
-ledger](../apk-analysis/dispositions/row003-sleepys-elite.json). They leave the
+classification correction are indexed additively in the row003 disposition
+ledger. They leave the
 canonical route table and original dynamic-vector provenance intact.
 
 Raw RX state is parsed atomically: malformed or bounds-faulting packets, and

@@ -226,5 +226,4 @@ data:
 The accepted row039 AHF Remote analysis establishes the app behavior summarized
 here. Physical control effects, the real peripheral's GATT property combination,
 and STOP latency remain unverified until user hardware validation after beta or
-release. See [the row039 disposition](../apk-analysis/dispositions/row039-timotion-ahf.md)
-for the complete comparison ledger and exclusions.
+release. The row039 audit holds the complete comparison ledger and exclusions.

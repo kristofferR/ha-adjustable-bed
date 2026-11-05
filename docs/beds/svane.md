@@ -376,5 +376,4 @@ position, save position, recall position and flatten.
 
 ### Analysis provenance
 
-See the [complete disposition ledger](../apk-analysis/dispositions/row130-svane.md)
-for all 663 rows and every exclusion.
+APK Protocol Audit row130 records all 663 disposition rows and every exclusion.

@@ -28,7 +28,7 @@ behavior.
 | ✅ | [Werkmeister Unterfederung](https://play.google.com/store/apps/details?id=de.vibradorm.werkmeister) 0.2, code 2 | `de.vibradorm.werkmeister` |
 
 The accepted static protocol/profile behavior is implemented with concrete code
-and executed-test bindings in the [row031 disposition ledger](../apk-analysis/row031-dispositions.md).
+and executed-test bindings, recorded in the row031 audit.
 APK hashes and seals are under [Analysis provenance](#analysis-provenance).
 
 ## Features
@@ -600,6 +600,5 @@ is discrete; it does not authorize arbitrary RGB or adjustable mood brightness.
 | Independent reconciliation audit seal (ACCEPT, zero material findings) | `f91c5b9efcf2eb85bdf0e80f81717ecd0b92d6059463b4a90ea4b807a3f5224d` |
 | Post-freeze comparison seal | `a59b50bb11a14660b737482066f4b6609f9e775e0170e97248a394c821ca7fc2` |
 
-See [all 356 exact exclusions](../apk-analysis/row031-dispositions.md). Raw
-artifacts, decompilation, packet reproducers and independent audit reports remain
+The row031 audit lists all 356 exact exclusions. Raw artifacts, decompilation, packet reproducers and independent audit reports remain
 machine-local.

@@ -1,7 +1,7 @@
 """Woosa Sleep 1.1.9 artifact vectors and command lifecycle.
 
-Vector provenance: accepted report C01-C61 / N01-N07, documented in
-docs/beds/woosa-disposition.md. No physical hardware confirmation is implied.
+Vector provenance: accepted report C01-C61 / N01-N07. No physical hardware
+confirmation is implied.
 """
 
 from __future__ import annotations

@@ -265,6 +265,5 @@ Other incoming routes have no bed-state consumer; raw diagnostics retain them.
 | Accepted REPORT.SHA256 | `455f487d3987a5661124f4f565ae3a99dc29853678f78a6fa7d39baffe2565a4` |
 | Independent AUDIT.SHA256 | `be869ca014a1e5cb3f7928d02a103cf1acabcd888f3c115e0ce015b93dab01cf` |
 
-The exhaustive [row117 discovery ledger](../apk-analysis/dispositions/row117-floyd.md)
-records evidence, every implemented/equivalent/excluded route and the focused
-artifact tests.
+The exhaustive row117 audit records the evidence, every
+implemented/equivalent/excluded route and the focused artifact tests.

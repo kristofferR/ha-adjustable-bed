@@ -594,8 +594,8 @@ generated timing table.
 
 #### Evidence
 
-The [disposition ledger](../apk-analysis/row040-dispositions.md) accounts for
-every reachable behavior and exclusion. Limoss Remote sends only its frozen
+APK Protocol Audit row040 accounts for every reachable behavior and exclusion.
+Limoss Remote sends only its frozen
 bodies, and its key tables match the report's rendered tables.
 
 ### FSM Relax
@@ -772,8 +772,8 @@ the STOP burst.
 
 #### Evidence
 
-The [disposition index](../apk-analysis/dispositions/075-fsm-relax.md) accounts
-for every reachable behavior and exclusion. FSM Relax sends only its frozen
+APK Protocol Audit unit 075 accounts for every reachable behavior and exclusion.
+FSM Relax sends only its frozen
 bodies.
 
 ## Notes
@@ -798,9 +798,9 @@ are settings of that profile, not separate routes.
   `1f595cb461818dd4a4661b827a78078c70b040fd7fa62b5a93b58f91945ea16c`; accepting
   independent-audit-004 manifest
   `9e02c4dbe33ff65c65a3fb8b17ce184aed047a660f4ea284aed86bf0a303f061`.
-  [Disposition ledger](../apk-analysis/row040-dispositions.md).
-- FSM Relax 1.9: [disposition index](../apk-analysis/dispositions/075-fsm-relax.md),
-  which records the accepted artifact set and report manifests.
+  Audit: row040.
+- FSM Relax 1.9: audit unit 075, which records the accepted artifact set and
+  report manifests.
 - The legacy route came from earlier `com.limoss.limossremote` and `com.stawett`
   analyses.
 - Raw artifacts and frozen audit reports remain machine-local.

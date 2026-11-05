@@ -286,9 +286,8 @@ Hardware status: **UNVERIFIED**.
 - Artifact-set SHA-256: `5d266015494edf9ad595c5b4c6d11fcde3ea53fc78e008b4990e4ce834a31980`
 - Accepted repair report manifest: `5d73627f5b010b372b3cdec39091faa817a4a596ead49db9ec507ee6025a5d0d`
 - Independent audit manifest: `7892663c50ea99a3174bfa1fd86cd27ed276ef4be1270bf256ac13133a0c155b`
-- All package evidence stays machine-local. The
-  [row037 disposition ledger](../apk-analysis/row037-dispositions.md) records the
-  separate implementation comparison.
+- All package evidence stays machine-local, including the row037 disposition
+  ledger that records the separate implementation comparison.
 - Current code and focused executed tests cover the accepted behavior. Workflow
   progress is recorded in the canonical APK audit trackers and published queue
   plan.

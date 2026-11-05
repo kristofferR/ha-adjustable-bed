@@ -1,17 +1,13 @@
 """ORE comfort-bed app controller for explicitly verified app profiles.
 
 Implements the accepted clean-room reports for com.ore.maxcoil 1.1.0 (5) and
-com.ore.Dynasty 1.0.2 (3), formal cluster-013
-(docs/apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md), and for
-com.ore.sfmc2bedsence 1.1 (3), formal cluster-015
-(docs/apk-analysis/dispositions/row059-ore-bedsense-innova.md). MaxCoil Una and
+com.ore.Dynasty 1.0.2 (3), formal cluster-013 (row056), and for
+com.ore.sfmc2bedsence 1.1 (3), formal cluster-015 (row059). MaxCoil Una and
 Dynasty Bases ship the same ``com.ore.okincomfortbed`` code base. Bedsense Bases
 is a separate package whose accepted report proves byte-identical frames,
 screens, timing, release and reply handling. Avanti Bases 1.0.5 (7),
-com.ore.AvantiBases, independently proves the same behavior (row065;
-docs/apk-analysis/dispositions/row065-avanti-bases.md).
-AMERICANSTAR 1.0 (1) independently proves the same behavior
-(docs/apk-analysis/dispositions/row062-americanstar.md).
+com.ore.AvantiBases, independently proves the same behavior (row065).
+AMERICANSTAR 1.0 (1) independently proves the same behavior (row062).
 
 Every command is ``E5 FE 16`` + a big-endian 32-bit word + the complement of the
 byte sum, written to the last FFE9 characteristic found in any service. The app

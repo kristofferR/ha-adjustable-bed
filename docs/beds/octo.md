@@ -787,8 +787,8 @@ dual-proxy operation remain hardware-validation items.
   Play Store variant or all 57 optional locale splits. No physical bed was
   available for validation, so hardware behavior remains unverified and is
   deferred for real users after beta or release.
-- The complete finding ledger, including already-covered behavior and explicit
-  exclusions, is in [row030 dispositions](../apk-analysis/dispositions/row030-octo-smart-control.md).
+- The row030 audit holds the complete finding ledger, including already-covered
+  behavior and explicit exclusions.
 
 #### Official app recheck (1.03.01)
 

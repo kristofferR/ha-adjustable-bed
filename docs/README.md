@@ -60,52 +60,16 @@ testing status.
 
 ## Protocol Research
 
-App-disposition ledgers in `beds/` and implementation records in `apk-analysis/`
-preserve the scope and evidence of individual audits.
+Bed guides state what an app does in reference form. Each guide's Status line
+says what is tested on hardware, and its Analysis provenance names the APK
+Protocol Audit behind it.
 
-The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptracker.md)
-maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
-including direct BLE controls, explicit exclusions and hardware validation status.
-
-The [Adjustable Comfort M1X12 protocol guide](beds/starcode-m1x12.md) links its
-sealed accepted evidence to the complete 970-ID implementation ledger.
-
-The [cluster033 durable disposition ledger](beds/cluster033-dispositions.json) maps all
-562 accepted discoveries to implementation symbols, focused tests, narrowly
-credited baseline behavior or exact evidence-backed exclusions. The eight app
-profiles and their hardware-unverified status remain indexed by the Supported
-Beds table.
-
-The [row030 OCTO Smart Control disposition ledger](apk-analysis/dispositions/row030-octo-smart-control.md)
-maps the accepted 1.03.02 artifact to the existing OCTO Standard protocol, including
-direct BLE controls, explicit exclusions and deferred hardware validation.
-
-The [row042 Nectar Move ledger](apk-analysis/dispositions/row042-nectar-motion.md)
-maps all 43 accepted comparison rows to implementation proof or exact exclusions.
-
-The [row068 Glideaway Motion ledger](apk-analysis/dispositions/row068-glideaway-motion.md)
-accounts for the accepted 1.0.3 revision01 commands, models, parsers, timing and
-explicit safety/product exclusions.
-
-The [row107 SleepEase disposition ledger](apk-analysis/dispositions/row107-doublesleep.md)
-maps the accepted DoubleSleep 1.2.24 artifact to all three drivers, controls,
-sensor/report consumers and explicit safety/product exclusions.
-
-[Comfort Motion app setup and BLE behavior](beds/jiecang.md#comfort-motion-app), including the
-[row115 discovery dispositions](apk-analysis/dispositions/row115-comfort-motion.md).
-
-[HJBed app controls and telemetry](beds/richmat.md#hjbed), including the complete [row121 disposition ledger](apk-analysis/dispositions/row121-hjbed.md).
-
-[Good Vibe Sleep profiles and independent sleep sensors](beds/goodvibe.md), with the complete [row116 disposition ledger](apk-analysis/dispositions/row116-goodvibe.md).
-
-[Solace, Woosa Sleep, BedSense and Motion Bed](beds/ff_frame.md) share the FFFF frame codec
-guide, with the [MotionFlex ledger](beds/solace-disposition.md).
-
-[Ergomotion 4.0 setup and protocol](beds/keeson.md#ergomotion-40), including the
-[issue 558 discovery dispositions](apk-analysis/dispositions/issue558-ergomotion4.md)
-and opt-in P1 split-side controls.
-
-[eShine E2000/E3000/E3100/E5000 protocol and setup](beds/eshine-okin.md), with the complete [row122 disposition ledger](apk-analysis/dispositions/row122-eshine.md).
+Discovery ledgers and disposition records are audit records, not
+documentation, so they never go in `docs/`. They stay machine-local with each
+audit report, and the implementation PR states the ledger totals and every
+exclusion. A ledger that a test reads is a fixture in
+[`tests/fixtures/`](../tests/fixtures/). See the
+[repository instructions](../AGENTS.md#mandatory-post-freeze-implementation-convergence).
 
 ## Development and Validation
 

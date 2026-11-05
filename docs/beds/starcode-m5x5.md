@@ -339,8 +339,7 @@ runs.
 
 ### Evidence and deferred validation
 
-The full [225-item disposition ledger](../apk-analysis/row005-dispositions.md)
-binds implementation and exclusions to code and executed tests. All 111 owned
+The full 225-item row005 disposition ledger binds implementation and exclusions to code and executed tests. All 111 owned
 command rows, 138 inherited command routes, accepted packet/parser vectors and
 exhaustive enum branches have focused tests. Raw APKs, decompilation and frozen
 reports stay machine-local.

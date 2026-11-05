@@ -781,9 +781,7 @@ async def test_release_invalidates_pending_hold_without_extra_wire_stop(coordina
 def test_disposition_ledger_covers_the_accepted_inventory():
     from hashlib import sha256
 
-    ledger = json.loads(
-        (FIXTURES.parents[1] / "docs/apk-analysis/dispositions/row121-hjbed.json").read_text()
-    )
+    ledger = json.loads((FIXTURES / "hjbed_ledger.json").read_text())
     items = ledger["items"]
     assert len(items) == len({row["id"] for row in items}) == 1510
     appended = {

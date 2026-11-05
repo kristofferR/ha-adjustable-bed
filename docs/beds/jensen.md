@@ -26,8 +26,6 @@ drives three bed families:
   frame; 2.0.37 does.
 - **Linak**-based Jensen beds use the [Linak](linak.md) bed type.
 
-See the [discovery ledger](jensen-disposition.md).
-
 ## Home Assistant setup
 
 Choose **Jensen / Svane** in the bed-type list (a detected JMC400 box is shown

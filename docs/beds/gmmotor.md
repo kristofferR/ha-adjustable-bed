@@ -6,7 +6,7 @@
 
 ## Known Models
 
-- Exact GM Control product codes, selected in setup. The [catalog ledger](../apk-analysis/dispositions/row102-gmmotor-catalog.csv) records every admitted and unsupported constructor.
+- Exact GM Control product codes, selected in setup. The row102 audit records every admitted and unsupported constructor.
 - `V9RM`, `V9RM (standard)` and `V9RM (split head)` retain distinct catalogs. Select the configuration actually used by the app.
 - `FWRM` and `WFRM` use the dedicated desk controller.
 - MM and SXB sleep modules are separate Bluetooth devices and separate integration entries.
@@ -259,14 +259,13 @@ HA safely drops malformed notifications that make the app's extractor loop
 without progress. It also guarantees callback cleanup after required-field
 failures, limits sleep report memory/decompression to 8 MiB and cancels stale
 session follow-ups on stop/disconnect. These are explicit HA safety behaviors;
-raw diagnostic observer faults are isolated so parsing can continue. The
-[discovery ledger](../apk-analysis/dispositions/row102-gmmotor.md) records
-their differences from the artifact.
+raw diagnostic observer faults are isolated so parsing can continue. The row102
+audit records their differences from the artifact.
 
 ### Analysis provenance
 
 - GM Control 4.6.6 / code 46600, artifact-set SHA-256
   `0bdb27d045fb8d097cfc20e26e759ff238f8ac55eb317a3d3eccb814ccc8d11b`.
-- [Complete row102 implementation/disposition ledger](../apk-analysis/dispositions/row102-gmmotor.md).
+- Audit: APK Protocol Audit row102.
 - Hardware, ATT delivery, firmware interpretation and physical effects remain
   unverified. Real-user reports after a beta or release can supply that evidence.

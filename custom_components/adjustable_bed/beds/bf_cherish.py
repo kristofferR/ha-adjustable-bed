@@ -1,7 +1,7 @@
 """Explicit BF 1.2.3 and Cherish 1.0.4 profiles (accepted row063).
 
 These apps share framing, not their command tables or alarm format. No
-advertisement identifies either app. See docs/apk-analysis/dispositions/row063-cluster001.md.
+advertisement identifies either app.
 """
 
 from __future__ import annotations

@@ -222,9 +222,8 @@ Typical device names look like:
 ## Commands
 
 The integration's everyday Fuzion entities use the bamkeys below. The complete
-Fuzion catalogue, including temperature programs, is in the
-[Fuzion discovery disposition](sleep-number-fuzion-disposition.md); the MCR
-command and parameter list is in [Sleep Number BLE commands](sleep-number-services.md).
+Fuzion and MCR command and parameter lists, including temperature programs, are
+in [Sleep Number BLE commands](sleep-number-services.md).
 
 ### Actuator Control
 
@@ -404,10 +403,9 @@ The frozen report remains machine-local with the APK and decompilation output.
 - Package: `com.selectcomfort.SleepIQ`, version `5.4.11`, code `1787576046`.
 - APK SHA-256: `710b7dfd536007fc4812ad9a16402be3c1bf882cfc27fa9214ad72154bf36f5f`.
 - Frozen `REPORT.SHA256` digest: `1c751b8ba76fd89d85eb0fb96f20d1f7fbc40171e3c3e3a7c59be3d36463475d`.
-- [Fuzion discovery disposition](sleep-number-fuzion-disposition.md).
-- [MCR discovery disposition](sleep-number-mcr-disposition.md).
+- Audit: the SleepIQ 5.4.11 Fuzion and MCR discovery dispositions.
 
-These ledgers distinguish implemented controls, internal transport behavior,
+These machine-local ledgers distinguish implemented controls, internal transport behavior,
 unreachable generated methods and explicit exclusions. Wi-Fi/account
 provisioning, firmware/file transfers, destructive factory operations and cloud
 report export are outside the integration's bed-control scope. Hardware testing

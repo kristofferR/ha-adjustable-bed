@@ -621,11 +621,7 @@ def test_durable_ledger_covers_every_accepted_identifier_and_command():
     import json
     from pathlib import Path
 
-    d = json.loads(
-        (
-            Path(__file__).parents[1] / "docs/apk-analysis/dispositions/row113-motomotion.json"
-        ).read_text()
-    )
+    d = json.loads((Path(__file__).parent / "fixtures/motomotion_ledger.json").read_text())
     assert len(d["items"]) == len({item["id"] for item in d["items"]}) == 316
     assert len(d["command_coverage"]) == 144
     assert (

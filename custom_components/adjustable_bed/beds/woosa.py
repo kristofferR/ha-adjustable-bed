@@ -1,8 +1,8 @@
 """Explicit Woosa Sleep profile, verified against com.sn.woosa 1.1.9.
 
 The shared discovery names cannot identify the app. Only an explicit profile
-selects these commands. See docs/beds/woosa-disposition.md for evidence and
-intentional differences from the Android UI.
+selects these commands. Evidence: the accepted com.sn.woosa 1.1.9 audit (issue
+#606), including intentional differences from the Android UI.
 """
 
 from __future__ import annotations

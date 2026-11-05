@@ -209,5 +209,4 @@ cycles and STOP behavior. No maintainer hardware acquisition is required.
 
 - This explicit profile follows the independently accepted row106 APK Protocol
   Audit. Static verified, hardware unverified.
-- The complete [discovery disposition ledger](../apk-analysis/dispositions/row106-eshine.md)
-  records the evidence, exclusions and safety differences.
+- The row106 audit records the evidence, exclusions and safety differences.

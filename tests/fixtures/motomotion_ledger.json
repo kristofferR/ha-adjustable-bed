@@ -1,0 +1,3331 @@
+{
+  "unit": {
+    "row": 113,
+    "package": "com.HHC.MotoMotion",
+    "version": "3.1.9",
+    "code": "2026051101"
+  },
+  "hardware": "UNVERIFIED; future real-user beta/release checks, not unfinished static implementation",
+  "comparison": "Separate post-freeze comparison from updated origin/main. No prior family implementation is credited as equivalent to MotoMotion. HA architecture reuse is expressed by concrete code/test groups.",
+  "numeric_contract": "Nonempty ASCII decimal strings0..signedMAX with arbitrarily many leading zeroes. Each native ADD wraps before RGB zero / D remainder. Stores survive later parse failure; event names are asynchronous, not model snapshots. Helpers and action-admitted values remain separate.",
+  "product_boundary": "Only direct BLE bed features. WiFi, SSID/password, network administration, cloud/account/OTA and unrelated camera/companion infrastructure are excluded as recorded, not implementation debt. HA adapter/proxy/setup remains supported.",
+  "ha_runtime_repairs_counting": "These four HA integration defects are scoped repairs of existing coverage, not new artifact discoveries or extra credit for the316candidate/144command coverage views.",
+  "coverage": {
+    "candidate_rows": 316,
+    "command_rows": 144,
+    "primary_routes": 17,
+    "unique_panel_classes": 13,
+    "aliases": 4,
+    "configuration_domains": 13,
+    "packet_formats": 5,
+    "receive_lengths": [
+      11,
+      16,
+      24,
+      31,
+      37,
+      38,
+      39,
+      42,
+      43,
+      50,
+      62,
+      71
+    ],
+    "counting": "Ledger identifiers, command rows, aliases and audit checks are overlapping coverage views, never a count of distinct features.",
+    "candidate_dispositions": {
+      "IMPLEMENTED": 292,
+      "EXCLUDED": 24
+    },
+    "command_dispositions": {
+      "IMPLEMENTED": 140,
+      "EXCLUDED": 4
+    }
+  },
+  "behavior_groups": {
+    "packets": {
+      "code": [
+        "custom_components/adjustable_bed/codec/motomotion.py::ascii_command",
+        "custom_components/adjustable_bed/codec/motomotion.py::binary_command",
+        "custom_components/adjustable_bed/codec/motomotion.py::Position.to_bytes"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_ascii_vectors",
+        "tests/test_motomotion.py::test_binary_vectors",
+        "tests/test_motomotion.py::test_posture_and_music_vectors"
+      ]
+    },
+    "movement": {
+      "code": [
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.movement_commands",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.hold_control",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.stop_all",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._refresh_held"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_held_movement_cadence_and_fresh_cleanup",
+        "tests/test_motomotion.py::test_all_primary_routes",
+        "tests/test_motomotion.py::test_selector2_ascii_branch_precedes_moto_binary",
+        "tests/test_motomotion.py::test_home_held_refresh_has_no_source_release_frame",
+        "tests/test_motomotion_ha.py::test_home_release_button_cancels_held_refresh_without_extra_stop"
+      ]
+    },
+    "memory": {
+      "code": [
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.preset_memory",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.program_memory",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.supports_memory_presets",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.supports_memory_programming",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.action"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_memory_cancel_cleanup_cannot_be_suppressed",
+        "tests/test_motomotion.py::test_program_does_not_trigger_apps_accidental_release_recall",
+        "tests/test_motomotion_ha.py::test_public_memory_buttons_and_actions_send_exact_panel_packets",
+        "tests/test_motomotion_ha.py::test_panel_a_public_memory_is_not_created_or_admitted"
+      ]
+    },
+    "levels": {
+      "code": [
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.action",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._comfort"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_right_child_level_consumes_right_delivered_state",
+        "tests/test_motomotion.py::test_h_heat_switches_between_hsw_and_cm_by_delivered_current_count"
+      ]
+    },
+    "rgb": {
+      "code": [
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._color",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._prepare_light",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._lumbar",
+        "custom_components/adjustable_bed/motomotion_protocol.py::rgb_total",
+        "custom_components/adjustable_bed/motomotion_protocol.py::light_cycle"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_long_padded_rgb_failure_then_live_toggle",
+        "tests/test_motomotion.py::test_d_light_overflow_through_live_action_and_unknown_guard",
+        "tests/test_motomotion.py::test_partial_receive_changes_real_lumbar_without_ok",
+        "tests/test_motomotion.py::test_pending_color_and_light_read_current_state"
+      ]
+    },
+    "music": {
+      "code": [
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.select",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.set_number",
+        "custom_components/adjustable_bed/codec/motomotion.py::music_command"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_number_and_select_callbacks_are_callable",
+        "tests/test_motomotion_ha.py::test_dynamic_number_select_sensor_use_real_command_serialization"
+      ]
+    },
+    "users": {
+      "code": [
+        "custom_components/adjustable_bed/motomotion_protocol.py::posture",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.async_execute_motomotion_request",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.restore_persisted_app_state",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._select_posture",
+        "custom_components/adjustable_bed/motomotion_services.py::handle"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_custom_postures_stay_with_selected_user",
+        "tests/test_motomotion.py::test_switch_posture_invalidates_save_and_rebuilds_five_target_axes",
+        "tests/test_motomotion_ha.py::test_public_posture_request_and_restore_have_one_physical_owner",
+        "tests/test_motomotion_ha.py::test_public_user_action_validates_all_targets_before_any_write"
+      ]
+    },
+    "session": {
+      "code": [
+        "custom_components/adjustable_bed/beds/motomotion.py::select_transport",
+        "custom_components/adjustable_bed/beds/motomotion.py::select_unpair_characteristic",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.start_notify",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.stop_notify",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.write_command",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.action"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_binding_cache_request_before_ble_without_durability",
+        "tests/test_motomotion.py::test_old_notify_session_rejected",
+        "tests/test_motomotion.py::test_unbind_uses_ffe1_after_normal_fff_roles_win",
+        "tests/test_motomotion.py::test_binding_suffix_admission_before_subscription_or_commands",
+        "tests/test_motomotion_ha.py::test_dynamic_number_select_sensor_use_real_command_serialization"
+      ]
+    },
+    "profiles": {
+      "code": [
+        "custom_components/adjustable_bed/profiles/motomotion.py::Profile",
+        "custom_components/adjustable_bed/profiles/motomotion.py::eligible",
+        "custom_components/adjustable_bed/setup_questions.py::_motomotion_errors",
+        "custom_components/adjustable_bed/controller_factory.py::create_controller",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.memory_slot_count",
+        "custom_components/adjustable_bed/pairing.py::supports_single_address_pairing",
+        "custom_components/adjustable_bed/paired_coordinator.py::SingleAddressPairedCoordinator._targets_for"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_all_primary_routes",
+        "tests/test_motomotion.py::test_independent_name_domains_and_safe_short_name",
+        "tests/test_motomotion_ha.py::test_setup_step_and_options_ownership_use_same_identity_validation",
+        "tests/test_motomotion_ha.py::test_offline_prime_factory_uses_ble_identity_and_creates_exact_controls",
+        "tests/test_motomotion.py::test_panel_memory_admission_matches_full_source_layout",
+        "tests/test_motomotion_ha.py::test_options_single_address_conversion_and_revert_preserve_profile",
+        "tests/test_motomotion_ha.py::test_single_address_parent_holds_and_stop_fan_out_exact_side_packets"
+      ]
+    },
+    "receive": {
+      "code": [
+        "custom_components/adjustable_bed/motomotion_state.py::State.parse",
+        "custom_components/adjustable_bed/motomotion_state.py::State.feed",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._notification",
+        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._deliver"
+      ],
+      "tests": [
+        "tests/test_motomotion.py::test_every_receive_length_and_exact_event_multiplicity",
+        "tests/test_motomotion.py::test_calibration_parses_all_fields_before_store",
+        "tests/test_motomotion.py::test_queued_event_reads_latest_partial_singleton"
+      ]
+    }
+  },
+  "command_coverage": [
+    {
+      "id": "P1-000",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-001",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-002",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-003",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-004",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-005",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-006",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-007",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-008",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-009",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-010",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-011",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-012",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-013",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-014",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-015",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-016",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-017",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-018",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-019",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-020",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-021",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-022",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-023",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-024",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-025",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-026",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-027",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-028",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-029",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-030",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-031",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-032",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-033",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-034",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-035",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-036",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-037",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-038",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-039",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-040",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-041",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-042",
+      "disposition": "EXCLUDED"
+    },
+    {
+      "id": "P1-043",
+      "disposition": "EXCLUDED"
+    },
+    {
+      "id": "P1-044",
+      "disposition": "EXCLUDED"
+    },
+    {
+      "id": "P1-045",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-046",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-047",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-048",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-049",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-050",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-051",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-052",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-053",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-054",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-055",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-056",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-057",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-058",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-059",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-060",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-061",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-062",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-063",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-064",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-065",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-066",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-067",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-068",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-069",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-070",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-071",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-072",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-073",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-074",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-075",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-076",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-077",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-078",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-079",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-080",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-081",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-082",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-083",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-084",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-085",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-086",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-087",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-088",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-089",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-090",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-091",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-092",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-093",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-094",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-095",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-096",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-097",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-098",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-099",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-100",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-101",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-102",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-103",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-104",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-105",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-106",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-107",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-108",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-109",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-110",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-111",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-112",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-113",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-114",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-115",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-116",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-117",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-118",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-119",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P1-120",
+      "disposition": "EXCLUDED"
+    },
+    {
+      "id": "P2-000",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-001",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-002",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-003",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-004",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-005",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-006",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-007",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-008",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-009",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-010",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-011",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-012",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-013",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-014",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-015",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P2-016",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P3-000",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P3-001",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P4-000",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P4-001",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P4-002",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "P5-000",
+      "disposition": "IMPLEMENTED"
+    }
+  ],
+  "items": [
+    {
+      "id": "B-0x50473c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50512c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x505268",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5053ac",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x506e80",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x506f78",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x507058",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x507428",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x507520",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x507a08",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508160",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5082e8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5083fc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508540",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508654",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508768",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508810",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x509710",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5098d8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50a0a4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50a1e0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50a308",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50a9e0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50ab54",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50af80",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50b148",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x515bc4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x515cbc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x515d9c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51a2d0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51a41c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51a83c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51b414",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51b5dc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51bda0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51bf68",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51c7c4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51c950",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51cc74",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51ce54",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51d658",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51db64",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x44e394",
+      "disposition": "EXCLUDED",
+      "reason": "Dead ColorPickerDialog path: light-kind3 is never assigned; A(00315,floor(channel/255*120),nocutoff,noside)",
+      "groups": []
+    },
+    {
+      "id": "B-0x44eecc",
+      "disposition": "EXCLUDED",
+      "reason": "Dead ColorPickerDialog path: light-kind3 is never assigned; A(00316,floor(channel/255*120),nocutoff,noside)",
+      "groups": []
+    },
+    {
+      "id": "B-0x44efc4",
+      "disposition": "EXCLUDED",
+      "reason": "Dead ColorPickerDialog path: light-kind3 is never assigned; A(00317,floor(channel/255*120),nocutoff,noside)",
+      "groups": []
+    },
+    {
+      "id": "B-0x501e74",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x502010",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x502dc4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x502f60",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5035a4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5036dc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50385c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5039b8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x503b34",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x503c0c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x503ce4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x503e3c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x503fb8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5040f8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5049fc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x504da4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x504ed0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x505b18",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x505bdc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x505c30",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x505cf4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x506014",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x506a4c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508eac",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508f70",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x508fe4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x509300",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50bc38",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50bd9c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50bee4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50c91c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50c984",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50c9d8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50ce68",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50ced0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50cf24",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50d078",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50d1fc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50d4b4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50da58",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50dac0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50db14",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50dfa4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e00c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e060",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e230",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e348",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e4c4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e604",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e780",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50e858",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50ea24",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50ec0c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50ed48",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50eec4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x50efe4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513350",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513488",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513608",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513764",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5138e0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5139b4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513a8c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513be4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513d60",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x513ea0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51420c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51430c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5143f4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x5173fc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x518a3c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x51b104",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "B-0x58e82c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "W-0x505134",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x505270",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5053b4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x506e88",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x506f80",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5072a0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x507430",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x507528",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x509718",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5098e0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50a0ac",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50a1e8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50a310",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50a9e8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50ab5c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50af88",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50b150",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x515bcc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x515cc4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x515fe4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51a2d8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51a72c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51a844",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51b41c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51b5e4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51bda8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51bf70",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51c7cc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51c958",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51cc7c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51ce5c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51d660",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51d7e4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51dda8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x501e7c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "levels",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x502018",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "levels",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x502dcc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "levels",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x502f68",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "levels",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5035ac",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5036e4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x503864",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5039c0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x503b3c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x503c14",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x503cec",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x503e44",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x503fc0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x504100",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x504a10",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x504abc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x504b5c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x506a54",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles",
+        "rgb"
+      ]
+    },
+    {
+      "id": "W-0x506b00",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x506b84",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50bc40",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50bda4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50bf28",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50d080",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50d204",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50d514",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "levels",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50e238",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50e350",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50e4cc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50e60c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50e788",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50e860",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50ea84",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "levels",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50ec14",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50ed50",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50eecc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x50efec",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x513358",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x513490",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x513610",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x51376c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5138e8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x5139bc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x513a94",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x513bec",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x513d68",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x513ea8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x514214",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x514314",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x514434",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x519e98",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "W-0x69d2dc",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDdeadRESETmenu",
+      "groups": []
+    },
+    {
+      "id": "T-0x504784",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x504654",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory",
+        "movement"
+      ]
+    },
+    {
+      "id": "T-0x50790c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory"
+      ]
+    },
+    {
+      "id": "T-0x507eb8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x508228",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x50833c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x508474",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x508594",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x5086a8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x5087bc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x51d94c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory"
+      ]
+    },
+    {
+      "id": "T-0x58bd5c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement"
+      ]
+    },
+    {
+      "id": "T-0x58c0e8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement"
+      ]
+    },
+    {
+      "id": "T-0x58c240",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement"
+      ]
+    },
+    {
+      "id": "T-0x58c900",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "movement"
+      ]
+    },
+    {
+      "id": "T-0x44e084",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDlight-kind3neverassigned",
+      "groups": []
+    },
+    {
+      "id": "T-0x44ee1c",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDlight-kind3neverassigned",
+      "groups": []
+    },
+    {
+      "id": "T-0x44ef18",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDlight-kind3neverassigned",
+      "groups": []
+    },
+    {
+      "id": "T-0x4e8120",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x504e44",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x505ac8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x505cb4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x505d48",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x505dc0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x505fd4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x508e60",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x509064",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x5090dc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x509134",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x5091ac",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x509224",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x50927c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "memory"
+      ]
+    },
+    {
+      "id": "T-0x50c744",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x4c7fc0",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "music"
+      ]
+    },
+    {
+      "id": "T-0x510018",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "music"
+      ]
+    },
+    {
+      "id": "T-0x5102b8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "music"
+      ]
+    },
+    {
+      "id": "T-0x510558",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "music"
+      ]
+    },
+    {
+      "id": "T-0x510a94",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "music"
+      ]
+    },
+    {
+      "id": "T-0x512234",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x5130fc",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "T-0x5118a4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "music"
+      ]
+    },
+    {
+      "id": "T-0x5154c8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "music"
+      ]
+    },
+    {
+      "id": "T-0x517288",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x517334",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x5188c4",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x51897c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "rgb"
+      ]
+    },
+    {
+      "id": "T-0x51f564",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "users"
+      ]
+    },
+    {
+      "id": "T-0x521920",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "users"
+      ]
+    },
+    {
+      "id": "T-0x522800",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "users"
+      ]
+    },
+    {
+      "id": "D-0x319394",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x44e454",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x4c8478",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x4e883c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x4eaf68",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x4e45e4",
+      "disposition": "EXCLUDED",
+      "reason": "Android runtime permission/location/Bluetooth settings UI is unrelated companion platform infrastructure. HA Bluetooth adapter/proxy/setup is supported through coordinator and config flow, not Android activities.",
+      "groups": []
+    },
+    {
+      "id": "D-0x4e4a9c",
+      "disposition": "EXCLUDED",
+      "reason": "Android runtime permission/location/Bluetooth settings UI is unrelated companion platform infrastructure. HA Bluetooth adapter/proxy/setup is supported through coordinator and config flow, not Android activities.",
+      "groups": []
+    },
+    {
+      "id": "D-0x4e5ad8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x58da84",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x58e220",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x58e82c",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x58ed18",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x58ee84",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "D-0x4e7948",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "V01-BT201",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V02-1",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V03-2",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V04-3",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V05-5",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V06-6",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V07-7",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V08-8",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V09-9",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V10-A",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V11-D",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V12-E",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V13-G",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V14-H",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V15-J",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V16-MM",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "V17-default",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-side",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-memory-stop",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-light-f",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-light-kind",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-heat-mode",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-tabs",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-binary",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-five-main",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-five-heat",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-music-modes",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-posture",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "C-dead-reset",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDdeadUI;A5461,0",
+      "groups": []
+    },
+    {
+      "id": "C-dead-dialog",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDdeadUI;duplicate315/316/317builder",
+      "groups": []
+    },
+    {
+      "id": "SDK-scan",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "SDK-connect",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "SDK-write",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "SDK-notify",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "session"
+      ]
+    },
+    {
+      "id": "SDK-read",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDunusedSDKhandlers,zeroappcallers",
+      "groups": []
+    },
+    {
+      "id": "SDK-descriptor",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDunusedrawdescriptorAPI;CCCDthroughsetNotifyreachable",
+      "groups": []
+    },
+    {
+      "id": "SDK-mtu",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDunusedSDKAPI,noappcallers",
+      "groups": []
+    },
+    {
+      "id": "SDK-classic",
+      "disposition": "EXCLUDED",
+      "reason": "NOTFOUNDapptransport/socketroute",
+      "groups": []
+    },
+    {
+      "id": "SDK-wifi-cloud",
+      "disposition": "EXCLUDED",
+      "reason": "EXCLUDEDproductboundary. NoreachablebedWiFi/cloud/provisioningpathafterapp/bridge/native/resourcepasses;network/TLSstringsengine/SDK/URLs,notimplementationdebt",
+      "groups": []
+    },
+    {
+      "id": "SDK-firmware",
+      "disposition": "EXCLUDED",
+      "reason": "NOTFOUNDappupdate/versioncapability/firmwarepayload",
+      "groups": []
+    },
+    {
+      "id": "SDK-crypto",
+      "disposition": "EXCLUDED",
+      "reason": "Nobedcrypto/nonce/CRC/compression;TLS/protobufunrelated;digitXOR/byteXORcovered",
+      "groups": []
+    },
+    {
+      "id": "SDK-ui-only",
+      "disposition": "EXCLUDED",
+      "reason": "ReachableUIonlylocalfieldbf,noBLE:EXCLUDEDnobedbehavior",
+      "groups": []
+    },
+    {
+      "id": "SDK-local-user",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "users"
+      ]
+    },
+    {
+      "id": "N-libapp.so",
+      "disposition": "IMPLEMENTED",
+      "reason": "Implemented through the referenced HA behavior groups. Original reachability and source reason are retained separately; aliases/callsites do not count as distinct hardware features.",
+      "groups": [
+        "packets",
+        "receive",
+        "users"
+      ]
+    },
+    {
+      "id": "N-libdatastore_shared_counter.so",
+      "disposition": "EXCLUDED",
+      "reason": "AndroidX DataStore shared-counter JNI; preferences, no BLE write boundary.",
+      "groups": []
+    },
+    {
+      "id": "N-libflutter.so",
+      "disposition": "EXCLUDED",
+      "reason": "Flutter/Dart engine and JNI platform runtime; sends typed channel payloads to registered Android plugins. No app-specific bed builder.",
+      "groups": []
+    },
+    {
+      "id": "N-libimage_processing_util_jni.so",
+      "disposition": "EXCLUDED",
+      "reason": "Camera image conversion JNI; no bed transport; image input feeds measurement UI.",
+      "groups": []
+    },
+    {
+      "id": "N-libmediapipe_tasks_vision_jni.so",
+      "disposition": "EXCLUDED",
+      "reason": "MediaPipe vision/graph/TFLite JNI. Landmarks become user-editable anthropometric inputs, not protocol commands or model selectors.",
+      "groups": []
+    },
+    {
+      "id": "N-libsurface_util_jni.so",
+      "disposition": "EXCLUDED",
+      "reason": "Camera surface JNI; no BLE transport.",
+      "groups": []
+    }
+  ]
+}
