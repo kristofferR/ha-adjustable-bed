@@ -25,7 +25,7 @@ from homeassistant.helpers import selector
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
-    async_delete_issue,
+    async_refresh_issues,
 )
 
 from .const import (
@@ -98,43 +98,38 @@ def _target_data(entry: ConfigEntry, side: str | None) -> dict[str, Any]:
 
 @callback
 def async_refresh_furnimove_layout_issues(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Offer the repair before connecting, including for offline legacy entries."""
-    for side in (None, *PAIR_SIDES):
-        issue_id = _issue_id(entry.entry_id, side)
-        if is_paired(entry.data):
-            if side is None or get_child(entry.data, side) is None:
-                async_delete_issue(hass, DOMAIN, issue_id)
+    """Offer the repair before connecting, including for offline legacy entries.
+
+    The refresh deletes the entry's issues that no longer apply and keeps the
+    rest as they were, so an ignored issue stays ignored.
+    """
+    sides = (
+        [side for side in PAIR_SIDES if get_child(entry.data, side) is not None]
+        if is_paired(entry.data)
+        else [None]
+    )
+    issue_ids = [_issue_id(entry.entry_id, side) for side in (None, *PAIR_SIDES)]
+    with async_refresh_issues(hass, DOMAIN, issue_ids=issue_ids):
+        for side in sides:
+            data = _target_data(entry, side)
+            if (kind := _issue_kind(data)) is None:
                 continue
-        elif side is not None:
-            async_delete_issue(hass, DOMAIN, issue_id)
-            continue
-        data = _target_data(entry, side)
-        kind = _issue_kind(data)
-        if kind is None:
-            async_delete_issue(hass, DOMAIN, issue_id)
-            continue
-        name = entry.title if side is None else f"{entry.title} ({side})"
-        placeholders = {"name": name}
-        if kind == _ROUTE:
-            placeholders["handset"] = str(data.get(CONF_PROTOCOL_VARIANT))
-        elif kind == _OKIMAT_CST:
-            placeholders["model"] = str(data[CONF_OKIMAT_MODEL_ON_CST])
-        async_create_issue(
-            hass, DOMAIN, issue_id,
-            is_fixable=True,
-            is_persistent=True,
-            severity=IssueSeverity.WARNING,
-            translation_key=kind,
-            translation_placeholders=placeholders,
-            data={"entry_id": entry.entry_id, "side": side},
-        )
-
-
-@callback
-def async_clear_furnimove_layout_issues(hass: HomeAssistant, entry_id: str) -> None:
-    """Remove repairs when their config entry is removed."""
-    for side in (None, *PAIR_SIDES):
-        async_delete_issue(hass, DOMAIN, _issue_id(entry_id, side))
+            name = entry.title if side is None else f"{entry.title} ({side})"
+            placeholders = {"name": name}
+            if kind == _ROUTE:
+                placeholders["handset"] = str(data.get(CONF_PROTOCOL_VARIANT))
+            elif kind == _OKIMAT_CST:
+                placeholders["model"] = str(data[CONF_OKIMAT_MODEL_ON_CST])
+            async_create_issue(
+                hass, DOMAIN, _issue_id(entry.entry_id, side),
+                config_entry_id=entry.entry_id,
+                is_fixable=True,
+                is_persistent=True,
+                severity=IssueSeverity.WARNING,
+                translation_key=kind,
+                translation_placeholders=placeholders,
+                data={"entry_id": entry.entry_id, "side": side},
+            )
 
 
 def _choice_schema(key: str, values: list[str], translation_key: str) -> vol.Schema:

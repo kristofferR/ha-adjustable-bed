@@ -1356,25 +1356,62 @@ async def test_removing_an_entry_clears_its_remacro_issues(
 
     pair, _children = _remacro_pair(hass, 50, 50)
     standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:73")
-    # A restored single for the left side owns that address after unpair.
+    # A restored single for the left side owns that address after unpair, and
+    # its setup raises the issue again before the pair is removed.
     restored = _remacro_entry(hass, "AA:BB:CC:DD:EE:71")
-    for address in ("AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72", "AA:BB:CC:DD:EE:73"):
+    for address, owner in (
+        ("AA:BB:CC:DD:EE:71", pair),
+        ("AA:BB:CC:DD:EE:72", pair),
+        ("AA:BB:CC:DD:EE:73", standalone),
+        ("AA:BB:CC:DD:EE:71", restored),
+    ):
         update_remacro_model_issue(
             hass,
             address,
             "Bed",
             "unmapped",
             {"company_id": "13", "app": "Slumberland"},
-            entry_id=pair.entry_id,
+            entry_id=owner.entry_id,
         )
     issues = ir.async_get(hass)
-    await hass.config_entries.async_remove(pair.entry_id)
+    # The restored single still hears its unlisted model when the pair goes.
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={13: b""})):
+        await hass.config_entries.async_remove(pair.entry_id)
     await hass.config_entries.async_remove(standalone.entry_id)
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:72") is None
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:73") is None
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is not None
     await hass.config_entries.async_remove(restored.entry_id)
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is None
+
+
+async def test_removing_a_failed_combine_hands_the_remacro_issue_back(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """A combine that never absorbed its beds must not take their warnings along."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.adjustable_bed import (
+        _async_prepare_remacro_entry,
+        _maybe_cache_paired_remacro_models,
+    )
+
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    single = _remacro_entry(hass, left)
+    pair, _children = _remacro_pair(hass, None, None)
+    issues = ir.async_get(hass)
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={13: b""})):
+        _async_prepare_remacro_entry(hass, single)
+        # The combine raises the warnings at setup, before it absorbs the beds.
+        _maybe_cache_paired_remacro_models(hass, pair)
+        issue = issues.async_get_issue(DOMAIN, f"remacro_model_{left}")
+        assert issue is not None and issue.config_entry_id == pair.entry_id
+        await hass.config_entries.async_remove(pair.entry_id)
+
+    issue = issues.async_get_issue(DOMAIN, f"remacro_model_{left}")
+    assert issue is not None and issue.config_entry_id == single.entry_id
+    assert issue.data == {"entry_id": single.entry_id, "side": None, "company_id": "13"}
+    assert issues.async_get_issue(DOMAIN, f"remacro_model_{right}") is None
 
 
 def _set_side_variants(hass: HomeAssistant, entry: MockConfigEntry, left: str, right: str) -> None:
@@ -1474,22 +1511,25 @@ async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> N
         _async_prepare_remacro_entry,
         _maybe_cache_paired_remacro_models,
     )
-    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN, CONF_PAIR_ID
     from custom_components.adjustable_bed.remacro_discovery import update_remacro_model_issue
 
     placeholders = {"company_id": "13", "app": "Slumberland"}
-    for address in ("AA:BB:CC:DD:EE:80", "AA:BB:CC:DD:EE:81"):
-        update_remacro_model_issue(hass, address, "Bed", "unmapped", placeholders, entry_id="x")
     standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:80", **{CONF_BED_TYPE: "linak"})
-    _async_prepare_remacro_entry(hass, standalone)
     pair = MockConfigEntry(
         domain=DOMAIN,
         data={
             CONF_BED_TYPE: "linak",
+            CONF_PAIR_ID: "pair_left_linak",
             CONF_PAIR_CHILDREN: [{"side": "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:81"}],
         },
     )
     pair.add_to_hass(hass)
+    for address, owner in (("AA:BB:CC:DD:EE:80", standalone), ("AA:BB:CC:DD:EE:81", pair)):
+        update_remacro_model_issue(
+            hass, address, "Bed", "unmapped", placeholders, entry_id=owner.entry_id
+        )
+    _async_prepare_remacro_entry(hass, standalone)
     _maybe_cache_paired_remacro_models(hass, pair)
     issues = ir.async_get(hass)
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:80") is None

@@ -77,10 +77,7 @@ from .controller_factory import create_controller
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .coordinator_connection import PairingOnlyConnectionActiveError
 from .entity_runtime import EntityRuntime
-from .furnimove_repair import (
-    async_clear_furnimove_layout_issues,
-    async_refresh_furnimove_layout_issues,
-)
+from .furnimove_repair import async_refresh_furnimove_layout_issues
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .linak_services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
@@ -111,11 +108,7 @@ from .position_estimate import (
 )
 from .profile_id import migrate_v5_data, with_profile_ids
 from .profile_recommendations import async_watch_profile_recommendations
-from .profile_review import (
-    async_clear_profile_review_issue,
-    async_refresh_profile_review_issue,
-    profile_review_mark,
-)
+from .profile_review import async_refresh_profile_review_issue, profile_review_mark
 from .remacro_discovery import (
     async_watch_remacro_fallback,
     clear_remacro_model_issues,
@@ -450,23 +443,12 @@ def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> Non
     A model the selected app does not list, or one not seen yet, still loads on
     the fallback controls, as every Remacro bed did in v4.0.2; it never blocks setup.
     """
-    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
-        # An earlier Remacro setup may have raised a model issue for this bed.
-        clear_remacro_model_issues(hass, _entry_addresses(entry))
-        return
-    manufacturer_data = remacro_manufacturer_data(hass, entry.data[CONF_ADDRESS])
-    new_data = add_remacro_model(entry.data, manufacturer_data)
-    if new_data != dict(entry.data):
-        hass.config_entries.async_update_entry(entry, data=new_data)
-    problem, placeholders = remacro_entry_problem(entry.data, manufacturer_data)
-    update_remacro_model_issue(
-        hass,
-        entry.data[CONF_ADDRESS],
-        entry.title,
-        problem,
-        placeholders,
-        entry_id=entry.entry_id,
-    )
+    if entry.data.get(CONF_BED_TYPE) == BED_TYPE_REMACRO:
+        manufacturer_data = remacro_manufacturer_data(hass, entry.data[CONF_ADDRESS])
+        new_data = add_remacro_model(entry.data, manufacturer_data)
+        if new_data != dict(entry.data):
+            hass.config_entries.async_update_entry(entry, data=new_data)
+    _async_refresh_remacro_issues(hass, entry)
 
 
 def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -488,32 +470,41 @@ def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) 
             child = add_remacro_model(
                 child, remacro_manufacturer_data(hass, child[CONF_ADDRESS])
             )
-        elif isinstance(child, dict) and isinstance(child.get(CONF_ADDRESS), str):
-            # A side that is no longer Remacro must not keep a Remacro model issue.
-            clear_remacro_model_issues(hass, [child[CONF_ADDRESS]])
         updated.append(child)
     if updated != children:
         hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_PAIR_CHILDREN: updated}
         )
-    for side in PAIR_SIDES:
-        if get_child(entry.data, side) is None:
-            continue
-        data = effective_child_data(entry.data, side, entry.options)
+    _async_refresh_remacro_issues(hass, entry)
+
+
+def _async_refresh_remacro_issues(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Raise or clear the Remacro model warning of every bed the entry runs.
+
+    The warning is keyed by bed, so this also hands it to the entry: the one
+    that ran the bed before may be gone, or is about to be.
+    """
+    if is_paired(entry.data):
+        beds = [
+            (f"{entry.title} ({side})", side, effective_child_data(entry.data, side, entry.options))
+            for side in PAIR_SIDES
+            if get_child(entry.data, side) is not None
+        ]
+    else:
+        beds = [(entry.title, None, dict(entry.data))]
+    for name, side, data in beds:
         address = data.get(CONF_ADDRESS)
-        if data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO or not isinstance(address, str):
+        if not isinstance(address, str):
+            continue
+        if data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
+            # An earlier Remacro setup may have raised a model issue for this bed.
+            clear_remacro_model_issues(hass, [address])
             continue
         problem, placeholders = remacro_entry_problem(
             data, remacro_manufacturer_data(hass, address)
         )
         update_remacro_model_issue(
-            hass,
-            address,
-            f"{entry.title} ({side})",
-            problem,
-            placeholders,
-            entry_id=entry.entry_id,
-            side=side,
+            hass, address, name, problem, placeholders, entry_id=entry.entry_id, side=side
         )
 
 
@@ -1804,23 +1795,28 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Clean up Repairs issues that would otherwise outlive the entry."""
-    async_clear_furnimove_layout_issues(hass, entry.entry_id)
+    """Clean up state that would otherwise outlive the entry.
+
+    Home Assistant removes the entry's Repairs issues itself: each one is linked
+    to the entry that raised it.
+    """
     await async_remove_position_estimates(hass, entry.entry_id)
-    async_clear_profile_review_issue(hass, entry.entry_id)
-    address = entry.data.get(CONF_ADDRESS)
-    if address:
-        clear_octo_pin_required_issue(hass, address)
-    # Unpair and combine restore other entries for the same beds first; their
-    # setup refreshes the issue, so only addresses nobody else owns are cleared.
+    # Unpair and combine restore other entries for the same beds first, so only
+    # addresses nobody else owns lose their app state.
     owned = {
         owned_address
         for other in hass.config_entries.async_entries(DOMAIN)
         if other.entry_id != entry.entry_id
         for owned_address in _entry_addresses(other)
     }
-    unowned = set(_entry_addresses(entry)) - owned
-    clear_remacro_model_issues(hass, unowned)
+    addresses = set(_entry_addresses(entry))
+    unowned = addresses - owned
+    # A combine that never absorbed its beds still raised their Remacro warnings
+    # as its own. Give each back to the entry that still runs the bed before
+    # Home Assistant removes the issues linked to this one.
+    for other in hass.config_entries.async_entries(DOMAIN):
+        if other.entry_id != entry.entry_id and addresses.intersection(_entry_addresses(other)):
+            _async_refresh_remacro_issues(hass, other)
     from .app_state_store import async_remove_app_states
 
     # Re-adding a bed must not restore the removed entry's app state or session.

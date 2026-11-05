@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
@@ -12,6 +13,7 @@ from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
     async_delete_issue,
+    async_refresh_issues,
 )
 from homeassistant.helpers.issue_registry import (
     async_get as async_get_issue_registry,
@@ -159,21 +161,11 @@ def async_clear_unsupported_device_issues(hass: HomeAssistant) -> None:
     device that wasn't recognised as a bed. Because the integration's Bluetooth
     matchers are intentionally broad, this nagged users about unrelated devices,
     so the feature was removed. Issues created by those versions linger in the
-    registry, so we clear them on setup to make the upgrade self-cleaning.
+    registry, so a refresh that recreates none of them clears them on setup.
     """
-    registry = async_get_issue_registry(hass)
-    stale_ids = [
-        issue_id
-        for (domain, issue_id) in list(registry.issues)
-        if domain == DOMAIN and issue_id.startswith(_UNSUPPORTED_ISSUE_PREFIX)
-    ]
-    for issue_id in stale_ids:
-        async_delete_issue(hass, DOMAIN, issue_id)
-    if stale_ids:
-        _LOGGER.debug(
-            "Cleared %d obsolete unsupported-device Repairs issue(s)",
-            len(stale_ids),
-        )
+    async_refresh_issues(
+        hass, DOMAIN, issue_id_pattern=re.escape(_UNSUPPORTED_ISSUE_PREFIX)
+    ).async_finish()
 
 
 def _pairing_required_issue_id(address: str) -> str:
@@ -227,6 +219,7 @@ async def create_pairing_required_issue(
         hass,
         DOMAIN,
         issue_id,
+        config_entry_id=entry_id,
         is_fixable=True,
         is_persistent=True,
         severity=IssueSeverity.ERROR,
@@ -272,6 +265,8 @@ def update_octo_pin_required_issue(
     address: str,
     name: str,
     pin_locked_without_pin: bool | None,
+    *,
+    entry_id: str | None = None,
 ) -> None:
     """Raise or clear the "Octo receiver is PIN locked" Repairs issue.
 
@@ -307,6 +302,7 @@ def update_octo_pin_required_issue(
         hass,
         DOMAIN,
         issue_id,
+        config_entry_id=entry_id,
         is_fixable=False,
         is_persistent=True,
         severity=IssueSeverity.WARNING,
@@ -335,6 +331,6 @@ def clear_octo_pin_required_issue(hass: HomeAssistant, address: str) -> None:
     follows the repair and saves a PIN while the bed is unreachable would keep
     seeing an issue claiming no PIN is configured. Callers use this when the
     configuration itself makes the issue moot (a PIN was saved, the bed type
-    changed) or when the entry goes away.
+    changed).
     """
     async_delete_issue(hass, DOMAIN, _octo_pin_required_issue_id(address))

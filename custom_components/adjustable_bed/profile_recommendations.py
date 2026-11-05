@@ -497,6 +497,7 @@ class ProfileRecommendationWatch:
             self.hass,
             DOMAIN,
             self.issue_id,
+            config_entry_id=self.entry.entry_id,
             is_fixable=True,
             is_persistent=False,
             severity=ir.IssueSeverity.WARNING,

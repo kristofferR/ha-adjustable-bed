@@ -4103,17 +4103,18 @@ class TestOctoPinLockDiagnostics:
         """A leftover issue would keep nagging about a bed that is gone."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import async_remove_entry
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
 
         issue_id = "octo_pin_required_aa_bb_cc_dd_ee_ff"
         registry = ir.async_get(hass)
-        update_octo_pin_required_issue(hass, "AA:BB:CC:DD:EE:FF", "Bed", True)
+        update_octo_pin_required_issue(
+            hass, "AA:BB:CC:DD:EE:FF", "Bed", True, entry_id=mock_octo_config_entry.entry_id
+        )
         assert registry.async_get_issue(DOMAIN, issue_id) is not None
 
-        await async_remove_entry(hass, mock_octo_config_entry)
+        await hass.config_entries.async_remove(mock_octo_config_entry.entry_id)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 

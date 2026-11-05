@@ -34,7 +34,6 @@ from custom_components.adjustable_bed.furnimove_repair import (
     CONF_OKIN_CST_KEPT,
     CONF_STAIRCASE_LAYOUT_CONFIRMED,
     FurniMoveLayoutRepairFlow,
-    async_clear_furnimove_layout_issues,
     async_refresh_furnimove_layout_issues,
 )
 from custom_components.adjustable_bed.pairing import effective_child_data
@@ -67,8 +66,30 @@ async def test_offline_entry_gets_repair_before_any_connection(hass):
     # HA supplies metadata to init, not a submitted form.
     result = await flow.async_step_init({"issue_id": issue_id})
     assert result["step_id"] == "init"
-    async_clear_furnimove_layout_issues(hass, entry.entry_id)
+    await hass.config_entries.async_remove(entry.entry_id)
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_layout_refresh_keeps_an_ignored_issue_and_drops_a_stale_one(hass):
+    entry = _legacy(hass)
+    registry = ir.async_get(hass)
+    issue_id = f"furnimove_layout_{entry.entry_id}_standalone"
+    stale_id = f"furnimove_layout_{entry.entry_id}_left"
+    # Left over from when the entry was a pair.
+    ir.async_create_issue(
+        hass, DOMAIN, stale_id, is_fixable=True, is_persistent=True,
+        severity=ir.IssueSeverity.WARNING, translation_key="furnimove_layout",
+    )
+    async_refresh_furnimove_layout_issues(hass, entry)
+    ir.async_ignore_issue(hass, DOMAIN, issue_id, True)
+
+    # Setup refreshes again on every reload.
+    async_refresh_furnimove_layout_issues(hass, entry)
+
+    issue = registry.async_get_issue(DOMAIN, issue_id)
+    assert issue is not None and issue.dismissed_version is not None
+    assert issue.config_entry_id == entry.entry_id
+    assert registry.async_get_issue(DOMAIN, stale_id) is None
 
 
 async def test_bed_repair_preserves_identity_and_clears_obsolete_pairing_issue(hass):
