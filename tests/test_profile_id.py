@@ -194,7 +194,7 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         migrated = dict(entry.data)
         profile_id = migrated.pop(CONF_PROFILE_ID)
         record = migrated.pop(CONF_PROFILE_MIGRATION)
-        assert (entry.version, entry.minor_version) == (5, 2)
+        assert (entry.version, entry.minor_version) == (5, 3)
         assert migrated == stored
         assert dict(entry.options) == {"motor_pulse_count": 7}
         assert profile_id == resolve_profile_id(data)

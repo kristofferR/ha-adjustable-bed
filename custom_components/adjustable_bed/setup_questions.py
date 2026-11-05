@@ -1603,6 +1603,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
     ),
+    # MC3 has no massage page; the other layouts' controllers turn massage on.
+    f"{BED_TYPE_COMFORT_ENHANCEMENTS}:mc3": _asking(
+        BED_TYPE_COMFORT_ENHANCEMENTS,
+        owns={**_BASE[BED_TYPE_COMFORT_ENHANCEMENTS].owns, CONF_HAS_MASSAGE: False},
+    ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,
@@ -1766,6 +1771,23 @@ def setup_profile_for(data: Mapping[str, Any]) -> SetupProfile | None:
     key = app_profile_key(bed_type, variant)
     app = data.get(key) if key is not None else None
     return setup_profile(bed_type, variant, app if isinstance(app, str) else None)
+
+
+def profile_massage(data: Mapping[str, Any]) -> bool | None:
+    """Return the massage a saved route's profile settles, or None if it leaves it open.
+
+    This is the value setup and Configure save for the profile, from its fixed
+    owned fields and what it derives from the saved answers. Data the profile
+    cannot read, such as an unknown handset, settles nothing.
+    """
+    profile = setup_profile_for(data)
+    if profile is None:
+        return None
+    try:
+        massage = profile.settled(data).get(CONF_HAS_MASSAGE)
+    except KeyError, ValueError:
+        return None
+    return massage if isinstance(massage, bool) else None
 
 
 def owned_fields(bed_type: str | None, variant: str | None) -> frozenset[str]:
