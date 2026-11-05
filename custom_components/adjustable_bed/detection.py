@@ -743,6 +743,7 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_STARCODE_ABM5_4: (
         "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
     ),
+    BED_TYPE_REMACRO: "Remacro: Slumberland, The Brick and Jerome's apps",
     BED_TYPE_REVERIE_NIGHTSTAND: (
         "Reverie: Nightstand app, Protocol 110 and Protocol 108 receivers"
     ),
@@ -783,6 +784,9 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B),
         (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230),
         (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
+        # The Remacro apps are answers of the Remacro question.
+        (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK),
+        (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES),
     }
 )
 # Configure still accepts a hidden app row by its value, as a repair submits it.

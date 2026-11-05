@@ -823,6 +823,13 @@
           "choice": "App"
         }
       },
+      "remacro_family": {
+        "title": "Which store app controls this bed?",
+        "description": "Slumberland, The Brick and Jerome's run the same controller, and nothing the bed advertises names the app. Choose the app you use on your phone. Only the apps that list this bed's model are offered. Model the bed advertises: **{model}**.",
+        "data": {
+          "choice": "App"
+        }
+      },
       "jiecang_legacy": {
         "title": "Motors on this bed",
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
@@ -9208,6 +9215,13 @@
         "m5x4": "AdjustableM5X4 app",
         "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
         "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed"
+      }
+    },
+    "remacro_family_choice": {
+      "options": {
+        "slumberland": "Slumberland app",
+        "the_brick": "The Brick app",
+        "jeromes": "Jerome's app"
       }
     }
   }
