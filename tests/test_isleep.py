@@ -512,16 +512,16 @@ async def test_setup_and_options_preserve_explicit_profile(hass):
         "homeassistant.components.bluetooth.async_last_service_info",
         return_value=SimpleNamespace(manufacturer_data=manufacturer(1, 132)),
     ):
-        form = await flow.async_step_isleep()
-        assert form["step_id"] == "isleep"
+        form = await flow.async_step_profile_questions()
+        assert form["step_id"] == "profile_questions"
         assert form["data_schema"] is not None
         assert (
             form["data_schema"](
                 {CONF_PRODUCT_TYPE: "132", CONF_KAIDI_ROOM_ID: 10001, CONF_KAIDI_SOFA_ACU_NO: 2}
             )[CONF_PRODUCT_TYPE]
-            == "132"
+            == 132
         )
-        await flow.async_step_isleep(
+        await flow.async_step_profile_questions(
             {CONF_PRODUCT_TYPE: "132", CONF_KAIDI_ROOM_ID: 10200, CONF_KAIDI_SOFA_ACU_NO: 2}
         )
     data = flow._finish_with_verify.call_args.args[0]

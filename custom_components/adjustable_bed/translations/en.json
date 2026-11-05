@@ -442,7 +442,7 @@
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
-          "protocol_variant": "Remote code or layout",
+          "protocol_variant": "Remote code, layout or BLE driver",
           "motor_count": "Number of motors or app screen",
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
@@ -459,14 +459,26 @@
           "vmatbasic_profile": "V-MAT Basic product profile",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
-          "product_type": "App layout code",
-          "sleepys_elite_selector": "Control box the app lists"
+          "product_type": "App product, model or layout",
+          "sleepys_elite_selector": "Control box the app lists",
+          "gmmotor_side": "App bed side",
+          "kaidi_room_id": "Room ID",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "sleeptracker_foundation": "Foundation size (app metadata)",
+          "sleeptracker_unit_number": "Processor unit number (wire side)",
+          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
+          "sleeptracker_restricted": "Restricted app session (no authentication)",
+          "sleeptracker_processor_type": "Processor type (0 if unknown)",
+          "ble_device_name": "Exact Bluetooth name",
+          "motion_bed_restored": "Use an app-restored profile",
+          "motion_bed_preset": "Retained preset layout",
+          "motion_bed_movement": "Retained movement layout"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
           "has_light": "Expose light controls when this bed has under-bed lighting.",
           "furnimove_remote": "The handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label doesn't identify the motor layout.",
-          "protocol_variant": "The code of the remote that controls the bed, or the layout its app shows. Keep Auto-detect if you don't know it.",
+          "protocol_variant": "The code of the remote that controls the bed, the layout its app shows, or the BLE driver the bed advertises. Keep the automatic choice if you don't know it.",
           "motor_count": "How many motors the bed has. For an app with 2M, 3M and 4M screens, the screen you use in the app.",
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
@@ -479,9 +491,21 @@
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout.",
+          "product_type": "What the app shows for this bed: its product, model, layout or four-character layout code. Each app has its own list; the Bluetooth name and shared services don't identify it. A GM Control product's standard and split-head configurations are separate choices, and a SleepEase sensor-only model has no motor controls.",
           "has_massage": "Show the massage controls. For retained Caresse Diamant settings, match the massage setting saved in the app.",
-          "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box."
+          "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box.",
+          "gmmotor_side": "The side GM Control drives with this product. The product must offer that side.",
+          "kaidi_room_id": "Keep the existing numeric room ID to adopt a provisioned bed. For an unprovisioned bed, choose its destination room, then use the enrollment action after setup. Home Assistant never resets an existing room.",
+          "kaidi_sofa_acu_no": "The advertised two-byte value. Products 130 and 143 use separate side controls only when it isn't 2.",
+          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
+          "sleeptracker_unit_number": "Use the app-recorded integer for this processor; a UART control box needs its own entry. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
+          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
+          "sleeptracker_restricted": "Authentication is the default. Turn this on only for the app's restricted route.",
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
+          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
+          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
         },
         "sections": {
           "advanced": {
@@ -547,22 +571,6 @@
           "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly."
         }
       },
-      "motion_bed": {
-        "title": "Motion Bed app profile",
-        "description": "Choose the identity and controls used by this app. Hardware operation remains unverified.",
-        "data": {
-          "ble_device_name": "Exact Bluetooth name",
-          "motion_bed_restored": "Use an app-restored profile",
-          "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
-        },
-        "data_description": {
-          "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
-          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
-          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
-        }
-      },
       "starcode_m5x5": {
         "title": "AdjustableM5X5 app",
         "description": "Confirm the exact bedding class and optional accessory group. Shared Bluetooth services do not identify an app.",
@@ -612,24 +620,6 @@
           "app": "App or current setup"
         }
       },
-      "sleeptracker": {
-        "title": "Tempur Sleeptracker-AI processor",
-        "description": "Choose this profile for TEMPUR-Ergo ProSmart Air / ActiveBreeze beds using Tempur Sleeptracker-AI. Select the Sleeptracker processor Bluetooth address, then your app layout and recorded processor unit number. Existing UART control-box addresses require a separate processor entry. Authentication is the default; restricted mode is an explicit app route.",
-        "data": {
-          "product_type": "App layout",
-          "sleeptracker_unit_number": "Processor unit number (wire side)",
-          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
-          "sleeptracker_restricted": "Restricted app session (no authentication)",
-          "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "sleeptracker_foundation": "Foundation size (app metadata)"
-        },
-        "data_description": {
-          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
-          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides."
-        }
-      },
       "starcode_m1x12": {
         "title": "Adjustable Comfort M1X12 app",
         "description": "Select this app explicitly. The shared Bluetooth service, manufacturer and ELEVATE name do not identify the app.",
@@ -668,31 +658,6 @@
           "ergomotion4_model_keys": "For Other catalog product only. Enter the model keys in their catalog order, for example o1, o2, o3.",
           "ergomotion4_massage_keys": "For Other catalog product only. Use the feature keys belonging to that exact product.",
           "ergomotion4_product_name": "Keep the exact app name. Names containing 4194 select the inverted RGB format."
-        }
-      },
-      "isleep": {
-        "title": "ISleep bed",
-        "description": "Select the product shown by the ISleep app. Keep the existing numeric room ID to adopt a provisioned bed. For an unprovisioned bed, choose its destination room, then use the explicit enrollment action after setup. HA never resets an existing room. The actuator descriptor is the advertised two-byte value: products 130/143 use separate side controls only when it is not 2.",
-        "data": {
-          "product_type": "ISleep product ID",
-          "kaidi_room_id": "Room ID",
-          "kaidi_sofa_acu_no": "Advertised actuator descriptor"
-        }
-      },
-      "doublesleep": {
-        "title": "OKIN SleepEase app profile",
-        "description": "Select the saved app model independently of its advertised BLE driver. Sensor-only models have no motor controls.",
-        "data": {
-          "product_type": "Saved app model",
-          "protocol_variant": "BLE driver"
-        }
-      },
-      "gmmotor": {
-        "title": "GM Control product",
-        "description": "Choose the exact product code used by GM Control. Remote pickers and QR codes need the concrete selected product. Bluetooth services alone cannot identify the layout. Standard and split-head configurations are separate choices.",
-        "data": {
-          "product_type": "Exact GM Control product / configuration",
-          "gmmotor_side": "App bed side"
         }
       },
       "migration_confirm": {

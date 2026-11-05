@@ -20,6 +20,7 @@ A `SetupProfile` has:
 | `validate` | Errors by field for the staged setup with the answers applied. |
 | `derive` | The owned fields the profile computes from its answers, such as a FurniMove handset table's motor count and massage. |
 | `title` | The name the step shows for the staged route. |
+| `seed` | Fills setup's defaults from the bed's advertisement before the first form, such as the ISleep product and room or the Motion Bed name. It never replaces a chosen value, and Configure does not run it. |
 
 A `Question` stores its answer under `key`. Its `choices` are fixed labels or a
 function of the staged setup, such as the layouts the chosen app supports;
@@ -119,11 +120,6 @@ listed so the gap is visible until each converts.
 | `logicdata_app` | App, command family, layout, transport and light |
 | `malouf_app` | App, model, transport and primary controller |
 | `limoss_remote` | Product, light, massage, reversals and remote theme |
-| `gmmotor` | Catalog product, suggested from the Bluetooth name, and side |
-| `isleep` | Product, room and sofa numbers, after reading the advertised metadata |
-| `doublesleep` | Model and variant, with the model default from the advertisement |
-| `sleeptracker` | Foundation, model, unit, snapshot side, restriction and processor |
-| `motion_bed` | Advertised name, restored setup, preset and movement |
 
 ## Shared steps
 
@@ -161,7 +157,6 @@ These steps serve every bed type or route, so no profile owns them.
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
 | `bedsense` | Layout, or the layout from the Bluetooth name. |
 | `leggett_lp_legacy` | Model code, protocol mode and the confirmed write and notification characteristics (free text). Its `normalize` cleans the code and UUIDs before they are checked. |
-
 | `vibradorm_app@werkmeister` | Remote (control type). |
 | `vibradorm_app@vmat` | VMAT remote; `normalize` derives its control type and features. |
 | `vibradorm_app@caresse` | Restored setup; when restored, its control type, floor light, RGB, massage, light extension and floor default. `normalize` clears retained settings an answer no longer allows. |
@@ -169,6 +164,11 @@ These steps serve every bed type or route, so no profile owns them.
 | `sleepys_elite_app` | Control box selector; the BOX25 selectors derive massage and position feedback. |
 | `sleepys_box15`, `sleepys_box24` | Motor count. |
 | `sleepys_box25` | Massage, and the packet dialect (Advanced). |
+| `gmmotor` | Catalog product, suggested from the raw Bluetooth name, and the app side the product must offer; angle sensing is off. |
+| `isleep` | Product, room ID and actuator descriptor, seeded from the advertisement; the product's axes derive the motor count. A single-address pair keeps a product with separate side controls. |
+| `doublesleep` | Saved app model, seeded from the platform name, and the BLE driver. |
+| `sleeptracker` | Foundation, app layout, unit number, snapshot side, restricted session and processor type; a lumbar layout derives the third motor. |
+| `motion_bed` | Exact Bluetooth name, seeded from the advertisement; restored profile and retained preset and movement layouts. `normalize` stores Auto as no retained layout. |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.
