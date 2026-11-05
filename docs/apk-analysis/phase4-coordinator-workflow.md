@@ -163,6 +163,12 @@ machine-local handoff and on the live status page, so a tracker edit never needs
 a size budget, compaction or a publication bundle. Check each draft with
 `.github/scripts/apk_tracker_guard.py` before editing the issue.
 
+The last step of every unit, and the one that matters most, is recording its
+implementation PR: link it in the #436 row and the evidence row when it opens
+and again when it merges, regenerate the queue view with
+`.github/scripts/apk_queue_view.py`, and update the live status page. The unit
+is not finished until they all show the PR.
+
 Distinguish historical acceptance from currently usable evidence. Issue closures
 marked superseded/deferred do not mean their former gates passed. Keep #542/#550
 status current without turning them into competing work queues.

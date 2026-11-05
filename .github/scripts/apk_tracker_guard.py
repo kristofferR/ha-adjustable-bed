@@ -78,7 +78,12 @@ ANALYSIS_STATES = frozenset({"ACCEPTED", "IN PROGRESS", "PARTIAL", "QUEUED", "BL
 IMPLEMENTATION_STATES = ("MERGED", "IN REVIEW", "PENDING", "NOT STARTED")
 MAX_QUEUE_CELL = 160
 
+PR_URL = "https://github.com/kristofferR/ha-adjustable-bed/pull/"
+
 _HASH = re.compile(r"\b[0-9a-f]{40,}\b")
+_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+_PR_MENTION = re.compile(r"PR #\d+")
+_PR_LINK = re.compile(r"\[PR #(\d+)\]\(" + re.escape(PR_URL) + r"(\d+)\)")
 _NOISE = re.compile(r"https?://\S+|`[^`]*`|\b[0-9a-f]{12,}\b|\]\([^)]*\)")
 
 
@@ -113,20 +118,33 @@ def _compacted(line: str) -> bool:
     return len(text) >= 100 and text.count(" ") / len(text) < 0.08
 
 
-def _lint_queue(lines: list[str]) -> list[str]:
+def queue_rows(lines: list[str]) -> list[list[str]]:
+    """Cells of every #436 queue row; raises ValueError when the table is malformed."""
     try:
         start, end = lines.index(QUEUE_START), lines.index(QUEUE_END)
     except ValueError:
-        return [f"queue table must sit between {QUEUE_START} and {QUEUE_END}"]
+        raise ValueError(f"queue table must sit between {QUEUE_START} and {QUEUE_END}") from None
     rows = [line for line in lines[start + 1 : end] if line.strip()]
     if len(rows) < 2 or rows[0] != QUEUE_HEADER:
-        return [f"queue table must start with the header {QUEUE_HEADER}"]
+        raise ValueError(f"queue table must start with the header {QUEUE_HEADER}")
+    return [[cell.strip() for cell in row.strip().strip("|").split("|")] for row in rows[2:]]
+
+
+def _visible(cell: str) -> str:
+    """Cell text as rendered: link labels without their targets."""
+    return _LINK.sub(r"\1", cell)
+
+
+def _lint_queue(lines: list[str]) -> list[str]:
+    try:
+        rows = queue_rows(lines)
+    except ValueError as error:
+        return [str(error)]
     problems: list[str] = []
     seen: set[str] = set()
-    for row in rows[2:]:
-        cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
+    for cells in rows:
         if len(cells) != 5 or not cells[0]:
-            problems.append(f"queue row needs five cells and an order ID: {row[:80]}")
+            problems.append(f"queue row needs five cells and an order ID: {'|'.join(cells)[:80]}")
             continue
         order, analysis, _unit, _route, implementation = cells
         if order in seen:
@@ -138,8 +156,16 @@ def _lint_queue(lines: list[str]) -> list[str]:
             problems.append(
                 f"queue row {order}: implementation must start with one of {IMPLEMENTATION_STATES}"
             )
+        # The PR link is the row's most important fact: every PR mention must be a link.
+        linked = _PR_LINK.findall(implementation)
+        if len(linked) != len(_PR_MENTION.findall(implementation)) or any(
+            a != b for a, b in linked
+        ):
+            problems.append(f"queue row {order}: write each PR as [PR #N]({PR_URL}N)")
+        if implementation.startswith(("MERGED", "IN REVIEW")) and not linked:
+            problems.append(f"queue row {order}: a MERGED or IN REVIEW row links its PR")
         for cell in cells:
-            if len(cell) > MAX_QUEUE_CELL:
+            if len(_visible(cell)) > MAX_QUEUE_CELL:
                 problems.append(f"queue row {order}: cell over {MAX_QUEUE_CELL} characters")
     return problems
 
