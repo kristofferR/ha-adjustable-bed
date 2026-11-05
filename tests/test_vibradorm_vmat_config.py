@@ -299,13 +299,8 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     flow.hass = hass
     await flow.async_step_reconfigure()
-    initial = await flow.async_step_vibradorm({"app": "vmat"})
-    schema = initial["data_schema"]
-    assert callable(schema)
-    submission = schema({})
-    assert isinstance(submission, dict)
-    submission[const.CONF_VIBRADORM_APP_PROFILE] = app
-    rebuilt = await flow.async_step_vibradorm_app(submission)
+    # The family step switches the app; the new app's questions follow.
+    rebuilt = await flow.async_step_vibradorm({"app": app})
     assert rebuilt["type"] == FlowResultType.FORM
     assert not rebuilt["errors"]
     schema = rebuilt["data_schema"]
@@ -314,7 +309,7 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     assert isinstance(defaults, dict)
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in defaults
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()):
-        await flow.async_step_vibradorm_app(defaults)
+        await flow.async_step_profile_questions(defaults)
     flow._migration_verified = True
     await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
     finished = await flow.async_step_migration_confirm({"confirm": True})
@@ -550,16 +545,17 @@ async def test_public_setup_transport_write_timeout_never_pairs(hass, mode):
 
 
 @pytest.mark.asyncio
-async def test_two_step_app_form_requires_remote_then_enters_existing_bond_flow(hass):
+async def test_vmat_asks_its_remote_then_enters_existing_bond_flow(hass):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._manual_data = {CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP}
-    result = await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_APP_PROFILE: "vmat"})
+    # The family step chooses VMAT; its only question is the remote.
+    result = await flow.async_step_vibradorm({"app": "vmat"})
     fields = {marker.schema for marker in result["data_schema"].schema}
-    assert fields == {const.CONF_VIBRADORM_APP_PROFILE, const.CONF_VIBRADORM_VMAT_REMOTE}
+    assert fields == {const.CONF_VIBRADORM_VMAT_REMOTE}
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-        await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_VMAT_REMOTE: "11"})
+        await flow.async_step_profile_questions({const.CONF_VIBRADORM_VMAT_REMOTE: "11"})
     pairing.assert_awaited_once()
     assert flow._manual_data[const.CONF_MOTOR_COUNT] == 3
     assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True

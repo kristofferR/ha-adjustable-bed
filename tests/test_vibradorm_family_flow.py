@@ -155,10 +155,7 @@ async def select_app(hass, entry, app):
     )
     values = result["data_schema"](seed)
     result = await manager.async_configure(result["flow_id"], values)
-    if result["type"] == FlowResultType.FORM and result["step_id"] in (
-        "vmatbasic",
-        "vibradorm_app",
-    ):
+    if result["type"] == FlowResultType.FORM and result["step_id"] == "profile_questions":
         result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
     if result["type"] == FlowResultType.FORM and result["step_id"] == "manual_pairing":
         result = await manager.async_configure(result["flow_id"], {"action": "pair_now"})
@@ -187,7 +184,7 @@ async def test_family_selection_retains_metadata_only_for_unchanged_app(
     flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     await flow.async_step_reconfigure()
     result = await flow.async_step_vibradorm({"app": app})
-    assert result["step_id"] == ("vmatbasic" if app == "vmatbasic" else "vibradorm_app")
+    assert result["step_id"] == "profile_questions"
     assert flow._manual_data is not None
     if app == original_app:
         assert flow._manual_data[const.CONF_VIBRADORM_APP_METADATA] == original[

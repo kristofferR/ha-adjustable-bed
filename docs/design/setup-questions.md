@@ -23,10 +23,21 @@ A `SetupProfile` has:
 
 A `Question` stores its answer under `key`. Its `choices` are fixed labels or a
 function of the staged setup, such as the layouts the chosen app supports;
-without choices it is yes or no, or free `text`. Its `default` is a value, a function of the
-staged setup, or `REQUIRED`. A staged answer the choices no longer offer falls
-back to the default. An `advanced` question sits in a collapsed Advanced
-section in setup.
+without choices it is yes or no, or free `text`. Its `default` is a value, a
+function of the staged setup, `REQUIRED`, or `OPTIONAL` (no default, may stay
+unanswered). A staged answer the choices no longer offer falls back to the
+default, and `staged_when` limits when a staged answer is the default at all,
+for a value the profile stored itself. `validator` replaces the one the choices
+imply, for a range or a format. An `advanced` question sits in a collapsed
+Advanced section in setup.
+
+`when` is the condition for asking a question: a Home Assistant field condition
+on another answer of the same form (`{"field": ..., "value": ...}`, or an
+operator such as `in`). It renders as a native conditional field
+(`data_entry_flow.Required/Optional(..., visible=...)`, Home Assistant 2026.11),
+so the form never redraws: a hidden question is neither required nor saved.
+When the form does not ask the condition's field, such as a route Configure
+leaves to the guided change, the saved setup settles the condition instead.
 
 Declarations are keyed like a [profile id](profile-id.md): `bed_type`,
 `bed_type:variant`, `bed_type@app` or `bed_type:variant@app`, and the most
@@ -67,12 +78,12 @@ recorded here as each family converts:
 | `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice) and motor count. |
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
 | `bedsense` | Layout, or the layout from the Bluetooth name. |
-
 | `leggett_lp_legacy` | Model code, protocol mode and the confirmed write and notification characteristics (free text). Its `normalize` cleans the code and UUIDs before they are checked. |
 
-Still on their own steps, and next to convert: the Vibradorm app and V-MAT
-Basic steps. Their questions depend on earlier answers, so they wait for the
-`when` condition to render as Home Assistant's native conditional field
-(2026.11). Their `normalize` clears retained settings when the app changes and
-derives flags from the V-MAT remote. The other profiles declare only the
-generic fields they own, converted from the former side tables.
+| `vibradorm_app@werkmeister` | Remote (control type). |
+| `vibradorm_app@vmat` | VMAT remote; `normalize` derives its control type and features. |
+| `vibradorm_app@caresse` | Restored setup; when restored, its control type, floor light, RGB, massage, light extension and floor default. `normalize` clears retained settings an answer no longer allows. |
+| `vmatbasic` | Product; for CBI and XT-Box, the floor light level and timer (the exact ranges are checked on save). |
+
+The other profiles declare only the generic fields they own, converted from the
+former side tables.
