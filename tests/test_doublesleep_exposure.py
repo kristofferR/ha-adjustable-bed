@@ -45,10 +45,10 @@ async def test_all_setup_routes_collect_separate_saved_model_and_driver(
             "preferred_adapter": "auto",
         }
     )
-    assert result["step_id"] == "doublesleep"
+    assert result["step_id"] == "profile_questions"
     values = result["data_schema"]({"product_type": "11136", "protocol_variant": "p2"})
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_doublesleep(values)
+        await flow.async_step_profile_questions(values)
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "11136" and saved["protocol_variant"] == "p2"
     assert saved["disable_angle_sensing"] and saved["motor_pulse_delay_ms"] == 300
@@ -119,13 +119,13 @@ async def test_setup_model_default_uses_platform_name_independently_of_driver(ha
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._manual_data = {}
+    flow._manual_data = {"bed_type": const.BED_TYPE_DOUBLESLEEP}
     flow._discovery_info = SimpleNamespace(
         name="osleepbts-A",
         device=SimpleNamespace(name="sleepbt"),
         manufacturer_data={89: bytes([0, 0, 0, 0, 0, 0, 134])},
     )
-    result = await flow.async_step_doublesleep()
+    result = await flow.async_step_profile_questions()
     assert result["data_schema"] is not None
     defaults = result["data_schema"]({})
     assert defaults["product_type"] == "10135"

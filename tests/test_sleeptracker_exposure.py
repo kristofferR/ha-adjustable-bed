@@ -56,12 +56,12 @@ async def test_every_setup_route_collects_processor_profile(
             "preferred_adapter": "auto",
         }
     )
-    assert result["step_id"] == "sleeptracker"
+    assert result["step_id"] == "profile_questions"
     values = result["data_schema"](
         {"product_type": "activebreeze_small", "sleeptracker_unit_number": 2}
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_sleeptracker(values)
+        await flow.async_step_profile_questions(values)
     data = finish.call_args.args[0]
     assert data["product_type"] == "activebreeze_small"
     assert data["sleeptracker_unit_number"] == 2
@@ -494,7 +494,7 @@ async def test_restricted_setup_requires_artifact_side_zero(hass):
     flow.hass = hass
     flow.context = {}
     flow._manual_data = {"bed_type": const.BED_TYPE_SLEEPTRACKER}
-    result = await flow.async_step_sleeptracker(
+    result = await flow.async_step_profile_questions(
         {"product_type": "ergo", "sleeptracker_restricted": True, "sleeptracker_unit_number": 1}
     )
     assert result["errors"] == {"sleeptracker_unit_number": "sleeptracker_restricted_unit"}
