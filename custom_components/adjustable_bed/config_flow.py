@@ -316,6 +316,7 @@ from .const import (
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
+    OKIN_CST_VARIANTS,
     OKIN_DOT_FURNIMOVE_VARIANTS,
     ORE_COMFORT_BED_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -902,13 +903,8 @@ def _route_section(bed_type: str | None, default: str) -> section | None:
     )
     return section(
         vol.Schema({vol.Required(CONF_PROTOCOL_VARIANT, default=default): field}),
-        {"collapsed": VARIANT_AUTO in routes and bed_type not in _FIXED_DEFAULT_ROUTES},
+        {"collapsed": VARIANT_AUTO in routes},
     )
-
-
-# Bed types whose Auto route is one fixed profile, not a detection: their apps
-# need their own route, so the list stays open.
-_FIXED_DEFAULT_ROUTES: Final = frozenset({BED_TYPE_OKIN_CST})
 
 
 def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
@@ -1084,6 +1080,9 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
     **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
     **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
+    # A new Okin CST bed answers the Okin question with its apps first; CST is
+    # not a guided family, so an existing entry keeps Configure.
+    BED_TYPE_OKIN_CST: "okin_family",
     **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
     **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
     **dict.fromkeys(LEGGETT_FAMILY.bed_types, "leggett_family"),
@@ -2009,6 +2008,13 @@ _OKIN_ROUTE_LABELS: Final[dict[str, str]] = {
     "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
 }
 _OKIN_KEEP_LABEL: Final = "I don't know: keep the detected controls"
+# The Okin CST products, each the route of the app its accepted report names
+# (cluster 011, Nectar Move).
+_OKIN_CST_APPS: Final[dict[str, str]] = {
+    f"{BED_TYPE_OKIN_CST}:{variant}": variant
+    for variant in OKIN_CST_VARIANTS
+    if variant != VARIANT_AUTO
+}
 
 
 def _route_and_motors_schema(
@@ -3207,9 +3213,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data[CONF_BED_TYPE],
                 data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
             )
+            if self._migration is None and (
+                self._okin_incoming in APP_VARIANT_CHOICES
+                or self._okin_incoming[0] == BED_TYPE_OKIN_CST
+                and self._okin_incoming[1] in _OKIN_CST_APPS.values()
+            ):
+                # An app row, such as Nectar Move, or an explicit CST product
+                # already answered the question.
+                return await self._async_finish_family_route()
         incoming, incoming_variant = self._okin_incoming
         # The apps the app review suggests for this route stay one answer away.
         apps = related_app_choices(incoming, incoming_variant)
+        # A detected or chosen Okin CST bed is offered its own apps first.
+        cst_apps = _OKIN_CST_APPS if incoming == BED_TYPE_OKIN_CST else {}
         # A FurniMove row or gateway chose no handset, so there is nothing to keep.
         can_keep = self._migration is not None or incoming != BED_TYPE_FURNIMOVE
         choice = (user_input or {}).get("choice")
@@ -3218,6 +3234,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self.async_step_migration_keep()
             if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
                 return await self.async_step_profile_questions()
+            return await self._async_finish_family_route()
+        if choice in cst_apps:
+            self._select_family_route(BED_TYPE_OKIN_CST, cst_apps[choice])
             return await self._async_finish_family_route()
         if choice in _OKIN_ROUTES or choice in apps:
             bed_type, variant = (
@@ -3242,12 +3261,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
                 data[CONF_MOTOR_COUNT] = 1
             return await self._async_finish_family_route()
-        options = [
+        routes = [
+            SelectOptionDict(value=key, label=label) for key, label in _OKIN_ROUTE_LABELS.items()
+        ]
+        app_options = [
             *(
-                SelectOptionDict(value=key, label=label)
-                for key, label in _OKIN_ROUTE_LABELS.items()
+                SelectOptionDict(value=key, label=OKIN_CST_VARIANTS[variant])
+                for key, variant in cst_apps.items()
             ),
             *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
+        ]
+        options = [
+            # The detected family's apps come first, then the other Okin answers.
+            *([*app_options, *routes] if cst_apps else [*routes, *app_options]),
             *([SelectOptionDict(value="keep", label=_OKIN_KEEP_LABEL)] if can_keep else []),
         ]
         return self.async_show_form(

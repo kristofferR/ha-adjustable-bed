@@ -1771,3 +1771,30 @@ async def test_a_saved_guided_change_answers_the_review(hass, enable_custom_inte
     record = decisions["history"][0]
     assert record["decision"] == "accepted" and record["source"] == "configure"
     assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == "ksbt"
+
+
+async def test_a_review_outside_the_guided_family_stays_in_configure(
+    hass, enable_custom_integrations
+):
+    """The Keeson wizard cannot offer Linak, so that review keeps the Configure handoff."""
+    from custom_components.adjustable_bed.const import BED_TYPE_LINAK, LINAK_CONTROL_SERVICE_UUID
+
+    config_entry = entry(
+        hass, **{CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "base", CONF_MOTOR_COUNT: 2}
+    )
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+    assert target.recommendation is not None
+    assert target.recommendation.suggested == BED_TYPE_LINAK
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=observed):
+        form = await flow.async_step_init({"issue_id": target.issue_id})
+        result = await flow.async_step_init({"action": "review"})
+    assert form["step_id"] == "init"
+    assert result["reason"] == "review_started"
+    assert result["next_flow"][0] == "options_flow"
+    hass.config_entries.options.async_abort(result["next_flow"][1])

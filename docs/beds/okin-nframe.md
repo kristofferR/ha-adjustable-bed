@@ -174,6 +174,12 @@ RF remote to answer.
 6. When detection found a route, **I don't know: keep the detected controls**
    saves it.
 
+A bed set up as [Okin CST](#okin-cst), from its row or the discovery question,
+is asked the same question with its own apps first: each CST product app, then
+Jordan's Serenity, Jordan's Tranquil and Customatic Z-Series, then the answers
+above. Keep saves Okin CST with its MF900 profile. Okin CST is not part of the
+guided change, so an existing CST entry keeps Configure.
+
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
 The same question appears, with **Keep** leaving the entry as it is. Before the
@@ -3212,11 +3218,12 @@ artifact hashes are listed under [Analysis provenance](#cst-analysis-provenance)
 
 ##### Choosing the app
 
-Choose the **Okin CST** row; its label names each app, so you can search for
-it. The receiver route list stays open, because **Auto** keeps the MF900
-profile rather than detecting the product: choose the route that names your
-app, for example **Rize Resident: Resident Adjustable Bed app**. The Nectar Move
-app has its own **Nectar Move** row.
+Choose the **Okin CST** row, whose label names each app, or choose **Okin CST**
+when discovery asks which Okin protocol the bed uses. Setup then asks the
+[Okin question](#home-assistant-setup) with the CST apps first, for example
+**Resident Adjustable Bed app (Rize Resident)**, because **Auto** keeps the
+MF900 profile rather than detecting the product. The Nectar Move app has its
+own **Nectar Move** row, which answers the question itself.
 
 ##### Protocol Details
 

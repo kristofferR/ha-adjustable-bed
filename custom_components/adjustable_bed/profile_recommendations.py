@@ -719,6 +719,27 @@ def async_complete_profile_review(hass: HomeAssistant, entry: ConfigEntry, flow_
             watch.refresh()
 
 
+def _reviews_within_guided_family(
+    entry_data: Mapping[str, Any], recommendation: Recommendation
+) -> bool:
+    """Return True when every candidate stays in the entry's guided family.
+
+    Configure refuses an app or route change within a guided family, so such a
+    review runs the guided change, as the app review does. A candidate of
+    another bed type stays a Configure change, which the guided change cannot
+    offer.
+    """
+    family = managed_family(entry_data)
+    if family is None or recommendation.rule == _TEMPUR_PROCESSOR_RULE:
+        return False
+    candidates = (recommendation.suggested,) if recommendation.suggested else recommendation.choices
+    return bool(candidates) and all(
+        not choice.startswith(_REMOTE_PREFIX)
+        and choice.partition(":")[0] in family.bed_types
+        for choice in candidates
+    )
+
+
 class ProfileRecommendationRepairFlow(RepairsFlow):
     """Review a suggestion; options owns validation and the final confirmation."""
 
@@ -740,12 +761,7 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
             return self.async_abort(reason="recommendation_changed")
         action = (user_input or {}).get("action")
         errors: dict[str, str] = {}
-        # Configure refuses an app or route change within a guided family, so
-        # its review runs the guided change instead, as the app review does.
-        guided = (
-            recommendation.rule != _TEMPUR_PROCESSOR_RULE
-            and managed_family(watch.entry.data) is not None
-        )
+        guided = _reviews_within_guided_family(watch.entry.data, recommendation)
         if action == "keep":
             try:
                 await watch.async_keep(recommendation)
