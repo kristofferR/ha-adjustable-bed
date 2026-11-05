@@ -13,7 +13,7 @@ from custom_components.adjustable_bed import doublesleep_protocol as p
 from custom_components.adjustable_bed.doublesleep_state import daily_report
 
 ROOT = Path(__file__).resolve().parents[1]
-LEDGER = json.loads((ROOT / "docs/apk-analysis/dispositions/row107-doublesleep.json").read_text())
+LEDGER = json.loads((ROOT / "tests/fixtures/doublesleep_ledger.json").read_text())
 
 
 def test_accepted_inventory_is_exhaustive_and_references_exist():

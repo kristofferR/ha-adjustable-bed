@@ -586,8 +586,7 @@ release.
 #### Evidence
 
 The Richmat remotes send only their frozen frames. The GGRM catalog actions are
-proven by the [row055 accepted authority](../apk-analysis/dispositions/row055-richmat-cluster.md#accepted-authority)
-(Revive Control, Blvd Home and HARMONY GGRM tables, with the `main_6e` release and
+proven by the accepted row055 reports (Revive Control, Blvd Home and HARMONY GGRM tables, with the `main_6e` release and
 its 120 ms delay); the other frames are the pre-v5 controller's.
 
 ### BedTech
@@ -921,9 +920,8 @@ to activate automatic intervention.
 RMControl sends the frames of the selected product's catalog, source-verified
 against RMControl 21.3.7 and hardware unverified. The service list is not a
 promise that every product supports those features; a rejected operation must not
-be worked around by choosing an unrelated product. See the
-[implementation ledger](../apk-analysis/row018-rmcontrol-implementation.md) and the
-[specialized evidence record](../apk-analysis/row018-rmcontrol-specialized-evidence.md).
+be worked around by choosing an unrelated product. Evidence: APK Protocol Audit
+row018.
 
 ### Richmat MH apps
 
@@ -1179,9 +1177,8 @@ See [Actions](../SERVICES.md).
 
 #### Evidence
 
-The Richmat MH apps send only frames frozen from their accepted row055 reports;
-see the [disposition ledger](../apk-analysis/dispositions/row055-richmat-cluster.md)
-for the evidence and every exclusion. Real users should confirm model selection by
+The Richmat MH apps send only frames frozen from their accepted row055 reports,
+which record the evidence and every exclusion. Real users should confirm model selection by
 name, KEEP/STOP behavior, alarm countdown semantics, LED timeout units and the
 waist mattress controls after a beta or release.
 
@@ -1305,7 +1302,7 @@ single-address side controls and two-address pairs.
 Values below come from the shipped `beds/hjbed.py` controller and its imported
 catalog/packet builders. Detail IDs distinguish product-specific variants. Each
 product exposes only its selected controls. The full profile bindings are in the
-[discovery ledger](../apk-analysis/dispositions/row121-hjbed.json). Exit limit
+[HJBed catalog](../../custom_components/adjustable_bed/hjbed_catalog.py). Exit limit
 and the clock, light and music menu probes use [function selectors](#function-selectors);
 in single-code mode they send `00` and `01`.
 
@@ -1560,7 +1557,7 @@ The current 19 profiles have all advanced music/alarm/repeat/light-page flags
 false. A feature reply cannot override that static gate. Simple lamp buttons,
 selected massage lists, and independently named music routes remain independent.
 The full per-product action and flag inventory is in the
-[durable disposition ledger](../apk-analysis/dispositions/row121-hjbed.json).
+[HJBed catalog](../../custom_components/adjustable_bed/hjbed_catalog.py).
 Alarm action keys are snake-case names such as `zero_gravity`, `anti_snoring`,
 `memory_position1`, `tv_position`, or `lounge_position`, and must belong to the
 selected product's alarm list.
@@ -1570,8 +1567,7 @@ selected product's alarm list.
 HJBed sends only frames frozen from its accepted row121 evidence (artifact set
 `bd3a5e96393fb32be9059fbb9a0eae5639deb7f0d761b4a27b3b382433c4d291`). Physical
 effects, ATT behavior and firmware acceptance are for real users to validate after
-a beta or release. See the [disposition summary](../apk-analysis/dispositions/row121-hjbed.md)
-and [complete ledger](../apk-analysis/dispositions/row121-hjbed.json).
+a beta or release. Evidence: APK Protocol Audit row121.
 
 ### Classic Richmat apps
 
@@ -1934,10 +1930,10 @@ motor-mapping configuration stay outside the supported surface. See
 #### Evidence
 
 The classic apps send only frames frozen from their five accepted row066
-reports. The accepted versions and all five artifact and report hashes are in
-the [discovery ledger](../apk-analysis/dispositions/row066-classic-richmat-apps.md),
-with the accepted authority, exact member differences, exclusions, safety
-divergences, implementation status and deferred hardware validation.
+reports. APK Protocol Audit row066 records the accepted versions, all five
+artifact and report hashes, the accepted authority, exact member differences,
+exclusions, safety divergences, implementation status and deferred hardware
+validation.
 Coaster's indivisible accepted aggregate and its historical six-cache-file FAIL
 remain explicit there. Static acceptance is not hardware confirmation.
 
@@ -1945,10 +1941,9 @@ remain explicit there. Static acceptance is not hardware confirmation.
 
 ### Analysis provenance
 
-- RMControl: [implementation ledger](../apk-analysis/row018-rmcontrol-implementation.md)
-  and [specialized evidence record](../apk-analysis/row018-rmcontrol-specialized-evidence.md).
-- Richmat MH: [row055 disposition ledger](../apk-analysis/dispositions/row055-richmat-cluster.md).
-- HJBed: [row121 disposition summary](../apk-analysis/dispositions/row121-hjbed.md).
-- Classic apps: [row066 discovery ledger](../apk-analysis/dispositions/row066-classic-richmat-apps.md).
+- RMControl: APK Protocol Audit row018.
+- Richmat MH: row055.
+- HJBed: row121.
+- Classic apps: row066.
 - The Richmat remotes, BedTech and L&P MlRM routes have no accepted report of
   their own; their frames are the pre-v5 controllers'.

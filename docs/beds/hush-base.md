@@ -191,4 +191,4 @@ Hardware validation is deferred to real users after beta/release. No maintainer 
 ### Analysis provenance
 
 - `com.richmat.hushbase` 1.0.5 (10501), artifact set `d24ad2c95ea839969a5406fa8219f62048386598152608554641586041293cd7`.
-- The [row126 discovery ledger](../apk-analysis/dispositions/row126-hush-base.md) and its machine-readable catalog give exact accepted source references, exhaustive dispositions and exclusions.
+- APK Protocol Audit row126 records the exact accepted source references, exhaustive dispositions and exclusions. Its item closure is the [ledger fixture](../../tests/fixtures/hush_ledger.json) that `tests/test_hush_dispositions.py` checks.

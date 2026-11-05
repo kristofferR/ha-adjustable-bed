@@ -469,9 +469,8 @@ See [action examples](../SERVICES.md#malouf-base--lucid-base-clock-and-alarm).
 
 #### Evidence
 
-The accepted cluster007 reports for both apps and the
-[discovery dispositions](../apk-analysis/dispositions/row023-malouf-lucid.md),
-which account for every reachable behavior and exclusion. Both app profiles send
+The accepted cluster007 reports for both apps and the row023 audit, which
+account for every reachable behavior and exclusion. Both app profiles send
 only their frozen frames.
 
 ### Malouf Base
@@ -552,5 +551,4 @@ app profiles still need reports from real users after a beta or release.
 - The evidence is the accepted APK Protocol Audit cluster007 reports for Malouf
   Base 2.4.3 (`com.malouf.bedbase`) and Lucid Base 1.3.3 (`com.lucid.bedbase`),
   with the accepted write-mode and routing amendments.
-- The [discovery dispositions](../apk-analysis/dispositions/row023-malouf-lucid.md)
-  account for the complete reachable behavior and exclusions.
+- The row023 audit accounts for the complete reachable behavior and exclusions.

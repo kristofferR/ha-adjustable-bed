@@ -1,6 +1,6 @@
 # MotoSleep / Power Bob
 
-**Status:** ⚠️ Partially tested (existing HHC support ✅ user tested; expanded model matrix static verified, hardware unverified)
+**Status:** ⚠️ Partially tested (existing HHC support ✅ user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); expanded model matrix static verified, hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), waynebowie99 and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 

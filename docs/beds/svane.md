@@ -1,6 +1,6 @@
 # Svane Remote
 
-**Status:** ❓ Needs testing (Svane Remote 1.8 profiles are artifact-verified; physical hardware unverified)
+**Status:** ⚠️ Partially tested (a LinON Pro bed moved and recalled memory with the earlier LinonPI implementation in [#152](https://github.com/kristofferR/ha-adjustable-bed/issues/152); the Svane Remote 1.8 profiles are artifact-verified, physical hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -376,5 +376,4 @@ position, save position, recall position and flatten.
 
 ### Analysis provenance
 
-See the [complete disposition ledger](../apk-analysis/dispositions/row130-svane.md)
-for all 663 rows and every exclusion.
+APK Protocol Audit row130 records all 663 disposition rows and every exclusion.

@@ -11,7 +11,7 @@ Unique features:
 - DewertOKIN OKIN-BLE compatibility profile with a second memory slot
 
 The Cool Base profile follows the accepted com.keeson.coolbase 1.0.0 audit
-(docs/apk-analysis/dispositions/row047-coolbase.md): every app frame carries a
+(APK Protocol Audit row 047): every app frame carries a
 literal trailer that the builder below reproduces, release ends the 100 ms
 refresh without a distinct STOP frame, and fan/massage/light state arrives only
 in 28-byte replies to the all-zero status query.

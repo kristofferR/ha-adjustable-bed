@@ -581,13 +581,11 @@ routine request. Feedback and unrelated backup disconnects preserve the routine.
 
 The implementation covers central and explicit local runtime consumers.
 Hardware delivery remains unverified and is deferred to real-user validation
-after beta/release. Audit evidence, overlay identities, exact exclusions and
-acceptance history are in the
-[disposition crosswalk](../apk-analysis/dispositions/row041-reverie.md#guide-evidence-and-scope-notes).
+after beta/release. The row041 audit records the evidence, overlay identities,
+exact exclusions and acceptance history.
 The [SDK implementation notes](reverie-pairlink-sdk.md) describe private receive
 and metadata consumers. They do not create an arbitrary-packet action.
 
 ### Analysis provenance
 
 - Package `com.reverie.reverie`, version 3.3.3.8; row041 and comparison seal amendment 007.
-- [Accepted evidence and disposition crosswalk](../apk-analysis/dispositions/row041-reverie.md).

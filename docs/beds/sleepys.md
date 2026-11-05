@@ -1,6 +1,6 @@
 # Sleepy's Elite (MFRM)
 
-**Status:** ❓ Needs testing (protocol implemented; hardware unverified)
+**Status:** ⚠️ Partially tested (BOX25 STAR receivers work in [#413](https://github.com/kristofferR/ha-adjustable-bed/issues/413), [#617](https://github.com/kristofferR/ha-adjustable-bed/issues/617) and [#702](https://github.com/kristofferR/ha-adjustable-bed/issues/702); BOX15, BOX24 and the Sleepy's Elite app profile need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [SethCalkins](https://github.com/SethCalkins) (BOX25 Star, ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed))
 
@@ -129,8 +129,8 @@ attempts in the internal route table; no payload bytes or platform acceptance
 are inferred for them, and they do not create public massage controls.
 
 Current caller policy, its accepted addendum/audit hashes, and the selector
-classification correction are indexed additively in the [row003 disposition
-ledger](../apk-analysis/dispositions/row003-sleepys-elite.json). They leave the
+classification correction are indexed additively in the row003 disposition
+ledger. They leave the
 canonical route table and original dynamic-vector provenance intact.
 
 Raw RX state is parsed atomically: malformed or bounds-faulting packets, and

@@ -321,7 +321,7 @@ they do not change the frozen audit ledger.
 | Original request | Current outcome | Existing evidence |
 | --- | --- | --- |
 | Live positions, initialization flags and raw motor counts | EXCLUDED as a VMAT app feature: no reachable live position parser is proven. The generic controller retains its separate historical parser and angle estimates. | `VibradormAppController.supports_position_feedback`; `test_remote_contract_and_no_guessed_capabilities`; [generic controller](vibradorm.md#position-feedback) |
-| Full EEPROM collection and diagnostic field sensors | EXCLUDED as a supported app operation: unsolicited EEPROM/log recognition does not establish a reachable collector or query. | Accepted VMAT notification/capability dispositions; Caresse dead parser routes `R031-0548`–`R031-0550` in the [row031 ledger](../apk-analysis/row031-dispositions.md) |
+| Full EEPROM collection and diagnostic field sensors | EXCLUDED as a supported app operation: unsolicited EEPROM/log recognition does not establish a reachable collector or query. | Accepted VMAT notification/capability dispositions; Caresse dead parser routes `R031-0548`–`R031-0550` in the row031 audit |
 | Memory recall M1–M6 and store handshake | ALREADY_IMPLEMENTED where the selected remote enables memory, with the exact nine-frame save sequence. | `hold_control`, `program_memory`; `test_every_reachable_held_control_releases`, `test_complete_nine_frame_save_sequence` |
 | Status request and sync | ALREADY_IMPLEMENTED for the VMAT sync remotes as a reply-gated held action. The observed sync flag is exposed; it is not a position measurement. | `hold_control`, `_notification`, `controller_state_sensor_specs`; `test_sync_only_streams_while_response_is_pending_and_held`, `test_registered_notifications_are_bound_to_live_role_and_generation` |
 | Floor light, level and timer | ALREADY_IMPLEMENTED for selectable floor remotes, with their exact LIGHT or CBI route and pending timer state. | `_floor`, `set_pending_floor_timer`; `test_floor_delivery_full_shipped_range` |
@@ -337,7 +337,7 @@ Code references above are in
 and [`vibradorm_vmat_profiles.py`](../../custom_components/adjustable_bed/vibradorm_vmat_profiles.py).
 Test references are in
 [`test_vibradorm_vmat.py`](../../tests/test_vibradorm_vmat.py); the
-[VMAT ledger](vmat-dispositions.json) retains the exact accepted source bindings.
+machine-local VMAT audit ledger retains the exact accepted source bindings.
 [Caresse / Werkmeister](vibradorm_app.md) and [V-MAT Basic](vmatbasic.md)
 have their own independent feature gates, vectors and dispositions.
 
@@ -351,8 +351,7 @@ item is deferred for lack of maintainer hardware.
 
 ### Discovery ledger
 
-- The [disposition ledger](vmat-dispositions.json) binds all 282 comparison
-  items: 240 IMPLEMENTED, 0 ALREADY_IMPLEMENTED and 42 EXCLUDED.
+- The machine-local VMAT audit ledger binds all 282 comparison items: 240 IMPLEMENTED, 0 ALREADY_IMPLEMENTED and 42 EXCLUDED.
 - Its exact exclusions cover 26 unreachable selectors, Android
   scanner/permission/bond APIs, phone presentation and unsafe
   queue/parser/cancellation behavior.

@@ -1,6 +1,6 @@
 # Okin N-frame
 
-**Status:** ⚠️ Mixed: Okimat and the RF ECO BT stair lift are tested; Prodigy CE / CU170 is hardware-tested in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368); DewertOkin, Customatic, the other Leggett profiles and the 40-bit profiles need testing. Each profile states its own status.
+**Status:** ⚠️ Mixed: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), david_nagy, corne, PT, MarcusW and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -951,7 +951,7 @@ provably complete catalog.
   [smartbed-mqtt #66](https://github.com/richardhopton/smartbed-mqtt/pull/66),
   not app evidence: the Okimat route has no accepted app report (its frozen
   vectors are the pre-v5 controller's frames), and the
-  [FurniMove ledger](../apk-analysis/dispositions/157-furnimove.md) describes
+  FurniMove audit (unit 157) describes
   only a single held key's refresh (D038), with no combined held keys.
   FurniMove's two-axis movement is its explicit
   [`furnimove_move_simultaneously`](furnimove.md) action.
@@ -1065,8 +1065,8 @@ channel.
 
 #### Evidence
 
-Okimat sends only its frozen frames. FurniMove handset evidence is in the
-[FurniMove ledger](../apk-analysis/dispositions/157-furnimove.md).
+Okimat sends only its frozen frames. FurniMove handset evidence comes from the
+FurniMove audit (unit 157).
 
 ### DewertOkin
 
@@ -1263,7 +1263,7 @@ offline two-axis fallback table's M2 keys and the six-byte frame; the M2
 staircase mapping comes from #344. If M2 is not the right channel for another
 installation, mapping it needs that owner's OKIN Smart Remote ID or QR contents;
 do not add M3, reversed, DOT or RF-Gateway variants to this profile without new
-evidence. See the [FurniMove ledger](../apk-analysis/dispositions/157-furnimove.md).
+evidence. Evidence: the FurniMove audit (unit 157).
 
 ### Customatic family
 
@@ -1421,9 +1421,8 @@ constant-true connection check.
 
 #### Evidence
 
-Each Customatic profile sends only its frozen frames. Exclusions and app
-behaviors HA does not replay are in the
-[Customatic ledger](../apk-analysis/dispositions/row028-customatic.md). Physical
+Each Customatic profile sends only its frozen frames. The Customatic audit
+(row028) records the exclusions and the app behaviors HA does not replay. Physical
 verification of movement labels, save and reset effects, light behavior and
 write-property compatibility is deferred to users after release.
 
@@ -1604,8 +1603,8 @@ ranges before writing; see their action descriptions for fields.
 #### Evidence
 
 Each Leggett profile sends only its frozen frames, plus the CU170 stop on Prodigy
-CE. The [Leggett app ledger](leggett-app-disposition.md) records the four
-accepted reports, app differences and transport exclusions.
+CE. The Leggett app audit covers the four accepted reports, app differences and
+transport exclusions.
 
 ### Prodigy 2L
 
@@ -1644,7 +1643,7 @@ instead of lumbar.
 
 **App:** [Prodigy CE / Prodigy 4](https://play.google.com/store/apps/details?id=com.leggett.prodigy4) 1.2.0 (18), `com.leggett.prodigy4`
 
-**Status:** ⚠️ Hardware-tested on CU170 in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368)
+**Status:** ✅ Tested on two CU170 controllers in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) (movement, Flat, presets and the light); recall of saved favorites is not yet confirmed
 
 Behaves as [Prodigy 2L](#prodigy-2l), with head, feet, pillow and lumbar, except
 as below.
@@ -1738,7 +1737,7 @@ Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
 **App:** [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi), `com.okin.bedding.smartbedwifi`
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
 
 #### Setup
 
@@ -2262,7 +2261,7 @@ For real users after a beta or release:
   20-APK XAPK.
 - Artifact-set SHA-256: `b5ef1222e24ad9bdf5b2d513fbc7a9aece2b63269c0e8d9632e2596837ffc70f`
 - Behavior is static-verified only: **hardware unverified**.
-- Comparison ledger: [row049](../apk-analysis/dispositions/row049-simmons.md)
+- Audit: APK Protocol Audit row049.
 
 ### OKIN SleepEase
 
@@ -2702,9 +2701,8 @@ confirmation finish.
 
 ###### Analysis provenance
 
-See the [complete disposition ledger](../apk-analysis/dispositions/row107-doublesleep.md)
-for accepted identities, exhaustive coverage, safety differences and exclusions.
-Actual negotiation, ATT/firmware effects and physical movement/sensor meanings
+APK Protocol Audit row107 records the accepted identities, exhaustive coverage,
+safety differences and exclusions. Actual negotiation, ATT/firmware effects and physical movement/sensor meanings
 remain checks for real users after a beta or release.
 
 ### Sleepy's legacy CB25
@@ -2749,9 +2747,8 @@ Frames are the pre-v5 translation table's, frozen in
 This profile belongs to `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK
 members. It preserves this app's commands and state rules separately from other
 StarCode, Sleepys and shared-UART applications. A brand, device-name prefix or
-service UUID alone does not identify the app profile. See the
-[row004 disposition](../apk-analysis/row004-dispositions.md) for accepted identity,
-required work and every exclusion.
+service UUID alone does not identify the app profile. Evidence: APK Protocol
+Audit row004.
 
 #### Setup
 
@@ -3221,8 +3218,8 @@ public-domain rejection tests; no accepted evidence or exclusion is rewritten.
 
 ###### Analysis provenance
 
-- Package `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK members. See
-  the [row004 disposition](../apk-analysis/row004-dispositions.md).
+- Package `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK members
+  (row004).
 - The implemented profile has the fixed selector schema, paired dispatch, owned
   cancellation and public entities covered by artifact vectors and focused
   tests. The README remains the supported-bed status index.
@@ -3237,7 +3234,7 @@ public-domain rejection tests; no accepted evidence or exclusion is rewritten.
 
 **Apps:** the Rize, MFirm 900, Support and Nectar Motion apps in [Apps](#apps)
 
-**Status:** ❓ Needs testing (static analysis complete; hardware validation pending)
+**Status:** ⚠️ Partially tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
 
 **Android:** all ten analyzed packages are Android apps. The nine cluster 011
 artifact hashes are listed under [Analysis provenance](#cst-analysis-provenance).
@@ -3852,7 +3849,7 @@ HA-specific handling:
 - Independently accepted S01 FULL analysis of `com.okin.bedding.serenity`
   version 1.0.1/code 2, with four verified APK/split members.
 - Artifact-set SHA-256: `b0729dc3a4eae2644cc5035b984a05ac116a658b79c886ab1b02eebdea584cc6`
-- Discovery ledger: [S01 dispositions](../apk-analysis/dispositions/S01-serenity.md)
+- Audit: APK Protocol Audit S01.
 
 ### Jordan's Tranquil
 
@@ -4052,7 +4049,7 @@ and light semantics, and notification contents.
   version 1.0.2/code 3, and the cluster 010 reconciliation with the
   [Customatic Z-Series](#customatic-z-series) app.
 - Artifact SHA-256: `595749e9f8eb2b654d88ad477fa80e4dfe5849335889b8c241fbd22faf3f5bda`
-- Discovery ledger: [row052 dispositions](../apk-analysis/dispositions/row052-okin-zseries-tranquil.md)
+- Audit: APK Protocol Audit row052.
 
 ### Customatic Z-Series
 
@@ -4277,7 +4274,7 @@ the back-to-back clock and alarm frames) and notification contents.
   version 1.0.4/code 5, and the cluster 010 reconciliation with
   [Jordan's Tranquil](#jordans-tranquil).
 - XAPK SHA-256: `3a700cc4869080ec570c2e8653601b2755c08c7d3e3b13fa6a233e2af2bce7a8`
-- Discovery ledger: [row052 dispositions](../apk-analysis/dispositions/row052-okin-zseries-tranquil.md)
+- Audit: APK Protocol Audit row052.
 
 ### Okin 64-Bit
 
@@ -4387,7 +4384,7 @@ Mattress Firm Nordic packets with this protocol.
 
 **App:** [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33), `com.okin.bedding.adjustablelumbar`
 
-**Status:** ❓ Needs testing (static-verified only, **hardware unverified**)
+**Status:** ⚠️ Partially tested (a BOX25 Star control box ran this profile's controls, memory included, before 4.1.0 in [#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670); the current profile is static-verified only)
 
 Select **Adjustable bed (Lumbar) app** manually when the bed uses the Android
 app `com.okin.bedding.adjustablelumbar` (shown as "Adjustable bed(Lumbar)").
@@ -4571,8 +4568,7 @@ consumers. Raw replies still appear in support bundles.
 The profile follows the accepted APK Protocol Audit of version 1.2.2 (code 33),
 a 20-APK Flutter XAPK with SHA-256
 `ed65ed1b4970c95c2b1744687f94401447f851f23e81f8af6699a68854988b08`. Behavior is
-static-verified only: **hardware unverified**. The comparison ledger is
-[row054](../apk-analysis/dispositions/row054-adjustable-lumbar.md).
+static-verified only: **hardware unverified**. Audit: APK Protocol Audit row054.
 
 ## Notes
 
@@ -4619,9 +4615,7 @@ detection priority and troubleshooting.
   `com.leggett.prodigy4` 1.2.0 (versionCode 18, artifact SHA-256
   `45922c518c9e8070…`), traced from layout binding to the GATT boundary and
   independently audited; the CU170 status mapping supplements it. The
-  [Leggett app ledger](leggett-app-disposition.md) records all four report
-  identities.
-- **FurniMove:** `com.okin.okinsmartcomfort` 2.2.0 (19), see the
-  [FurniMove ledger](../apk-analysis/dispositions/157-furnimove.md).
+  Leggett app audit records all four report identities.
+- **FurniMove:** `com.okin.okinsmartcomfort` 2.2.0 (19), audit unit 157.
 
 Raw APKs, decompilation output and frozen reports stay machine-local.

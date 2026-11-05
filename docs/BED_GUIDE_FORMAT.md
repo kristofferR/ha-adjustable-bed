@@ -152,7 +152,7 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
 #### Timing         <!-- link the generated tables; prose only for sequences the data lacks -->
 #### Notifications  <!-- which responses the profile consumes and how -->
 #### Services       <!-- actions beyond the standard entities -->
-#### Evidence       <!-- link to the discovery ledger -->
+#### Evidence       <!-- the audit row behind it, results in reference form -->
 ```
 
 - **Detection rules** go under the profile's Setup: the service UUIDs or name
@@ -160,9 +160,10 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
   an explicit choice. "Choosing a profile" only says which route detection
   suggests.
 - A family member lists only what differs from its family section.
-- **Evidence** links the ledger and states the result in reference form, for
+- **Evidence** names the audit row and states the result in reference form, for
   example "Comfort Motion sends only its frozen frames". Dispositions, exclusions,
-  counts and reachability arguments stay in the ledger.
+  counts and reachability arguments stay in the machine-local ledger. Never link
+  a ledger file.
 
 ## Rules
 

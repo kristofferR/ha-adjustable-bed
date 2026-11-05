@@ -158,8 +158,8 @@ remain available. Received actions never enable additional product capabilities.
 HA ignores incomplete or unknown notifications atomically. In particular, the
 app's unknown `fe 16` marker is not treated as a proven fragmentation format and
 cannot suppress the next valid delivery. State is invalidated on disconnect.
-The [disposition ledger](../apk-analysis/dispositions/row122-eshine.md) explains
-all intentional app-to-HA framing and lifecycle corrections.
+The row122 audit records every intentional app-to-HA framing and lifecycle
+correction.
 
 ## Command Timing
 
@@ -189,4 +189,4 @@ session. Timing describes requested writes, not measured on-air or firmware timi
 - Package `com.okin.eshine` 1.1.8, version code 22.
 - Six-file artifact set SHA-256: `fbf9cbc16b7f016c296821899e11e0d540f609af5ad9fb05bd3842a63acf9a5a`.
 - Base APK SHA-256: `aa46126cc2dacb0ac8ecbdfb7968624cce4efba419c66ef3d1aa8000c45af7cd`.
-- [Accepted evidence and all discovery dispositions](../apk-analysis/dispositions/row122-eshine.md).
+- Audit: APK Protocol Audit row122.

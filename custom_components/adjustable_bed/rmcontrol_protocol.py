@@ -1,7 +1,6 @@
 """RMControl 21.3.7 packet primitives, independent of BLE and HA state.
 
-Source trails and interpretation corrections are documented in
-docs/apk-analysis/row018-rmcontrol-specialized-evidence.md.
+Evidence: APK Protocol Audit row 018, with its interpretation corrections.
 """
 
 from __future__ import annotations

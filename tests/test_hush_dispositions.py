@@ -7,7 +7,7 @@ from pathlib import Path
 from custom_components.adjustable_bed.hush_catalog import PRODUCTS
 
 ROOT = Path(__file__).parents[1]
-LEDGER = ROOT / "docs/apk-analysis/dispositions/row126-hush-base.json"
+LEDGER = ROOT / "tests/fixtures/hush_ledger.json"
 
 
 def test_exact_registry_closure_and_distinct_roles():

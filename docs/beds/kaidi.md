@@ -1,6 +1,6 @@
 # Kaidi
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested (a Rize Remedy III with a Mouselet controller in [#247](https://github.com/kristofferR/ha-adjustable-bed/issues/247)); other Kaidi product families need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

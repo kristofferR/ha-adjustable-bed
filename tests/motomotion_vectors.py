@@ -3,7 +3,7 @@
 Each entry is a test vector of the accepted MotoMotion 3.1.9 report
 (``com.HHC.MotoMotion``, row113; ``analysis.json`` SHA-256
 ``b56fe6ab9dd878f3fc4c4937bf490653aa2308feb316c0a8305212201a7d0b5f``), split
-into its frames. The ledger is ``docs/apk-analysis/dispositions/row113-motomotion.json``.
+into its frames. The ledger is ``tests/fixtures/motomotion_ledger.json``.
 """
 
 from __future__ import annotations

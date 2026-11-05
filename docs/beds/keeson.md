@@ -1,6 +1,6 @@
 # Keeson
 
-**Status:** ✅ Tested (Base, KSBT and Ergomotion routes; the app profiles are APK-verified with hardware unverified)
+**Status:** ✅ Tested (Base, KSBT, KSBT03C, Ergomotion, Sino / BetterLiving and Cool Base routes; Adjustable Lite partly; the other app profiles are APK-verified with hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [MangoScango](https://github.com/MangoScango)
 
@@ -40,8 +40,8 @@ Brands using Keeson/Ergomotion actuators:
 **Beautyrest BLACK app boundary:** The accepted Android app
 `com.keeson.beautyrestblack` 1.2.1 (18) uses TCP and network services, with no
 reachable Bluetooth bed-control transport in that exact artifact. BLE hardware
-using independently identified Keeson protocols remains supported. See the
-[complete app disposition](../apk-analysis/dispositions/row044-beautyrest-black.md).
+using independently identified Keeson protocols remains supported. Evidence:
+APK Protocol Audit row044.
 
 **DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
 - Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [explicit profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
@@ -642,7 +642,7 @@ bed type stores its own default cadence, which is kept as configured.
 
 ### Sino and BetterLiving
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested (a BetterLiving bed in [#229](https://github.com/kristofferR/ha-adjustable-bed/issues/229); a Dynasty Bases DM9000 on the older `ore` alias in [#180](https://github.com/kristofferR/ha-adjustable-bed/issues/180))
 
 #### Setup
 
@@ -696,7 +696,7 @@ burst until an on-air capture provides a device-independent interval.
 
 ### KSBT family
 
-**Status:** ✅ Tested (KSBT); ❓ Needs testing (KSBT03C, KSBT03CR, KSBT04C)
+**Status:** ✅ Tested (KSBT on an Ergomotion Rio 6.0 in [#297](https://github.com/kristofferR/ha-adjustable-bed/issues/297); KSBT03C on an Ergomotion Rio 5.0 in [#408](https://github.com/kristofferR/ha-adjustable-bed/issues/408)); ❓ Needs testing (KSBT03CR, KSBT04C)
 
 Profiles: KSBT, KSBT03C, KSBT03CR and KSBT04C.
 
@@ -822,7 +822,7 @@ profile does not subscribe.
 
 **App:** [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) 1.0.2 (5), `com.keeson.adjustablelite`
 
-**Status:** ❓ Needs testing (clean-room analysis complete; hardware unverified)
+**Status:** ⚠️ Partially tested (two Keeson MC232SC / KSSF05C beds in [#669](https://github.com/kristofferR/ha-adjustable-bed/issues/669); their TV, Lounge and Anti-Snore presets are tracked in [#681](https://github.com/kristofferR/ha-adjustable-bed/issues/681))
 
 #### Setup
 
@@ -908,13 +908,12 @@ KSSF05C preset workaround are removed.
 Select the Sleeptracker processor's actual Bluetooth endpoint when adding the
 Tempur profile. A `KSSF05C` / MC232SC name identifies neither that endpoint nor
 the app layout. Changing an existing UART entry's profile alone cannot turn it
-into the framed-JSON processor. See the [processor setup guide](sleeptracker.md#select-the-processor)
-and [S02 discovery ledger](../apk-analysis/dispositions/S02-sleeptracker.md).
+into the framed-JSON processor. See the [processor setup guide](sleeptracker.md#select-the-processor).
+Evidence: APK Protocol Audit S02.
 
 #### Evidence
 
-See the [app disposition](../apk-analysis/dispositions/row051-adjustable-lite.md).
-The app does not decode whether the light button toggles, how the timer button
+Evidence: APK Protocol Audit row051. The app does not decode whether the light button toggles, how the timer button
 cycles, massage level limits, or the unit of the raw timer value; those remain to
 be confirmed on hardware by real users after a beta or release.
 
@@ -1055,8 +1054,7 @@ The `hold_control` action holds any streamed control for 0.1-60 s.
 
 #### Evidence
 
-See the [app disposition](../apk-analysis/dispositions/row060-okin-simon-cluster.md),
-which lists the exclusions. Real users should confirm, after a beta or release,
+Evidence: APK Protocol Audit row060, which lists the exclusions. Real users should confirm, after a beta or release,
 which actuators each key moves, what Home does, whether memory saves persist, the
 Heal massage and light semantics, and the GATT layout.
 
@@ -1157,8 +1155,7 @@ most 14 characters as typed, then trimmed and non-empty.
 
 #### Evidence
 
-See the [cluster disposition](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
-Its cluster sibling Bedsense Bases uses the
+Evidence: APK Protocol Audit row059 (cluster-015). Its cluster sibling Bedsense Bases uses the
 [ORE comfort-bed profiles](#ore-comfort-bed-profiles). Hardware still needs to
 confirm the physical actuator behind each key (the 3M third motor uses lumbar IDs
 beside head artwork), how long Memory A/B must be held, massage level limits and
@@ -1235,8 +1232,7 @@ them interrupts it.
 
 #### Evidence
 
-See the [app disposition](../apk-analysis/dispositions/row058-restonic-bt.md).
-Deferred validation for real users: the actual write mode, whether the light
+Evidence: APK Protocol Audit row058. Deferred validation for real users: the actual write mode, whether the light
 toggles, what ZZZ does, how many actuators move, and whether the zero frame
 stops motion and presets.
 
@@ -1537,8 +1533,7 @@ ROW Control's Zero-G Box layout has an empty timer handler, so it has no sensor.
 
 #### Evidence
 
-The [disposition ledger](cluster033-dispositions.json) holds every discovery of
-the accepted cluster033 reports and its disposition. Actual bed effects and
+Evidence: the accepted APK Protocol Audit cluster033 reports. Actual bed effects and
 firmware interpretation are unverified.
 
 | App | Package | Version | Artifact-set SHA-256 |
@@ -1555,6 +1550,8 @@ firmware interpretation are unverified.
 ### Tempur Curve
 
 **App:** [Tempur Curve](https://play.google.com/store/apps/details?id=com.ore.tempur) 1.7, `com.ore.tempur`
+
+**Status:** ❓ Needs testing (static artifact evidence, hardware unverified)
 
 Bed type `tempur_curve`, one layout. Shared behavior is in the
 [cluster033 app family](#cluster033-app-family).
@@ -1585,6 +1582,8 @@ Bed type `tempur_curve`, one layout. Shared behavior is in the
 ### Q-Plus Adjustable Remote
 
 **App:** [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) 1.8, `com.sbi.costco`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `qplus_app`. The generic `sbi` bed type is a separate route over the
 same frame.
@@ -1680,6 +1679,8 @@ alarm scheduling stays outside the integration.
 ### Serta MP Remote
 
 **App:** [Serta MP Remote](https://play.google.com/store/apps/details?id=com.ore.serta330) 1.1, `com.ore.serta330`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `serta_mp_remote`, one layout. `SertaMPRemoteController` adds
 calibrated position feedback, pulse targets and four local memories to the
@@ -1800,6 +1801,8 @@ physical meaning is assumed for it.
 
 **App:** [Omazz Adjusto III](https://play.google.com/store/apps/details?id=com.sfd.Omazz) 1.0.5, `com.sfd.Omazz`
 
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+
 Bed type `omazz_adjusto_iii`, one layout. The app has no reachable name writer,
 so rename is unavailable.
 
@@ -1830,6 +1833,8 @@ so rename is unavailable.
 ### Ergomotion app
 
 **App:** [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) 1.6.4, `com.sfd.ergomotion`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `ergomotion_app` (setup label **Ergomotion (app)**). It is separate from
 the `ergomotion` bed type, which uses the [Ergomotion](#ergomotion) profile.
@@ -1870,6 +1875,8 @@ the `ergomotion` bed type, which uses the [Ergomotion](#ergomotion) profile.
 
 **App:** [ROW Control](https://play.google.com/store/apps/details?id=com.sfd.row) 2.0, `com.sfd.row`
 
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+
 Bed type `row_control`. The Zero-G Box layout has no **App timer status** sensor.
 
 #### Controls
@@ -1901,6 +1908,8 @@ Bed type `row_control`. The Zero-G Box layout has no **App timer status** sensor
 ### Ergo Slim
 
 **App:** [Ergo Slim](https://play.google.com/store/apps/details?id=com.sfd.slim) 1.3, `com.sfd.slim`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `ergo_slim`. The report proves a clock write when the session starts but
 no delay before it, so the clock is written at connect.
@@ -1942,6 +1951,8 @@ no delay before it, so the clock is written at connect.
 ### TEMPUR AU
 
 **App:** [TEMPUR AU](https://play.google.com/store/apps/details?id=com.sfd.tempur_au) 1.6, `com.sfd.tempur_au`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `tempur_au`. Memory Level 1-3 on B2 are opaque keys.
 
@@ -2008,6 +2019,8 @@ frames of other families and keep it.
 ### Glideaway Motion
 
 **App:** [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (code 11), `com.ore.bedding.glideawaymontion`
+
+**Status:** ❓ Needs testing (artifact-proven, hardware unverified)
 
 Choose **Glideaway Motion / Montion app** and the model selected in the Android
 app (the archive label misspells Motion as "Montion"). It is separate from the
@@ -2145,8 +2158,7 @@ boundaries, needs real-user confirmation.
 #### Evidence
 
 Accepted report row068, XAPK set SHA-256
-`7eb30a03349b9d9b9bffc43e2dafdb672c422fdd70e16b3e2c9ec2a55730c315`; see the
-[discovery ledger](../apk-analysis/dispositions/row068-glideaway-motion.md). The
+`7eb30a03349b9d9b9bffc43e2dafdb672c422fdd70e16b3e2c9ec2a55730c315`. The
 app leaves combined movement and the light without a release and lets streams
 outlive the page; the integration bounds every hold and releases those too,
 with the same zero frame.
@@ -2154,6 +2166,8 @@ with the same zero frame.
 ### Scott Living
 
 **App:** Scott Living, `com.keeson.scottlivingrelease`
+
+**Status:** ❓ Needs testing (no accepted app report; hardware unverified)
 
 Bed type `scott_living`, selected manually: it shares the FFE5 service with
 other Keeson beds and has no distinct name. It writes FFE9 and subscribes to
@@ -2540,7 +2554,7 @@ For split-king beds, configure the protocol variant:
 
 ### Cool Base
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested (a DewertOkin bed on this route in [discussion #341](https://github.com/kristofferR/ha-adjustable-bed/discussions/341))
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -2557,7 +2571,7 @@ For split-king beds, configure the protocol variant:
 | ✅ | Cool Base 1.0.0 (3) | `com.keeson.coolbase` |
 
 The Cool Base profile follows the independently accepted clean-room audit of
-this app; see the [row047 dispositions](../apk-analysis/dispositions/row047-coolbase.md).
+this app (APK Protocol Audit row047).
 Hardware behavior is unverified.
 
 #### Features
@@ -2979,8 +2993,7 @@ services and unrelated phone infrastructure are outside this BLE integration.
 | `com.BF` | 1.2.3 (11) | `64982c7a35fed0c902061b7b0f732b15798a38688119c1d92d343052781a83d1` |
 | `com.okin.ore.cherish` | 1.0.4 (5) | `2f32624027a0f3a950f796f87c18feda2eafad1fa253927751a02426824b8520` |
 
-The exhaustive [disposition ledger](../apk-analysis/dispositions/row063-cluster001.md)
-records the evidence and implementation treatment, including report, audit and
+Evidence: APK Protocol Audit row063 (cluster001), with its report, audit and
 reconciliation seals.
 
 ### Comfort Enhancements
@@ -3212,7 +3225,7 @@ replacement command, even if cancelled; delayed start writes remain cancellable.
 - Evidence: accepted independent audit of `com.okin.enhancements` **1.0.3 (4)**.
 - Artifact set SHA-256:
   `bc76b08e593f42a3772385551553cb93345394639cfeb4d8e2cc61a99c28eab7`.
-- See the [complete discovery dispositions](../apk-analysis/dispositions/row110-comfort-enhancements.md).
+- Audit: APK Protocol Audit row110.
 
 ### Ergomotion 4.0
 
@@ -3946,7 +3959,6 @@ maintainer implementation blocker.
 - Artifact-set SHA-256: `cd637f0dec9831c9deb08f1449b2faf87c9dd70f511eaeb7210950c7a7eb69c0`.
 - Report seal: `221e356d9e6b88aaa68991d666a1bfa978ee5356be7c6da0447979b08ff09e7b`.
 - Accepted independent audit: `9b317001ba212a9e58270b340c7ab1be45cbae7bb58f66b3b56bb6e522c8ae4d`, 17/17 PASS.
-- [Complete discovery dispositions](../apk-analysis/dispositions/issue558-ergomotion4.md).
 - Ref [#558](https://github.com/kristofferR/ha-adjustable-bed/issues/558).
 
 ### AdjustaMattress
@@ -4364,8 +4376,8 @@ sleep, status refresh, local strength choice and the persisted privacy agreement
 
 ###### AdjustaMattress app defects and safety dispositions
 
-The following app defects have explicit safety dispositions in the
-[discovery ledger](../apk-analysis/dispositions/row067-adjustamattress.md):
+The following app defects have explicit safety dispositions in the row067
+audit:
 
 - P2 lighting allocates no light frame. It resends the previous arbitrary frame,
   including a prior motor command, and starts refresh. This replay is excluded;
@@ -4415,7 +4427,7 @@ The following app defects have explicit safety dispositions in the
   the accepted provenance; implementation does not retroactively waive it.
 - Machine-local raw artifacts, audit reports and seals are preserved and
   excluded from Git.
-- Discovery ledger: [row067-adjustamattress.md](../apk-analysis/dispositions/row067-adjustamattress.md).
+- Audit: APK Protocol Audit row067.
 
 ## Notes
 
@@ -4447,20 +4459,17 @@ types store their own defaults and are left unchanged.
 
 ### Analysis provenance
 
-- Adjustable Lite 1.0.2 (5): [row051](../apk-analysis/dispositions/row051-adjustable-lite.md).
-- Restonic BT Remote 1.2.0 (3): [row058](../apk-analysis/dispositions/row058-restonic-bt.md).
-- Simon Li, Heal Every Night and OKIN-Seating: [row060](../apk-analysis/dispositions/row060-okin-simon-cluster.md).
+- Adjustable Lite 1.0.2 (5): row051.
+- Restonic BT Remote 1.2.0 (3): row058.
+- Simon Li, Heal Every Night and OKIN-Seating: row060.
 - MaxCoil Una 1.1.0 (5) (`com.ore.maxcoil`) and Dynasty Bases 1.0.2 (3)
   (`com.ore.Dynasty`): clean-room analysis complete and accepted (formal
-  cluster-013). See the [MaxCoil Una / Dynasty Bases dispositions](../apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md).
+  cluster-013, row056).
 - Bedsense Bases 1.1 (3) (`com.ore.sfmc2bedsence`) and INNOVA 2.0 (3)
-  (`com.ore.sfm`): complete and accepted (formal cluster-015). See the
-  [Bedsense Bases / INNOVA dispositions](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
+  (`com.ore.sfm`): complete and accepted (formal cluster-015, row059).
 - Avanti Bases 1.0.5 (7) (`com.ore.AvantiBases`, standalone FULL row065):
-  independently accepted. See its [discovery ledger](../apk-analysis/dispositions/row065-avanti-bases.md).
-- AMERICANSTAR 1.0 (1) (`com.ore.americanstar`): independently accepted. See its
-  [dispositions](../apk-analysis/dispositions/row062-americanstar.md).
-- Cluster033 apps: see the [cluster033 app family](#cluster033-app-family) and its
-  [disposition ledger](cluster033-dispositions.json).
+  independently accepted.
+- AMERICANSTAR 1.0 (1) (`com.ore.americanstar`): independently accepted (row062).
+- Cluster033 apps: see the [cluster033 app family](#cluster033-app-family).
 - The other routes come from the smartbed-mqtt reverse engineering, fresh
   decompilation of the OEM apps listed above, and hardware reports.

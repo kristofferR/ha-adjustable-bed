@@ -1,8 +1,7 @@
 """Comfort Enhancements 1.0.3 (com.okin.enhancements), explicit MC2..MC5 layouts.
 
-See docs/apk-analysis/dispositions/row110-comfort-enhancements.md for the
-accepted artifact and the separate implementation dispositions. No live status
-parser is reachable in the app, so local control state is assumed only.
+Evidence: APK Protocol Audit row 110. No live status parser is reachable in
+the app, so local control state is assumed only.
 """
 
 from __future__ import annotations

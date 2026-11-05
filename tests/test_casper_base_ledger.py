@@ -10,9 +10,7 @@ ROOT = Path(__file__).parents[1]
 
 
 def test_disposition_coverage_and_references():
-    ledger = json.loads(
-        (ROOT / "docs/apk-analysis/dispositions/row101-casper-base.json").read_text()
-    )
+    ledger = json.loads((ROOT / "tests/fixtures/casper_base/ledger.json").read_text())
     entries = ledger["entries"]
     assert len({e["id"] for e in entries}) == len(entries) == 568
     assert Counter(e["disposition"] for e in entries) == {"IMPLEMENTED": 535, "EXCLUDED": 33}
