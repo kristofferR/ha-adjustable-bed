@@ -76,6 +76,9 @@ MAX_ADVERTISEMENT_AGE_SECONDS: float = 90.0
 # one phase that can honestly drive a determinate progress bar.
 ADVERTISEMENT_WAIT_SECONDS: float = 30.0
 
+# How often that wait reports progress while no advertisement arrives.
+_PROGRESS_INTERVAL_SECONDS: float = 1.0
+
 
 class FreshnessStatus(StrEnum):
     """Why a bed is, or is not, worth attempting a connection to right now.
@@ -426,7 +429,6 @@ async def async_wait_for_advertisement(
     max_age: float = MAX_ADVERTISEMENT_AGE_SECONDS,
     seen_after: float | None = None,
     wait_timeout: float = ADVERTISEMENT_WAIT_SECONDS,
-    poll_interval: float = 1.0,
     on_progress: Callable[[float], None] | None = None,
 ) -> tuple[AdvertisementEvidence, BLEDevice | None]:
     """Gate a connection, listening a while longer before giving up.
@@ -434,7 +436,8 @@ async def async_wait_for_advertisement(
     A bed that is simply between advertising intervals, or that the user is
     walking over to put into pairing mode, should not be reported as absent on
     the strength of one glance at the history. This waits for a genuinely fresh
-    advertisement and only then resolves the device.
+    advertisement and only then resolves the device. Every packet Home Assistant
+    receives from the address wakes the wait, so it ends on the first fresh one.
 
     ``on_progress`` receives the fraction of the wait elapsed. It is the only
     honest determinate progress in the whole setup path: the duration really is
@@ -443,38 +446,48 @@ async def async_wait_for_advertisement(
     When ``seen_after`` is provided, cached history at or before that marker is
     ignored until a later advertisement arrives.
     """
-    evidence, device = async_gate_connection(
-        hass,
-        address,
-        source=source,
-        max_age=max_age,
-        seen_after=seen_after,
-    )
+
+    def gate() -> tuple[AdvertisementEvidence, BLEDevice | None]:
+        return async_gate_connection(
+            hass, address, source=source, max_age=max_age, seen_after=seen_after
+        )
+
+    def report(fraction: float) -> None:
+        if on_progress is not None:
+            with contextlib.suppress(Exception):
+                on_progress(fraction)
+
+    evidence, device = gate()
     if evidence.is_fresh and device is not None:
         return evidence, device
+    if wait_timeout <= 0:
+        report(1.0)
+        return evidence, None
 
-    deadline = _monotonic() + wait_timeout
-    while True:
-        remaining = deadline - _monotonic()
-        if remaining <= 0:
-            if on_progress is not None:
-                with contextlib.suppress(Exception):
-                    on_progress(1.0)
-            return evidence, None
-        if on_progress is not None:
-            elapsed = wait_timeout - remaining
-            with contextlib.suppress(Exception):
-                on_progress(min(1.0, max(0.0, elapsed / wait_timeout)))
-        await asyncio.sleep(min(poll_interval, remaining))
-        evidence, device = async_gate_connection(
-            hass,
-            address,
-            source=source,
-            max_age=max_age,
-            seen_after=seen_after,
-        )
-        if evidence.is_fresh and device is not None:
-            if on_progress is not None:
-                with contextlib.suppress(Exception):
-                    on_progress(1.0)
-            return evidence, device
+    advertised = asyncio.Event()
+    # The callback runs before Home Assistant records the packet, so it only
+    # wakes the wait; the gate then reads the updated history.
+    unsubscribe = bluetooth.async_register_advertisement_callback(
+        hass, lambda _service_info: advertised.set(), address.upper()
+    )
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    try:
+        async with asyncio.timeout(wait_timeout):
+            while True:
+                report(min(1.0, (loop.time() - started) / wait_timeout))
+                with contextlib.suppress(TimeoutError):
+                    async with asyncio.timeout(_PROGRESS_INTERVAL_SECONDS):
+                        await advertised.wait()
+                if not advertised.is_set():
+                    continue
+                advertised.clear()
+                evidence, device = gate()
+                if evidence.is_fresh and device is not None:
+                    report(1.0)
+                    return evidence, device
+    except TimeoutError:
+        report(1.0)
+        return evidence, None
+    finally:
+        unsubscribe()

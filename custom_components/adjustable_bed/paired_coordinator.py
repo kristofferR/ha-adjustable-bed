@@ -225,7 +225,7 @@ class PairedBedCoordinator:
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Synthetic parent device; children nest under it via ``via_device``."""
+        """Synthetic parent device; each side is a child device of it."""
         first = next(iter(self._children.values()))
         return DeviceInfo(
             identifiers={(DOMAIN, self._pair_id)},

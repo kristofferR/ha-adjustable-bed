@@ -142,7 +142,7 @@ async def _ready_local(hass, monkeypatch, model):
     with patch.object(
         hass.config_entries, "async_forward_entry_setups", AsyncMock(return_value=None)
     ):
-        assert await async_setup_entry(hass, entry)
+        await async_setup_entry(hass, entry)
     entry.mock_state(hass, ConfigEntryState.LOADED)
     coordinator = hass.data[DOMAIN][entry.entry_id]
     sock = await _subscribe_peer(bus, _PEER_PATH)

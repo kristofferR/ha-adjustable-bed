@@ -527,6 +527,7 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
         hass,
         DOMAIN,
         issue_id,
+        config_entry_id=entry.entry_id,
         is_fixable=True,
         is_persistent=False,
         severity=IssueSeverity.WARNING,
@@ -538,7 +539,7 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
 
 @callback
 def async_clear_profile_review_issue(hass: HomeAssistant, entry_id: str) -> None:
-    """Remove the review when its config entry is removed."""
+    """Remove the entry's review once its profile has been settled."""
     async_delete_issue(hass, DOMAIN, _issue_id(entry_id))
 
 

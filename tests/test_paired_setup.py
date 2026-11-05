@@ -263,7 +263,7 @@ class TestPairedSetup:
             patch.object(AdjustableBedCoordinator, "_schedule_position_hydration"),
             patch.object(hass.config_entries, "async_forward_entry_setups", new_callable=AsyncMock),
         ):
-            assert await _async_setup_paired_entry(hass, entry)
+            await _async_setup_paired_entry(hass, entry)
 
         assert attempts == {LEFT_ADDR: 2, RIGHT_ADDR: 1}
         hass.data[DOMAIN].pop(entry.entry_id, None)

@@ -19,12 +19,11 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_BACK_MAX_ANGLE, CONF_LEGS_MAX_ANGLE, DOMAIN
 from .coordinator import AdjustableBedCoordinator
-from .entity import AdjustableBedEntity
+from .entity import AdjustableBedEntity, RenamesInPlace
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import PairedBedCoordinator, entity_runtimes
 from .position_estimate import (
@@ -70,7 +69,7 @@ def _estimated_beds(
     return manager, beds
 
 
-class _ListensToEstimates(Entity):
+class _ListensToEstimates(RenamesInPlace):
     """Write state whenever the entry's estimates or saved positions change."""
 
     _attr_should_poll = False
