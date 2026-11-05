@@ -1065,6 +1065,8 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
     **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
     **dict.fromkeys(LEGGETT_FAMILY.bed_types, "leggett_family"),
+    # Declared questions only: the layout is BedSense's own question.
+    BED_TYPE_BEDSENSE: "profile_questions",
     BED_TYPE_STARCODE_ABM5_4: "starcode_app",
     BED_TYPE_MOTION_BED: "motion_bed",
     BED_TYPE_DOUBLESLEEP: "doublesleep",
@@ -1219,42 +1221,6 @@ CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
 }
 
 MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN})
-
-
-def _add_furnimove_schema_field(
-    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
-) -> None:
-    from .furnimove_profiles import furnimove_handset_choices
-
-    current_data = current_data or {}
-    current = current_data.get(CONF_FURNIMOVE_REMOTE)
-    schema[
-        vol.Required(
-            CONF_FURNIMOVE_REMOTE,
-            default=current if isinstance(current, str) else vol.UNDEFINED,
-        )
-    ] = vol.In(furnimove_handset_choices(current))
-
-
-def _furnimove_errors(data: dict[str, Any], current: object = None) -> dict[str, str]:
-    from .furnimove_profiles import furnimove_handset_choices
-
-    remote = data.get(CONF_FURNIMOVE_REMOTE)
-    if not isinstance(remote, str) or remote not in furnimove_handset_choices(current):
-        return {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
-    return {}
-
-
-def _furnimove_settings(data: dict[str, Any]) -> dict[str, Any]:
-    from .furnimove_profiles import get_furnimove_profile
-
-    profile = get_furnimove_profile(data[CONF_FURNIMOVE_REMOTE])
-    return {
-        CONF_FURNIMOVE_REMOTE: profile.handset_id,
-        CONF_MOTOR_COUNT: profile.motor_count,
-        CONF_HAS_MASSAGE: bool(profile.by_type("massage-function")),
-        CONF_DISABLE_ANGLE_SENSING: True,
-    }
 
 
 def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
@@ -2314,7 +2280,12 @@ def _question_field(question: Question, data: Mapping[str, Any]) -> tuple[vol.Ma
     marker_type = vol.Required if default is REQUIRED else vol.Optional
     marker = marker_type(question.key, default=vol.UNDEFINED if default is REQUIRED else default)
     options = question.options(data)
-    return marker, (bool if options is None else vol.In(dict(options)))
+    if options is None:
+        return marker, bool
+    if all(isinstance(key, int) for key in options):
+        # The frontend returns a select's value as text.
+        return marker, vol.All(vol.Coerce(int), vol.In(dict(options)))
+    return marker, vol.In(dict(options))
 
 
 def _profile_question_schema(
@@ -2345,7 +2316,12 @@ def _profile_answers(
     answers = {}
     for question in profile.questions:
         if question.key in submitted:
-            answers[question.key] = submitted[question.key]
+            _marker, validator = _question_field(question, data)
+            try:
+                # The schema coerces a select's text; a direct call gets the same.
+                answers[question.key] = validator(submitted[question.key])
+            except vol.Invalid:
+                answers[question.key] = submitted[question.key]
         elif user_input and (default := question.default_for(data)) is not REQUIRED:
             answers[question.key] = default
     return answers
@@ -2575,7 +2551,6 @@ def _normalize_cluster033_data(data: dict[str, Any]) -> None:
 # Options fields of app profiles whose adder needs only the current data.
 _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]] = {
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, _add_cluster033_schema_fields),
-    BED_TYPE_FURNIMOVE: _add_furnimove_schema_field,
     BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
     BED_TYPE_MOTION_BED: _add_motion_bed_schema_fields,
@@ -3189,25 +3164,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="logicdata_app", data_schema=vol.Schema(schema), errors=errors
         )
 
-    async def async_step_furnimove(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Choose the handset table independently of the receiver and GATT."""
-        assert self._manual_data is not None
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            errors = _furnimove_errors(user_input)
-            if not errors:
-                self._manual_data.update(_furnimove_settings(user_input))
-                return await self._finish_with_verify(
-                    self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
-                )
-        schema: dict[vol.Marker, Any] = {}
-        _add_furnimove_schema_field(schema, user_input or self._manual_data)
-        return self.async_show_form(
-            step_id="furnimove", data_schema=vol.Schema(schema), errors=errors
-        )
-
     async def async_step_jiecang_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -3330,6 +3286,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and can_keep:
             if self._migration is not None:
                 return await self.async_step_migration_keep()
+            if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
+                return await self.async_step_profile_questions()
             return await self._async_finish_family_route()
         if choice in _OKIN_ROUTES or choice in apps:
             bed_type, variant = (
@@ -3346,9 +3304,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     data.pop(key, None)
                 _apply_route_defaults(data, bed_type, variant)
             if bed_type == BED_TYPE_FURNIMOVE:
-                return await self.async_step_furnimove()
+                return await self.async_step_profile_questions()
             if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
-                return await self.async_step_okin_remote()
+                return await self.async_step_profile_questions()
             if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
                 # Choosing the staircase is the explicit confirmation its repair asks for.
                 data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
@@ -3376,25 +3334,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
             ),
             description_placeholders={"current": bed_type_label(incoming)},
-        )
-
-    async def async_step_okin_remote(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect the handset or remote code, which picks the motors and buttons."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        bed_type = data[CONF_BED_TYPE]
-        routes = _labelled_routes(bed_type)
-        motor_counts = _motor_count_options(bed_type)
-        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
-            data[CONF_PROTOCOL_VARIANT] = user_input[CONF_PROTOCOL_VARIANT]
-            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="okin_remote",
-            data_schema=_route_and_motors_schema(data, routes, motor_counts),
-            description_placeholders={"current": bed_type_label(bed_type)},
         )
 
     async def async_step_keeson_family(
@@ -3471,7 +3410,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if variant in _KEESON_RESTONIC:
             return await self.async_step_keeson_restonic()
         if variant in _KEESON_SCREEN_APPS:
-            return await self.async_step_keeson_screen()
+            return await self.async_step_profile_questions()
         return await self._async_finish_family_route()
 
     async def async_step_keeson_app(
@@ -3534,36 +3473,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
 
-    async def async_step_keeson_screen(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Ask the app's 2M, 3M or 4M screen, which sets the motor count."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        if user_input is not None and str(user_input.get(CONF_MOTOR_COUNT)) in ("2", "3", "4"):
-            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
-            return await self._async_finish_family_route()
-        current = str(data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT))
-        return self.async_show_form(
-            step_id="keeson_screen",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_MOTOR_COUNT, default=current if current in ("2", "3", "4") else "2"
-                    ): SelectSelector(
-                        SelectSelectorConfig(
-                            options=["2", "3", "4"],
-                            translation_key="keeson_screen",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={
-                "app": _keeson_route_label(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
-            },
-        )
-
     async def async_step_keeson_route(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -3611,7 +3520,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self.async_step_motion_bed()
         if choice == "bedsense":
             self._select_family_route(BED_TYPE_BEDSENSE, None)
-            return await self.async_step_solace_bedsense()
+            return await self.async_step_profile_questions()
         return self.async_show_form(
             step_id="solace_family",
             data_schema=vol.Schema(
@@ -3636,33 +3545,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._select_family_route(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA)
             return await self._async_finish_family_route()
         return self.async_show_form(step_id="solace_woosa", data_schema=vol.Schema({}))
-
-    async def async_step_solace_bedsense(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect the BedSense layout, which owns its motion controls."""
-        assert self._manual_data is not None
-        routes = _labelled_routes(BED_TYPE_BEDSENSE)
-        layout = (user_input or {}).get(CONF_PROTOCOL_VARIANT)
-        if layout in routes:
-            self._select_family_route(BED_TYPE_BEDSENSE, layout)
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="solace_bedsense",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[
-                                SelectOptionDict(value=key, label=label)
-                                for key, label in routes.items()
-                            ],
-                            mode=SelectSelectorMode.DROPDOWN,
-                        )
-                    )
-                }
-            ),
-        )
 
     async def async_step_leggett_family(
         self, user_input: dict[str, Any] | None = None
@@ -3731,7 +3613,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         if user_input is not None and not errors:
             data.update(answers)
-            data.update(profile.fixed_values())
+            data.update(profile.settled(data))
             return await self._async_finish_family_route()
         return self.async_show_form(
             step_id="profile_questions",
@@ -7928,7 +7810,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if entry_data.get(CONF_FURNIMOVE_REMOTE) not in FURNIMOVE_PROFILES:
                 self._manual_data = entry_data
                 self._manual_data[CONF_NAME] = title
-                return await self.async_step_furnimove()
+                return await self.async_step_profile_questions()
         needs_pin_check = (
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
@@ -10001,14 +9883,6 @@ class AdjustableBedOptionsFlow(
                             errors={CONF_LEGGETT_APP_PROFILE: "leggett_app_invalid_profile"},
                         )
                     user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
-            if bed_type == BED_TYPE_FURNIMOVE and not separate_address_pair:
-                app_data = {**current_data, **user_input}
-                app_errors = _furnimove_errors(app_data, current_data.get(CONF_FURNIMOVE_REMOTE))
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
-                    )
-                user_input.update(_furnimove_settings(app_data))
             if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
                 app_errors = _logicdata_app_errors({**current_data, **user_input})
                 if app_errors:
@@ -10024,7 +9898,7 @@ class AdjustableBedOptionsFlow(
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
                     )
-                user_input.update(declared.fixed_values())
+                user_input.update(declared.settled(app_data))
             if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
                 from .beds.starcode_abm5_4_profiles import SELECTORS
 

@@ -74,9 +74,9 @@ async def test_ore_app_asks_its_screen_for_the_motor_count(hass):
     assert result["step_id"] == "keeson_app"
     assert len(options(result)) == 6
     result = await flow.async_step_keeson_app({"choice": "keeson:avanti_bases"})
-    assert result["step_id"] == "keeson_screen"
+    assert result["step_id"] == "profile_questions"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_keeson_screen({const.CONF_MOTOR_COUNT: "4"})
+        await flow.async_step_profile_questions({const.CONF_MOTOR_COUNT: "4"})
     saved = finish.call_args.args[0]
     assert saved[const.CONF_PROTOCOL_VARIANT] == const.KEESON_VARIANT_AVANTI_BASES
     assert saved[const.CONF_MOTOR_COUNT] == 4

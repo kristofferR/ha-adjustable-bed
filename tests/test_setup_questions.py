@@ -79,3 +79,51 @@ def test_configure_leaves_the_route_to_the_guided_change():
     )
     assert profile is not None
     assert [question.key for question in profile.questions] == [const.CONF_HAS_LIGHT]
+
+
+def test_a_handset_table_derives_the_motors_and_massage():
+    profile = SETUP_PROFILES[const.BED_TYPE_FURNIMOVE]
+    settled = profile.settled({const.CONF_FURNIMOVE_REMOTE: "82417"})
+    assert settled[const.CONF_MOTOR_COUNT] == 2
+    assert settled[const.CONF_HAS_MASSAGE] is False
+    assert settled[const.CONF_DISABLE_ANGLE_SENSING] is True
+
+
+def test_a_generic_field_the_profile_asks_is_hidden_from_generic_forms():
+    # The remote code and motor count are the Okin UUID profile's own questions.
+    assert {const.CONF_PROTOCOL_VARIANT, const.CONF_MOTOR_COUNT} <= hidden_generic_fields(
+        const.BED_TYPE_OKIN_UUID, const.VARIANT_AUTO
+    )
+
+
+def test_a_saved_route_new_setups_do_not_offer_stays_selectable():
+    code, _motors = SETUP_PROFILES[const.BED_TYPE_OKIN_DOT].questions
+    saved = {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_DOT, const.CONF_PROTOCOL_VARIANT: "90167"}
+    assert "90167" in (code.options(saved) or {})
+    assert "90167" not in (code.options({const.CONF_BED_TYPE: const.BED_TYPE_OKIN_DOT}) or {})
+
+
+async def test_whole_number_answers_are_coerced_from_select_text(hass):
+    from unittest.mock import AsyncMock, patch
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._manual_data = {
+        const.CONF_BED_TYPE: const.BED_TYPE_KEESON,
+        const.CONF_PROTOCOL_VARIANT: const.KEESON_VARIANT_INNOVA,
+    }
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions({const.CONF_MOTOR_COUNT: "3"})
+    assert finish.call_args.args[0][const.CONF_MOTOR_COUNT] == 3
+
+
+def test_every_profile_with_questions_has_a_setup_step_that_asks_them():
+    """A declared question hides its generic field, so some step must ask it."""
+    from custom_components.adjustable_bed.config_flow import _APP_SETUP_STEPS
+    from custom_components.adjustable_bed.profile_id import profile_route
+
+    for key, profile in SETUP_PROFILES.items():
+        if profile.questions:
+            assert profile_route(key).bed_type in _APP_SETUP_STEPS, key
