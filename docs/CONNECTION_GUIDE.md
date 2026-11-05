@@ -170,10 +170,14 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
    - **Manual:** Choose **Select by actuator brand** or **Show all BLE devices**, then select the bed or enter its Bluetooth MAC address (format: `AA:BB:CC:DD:EE:FF`)
 
 4. **Configure Settings**
+   - **Bed type**: Type part of your app, brand or controller name to search the
+     list. For a family with a guided change, such as Okin, Keeson or
+     Leggett & Platt, setup then asks which app or remote controls the bed; see
+     [Initial Setup](CONFIGURATION.md#initial-setup)
    - **Name**: Friendly name for your bed
    - **Motor Count**: See below
    - **Has Massage**: Enable if your bed has massage
-   - **Protocol Variant** (if available): Usually leave as "auto"
+   - **Advanced: receiver route** (only for bed types with several routes): Usually leave as Auto-detect
    - **App/product profile** (where offered): Match the actual app or remote; see [profile settings](CONFIGURATION.md#app-and-product-profiles)
 
    The setup form also shows which Bluetooth path Home Assistant is likely to
