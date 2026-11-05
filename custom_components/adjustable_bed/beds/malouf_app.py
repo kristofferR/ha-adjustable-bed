@@ -839,8 +839,8 @@ class MaloufAppController(BedController):
 
 def require_app_transport(
     client: BleakClient, data: Mapping[str, Any], device_name: str | None
-) -> None:
-    """Raise ConnectionError unless the link resolves the staged app's GATT transport.
+) -> TransportKey:
+    """Return the staged app's GATT transport on this link, or raise ConnectionError.
 
     A guided change checks a candidate link with the controller's own transport
     selection, so the check is exactly what the runtime will require.
@@ -864,6 +864,6 @@ def require_app_transport(
         primary=data.get(CONF_MALOUF_APP_PRIMARY, True),
     )
     try:
-        controller._resolve_transport()  # noqa: SLF001 - the controller's own selection
+        return controller._resolve_transport()  # noqa: SLF001 - the controller's own selection
     except ValueError as err:
         raise ConnectionError(str(err)) from err

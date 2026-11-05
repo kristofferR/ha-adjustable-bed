@@ -1,6 +1,7 @@
 """One Malouf / Lucid app-or-receiver question, and guided changes between its routes (#676)."""
 
 from contextlib import ExitStack
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -16,6 +17,7 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
+from custom_components.adjustable_bed.profile_migration import ControlChanges
 from tests.test_sleepys_family_flow import (
     entry_for,
     finish_check,
@@ -233,3 +235,60 @@ def test_transport_check_matches_the_apps_own_selection(name, services, ok):
     else:
         with pytest.raises(ConnectionError):
             require_app_transport(client, data, name)  # type: ignore[arg-type]
+
+
+RICHMAT_FRAMED = ("0000fee9-0000-1000-8000-00805f9b34fb", "d44bc439-abfd-45a2-b575-925416129600")
+
+
+def advertised(name: str | None):
+    """An advertisement whose service info falls back to the address for no name."""
+    return SimpleNamespace(name=name or ADDRESS, device=SimpleNamespace(name=name))
+
+
+async def _change_receiver_to_malouf_app(hass, client, name):
+    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_MALOUF_NEW_OKIN})
+    manager = hass.config_entries.flow
+    with ExitStack() as stack:
+        bluetooth_patches(stack, client)
+        stack.enter_context(
+            patch(
+                "custom_components.adjustable_bed.config_flow.bluetooth.async_last_service_info",
+                return_value=advertised(name),
+            )
+        )
+        changes = stack.enter_context(
+            patch(
+                "custom_components.adjustable_bed.config_flow.async_control_changes",
+                new=AsyncMock(return_value=ControlChanges(known=False)),
+            )
+        )
+        result = await reconfigure(hass, entry)
+        result = await manager.async_configure(result["flow_id"], {"choice": "malouf"})
+        result = await manager.async_configure(
+            result["flow_id"], {const.CONF_MALOUF_APP_MODEL: "S755"}
+        )
+        result = await finish_check(hass, result)
+        if result["step_id"] == "migration_confirm":
+            result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    return entry, result, changes
+
+
+async def test_an_unnamed_bed_reads_as_okin_like_the_runtime(hass, enable_custom_integrations):
+    entry, result, _changes = await _change_receiver_to_malouf_app(
+        hass, gatt_client(OKIN_NEW), None
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_MALOUF_APP
+
+
+async def test_the_confirm_step_lists_the_checked_transports_controls(
+    hass, enable_custom_integrations
+):
+    entry, result, changes = await _change_receiver_to_malouf_app(
+        hass, gatt_client(RICHMAT_FRAMED), "QRRM123"
+    )
+    assert result["reason"] == "reconfigure_successful"
+    previewed = changes.await_args.args[2]
+    assert previewed[const.CONF_MALOUF_APP_TRANSPORT] == "richmat_framed"
+    # The entry keeps the automatic choice the user made.
+    assert entry.data[const.CONF_MALOUF_APP_TRANSPORT] == "auto"

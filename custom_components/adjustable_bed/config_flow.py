@@ -3301,6 +3301,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the migrating family's exact endpoint check on the candidate link."""
+        self._migration_preview = {}
         if self._migration_family is VIBRADORM_FAMILY:
             _validate_vibradorm_setup_roles(client, data)
         elif self._migration_family is JIECANG_FAMILY:
@@ -3323,11 +3324,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         elif self._migration_family is MALOUF_FAMILY and data[CONF_BED_TYPE] == BED_TYPE_MALOUF_APP:
             from .beds.malouf_app import require_app_transport
 
-            # Automatic transport reads the advertised name, as the runtime does.
+            # Automatic transport reads the advertised device name, as the
+            # runtime does; an unnamed bed has none.
             advertised = bluetooth.async_last_service_info(
                 self.hass, data[CONF_ADDRESS], connectable=False
             )
-            require_app_transport(client, data, advertised.name if advertised else None)
+            transport = require_app_transport(
+                client, data, advertised.device.name if advertised else None
+            )
+            # The confirm step lists this transport's controls; the entry
+            # keeps the user's choice, which may stay automatic.
+            self._migration_preview = {CONF_MALOUF_APP_TRANSPORT: transport}
 
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
@@ -3371,7 +3378,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Review the staged change: added, removed and referenced controls."""
         assert self._pending_entry is not None
         entry = self._get_reconfigure_entry()
-        changes = await async_control_changes(self.hass, entry, self._pending_entry)
+        changes = await async_control_changes(
+            self.hass, entry, {**self._pending_entry, **self._migration_preview}
+        )
 
         async def text(key: str, default: str) -> str:
             return await _async_translation(
@@ -3715,6 +3724,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         data = self._manual_data
         self._migration_verified = False
+        self._migration_preview = {}
         if bed_type == data[CONF_BED_TYPE] and variant in (None, data.get(CONF_PROTOCOL_VARIANT)):
             return
         _apply_route_defaults(data, bed_type, variant)
@@ -4423,6 +4433,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._leggett_incoming: tuple[str, str] | None = None
         self._sleepys_incoming: str | None = None
         self._malouf_incoming: str | None = None
+        # What the connection check resolved for the staged route, for the
+        # confirm step's control list only.
+        self._migration_preview: dict[str, Any] = {}
         self._app_family_incoming: str | None = None
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
