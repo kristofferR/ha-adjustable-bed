@@ -482,6 +482,11 @@ def _kept_apps(entry_data: Mapping[str, Any]) -> frozenset[str] | None:
     return frozenset(app for app in apps if isinstance(app, str)) if isinstance(apps, list) else None
 
 
+def kept_profile_choices(entry_data: Mapping[str, Any]) -> frozenset[str]:
+    """Return the app choices the entry was shown when it kept its current route."""
+    return _kept_apps(entry_data) or frozenset()
+
+
 def carry_profile_review(source: Mapping[str, Any], target: dict[str, Any]) -> None:
     """Keep a pair's review state on a standalone bed split out of it.
 
@@ -489,14 +494,15 @@ def carry_profile_review(source: Mapping[str, Any], target: dict[str, Any]) -> N
     offer. A Keep answered on the pair covers each bed for the apps it was
     shown, including a review the bed still had from before it was combined.
     """
-    if (apps := _kept_apps(source)) is not None:
+    if _pending(source) and (mark := profile_review_mark(target)) is not None:
+        # The pair's open review outranks an older Keep it may also hold.
+        target[CONF_PROFILE_REVIEW_PENDING] = mark
+    elif (apps := _kept_apps(source)) is not None:
         target.pop(CONF_PROFILE_REVIEW_PENDING, None)
         target[CONF_PROFILE_REVIEW_KEPT] = {
             "route": _route_signature(target),
             "apps": sorted(apps),
         }
-    elif _pending(source) and (mark := profile_review_mark(target)) is not None:
-        target[CONF_PROFILE_REVIEW_PENDING] = mark
 
 
 def choice_label(choice: str) -> str:
@@ -775,6 +781,10 @@ class ProfileReviewRepairFlow(RepairsFlow):
                 }
             ),
         )
+
+    async def async_step_managed(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
+        """Take the guided-change answer the init step's managed form submits."""
+        return await self.async_step_init(user_input)
 
     async def async_step_configure(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Hand an app with its own settings to Configure, leaving the review open."""

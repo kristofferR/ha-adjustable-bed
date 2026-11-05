@@ -1,24 +1,45 @@
 """Existing generic Solace entries are asked once whether they use Woosa Sleep (#676)."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from homeassistant.components.repairs import repairs_flow_manager
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import issue_registry as ir
+from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_migrate_entry
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_ID,
+    CONF_PAIR_MODE,
     CONF_PROFILE_REVIEW_KEPT,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
+    CONF_SIDE,
     DOMAIN,
+    PAIR_MODE_SEPARATE_ADDRESS,
+    SOLACE_SERVICE_UUID,
     SOLACE_VARIANT_WOOSA,
 )
-from custom_components.adjustable_bed.profile_review import async_refresh_profile_review_issue
+from custom_components.adjustable_bed.profile_recommendations import (
+    ISSUE_PREFIX,
+    _watches,
+    async_watch_profile_recommendations,
+)
+from custom_components.adjustable_bed.profile_review import (
+    async_refresh_profile_review_issue,
+    carry_profile_review,
+    profile_review_mark,
+)
+from tests.test_profile_recommendations import HISTORY as RECOMMENDATION_HISTORY
+from tests.test_profile_recommendations import REGISTER, coordinator
 from tests.test_profile_review import _HISTORY, ADDRESS, _issue, _open
 
 WOOSA = f"{BED_TYPE_SOLACE}:{SOLACE_VARIANT_WOOSA}"
@@ -109,3 +130,69 @@ async def test_choosing_woosa_continues_in_the_guided_change(
     assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "solace:auto"
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_SOLACE
     assert _issue(hass, entry) is not None
+
+
+async def test_the_woosa_repair_opens_and_keeps_through_the_repairs_manager(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    assert await async_setup_component(hass, "repairs", {})
+    assert await async_setup_component(hass, DOMAIN, {})
+    entry = await migrated(hass)
+    with patch(_HISTORY, return_value=None):
+        async_refresh_profile_review_issue(hass, entry)
+        issue = _issue(hass, entry)
+        assert issue is not None
+        manager = repairs_flow_manager(hass)
+        assert manager is not None
+        form = await manager.async_init(DOMAIN, data={"issue_id": issue.issue_id})
+        assert form["step_id"] == "managed"
+        result = await manager.async_configure(form["flow_id"], {"choice": "keep"})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert WOOSA in entry.data[CONF_PROFILE_REVIEW_KEPT]["apps"]
+
+
+async def test_a_kept_woosa_review_is_not_asked_again_by_a_recommendation(
+    hass: HomeAssistant,
+) -> None:
+    entry = await migrated(hass)
+    with patch(_HISTORY, return_value=None):
+        async_refresh_profile_review_issue(hass, entry)
+        flow, _form = await _open(hass, entry)
+        await flow.async_step_init({"choice": "keep"})
+    # The bed then advertises a QMS name, which several apps share.
+    seen = MagicMock(
+        address=ADDRESS,
+        service_uuids=[SOLACE_SERVICE_UUID],
+        manufacturer_data={},
+        service_data={},
+    )
+    seen.name = "QMS-i06"
+    coord = coordinator()
+    coord.bed_type = BED_TYPE_SOLACE
+    coord.controller.protocol_diagnostics = {}
+    with patch(RECOMMENDATION_HISTORY, return_value=seen), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, entry, ((None, coord),))
+    target = _watches(hass)[f"{ISSUE_PREFIX}{entry.entry_id}_standalone"]
+    assert target.recommendation is not None
+    assert target.recommendation.choices == (WOOSA,)
+    assert ir.async_get(hass).async_get_issue(DOMAIN, target.issue_id) is None
+
+
+def test_a_split_pair_keeps_its_open_woosa_review_over_an_older_keep() -> None:
+    single = {CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_SOLACE}
+    pair = {
+        **single,
+        CONF_PAIR_ID: "pair",
+        CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+        CONF_PAIR_CHILDREN: [
+            {CONF_SIDE: "left", **single},
+            {CONF_SIDE: "right", CONF_ADDRESS: "AA:BB:CC:DD:EE:31", CONF_BED_TYPE: BED_TYPE_SOLACE},
+        ],
+    }
+    mark = profile_review_mark(pair)
+    # Kept before Woosa Sleep was offered, then marked again by the v5 migration.
+    pair[CONF_PROFILE_REVIEW_KEPT] = {"route": mark, "apps": []}
+    pair[CONF_PROFILE_REVIEW_PENDING] = mark
+    target = dict(single)
+    carry_profile_review(pair, target)
+    assert target[CONF_PROFILE_REVIEW_PENDING] == "solace:auto"

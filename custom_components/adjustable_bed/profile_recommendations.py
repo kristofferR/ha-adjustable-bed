@@ -81,6 +81,7 @@ from .profile_review import (
     async_refresh_profile_review_issue,
     choice_label,
     covers_profile_review,
+    kept_profile_choices,
     profile_review_mark,
     related_app_choices,
 )
@@ -489,7 +490,12 @@ class ProfileRecommendationWatch:
             async_clear_profile_review_issue(self.hass, self.entry.entry_id)
         else:
             async_refresh_profile_review_issue(self.hass, self.entry)
-        if recommendation is None or self.dismissed.get(recommendation.rule):
+        if (
+            recommendation is None
+            or self.dismissed.get(recommendation.rule)
+            # Keep on the app review already answered every choice offered here.
+            or set(recommendation.choices) <= kept_profile_choices(self.entry.data)
+        ):
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
         current = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
