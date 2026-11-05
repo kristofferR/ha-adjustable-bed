@@ -1662,54 +1662,6 @@ class SleepNumberController(BedController):
             }
         )
 
-    async def _query_optional_presence_feature_for_side(
-        self,
-        *,
-        side: str,
-        presence_bamkey: str,
-        store_present: Callable[[str, bool], None],
-        read_state: Callable[[str], Any],
-    ) -> None:
-        """Query a presence-gated optional Sleep Number feature for one side."""
-        normalized_side = self._require_side(side)
-        try:
-            present = await self._read_feature_presence(presence_bamkey, side=normalized_side)
-        except BamkeyNotSupportedError:
-            _LOGGER.debug(
-                "Sleep Number optional feature %s on side %s reported as unsupported by the bed",
-                presence_bamkey,
-                normalized_side,
-                exc_info=True,
-            )
-            store_present(normalized_side, False)
-            return
-
-        store_present(normalized_side, present)
-        if not present:
-            return
-
-        try:
-            await read_state(normalized_side)
-        except BamkeyNotSupportedError:
-            _LOGGER.debug(
-                "Sleep Number optional feature %s state read is unsupported on side %s",
-                presence_bamkey,
-                normalized_side,
-                exc_info=True,
-            )
-
-    async def _read_feature_presence(self, bamkey: str, *, side: str | None = None) -> bool:
-        """Read a boolean-like Sleep Number Presence bamkey."""
-        normalized_side = self._require_side(side or self._side)
-        response = await self._send_bamkey_command(
-            bamkey,
-            normalized_side,
-            expected_args=1,
-        )
-        if bamkey == SleepNumberCommands.GET_FOOTWARMING_PRESENCE:
-            return int(response[0]) == 1
-        return self._normalize_presence_flag(response[0])
-
     async def _read_bed_presence_states(self) -> dict[str, str]:
         """Read and publish occupancy state for both sides in one BAMG request."""
         await self._ensure_bed_presence_channel_primed()
@@ -2378,16 +2330,6 @@ class SleepNumberController(BedController):
         if value == "out":
             return False
         return None
-
-    @staticmethod
-    def _normalize_presence_flag(value: str) -> bool:
-        """Normalize a Sleep Number Presence enum value."""
-        normalized = value.strip().lower()
-        if normalized in {"true", "present", "1"}:
-            return True
-        if normalized in {"false", "not_present", "0"}:
-            return False
-        raise ValueError(f"Unsupported Sleep Number presence flag: {value}")
 
     @staticmethod
     def _normalize_sleep_number_setting(value: int) -> int:

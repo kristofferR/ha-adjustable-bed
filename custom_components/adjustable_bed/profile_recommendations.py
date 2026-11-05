@@ -30,6 +30,10 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_CLUSTER018,
+    BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_GOODVIBE,
+    BED_TYPE_HJBED,
     BED_TYPE_KEESON,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
@@ -81,6 +85,10 @@ from .profile_review import (
     related_app_choices,
 )
 from .validators import get_variants_for_bed_type
+
+# These name hints ask the user which companion app they use. They are not
+# competing receiver signatures for an already configured physical device.
+_GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -167,7 +175,7 @@ def _reported_recommendation(
     if (
         detected.bed_type != BED_TYPE_SLEEPYS_BOX25
         or detected.requires_characteristic_check
-        or set(detected.ambiguous_types or ()) - {BED_TYPE_STARCODE_ABM5_4}
+        or set(detected.ambiguous_types or ()) - {BED_TYPE_STARCODE_ABM5_4} - _GMMOTOR_APP_HINTS
     ):
         return None
     # This key changes only for materially different evidence, not releases,
@@ -215,6 +223,11 @@ def recommend_profile(
         return None
     current = bed_type_choice(bed_type, variant if isinstance(variant, str) else None)
     detected = detect_bed_type_detailed(info)
+    if bed_type in _GMMOTOR_APP_HINTS and bed_type in (detected.ambiguous_types or ()):
+        return None  # The user's explicit companion app resolves this shared identity.
+    detected.ambiguous_types = [
+        choice for choice in detected.ambiguous_types or () if choice not in _GMMOTOR_APP_HINTS
+    ] or None
     if detected.bed_type not in SUPPORTED_BED_TYPES or detected.confidence < 0.6:
         return None
     assert detected.bed_type is not None
@@ -251,8 +264,16 @@ def recommend_profile(
             return _variant_review(bed_type, OCTO_VARIANT_STANDARD, OCTO_VARIANT_STAR2)
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
-    if (detected.confidence < 0.9 or detected.ambiguous_types) and not any(
-        signal.startswith(("name:", "manufacturer", "mac:")) for signal in detected.signals
+    receiver_ambiguities = set(detected.ambiguous_types or ()) - {
+        BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_ESHINE_OKIN, BED_TYPE_CLUSTER018,
+    }
+    if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
+        signal.startswith(("name:", "manufacturer", "mac:"))
+        and signal not in (
+            "name:hjbed_app_candidate", "name:goodvibe_app_candidate",
+            "name:eshine_okin_app_candidate", "name:cluster018_app_candidate",
+        )
+        for signal in detected.signals
     ):
         return None
     matches = {detected.bed_type, *(detected.ambiguous_types or ())}
@@ -267,6 +288,9 @@ def recommend_profile(
         return None
     if bed_type in matches and bed_type != detected.bed_type:
         return None  # Detection explicitly accepts the selected alternative.
+    # App-name hints offer an opt-in choice, not a competing receiver signature.
+    # Keep an already selected app above; assess other profiles by receiver evidence.
+    matches = {detected.bed_type, *receiver_ambiguities}
     if variant in (None, VARIANT_AUTO) and (
         LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
         == LEGACY_BED_TYPE_MAPPING.get(detected.bed_type, detected.bed_type)
@@ -307,7 +331,7 @@ def recommend_profile(
         detected.bed_type
         if bed_type != detected.bed_type
         and detected.confidence >= 0.9
-        and not detected.ambiguous_types
+        and not receiver_ambiguities
         and not detected.requires_characteristic_check
         and not apps
         else None

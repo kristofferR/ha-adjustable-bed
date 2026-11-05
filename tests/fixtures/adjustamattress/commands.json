@@ -1,0 +1,1745 @@
+[
+  {
+    "id": "P1-headUp",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 01 00 00 00 00 04"
+  },
+  {
+    "id": "P1-headDown",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 02 00 00 00 00 03"
+  },
+  {
+    "id": "P1-footUp",
+    "protocol": "P1",
+    "action": "footUp",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 04 00 00 00 00 01"
+  },
+  {
+    "id": "P1-footDown",
+    "protocol": "P1",
+    "action": "footDown",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 08 00 00 00 00 FD"
+  },
+  {
+    "id": "P1-unionUp",
+    "protocol": "P1",
+    "action": "unionUp",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 05 00 00 00 00 00"
+  },
+  {
+    "id": "P1-unionDown",
+    "protocol": "P1",
+    "action": "unionDown",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 0A 00 00 00 00 FB"
+  },
+  {
+    "id": "P1-neckTiltUp",
+    "protocol": "P1",
+    "action": "neckTiltUp",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 10 00 00 00 00 F5"
+  },
+  {
+    "id": "P1-neckTiltDown",
+    "protocol": "P1",
+    "action": "neckTiltDown",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 20 00 00 00 00 E5"
+  },
+  {
+    "id": "P1-lumbarUp",
+    "protocol": "P1",
+    "action": "lumbarUp",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 40 00 00 00 00 C5"
+  },
+  {
+    "id": "P1-lumbarDown",
+    "protocol": "P1",
+    "action": "lumbarDown",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 80 00 00 00 00 85"
+  },
+  {
+    "id": "P1-stop",
+    "protocol": "P1",
+    "action": "stop",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 00 00 00 05"
+  },
+  {
+    "id": "P1-zeroGravity",
+    "protocol": "P1",
+    "action": "zeroGravity",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 10 00 00 00 F5"
+  },
+  {
+    "id": "P1-flatPosition",
+    "protocol": "P1",
+    "action": "flatPosition",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 00 08 00 FD"
+  },
+  {
+    "id": "P1-tv",
+    "protocol": "P1",
+    "action": "tv",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 40 00 00 00 C5"
+  },
+  {
+    "id": "P1-m1",
+    "protocol": "P1",
+    "action": "m1",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 10 00 00 F5"
+  },
+  {
+    "id": "P1-lounge",
+    "protocol": "P1",
+    "action": "lounge",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 20 00 00 00 E5"
+  },
+  {
+    "id": "P1-anti",
+    "protocol": "P1",
+    "action": "anti",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 80 00 00 00 85"
+  },
+  {
+    "id": "P1-underbedLighting",
+    "protocol": "P1",
+    "action": "underbedLighting",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 02 00 00 03"
+  },
+  {
+    "id": "P1-liftHead",
+    "protocol": "P1",
+    "action": "liftHead",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 10 00"
+  },
+  {
+    "id": "P1-liftFoot",
+    "protocol": "P1",
+    "action": "liftFoot",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 20 00"
+  },
+  {
+    "id": "P1-liftUp",
+    "protocol": "P1",
+    "action": "liftUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 40 00"
+  },
+  {
+    "id": "P1-liftDown",
+    "protocol": "P1",
+    "action": "liftDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 80 00"
+  },
+  {
+    "id": "P1-massageTimer",
+    "protocol": "P1",
+    "action": "massageTimer",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 02 00 00 00 03"
+  },
+  {
+    "id": "P1-headStrengthAdd",
+    "protocol": "P1",
+    "action": "headStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 08 00 00 00 FD"
+  },
+  {
+    "id": "P1-footStrengthAdd",
+    "protocol": "P1",
+    "action": "footStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 04 00 00 00 01"
+  },
+  {
+    "id": "P1-waveAdd",
+    "protocol": "P1",
+    "action": "waveAdd",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 00 10 00 F5"
+  },
+  {
+    "id": "P1-queryMassage",
+    "protocol": "P1",
+    "action": "queryMassage",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 03 00 00 00 00 02"
+  },
+  {
+    "id": "P1-queryMassageOnce",
+    "protocol": "P1",
+    "action": "queryMassageOnce",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 03 00 00 00 00 02"
+  },
+  {
+    "id": "P1-queryAlarm",
+    "protocol": "P1",
+    "action": "queryAlarm",
+    "inputs": {
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "E2 80 03 00 9A"
+  },
+  {
+    "id": "P1-setAlarm/type0",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 0,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "ED 80 03 07 1E 7F 13 00 00 00 00 00 00 00 00 D8"
+  },
+  {
+    "id": "P1-setAlarm/type9",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 9,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "ED 80 03 07 1E 7F 09 00 00 00 00 00 00 00 00 E2"
+  },
+  {
+    "id": "P1-setAlarm/type17",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 17,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "ED 80 03 07 1E 7F 11 00 00 00 00 00 00 00 00 DA"
+  },
+  {
+    "id": "P1-setAlarm/type19",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 19,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "ED 80 03 07 1E 7F 13 00 00 00 00 00 00 00 00 D8"
+  },
+  {
+    "id": "P1-setAlarm/type255",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 255,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "ED 80 03 07 1E 7F FF 00 00 00 00 00 00 00 00 EC"
+  },
+  {
+    "id": "P1-setCurrentTime",
+    "protocol": "P1",
+    "action": "setCurrentTime",
+    "inputs": {
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "E7 80 01 7E 0B 03 05 22 0C D8"
+  },
+  {
+    "id": "P1-timer10",
+    "protocol": "P1",
+    "action": "timer10",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 00 00 00 05"
+  },
+  {
+    "id": "P1-timer20",
+    "protocol": "P1",
+    "action": "timer20",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 00 00 00 05"
+  },
+  {
+    "id": "P1-timer30",
+    "protocol": "P1",
+    "action": "timer30",
+    "inputs": {},
+    "expected_bytes": "E6 FE 16 00 00 00 00 00 05"
+  },
+  {
+    "id": "P2-headUp",
+    "protocol": "P2",
+    "action": "headUp",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 01 05"
+  },
+  {
+    "id": "P2-headDown",
+    "protocol": "P2",
+    "action": "headDown",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 02 04"
+  },
+  {
+    "id": "P2-footUp",
+    "protocol": "P2",
+    "action": "footUp",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 04 02"
+  },
+  {
+    "id": "P2-footDown",
+    "protocol": "P2",
+    "action": "footDown",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 08 FE"
+  },
+  {
+    "id": "P2-unionUp",
+    "protocol": "P2",
+    "action": "unionUp",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 05 01"
+  },
+  {
+    "id": "P2-unionDown",
+    "protocol": "P2",
+    "action": "unionDown",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 0A FC"
+  },
+  {
+    "id": "P2-neckTiltUp",
+    "protocol": "P2",
+    "action": "neckTiltUp",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 10 F6"
+  },
+  {
+    "id": "P2-neckTiltDown",
+    "protocol": "P2",
+    "action": "neckTiltDown",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 20 E6"
+  },
+  {
+    "id": "P2-lumbarUp",
+    "protocol": "P2",
+    "action": "lumbarUp",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 40 C6"
+  },
+  {
+    "id": "P2-lumbarDown",
+    "protocol": "P2",
+    "action": "lumbarDown",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 80 86"
+  },
+  {
+    "id": "P2-stop",
+    "protocol": "P2",
+    "action": "stop",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 00 00 00 00 06"
+  },
+  {
+    "id": "P2-zeroGravity",
+    "protocol": "P2",
+    "action": "zeroGravity",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 01 04"
+  },
+  {
+    "id": "P2-flatPosition",
+    "protocol": "P2",
+    "action": "flatPosition",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 02 03"
+  },
+  {
+    "id": "P2-tv",
+    "protocol": "P2",
+    "action": "tv",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 04 01"
+  },
+  {
+    "id": "P2-m1",
+    "protocol": "P2",
+    "action": "m1",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 08 FD"
+  },
+  {
+    "id": "P2-lounge",
+    "protocol": "P2",
+    "action": "lounge",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 09 FC"
+  },
+  {
+    "id": "P2-anti",
+    "protocol": "P2",
+    "action": "anti",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 09 FC"
+  },
+  {
+    "id": "P2-liftHead",
+    "protocol": "P2",
+    "action": "liftHead",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 10 00"
+  },
+  {
+    "id": "P2-liftFoot",
+    "protocol": "P2",
+    "action": "liftFoot",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 20 00"
+  },
+  {
+    "id": "P2-liftUp",
+    "protocol": "P2",
+    "action": "liftUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 40 00"
+  },
+  {
+    "id": "P2-liftDown",
+    "protocol": "P2",
+    "action": "liftDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 80 00"
+  },
+  {
+    "id": "P2-headMassageOne",
+    "protocol": "P2",
+    "action": "headMassageOne",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 10 E6"
+  },
+  {
+    "id": "P2-headMassageTwo",
+    "protocol": "P2",
+    "action": "headMassageTwo",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 11 E5"
+  },
+  {
+    "id": "P2-headMassageThree",
+    "protocol": "P2",
+    "action": "headMassageThree",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 12 E4"
+  },
+  {
+    "id": "P2-headMassageFour",
+    "protocol": "P2",
+    "action": "headMassageFour",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 13 E3"
+  },
+  {
+    "id": "P2-footMassageOne",
+    "protocol": "P2",
+    "action": "footMassageOne",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 11 00 00 10 E5"
+  },
+  {
+    "id": "P2-footMassageTwo",
+    "protocol": "P2",
+    "action": "footMassageTwo",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 11 00 00 11 E4"
+  },
+  {
+    "id": "P2-footMassageThree",
+    "protocol": "P2",
+    "action": "footMassageThree",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 11 00 00 12 E3"
+  },
+  {
+    "id": "P2-footMassageFour",
+    "protocol": "P2",
+    "action": "footMassageFour",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 11 00 00 13 E2"
+  },
+  {
+    "id": "P2-WaveOne",
+    "protocol": "P2",
+    "action": "WaveOne",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 20 D6"
+  },
+  {
+    "id": "P2-waveTwo",
+    "protocol": "P2",
+    "action": "waveTwo",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 21 D5"
+  },
+  {
+    "id": "P2-waveThree",
+    "protocol": "P2",
+    "action": "waveThree",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 22 D4"
+  },
+  {
+    "id": "P2-waveFour",
+    "protocol": "P2",
+    "action": "waveFour",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 10 00 00 23 D3"
+  },
+  {
+    "id": "P2-massageTimer",
+    "protocol": "P2",
+    "action": "massageTimer",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "P2-headStrengthAdd",
+    "protocol": "P2",
+    "action": "headStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 08 00 00"
+  },
+  {
+    "id": "P2-footStrengthAdd",
+    "protocol": "P2",
+    "action": "footStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 04 00 00"
+  },
+  {
+    "id": "P2-waveAdd",
+    "protocol": "P2",
+    "action": "waveAdd",
+    "inputs": {},
+    "expected_bytes": "05 02 10 00 00 00 00"
+  },
+  {
+    "id": "P2-timer10",
+    "protocol": "P2",
+    "action": "timer10",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 41 C4"
+  },
+  {
+    "id": "P2-timer20",
+    "protocol": "P2",
+    "action": "timer20",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 42 C3"
+  },
+  {
+    "id": "P2-timer30",
+    "protocol": "P2",
+    "action": "timer30",
+    "inputs": {},
+    "expected_bytes": "E5 FE 16 01 00 00 43 C2"
+  },
+  {
+    "id": "P2-queryAlarm",
+    "protocol": "P2",
+    "action": "queryAlarm",
+    "inputs": {
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "E2 FE 16 0C 22 05 02 D4"
+  },
+  {
+    "id": "P2-setAlarm/type0",
+    "protocol": "P2",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 0,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "EB FE 16 0C 22 05 1E 07 02 7F FF FF FF 2A"
+  },
+  {
+    "id": "P2-setAlarm/type9",
+    "protocol": "P2",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 9,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "EB FE 16 0C 22 05 1E 07 02 7F 11 11 FF 06"
+  },
+  {
+    "id": "P2-setAlarm/type17",
+    "protocol": "P2",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 17,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "EB FE 16 0C 22 05 1E 07 02 7F FF FF 08 21"
+  },
+  {
+    "id": "P2-setAlarm/type19",
+    "protocol": "P2",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 19,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "EB FE 16 0C 22 05 1E 07 02 7F FF FF 09 20"
+  },
+  {
+    "id": "P2-setAlarm/type255",
+    "protocol": "P2",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 255,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "EB FE 16 0C 22 05 1E 07 02 7F FF FF FF 2A"
+  },
+  {
+    "id": "P3-headUp",
+    "protocol": "P3",
+    "action": "headUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 01 00"
+  },
+  {
+    "id": "P3-headDown",
+    "protocol": "P3",
+    "action": "headDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 02 00"
+  },
+  {
+    "id": "P3-footUp",
+    "protocol": "P3",
+    "action": "footUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 04 00"
+  },
+  {
+    "id": "P3-footDown",
+    "protocol": "P3",
+    "action": "footDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 08 00"
+  },
+  {
+    "id": "P3-unionUp",
+    "protocol": "P3",
+    "action": "unionUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 05 00"
+  },
+  {
+    "id": "P3-unionDown",
+    "protocol": "P3",
+    "action": "unionDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 0A 00"
+  },
+  {
+    "id": "P3-neckTiltUp",
+    "protocol": "P3",
+    "action": "neckTiltUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 10 00"
+  },
+  {
+    "id": "P3-neckTiltDown",
+    "protocol": "P3",
+    "action": "neckTiltDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 20 00"
+  },
+  {
+    "id": "P3-lumbarUp",
+    "protocol": "P3",
+    "action": "lumbarUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 40 00"
+  },
+  {
+    "id": "P3-lumbarDown",
+    "protocol": "P3",
+    "action": "lumbarDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 80 00"
+  },
+  {
+    "id": "P3-stop",
+    "protocol": "P3",
+    "action": "stop",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 00 00"
+  },
+  {
+    "id": "P3-zeroGravity",
+    "protocol": "P3",
+    "action": "zeroGravity",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 10 00 00"
+  },
+  {
+    "id": "P3-flatPosition",
+    "protocol": "P3",
+    "action": "flatPosition",
+    "inputs": {},
+    "expected_bytes": "05 02 08 00 00 00 00"
+  },
+  {
+    "id": "P3-tv",
+    "protocol": "P3",
+    "action": "tv",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 40 00 00"
+  },
+  {
+    "id": "P3-m1",
+    "protocol": "P3",
+    "action": "m1",
+    "inputs": {},
+    "expected_bytes": "05 02 00 01 00 00 00"
+  },
+  {
+    "id": "P3-lounge",
+    "protocol": "P3",
+    "action": "lounge",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 20 00 00"
+  },
+  {
+    "id": "P3-anti",
+    "protocol": "P3",
+    "action": "anti",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 80 00 00"
+  },
+  {
+    "id": "P3-underbedLighting",
+    "protocol": "P3",
+    "action": "underbedLighting",
+    "inputs": {},
+    "expected_bytes": "05 02 00 02 00 00 00"
+  },
+  {
+    "id": "P3-liftHead",
+    "protocol": "P3",
+    "action": "liftHead",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 10 00"
+  },
+  {
+    "id": "P3-liftFoot",
+    "protocol": "P3",
+    "action": "liftFoot",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 20 00"
+  },
+  {
+    "id": "P3-liftUp",
+    "protocol": "P3",
+    "action": "liftUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 40 00"
+  },
+  {
+    "id": "P3-liftDown",
+    "protocol": "P3",
+    "action": "liftDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 80 00"
+  },
+  {
+    "id": "P3-massageTimer",
+    "protocol": "P3",
+    "action": "massageTimer",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "P3-headStrengthAdd",
+    "protocol": "P3",
+    "action": "headStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 08 00 00"
+  },
+  {
+    "id": "P3-footStrengthAdd",
+    "protocol": "P3",
+    "action": "footStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 04 00 00"
+  },
+  {
+    "id": "P3-waveAdd",
+    "protocol": "P3",
+    "action": "waveAdd",
+    "inputs": {},
+    "expected_bytes": "05 02 10 00 00 00 00"
+  },
+  {
+    "id": "P3-queryMassage",
+    "protocol": "P3",
+    "action": "queryMassage",
+    "inputs": {},
+    "expected_bytes": "00 B0"
+  },
+  {
+    "id": "P3-queryMassageOnce",
+    "protocol": "P3",
+    "action": "queryMassageOnce",
+    "inputs": {},
+    "expected_bytes": "00 B0"
+  },
+  {
+    "id": "P3-queryAlarm",
+    "protocol": "P3",
+    "action": "queryAlarm",
+    "inputs": {
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "00 C0"
+  },
+  {
+    "id": "P3-setAlarm/type0",
+    "protocol": "P3",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 0,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "07 05 7F 06 07 1E 00 01 01"
+  },
+  {
+    "id": "P3-setAlarm/type9",
+    "protocol": "P3",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 9,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "07 05 7F 08 07 1E 00 01 01"
+  },
+  {
+    "id": "P3-setAlarm/type17",
+    "protocol": "P3",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 17,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "07 05 7F 05 07 1E 00 01 01"
+  },
+  {
+    "id": "P3-setAlarm/type19",
+    "protocol": "P3",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 19,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "07 05 7F 06 07 1E 00 01 01"
+  },
+  {
+    "id": "P3-setAlarm/type255",
+    "protocol": "P3",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 255,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "07 05 7F 06 07 1E 00 01 01"
+  },
+  {
+    "id": "P3-setCurrentTime",
+    "protocol": "P3",
+    "action": "setCurrentTime",
+    "inputs": {
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "07 04 1A 0B 03 02 05 22 0C"
+  },
+  {
+    "id": "P3-timer10",
+    "protocol": "P3",
+    "action": "timer10",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "P3-timer20",
+    "protocol": "P3",
+    "action": "timer20",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "P3-timer30",
+    "protocol": "P3",
+    "action": "timer30",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "P4-headUp",
+    "protocol": "P4",
+    "action": "headUp",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 01 00 00"
+  },
+  {
+    "id": "P4-headDown",
+    "protocol": "P4",
+    "action": "headDown",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 02 00 00"
+  },
+  {
+    "id": "P4-footUp",
+    "protocol": "P4",
+    "action": "footUp",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 04 00 00"
+  },
+  {
+    "id": "P4-footDown",
+    "protocol": "P4",
+    "action": "footDown",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 08 00 00"
+  },
+  {
+    "id": "P4-unionUp",
+    "protocol": "P4",
+    "action": "unionUp",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 05 00 00"
+  },
+  {
+    "id": "P4-unionDown",
+    "protocol": "P4",
+    "action": "unionDown",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 0A 00 00"
+  },
+  {
+    "id": "P4-neckTiltUp",
+    "protocol": "P4",
+    "action": "neckTiltUp",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 10 00 00"
+  },
+  {
+    "id": "P4-neckTiltDown",
+    "protocol": "P4",
+    "action": "neckTiltDown",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 20 00 00"
+  },
+  {
+    "id": "P4-lumbarUp",
+    "protocol": "P4",
+    "action": "lumbarUp",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 40 00 00"
+  },
+  {
+    "id": "P4-lumbarDown",
+    "protocol": "P4",
+    "action": "lumbarDown",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 80 00 00"
+  },
+  {
+    "id": "P4-stop",
+    "protocol": "P4",
+    "action": "stop",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 00 00 00 00"
+  },
+  {
+    "id": "P4-zeroGravity",
+    "protocol": "P4",
+    "action": "zeroGravity",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 10 00 00 00"
+  },
+  {
+    "id": "P4-flatPosition",
+    "protocol": "P4",
+    "action": "flatPosition",
+    "inputs": {},
+    "expected_bytes": "06 02 08 00 00 00 00 00"
+  },
+  {
+    "id": "P4-tv",
+    "protocol": "P4",
+    "action": "tv",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 40 00 00 00"
+  },
+  {
+    "id": "P4-m1",
+    "protocol": "P4",
+    "action": "m1",
+    "inputs": {},
+    "expected_bytes": "06 02 00 01 00 00 00 00"
+  },
+  {
+    "id": "P4-lounge",
+    "protocol": "P4",
+    "action": "lounge",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 20 00 00 00"
+  },
+  {
+    "id": "P4-anti",
+    "protocol": "P4",
+    "action": "anti",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 80 00 00 00"
+  },
+  {
+    "id": "P4-underbedLighting",
+    "protocol": "P4",
+    "action": "underbedLighting",
+    "inputs": {},
+    "expected_bytes": "06 02 00 02 00 00 00 00"
+  },
+  {
+    "id": "P4-liftHead",
+    "protocol": "P4",
+    "action": "liftHead",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 10 00"
+  },
+  {
+    "id": "P4-liftFoot",
+    "protocol": "P4",
+    "action": "liftFoot",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 20 00"
+  },
+  {
+    "id": "P4-liftUp",
+    "protocol": "P4",
+    "action": "liftUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 40 00"
+  },
+  {
+    "id": "P4-liftDown",
+    "protocol": "P4",
+    "action": "liftDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 80 00"
+  },
+  {
+    "id": "P4-massageTimer",
+    "protocol": "P4",
+    "action": "massageTimer",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 02 00 00 00"
+  },
+  {
+    "id": "P4-headStrengthAdd",
+    "protocol": "P4",
+    "action": "headStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 08 00 00 00"
+  },
+  {
+    "id": "P4-footStrengthAdd",
+    "protocol": "P4",
+    "action": "footStrengthAdd",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 04 00 00 00"
+  },
+  {
+    "id": "P4-waveAdd",
+    "protocol": "P4",
+    "action": "waveAdd",
+    "inputs": {},
+    "expected_bytes": "05 02 10 00 00 00 00"
+  },
+  {
+    "id": "P4-queryMassage",
+    "protocol": "P4",
+    "action": "queryMassage",
+    "inputs": {},
+    "expected_bytes": "00 B0"
+  },
+  {
+    "id": "P4-queryMassageOnce",
+    "protocol": "P4",
+    "action": "queryMassageOnce",
+    "inputs": {},
+    "expected_bytes": "00 B0"
+  },
+  {
+    "id": "P4-queryAlarm",
+    "protocol": "P4",
+    "action": "queryAlarm",
+    "inputs": {
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "00 C0"
+  },
+  {
+    "id": "P4-setAlarm/type0",
+    "protocol": "P4",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 0,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "08 05 7F 05 07 1E 00 01 00 00"
+  },
+  {
+    "id": "P4-setAlarm/type9",
+    "protocol": "P4",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 9,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "08 05 7F 08 07 1E 00 01 00 00"
+  },
+  {
+    "id": "P4-setAlarm/type17",
+    "protocol": "P4",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 17,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "08 05 7F 05 07 1E 00 01 00 00"
+  },
+  {
+    "id": "P4-setAlarm/type19",
+    "protocol": "P4",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 19,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "08 05 7F 06 07 1E 00 01 00 00"
+  },
+  {
+    "id": "P4-setAlarm/type255",
+    "protocol": "P4",
+    "action": "setAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 127,
+      "alarm_type": 255,
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "08 05 7F 05 07 1E 00 01 00 00"
+  },
+  {
+    "id": "P4-setCurrentTime",
+    "protocol": "P4",
+    "action": "setCurrentTime",
+    "inputs": {
+      "parts": [
+        0,
+        0,
+        12,
+        34,
+        5,
+        3,
+        2,
+        11,
+        2026
+      ]
+    },
+    "expected_bytes": "07 04 7E 0A 03 02 05 22 0C"
+  },
+  {
+    "id": "P4-queryControlBoxStatus",
+    "protocol": "P4",
+    "action": "queryControlBoxStatus",
+    "inputs": {},
+    "expected_bytes": "00 B0"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo0-strength0",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": false,
+      "strength_index": 0
+    },
+    "expected_bytes": "05 0B 00 01 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo0-strength1",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": false,
+      "strength_index": 1
+    },
+    "expected_bytes": "05 0B 00 03 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo0-strength2",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": false,
+      "strength_index": 2
+    },
+    "expected_bytes": "05 0B 00 06 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo0-strength3",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": false,
+      "strength_index": 3
+    },
+    "expected_bytes": "05 0B 00 01 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo1-strength0",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": true,
+      "strength_index": 0
+    },
+    "expected_bytes": "05 0B 02 01 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo1-strength1",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": true,
+      "strength_index": 1
+    },
+    "expected_bytes": "05 0B 02 03 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo1-strength2",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": true,
+      "strength_index": 2
+    },
+    "expected_bytes": "05 0B 02 06 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled0-demo1-strength3",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": false,
+      "demonstration": true,
+      "strength_index": 3
+    },
+    "expected_bytes": "05 0B 02 01 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo0-strength0",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": false,
+      "strength_index": 0
+    },
+    "expected_bytes": "05 0B 01 01 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo0-strength1",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": false,
+      "strength_index": 1
+    },
+    "expected_bytes": "05 0B 01 03 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo0-strength2",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": false,
+      "strength_index": 2
+    },
+    "expected_bytes": "05 0B 01 06 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo0-strength3",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": false,
+      "strength_index": 3
+    },
+    "expected_bytes": "05 0B 01 01 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo1-strength0",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": true,
+      "strength_index": 0
+    },
+    "expected_bytes": "05 0B 02 01 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo1-strength1",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": true,
+      "strength_index": 1
+    },
+    "expected_bytes": "05 0B 02 03 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo1-strength2",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": true,
+      "strength_index": 2
+    },
+    "expected_bytes": "05 0B 02 06 01 23 00"
+  },
+  {
+    "id": "P4-_sendAntiSnoreCommand/enabled1-demo1-strength3",
+    "protocol": "P4",
+    "action": "_sendAntiSnoreCommand",
+    "inputs": {
+      "enabled": true,
+      "demonstration": true,
+      "strength_index": 3
+    },
+    "expected_bytes": "05 0B 02 01 01 23 00"
+  },
+  {
+    "id": "P4-toggleSleeping/False",
+    "protocol": "P4",
+    "action": "toggleSleeping",
+    "inputs": {
+      "sleeping": false
+    },
+    "expected_bytes": "01 B5 01"
+  },
+  {
+    "id": "P4-toggleSleeping/True",
+    "protocol": "P4",
+    "action": "toggleSleeping",
+    "inputs": {
+      "sleeping": true
+    },
+    "expected_bytes": "01 B5 00"
+  },
+  {
+    "id": "P4-timer10",
+    "protocol": "P4",
+    "action": "timer10",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 02 00 00 00"
+  },
+  {
+    "id": "P4-timer20",
+    "protocol": "P4",
+    "action": "timer20",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 02 00 00 00"
+  },
+  {
+    "id": "P4-timer30",
+    "protocol": "P4",
+    "action": "timer30",
+    "inputs": {},
+    "expected_bytes": "06 02 00 00 02 00 00 00"
+  },
+  {
+    "id": "P2-underbedLighting",
+    "protocol": "P2",
+    "action": "underbedLighting",
+    "inputs": {
+      "retained_frame": [
+        229,
+        254,
+        22,
+        0,
+        0,
+        0,
+        0,
+        6
+      ]
+    },
+    "expected_bytes": "E5 FE 16 00 00 00 00 06"
+  }
+]

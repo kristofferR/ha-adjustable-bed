@@ -1,61 +1,67 @@
 # OKIN Smart Remote / RF ECO BT Single Actuator
 
-**Status:** Supported
+**Status:** ✅ Tested (Supported; reporter hardware in [issue #344](https://github.com/kristofferR/ha-adjustable-bed/issues/344))
 
-This profile is for the Elda BTH / RF ECO BT / MEGAMAT setup from
-[issue #344](https://github.com/kristofferR/ha-adjustable-bed/issues/344). It is
-not a normal adjustable bed profile: it exposes one cover entity named `Stair`
-for a moving staircase actuator.
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-The [ELDA-BTH product page](https://elda-treppen.de/produkt/bth/) describes the
-system as a semi-automatic loft stair with a quiet maintenance-free spindle
-motor, gas spring support, switch and/or radio remote control, and electrical
-emergency lowering.
+> [!WARNING]
+> This controls a moving staircase, not a bed. It is not a normal adjustable
+> bed profile: it exposes one cover entity named `Stair` for a moving staircase
+> actuator. See [Safety](#safety).
+
+## Known Models
+
+- Elda BTH / RF ECO BT / MEGAMAT setup from issue #344
+- The [ELDA-BTH product page](https://elda-treppen.de/produkt/bth/) describes
+  the system as a semi-automatic loft stair with a quiet maintenance-free
+  spindle motor, gas spring support, switch and/or radio remote control, and
+  electrical emergency lowering.
+- Device Information model `MEGAMAT MBZ`; advertises as `OKIN-050226`
+
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19) | `com.okin.okinsmartcomfort` |
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Stair actuator cover | Yes |
-| Stop | Yes |
-| Presets | No |
-| Memory buttons | No |
-| Lights | No |
-| Massage | No |
-| Position feedback | No |
+| Stair actuator cover | ✅ |
+| Stop | ✅ (ends the held command; no stop frame) |
+| Presets | ❌ |
+| Memory buttons | ❌ |
+| Lights | ❌ |
+| Massage | ❌ |
+| Position feedback | ❌ |
 
-## Setup
+## Protocol Details
+
+**Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b`
+**Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b` (write with response)
+**Format:** six-byte `04 02` + 32-bit big-endian keycode
+
+- The accepted clean-room audit of `com.okin.okinsmartcomfort` 2.2.0 (19)
+  proves the shipped offline two-axis fallback table's M2 commands and
+  six-byte frame.
+- The staircase retains its independently reported M2 actuator mapping from
+  issue #344.
+- The integration requests a Bluetooth bond for this bed type, as it does for
+  Okin UUID beds.
+
+## Detection / Setup
 
 Use manual setup and choose **OKIN Smart Remote / RF ECO BT single actuator**.
 
-Choose this profile only for a single moving actuator. RF ECO BT is also used
-as the receiver for adjustable beds. For a bed controlled by the FurniMove app,
-choose **[FurniMove / OKIN Smart Remote](furnimove.md)** and select its exact
-handset ID. For another app, use that app’s documented integration profile.
-Legacy RF ECO BT entries receive an offline layout repair, including entries
-with a configured count of one. Explicit staircase confirmation prevents the
-repair from returning while preserving the existing Stair entity.
-
-### Connection behavior
-
-Home Assistant keeps this staircase profile's BLE connection open, including
-when **Disconnect After Command** is enabled. In the reporter's
-[4.1.1 test](https://github.com/kristofferR/ha-adjustable-bed/issues/344#issuecomment-6036101893),
-the normal 40-second idle disconnect left the receiver advertising but unable
-to reconnect, with GATT timeouts. Retaining the connection worked reliably,
-including after a Home Assistant restart. This connection policy applies to
-the staircase profile; a shared RF ECO BT receiver label does not establish the
-same requirement for other profiles.
-
-Keeping the link open occupies a Bluetooth connection slot and may prevent a
-companion app from connecting. After an unexpected drop, Home Assistant schedules
-one automatic reconnect operation using the configured connection profile's
-bounded retry budget. Recovery sends no movement command. If it fails, the next
-command or **Connect** action can try again; no background retry loop runs.
-Manual Disconnect remains available and cancels both scheduled and in-progress
-automatic recovery. The receiver may still require a power cycle if GATT
-timeouts recur; keeping the link
-open is a tested workaround, not an established explanation of those timeouts.
+- Choose this profile only for a single moving actuator. RF ECO BT is also used
+  as the receiver for adjustable beds.
+- For a bed controlled by the FurniMove app, choose
+  **[FurniMove / OKIN Smart Remote](furnimove.md)** and select its exact handset
+  ID. For another app, use that app's documented integration profile.
+- Legacy RF ECO BT entries receive an offline layout repair, including entries
+  with a configured count of one. Explicit staircase confirmation prevents the
+  repair from returning while preserving the existing Stair entity.
 
 ### Device identification
 
@@ -78,48 +84,77 @@ Full OKIMAT beds and RF ECO BT bed receivers expose the **same** OKIN write +
 CSS GATT signature as this stair profile. The GATT signature alone is therefore
 not enough to choose a topology. Confirmed Device Information models include:
 
-- `MEGAMAT MBZ`: the single-actuator ELDA staircase from issue #344
-- `OKIMAT 4 IPS/M`: the multi-motor Lattoflex bed from issue #406
-- `RF eco BT`: a two-motor bed receiver using RF-TOPLINE handset `82620`, also
-  reported in issue #344
+| Model | Device |
+|---|---|
+| `MEGAMAT MBZ` | The single-actuator ELDA staircase from issue #344 |
+| `OKIMAT 4 IPS/M` | The multi-motor Lattoflex bed from issue #406 |
+| `RF eco BT` | A two-motor bed receiver using RF-TOPLINE handset `82620`, also reported in issue #344 |
 
-The exact `MEGAMAT MBZ` model remains the stronger staircase signal. For other
-shared-GATT receivers, selecting a valid handset code explicitly under the
-Okin UUID profile is stronger evidence than the generic receiver identity and
-keeps the multi-motor controller active.
+- The exact `MEGAMAT MBZ` model remains the stronger staircase signal.
+- For other shared-GATT receivers, selecting a valid handset code explicitly
+  under the Okin UUID profile is stronger evidence than the generic receiver
+  identity and keeps the multi-motor controller active.
+- Generic `OKIN-*` devices remain ambiguous because multiple unrelated OKIN
+  protocols use that naming pattern.
 
-Generic `OKIN-*` devices remain ambiguous because multiple unrelated OKIN
-protocols use that naming pattern.
+## Commands
 
-## Protocol
+| Action | Packet | Description |
+|--------|--------|-------------|
+| Open / up | `04 02 00 00 00 01` | M2 out |
+| Close / down | `04 02 00 00 00 02` | M2 in |
+| Stop / release | End held-command refresh, no extra frame | |
 
-The accepted clean-room audit of `com.okin.okinsmartcomfort` 2.2.0 (19) proves
-the shipped offline two-axis fallback table's M2 commands and six-byte frame.
-The staircase retains its independently reported M2 actuator mapping from
-issue #344. The generic zero-valued frame is not a valid staircase STOP: the
-reporter found it switched a light on, while ending refresh stopped motion.
-The integration therefore sends only the held direction and ends its cancellable
-refresh on release. It does not fabricate a zero command.
+The generic zero-valued frame is not a valid staircase STOP: the reporter found
+it switched a light on, while ending refresh stopped motion. The integration
+therefore sends only the held direction and ends its cancellable refresh on
+release. It does not fabricate a zero command.
 
-| Action | Packet |
-|--------|--------|
-| Open / up | `04 02 00 00 00 01` |
-| Close / down | `04 02 00 00 00 02` |
-| Stop / release | End held-command refresh, no extra frame |
+## Command Timing
 
-Direction refresh uses the app's 100 ms interval with the configured bounded
-pulse count. Cancellation always clears the held motor state. An explicit stop
-ends the running command; it sends no unsupported opcode.
+- Direction refresh uses the app's 100 ms interval with the configured bounded
+  pulse count.
+- Cancellation always clears the held motor state.
+- An explicit stop ends the running command; it sends no unsupported opcode.
+
+## Connection behavior
+
+Home Assistant keeps this staircase profile's BLE connection open, including
+when **Disconnect After Command** is enabled.
+
+- In the reporter's
+  [4.1.1 test](https://github.com/kristofferR/ha-adjustable-bed/issues/344#issuecomment-6036101893),
+  the normal 40-second idle disconnect left the receiver advertising but unable
+  to reconnect, with GATT timeouts. Retaining the connection worked reliably,
+  including after a Home Assistant restart.
+- The FurniMove profile applies the same policy when the receiver reports the
+  `RF eco BT` model and a connect to it has timed out or aborted, after a bed
+  receiver showed the same reconnect failures
+  ([#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)). Other
+  profiles are unchanged.
+- Keeping the link open occupies a Bluetooth connection slot and may prevent a
+  companion app from connecting.
+- After an unexpected drop, Home Assistant schedules one automatic reconnect
+  operation using the configured connection profile's bounded retry budget.
+  Recovery sends no movement command. If it fails, the next command or
+  **Connect** action can try again; no background retry loop runs.
+- Manual Disconnect remains available and cancels both scheduled and
+  in-progress automatic recovery.
+- The receiver may still require a power cycle if GATT timeouts recur; keeping
+  the link open is a tested workaround, not an established explanation of
+  those timeouts.
 
 ## Safety
 
 This controls a moving staircase, not a bed. Automations should only run where
 motion is safe, visible, and supervised.
 
-## Follow-up
+## Notes
+
+### Follow-up
 
 If M2 is not the correct actuator channel for a single-actuator installation, a
 future follow-up may need the reporter's OKIN Smart Remote ID or QR contents to
 map the actual channel. Do not add M3, reversed, DOT, or RF-gateway variants to
-the stair profile without new evidence. Beds using FurniMove belong on its explicit app profile with their selected
-handset ID.
+the stair profile without new evidence. Beds using FurniMove belong on its
+explicit app profile with their selected handset ID.

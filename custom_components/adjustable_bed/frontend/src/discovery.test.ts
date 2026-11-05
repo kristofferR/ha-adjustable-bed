@@ -9,6 +9,7 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
+import { heldButtonMotor } from "./hold";
 import type { EntityRegistryDisplayEntry, HomeAssistant } from "./types";
 
 function entry(
@@ -34,16 +35,252 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   };
 }
 
+test("GM product controls and raw session state stay with their physical device", () => {
+  const hass = hassWith([
+    entry("button.gm_head", "remote_action", "bed"),
+    entry("sensor.gm_state", "gmmotor_state", "bed"),
+    entry("sensor.gm_sleep", "gmmotor_sleep_state", "module"),
+  ]);
+  hass.states["button.gm_head"] = {
+    entity_id: "button.gm_head", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "gm_0", hold_start_delay_ms: 100, hold_release_delay_ms: 0 },
+  };
+  const bed = bedEntitiesForDevice(hass, "bed");
+  expect(bed.utility).toEqual(["button.gm_head"]);
+  expect(bed.utilityStates).toEqual(["sensor.gm_state"]);
+  expect(bed.motors).toEqual([]);
+  expect(heldButtonMotor(hass, bed.utility[0])?.heldControl?.control).toBe("gm_0");
+  expect(bedEntitiesForDevice(hass, "module").utilityStates).toEqual(["sensor.gm_sleep"]);
+});
+
 test("paired hold routing comes from backend metadata, not translated motor names", () => {
   const hass = hassWith([entry("button.pair_head_up", "head_up", "pair")]);
   hass.states["button.pair_head_up"] = {
     entity_id: "button.pair_head_up", state: "unknown", last_changed: "", last_updated: "",
-    attributes: { paired_hold_motor: "back" },
+    attributes: { paired_hold_motor: "back", paired_hold_side: "both" },
   };
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove)
-    .toEqual({ deviceId: "pair", motor: "back" });
+    .toEqual({ deviceId: "pair", motor: "back", side: "both" });
   delete hass.states["button.pair_head_up"].attributes.paired_hold_motor;
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove).toBeUndefined();
+});
+
+test("standalone held motor metadata selects the bounded timed action", () => {
+  const hass = hassWith([entry("button.back_up", "back_up")]);
+  hass.states["button.back_up"] = {
+    entity_id: "button.back_up", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "back_up", hold_start_delay_ms: 250, hold_release_delay_ms: 100 },
+  };
+  expect(bedEntitiesForDevice(hass, "dev1").motors[0].timedMove)
+    .toEqual({ deviceId: "dev1", motor: "back" });
+});
+
+test("cover hold metadata stays attached to the selected raw Part motor", () => {
+  const hass = hassWith([entry("cover.part_1", "starcode_m1x12_part_1", "m1x12")]);
+  hass.states["cover.part_1"] = {
+    entity_id: "cover.part_1", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      held_control_up: "part_1_up",
+      held_control_down: "part_1_down",
+      held_stop_scope: "side",
+      hold_start_delay_ms: 100,
+      hold_release_delay_ms: 100,
+    },
+  };
+
+  expect(bedEntitiesForDevice(hass, "m1x12").motors).toEqual([{
+    key: "starcode_m1x12_part_1",
+    cover: "cover.part_1",
+    coverStopScope: "side",
+    holdEntityId: "cover.part_1",
+    deviceId: "m1x12",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  }]);
+});
+
+test("paired M1X12 and explicit ELEVATE motor buttons expose directional holds", () => {
+  const rows = [
+    ["button.part_1_up", "starcode_m1x12_part_1_up", "part_1_up"],
+    ["button.part_1_down", "starcode_m1x12_part_1_down", "part_1_down"],
+    ["button.actuator_1_up", "elevate_actuator_1_up", "actuator_1_up"],
+    ["button.actuator_1_down", "elevate_actuator_1_down", "actuator_1_down"],
+  ] as const;
+  const hass = hassWith(rows.map(([id, key]) => entry(id, key, "pair")));
+  for (const [id, _key, control] of rows) {
+    hass.states[id] = {
+      entity_id: id,
+      state: "unknown",
+      last_changed: "",
+      last_updated: "",
+      attributes: {
+        held_control: control,
+        hold_start_delay_ms: 100,
+        hold_release_delay_ms: 100,
+      },
+    };
+  }
+
+  const bed = bedEntitiesForDevice(hass, "pair");
+  expect(bed.utility).toEqual([]);
+  expect(bed.motors).toHaveLength(2);
+  expect(bed.motors.find((item) => item.key === "starcode_m1x12_part_1")).toMatchObject({
+    up: "button.part_1_up",
+    down: "button.part_1_down",
+    deviceId: "pair",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  });
+  expect(bed.motors.find((item) => item.key === "elevate_actuator_1")).toMatchObject({
+    up: "button.actuator_1_up",
+    down: "button.actuator_1_down",
+    deviceId: "pair",
+    heldControls: {
+      up: { control: "actuator_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "actuator_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  });
+});
+
+test("legacy paired motor buttons remain finite without hold metadata", () => {
+  const hass = hassWith([
+    entry("button.back_up", "back_up", "pair"),
+    entry("button.back_down", "back_down", "pair"),
+  ]);
+
+  expect(bedEntitiesForDevice(hass, "pair").motors).toEqual([
+    { key: "back", up: "button.back_up", down: "button.back_down" },
+  ]);
+});
+
+test("combined ELEVATE buttons without a shared hold stay in finite motor slots", () => {
+  const hass = hassWith([
+    entry("button.elevate_actuator_1_up", "elevate_actuator_1_up", "pair"),
+    entry("button.elevate_actuator_1_down", "elevate_actuator_1_down", "pair"),
+  ]);
+
+  expect(bedEntitiesForDevice(hass, "pair").motors).toEqual([{
+    key: "elevate_actuator_1",
+    up: "button.elevate_actuator_1_up",
+    down: "button.elevate_actuator_1_down",
+  }]);
+});
+
+test("M1X12 telemetry and controls stay in side-owned existing card rows", () => {
+  const entries = [
+    entry("cover.part_1_left", "starcode_m1x12_part_1", "m1-side"),
+    entry("sensor.part_1_position_left", "starcode_m1x12_part_1_position", "m1-side"),
+    entry("number.brightness_left", "starcode_m1x12_brightness", "m1-side"),
+    entry("sensor.alarm_0_left", "starcode_m1x12_alarm_0", "m1-side"),
+    entry("sensor.light_brightness_left", "starcode_m1x12_light_brightness", "m1-side"),
+    entry("sensor.sonic_mode_left", "starcode_m1x12_sonic_mode", "m1-side"),
+    entry("binary_sensor.light_on_left", "starcode_m1x12_light_on", "m1-side"),
+    entry("binary_sensor.sonic_active_left", "starcode_m1x12_sonic_active", "m1-side"),
+    entry("binary_sensor.motor_stopped_left", "starcode_m1x12_motor_stopped", "m1-side"),
+    entry("button.wave_up_left", "starcode_m1x12_hold_massage_wave_up", "m1-side"),
+  ];
+  const hass = hassWith(entries);
+  for (const e of entries) {
+    hass.states[e.entity_id] = {
+      entity_id: e.entity_id, state: "unknown", last_changed: "", last_updated: "",
+      attributes: { bed_side: "left" },
+    };
+  }
+  Object.assign(hass.states["cover.part_1_left"].attributes, {
+    held_control_up: "part_1_up",
+    held_control_down: "part_1_down",
+    held_stop_scope: "side",
+    hold_start_delay_ms: 100,
+    hold_release_delay_ms: 100,
+  });
+
+  const left = bedEntitiesForDevice(hass, "m1-side", "left");
+  expect(left.motors).toEqual([{
+    key: "starcode_m1x12_part_1",
+    cover: "cover.part_1_left",
+    coverStopScope: "side",
+    holdEntityId: "cover.part_1_left",
+    deviceId: "m1-side",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+    position: "sensor.part_1_position_left",
+  }]);
+  expect(left.lights.level).toBe("number.brightness_left");
+  expect(left.lights.state).toBe("binary_sensor.light_on_left");
+  expect(left.lights.states).toEqual(["sensor.light_brightness_left"]);
+  expect(left.massage.states).toEqual([
+    "sensor.sonic_mode_left", "binary_sensor.sonic_active_left",
+  ]);
+  expect(left.massage.buttons).toEqual(["button.wave_up_left"]);
+  expect(left.utilityStates).toEqual([
+    "sensor.alarm_0_left", "binary_sensor.motor_stopped_left",
+  ]);
+  expect(bedEntitiesForDevice(hass, "m1-side", "right").motors).toEqual([]);
+});
+
+test("M1X12 held massage actions and setup controls land in their card sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.wave_up", "starcode_m1x12_hold_massage_wave_up", "m1x12"),
+    entry("button.head_down", "starcode_m1x12_hold_massage_head_down", "m1x12"),
+    entry("button.memory_8", "starcode_m1x12_memory_8", "m1x12"),
+    entry("button.query", "starcode_m1x12_query", "m1x12"),
+  ]), "m1x12");
+  expect(bed.massage.buttons).toEqual(["button.wave_up", "button.head_down"]);
+  expect(bed.utility).toEqual(["button.memory_8", "button.query"]);
+});
+
+test("Octo backend motor and dynamic memory metadata is retained for the card", () => {
+  const hass = hassWith([
+    entry("cover.octo_back", "back", "octo"),
+    entry("button.octo_memory_9", "preset_memory_9", "octo"),
+    entry("button.octo_save_memory_9", "program_memory_9", "octo"),
+  ]);
+  hass.states["cover.octo_back"] = {
+    entity_id: "cover.octo_back", state: "closed", last_changed: "", last_updated: "",
+    attributes: {
+      held_control_up: "back_up", held_control_down: "back_down",
+      held_stop_scope: "side", hold_start_delay_ms: 100, hold_release_delay_ms: 100,
+    },
+  };
+  hass.states["button.octo_memory_9"] = {
+    entity_id: "button.octo_memory_9", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      held_control: "memory_9", hold_start_delay_ms: 100, hold_release_delay_ms: 200,
+    },
+  };
+  hass.states["button.octo_save_memory_9"] = {
+    entity_id: "button.octo_save_memory_9", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {},
+  };
+  const bed = bedEntitiesForDevice(hass, "octo");
+  expect(bed.motors[0].heldControls).toEqual({
+    up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 },
+    down: { control: "back_down", startDelayMs: 100, releaseDelayMs: 100 },
+  });
+  expect(bed.memory[0]).toMatchObject({
+    slot: 9,
+    goto: "button.octo_memory_9",
+    save: "button.octo_save_memory_9",
+  });
+  // The card renders the recall tile from the button's own hold metadata.
+  expect(heldButtonMotor(hass, bed.memory[0].goto!)?.heldControl).toEqual({
+    control: "memory_9", startDelayMs: 100, releaseDelayMs: 200,
+  });
+});
+
+test("OCTO all-down and remote lock are utility controls", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.octo_all_down", "octo_all_down", "octo"),
+    entry("switch.octo_remote_lock", "remote_control_lock", "octo"),
+  ]), "octo");
+  expect(bed.utility).toEqual(["button.octo_all_down", "switch.octo_remote_lock"]);
+  expect(bed.presets).toEqual([]);
 });
 
 test("Motion hub module selector is a nonempty utility control", () => {
@@ -100,6 +337,24 @@ test("2-motor bed with light switch and no massage/climate", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("Nectar Move Reading and save-response state are discoverable in their own sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.preset_flat", "preset_flat"),
+    entry("button.preset_lounge", "preset_lounge"),
+    entry("button.preset_reading", "preset_reading"),
+    entry("binary_sensor.save_response", "memory_save_response_observed"),
+  ]), "dev1");
+
+  expect(bed.presets).toEqual([
+    "button.preset_flat",
+    "button.preset_lounge",
+    "button.preset_reading",
+  ]);
+  expect(bed.utilityStates).toEqual(["binary_sensor.save_response"]);
+  expect(bed.utility).toEqual([]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("read-only light state is visible independently of light controls", () => {
   const hass = hassWith([
     entry("binary_sensor.bed_light", "under_bed_lights"),
@@ -108,6 +363,21 @@ test("read-only light state is visible independently of light controls", () => {
   expect(bed.lights.state).toBe("binary_sensor.bed_light");
   expect(bed.lights.switch).toBeUndefined();
   expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("Sleepy's voice brightness actions appear with its lighting controls", () => {
+  const bed = bedEntitiesForDevice(
+    hassWith([
+      entry("button.sleepys_brightness_down", "sleepys_app_voice_brightness_down"),
+      entry("button.sleepys_brightness_up", "sleepys_app_voice_brightness_up"),
+    ]),
+    "dev1",
+  );
+  expect(bed.lights.buttons).toEqual([
+    "button.sleepys_brightness_down",
+    "button.sleepys_brightness_up",
+  ]);
+  expect(bed.utility).toEqual([]);
 });
 
 test("Adjustable Lite light toggle and reported bulb state share the lighting section", () => {
@@ -139,6 +409,44 @@ test("INNOVA massage level and memory-page timer buttons join the massage sectio
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.massage.buttons).toEqual(["button.innova_level", "button.innova_timer_hold"]);
   expect(bed.massage.timer).toBe("sensor.innova_timer");
+});
+
+test("Sleepy's timer select remains in massage alongside Pairlink selectors", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("select.sleepys_timer", "sleepys_app_massage_timer_code"),
+    entry("sensor.sleepys_timer", "sleepys_app_massage_timer_code"),
+    entry("select.pairlink_mode", "reverie_pairlink_massage_mode"),
+    entry("select.pairlink_rhythm", "reverie_pairlink_massage_rhythm"),
+  ]), "dev1");
+  expect(bed.massage.selects).toEqual([
+    "select.sleepys_timer", "select.pairlink_mode", "select.pairlink_rhythm",
+  ]);
+  expect(bed.massage.states).toEqual(["sensor.sleepys_timer"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("Pairlink massage controls and state join the massage section", () => {
+  const hass = hassWith([
+    entry("sensor.pairlink_timer_state", "reverie_pairlink_massage_timer"),
+    entry("sensor.pairlink_mode_state", "reverie_pairlink_massage_mode"),
+    entry("number.pairlink_timer", "reverie_pairlink_massage_timer"),
+    entry("select.pairlink_mode", "reverie_pairlink_massage_mode"),
+    entry("select.pairlink_rhythm", "reverie_pairlink_massage_rhythm"),
+    entry("binary_sensor.pairlink_low_battery", "reverie_pairlink_low_battery"),
+  ]);
+
+  const bed = bedEntitiesForDevice(hass, "dev1");
+
+  expect(bed.massage.timer).toBe("number.pairlink_timer");
+  expect(bed.massage.states).toEqual([
+    "sensor.pairlink_timer_state",
+    "sensor.pairlink_mode_state",
+  ]);
+  expect(bed.massage.selects).toEqual([
+    "select.pairlink_mode",
+    "select.pairlink_rhythm",
+  ]);
+  expect(bed.utility).toEqual(["binary_sensor.pairlink_low_battery"]);
 });
 
 test("exact app controls separate floor, bounded mood and massage surfaces", () => {
@@ -993,4 +1301,285 @@ test("a Sleeptracker reported-state-only registry surface is not empty", () => {
   expect(bed.massage.states).toEqual(["binary_sensor.wind_down"]);
   expect(bedIsEmpty(bed)).toBe(false);
   expect(bedIsEmpty(bedEntitiesForDevice(hassWith([]), "dev1"))).toBe(true);
+});
+
+test("explicit app timer state and opaque MX Memory 1 keep their own card buckets", () => {
+  const hass = hassWith([
+    entry("sensor.app_timer", "app_timer_status"),
+    entry("button.mx_memory1", "remote_action"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.massage.timer).toBe("sensor.app_timer");
+  expect(bed.utility).toContain("button.mx_memory1");
+  expect(bed.presets).toEqual([]);
+});
+
+test("flat cover and combined-button holds project native ownership and direction-specific fallback", () => {
+  const hass = hassWith([
+    entry("cover.left_back", "back", "left-child"),
+    entry("button.pair_up", "back_up", "pair"),
+    entry("button.pair_down", "back_down", "pair"),
+  ]);
+  hass.states["cover.left_back"] = {
+    entity_id: "cover.left_back", state: "open", last_changed: "", last_updated: "",
+    attributes: { held_control_up: "head_up", held_control_down: "head_down", held_stop_scope: "side", hold_start_delay_ms: 0, hold_release_delay_ms: 300 },
+  };
+  hass.states["button.pair_down"] = {
+    entity_id: "button.pair_down", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "head_down", hold_start_delay_ms: 0, hold_release_delay_ms: 0 },
+  };
+  const left = bedEntitiesForDevice(hass, "left-child").motors[0];
+  expect(left.deviceId).toBe("left-child");
+  expect(left.heldControls).toEqual({
+    up: { control: "head_up", startDelayMs: 0, releaseDelayMs: 300 },
+    down: { control: "head_down", startDelayMs: 0, releaseDelayMs: 300 },
+  });
+  const both = bedEntitiesForDevice(hass, "pair").motors[0];
+  expect(both.up).toBe("button.pair_up");
+  expect(both.heldControls?.up).toBeUndefined();
+  expect(both.heldControls?.down?.control).toBe("head_down");
+  expect(both.deviceId).toBe("pair");
+});
+
+test("Comfort Enhancements keeps Quiet sleep in presets and app massage clicks in massage", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.quiet", "comfort_enhancements_quiet_sleep"),
+    entry("button.head_cycle", "comfort_enhancements_head_cycle"),
+    entry("button.foot_cycle", "comfort_enhancements_foot_cycle"),
+    entry("button.timer_cycle", "comfort_enhancements_timer_cycle"),
+    entry("select.timer", "massage_timer"),
+    entry("cover.lift", "bed_height"),
+  ]), "dev1");
+  expect(bed.presets).toEqual(["button.quiet"]);
+  expect(bed.massage.buttons).toEqual(["button.head_cycle", "button.foot_cycle", "button.timer_cycle"]);
+  expect(bed.massage.timer).toBe("select.timer");
+  expect(bed.motors[0].key).toBe("bed_height");
+});
+
+test("Eshine named saves and literal massage controls join their card sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.save", "eshine_save_zero_g"),
+    entry("button.strength", "eshine_massage_head_strength"),
+    entry("button.timer", "eshine_massage_20_minutes"),
+    entry("button.mode", "massage_mode_step"),
+    entry("button.light", "toggle_light"),
+    entry("cover.pillow", "pillow"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.save"]);
+  expect(bed.massage.buttons).toEqual(["button.strength", "button.timer", "button.mode"]);
+  expect(bed.lights.toggle).toBe("button.light");
+  expect(bed.motors.map((motor) => motor.key)).toEqual(["pillow"]);
+});
+
+test("Glideaway exposes its reported massage timer and alarm refresh", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("sensor.motion_timer", "glideaway_motion_massage_timer"),
+    entry("button.motion_alarm", "glideaway_motion_query_alarm"),
+    entry("cover.motion_tilt", "tilt"),
+    entry("cover.motion_height", "bed_height"),
+  ]), "dev1");
+  expect(bed.massage.timer).toBe("sensor.motion_timer");
+  expect(bed.utility).toContain("button.motion_alarm");
+  expect(bed.motors.map(m => m.key)).toEqual(["tilt", "bed_height"]);
+});
+
+test("ISleep controls retain each pattern and keep enrollment outside the everyday card", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.all_up", "isleep_all_up"),
+    entry("button.all_down", "isleep_all_down"),
+    entry("button.pattern_1", "isleep_pattern"),
+    entry("button.pattern_cancel", "isleep_pattern"),
+    entry("button.enroll", "isleep_enroll"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.all_up", "button.all_down"]);
+  expect(bed.massage.buttons).toEqual(["button.pattern_1", "button.pattern_cancel"]);
+});
+
+test("BedSense app actions retain distinct entities and app indicators", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("cover.bed_hip", "bedsense_hip"),
+    entry("button.bed_8h", "bedsense_light"),
+    entry("button.bed_10h", "bedsense_light"),
+    entry("button.bed_head_up", "bedsense_massage"),
+    entry("button.bed_timer_10", "bedsense_massage"),
+    entry("button.bed_cycle", "bedsense_action"),
+    entry("button.bed_clear", "bedsense_action"),
+    entry("sensor.bed_light", "bedsense_light_duration"),
+    entry("sensor.bed_head", "bedsense_head_bar"),
+    entry("sensor.bed_steps", "bedsense_foot_steps"),
+    entry("sensor.bed_timer", "bedsense_massage_timer"),
+  ]), "dev1");
+  expect(bed.motors[0].cover).toBe("cover.bed_hip");
+  expect(bed.lights.buttons).toEqual(["button.bed_8h", "button.bed_10h"]);
+  expect(bed.lights.state).toBe("sensor.bed_light");
+  expect(bed.massage.buttons).toEqual(["button.bed_head_up", "button.bed_timer_10"]);
+  expect(bed.massage.states).toEqual(["sensor.bed_head", "sensor.bed_steps"]);
+  expect(bed.massage.timer).toBe("sensor.bed_timer");
+  expect(bed.utility).toEqual(["button.bed_cycle", "button.bed_clear"]);
+});
+
+
+test("AdjustaMattress model-gated controls and neutral reported fields stay visible", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.light", "adjustamattress_underbed_lighting"),
+    entry("button.head_step", "adjustamattress_head_strength_add"),
+    entry("button.timer", "adjustamattress_timer20"),
+    entry("button.m1", "adjustamattress_m1"),
+    entry("button.sleep", "adjustamattress_sleep"),
+    entry("select.head", "adjustamattress_head_selector"),
+    entry("select.commit", "adjustamattress_alarm_commit"),
+    entry("number.hour", "adjustamattress_alarm_draft_hour"),
+    entry("sensor.head", "adjustamattress_head_intensity"),
+    entry("sensor.alarm", "adjustamattress_alarm_repeat"),
+    entry("binary_sensor.aux", "adjustamattress_auxiliary_status_bit_1"),
+  ]), "dev1");
+  expect(bed.lights.buttons).toEqual(["button.light"]);
+  expect(bed.massage.buttons).toEqual(["button.head_step", "button.timer"]);
+  expect(bed.massage.selects).toEqual(["select.head"]);
+  expect(bed.massage.states).toEqual(["sensor.head"]);
+  expect(bed.presets).toEqual(["button.m1"]);
+  expect(bed.utility).toEqual(["button.sleep"]);
+  expect(bed.utilitySelects).toEqual(["select.commit"]);
+  expect(bed.utilityNumbers).toEqual(["number.hour"]);
+  expect(bed.utilityStates).toEqual(["sensor.alarm", "binary_sensor.aux"]);
+});
+
+test("BF and Cherish expose their exact app controls in the native card", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("number.cherish_intensity", "bf_cherish_intensity"),
+    entry("number.cherish_wave", "bf_cherish_wave"),
+    entry("select.cherish_timer", "massage_timer"),
+    entry("button.bf_query", "bf_query_alarm"),
+    entry("button.cherish_both_up", "bf_cherish_both_up"),
+    entry("button.cherish_both_down", "bf_cherish_both_down"),
+  ]), "dev1");
+  expect(bed.massage.numbers).toEqual(["number.cherish_intensity", "number.cherish_wave"]);
+  expect(bed.massage.timer).toBe("select.cherish_timer");
+  expect(bed.utility).toEqual(["button.bf_query"]);
+  expect(bed.motors.map((motor) => [motor.key, motor.up, motor.down])).toEqual([
+    ["back_legs", "button.cherish_both_up", "button.cherish_both_down"],
+  ]);
+});
+
+test("Casper Base product actions stay available in the card utility section", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.casper_save_tv", "casper_base_action"),
+    entry("button.casper_fan", "casper_base_action"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.casper_save_tv", "button.casper_fan"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("HJBed gestures release through their same-side cancellation button", () => {
+  const hass = hassWith([
+    entry("button.memory", "hjbed_action_right", "right"),
+    entry("button.release", "hjbed_release_right", "right"),
+    entry("button.other_release", "hjbed_release_left", "left"),
+  ]);
+  hass.states["button.memory"] = {
+    entity_id: "button.memory", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { bed_side: "right", held_control: "hjbed_memory_position1",
+      hold_start_delay_ms: 0, hold_release_delay_ms: 0, hold_release_button_key: "hjbed_release" },
+  };
+  expect(heldButtonMotor(hass, "button.memory")?.releaseButton).toBe("button.release");
+  delete hass.entities["button.release"];
+  expect(heldButtonMotor(hass, "button.memory")).toBeUndefined();
+});
+
+test("SleepEase exposes held motors, massage, lights, sensors and the local child gate", () => {
+  const hass = hassWith([
+    entry("cover.head", "head"),
+    entry("button.flat", "preset_flat"),
+    entry("button.massage", "doublesleep_massage_action"),
+    entry("button.light", "doublesleep_light_action"),
+    entry("button.refresh", "doublesleep_action"),
+    entry("sensor.hr", "doublesleep_left_heart_rate"),
+    entry("sensor.mode", "doublesleep_massage_mode"),
+    entry("sensor.light", "doublesleep_light"),
+    entry("binary_sensor.flag", "doublesleep_left_flag1"),
+    entry("select.child", "doublesleep_child_lock"),
+  ]);
+  hass.states["cover.head"] = {
+    entity_id: "cover.head", state: "open", last_changed: "", last_updated: "",
+    attributes: { held_control_up: "doublesleep_2", held_control_down: "doublesleep_3",
+                  held_stop_scope: "side",
+                  hold_start_delay_ms: 0, hold_release_delay_ms: 0 },
+  };
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors[0].heldControls?.up.control).toBe("doublesleep_2");
+  expect(bed.motors[0].coverStopScope).toBe("side");
+  expect(bed.presets).toEqual(["button.flat"]);
+  expect(bed.massage.buttons).toEqual(["button.massage"]);
+  expect(bed.massage.states).toEqual(["sensor.mode"]);
+  expect(bed.lights.buttons).toEqual(["button.light"]);
+  expect(bed.lights.states).toEqual(["sensor.light"]);
+  expect(bed.utility).toEqual(["button.refresh"]);
+  expect(bed.utilityStates).toEqual(["sensor.hr", "binary_sensor.flag"]);
+  expect(bed.utilitySelects).toEqual(["select.child"]);
+});
+
+test("Good Vibe Sleep exposes app controls, side selection and independent sleep state", () => {
+  const hass = hassWith([
+    entry("button.app_action", "goodvibe_action"),
+    entry("button.monitor", "goodvibe_action"),
+    entry("select.side", "goodvibe_side"),
+    entry("select.light_duration", "goodvibe_light_duration"),
+    entry("select.countdown", "goodvibe_massage_timer"),
+    entry("number.snore", "goodvibe_snore_count"),
+    entry("sensor.status", "goodvibe_status"),
+    entry("sensor.live", "goodvibe_l_heart"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.utility).toEqual(["button.app_action", "button.monitor"]);
+  expect(bed.utilityStates).toEqual(["sensor.status", "sensor.live"]);
+  expect(bed.controlSide).toBe("select.side");
+  expect(bed.utilitySelects).toEqual(["select.light_duration", "select.countdown"]);
+  expect(bed.utilityNumbers).toEqual(["number.snore"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("eShine product actions and feedback appear on the card and retain side routing", () => {
+  const hass = hassWith([
+    entry("button.chord", "eshine_okin_flat_zero_g", "left"),
+    entry("button.strength", "eshine_okin_massage_head_strength", "left"),
+    entry("sensor.massage", "eshine_okin_massage", "left"),
+    entry("sensor.alarm", "eshine_okin_alarm", "left"),
+    entry("button.other", "eshine_okin_query_state", "right"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "left");
+  expect(bed.utility).toEqual(["button.chord"]);
+  expect(bed.utilityStates).toEqual(["sensor.alarm"]);
+  expect(bed.massage.buttons).toEqual(["button.strength"]);
+  expect(bed.massage.states).toEqual(["sensor.massage"]);
+  expect(bedEntitiesForDevice(hass, "right").utility).toEqual(["button.other"]);
+});
+
+
+test("eShine motor hold metadata uses one bounded controller stream per physical side", () => {
+  const hass = hassWith([
+    entry("cover.left_head", "head", "left"),
+    entry("cover.left_feet", "feet", "left"),
+    entry("cover.left_pillow", "pillow", "left"),
+    entry("cover.right_head", "head", "right"),
+  ]);
+  for (const axis of ["head", "feet", "pillow"]) {
+    const id = `cover.left_${axis}`;
+    hass.states[id] = {
+      entity_id: id, state: "open", last_changed: "", last_updated: "",
+      attributes: {
+        held_control_up: `${axis}_up`, held_control_down: `${axis}_down`,
+        held_stop_scope: "motor", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+      },
+    };
+  }
+  const bed = bedEntitiesForDevice(hass, "left");
+  expect(bed.motors).toHaveLength(3);
+  for (const motor of bed.motors) {
+    expect(motor.deviceId).toBe("left");
+    expect(motor.heldControls).toEqual({
+      up: { control: `${motor.key}_up`, startDelayMs: 0, releaseDelayMs: 0 },
+      down: { control: `${motor.key}_down`, startDelayMs: 0, releaseDelayMs: 0 },
+    });
+  }
+  expect(bedEntitiesForDevice(hass, "right").motors[0].heldControls).toBeUndefined();
 });

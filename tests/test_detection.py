@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
@@ -53,6 +54,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -92,6 +94,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
+    REVERIE_PAIRLINK_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -129,6 +132,7 @@ def _make_service_info(
     """Create a mock BluetoothServiceInfoBleak."""
     service_info = MagicMock()
     service_info.name = name
+    service_info.device.name = name
     service_info.address = address
     service_info.service_uuids = service_uuids or []
     service_info.manufacturer_data = manufacturer_data or {}
@@ -418,6 +422,21 @@ class TestDetectBedTypeByServiceUUID:
         )
         assert detect_bed_type(service_info) == BED_TYPE_REVERIE
 
+    def test_detect_reverie_pairlink_by_uuid_and_display_name(self):
+        """Pairlink app devices are findable by their dedicated service UUID."""
+        service_info = _make_service_info(
+            name="R510L",
+            service_uuids=[REVERIE_PAIRLINK_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_REVERIE_PAIRLINK
+        assert result.confidence == 1.0
+        assert "uuid:reverie_pairlink" in result.signals
+        assert (
+            BED_TYPE_DISPLAY_NAMES[BED_TYPE_REVERIE_PAIRLINK]
+            == "Reverie Pairlink (R510L / Harmoniq)"
+        )
+
     def test_detect_octo_star2_by_uuid(self):
         """Test Octo Star2 detection by unique service UUID."""
         service_info = _make_service_info(
@@ -473,14 +492,19 @@ class TestDetectBedTypeByServiceUUID:
             ("STAR255402123456", BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4),
         ],
     )
-    def test_starcode_exact_names_require_app_choice(self, name, legacy_type, other_app, service_uuids):
+    def test_starcode_exact_names_require_app_choice(
+        self, name, legacy_type, other_app, service_uuids
+    ):
         """Name or shared UART transport does not identify the owning app."""
         result = detect_bed_type_detailed(
             _make_service_info(name=name, service_uuids=service_uuids)
         )
         assert result.bed_type == legacy_type
         assert result.confidence == 0.65
-        assert result.ambiguous_types == [BED_TYPE_STARCODE_M5X5] + ([other_app] if other_app else [])
+        assert result.ambiguous_types == [
+            BED_TYPE_STARCODE_M5X5,
+            BED_TYPE_STARCODE_M1X12,
+        ] + ([other_app] if other_app else [])
         assert result.signals == ["name:starcode_bedding_app_choices"] + (
             ["name:starcode_abm5_4_app_candidate"] if other_app else []
         )
@@ -967,7 +991,8 @@ class TestDetectBedTypeByManufacturerData:
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
         assert "name:smartbed428" in result.signals
         assert "manufacturer_payload:ab0102" in result.signals
-        assert result.ambiguous_types is None
+        # The explicit eShine app hint never replaces this proven receiver match.
+        assert result.ambiguous_types == ["eshine_okin"]
 
     def test_cb24_ab_payload_still_detects_cb24(self):
         """Known CB24AB advertisements must keep the CB24 detection path."""
@@ -1004,6 +1029,43 @@ class TestDetectBedTypeByManufacturerData:
         assert result.confidence == 0.85
         assert "name:nora_con" in result.signals
         assert "uuid:nordic_uart" in result.signals
+
+
+# Connected GATT from the issue #555 support bundle: two OKIMAT 4 IPS drives
+# (Device Information model "OKIMAT 4 IPS") paired with FurniMove.
+ISSUE_555_OKIMAT_GATT = [
+    SimpleNamespace(uuid=uuid, characteristics=[SimpleNamespace(uuid=char) for char in chars])
+    for uuid, chars in (
+        ("00001800-0000-1000-8000-00805f9b34fb", ("00002a00-0000-1000-8000-00805f9b34fb",)),
+        (
+            "62741523-52f9-8864-b1ab-3b3a8d65950b",
+            (
+                "00001720-0000-1000-8000-00805f9b34fb",
+                "62741625-52f9-8864-b1ab-3b3a8d65950b",
+                "62741525-52f9-8864-b1ab-3b3a8d65950b",
+                "00001721-0000-1000-8000-00805f9b34fb",
+            ),
+        ),
+        ("0000180a-0000-1000-8000-00805f9b34fb", ("00002a24-0000-1000-8000-00805f9b34fb",)),
+        (
+            "90311623-25fa-3346-12ef-3cfb7a2556ac",
+            (
+                "00001820-0000-1000-8000-00805f9b34fb",
+                "00001821-0000-1000-8000-00805f9b34fb",
+                "90311725-25fa-3346-12ef-3cfb7a2556ac",
+                "90311625-25fa-3346-12ef-3cfb7a2556ac",
+            ),
+        ),
+        (
+            "00001530-1212-efde-1523-785feabcd123",
+            (
+                "00001532-1212-efde-1523-785feabcd123",
+                "00001531-1212-efde-1523-785feabcd123",
+                "00001534-1212-efde-1523-785feabcd123",
+            ),
+        ),
+    )
+]
 
 
 class TestOkinUUIDDisambiguation:
@@ -1200,8 +1262,8 @@ class TestOkinUUIDDisambiguation:
         assert "gatt_service:nordic_dfu" in result.signals
         assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
 
-    def test_shared_okin_gatt_refinement_corrects_leggett_okin_to_cst(self):
-        """A saved Leggett/Okin entry should use CST when connected GATT proves it."""
+    def test_shared_okin_gatt_refinement_keeps_leggett_okin_despite_cst_hint(self):
+        """CSS plus DFU is not CST proof, so a saved Leggett Okin entry is kept."""
         gatt_services = [
             SimpleNamespace(
                 uuid=OKIMAT_SERVICE_UUID,
@@ -1223,7 +1285,7 @@ class TestOkinUUIDDisambiguation:
 
         assert (
             refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_LEGGETT_OKIN, gatt_services)
-            == BED_TYPE_OKIN_CST
+            == BED_TYPE_LEGGETT_OKIN
         )
 
     def test_lp_control_identity_overrides_dual_stack_cst_guess(self):
@@ -1297,8 +1359,8 @@ class TestOkinUUIDDisambiguation:
             == BED_TYPE_OKIN_CST
         )
 
-    def test_shared_okin_gatt_refinement_corrects_legacy_leggett_okin_variant_to_cst(self):
-        """A legacy Leggett entry using the OKIN variant should be GATT-refinable."""
+    def test_shared_okin_gatt_refinement_keeps_legacy_leggett_okin_variant(self):
+        """A legacy Leggett OKIN entry is not moved to CST by CSS plus DFU."""
         gatt_services = [
             SimpleNamespace(
                 uuid=OKIMAT_SERVICE_UUID,
@@ -1324,7 +1386,7 @@ class TestOkinUUIDDisambiguation:
                 gatt_services,
                 LEGGETT_VARIANT_OKIN,
             )
-            == BED_TYPE_OKIN_CST
+            == BED_TYPE_LEGGETT_PLATT
         )
 
     def test_shared_okin_gatt_refinement_ignores_legacy_leggett_gen2_variant(self):
@@ -1357,8 +1419,31 @@ class TestOkinUUIDDisambiguation:
             == BED_TYPE_LEGGETT_PLATT
         )
 
-    def test_shared_okin_gatt_refinement_corrects_canonical_7byte_to_cst(self):
-        """A saved canonical OKIN 7-byte entry should still be GATT-refinable."""
+    @pytest.mark.parametrize("ble_model", ["OKIMAT 4 IPS", None])
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID])
+    def test_issue_555_okimat_gatt_never_selects_cst(self, bed_type: str, ble_model: str | None):
+        """CSS plus DFU kept moving a FurniMove OKIMAT bed to CST, even unread (#555)."""
+        assert detect_bed_type_from_gatt_services(ISSUE_555_OKIMAT_GATT, "Milou").bed_type == (
+            BED_TYPE_OKIN_CST
+        )
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                bed_type, ISSUE_555_OKIMAT_GATT, "auto", ble_model, "Milou"
+            )
+            == bed_type
+        )
+
+    def test_issue_555_persisted_cst_waits_for_the_repair(self):
+        """An entry already saved as CST changes only through the user's repair choice."""
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_OKIN_CST, ISSUE_555_OKIMAT_GATT, "auto", "OKIMAT 4 IPS", "Milou"
+            )
+            == BED_TYPE_OKIN_CST
+        )
+
+    def test_shared_okin_gatt_refinement_keeps_canonical_7byte(self):
+        """A saved OKIN 7-byte entry is not moved to CST by CSS plus DFU."""
         gatt_services = [
             SimpleNamespace(
                 uuid=OKIMAT_SERVICE_UUID,
@@ -1380,7 +1465,7 @@ class TestOkinUUIDDisambiguation:
 
         assert (
             refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIN_7BYTE, gatt_services)
-            == BED_TYPE_OKIN_CST
+            == BED_TYPE_OKIN_7BYTE
         )
 
     def test_shared_okin_gatt_refinement_corrects_okimat_to_rf_eco_bt(self):
@@ -1621,7 +1706,7 @@ class TestOkinUUIDDisambiguation:
         [
             (BED_TYPE_OKIN_UUID, "82620", "RF eco BT", BED_TYPE_OKIN_UUID),
             (BED_TYPE_OKIMAT, "82620", "RF eco BT", BED_TYPE_OKIMAT),
-            (BED_TYPE_OKIN_UUID, "auto", "RF eco BT", BED_TYPE_OKIN_CST),
+            (BED_TYPE_OKIN_UUID, "auto", "RF eco BT", BED_TYPE_OKIN_UUID),
             (BED_TYPE_OKIN_UUID, "82620", "MEGAMAT MBZ", BED_TYPE_OKIN_RF_ECO_BT),
         ],
     )

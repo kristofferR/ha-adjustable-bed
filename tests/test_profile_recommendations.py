@@ -1677,3 +1677,17 @@ async def test_failed_hardware_commit_leaves_review_and_history_unconfirmed(
         target.refresh()
         assert issue(hass, target) is not None
         hass.config_entries.options.async_abort(result["flow_id"])
+
+
+def test_eshine_search_hint_does_not_question_an_already_matching_receiver():
+    from custom_components.adjustable_bed.const import BED_TYPE_MALOUF_NEW_OKIN
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+    observed = info("Smartbed428000193")
+    observed.manufacturer_data = {89: bytes.fromhex("4142010204")}
+    detected = detect_bed_type_detailed(observed)
+    assert "eshine_okin" in (detected.ambiguous_types or ())
+    assert recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN, CONF_PROTOCOL_VARIANT: "auto"},
+        observed, {},
+    ) is None

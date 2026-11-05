@@ -33,9 +33,8 @@ For every current and future bed integration, implement direct BLE bed features 
 
 **Current status:** Dozens of bed protocols implemented. The README's "Supported Beds" table is the single source of truth for which protocols exist and which are confirmed working — don't duplicate that list here.
 
-**v4 baseline:** Work from `main`. It requires Home Assistant 2026.9.0+
-and Python 3.14.2+. Start with the [documentation index](docs/README.md),
-[migration notes](docs/HA_2026_9.md), and [validation matrix](docs/V4_VALIDATION.md).
+**Baseline:** Work from `main`. It requires Home Assistant 2026.9.0+
+and Python 3.14.2+. Start with the [documentation index](docs/README.md).
 
 ## GitHub Comment Approval
 
@@ -129,7 +128,7 @@ custom_components/adjustable_bed/
 - One parent device with native Left/Right children, for both one-address and two-address pairs
 - Conversion and unpair preserve side entity/device identities through registry ownership transactions
 - Child service targets retain their side; conflicting explicit side requests are rejected
-- See [runtime boundaries](docs/design/paired-runtime-and-registry.md) and [migration](docs/HA_2026_9.md)
+- See [runtime boundaries](docs/design/paired-runtime-and-registry.md)
 
 **Config Flow** (`config_flow.py`):
 - Automatic discovery via BLE service UUIDs and device name patterns
@@ -226,7 +225,10 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
    sensors stuck at "unknown". Note that `position_number_specs` requires a live
    controller, so these entities only appear once the bed has connected.
 
-10. **Create documentation** in `docs/beds/newbed.md`
+10. **Create documentation** in `docs/beds/newbed.md` using the
+    [bed guide format](docs/BED_GUIDE_FORMAT.md): Status, Credit, Known Models,
+    Apps and Features tables, Protocol Details and command tables. Evidence and
+    dispositions go in the discovery ledger, not the guide.
 
 11. **For an app profile, make the app findable and declare what it owns.**
     Users search the bed-type list by app name. An app that is its own bed type
@@ -255,7 +257,7 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 | `motor_pulse_count` | Command repeat count | 10 |
 | `motor_pulse_delay_ms` | Delay between repeats | 100 |
 | `disconnect_after_command` | Disconnect immediately after commands | per bed type (`disconnect_after_command_default_enabled`) |
-| `idle_disconnect_seconds` | Idle timeout before disconnect | 40 |
+| `idle_disconnect_seconds` | Idle timeout before disconnect; 0 keeps connected unless `disconnect_after_command` | 40 |
 | `disable_discovery` | Suppress automatic discovery (global, stored via `discovery_settings`) | false |
 | `position_mode` | Speed vs accuracy tradeoff | speed |
 | `octo_pin` | PIN for Octo beds | "" |
@@ -403,10 +405,9 @@ The `generate_support_bundle` service captures protocol data for debugging and a
 | `docs/CONNECTION_GUIDE.md` | Bluetooth setup, ESPHome proxy configuration |
 | `docs/TROUBLESHOOTING.md` | Common issues and solutions |
 | `docs/SERVICES.md` | All public actions, paired side routing and automation examples |
-| `docs/HA_2026_9.md` | v4 baseline, migration, backup and rollback |
-| `docs/V4_VALIDATION.md` | Automated validation and final release-candidate gates |
 | `docs/COMMAND_LIFECYCLE.md` | Scheduling, cancellation and connection ownership |
 | `docs/beds/*.md` | Per-actuator protocol documentation |
+| `docs/BED_GUIDE_FORMAT.md` | Required layout for bed guides |
 
 ## Reference Materials
 
@@ -431,10 +432,11 @@ Until [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436) 
 - Register analyses completed ahead of the scheduled APK Protocol Audit bulk analysis run in [issue #447](https://github.com/kristofferR/ha-adjustable-bed/issues/447), including the exact package/version, artifact-set hash, report status, and originating issue or PR. An accepted COMPLETE report that passes the #443 gates replaces that package's APK Protocol Audit route and must be excluded from the later bulk run. PARTIAL or BLOCKED work remains in the completion queue.
 - Use the single ordered work queue in [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436#canonical-ordered-phase-4-queue); the [published queue plan](https://plans.kristofferr.com/d/ch8geif5zzyg) expands every formal cluster into its APK members. The completed-batch ledger in #443 and the early-exclusion registry in #447 are not competing queues. Clear implementation debt in the analysis-complete prefix before starting the next analysis row.
 - Only after a clean-room report is frozen may a separate comparison pass inspect the integration and historical evidence. For a formal cluster, finish and accept every member report, required FULL promotion, independent review, and cluster reconciliation before changing integration code. Then make one proper, full, non-draft integration PR as the final cluster step, covering every actionable finding with focused tests, durable documentation, and an explicit implemented, already-implemented, or excluded disposition. Do not create per-APK or mid-cluster implementation PRs, and do not advance to the next queue unit while the cluster PR is absent or incomplete. A standalone FULL route follows the same evidence-first, implementation-PR-last ordering as a one-package work unit.
-- After a work unit's analysis or implementation status changes, synchronize the ordered queue and counts in #436, the #443 progress summary, the #447 routing arithmetic, and the published queue plan in the same task.
+- After a work unit's analysis or implementation status changes, update the trackers in the same task by following [the tracker rules](docs/apk-analysis/TRACKERS.md): edit the affected #436 queue row and counts in place, add one evidence row to #443 or #447, and regenerate the published queue view from #436. The trackers are reference pages, not logs. Never prepend or append run journals, review or CI state, receipts or compacted text, and never post status comments on them. Run status belongs in the handoff and on the live status page. Check every draft with `.github/scripts/apk_tracker_guard.py` before publishing; the guard workflow restores rule-breaking edits.
 - Keep raw artifacts, decompilation output, and APK Protocol Audit reports machine-local and ignored as required by #436. Commit only durable integration, test, documentation, and workflow-instruction changes.
 - Do not assume maintainers can physically test a discovered bed. A report may be COMPLETE when app behavior is exhaustively proven from the artifact while hardware status remains explicitly unverified. Treat physical checks and captures as deferred external validation for real users after a beta or release, not as an immediately actionable maintainer task or an automatic reason to fail the analysis.
 - Never guess protocol behavior when the required artifact or analysis layer is unavailable. Record the precise APK or runtime-table blocker. If only physical semantics remain, record a deferred validation request for real users after beta/release; do not ask a maintainer to acquire or immediately test the bed.
+- Product, model or capability catalogs that an app downloads from its vendor backend to choose a BLE profile are evidence the coordinator acquires without asking, by replaying the app's own read-only request once and staging the response as an offline input for a scoped repair. Follow [the runtime catalog procedure](docs/apk-analysis/phase4-coordinator-workflow.md#acquire-runtime-catalogs-without-asking). Fetching one is evidence collection, not an in-scope cloud feature. Analysts stay offline.
 
 ### Mandatory post-freeze implementation convergence
 
@@ -444,11 +446,12 @@ account for every reachable discovery before the task can be called complete.
 
 - Build a discovery ledger covering every reachable BLE behavior, including commands, packet builders, responses and notifications, parsers, timing, release behavior, pairing/authentication, discovery rules, model/variant selection, capability gates, configuration writes, and user-visible state.
 - Give every ledger item exactly one disposition: `IMPLEMENTED`, `ALREADY_IMPLEMENTED`, or `EXCLUDED`.
-- Implement every in-scope item marked `IMPLEMENTED` in the same task, with focused artifact-vector tests, entity or service exposure where users need it, and durable protocol documentation. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
+- Implement every in-scope item marked `IMPLEMENTED` in the same task, with focused artifact-vector tests, entity or service exposure where users need it, and durable protocol documentation: a bed guide in the [bed guide format](docs/BED_GUIDE_FORMAT.md) with command tables from the shipped code, plus the discovery ledger for evidence and dispositions. Never write the guide as audit prose. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
 - `ALREADY_IMPLEMENTED` requires a concrete code and test reference showing behavior equivalent to the frozen artifact, not a family resemblance or an assumed shared protocol.
 - `EXCLUDED` requires the exact evidence and reason. Valid reasons are an out-of-scope transport or product boundary (for example WiFi/cloud behavior in this BLE-only integration), a safety constraint, dead or unreachable artifact code, or behavior unrelated to bed integration. Convenience, uncertain model prevalence, missing maintainer hardware, or lack of an existing entity are not valid exclusions.
 - Static artifact evidence can complete the implementation even without physical hardware. Keep hardware status explicit and defer only physical validation, never the implementation itself, when the behavior is exhaustively proven.
 - The task completion summary must state the ledger totals and list every exclusion. Any item without a disposition keeps the implementation task incomplete.
+- The final and most important step: when the implementation PR opens, and again when it merges, record its link in the #436 queue row, the unit's #443 or #447 evidence row, the regenerated queue view and the live status page, as [the tracker rules](docs/apk-analysis/TRACKERS.md#the-final-step-record-the-pr) describe. The task is not complete until all of them show the PR.
 
 See **[docs/apk-analysis/TOOLING.md](docs/apk-analysis/TOOLING.md)** for decompiler setup and
 invocation (jadx, apktool, blutter, ffdec) and the required per-stack coverage. It is method-only
@@ -457,7 +460,10 @@ clean-room analyst.
 
 Coordinators follow [the APK Protocol Audit operational workflow](docs/apk-analysis/phase4-coordinator-workflow.md)
 for ownership, affected-scope audit repairs, preserved accepted work, and the bounded pilot.
-It does not replace the analyst prompt, report schema, or completion gates.
+It does not replace the analyst prompt, report schema, or completion gates. Launch every
+analyst, auditor and repair worker as a visible T3 thread (`delegate_task`) confined by the run
+workspace's `sandbox.sh` wrappers, never as a hidden background process such as a direct
+`codex exec` or detached job.
 
 The canonical #443 analyst prompt and pinned `analysis.json` schema are
 [`docs/apk-analysis/phase4-analyst-prompt.md`](docs/apk-analysis/phase4-analyst-prompt.md) and

@@ -11,6 +11,14 @@ from .base import BedController
 
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
+    from .adjustamattress import AdjustaMattressController as AdjustaMattressController
+    from .bedsense import BedSenseController as BedSenseController
+    from .bf_cherish import BfCherishController as BfCherishController
+    from .casper_base import CasperBaseController as CasperBaseController
+    from .casper_sleep import CasperSleepController as CasperSleepController
+    from .cluster018 import Cluster018Controller as Cluster018Controller
+    from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
+    from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
@@ -19,9 +27,22 @@ if TYPE_CHECKING:
     from .dewertokin_rf_gateway import (
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
+    from .doublesleep import DoubleSleepController as DoubleSleepController
+    from .ergo_slim import ErgoSlimController as ErgoSlimController
+    from .ergomotion4 import Ergomotion4Controller as Ergomotion4Controller
+    from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
+    from .eshine import EshineController as EshineController
+    from .eshine_okin import EshineOkinController as EshineOkinController
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
+    from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
+    from .gmmotor import GmmotorController as GmmotorController
+    from .gmmotor_desk import GmmotorDeskController as GmmotorDeskController
+    from .gmmotor_sleep import GmmotorSleepController as GmmotorSleepController
+    from .goodvibe import GoodVibeController as GoodVibeController
+    from .hjbed import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
+    from .isleep import IsleepController as IsleepController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
     from .jiecang import JiecangController as JiecangController
@@ -52,6 +73,7 @@ if TYPE_CHECKING:
     from .okin_ore import OkinOreController as OkinOreController
     from .okin_rf_eco_bt import OkinRfEcoBtController as OkinRfEcoBtController
     from .okin_uuid import OkinUuidController as OkinUuidController
+    from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
     from .remacro import RemacroController as RemacroController
     from .reverie import ReverieController as ReverieController
@@ -59,11 +81,14 @@ if TYPE_CHECKING:
     from .richmat import RichmatController as RichmatController
     from .richmat_mh import RichmatMhController as RichmatMhController
     from .rondure import RondureController as RondureController
+    from .row_control import RowControlController as RowControlController
+    from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
     from .serenity import SerenityController as SerenityController
     from .serenity import TranquilController as TranquilController
     from .serenity import ZSeriesController as ZSeriesController
+    from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
     from .simmons import SimmonsController as SimmonsController
     from .sleep_number import SleepNumberController as SleepNumberController
     from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
@@ -77,6 +102,8 @@ if TYPE_CHECKING:
     from .starcode_m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .suta import SutaController as SutaController
     from .svane import SvaneController as SvaneController
+    from .tempur_au import TempurAUController as TempurAUController
+    from .tempur_curve import TempurCurveController as TempurCurveController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
     from .vibradorm import VibradormController as VibradormController
     from .vibradorm_app import VibradormAppController as VibradormAppController
@@ -84,6 +111,29 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "GoodVibeController": "goodvibe",
+    "HJBedController": "hjbed",
+    "DoubleSleepController": "doublesleep",
+    "GmmotorController": "gmmotor",
+    "GmmotorDeskController": "gmmotor_desk",
+    "GmmotorSleepController": "gmmotor_sleep",
+    'TempurCurveController': 'tempur_curve',
+    'QPlusAppController': 'sbi',
+    'SertaMPRemoteController': 'serta_mp_remote',
+    'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
+    'ErgomotionAppController': 'ergomotion_app',
+    'Cluster018Controller': 'cluster018',
+    'Ergomotion4Controller': 'ergomotion4',
+    'RowControlController': 'row_control',
+    'ErgoSlimController': 'ergo_slim',
+    'TempurAUController': 'tempur_au',
+    "CasperBaseController": "casper_base",
+    "CasperSleepController": "casper_sleep",
+    "ComfortEnhancementsController": "comfort_enhancements",
+    "EshineController": "eshine",
+    "EshineOkinController": "eshine_okin",
+    "GlideawayMotionController": "glideaway_motion",
+    "BedSenseController": "bedsense",
     "InnovaController": "innova",
     "StarcodeM5X5Controller": "starcode_m5x5",
     "FurniMoveController": "furnimove",
@@ -92,6 +142,7 @@ _EXPORT_MODULES = {
     "TranquilController": "serenity",
     "ZSeriesController": "serenity",
     "SimmonsController": "simmons",
+    "AdjustaMattressController": "adjustamattress",
     "AdjustableLumbarController": "adjustable_lumbar",
     "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",
@@ -100,8 +151,10 @@ _EXPORT_MODULES = {
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",
     "JensenController": "jensen",
     "JensenLinonController": "jensen_linon",
+    "ComfortMotionController": "comfort_motion",
     "JiecangController": "jiecang",
     "JiecangAppController": "jiecang_app",
+    "IsleepController": "isleep",
     "KaidiController": "kaidi",
     "KeesonController": "keeson",
     "LeggettGen2Controller": "leggett_gen2",
@@ -125,6 +178,7 @@ _EXPORT_MODULES = {
     "OkinDotController": "okin_dot",
     "OkinHandleController": "okin_handle",
     "OkinNordicController": "okin_nordic",
+    "BfCherishController": "bf_cherish",
     "OkinOreController": "okin_ore",
     "OkinRfEcoBtController": "okin_rf_eco_bt",
     "OkinUuidController": "okin_uuid",
@@ -155,6 +209,18 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "DoubleSleepController",
+    'TempurCurveController',
+    'QPlusAppController',
+    'SertaMPRemoteController',
+    'OmazzAdjustoIIIController',
+    'ErgomotionAppController',
+    'Cluster018Controller',
+    'Ergomotion4Controller',
+    'RowControlController',
+    'ErgoSlimController',
+    'TempurAUController',
+
     # Base class
     "BedController",
     # Protocol-based controllers
@@ -165,6 +231,7 @@ __all__ = [
     "OkinCstController",
     "OkinDotController",
     "OkinHandleController",
+    "BfCherishController",
     "OkinOreController",
     "OkinRfEcoBtController",
     "OkinUuidController",
@@ -178,6 +245,7 @@ __all__ = [
     "LeggettWilinkeController",
     # Brand-specific controllers
     "CoolBaseController",
+    "ComfortMotionController",
     "JiecangController",
     "JiecangAppController",
     "JensenController",

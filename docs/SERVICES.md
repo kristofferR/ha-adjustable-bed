@@ -33,6 +33,26 @@ both sides.
 `target_address` and has no `side` parameter. Select a child device for a
 two-address pair. See [support capture](GETTING_HELP.md#generating-a-support-bundle).
 
+## OKIN SleepEase / DoubleSleep
+
+`doublesleep_configure` accepts a bed `device_id` and optional paired target
+`side`. Its `action` selects alarm setup, anti-snore apply/demo, sensitivity,
+day/month report retrieval, named preset programming or MFP capability queries.
+The fields and model/driver gates are documented in the
+[SleepEase guide](beds/doublesleep.md#configuration-and-reports).
+`report_side` chooses a sensor stream independently of paired-device `side`.
+Report sensors retain raw results and typed records for automations.
+
+```yaml
+action: adjustable_bed.doublesleep_configure
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  action: report
+  report_side: left
+  report_kind: day
+  date: "2026-11-03"
+```
+
 ## Sleeptracker Smart Bed
 
 These actions require the separate [Sleeptracker framed-JSON processor](beds/sleeptracker.md).
@@ -118,12 +138,20 @@ movement. Hardware behavior remains unverified.
 
 | Action | Required fields besides `device_id` | Behavior |
 |--------|------------------------------------|----------|
-| `goto_preset` | `preset` | Recall a memory slot, 1–8 where supported. Optional `duration` sets the recall hold where the bed supports it |
+| `goto_preset` | `preset` | Recall a supported memory slot, 1–255 where the controller advertises it. Optional `duration` sets the recall hold where supported |
 | `save_preset` | `preset` | Overwrite a supported memory slot with the current position |
 | `stop_all` | None | Cancel pending/active movement and perform the controller's STOP or release cleanup |
 | `set_position` | `motor`, `position` | Move one supported axis to a target |
 | `set_positions` | `positions` | Validate all motor targets before starting an ordered multi-motor request |
 | `timed_move` | `motor`, `direction`, `duration_ms` | Move up/down for an elapsed movement ceiling of 100–30000 ms |
+| `reverie_set_comfort` | `comfort` | Send a typed Reverie composite setting after every selected model validates it |
+| `reverie_run_routine` | `steps` | Replace and run the selected target's Reverie Composer queue |
+| `reverie_test` | None | Run the selected Reverie protocol's timed diagnostic writes and cleanup |
+
+M1X12 uses `m1x12_part_1`, `m1x12_part_2`, `m1x12_part_4`,
+`m1x12_part_8`, and `m1x12_part_16` motor targets. ELEVATE uses
+`elevate_actuator_1`, `elevate_actuator_2`, and `elevate_both`.
+Each target must be declared by the selected bed's controller.
 
 The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
@@ -143,6 +171,55 @@ is performed before movement, but a later transport failure can still leave a
 partially completed move.
 
 A direct command being accepted is not confirmation that the target was reached.
+
+### Reverie composite actions
+
+`reverie_set_comfort` accepts a `comfort` object with optional `head_position`,
+`foot_position`, `lumbar_position`, `head_massage`, `foot_massage`, `timer_byte`,
+and `mode` fields. Each Reverie protocol and selected model validates its supported fields
+and ranges before any selected target writes. Protocol 110 Composer requests
+require its five position and strength fields because its app sends one
+complete payload. Protocol 108 applies changed position and massage values
+after stable notification feedback. Pairlink ordinary requests send only values
+changed from accepted state. Its alarm route sends the source-defined complete
+eight-write sequence. `timer_byte` is a raw source byte, not a duration in
+minutes. Pairlink central writes require the accepted per-target session inputs
+and a ready mesh session; local peripheral writes require the separately
+configured local role to be ready.
+
+`reverie_run_routine` accepts ordered `steps`, each with an integer
+`duration_minutes` and an optional `comfort` object. It replaces the selected
+physical target's routine queue. HA automation timing remains the user's
+scheduler; this action only runs the bed-specific sequence. Protocol 108 and
+Protocol 110 each own a queue and timer per physical address. The STK Composer
+route uses its selected V1 facade with numeric side values 1, 2, or 3, which
+have no inferred left/right mapping. Pairlink uses its separate routine timing
+and replacement behavior: missing comfort settings are skipped, the duration
+list is retained independently, missing durations default to one minute, and
+durations have a one-minute minimum. Pairlink does not schedule a timer after
+its last resolved setting. Other Reverie profiles still require a duration.
+The paired-bed `side` field remains the separate Home Assistant left/right/both
+target selector.
+
+STOP cancels the selected target's remaining routine steps as well as current
+movement. Routines, diagnostics, and Protocol 108 comfort require concurrent
+connection mode for two-address pairs using central Bluetooth connections,
+including side-only targets. Sequential mode disconnects each receiver before deferred work can
+finish. Local Pairlink peripheral transports do not have that restriction.
+
+`reverie_test` starts the accepted Protocol 108 or 110 ten-second bed test and
+schedules its matching protocol stop writes. Pairlink's two-second diagnostic
+uses the central encrypted route and has the same explicit runtime-input
+requirements as other Pairlink sends. The local peripheral profile uses the
+selected host adapter's verified address in its advertisement. Its backend is
+integration-owned direct BlueZ D-Bus, separate from Home Assistant's managed
+client transport. A successful characteristic write does not confirm a
+physical response.
+
+Use Home Assistant automations to schedule direct Reverie actions such as
+`reverie_set_comfort`, `reverie_run_routine`, `goto_preset`, and `save_preset`.
+Phone-local alarm storage, Android notification delivery, and the phone's
+alarm scheduler are outside the integration's scope.
 Reported state remains the last measured value until feedback arrives. See
 [position state and freshness](TROUBLESHOOTING.md#position-commands-and-reported-state).
 
@@ -204,6 +281,12 @@ before any of them is written.
 
 ### `hold_control`
 
+Card release events apply to the press that started the movement. Releasing an
+older direction after STOP does not stop a newer press. Compact card cleanup
+retains only targets whose movement service was dispatched; cancelling before
+a declared start delay expires does not send an extra cleanup STOP. An explicit
+Stop button still stops its selected target immediately.
+
 Hold one control declared by the bed's app profile for `duration` seconds
 (0.1–60, whole milliseconds), then send that profile's release sequence. A
 control the bed does not declare is rejected with the list of controls the bed
@@ -211,31 +294,35 @@ accepts. Save controls can change stored positions. Svane Remote and Limoss
 Remote beds validate and release through their own live session, so a single
 call cannot mix them with other profiles.
 
-```yaml
-action: adjustable_bed.hold_control
-data:
-  device_id: YOUR_DEVICE_ID
-  control: head_up
-  duration: 2.5
-```
+Sleepy's Elite uses selector-supported static controls here. Numeric and select
+entities remain separate commit paths. Its accepted palette commits select
+codes `1`–`7`, each as one writer attempt without repeat or STOP. Caller timing
+for the other dynamic app values remains under source-to-caller reconciliation;
+they are not exposed through `hold_control`.
 
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
+| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
+| [Glideaway Motion / Montion](beds/glideaway-motion.md) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
 | [Leggett Okin app profiles](beds/leggett-okin.md) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide. `leggett_hold_control` remains as an alias limited to this list |
 | [Jordan's Serenity](beds/serenity.md#reachable-commands) | 31 literal app actions | Two-frame release |
 | [Jordan's Tranquil](beds/tranquil.md#reachable-commands) | 30 literal app actions | Two-frame release |
 | [Customatic Z-Series](beds/customatic-z-series.md#reachable-commands) | Literal Z-230 or Z-280 actions | A Z-230 rejects Z-280-only actions and the reverse |
 | [SIMMONS](beds/simmons.md) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Frame every 300 ms, then STOP at +100 and +400 ms. Holding `memory` for 5 seconds mirrors the app's Custom Mode save; whether the bed stores it is unverified |
+| [AdjustaMattress](beds/adjustamattress.md) | App action identifiers such as `headUp`, `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `flatPosition`, `zeroGravity`, `m1`, `underbedLighting`, `headStrengthAdd`, `timer10`, subject to the selected model/layout | 200 ms refresh; movement/lift starts at +200 ms. STOP at +200 ms after release. Ordinary P3/P4 massage additionally queries at +400/+600 ms. P2 unsafe prior-frame lighting replay is excluded |
 | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Frame every 100 ms, then STOP immediately and 300 ms later. Whether a save stores the position is unverified |
 | [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) | Simon Li: `back_up`, `back_down`, `foot_up`, `foot_down`, `lumbar_up`, `lumbar_down`, `home`, `memory_1`, `memory_2`. OKIN-Seating: `back_up`, `back_down`, `foot_up`, `foot_down`, `home`. Heal Every Night: `head_up`, `head_down`, `foot_up`, `foot_down`, plus `tilt_up`, `tilt_down`, `lumbar_up`, `lumbar_down` on Healing 7 and 8 | Key every 100 ms, then the zero frame 10 ms (Simon Li, OKIN-Seating) or 100 ms (Heal Every Night) later. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save |
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` repeat every 100 ms; the others are sent once. One zero frame 100 ms after the hold |
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | Key every 100 ms, then the zero key 100 ms later |
 | [AdjustableM5X4](beds/starcode-abm5-4.md) | Movement, preset, save and massage controls | Movement and memory refresh every 100 ms with immediate STOP. Flat runs 600 ms; save and reset run the six-second confirmation interval regardless of `duration`. Positive massage controls require observed active state. One physical address only |
+| [Adjustable Comfort M1X12](beds/starcode-m1x12.md) | Parts 1, 2, 4, 8, 16 and union movement, massage wave/intensity, plus explicit ELEVATE actions | 100 ms held refresh, 0.1–60 seconds, fresh STOP on release/cancellation. The native card invokes one bounded service window and routes STOP to the owning side |
 | [Caresse / Werkmeister](beds/vibradorm_app.md) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
 | [V-MAT Basic](beds/vmatbasic.md) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
+| [OCTO Smart Control](beds/octo.md) | Advertised motor directions and `memory_1` through the discovered memory count | P1 commands repeat every 350 ms inside each bounded operation, which ends with STOP. The 60-second service maximum is a Home Assistant safety bound; the card starts another bounded call only while the user still holds the control. |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss-remote.md) | Controls rendered for the receiver's layout | Five-frame release |
 | [FSM Relax](beds/fsm_relax.md) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
+| [TiMOTION AHF](beds/timotion-ahf.md) | `control_1_up`/`control_1_down` through `control_5_up`/`control_5_down`, `night`, `light`, `chair` | First 100 ms wait is inside the requested bound; a 100 ms wait separates writes, plus BLE write latency. Release sends three neutral STOP writes. This is bounded HA behavior, not Android timing parity or a firmware maximum |
 
 Customatic Clarity, Remedy and Jerome's C use
 [`customatic_hold_memory` and `customatic_move_simultaneously`](beds/customatic.md),
@@ -252,6 +339,7 @@ its app's name rule to every target before any write:
 | [Linak Bed Control](beds/linak.md) | 1–17 UTF-8 bytes. The controller then disconnects so it can advertise the new name |
 | [LOGICDATA app profiles](beds/logicdata-app.md) | Phone and tablet: 1–255 printable ASCII characters. [Sleep Smart](beds/logicdata-sleep-smart.md) beds and pumps: 1–20 letters, digits, ä, ö, ü or ß |
 | [Jiecang app profiles](beds/jiecang-app.md) | 1–20 ASCII letters or digits |
+| [Comfort Motion app](beds/comfort-motion.md) | 1–18 ASCII letters, digits, dots or underscores, discovered G1 name role required |
 | [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, then trimmed and non-empty |
 | [FurniMove](beds/furnimove.md#controls-and-actions) | One physical receiver; a unique name of at most 18 UTF-16 units after trimming |
 | [V-MAT Basic](beds/vmatbasic.md) | One physical receiver; Java-style trim, at most ten UTF-16 units (empty allowed) and 20 UTF-8 bytes |
@@ -270,7 +358,7 @@ still work, with their original name checks.
 
 Set each targeted controller's clock to Home Assistant's local time. Supported
 by the [Malouf Base / Lucid Base](beds/malouf-app.md) app profile on its OKIN
-transports, [SIMMONS](beds/simmons.md#alarms-and-clock), and
+transports, [Glideaway Motion / Montion](beds/glideaway-motion.md#alarm-and-clock), [SIMMONS](beds/simmons.md#alarms-and-clock), and
 [Customatic Z-Series](beds/customatic-z-series.md) controllers whose
 manufacturer string enables the alarm page (see
 [`zseries_set_alarm`](#zseries_set_alarm)). Z-Series beds cannot share a call
@@ -287,6 +375,7 @@ enable additional commands.
 
 | Controller/profile | Actions | Guide |
 |--------------------|---------|-------|
+| Sleepy's Elite app | Selector-backed controls are exposed as Home Assistant entities; there is no separate alarm action | [Sleepy's Elite app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) |
 | Linak Bed Control | `linak_move_simultaneously`, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Jensen JMC400 | `linak_move_simultaneously` (back and legs only; the action keeps its original name) | [Jensen](beds/jensen.md) |
 | Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |
@@ -294,11 +383,13 @@ enable additional commands.
 | Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer` | [Prodigy / U Series](beds/leggett-okin.md) |
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
+| Glideaway Motion / Montion app | `glideaway_set_alarm` | [Glideaway Motion](beds/glideaway-motion.md#alarm-and-clock) |
 | Customatic Z-Series app | `zseries_set_alarm` | [Z-Series](beds/customatic-z-series.md) |
 | SIMMONS app | `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
 | LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1) | [Sleep Smart](beds/logicdata-sleep-smart.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake` | [Jiecang](beds/jiecang-app.md) |
+| Comfort Motion app | `jiecang_wake`, `jiecang_stop_wake`; use HA automations for scheduling | [Comfort Motion](beds/comfort-motion.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
 | Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat-mh.md#actions) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
@@ -316,6 +407,17 @@ For the explicit Richmat app profiles. Each action checks every targeted bed bef
 - `richmat_mh_light_color` takes `rgb_color` and writes the LED or button-light page's colour frame. Models whose motor page has no light toggle have no on/off command, so they get no Home Assistant light and set the colour with this action.
 
 Alarm countdowns and the waist alarm's current time are read for each bed just before its frames are built, after any reconnect.
+
+### `glideaway_set_alarm`
+
+For the explicit MOTION 400/450/500/600 profiles. Accepts `device_id`, `enabled`,
+`time` (minute precision, required when enabling), `wake_mode` (`none`,
+`memory_1`, `memory_2`, default `none`) and optional `side`. Sends HA local RTC,
+then the alarm 300 ms later. Time is the wire 24-hour value; the app sends one
+hour below its 1–12 wheel label. The app's unusual automatic weekday rule and
+RTC offsets are preserved. Read the [calendar details](beds/glideaway-motion.md#alarm-and-clock)
+before use. `sync_clock` sends only RTC; Refresh alarm queries twice, 200 ms apart.
+Alarm state is reported by a sensor. Hardware semantics remain unverified.
 
 ### `zseries_set_alarm`
 
@@ -370,7 +472,8 @@ The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_rem
 ### FSM Relax app actions
 
 [`hold_control`](#hold_control) accepts a supported `command_XX` and explicit
-`duration` in seconds. `goto_preset` accepts local `preset` 1–8 and an optional
+`duration` in seconds. `goto_preset` accepts local `preset` 1–255, subject to the
+selected controller's live capacity, and an optional
 `duration`; `fsm_relax_calibrate` requires `confirmed: true` and makes one
 write attempt.
 Native Save/Memory buttons and generic memory actions expose up to eight slots
@@ -380,7 +483,7 @@ See [FSM Relax](beds/fsm_relax.md) for profile gates and reply ambiguity.
 
 ### `starcode_move_lifts`
 
-Controls the accessories configured on an AdjustableM5X5 or DewertOkin ELEVATE main entry; lifts may be either type. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action supports one main plus up to three distinct lifts and never fans out lighting, massage or programming.
+Controls accessories configured on an AdjustableM5X5 or Adjustable Comfort M1X12 main entry. AdjustableM5X5 retains its one-main-plus-three-lifts limit and accepts its existing member types. M1X12 accepts up to two distinct ELEVATE entries explicitly configured with the M1X12 variant. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action never fans out lighting, massage or programming.
 
 ```yaml
 action: adjustable_bed.starcode_move_lifts
@@ -390,3 +493,183 @@ data:
 ```
 
 Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memory slots, three named-save buttons and reset. Programming sends 55 attempts and reports transport completion, not proof that firmware retained the setting. RGB palette indices and brightness use controller-declared select/number entities. Alarm, sound/EQ, sonic and kneading feedback are read-only.
+
+### `configure_alarm_schedule`
+
+Writes whole weekly and one-time tables for the explicit Tempur Curve, Q-Plus
+Adjustable Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and
+TEMPUR AU app profiles. Serta MP Remote has no accepted table writer and is
+unavailable for this action. `supports_alarm` alone never grants this contract.
+
+```yaml
+action: adjustable_bed.configure_alarm_schedule
+data:
+  device_id: YOUR_DEVICE_ID
+  weekly:
+    - enabled: true
+      wake: true
+      hour: 7
+      minute: 30
+      weekdays: [0, 1, 2, 3, 4]
+  one_time: []
+  dispatch: weekly
+```
+
+Both lists are required and may be empty. `dispatch` is required and is `both`,
+`weekly`, or `one_time`. Records default to `enabled: false`, `wake: false`,
+`hour: 0`, `minute: 0`. Hours are 0..23 and minutes 0..59. Weekly days are unique
+integers, Monday 0 through Sunday 6; an enabled weekly record requires a day.
+Each table permits at most three enabled records. Disabled rows consume no
+slots; an enabled `wake: false` row does consume a slot.
+
+An enabled one-time record must be later today in Home Assistant's local
+timezone. The action captures one reference time and reuses it for every
+physical target and serialization. Equal/past times, nonexistent DST times and
+ambiguous DST times are rejected before any write. There is no next-day
+rollover. Absolute target/reference timestamps first use Java Date millisecond
+precision. Their positive millisecond difference then uses integer division
+for relative hour/minute/second fields; zero bytes do not establish firmware clearing.
+
+Both complete tables, including the unselected table, and every physical
+target must pass validation before checksums or writes. Fourth rows, source
+partial-overflow corruption and negative deltas are rejected. `both` sends
+weekly first, waits 500 ms, then sends one-time; single-table dispatch retains
+500 ms post-write pacing. Configuration uses the existing command lock and
+scheduler with `cancel_running: false`. Native child targets and optional
+`side` retain their existing routing and conflict checks.
+
+Empty tables attempt empty-table writes; clearing firmware is unverified. A
+transport failure may leave one table sent and the other unsent. There is no
+wire rollback. Phone alarm schedulers, local audio, permissions and snooze UI
+storage are outside this BLE action. Normalize any automation's hour/minute
+arithmetic first, reject cross-date results, and preserve its intended weekly
+or one-time dispatch. See each [app guide](CONFIGURATION.md#curve-q-plus-serta-mp-and-sfd-app-profiles)
+for exact weekday-marker, wake-byte, notification and release differences.
+
+## Comfort Enhancements alarm
+
+`adjustable_bed.comfort_enhancements_set_alarm` programs or disables the app's
+current-day BLE alarm. Supply `device_id`, `enabled`, and `time: "06:45:00"`
+when enabling. Optional `memory` is 0 (none), 1 (A/single Memory), or 2 (B,
+MC2/MC3 only); `massage` defaults to false. Paired `side` routing is supported.
+Disable with `enabled: false`, without a time. `adjustable_bed.sync_clock`
+synchronizes the clock and sends the app query. There is no alarm feedback or
+phone scheduler. See [packet behavior and limits](beds/comfort-enhancements.md#clock-and-alarm).
+### Floyd Home actions
+
+`adjustable_bed.floyd_action` exposes confirmed `save_zero_g`,
+`save_anti_snore`, unassigned BLE `assign_room` / `confirm_add`, and preset
+recall with explicit conditional `internal_side` selection. All controls use
+normal `device_id` and paired physical `side` routing. See the
+[Floyd action table](beds/floyd.md#movement-and-presets) before programming a
+preset or assigning membership. Combined movement uses `hold_control` with
+`head_feet_up` or `head_feet_down` and a duration up to 30 seconds. HA automations
+schedule these presets; the app's phone alarms are not on-bed alarm storage.
+
+### BF and Cherish bed alarms
+
+`adjustable_bed.bf_cherish_set_alarm` accepts `device_id`, `enabled`, optional
+`side`, `time` (required when enabling, minute precision), and `memory` (`none`,
+`memory_1`, `memory_2`, default `none`). The clock uses HA local time. All
+targets must be BF or Cherish profiles. [Profile details and example](beds/bf-cherish.md#alarm-action)
+cover distinct packet formats, retained intent and report limitations.
+
+### Casper Base
+
+`adjustable_bed.casper_base` provides capability-validated alarm, light, automatic
+external-detector, sleep sensor and remote-finder operations. Select a `device_id`
+and `operation`; paired targets are validated together before sending commands.
+The [Casper Base guide](beds/casper-base.md#configuration-actions) lists each
+operation's fields and the separate sensor/remote entry types.
+
+### GM Control
+
+`adjustable_bed.gmmotor` runs finite, product-admitted Bluetooth operations.
+Choose `device_id` and `operation`, with optional paired `side`. Every selected
+target is validated before its operation is scheduled. Named product controls
+use their button or `hold_control`; no raw-write action is exposed.
+
+The [GM Control command reference](beds/gmmotor.md#specialized-actions) lists
+clock/countdown/repeat alarm, RGB/timeout, anti-snore, bottom massage timer and
+sleep-name operations. The state sensor's `gmmotor_alarm_choices` attribute lists
+the exact accepted `mode` names for that product. Countdown alarms use `value`
+in minutes, or `alarm_at` with local `hour`/`minute`. Repeat records use `slot`,
+`repeat`, `hour`, `minute`, `mode`, `status`. Clock and light menus require their
+source capability replies.
+
+Independent MM/SXB entries expose `sensor_time`, `sensor_part`,
+`sensor_query_part`, `sensor_live`, `sensor_report`, `sensor_stop`, and the
+SXB-only `sensor_sensitivity` query. Device-part setting uses `value` (MM 1/2,
+SXB 11/12/13). Reports use `part` (1 left, 2 right), `report_type` (1 day, 2 month)
+and optional `report_date`. Live polling uses `enabled`. Local stop sends no
+hardware STOP. The [sleep-module reference](beds/gmmotor.md#sleep-modules) records
+the distinct wire builders and raw-data limitations.
+
+### HJBed configuration
+
+`adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/hjbed.md#configuration-actions).
+
+### Good Vibe Sleep configuration
+
+`adjustable_bed.goodvibe` exposes product-gated alarm, light and snore settings plus independent sleep-sensor queries. Select an exact alarm action ID from the [command/profile tables](beds/goodvibe.md#alarms-and-snore-settings). Sleep reports use `operation: report`, a date, part and report type (1 day, 2 month); metadata, continuation and typed receipt form one operation. The status sensor retains typed reports and per-side live values. Use the app-labelled buttons for normal controls and the existing bounded `hold_control` action for held gestures. See the [protocol guide](beds/goodvibe.md) for every packet, profile gate and lifecycle limit.
+
+## Ergomotion 4.0
+
+The [Ergomotion 4.0 profile](beds/ergomotion-4.md) exposes each selected product's
+named action as a button. Held buttons work with `hold_control` (1–60000 ms);
+the guide's command table lists each control key. Existing device/side targeting
+routes P1 commands and cleanup through the same Left/Right child. A parent
+target defaults to native Both. P2 products do not have a side field.
+
+The existing `rename`, `sync_clock`, `configure_alarm_schedule` and
+`stop_wake_routine` actions also support this profile, including P2 layouts.
+Rename accepts a trimmed 1–16 UTF-16-unit name, with the app's byte-copy rules.
+Weekly/one-time alarm tables each hold three enabled records; both are
+validated before dispatch. One-time targets must be later today and unambiguous
+in the local timezone. These configuration frames have no side field: target
+the physical receiver/parent once when configuring shared state.
+
+RGB requires an eligible product and reported light-on state. Use its light
+toggle button while off. The named high/medium/low buttons preserve 100/60/20%
+channel scaling. Meditation Start/Stop is available only for the guide's exact
+product/name gates; an HA automation can repeat Start for cycle operation.
+
+## eShine E2000 / E3000 / E3100 / E5000 alarm
+
+`adjustable_bed.eshine_set_alarm` sets or disables the next-occurrence bed-local
+alarm. Required fields: `device_id`, `enabled`; an enabled alarm also requires
+minute-precision `time`. `wake_mode` is `zero_g` (default), `flat`, or `massage`
+(E3000/E3100/E5000 only). Optional `side` retains native paired-side routing.
+Every selected target is validated before any clock or alarm write.
+
+Use `sync_clock`, `hold_control`, and the profile's refresh/strength/timer buttons
+for other controls. See the [protocol guide](beds/eshine-okin.md#clock-and-alarms)
+for packet values, timing and hardware-unverified status. This is separate from
+the E6000 app profile.
+
+## Classic Richmat app settings
+
+`adjustable_bed.richmat_classic` targets the selected Avocado Eco Base,
+CoasterSleep, Forty Winks, Milemont or Superior app profile. It validates every
+selected physical target before sending settings.
+
+| Operation | Fields | Effect |
+|---|---|---|
+| `query` | None | Query alarm metadata when present, lamp and aroma capabilities. |
+| `alarm` | `action`, `time` | Schedule one action from the layout’s diagnostics `alarm_actions`, at minute precision. |
+| `cancel_alarm` | None | Cancel the bed alarm. |
+| `rgb` | `rgb_color` | One RGB write, when the app’s lamp capability/menu is available. |
+| `lamp_slider` / `lamp_save` | `minutes`, 0-15 | Preserve the app’s distinct seconds/minutes encodings. |
+| `aroma` | `aroma_times: [mode2_minutes, mode3_minutes, pause_hours]` | Write three settings, ranges 1-60, 1-60 and 1-12. |
+| `massage_popup` | `popup`: `15`, `30`, `45` or `toggle` | Choose an option bound to the current layout’s popup. |
+| `massage_timer` | `progress`: 0-5 | D1RM/D9RM slider, preserving pass-through values 1 and 4. |
+| `desk_target` | `height` | Target within the desk’s current reported app ruler range. |
+| `desk_unit` | `unit`: `cm` or `inches` | Set the source unit value. |
+| `desk_recall` | `slot`: 1-4, optional `duration_ms`: 1-60000 | Hold the selected desk button with 200 ms refresh. Slot 4 is reset. |
+| `desk_reset` | None | Confirm a newly reported desk error once; the last reported error remains visible. |
+
+Alarm, light and aroma actions retain the app’s capability and layout gates.
+Alarm delay is until the next chosen local wall-clock time; the same minute
+means tomorrow. There is no inferred weekly schedule. Desk actions require
+FWRM/WFRM. App mode labels do not authorize one-address side pairing. Wi-Fi,
+cloud and bed network/group administration are excluded.

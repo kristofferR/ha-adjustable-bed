@@ -174,17 +174,19 @@ def test_service_schemas_reject_invalid_wire_ranges() -> None:
         ANTI_SNORE_SCHEMA({"device_id": "bed", "operation": "configure", "mode": "enabled"})
 
 
-def test_late_capability_adds_entities_once_and_unregisters() -> None:
+def test_late_capability_adds_entities_once_and_unregisters(hass) -> None:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.capability_controller.has_dynamic_controller_entities = True
     entry = MagicMock()
     add = MagicMock()
     initial = MagicMock(spec=Entity)
     initial.unique_id = "existing"
+    initial.entity_id = None
     late = MagicMock(spec=Entity)
     late.unique_id = "late_rgb"
+    late.entity_id = None
     current = [initial]
-    async_setup_dynamic_entities(entry, coordinator, add, lambda: tuple(current))
+    async_setup_dynamic_entities(hass, entry, coordinator, add, lambda: tuple(current))
     add.assert_called_once_with([initial])
     callback = coordinator.register_controller_state_callback.call_args.args[0]
     current.append(late)
@@ -197,10 +199,10 @@ def test_late_capability_adds_entities_once_and_unregisters() -> None:
     )
 
 
-def test_static_controller_does_not_gain_a_discovery_listener() -> None:
+def test_static_controller_does_not_gain_a_discovery_listener(hass) -> None:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.capability_controller.has_dynamic_controller_entities = False
-    async_setup_dynamic_entities(MagicMock(), coordinator, MagicMock(), lambda: ())
+    async_setup_dynamic_entities(hass, MagicMock(), coordinator, MagicMock(), lambda: ())
     coordinator.register_controller_state_callback.assert_not_called()
 
 
@@ -296,7 +298,7 @@ async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssis
     ctrl._accept_notification(Notification("capability", {"light": True}))
     add = MagicMock()
     async_setup_dynamic_entities(
-        entry, coordinator, add, lambda: _select_entities_for(hass, coordinator)
+        hass, entry, coordinator, add, lambda: _select_entities_for(hass, coordinator)
     )
     assert add.call_count == 1
     callback = coordinator.register_controller_state_callback.call_args.args[0]
@@ -361,6 +363,8 @@ async def test_light_without_reported_color_uses_power_only(
     ctrl.lights_on = AsyncMock()
     ctrl.lights_toggle = AsyncMock()
     ctrl.set_light_color = AsyncMock()
+    ctrl.light_auto_off_seconds = None
+    coordinator.controller = ctrl
     coordinator.capability_controller = ctrl
 
     async def execute(command, **kwargs):

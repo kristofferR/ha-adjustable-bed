@@ -23,12 +23,19 @@ from typing import Any, Final, TypedDict, cast
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
+    BED_TYPE_CASPER_BASE,
+    BED_TYPE_ERGOMOTION,
+    BED_TYPE_ERGOMOTION_4,
+    BED_TYPE_GMMOTOR,
+    BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
+    BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    CASPER_BASE_SIDE_VARIANTS,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
@@ -135,11 +142,17 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_ERGOMOTION,
+        BED_TYPE_ERGOMOTION_4,
+        BED_TYPE_KEESON,
         BED_TYPE_SBI,
         BED_TYPE_RONDURE,
         BED_TYPE_OKIN_CB24,
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
+        BED_TYPE_ISLEEP,
+        BED_TYPE_CASPER_BASE,
+        BED_TYPE_GMMOTOR,
     }
 )
 
@@ -149,10 +162,28 @@ def supports_single_address_pairing(
     protocol_variant: str | None = None,
     *,
     resolved_variant: str | None = None,
+    product_type: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_KEESON:
+        # Auto can resolve to incompatible P2/JSON/OEM frames at connection.
+        return protocol_variant in {"base", "ergomotion"}
+    if bed_type == BED_TYPE_ERGOMOTION_4:
+        from .ergomotion4_profiles import PRODUCTS
+
+        product = PRODUCTS.get(product_type or "H")
+        return product is not None and product.protocol == "P1"
+    if bed_type == BED_TYPE_GMMOTOR:
+        from .gmmotor_profiles import load_profile
+
+        try:
+            return product_type is not None and 1 in load_profile(product_type).sides
+        except ValueError:
+            return False
+    if bed_type == BED_TYPE_CASPER_BASE:
+        return protocol_variant in CASPER_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_KAIDI:
         effective_variant = (
             resolved_variant
@@ -253,7 +284,39 @@ def effective_child_data(
         raise ValueError(f"Paired entry has no child for side {side!r}")
     shared = inheritable_child_fields(entry_data)
     overrides = inheritable_child_fields(options or {})
+    side_owned = side_owned_profile_fields(descriptor)
+    overrides = {key: value for key, value in overrides.items() if key not in side_owned}
     return {**shared, **descriptor, **overrides}
+
+
+def side_owned_profile_fields(child_data: Mapping[str, Any]) -> frozenset[str]:
+    """Return profile-owned options that must remain attached to one child."""
+    from .app_profiles import per_side_profile
+
+    bed_type = child_data.get(CONF_BED_TYPE)
+    variant = child_data.get(CONF_PROTOCOL_VARIANT)
+    profile = per_side_profile(
+        bed_type if isinstance(bed_type, str) else None,
+        variant if isinstance(variant, str) else None,
+    )
+    if profile is None:
+        return frozenset()
+    fields = set(profile.keys)
+    if profile.variant_owned:
+        fields.add(CONF_PROTOCOL_VARIANT)
+    return frozenset(fields)
+
+
+def filter_child_options(
+    child_data: Mapping[str, Any], options: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Keep a parent option overlay from replacing one child's app profile."""
+    side_owned = side_owned_profile_fields(child_data)
+    return {
+        key: value
+        for key, value in inheritable_child_fields(options).items()
+        if key not in side_owned
+    }
 
 
 def pair_member_addresses(entry_data: Mapping[str, Any]) -> list[str]:
@@ -585,6 +648,7 @@ def build_single_address_pair_entry_data(
         bed_type,
         protocol_variant,
         resolved_variant=resolved_variant,
+        product_type=single_data.get(CONF_PRODUCT_TYPE),
     ):
         raise ValueError(f"{bed_type!r} does not support single-address pairing")
 

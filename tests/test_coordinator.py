@@ -12,11 +12,17 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bluetooth_transport import (
     ConnectionPath,
     TransportClass,
+)
+from custom_components.adjustable_bed.bond_verification import (
+    BondEvidence,
+    BondOwner,
+    BondVerificationStatus,
 )
 from custom_components.adjustable_bed.command_scheduler import (
     CommandKind,
@@ -714,11 +720,25 @@ class TestCoordinatorConnection:
         assert pairing["connection_attempts"][0]["pairing"]["os_bond_reported"] is True
         assert pairing["connection_attempts"][0]["pairing"]["requested"] is False
 
+    @pytest.mark.parametrize(
+        "bond_data",
+        [
+            pytest.param({}, id="unpaired"),
+            # A repair records a bond but keeps the latch. That marker must not
+            # skip pairing: an unpaired proxy reconnect stays unencrypted and
+            # brings the repair straight back (issue #709).
+            pytest.param(
+                {CONF_BLE_BOND_ESTABLISHED: True, CONF_BLE_BOND_MARKER_UNRELIABLE: True},
+                id="latched_after_repair",
+            ),
+        ],
+    )
     async def test_leggett_gen2_connects_discovers_then_pairs(
         self,
         hass: HomeAssistant,
         mock_bluetooth_adapters,
         mock_bleak_client: MagicMock,
+        bond_data: dict[str, bool],
     ) -> None:
         """Gen2 coordinator pairing must follow the LP Control app ordering."""
         del mock_bluetooth_adapters
@@ -734,6 +754,7 @@ class TestCoordinatorConnection:
                 CONF_HAS_MASSAGE: True,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
+                **bond_data,
             },
             unique_id=TEST_ADDRESS,
             entry_id="leggett_gen2_pair_order_test",
@@ -801,13 +822,34 @@ class TestCoordinatorConnection:
                 "custom_components.adjustable_bed.coordinator.asyncio.sleep",
                 new=AsyncMock(),
             ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.delete_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as delete_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as create_issue,
         ):
             coordinator = AdjustableBedCoordinator(hass, entry)
             coordinator._max_retries = 1
+            if bond_data:
+                # The runtime failure that latched the marker is retired by
+                # this link's bond, not re-raised when the connect finishes.
+                coordinator._last_bond_evidence = BondEvidence(
+                    status=BondVerificationStatus.AUTH_FAILED,
+                    owner=BondOwner(transport=TransportClass.PROXY, source="proxy-a"),
+                    operation="runtime_gatt_access",
+                    observed_at="2026-10-27T21:19:09+00:00",
+                )
             result = await coordinator.async_connect()
 
         assert result is True
         assert events == ["connect_and_discover", "pair"]
+        # The bond on this link clears an earlier session's repair, since the
+        # Gen2 probe is never conclusive on its own.
+        delete_issue.assert_awaited_once_with(hass, TEST_ADDRESS)
+        create_issue.assert_not_awaited()
         assert mock_establish_connection.await_args.kwargs["pair"] is False
         assert mock_establish_connection.await_args.kwargs["use_services_cache"] is False
         mock_bleak_client.pair.assert_awaited_once_with()
@@ -939,6 +981,103 @@ class TestCoordinatorConnection:
             )
 
         disconnect.assert_not_awaited()
+        assert coordinator._client is client
+
+        await coordinator.async_disconnect()
+
+    async def test_runtime_auth_failure_pairs_the_unpaired_link_before_any_repair(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """An unpaired proxy link to a bonded bed is unencrypted, not unbonded.
+
+        Issue #709: the ESP32 proxy does not raise link security on this reply,
+        so pairing the live link with the stored keys fixes it without pairing
+        mode. Only a failure on the now-paired link is evidence for the repair.
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._bed_type = BED_TYPE_LEGGETT_GEN2
+        client = coordinator._client
+        client.pair = AsyncMock()
+
+        async def _encryption_failure_command(_controller):
+            raise BleakError(
+                "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+                "handle=42 error=15 description=Insufficient encryption"
+            )
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as create_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.delete_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as delete_issue,
+        ):
+            with pytest.raises(BleakError):
+                await coordinator.async_execute_controller_command(
+                    _encryption_failure_command, cancel_running=False
+                )
+
+            client.pair.assert_awaited_once_with()
+            create_issue.assert_not_awaited()
+            delete_issue.assert_awaited_once_with(hass, coordinator.address)
+            assert coordinator._client is client
+            assert coordinator._last_bond_verification["status"] == "encrypted_in_place"
+
+            with pytest.raises(BleakError):
+                await coordinator.async_execute_controller_command(
+                    _encryption_failure_command, cancel_running=False
+                )
+
+        # The link already paired, so the repeat is real evidence.
+        client.pair.assert_awaited_once_with()
+        create_issue.assert_awaited_once()
+
+        await coordinator.async_disconnect()
+
+    async def test_runtime_auth_failure_raises_the_repair_when_in_place_pairing_fails(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """A bed that refuses the bond outside its pairing window still gets the repair."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._bed_type = BED_TYPE_LEGGETT_GEN2
+        client = coordinator._client
+        client.pair = AsyncMock(side_effect=BleakError("pairing rejected"))
+
+        async def _encryption_failure_command(_controller):
+            raise BleakError(
+                "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+                "handle=42 error=15 description=Insufficient encryption"
+            )
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as create_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.delete_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as delete_issue,
+            pytest.raises(BleakError),
+        ):
+            await coordinator.async_execute_controller_command(
+                _encryption_failure_command, cancel_running=False
+            )
+
+        client.pair.assert_awaited_once_with()
+        create_issue.assert_awaited_once()
+        delete_issue.assert_not_awaited()
         assert coordinator._client is client
 
         await coordinator.async_disconnect()
@@ -5501,7 +5640,8 @@ class TestRuntimeBedTypeCorrection:
         adapter_result = MagicMock()
         adapter_result.device = MagicMock()
         adapter_result.device.address = TEST_ADDRESS
-        adapter_result.device.name = TEST_NAME
+        # LP Control names identify the pairing-required 6-byte profile.
+        adapter_result.device.name = "LP BED CONTROL"
         adapter_result.device.details = {"source": "local"}
         adapter_result.source = "local"
         adapter_result.rssi = -60
@@ -5557,10 +5697,10 @@ class TestRuntimeBedTypeCorrection:
             result = await coordinator.async_connect()
 
         assert result is True
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
-        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_LEGGETT_OKIN
+        assert coordinator.bed_type == BED_TYPE_LEGGETT_OKIN
         assert mock_create_controller.await_count == 1
-        assert mock_create_controller.await_args.kwargs["bed_type"] == BED_TYPE_OKIN_CST
+        assert mock_create_controller.await_args.kwargs["bed_type"] == BED_TYPE_LEGGETT_OKIN
         assert mock_bleak_client.disconnect.await_count == 1
         assert [call.kwargs.get("pair") for call in mock_establish_connection.await_args_list] == [
             False,
@@ -5681,6 +5821,79 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.motor_pulse_delay_ms == LEGGETT_OKIN_PULSE_DEFAULTS[1]
         assert entry.data[CONF_MOTOR_PULSE_COUNT] == LEGGETT_OKIN_PULSE_DEFAULTS[0]
         assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == LEGGETT_OKIN_PULSE_DEFAULTS[1]
+
+
+    async def test_okimat_drive_on_cst_raises_route_repair_without_switching(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+        mock_coordinator_connected: None,
+        mock_establish_connection: AsyncMock,
+    ):
+        """Issue #555: an OKIMAT drive saved as CST is offered a repair, not rerouted."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Milou",
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: "Milou",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: "auto",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="test_entry_issue_555",
+        )
+        entry.add_to_hass(hass)
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID)],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID)],
+            ),
+            SimpleNamespace(uuid=NORDIC_DFU_SERVICE_UUID, characteristics=[]),
+        ]
+        mock_bleak_client.services = MagicMock()
+        mock_bleak_client.services.__iter__ = lambda self: iter(gatt_services)
+        mock_bleak_client.services.__len__ = lambda self: len(gatt_services)
+        mock_bleak_client.services.get_service = MagicMock(return_value=None)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=("DewertOkin GmbH", "OKIMAT 4 IPS"),
+            ),
+            patch.object(
+                AdjustableBedCoordinator,
+                "_async_verify_bonded",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            assert await coordinator.async_connect() is True
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+        assert entry.data["okimat_model_on_cst"] == "OKIMAT 4 IPS"
+        issue = ir.async_get(hass).async_get_issue(
+            DOMAIN, "furnimove_layout_test_entry_issue_555_standalone"
+        )
+        assert issue is not None and issue.translation_key == "okimat_cst_route"
+        assert issue.translation_placeholders == {"name": "Milou", "model": "OKIMAT 4 IPS"}
 
 
 class TestDeviceInfoCache:

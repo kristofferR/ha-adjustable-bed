@@ -15,8 +15,14 @@ from .adapter import discover_services
 from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
+    BED_TYPE_BF,
+    BED_TYPE_CASPER_BASE,
+    BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -24,9 +30,20 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_ERGOMOTION_4,
+    BED_TYPE_ESHINE,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_GMMOTOR,
+    BED_TYPE_GMMOTOR_SLEEP_MM,
+    BED_TYPE_GMMOTOR_SLEEP_SXB,
+    BED_TYPE_GOODVIBE,
+    BED_TYPE_HJBED,
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -68,6 +85,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -82,9 +100,11 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -95,6 +115,7 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
+    CLUSTER033_BED_TYPES,
     CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
@@ -131,7 +152,9 @@ from .const import (
     CONF_SLEEPTRACKER_RESTRICTED,
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
     CONF_SLEEPTRACKER_UNIT,
+    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
@@ -150,6 +173,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     HAS_LIGHT_DEFAULTS,
+    KAIDI_VARIANT_FLOYD,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -209,6 +233,7 @@ from .const import (
     SLEEPYS_BOX25_VARIANT_LEGACY,
     SLEEPYS_BOX25_VARIANT_STAR,
     SOLACE_VARIANT_WOOSA,
+    STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
     SVANE_VARIANT_MULTI,
@@ -354,6 +379,17 @@ class _ControllerSpec:
 # tests/test_controller_contract.py resolves every entry, so a bad module or
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_BF: _ControllerSpec("bf_cherish", "BfCherishController"),
+    BED_TYPE_CHERISH: _ControllerSpec("bf_cherish", "BfCherishController", MappingProxyType({"cherish": True})),
+    BED_TYPE_ESHINE: _ControllerSpec("eshine", "EshineController"),
+    BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
+    "casper_remote": _ControllerSpec("casper_sleep", "CasperRemoteController"),
+    "casper_sleep_mm": _ControllerSpec(
+        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "mm"})
+    ),
+    "casper_sleep_sxb": _ControllerSpec(
+        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "sxb"})
+    ),
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
@@ -379,16 +415,13 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     ),
     BED_TYPE_SUTA: _ControllerSpec("suta", "SutaController"),
     BED_TYPE_TIMOTION_AHF: _ControllerSpec("timotion_ahf", "TiMOTIONAhfController"),
-    BED_TYPE_REVERIE: _ControllerSpec("reverie", "ReverieController"),
-    BED_TYPE_REVERIE_NIGHTSTAND: _ControllerSpec(
-        "reverie_nightstand", "ReverieNightstandController"
-    ),
     BED_TYPE_COMFORT_MOTION: _ControllerSpec("jiecang", "JiecangController"),
     # Ergomotion is the Keeson protocol with position feedback; Serta Motion
     # Perfect is the same protocol with its own variant.
     BED_TYPE_ERGOMOTION: _ControllerSpec(
         "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_ERGOMOTION})
     ),
+    BED_TYPE_ERGOMOTION_4: _ControllerSpec("ergomotion4", "Ergomotion4Controller"),
     BED_TYPE_SERTA: _ControllerSpec(
         "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_SERTA})
     ),
@@ -404,7 +437,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_BEDTECH: _ControllerSpec("bedtech", "BedTechController"),
     BED_TYPE_SLEEPYS_BOX15: _ControllerSpec("sleepys", "SleepysBox15Controller"),
     BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys", "SleepysBox24Controller"),
-    BED_TYPE_STAR_ELEVATE: _ControllerSpec("star_elevate", "StarElevateController"),
     BED_TYPE_VIBRADORM: _ControllerSpec("vibradorm", "VibradormController"),
     BED_TYPE_SCOTT_LIVING: _ControllerSpec("scott_living", "ScottLivingController"),
 }
@@ -453,6 +485,7 @@ async def create_controller(
     capability_snapshot: Mapping[str, Any] | None = None,
     rmcontrol_product: str = "",
     rmcontrol_side: str = "left",
+    advertisement_name: str | None = None,
 ) -> BedController:
     """Create the appropriate bed controller.
 
@@ -485,6 +518,63 @@ async def create_controller(
         ValueError: If bed_type is unknown
         ConnectionError: If auto-detection is needed but client is not connected
     """
+    if bed_type == BED_TYPE_COMFORT_ENHANCEMENTS:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.comfort_enhancements", __package__
+        )
+        from .beds.comfort_enhancements import ComfortEnhancementsController
+
+        return ComfortEnhancementsController(coordinator, layout=protocol_variant or "")
+
+    if bed_type == BED_TYPE_ADJUSTAMATTRESS:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.adjustamattress", __package__
+        )
+        from .beds.adjustamattress import AdjustaMattressController
+
+        return AdjustaMattressController(
+            coordinator, protocol_variant=protocol_variant,
+            device_name=device_name if client is not None else None,
+        )
+
+    if bed_type == BED_TYPE_CASPER_BASE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.casper_base", __package__
+        )
+        from .beds.casper_base import CasperBaseController
+
+        return CasperBaseController(coordinator, product=protocol_variant or "")
+
+    if bed_type == BED_TYPE_GMMOTOR:
+        from .const import CONF_GMMOTOR_SIDE
+        from .gmmotor_profiles import profile_choices
+
+        profile = coordinator.entry.data.get(CONF_PRODUCT_TYPE, "")
+        if profile not in profile_choices():
+            profile = ""  # Source factory's unsupported-selector fallback.
+        side = coordinator.entry.data.get(CONF_GMMOTOR_SIDE, "left")
+        if profile in ("FWRM", "WFRM"):
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.gmmotor_desk", __package__
+            )
+            from .beds.gmmotor_desk import GmmotorDeskController
+
+            return GmmotorDeskController(coordinator, profile=profile)
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.gmmotor", __package__
+        )
+        from .beds.gmmotor import GmmotorController
+
+        return GmmotorController(coordinator, profile=profile, side=side)
+
+    if bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.gmmotor_sleep", __package__
+        )
+        from .beds.gmmotor_sleep import GmmotorSleepController
+
+        return GmmotorSleepController(coordinator, sxb=bed_type == BED_TYPE_GMMOTOR_SLEEP_SXB)
+
     if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
         # The app's name rule picks the table unless the variant fixes the
         # branch; offline controllers must not read the display name.
@@ -498,6 +588,54 @@ async def create_controller(
             protocol_variant=protocol_variant,
             device_name=device_name if client is not None else None,
         )
+
+    if bed_type == BED_TYPE_REVERIE_NIGHTSTAND:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.reverie_nightstand", __package__
+        )
+        from .beds.reverie_nightstand import ReverieNightstandController
+
+        return ReverieNightstandController(coordinator, model=protocol_variant)
+
+    if bed_type == BED_TYPE_REVERIE_PAIRLINK:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.reverie_pairlink", __package__
+        )
+        from .beds.reverie_pairlink import ReveriePairlinkController
+        from .beds.reverie_pairlink_runtime import create_pairlink_runtime_for_entry
+
+        pairlink_runtime = getattr(coordinator, "_pairlink_runtime", None)
+        if pairlink_runtime is None:
+            entry_data = getattr(coordinator.entry, "data", {})
+            entry_options = getattr(coordinator.entry, "options", {})
+            pairlink_runtime = create_pairlink_runtime_for_entry(
+                entry_data if isinstance(entry_data, Mapping) else {},
+                entry_options if isinstance(entry_options, Mapping) else {},
+                manufacturer_data=manufacturer_data,
+            )
+            coordinator._pairlink_runtime = pairlink_runtime
+        else:
+            pairlink_runtime.refresh_configured_inputs(
+                coordinator.entry.data,
+                getattr(coordinator.entry, "options", {}),
+                manufacturer_data=manufacturer_data,
+            )
+
+        return ReveriePairlinkController(
+            coordinator,
+            model=protocol_variant,
+            device_name=device_name,
+            manufacturer_data=manufacturer_data,
+            runtime=pairlink_runtime,
+        )
+
+    if bed_type == BED_TYPE_REVERIE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.reverie", __package__
+        )
+        from .beds.reverie import ReverieController
+
+        return ReverieController(coordinator, model=protocol_variant)
 
     if bed_type in RICHMAT_MH_APPS:
         # The app's name rule picks the model unless the variant fixes it;
@@ -545,6 +683,37 @@ async def create_controller(
         from .beds.solace import SolaceController
 
         return SolaceController(coordinator)
+
+    if bed_type == BED_TYPE_GOODVIBE:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.goodvibe", __package__)
+        from .beds.goodvibe import GoodVibeController
+        return GoodVibeController(coordinator, profile=protocol_variant or "")
+
+    if bed_type == BED_TYPE_ESHINE_OKIN:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.eshine_okin", __package__)
+        from .beds.eshine_okin import EshineOkinController
+        return EshineOkinController(coordinator, profile=protocol_variant or "")
+
+    if bed_type == "richmat_classic_apps":
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.cluster018", __package__)
+        from .beds.cluster018 import Cluster018Controller
+        from .cluster018_profiles import load_catalog
+        await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
+        return Cluster018Controller(coordinator, device_name=device_name)
+
+
+    if bed_type == BED_TYPE_HJBED:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)
+        from .beds.hjbed import HJBedController
+        return HJBedController(coordinator, profile=protocol_variant or "")
+
+    if bed_type == BED_TYPE_GLIDEAWAY_MOTION:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.glideaway_motion", __package__
+        )
+        from .beds.glideaway_motion import GlideawayMotionController
+
+        return GlideawayMotionController(coordinator, model=protocol_variant)
 
     if bed_type == BED_TYPE_ZSERIES:
         # The app page is a user choice nothing on the bed identifies.
@@ -747,6 +916,21 @@ async def create_controller(
             transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
         )
 
+    if bed_type == BED_TYPE_DOUBLESLEEP:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.doublesleep", __package__)
+        from .beds.doublesleep import DoubleSleepController
+        from .doublesleep_protocol import real_mac, select_model, select_protocol
+
+        data = {**coordinator.entry.data, **coordinator.entry.options}
+        name = advertisement_name or data.get(CONF_BLE_DEVICE_NAME, device_name or "")
+        if protocol_variant not in ("p1", "p2", "p3") and manufacturer_data is None:
+            raise ConnectionError("SleepEase automatic driver selection requires a live advertisement")
+        protocol = select_protocol(name, manufacturer_data or {})
+        if protocol_variant in ("p1", "p2", "p3"):
+            protocol = protocol_variant
+        model = int(data.get(CONF_PRODUCT_TYPE, select_model(device_name or name, manufacturer_data or {})))
+        return DoubleSleepController(coordinator, protocol=protocol, model=model, advertised_identity=real_mac(name, manufacturer_data or {}))
+
     if bed_type == BED_TYPE_SLEEPTRACKER:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.sleeptracker", __package__
@@ -841,6 +1025,33 @@ async def create_controller(
             device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
         )
 
+    if bed_type == BED_TYPE_STARCODE_M1X12:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.starcode_m1x12", __package__
+        )
+        from .beds.starcode_m1x12 import StarcodeM1X12Controller
+
+        return StarcodeM1X12Controller(
+            coordinator,
+            profile=coordinator.entry.data[CONF_STARCODE_M1X12_PROFILE],
+            device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
+        )
+
+    if bed_type == BED_TYPE_STAR_ELEVATE:
+        if protocol_variant == STAR_ELEVATE_VARIANT_M1X12:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.starcode_m1x12", __package__
+            )
+            from .beds.starcode_m1x12 import StarElevateM1X12Controller
+
+            return StarElevateM1X12Controller(coordinator)
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.star_elevate", __package__
+        )
+        from .beds.star_elevate import StarElevateController
+
+        return StarElevateController(coordinator)
+
     if bed_type == BED_TYPE_VIBRADORM_APP:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.vibradorm_app", __package__
@@ -892,6 +1103,18 @@ async def create_controller(
         from .beds.jiecang_app import JiecangAppController
 
         entry_data = coordinator.entry.data
+        if entry_data[CONF_JIECANG_APP_PROFILE] == "comfort_motion":
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.comfort_motion", __package__
+            )
+            from .beds.comfort_motion import ComfortMotionController
+
+            return ComfortMotionController(
+                coordinator,
+                layout=entry_data[CONF_JIECANG_APP_LAYOUT],
+                transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+                has_light=entry_data.get(CONF_HAS_LIGHT, True),
+            )
         return JiecangAppController(
             coordinator,
             profile=entry_data[CONF_JIECANG_APP_PROFILE],
@@ -940,6 +1163,16 @@ async def create_controller(
             raise ValueError(
                 "Kaidi product metadata could not be mapped to a command family. "
                 "Select a Kaidi protocol variant manually in options."
+            )
+
+        if resolution.variant == KAIDI_VARIANT_FLOYD:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.floyd", __package__
+            )
+            from .beds.floyd import FloydController
+
+            return FloydController(
+                coordinator, device_name=device_name, manufacturer_data=manufacturer_data,
             )
 
         return KaidiController(
@@ -1534,6 +1767,23 @@ async def create_controller(
         _LOGGER.info("Using BOX25 StarCode dialect (%s)", selection_reason)
         return SleepysBox25Controller(coordinator)
 
+    if bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sleepys_app", __package__
+        )
+        from .beds.sleepys_app import SleepysEliteAppController
+
+        entry = getattr(coordinator, "entry", None)
+        entry_data = getattr(entry, "data", {})
+        entry_options = getattr(entry, "options", {})
+        selector = entry_options.get(
+            CONF_SLEEPYS_ELITE_SELECTOR,
+            entry_data.get(CONF_SLEEPYS_ELITE_SELECTOR),
+        )
+        if selector is None:
+            raise ValueError("Sleepy's Elite app profile requires an explicit selector")
+        return SleepysEliteAppController(coordinator, selector)
+
     if bed_type == BED_TYPE_RONDURE:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.rondure", __package__
@@ -1572,6 +1822,31 @@ async def create_controller(
         )
         return CoolBaseController(coordinator, dewert_okin_profile=dewert_okin_profile)
 
+    if bed_type in CLUSTER033_BED_TYPES:
+        module_name, class_name = {
+            'tempur_curve': ('tempur_curve', 'TempurCurveController'),
+            'qplus_app': ('sbi', 'QPlusAppController'),
+            'serta_mp_remote': ('serta_mp_remote', 'SertaMPRemoteController'),
+            'omazz_adjusto_iii': ('omazz_adjusto_iii', 'OmazzAdjustoIIIController'),
+            'ergomotion_app': ('ergomotion_app', 'ErgomotionAppController'),
+            'row_control': ('row_control', 'RowControlController'),
+            'ergo_slim': ('ergo_slim', 'ErgoSlimController'),
+            'tempur_au': ('tempur_au', 'TempurAUController'),
+        }[bed_type]
+        module = await coordinator.hass.async_add_import_executor_job(
+            import_module, f".beds.{module_name}", __package__
+        )
+        data = coordinator.entry.data
+        kwargs = {"layout": data.get(CONF_PRODUCT_TYPE)}
+        if bed_type == "qplus_app":
+            kwargs["side"] = protocol_variant if protocol_variant in ("both", "side_a", "side_b") else "both"
+        if bed_type == "serta_mp_remote":
+            kwargs["memories"] = tuple(
+                (data.get(f"serta_mp_memory_{slot}_head", 15), data.get(f"serta_mp_memory_{slot}_foot", 0 if slot == 4 else 35))
+                for slot in range(1, 5)
+            )
+        return getattr(module, class_name)(coordinator, **kwargs)
+
     if bed_type == BED_TYPE_SBI:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.sbi", __package__
@@ -1586,6 +1861,19 @@ async def create_controller(
         )
         _LOGGER.debug("Using SBI controller with variant: %s", variant)
         return SBIController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_BEDSENSE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.bedsense", __package__
+        )
+        from .beds.bedsense import BedSenseController, BedSenseSession
+
+        return BedSenseController(
+            coordinator,
+            variant=protocol_variant or "auto",
+            device_name=device_name if client is not None else None,
+            session=app_session(coordinator.hass, coordinator.address, "bedsense", BedSenseSession),
+        )
 
     controller = await _create_from_registry(coordinator, bed_type)
     if controller is not None:

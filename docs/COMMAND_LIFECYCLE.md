@@ -26,6 +26,8 @@ notification requirements, or preset semantics of other beds.
 ## Boundaries
 
 - Persistent-connection controllers keep their existing connection requirement.
+  An idle timeout of `0` gives any bed the same lifecycle while Disconnect After
+  Command is off: no idle timer, and a dropped link reconnects on demand.
   Sequential pairs still explicitly disconnect before switching sides; a group
   hold never overrides explicit disconnect.
 - The scheduler continues to serialize opaque controller operations. Same-resource
@@ -51,6 +53,32 @@ notification requirements, or preset semantics of other beds.
   should distinguish service outcomes, actual movement, cleanup latency, and idle
   reconnections, rather than treating an accepted service as proof of movement.
 
+## Card hold ownership
+
+Held controls keep the existing flat entity attributes: button `held_control`,
+cover `held_control_up` / `held_control_down`, and the two delay fields.
+Cover `held_stop_scope` explicitly distinguishes a whole-side STOP from a
+motor-specific STOP; timing metadata alone does not imply either scope.
+Combined hold metadata is exposed only while both current receivers have matching
+contracts and concurrent execution is available. A declared-hold combined button
+still uses a finite timed operation when that metadata is absent, including
+sequential mode. Sleepy's retains its native action duration; other declared
+holds retain the one-second card pulse. Each receiver keeps its own controller
+cleanup. Sleepy's app delay fields govern card gestures, not additional delays
+around the controller's finite service action.
+
+Window blur and hidden-document transitions release the captured hold target.
+An unrelated side's STOP leaves the other side's hold owner intact. Exact STOP
+and cover identities remain owned even if composite scope metadata disappears;
+a newer hold or assistive activation supersedes older deferred cleanup.
+Keyboard release matches the original activation key and STOP target.
+
+Registered hold/timed and Reverie comfort, routine, and diagnostic operations
+capture physical STOP epochs and pair resource generations before preflight.
+A STOP on a later target also invalidates its pending dispatch while an earlier
+target is still starting. Paired admission rechecks ownership after lane waits,
+before reservations can cancel newer work, and before committing movement.
+
 ## Useful regression scenarios
 
 Use the existing coordinator, controller-contract, scheduler, paired, and timed
@@ -59,3 +87,11 @@ service completion times, reported positions when available, and the final link
 release time. Exercise cold commands, overlapping replacements, STOP during
 startup/read/cleanup, full recalls, combined failure cleanup, and several minutes
 of idle after release. Keep raw device logs private.
+
+Controller-declared motor holds also bound ordinary native cover actions. The
+cover uses the existing one-second caller pulse and the declared start/release
+policy; assistive card activation uses the same bounded movement service.
+Motor-specific cover Stops invalidate only an overlapping axis. Declared
+side-wide cover Stops and bed Stops retain their physical side scope.
+Activation-key endings handled by a row do not reach the unscoped window release
+fallback.

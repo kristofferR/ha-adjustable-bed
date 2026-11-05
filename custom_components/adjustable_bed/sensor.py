@@ -23,6 +23,8 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
+    BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
     BEDS_WITH_ANGLE_SENSING,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -31,6 +33,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    bed_type_has_position_feedback,
 )
 from .entity import AdjustableBedEntity
 from .entity_discovery import (
@@ -145,7 +148,7 @@ async def async_setup_entry(
     for runtime in entity_runtimes(coordinator):
         async_remove_retired_rmcontrol_telemetry(hass, entry, runtime, "sensor")
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities,
+            hass, entry, runtime, async_add_entities,
             partial(_sensor_entities_for, hass, runtime),
         )
 
@@ -157,10 +160,16 @@ def _sensor_entities_for(
     entry = coordinator.entry  # ChildEntryView for a paired child; real entry otherwise
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
     bed_type = entry.data.get(CONF_BED_TYPE)
+    protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
+    has_angle_feedback = bed_type in BEDS_WITH_ANGLE_SENSING
+    if bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
+        has_angle_feedback = bed_type_has_position_feedback(bed_type, protocol_variant)
     # capability_controller: an offline paired side still gets its sensors built
     # from a client-free controller minted from config (see coordinator).
     controller = coordinator.capability_controller
+    if controller is not None and controller.auto_enable_massage:
+        has_massage = True
     position_number_keys = (
         {spec.position_key for spec in controller.position_number_specs}
         if controller is not None
@@ -176,7 +185,7 @@ def _sensor_entities_for(
         # Linak position numbers already expose the app's exact reference values.
         # Remove every legacy angle entity, including axes omitted by a new mask.
         _async_remove_stale_angle_entities(hass, coordinator)
-    elif bed_type not in BEDS_WITH_ANGLE_SENSING:
+    elif not has_angle_feedback:
         _async_remove_stale_angle_entities(hass, coordinator)
     elif position_number_keys:
         # A position number already exposes the same live value while also
@@ -199,7 +208,7 @@ def _sensor_entities_for(
     if not coordinator.disable_angle_sensing:
         if bed_type == BED_TYPE_LINAK:
             _LOGGER.debug("Skipping duplicate Linak angle sensors")
-        elif bed_type not in BEDS_WITH_ANGLE_SENSING:
+        elif not has_angle_feedback:
             _LOGGER.debug("Skipping angle sensors for %s - no angle feedback", bed_type)
         else:
             for description in SENSOR_DESCRIPTIONS:
@@ -213,7 +222,6 @@ def _sensor_entities_for(
     # Set up massage state sensors (only for beds with massage and state feedback)
     # Keeson/Ergomotion beds have state feedback via BLE notifications
     if has_massage and controller is not None:
-        protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
         has_massage_feedback = bed_type == BED_TYPE_ERGOMOTION or (
             bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
         )
@@ -287,7 +295,7 @@ def _sensor_entities_for(
 
     if controller is not None:
         # Retire this runtime's app telemetry after a protocol/profile change.
-        for namespace in ("motion_bed_", "sleeptracker_"):
+        for namespace in ("motion_bed_", "sleeptracker_", "bedsense_", "sleepys_app_", "glideaway_motion_"):
             prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
             prefix += namespace
             desired = {coordinator.entity_unique_id(spec.key) for spec in controller.controller_state_sensor_specs}

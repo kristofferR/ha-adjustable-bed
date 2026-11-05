@@ -10,22 +10,28 @@ from typing import TYPE_CHECKING, Any, cast
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import ProductButtonSpec, SideBoundController
+from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec, SideBoundController
 from .const import (
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_TIMOTION_AHF,
     DOMAIN,
     PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
+    SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
@@ -34,7 +40,13 @@ from .paired_coordinator import (
 from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
+    from .beds.base import (
+        BedController,
+        ControllerButtonSpec,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+        SideBoundController,
+    )
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -178,6 +190,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: cast(Any, ctrl).preset_lounge(),
         cancel_movement=True,
         required_capability="supports_preset_lounge",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_reading",
+        translation_key="preset_reading",
+        icon="mdi:book-open-page-variant",
+        press_fn=lambda ctrl: ctrl.preset_reading(),
+        cancel_movement=True,
+        required_capability="supports_preset_reading",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_swing",
@@ -445,7 +465,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_up(),
-        required_capability="supports_massage_intensity_step_control",
+        required_capability="supports_massage_intensity_up_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_down",
@@ -729,31 +749,70 @@ async def async_setup_entry(
     # both sides support (since paired setup omits a combined cover, these buttons
     # are how the whole bed is driven from the parent device/card).
     if isinstance(coordinator, PairedBedCoordinator):
-        entities: list[ButtonEntity] = []
         children = list(coordinator.children.values())
         _async_migrate_massage_intensity_button_unique_ids(hass, coordinator, key_suffix="_both")
+        # OCTO sides add their own controls once their capability list is known.
+        static_runtimes: list[EntityRuntime] = []
         for runtime in entity_runtimes(coordinator):
-            entities.extend(
-                _button_entities_for(
+            if octo_controller(runtime.capability_controller) is not None:
+                async_setup_dynamic_entities(
                     hass,
+                    entry,
                     runtime,
+                    async_add_entities,
+                    lambda runtime=runtime: _button_entities_for(hass, runtime),
                 )
+            else:
+                static_runtimes.append(runtime)
+
+        def build_paired_buttons() -> list[ButtonEntity]:
+            entities: list[ButtonEntity] = []
+            for runtime in static_runtimes:
+                entities.extend(_button_entities_for(hass, runtime))
+            # A pair whose every side lacks a global STOP frame gets no combined Stop.
+            if not all(remacro_side_lacks_global_stop(child) for child in children):
+                entities.append(PairedBedStopButton(coordinator))
+            # Combined buttons read both children's live capabilities, so pass the
+            # raw children (the button itself dispatches via the parent, side=both).
+            entities.extend(_combined_button_entities_for(coordinator, children))
+            _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
+            return entities
+
+        if any(runtime.bed_type == BED_TYPE_JIECANG_APP for runtime in static_runtimes):
+            async_setup_dynamic_entities(
+                hass,
+                entry,
+                static_runtimes[0],
+                async_add_entities,
+                build_paired_buttons,
+                additional_coordinators=static_runtimes[1:],
             )
-        # A pair whose every side lacks a global STOP frame gets no combined Stop.
-        if not all(remacro_side_lacks_global_stop(child) for child in children):
-            entities.append(PairedBedStopButton(coordinator))
-        # Combined buttons read both children's live capabilities, so pass the
-        # raw children (the button itself dispatches via the parent, side=both).
-        entities.extend(_combined_button_entities_for(coordinator, children))
-        _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
-        async_add_entities(entities)
-        _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, entities)
+        else:
+            entities = build_paired_buttons()
+            async_add_entities(entities)
+            _async_follow_motion_bed_module_actions(
+                hass, entry, coordinator, async_add_entities, entities
+            )
         return
 
-    initial = [entity for runtime in entity_runtimes(coordinator)
-               for entity in _button_entities_for(hass, runtime)]
+    initial: list[ButtonEntity] = []
+    for runtime in entity_runtimes(coordinator):
+        if (
+            octo_controller(runtime.capability_controller) is not None
+            or runtime.bed_type == BED_TYPE_JIECANG_APP
+        ):
+            async_setup_dynamic_entities(
+                hass,
+                entry,
+                runtime,
+                async_add_entities,
+                lambda runtime=runtime: _button_entities_for(hass, runtime),
+            )
+        else:
+            initial.extend(_button_entities_for(hass, runtime))
     async_add_entities(initial)
     _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, initial)
+
 
 def _async_follow_motion_bed_module_actions(
     hass: HomeAssistant,
@@ -765,7 +824,10 @@ def _async_follow_motion_bed_module_actions(
     # A Motion Bed hub discovers each module after subscribing to status replies.
     # Keep entity identities stable while adding newly reported module controls.
     created = {entity.unique_id for entity in initial}
-    actions = {entity.unique_id: entity for entity in initial if isinstance(entity, ControllerActionButton)}
+    actions = {
+        entity.unique_id: entity for entity in initial if isinstance(entity, ControllerActionButton)
+    }
+
     def add_motion_bed_module_actions(updates: dict[str, object]) -> None:
         additions: list[ButtonEntity] = []
         for runtime in entity_runtimes(coordinator):
@@ -784,34 +846,51 @@ def _async_follow_motion_bed_module_actions(
                 entity.async_write_ha_state()
         if additions:
             async_add_entities(additions)
+
     for runtime in entity_runtimes(coordinator):
         if runtime.bed_type == BED_TYPE_MOTION_BED:
-            entry.async_on_unload(runtime.register_controller_state_callback(add_motion_bed_module_actions))
+            entry.async_on_unload(
+                runtime.register_controller_state_callback(add_motion_bed_module_actions)
+            )
 
 
-def _button_entities_for(
-    hass: HomeAssistant, coordinator: EntityRuntime
-) -> list[ButtonEntity]:
+def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[ButtonEntity]:
     """Build button entities for a single (child or standalone) coordinator."""
     # capability_controller: an offline paired side still gets its buttons built
     # from a client-free controller minted from config (see coordinator); stale
     # cleanup below runs against it too (only when non-None).
     controller = coordinator.capability_controller
+    octo = octo_controller(controller)
     has_massage = _massage_entities_enabled(coordinator, controller)
+
+    if octo is not None and not octo.controller_entity_discovery_complete:
+        return [
+            AdjustableBedButton(coordinator, description)
+            for description in BUTTON_DESCRIPTIONS
+            if description.is_coordinator_action
+        ]
 
     if controller is not None:
         _async_migrate_massage_intensity_button_unique_ids(hass, coordinator)
-        _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
+        # Unresolved capabilities (for example Linak memory slots) are not proof
+        # that a button is gone, so keep existing entities until discovery ends.
+        if controller.controller_entity_discovery_complete:
+            _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
 
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
+        if octo is not None and description.memory_slot is not None:
+            # OCTO exposes memory slots dynamically, including slots beyond the
+            # legacy fixed 1-8 button descriptions.
+            continue
         if not _should_add_button(description, controller, has_massage):
             continue
         entities.append(AdjustableBedButton(coordinator, description))
 
     if controller is not None:
         specs = tuple(
-            spec for spec in controller.controller_button_specs
+            spec
+            for spec in controller.controller_button_specs
             if isinstance(spec, ProductButtonSpec)
         )
         desired = {coordinator.entity_unique_id(f"product_action_{spec.key}") for spec in specs}
@@ -827,9 +906,40 @@ def _button_entities_for(
                 and row.unique_id not in desired
             ):
                 registry.async_remove(row.entity_id)
+
+        if octo is not None and octo.controller_entity_discovery_complete:
+            # Memory slots are discovered from the complete CAP_END list. Retire
+            # only this Octo runtime's slot identities, including slots above
+            # the old fixed 1..8 set, and keep child-side suffixes scoped.
+            memory_keys = {
+                spec.key
+                for spec in controller.controller_button_specs
+                if spec.key.startswith(("preset_memory_", "program_memory_"))
+            }
+            for slot_prefix in ("preset_memory_", "program_memory_"):
+                prefix, suffix = coordinator.entity_unique_id(slot_prefix).split(slot_prefix, 1)
+                prefix += slot_prefix
+                desired_memory = {
+                    coordinator.entity_unique_id(key)
+                    for key in memory_keys
+                    if key.startswith(slot_prefix)
+                }
+                for row in list(
+                    er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)
+                ):
+                    if (
+                        row.domain != "button"
+                        or row.platform != DOMAIN
+                        or not row.unique_id.startswith(prefix)
+                        or not row.unique_id.endswith(suffix)
+                    ):
+                        continue
+                    slot = row.unique_id[len(prefix) : len(row.unique_id) - len(suffix)]
+                    if slot.isdecimal() and row.unique_id not in desired_memory:
+                        registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_"):
+        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_", "eshine_okin_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -838,18 +948,31 @@ def _button_entities_for(
             if (
                 namespace == "motion_bed_"
                 and coordinator.bed_type == BED_TYPE_MOTION_BED
-                and any(spec.key == "motion_bed_active_module" for spec in controller.controller_select_specs)
+                and any(
+                    spec.key == "motion_bed_active_module"
+                    for spec in controller.controller_select_specs
+                )
             ):
                 from .beds.motion_bed import button_actions_for
 
                 # Keep possible hub identities while inventory is unknown, but
                 # retire controls that only belong to the former home profile.
-                owners = frozenset({
-                    "Setting2Activity", "MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity",
-                    "DiandongFragment", "DianDongSetActivity", "AlarmActivity",
-                    "QinangFragment", "AnmoSetActivity", "PressSetActivity",
-                    "LengnuanFragment", "TimeSettingActivity",
-                })
+                owners = frozenset(
+                    {
+                        "Setting2Activity",
+                        "MainMcuActivity",
+                        "ChangeDeviceActivity",
+                        "ConnectMcuActivity",
+                        "DiandongFragment",
+                        "DianDongSetActivity",
+                        "AlarmActivity",
+                        "QinangFragment",
+                        "AnmoSetActivity",
+                        "PressSetActivity",
+                        "LengnuanFragment",
+                        "TimeSettingActivity",
+                    }
+                )
                 desired_actions.update(
                     coordinator.entity_unique_id(key) for key in button_actions_for(owners)
                 )
@@ -930,6 +1053,8 @@ def _massage_entities_enabled(
     controller: BedController | SideBoundController | None,
 ) -> bool:
     """Return the effective configured or protocol-declared massage capability."""
+    if coordinator.bed_type == BED_TYPE_TIMOTION_AHF:
+        return False
     return coordinator.has_massage or bool(controller and controller.auto_enable_massage)
 
 
@@ -944,7 +1069,8 @@ def _combined_motor_buttons_for(
     Built from each side's own ``MotorControlSpec`` (not generic
     ``COVER_DESCRIPTIONS``) so a 3/4-motor Octo — whose ``head``/``feet`` map to the
     extra ``_move_motor3/4`` functions — drives the RIGHT motor on both sides. All
-    eligible sides are the same bed type, so any side's specs match.
+    eligible sides share the same controls. Held metadata is intersected for
+    each direction so a combined card hold never assumes cross-side support.
     """
     specs_by_key: dict[str, MotorControlSpec] = {}
     common: set[str] | None = None
@@ -969,8 +1095,14 @@ def _combined_motor_buttons_for(
         spec = specs_by_key.get(key)
         if spec is None:
             continue
-        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "up"))
-        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "down"))
+        for direction in ("up", "down"):
+            entities.append(
+                PairedBedCombinedMotorButton(
+                    coordinator,
+                    spec,
+                    direction,
+                )
+            )
     return entities
 
 
@@ -1163,10 +1295,18 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        controller = self._coordinator.capability_controller
+        if octo_controller(controller) is not None:
+            self.async_on_remove(
+                self._coordinator.register_controller_state_callback(
+                    lambda _state: self.async_write_ha_state()
+                )
+            )
         if (
             self._coordinator.bed_type == BED_TYPE_LIMOSS_REMOTE
             and self.entity_description.memory_slot is not None
         ):
+
             def names_changed(state: dict[str, Any]) -> None:
                 if "limoss_remote_memory_names" in state:
                     self.async_write_ha_state()
@@ -1174,6 +1314,19 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
             self.async_on_remove(
                 self._coordinator.register_controller_state_callback(names_changed)
             )
+
+    @property
+    def available(self) -> bool:
+        """Hide Octo's normal controls while its live PIN gate is locked."""
+        controller = self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        if octo is not None and self.entity_description.key not in {
+            "stop",
+            "connect",
+            "disconnect",
+        }:
+            return super().available and octo.normal_controls_available
+        return super().available
 
     @property
     def name(self) -> str | UndefinedType | None:
@@ -1203,6 +1356,18 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         slot_name = _discovered_memory_slot_name(coordinator, description)
         if slot_name is not None:
             self._attr_name = slot_name
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        controller = self._coordinator.capability_controller
+        hold = controller.standard_button_hold_spec(self.entity_description.key) if controller else None
+        if hold is not None:
+            attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
+                              hold_release_delay_ms=hold.release_delay_ms)
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
+        return attributes
 
     async def async_press(self) -> None:
         """Handle button press."""
@@ -1265,9 +1430,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     _attr_translation_key = "remote_action"
 
-    def __init__(
-        self, coordinator: EntityRuntime, spec: ControllerButtonSpec
-    ) -> None:
+    def __init__(self, coordinator: EntityRuntime, spec: ControllerButtonSpec) -> None:
         super().__init__(coordinator)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
@@ -1275,9 +1438,35 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         self._attr_icon = spec.icon
         if spec.translation_key is not None:
             self._attr_translation_key = coordinator.entity_translation_key(spec.translation_key)
-            self._attr_name = None
+            if not spec.key.startswith(("preset_memory_", "program_memory_")):
+                self._attr_name = None
             if spec.translation_placeholders is not None:
                 self._attr_translation_placeholders = dict(spec.translation_placeholders)
+
+    async def async_added_to_hass(self) -> None:
+        """Refresh availability when the controller publishes new state."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self._coordinator.register_controller_state_callback(
+                self._handle_controller_state_update
+            )
+        )
+        if self._spec.key.startswith("timotion_ahf_"):
+            self.async_on_remove(
+                self._coordinator.register_connection_state_callback(
+                    self._handle_connection_state_update
+                )
+            )
+
+    @callback
+    def _handle_controller_state_update(self, _state: dict[str, Any]) -> None:
+        """Re-evaluate controller-declared action availability."""
+        self.async_write_ha_state()
+
+    @callback
+    def _handle_connection_state_update(self, _connected: bool) -> None:
+        """Refresh AHF availability when its on-demand link opens or closes."""
+        self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
@@ -1288,6 +1477,27 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
+        if self._spec.release_only:
+            controller = self._coordinator.capability_controller
+            if controller is not None:
+                controller.on_gesture_release()
+            token = CONTROLLER_GESTURE_RELEASE.set(True)
+            try:
+                await self._coordinator.async_stop_command()
+            finally:
+                CONTROLLER_GESTURE_RELEASE.reset(token)
+            return
+        if self._spec.key == "hjbed_release":
+            from .hjbed_state import GESTURE_RELEASE
+
+            # STOP admission also invalidates a hold still awaiting Bluetooth
+            # preflight. Only its action cleanup may send a release packet.
+            token = GESTURE_RELEASE.set(True)
+            try:
+                await self._coordinator.async_stop_command()
+            finally:
+                GESTURE_RELEASE.reset(token)
+            return
         if self._spec.scheduler_resource is not None:
             await self._coordinator.async_execute_controller_command(
                 self._spec.press_fn,
@@ -1298,6 +1508,21 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         await self._coordinator.async_execute_controller_command(
             self._spec.press_fn, cancel_running=self._spec.cancel_movement
         )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the declared held control to the bounded card/service path."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = self._spec.hold
+        if hold is not None:
+            attributes.update(
+                held_control=hold.control,
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+            )
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
+        return attributes
 
 
 def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str:
@@ -1370,7 +1595,14 @@ class PairedBedCombinedButton(ButtonEntity):
 
     @property
     def available(self) -> bool:
-        """Always available (the bed reconnects on demand)."""
+        """Hide combined actions when a Standard Octo side is PIN-locked."""
+        if self.entity_description.key == "stop":
+            return True
+        for child in self._coordinator.children.values():
+            controller = child.capability_controller
+            octo = octo_controller(controller)
+            if octo is not None and not octo.normal_controls_available:
+                return False
         return True
 
     async def async_press(self) -> None:
@@ -1388,7 +1620,9 @@ class PairedBedCombinedButton(ButtonEntity):
             for child in self._coordinator.children.values():
                 controller = child.capability_controller
                 if controller is None:
-                    raise ValueError(f"Cannot validate memory for unavailable device '{child.name}'")
+                    raise ValueError(
+                        f"Cannot validate memory for unavailable device '{child.name}'"
+                    )
                 controller.validate_memory_recall(description.memory_slot)
         await self._coordinator.async_execute_controller_command(
             description.press_fn,
@@ -1396,6 +1630,41 @@ class PairedBedCombinedButton(ButtonEntity):
             cancel_running=description.cancel_movement,
             resource=_button_resource(description.key),
         )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose a bounded Both timed move when both sides own that motor."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        action = self.entity_description.key
+        motor = next(
+            (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),
+            None,
+        )
+        if motor is None:
+            return attributes
+        candidates = ("back", "head") if motor == "head" else ("legs", "feet")
+        common = next(
+            (
+                candidate
+                for candidate in candidates
+                if _paired_motor_available(self._coordinator, candidate)
+            ),
+            None,
+        )
+        if common is not None:
+            hold = _paired_motor_hold_spec(self._coordinator, common)
+            direction = "up" if action.endswith("_up") else "down"
+            if hold is not None:
+                attributes.update(
+                    paired_hold_motor=common,
+                    paired_hold_side=SIDE_BOTH,
+                    held_control=(hold.up_control if direction == "up" else hold.down_control),
+                    hold_start_delay_ms=hold.start_delay_ms,
+                    hold_release_delay_ms=hold.release_delay_ms,
+                )
+                if hold.release_button_key is not None:
+                    attributes["hold_release_button_key"] = hold.release_button_key
+        return attributes
 
 
 class PairedBedCombinedMotorButton(ButtonEntity):
@@ -1422,6 +1691,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._coordinator = coordinator
         self._direction = direction
         self._motor_key = spec.key
+        self._hold_spec = spec.hold
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
@@ -1436,7 +1706,8 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._attr_device_info = coordinator.device_info
         self._attr_extra_state_attributes = (
             {"bed_side": SIDE_BOTH}
-            if isinstance(coordinator, SingleAddressPairedCoordinator) else {}
+            if isinstance(coordinator, SingleAddressPairedCoordinator)
+            else {}
         )
 
     async def async_added_to_hass(self) -> None:
@@ -1449,16 +1720,35 @@ class PairedBedCombinedMotorButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Advertise the existing timed action for held OCTO pair movement."""
-        attributes = dict(self._attr_extra_state_attributes or {})
+        """Advertise this common motor through the bounded paired action."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = _paired_motor_hold_spec(self._coordinator, self._motor_key, self._direction)
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
             and len(self._coordinator.children) == 2
-            and self._coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
             and self._motor_key in {"back", "legs"}
-            and all(child.bed_type == BED_TYPE_OCTO for child in self._coordinator.children.values())
+            and all(
+                child.bed_type == BED_TYPE_OCTO for child in self._coordinator.children.values()
+            )
         ):
-            attributes["paired_hold_motor"] = self._motor_key
+            # OCTO already supports bounded pulses without a declared hold/release contract.
+            attributes.update(paired_hold_motor=self._motor_key, paired_hold_side=SIDE_BOTH)
+        if hold is not None:
+            attributes.update(
+                **(
+                    {
+                        "paired_hold_motor": self._motor_key,
+                        "paired_hold_side": SIDE_BOTH,
+                    }
+                    if self._motor_key in {"back", "legs"}
+                    else {}
+                ),
+                held_control=(hold.up_control if self._direction == "up" else hold.down_control),
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+            )
+            if hold.release_button_key is not None:
+                attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
 
     @property
@@ -1468,9 +1758,84 @@ class PairedBedCombinedMotorButton(ButtonEntity):
 
     async def async_press(self) -> None:
         """Move this motor on both sides."""
+        if self._hold_spec is not None and all(
+            child.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
+            for child in self._coordinator.children.values()
+        ):
+            control = (
+                self._hold_spec.up_control if self._direction == "up" else self._hold_spec.down_control
+            )
+
+            async def finite_app_move(controller: BedController) -> None:
+                await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
+
+            await self._coordinator.async_execute_controller_command(
+                finite_app_move, side=SIDE_BOTH, cancel_running=True, resource=self._resource
+            )
+            return
+        if self._hold_spec is not None:
+            # Sequential/incompatible pairs omit card hold metadata. Their
+            # ordinary button press must still finish each receiver's hold and
+            # release, using current per-target validation and admission.
+            from .services import _async_timed_move
+
+            await _async_timed_move(
+                [(self._coordinator, SIDE_BOTH)],
+                self._motor_key,
+                self._direction,
+                1000,
+            )
+            return
+        move_fn = self._move_fn
         await self._coordinator.async_execute_controller_command(
-            self._move_fn,
+            move_fn,
             side=SIDE_BOTH,
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:
+    """Require an exact current motor capability on every physical side."""
+    return bool(coordinator.children) and all(
+        (controller := child.capability_controller) is not None
+        and any(spec.key == motor for spec in controller.motor_control_specs)
+        for child in coordinator.children.values()
+    )
+
+
+def _paired_motor_hold_spec(
+    coordinator: PairedBedCoordinator,
+    motor: str,
+    direction: str | None = None,
+) -> ControllerMotorHoldSpec | None:
+    """Return a Both hold contract only when every live side can match it."""
+    if (
+        coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+        or len(coordinator.children) != 2
+    ):
+        return None
+
+    common: ControllerMotorHoldSpec | None = None
+    for child in coordinator.children.values():
+        controller = child.capability_controller
+        if controller is None:
+            return None
+        spec = next(
+            (candidate for candidate in controller.motor_control_specs if candidate.key == motor),
+            None,
+        )
+        if spec is None or spec.hold is None:
+            return None
+        if common is None:
+            common = spec.hold
+        elif (
+            (spec.hold.up_control != common.up_control and direction != "down")
+            or (spec.hold.down_control != common.down_control and direction != "up")
+            or spec.hold.start_delay_ms != common.start_delay_ms
+            or spec.hold.release_delay_ms != common.release_delay_ms
+            or spec.hold.stop_scope != common.stop_scope
+            or spec.hold.release_button_key != common.release_button_key
+        ):
+            return None
+    return common

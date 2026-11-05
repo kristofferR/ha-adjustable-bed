@@ -17,11 +17,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerSelectSpec
 from .const import (
+    BED_TYPE_ISLEEP,
     DOMAIN,
 )
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -149,14 +151,15 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities,
+            hass,
+            entry,
+            runtime,
+            async_add_entities,
             partial(_select_entities_for, hass, runtime),
         )
 
 
-def _select_entities_for(
-    hass: HomeAssistant, coordinator: EntityRuntime
-) -> list[SelectEntity]:
+def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[SelectEntity]:
     """Build select entities for a single (child or standalone) coordinator."""
     has_massage = coordinator.has_massage
     controller = coordinator.capability_controller
@@ -207,7 +210,9 @@ def _select_entities_for(
             # control doesn't linger in the UI and card.
             _async_remove_stale_select_entity(hass, coordinator, LIGHT_TIMER_DESCRIPTION.key)
 
-        thermal_timer_options = list(getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, []))
+        thermal_timer_options = list(
+            getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, [])
+        )
         thermal_sides = controller.thermal_climate_sides
         if thermal_sides and thermal_timer_options:
             _LOGGER.debug(
@@ -384,7 +389,15 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
             raise ServiceValidationError("Option is not supported by this controller")
         if self._spec.local_select_fn is not None:
             # No frame is sent, so do not take the bed's single BLE link.
-            self._spec.local_select_fn(option)
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_select_specs if controller is not None else ()
+            live = next(
+                (spec for spec in specs if spec.key == self._spec.key),
+                None,
+            )
+            if live is None or live.local_select_fn is None or option not in live.options:
+                raise ServiceValidationError("Controller no longer supports this local option")
+            live.local_select_fn(option)
             return
 
         async def select(ctrl: BedController) -> None:
@@ -455,13 +468,17 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
     def current_option(self) -> str | None:
         """Return the current timer setting from controller state."""
         controller = self._coordinator.controller
-        if controller is None:
+        if controller is None and self._coordinator.bed_type == BED_TYPE_ISLEEP:
+            side = self._coordinator.entity_side or "both"
+            state = self._coordinator.controller_state.get(f"isleep_massage_{side}")
+            timer_mode = state.get("timer_mode") if isinstance(state, dict) else None
+        elif controller is None:
             # Between connections, the timer the profile last published.
             state = self._coordinator.controller_state
             timer_mode = (
                 state.get("okin_app_massage_timer")
                 if "okin_app_massage_timer" in state
-                else state.get("woosa_massage_timer", 0)
+                else state.get("bf_cherish_massage_timer", state.get("woosa_massage_timer", 0))
             )
         else:
             timer_mode = controller.get_massage_state().get("timer_mode")
@@ -509,7 +526,16 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
     """Select entity backed by controller state updates."""
 
+    _attr_should_poll = False
+
     entity_description: AdjustableBedControllerStateSelectDescription
+
+    @property
+    def available(self) -> bool:
+        """Respect Octo's PIN gate for live settings."""
+        controller = self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        return super().available and (octo is None or octo.normal_controls_available)
 
     def __init__(
         self,

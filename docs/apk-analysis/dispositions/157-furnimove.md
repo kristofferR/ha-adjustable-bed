@@ -49,6 +49,40 @@ structure when a read does not answer. The evening capture disconnects before
 service resolution; its local connection abort remains unverified hardware
 behavior, rather than evidence of an unsupported command.
 
+The 4.2.0 retest with 82417 still did not move the bed. Its bundle never
+connected: every attempt ended in `le-connection-abort-by-local` or a timeout,
+while links that did come up in earlier captures stayed stable for minutes.
+That matches the receiver behavior reported in
+[issue #344](https://github.com/kristofferR/ha-adjustable-bed/issues/344):
+RF eco BT receivers (part 88802) keep advertising after a disconnect but
+refuse or time out reconnects, and holding the link open fixed it on hardware.
+This entry used Disconnect After Command, which reconnects for every command.
+FurniMove therefore holds the link open when the controller's own model read
+reports `RF eco BT` and a connect in this Home Assistant session has timed out
+or aborted, and recovers after an unexpected drop. Receivers that reconnect
+normally keep their handoff, so the FurniMove app stays usable alongside Home
+Assistant (#336). **Disconnect** clears the stall until the next one. This is receiver
+connection policy, not app behavior: frames, timing, bond policy and the
+ledger totals are unchanged. Other receivers keep their configured handoff.
+
+## OKIMAT drives saved as Okin CST (#555)
+
+[Issue #555](https://github.com/kristofferR/ha-adjustable-bed/issues/555)
+reports two `OKIMAT 4 IPS` drives used with FurniMove. Their support bundle
+shows the Okin service and write characteristic, CSS and Nordic DFU. Version
+3.5.0 read that combination as Okin CST and saved it, so every movement was a
+14-byte CST frame that the drives ignored. FurniMove has no reachable CSS
+command (D021), and cluster 011 found no GATT, name or Device Information signal
+that selects a CST product. Shared GATT therefore never selects CST any more.
+An existing CST entry whose drive reports an `OKIMAT` model gets a repair:
+Okimat, FurniMove with a captured handset, or keep CST
+([furnimove_repair.py](../../../custom_components/adjustable_bed/furnimove_repair.py),
+[test_furnimove_repair.py](../../../tests/test_furnimove_repair.py),
+[test_detection.py](../../../tests/test_detection.py)). The remote code printed
+on the #555 handset, `90569`, returned `Item not found` from the production
+object and button endpoints on 2026-11-03, so it stays unselectable. Frames,
+timing, bond policy, catalog and the 60-item totals are unchanged.
+
 ## Behavior decisions
 
 | ID | Behavior | Disposition and evidence |

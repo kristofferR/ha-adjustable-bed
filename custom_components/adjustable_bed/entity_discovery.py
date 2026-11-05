@@ -10,29 +10,47 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .entity_runtime import EntityRuntime
+from .octo_runtime import octo_controller
 
 
 def async_setup_dynamic_entities(
+    hass: HomeAssistant,
     entry: ConfigEntry,
     coordinator: EntityRuntime,
     async_add_entities: AddEntitiesCallback,
     build_entities: Callable[[], Iterable[Entity]],
+    *,
+    additional_coordinators: Iterable[EntityRuntime] = (),
 ) -> None:
     """Register initial entities, then add each newly proven capability once."""
     entities = list(build_entities())
-    known = {entity.unique_id for entity in entities}
+    known = {entity.unique_id: entity for entity in entities}
     async_add_entities(entities)
-    controller = coordinator.capability_controller
-    if controller is None or not controller.has_dynamic_controller_entities:
-        return
 
     def discover(_state: object) -> None:
-        additions = [entity for entity in build_entities() if entity.unique_id not in known]
+        candidates = list(build_entities())
+        # Builders may retire registry rows when a capability is withdrawn.
+        # Forget those instances so a later positive reply can recreate them.
+        for identity, entity in list(known.items()):
+            if entity.entity_id and er.async_get(hass).async_get(entity.entity_id) is None:
+                del known[identity]
+        octo = octo_controller(coordinator.capability_controller)
+        if octo is not None and octo.controller_entity_discovery_complete:
+            # Platform builders retire Octo registry rows only after a complete
+            # capability list. Forget those IDs too, so a later complete list
+            # can add the same stable identities again.
+            current = {entity.unique_id for entity in candidates}
+            for identity in [identity for identity in known if identity not in current]:
+                del known[identity]
+        additions = [entity for entity in candidates if entity.unique_id not in known]
         if additions:
-            known.update(entity.unique_id for entity in additions)
+            known.update((entity.unique_id, entity) for entity in additions)
             async_add_entities(additions)
 
-    entry.async_on_unload(coordinator.register_controller_state_callback(discover))
+    for runtime in (coordinator, *additional_coordinators):
+        controller = runtime.capability_controller
+        if controller is not None and controller.has_dynamic_controller_entities:
+            entry.async_on_unload(runtime.register_controller_state_callback(discover))
 
 
 def async_remove_retired_rmcontrol_telemetry(
