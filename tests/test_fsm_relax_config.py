@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from tests.form_helpers import answer_app
 
 
 def data():
@@ -213,6 +214,7 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
         if route == "manual":
             result = await hass.config_entries.flow.async_init(const.DOMAIN, context={"source": SOURCE_USER})
             result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={CONF_ADDRESS: "manual"})
+            result = await answer_app(hass, result, const.BED_TYPE_LIMOSS)
             assert result["step_id"] == "manual_entry"
         else:
             info = mock_bluetooth_service_info

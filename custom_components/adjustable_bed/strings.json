@@ -3,10 +3,10 @@
     "flow_title": "{name} ({address})",
     "step": {
       "user": {
-        "title": "Select Adjustable Bed",
-        "description": "Select a discovered bed or choose how to add your bed.",
+        "title": "Add Adjustable Bed",
+        "description": "Select a discovered bed or choose how to add your bed. **Set up by app or remote** finds the app you use on your phone. **Pick any Bluetooth device** lets you choose the device first, then the app.",
         "data": {
-          "address": "Device"
+          "address": "Bed or setup method"
         }
       },
       "select_actuator": {
@@ -825,6 +825,14 @@
         "description": "Richmat apps share the bed's Bluetooth names and services, so the name doesn't choose one. Choose the app you use on your phone. Without one of these apps, choose the Richmat remote controls.",
         "data": {
           "choice": "App"
+        }
+      },
+      "select_app": {
+        "title": "Which app controls this bed?",
+        "description": "Choose the app you use on your phone, or the remote if you don't use an app. Type to search apps, remotes and brands. If yours isn't listed, the last choice lists the motor brands.",
+        "data": {
+          "bed_type": "App or remote",
+          "not_listed": "My app isn't listed, or I don't know"
         }
       }
     },
@@ -9455,6 +9463,15 @@
         "milemont": "Milemont app",
         "superior": "Superior app",
         "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code"
+      }
+    },
+    "setup_start": {
+      "options": {
+        "select_by_app": "Set up by app or remote",
+        "scan": "Scan again for beds",
+        "manual": "Pick any Bluetooth device",
+        "diagnostic": "Browse unsupported BLE devices",
+        "pair_beds": "Combine two beds into one (Dual Bed)"
       }
     }
   }
