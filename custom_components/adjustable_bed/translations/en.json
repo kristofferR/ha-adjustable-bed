@@ -494,7 +494,8 @@
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_profile": "V-MAT Basic product profile",
           "vmatbasic_floor_level": "Saved floor brightness",
-          "vmatbasic_floor_minutes": "Saved floor timer (minutes)"
+          "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
+          "product_type": "App layout code"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -512,16 +513,19 @@
           "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
-          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting."
+          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
+          "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout."
         },
         "sections": {
           "advanced": {
             "name": "Advanced",
             "data": {
-              "jiecang_app_transport": "BLE transport"
+              "jiecang_app_transport": "BLE transport",
+              "cluster018_third_service": "Allow the app’s third-service fallback"
             },
             "data_description": {
-              "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only."
+              "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
+              "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes."
             }
           }
         }
@@ -1117,7 +1121,8 @@
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently."
+          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
+          "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes."
         }
       },
       "remove_bond": {

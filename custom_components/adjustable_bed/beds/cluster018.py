@@ -41,7 +41,12 @@ from ..cluster018_protocol import (
 from ..cluster018_receive import MalformedFrame, ReceiveState
 from ..cluster018_requests import Request
 from ..cluster018_transport import Transport, select
-from ..const import CONF_MOTOR_PULSE_COUNT, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
+from ..const import (
+    CONF_CLUSTER018_THIRD_SERVICE,
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_PRODUCT_TYPE,
+    CONF_PROTOCOL_VARIANT,
+)
 from ..profiles.richmat import RICHMAT_CLASSIC
 from .base import (
     CONTROLLER_GESTURE_RELEASE,
@@ -66,10 +71,16 @@ async def _press(controller: BedController, node: int, long: bool = False) -> No
 class Cluster018Controller(BedController):
     """One selected package/layout and one current physical BLE session."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator, *, device_name: str | None = None) -> None:
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        app: str | None = None,
+        device_name: str | None = None,
+    ) -> None:
         super().__init__(coordinator)
         self._device_name = device_name
-        self.app = str(coordinator.entry.data[CONF_PROTOCOL_VARIANT])
+        self.app = app or str(coordinator.entry.data[CONF_PROTOCOL_VARIANT])
         self.profile = RICHMAT_CLASSIC[self.app]
         self.layout = str(coordinator.entry.data[CONF_PRODUCT_TYPE]).strip().upper()
         if self.layout in ("TEST", "RMCS"):
@@ -232,7 +243,7 @@ class Cluster018Controller(BedController):
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("The app's bed is disconnected")
-        session = select(client, third_service=self._coordinator.entry.data.get("cluster018_third_service", False))
+        session = select(client, third_service=self._coordinator.entry.data.get(CONF_CLUSTER018_THIRD_SERVICE, False))
         name = self._device_name if self._device_name is not None else self._coordinator.entry.data.get("ble_device_name")
         self._worker.set_interval(worker_interval(name, session.wire))
         self._session = session

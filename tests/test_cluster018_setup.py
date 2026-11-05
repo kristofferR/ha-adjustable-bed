@@ -7,7 +7,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import voluptuous as vol
 
 from custom_components.adjustable_bed.cluster018_models import MODEL_CHOICES
 from custom_components.adjustable_bed.cluster018_profiles import (
@@ -15,11 +14,33 @@ from custom_components.adjustable_bed.cluster018_profiles import (
     load_catalog,
     resolve_layout,
 )
-from custom_components.adjustable_bed.config_flow import (
-    _add_cluster018_schema_fields,
-    _normalize_cluster018_data,
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_CLUSTER018,
+    CONF_CLUSTER018_THIRD_SERVICE,
+    CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_MASSAGE,
+    CONF_MOTOR_COUNT,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.setup_questions import SetupProfile, setup_profile
+
+PROFILE = setup_profile(BED_TYPE_CLUSTER018)
+assert isinstance(PROFILE, SetupProfile)
+LAYOUT, THIRD_SERVICE = PROFILE.questions
+
+
+def _layouts(app: str) -> set[str]:
+    return set(LAYOUT.options({"protocol_variant": app}) or {})
+
+
+def _setup(data: dict) -> dict:
+    """Stage the layout answer as setup and Configure do; raise on its error."""
+    answers = {key: data[key] for key in ("product_type",) if key in data}
+    staged = PROFILE.staged({k: v for k, v in data.items() if k not in answers}, answers)
+    assert PROFILE.validate is not None
+    if errors := PROFILE.validate(staged):
+        raise ValueError(errors)
+    return {**staged, **PROFILE.settled(staged)}
 
 
 def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
@@ -46,9 +67,22 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
         assert hashlib.sha256(encoded).hexdigest() == row["sha256"], row
 
 
+def test_the_app_is_its_variant_and_setup_asks_its_layout():
+    assert BED_TYPE_CLUSTER018 not in {o["value"] for o in get_bed_type_options()}
+    assert LAYOUT.key == "product_type"
+    assert (THIRD_SERVICE.key, THIRD_SERVICE.default, THIRD_SERVICE.advanced) == (
+        CONF_CLUSTER018_THIRD_SERVICE, False, True,
+    )
+    saved = _setup({"protocol_variant": "milemont", "product_type": "6BRM"})
+    assert {key: saved[key] for key in (CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING)} == {
+        CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+    }
+    assert PROFILE.title is not None and PROFILE.title(saved) == "Milemont"
+
+
 def test_explicit_layout_is_required_and_aliases_are_package_local():
     with pytest.raises(ValueError):
-        _normalize_cluster018_data({'protocol_variant': 'avocadoecobase'})
+        _setup({'protocol_variant': 'avocadoecobase'})
     assert resolve_layout('avocadoecobase', ' B6RU ') == 'B6RM'
     assert resolve_layout('avocadoecobase', 'OTRM', russian=True) == 'O0RM'
     assert resolve_layout('avocadoecobase', 'MPE_HJ002-bed', from_name=True) == 'TWRM'
@@ -73,44 +107,37 @@ def test_every_member_alias_preserves_name_manual_and_scan_boundaries():
 
 def test_options_validate_member_specific_layout_before_mutation():
     exclusive = next(iter(set(MODEL_CHOICES['fortywinks']) - set(MODEL_CHOICES['milemont'])))
+    assert exclusive in _layouts('fortywinks') and exclusive not in _layouts('milemont')
     with pytest.raises(ValueError):
-        _normalize_cluster018_data({'protocol_variant': 'milemont', 'product_type': exclusive})
-    data = {'protocol_variant': 'avocadoecobase', 'product_type': '6BRM'}
-    schema = {}
-    _add_cluster018_schema_fields(schema, data)
-    assert vol.Schema(schema)(data)['product_type'] == '6BRM'
+        _setup({'protocol_variant': 'milemont', 'product_type': exclusive})
+    assert _setup({'protocol_variant': 'avocadoecobase', 'product_type': '6BRM'})['product_type'] == '6BRM'
 
 
 @pytest.mark.parametrize("app", ("fortywinks", "superior"))
 @pytest.mark.parametrize("layout", ("CORN", "CPRN"))
 def test_zrs6_picker_choices_select_actual_member_local_layouts(app, layout):
-    data = {"protocol_variant": app, "product_type": "ZRS6:" + layout}
-    schema = {}
-    _add_cluster018_schema_fields(schema, data)
-    selected = vol.Schema(schema)(data)
-    _normalize_cluster018_data(selected)
+    assert "ZRS6:" + layout in _layouts(app) and "ZRS6" not in _layouts(app)
+    selected = _setup({"protocol_variant": app, "product_type": "ZRS6:" + layout})
     assert selected["product_type"] == layout
     assert layout in load_catalog(app)["models"]
     with pytest.raises(ValueError):
-        _normalize_cluster018_data({"protocol_variant": app, "product_type": "ZRS6"})
+        _setup({"protocol_variant": app, "product_type": "ZRS6"})
 
 
 @pytest.mark.parametrize("app", ("avocadoecobase", "coastersleep", "milemont"))
 def test_zrs6_picker_is_not_added_to_other_member_apps(app):
+    assert "ZRS6:CORN" not in _layouts(app)
     with pytest.raises(ValueError):
-        _normalize_cluster018_data({"protocol_variant": app, "product_type": "ZRS6:CORN"})
+        _setup({"protocol_variant": app, "product_type": "ZRS6:CORN"})
 
 
 def test_manual_aliases_are_selectable_but_diagnostic_layouts_are_rejected():
-    data = {"protocol_variant": "avocadoecobase", "product_type": "B6RU"}
-    schema = {}
-    _add_cluster018_schema_fields(schema, data)
-    _normalize_cluster018_data(vol.Schema(schema)(data))
-    _normalize_cluster018_data(data)
-    assert data["product_type"] == "B6RM"
+    assert "B6RU" in _layouts("avocadoecobase")
+    assert _setup({"protocol_variant": "avocadoecobase", "product_type": " b6ru "})["product_type"] == "B6RM"
     for layout in ("TEST", "RMCS"):
+        assert layout not in _layouts("avocadoecobase")
         with pytest.raises(ValueError):
-            _normalize_cluster018_data({"protocol_variant": "avocadoecobase", "product_type": layout})
+            _setup({"protocol_variant": "avocadoecobase", "product_type": layout})
 
 
 def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
@@ -148,3 +175,92 @@ def test_app_hint_preserves_explicit_member_selection(app):
     assert recommend_profile(
         {CONF_BED_TYPE: BED_TYPE_CLUSTER018, CONF_PROTOCOL_VARIANT: app}, advert, {}
     ) is None
+
+
+async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass):
+    from unittest.mock import patch
+
+    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_DISCONNECT_AFTER_COMMAND,
+        CONF_PRODUCT_TYPE,
+        CONF_PROTOCOL_VARIANT,
+    )
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": "user"}
+    flow._selected_bed_type = BED_TYPE_CLUSTER018
+    result = await flow.async_step_manual_entry(
+        {
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:18",
+            CONF_NAME: "Classic bed",
+            CONF_BED_TYPE: f"{BED_TYPE_CLUSTER018}:fortywinks",
+            CONF_DISCONNECT_AFTER_COMMAND: False,
+        }
+    )
+    assert result["step_id"] == "profile_questions"
+    assert result["description_placeholders"] == {"profile": "Forty Winks"}
+    milemont_only = next(iter(set(MODEL_CHOICES["milemont"]) - set(MODEL_CHOICES["fortywinks"])), None)
+    if milemont_only is not None:
+        invalid = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: milemont_only})
+        assert invalid["errors"] == {CONF_PRODUCT_TYPE: "cluster018_layout"}
+    with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+        result = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "ZRS6:CORN"})
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    data = result["data"]
+    assert (data[CONF_BED_TYPE], data[CONF_PROTOCOL_VARIANT], data[CONF_PRODUCT_TYPE]) == (
+        BED_TYPE_CLUSTER018, "fortywinks", "CORN",
+    )
+    assert (data[CONF_MOTOR_COUNT], data[CONF_HAS_MASSAGE], data[CONF_DISABLE_ANGLE_SENSING]) == (
+        2, False, True,
+    )
+    assert data[CONF_CLUSTER018_THIRD_SERVICE] is False
+    from custom_components.adjustable_bed.profile_id import resolve_profile_id
+
+    assert resolve_profile_id(data) == f"{BED_TYPE_CLUSTER018}:fortywinks"
+
+
+async def test_configure_rejects_another_apps_layout_and_saves_the_fallback(hass):
+    from homeassistant.const import CONF_ADDRESS
+    from homeassistant.data_entry_flow import FlowResultType
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_PRODUCT_TYPE,
+        CONF_PROTOCOL_VARIANT,
+        DOMAIN,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:18",
+            CONF_BED_TYPE: BED_TYPE_CLUSTER018,
+            CONF_PROTOCOL_VARIANT: "milemont",
+            CONF_PRODUCT_TYPE: "6BRM",
+        },
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    form = await flow.async_step_settings()
+    shown = {str(key) for key in form["data_schema"].schema}
+    assert {CONF_PRODUCT_TYPE, CONF_CLUSTER018_THIRD_SERVICE} <= shown
+    assert not {CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING} & shown
+    exclusive = next(iter(set(MODEL_CHOICES["fortywinks"]) - set(MODEL_CHOICES["milemont"])))
+    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "milemont", CONF_PRODUCT_TYPE: exclusive})
+    assert result["errors"]
+    result = await flow.async_step_settings(
+        {CONF_PRODUCT_TYPE: "B6RU", CONF_CLUSTER018_THIRD_SERVICE: True}
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_PRODUCT_TYPE] == "B6RM"
+    assert entry.data[CONF_CLUSTER018_THIRD_SERVICE] is True
