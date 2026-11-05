@@ -441,11 +441,27 @@
           "vmatbasic_profile": "V-MAT Basic product profile",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
-          "product_type": "App layout code",
+          "product_type": "App product, model or layout",
           "sleepys_elite_selector": "Control box the app lists",
           "logicdata_app_profile": "Bed app",
           "logicdata_app_family": "Command family",
-          "logicdata_app_layout": "Physical actuator layout"
+          "logicdata_app_layout": "Physical actuator layout",
+          "malouf_app_model": "Bed model",
+          "malouf_app_primary": "Primary bed in the app",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions",
+          "gmmotor_side": "App bed side",
+          "kaidi_room_id": "Room ID",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "sleeptracker_foundation": "Foundation size (app metadata)",
+          "sleeptracker_unit_number": "Processor unit number (wire side)",
+          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
+          "sleeptracker_restricted": "Restricted app session (no authentication)",
+          "sleeptracker_processor_type": "Processor type (0 if unknown)",
+          "ble_device_name": "Exact Bluetooth name",
+          "motion_bed_restored": "Use an app-restored profile",
+          "motion_bed_preset": "Retained preset layout",
+          "motion_bed_movement": "Retained movement layout"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -464,12 +480,28 @@
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout.",
+          "product_type": "What the app shows for this bed: its product, model, layout or four-character layout code. Each app has its own list; the Bluetooth name and shared services don't identify it. A GM Control product's standard and split-head configurations are separate choices, and a SleepEase sensor-only model has no motor controls.",
           "has_massage": "Show the massage controls. For retained Caresse Diamant settings, match the massage setting saved in the app.",
           "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box.",
           "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. A MOTIONrelax app's P2 family is the middle layout, so it asks no layout.",
-          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the layout. Sleep Smart beds use the two-motor standard or split-series layout."
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the layout. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport. These app profiles come from the Android apps and are not yet verified on hardware.",
+          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
+          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
+          "gmmotor_side": "The side GM Control drives with this product. The product must offer that side.",
+          "kaidi_room_id": "Keep the existing numeric room ID to adopt a provisioned bed. For an unprovisioned bed, choose its destination room, then use the enrollment action after setup. Home Assistant never resets an existing room.",
+          "kaidi_sofa_acu_no": "The advertised two-byte value. Products 130 and 143 use separate side controls only when it isn't 2.",
+          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
+          "sleeptracker_unit_number": "Use the app-recorded integer for this processor; a UART control box needs its own entry. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
+          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
+          "sleeptracker_restricted": "Authentication is the default. Turn this on only for the app's restricted route.",
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
+          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
+          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
         },
         "sections": {
           "advanced": {
@@ -478,13 +510,15 @@
               "jiecang_app_transport": "BLE transport",
               "cluster018_third_service": "Allow the app’s third-service fallback",
               "protocol_variant": "Packet dialect",
-              "logicdata_app_transport": "BLE transport"
+              "logicdata_app_transport": "BLE transport",
+              "malouf_app_transport": "Bluetooth transport"
             },
             "data_description": {
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
               "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
               "protocol_variant": "Auto reads the receiver's manufacturer name: text containing star selects StarCode, anything else the legacy CB25 packets. Change it only if Auto picks the wrong one.",
-              "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports."
+              "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
+              "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous."
             }
           }
         }
@@ -509,22 +543,6 @@
           "outcome_inconclusive": "PIN verification could not be completed. This does not mean the PIN is wrong. Wake the bed, close other apps connected to it, and check that your Bluetooth adapter or proxy is available. Submit to retry; the entry has not been saved."
         }
       },
-      "malouf_app": {
-        "title": "Malouf Base / Lucid Base profile",
-        "description": "Select the app and exact bed model used by your physical bed. These profiles are derived from the Android apps and have not been verified on hardware.",
-        "data": {
-          "malouf_app_profile": "Android app",
-          "malouf_app_model": "Bed model",
-          "malouf_app_transport": "Bluetooth transport",
-          "malouf_app_primary": "Primary bed in the app"
-        },
-        "data_description": {
-          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
-          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
-          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
-          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
-        }
-      },
       "starcode_app": {
         "title": "AdjustableM5X4 app profile",
         "description": "Choose the selector saved by your app. The original Bluetooth device name selects transport independently; shared identifiers cannot identify this app. Each physical side retains its own settings.",
@@ -535,22 +553,6 @@
         "data_description": {
           "starcode_abm5_4_command_selector": "Match the saved command/parser selector. The app initially saves none; manufacturer classification may update it without changing its UI selector.",
           "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly."
-        }
-      },
-      "motion_bed": {
-        "title": "Motion Bed app profile",
-        "description": "Choose the identity and controls used by this app. Hardware operation remains unverified.",
-        "data": {
-          "ble_device_name": "Exact Bluetooth name",
-          "motion_bed_restored": "Use an app-restored profile",
-          "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
-        },
-        "data_description": {
-          "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
-          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
-          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
         }
       },
       "starcode_m5x5": {
@@ -602,24 +604,6 @@
           "app": "App or current setup"
         }
       },
-      "sleeptracker": {
-        "title": "Tempur Sleeptracker-AI processor",
-        "description": "Choose this profile for TEMPUR-Ergo ProSmart Air / ActiveBreeze beds using Tempur Sleeptracker-AI. Select the Sleeptracker processor Bluetooth address, then your app layout and recorded processor unit number. Existing UART control-box addresses require a separate processor entry. Authentication is the default; restricted mode is an explicit app route.",
-        "data": {
-          "product_type": "App layout",
-          "sleeptracker_unit_number": "Processor unit number (wire side)",
-          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
-          "sleeptracker_restricted": "Restricted app session (no authentication)",
-          "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "sleeptracker_foundation": "Foundation size (app metadata)"
-        },
-        "data_description": {
-          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
-          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides."
-        }
-      },
       "starcode_m1x12": {
         "title": "Adjustable Comfort M1X12 app",
         "description": "Select this app explicitly. The shared Bluetooth service, manufacturer and ELEVATE name do not identify the app.",
@@ -658,31 +642,6 @@
           "ergomotion4_model_keys": "For Other catalog product only. Enter the model keys in their catalog order, for example o1, o2, o3.",
           "ergomotion4_massage_keys": "For Other catalog product only. Use the feature keys belonging to that exact product.",
           "ergomotion4_product_name": "Keep the exact app name. Names containing 4194 select the inverted RGB format."
-        }
-      },
-      "isleep": {
-        "title": "ISleep bed",
-        "description": "Select the product shown by the ISleep app. Keep the existing numeric room ID to adopt a provisioned bed. For an unprovisioned bed, choose its destination room, then use the explicit enrollment action after setup. HA never resets an existing room. The actuator descriptor is the advertised two-byte value: products 130/143 use separate side controls only when it is not 2.",
-        "data": {
-          "product_type": "ISleep product ID",
-          "kaidi_room_id": "Room ID",
-          "kaidi_sofa_acu_no": "Advertised actuator descriptor"
-        }
-      },
-      "doublesleep": {
-        "title": "OKIN SleepEase app profile",
-        "description": "Select the saved app model independently of its advertised BLE driver. Sensor-only models have no motor controls.",
-        "data": {
-          "product_type": "Saved app model",
-          "protocol_variant": "BLE driver"
-        }
-      },
-      "gmmotor": {
-        "title": "GM Control product",
-        "description": "Choose the exact product code used by GM Control. Remote pickers and QR codes need the concrete selected product. Bluetooth services alone cannot identify the layout. Standard and split-head configurations are separate choices.",
-        "data": {
-          "product_type": "Exact GM Control product / configuration",
-          "gmmotor_side": "App bed side"
         }
       },
       "migration_confirm": {
@@ -846,6 +805,13 @@
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
         "data": {
           "motor_count": "Number of motors"
+        }
+      },
+      "malouf_family": {
+        "title": "Which app or receiver controls this bed?",
+        "description": "The Malouf Base and Lucid Base apps and the older receiver routes send different commands, and neither a retail model name nor the Bluetooth services tell them apart. Choose the app you use on your phone, or the receiver whose Bluetooth service the bed advertises. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or receiver"
         }
       }
     },
@@ -1225,7 +1191,19 @@
           "logicdata_app_profile": "Bed app",
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
-          "logicdata_app_transport": "BLE transport"
+          "logicdata_app_transport": "BLE transport",
+          "malouf_app_model": "Bed model",
+          "malouf_app_primary": "Primary bed in the app",
+          "malouf_app_transport": "Bluetooth transport",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions",
+          "gmmotor_side": "GM Control app bed side",
+          "kaidi_room_id": "Room ID",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "ble_device_name": "Exact Bluetooth name",
+          "motion_bed_restored": "Use an app-restored profile",
+          "motion_bed_preset": "Retained preset layout",
+          "motion_bed_movement": "Retained movement layout"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1254,7 +1232,16 @@
           "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
-          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports."
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
+          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
+          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
+          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
+          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
+          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
+          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
         }
       },
       "right_settings": {
@@ -1299,7 +1286,19 @@
           "logicdata_app_profile": "Bed app",
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
-          "logicdata_app_transport": "BLE transport"
+          "logicdata_app_transport": "BLE transport",
+          "malouf_app_model": "Bed model",
+          "malouf_app_primary": "Primary bed in the app",
+          "malouf_app_transport": "Bluetooth transport",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions",
+          "gmmotor_side": "GM Control app bed side",
+          "kaidi_room_id": "Room ID",
+          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "ble_device_name": "Exact Bluetooth name",
+          "motion_bed_restored": "Use an app-restored profile",
+          "motion_bed_preset": "Retained preset layout",
+          "motion_bed_movement": "Retained movement layout"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1328,7 +1327,16 @@
           "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
-          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports."
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
+          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
+          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
+          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
+          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
+          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
+          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
         }
       },
       "change_app": {
@@ -9350,6 +9358,15 @@
         "protocol_110": "Protocol 110 receiver (Nightstand service)",
         "protocol_108": "Protocol 108 receiver (older service)",
         "keep": "I don't know: keep the detected receiver"
+      }
+    },
+    "malouf_family_choice": {
+      "options": {
+        "malouf": "Malouf Base app: the model it lists",
+        "lucid": "Lucid Base app: the model it lists",
+        "nordic_uart": "Malouf or Lucid receiver on the Nordic UART service",
+        "ffe5": "Malouf or Lucid receiver on the FFE5 service",
+        "keep": "I don't know: keep the detected controls"
       }
     },
     "sleep_number_family_choice": {

@@ -35,11 +35,11 @@ original data and options keep them under `origin_data` and `origin_options`.
 | Key | Class | Set by | Read by |
 |---|---|---|---|
 | `bed_type` | Profile | Bed-type list in setup, a family step, Configure, Reconfigure | `profile_id.py`, `controller_factory.py`, entity platforms |
-| `protocol_variant` | Profile | Route choice in setup (`route` step), a family step, Configure; a question of `bedsense`, `okin_uuid`, `okimat`, `okin_dot` and `sleepys_box25`; owned by the declarations that fix it | `profile_id.py`, controllers |
+| `protocol_variant` | Profile | Route choice in setup (`route` step), a family step, Configure; a question of `bedsense`, `okin_uuid`, `okimat`, `okin_dot`, `sleepys_box25` and `doublesleep`; owned by the declarations that fix it | `profile_id.py`, controllers |
 | `jiecang_app_profile` | Profile | `jiecang_family` | `profile_id.py`, `beds/jiecang_app.py` |
 | `leggett_app_profile` | Profile | `leggett_family`, Configure | `profile_id.py`, `controller_factory.py` |
 | `logicdata_app_profile` | Profile | `logicdata_family`; a question of `logicdata_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
-| `malouf_app_profile` | Profile | `malouf_app` step, Configure | `profile_id.py`, `controller_factory.py` |
+| `malouf_app_profile` | Profile | `malouf_family`; Configure only when another bed type switches to the app | `profile_id.py`, `controller_factory.py` |
 | `vibradorm_app_profile` | Profile | `vibradorm` family step | `profile_id.py`, `controller_factory.py`, `coordinator_bonds.py`, `coordinator_connection.py` |
 | `profile_id` | Internal | `profile_id.with_profile_ids` at migration and every setup | `coordinator.py`, diagnostics |
 | `address` (Home Assistant's `CONF_ADDRESS`) | Internal | Discovery or the typed address | Coordinator, device registry |
@@ -56,9 +56,9 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/cluster018.py` |
 | `motor_pulse_delay_ms` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_user_set` | Internal | Setup and Configure record whether the user changed the pulse fields | `coordinator.py` (a profile default applies otherwise) |
-| `product_type` | User | App steps (Limoss Remote, FSM Relax, GM Control, ISleep, DoubleSleep, Sleeptracker, Ergomotion 4 apps), Configure; a question of `richmat_classic_apps` | `controller_factory.py`, `pairing.py` |
+| `product_type` | User | App steps (Limoss Remote, FSM Relax, Ergomotion 4 apps), Configure; a question of `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | `controller_factory.py`, `pairing.py` |
 | `reverse_motor_1`, `reverse_motor_2`, `reverse_motor_3`, `reverse_motor_4` | User | Limoss Remote and FSM Relax steps, Configure | `controller_factory.py` |
-| `ble_device_name` | User | Setup stores the advertised name; the Motion Bed and StarCode steps and Configure ask it | Name rules in controllers, `coordinator.py` |
+| `ble_device_name` | User | Setup stores the advertised name; the StarCode steps and Configure ask it; a question of `motion_bed` | Name rules in controllers, `coordinator.py` |
 | `preferred_adapter` | User | Setup and Configure | `coordinator.py`, repairs |
 | `connection_profile` | User | Configure | `coordinator.py` |
 | `disconnect_after_command` | User | `disconnect_after_command` step, Configure | `coordinator.py` |
@@ -96,11 +96,11 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `logicdata_app_family` | Profile | A question of `logicdata_app` | `controller_factory.py` |
 | `logicdata_app_layout` | Profile | A question of `logicdata_app@phone` and `logicdata_app@tablet` for P1, and of `logicdata_app@sleep_smart`; `normalize` sets the MOTIONrelax P2 middle layout | `controller_factory.py` |
 | `logicdata_app_transport` | Profile | An Advanced question of `logicdata_app` | `controller_factory.py` |
-| `malouf_app_model` | User | `malouf_app` step, Configure | `controller_factory.py` |
-| `malouf_app_transport` | User | `malouf_app` step, Configure | `controller_factory.py` |
-| `malouf_app_primary` | User | `malouf_app` step, Configure | `controller_factory.py` |
-| `malouf_layout` | User | Malouf setup fields, Configure | `coordinator.py` |
-| `malouf_memory_slots` | User | Malouf setup fields, Configure | `coordinator.py` |
+| `malouf_app_model` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
+| `malouf_app_transport` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
+| `malouf_app_primary` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
+| `malouf_layout` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
+| `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
 | `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
 | `jensen_pin` | User | Jensen setup fields, Configure | `coordinator.py` |
@@ -108,21 +108,21 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `rmcontrol_product` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |
 | `rmcontrol_side` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |
 | `cb24_bed_selection` | User | Configure, for CB24 | `coordinator.py` |
-| `gmmotor_side` | User | `gmmotor` step, Configure | `controller_factory.py` |
+| `gmmotor_side` | Profile | A question of `gmmotor` | `controller_factory.py` |
 | `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | `controller_factory.py` |
 | `starcode_abm5_4_ui_selector` | Internal | `starcode_app` copies the command selector | `controller_factory.py` |
 | `starcode_abm5_4_transport_selector` | User | `starcode_app` step (or its connection probe), Configure | `controller_factory.py` |
 | `starcode_m5x5_profile` | User | `starcode_m5x5` step, Configure | `controller_factory.py`, `starcode_accessory_group.py` |
 | `starcode_m1x12_profile` | User | `starcode_m1x12` step, Configure | `controller_factory.py`, `starcode_accessory_group.py` |
 | `starcode_lift_entries` | User | StarCode and ELEVATE steps, Configure | `starcode_accessory_group.py`, `pairing_candidates.py` |
-| `motion_bed_restored` | User | `motion_bed` step, Configure | `controller_factory.py` |
-| `motion_bed_preset` | User | `motion_bed` step, Configure | `controller_factory.py` |
-| `motion_bed_movement` | User | `motion_bed` step, Configure | `controller_factory.py` |
-| `sleeptracker_foundation` | User | `sleeptracker` step, Configure | `controller_factory.py` |
-| `sleeptracker_unit_number` | User | `sleeptracker` step, Configure | `controller_factory.py` |
-| `sleeptracker_snapshot_side` | User | `sleeptracker` step, Configure | `controller_factory.py` |
-| `sleeptracker_restricted` | User | `sleeptracker` step, Configure | `controller_factory.py` |
-| `sleeptracker_processor_type` | User | `sleeptracker` step, Configure | `controller_factory.py` |
+| `motion_bed_restored` | Profile | A question of `motion_bed` | `controller_factory.py` |
+| `motion_bed_preset` | Profile | A question of `motion_bed` | `controller_factory.py` |
+| `motion_bed_movement` | Profile | A question of `motion_bed` | `controller_factory.py` |
+| `sleeptracker_foundation` | Profile | A question of `sleeptracker` | `controller_factory.py` |
+| `sleeptracker_unit_number` | Profile | A question of `sleeptracker` | `controller_factory.py` |
+| `sleeptracker_snapshot_side` | Profile | A question of `sleeptracker` | `controller_factory.py` |
+| `sleeptracker_restricted` | Profile | A question of `sleeptracker` | `controller_factory.py` |
+| `sleeptracker_processor_type` | Profile | A question of `sleeptracker` | `controller_factory.py` |
 | `limoss_remote_theme` | User | `limoss_remote` step, Configure | `controller_factory.py` |
 | `limoss_remote_state` | Internal | `coordinator.py` keeps the remote's state | `controller_factory.py` |
 | `fsm_relax_memory_names` | User | `fsm_relax` step, Configure | `controller_factory.py` |
@@ -135,8 +135,8 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `pairlink_home_id` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
 | `pairlink_password_text` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
 | `pairlink_password_hex` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
-| `kaidi_room_id` | User | The `isleep` step and Configure; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `beds/floyd.py`, `isleep_profile.py` |
-| `kaidi_sofa_acu_no` | User | The `isleep` step and Configure; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `controller_factory.py`, `kaidi_variants.py` |
+| `kaidi_room_id` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `beds/floyd.py`, `isleep_profile.py` |
+| `kaidi_sofa_acu_no` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `controller_factory.py`, `kaidi_variants.py` |
 | `kaidi_target_vaddr` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py` |
 | `kaidi_product_id` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py`, `controller_factory.py`, `kaidi_variants.py` |
 | `kaidi_adv_type` | Internal | `kaidi_metadata.py` from the advertisement | Setup log, diagnostics |

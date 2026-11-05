@@ -715,6 +715,8 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_SLEEPYS_BOX15,
         BED_TYPE_SLEEPYS_BOX24,
         BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_MALOUF_NEW_OKIN,
+        BED_TYPE_MALOUF_LEGACY_OKIN,
         BED_TYPE_CUSTOMATIC_JEROMES,
         BED_TYPE_CUSTOMATIC_REMEDY,
         BED_TYPE_TRANQUIL,
@@ -738,6 +740,9 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     ),
     BED_TYPE_SLEEPYS_ELITE_APP: (
         "Sleepy's Elite: MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers"
+    ),
+    BED_TYPE_MALOUF_APP: (
+        "Malouf / Lucid: Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers"
     ),
     BED_TYPE_CUSTOMATIC_CLARITY: (
         "Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps"

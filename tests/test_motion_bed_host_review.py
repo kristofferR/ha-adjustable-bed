@@ -109,8 +109,8 @@ async def test_explicit_discovered_app_choice_reaches_its_real_factory(enable_cu
     assert (await flow.async_step_bluetooth_confirm())["step_id"] == "bluetooth_confirm"
     result = await flow.async_step_bluetooth_confirm({CONF_BED_TYPE: app, CONF_NAME: "QMS-IQ", CONF_DISCONNECT_AFTER_COMMAND: False})
     if app == BED_TYPE_MOTION_BED:
-        assert result["step_id"] == "motion_bed"
-        await flow.async_step_motion_bed({CONF_BLE_DEVICE_NAME: "QMS-IQ"})
+        assert result["step_id"] == "profile_questions"
+        await flow.async_step_profile_questions({CONF_BLE_DEVICE_NAME: "QMS-IQ"})
     else:
         # The Solace row asks which app shares the QMS name.
         assert result["step_id"] == "solace_family"
