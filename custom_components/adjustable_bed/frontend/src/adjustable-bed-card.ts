@@ -669,13 +669,20 @@ export class AdjustableBedCard extends LitElement {
             ? [...pane.label][0] : pane.label}</span>
         </span>
         ${mode === "angles" ? html`<span class="compact-position"
-          title=${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true).map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
+          title=${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true).map((m) => `${this._motorName(m)} ${this._compactReadout(m) ?? "?"}`).join(" · ")}
         >${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true)
-          .filter((m) => m.angle || m.position || m.cover)
-          .map((m) => this._readout(m) ?? "?").join(" / ") ||
+          .filter((m) => m.angle || m.position || m.cover || m.estimate)
+          .map((m) => this._compactReadout(m) ?? "?").join(" / ") ||
           localize(this.hass, "compact.no_position")}</span>` : nothing}
       </div>`)}
     </div>`;
+  }
+
+  // A compact readout labels an estimate as the percentage graphic does:
+  // "≈ 42%", "Was ≈ 42%", or "?" when it is unknown or not calibrated.
+  private _compactReadout(m: MotorEntity): string | undefined {
+    if (m.angle || m.position || !m.estimate) return this._readout(m);
+    return estimatedGraphicPanel(motorEstimate(this.hass, m), true, (k, p) => this._t(k, p))?.readout ?? "?";
   }
 
   private _available(entityId: string): boolean {
