@@ -98,12 +98,12 @@ async def async_setup_beta_feedback(hass: HomeAssistant) -> None:
         update_type: persistent_notification.UpdateType,
         notifications: dict[str, persistent_notification.Notification],
     ) -> None:
-        # Only this module creates the notification id, so its removal is a dismissal.
+        # Only this module creates the notification id, and only once per run, so
+        # its removal is the dismissal. The stop listener unsubscribes.
         if (
             update_type is persistent_notification.UpdateType.REMOVED
             and NOTIFICATION_ID in notifications
         ):
-            unsubscribe()
             hass.async_create_task(
                 store.async_save({**data, key: dismissed}), "adjustable_bed beta feedback dismissed"
             )
