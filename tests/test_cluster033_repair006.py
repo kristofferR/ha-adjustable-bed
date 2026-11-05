@@ -206,7 +206,6 @@ def paired_entry(hass, app, left_layout, right_layout, **extra):
         data={
             "pair_id": "repair006",
             "pair_mode": "separate_address",
-            "pair_schema_version": 1,
             "pair_children": children,
             "bed_type": app,
             "name": "App pair",

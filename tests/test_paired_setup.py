@@ -72,7 +72,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
-    CONF_PAIR_SCHEMA_VERSION,
     CONF_PREFERRED_ADAPTER,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
@@ -170,7 +169,6 @@ def _paired_entry_data() -> dict:
     return {
         CONF_PAIR_ID: PAIR_ID,
         CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-        CONF_PAIR_SCHEMA_VERSION: 1,
         CONF_BED_TYPE: BED_TYPE_LINAK,
         CONF_NAME: "Master Bed",
         CONF_PREFERRED_ADAPTER: "auto",

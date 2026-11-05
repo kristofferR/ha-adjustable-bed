@@ -217,7 +217,6 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
         CONF_PAIR_ID,
         CONF_PAIR_MEMBER_ADDRESSES,
         CONF_PAIR_MODE,
-        CONF_PAIR_SCHEMA_VERSION,
         CONF_SIDE,
         PAIR_MODE_SEPARATE_ADDRESS,
     )
@@ -246,7 +245,6 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
         data={
             CONF_PAIR_ID: "pair_estimates",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-            CONF_PAIR_SCHEMA_VERSION: 1,
             CONF_BED_TYPE: BED_TYPE_OCTO,
             "name": "Master Bed",
             CONF_PREFERRED_ADAPTER: "auto",

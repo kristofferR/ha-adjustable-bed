@@ -1107,11 +1107,10 @@ async def test_paired_sides_cache_their_own_model(hass: HomeAssistant) -> None:
     assert CONF_REMACRO_MODEL not in children[1]
 
 
-async def test_discovery_form_reports_an_app_that_does_not_list_the_model(
+async def test_discovery_offers_only_the_apps_that_list_the_model(
     hass: HomeAssistant, mock_bluetooth_service_info_remacro, enable_custom_integrations
 ) -> None:
     from homeassistant.config_entries import SOURCE_BLUETOOTH
-    from homeassistant.data_entry_flow import FlowResultType
 
     mock_bluetooth_service_info_remacro.manufacturer_data = {55: b""}
     result = await hass.config_entries.flow.async_init(
@@ -1120,13 +1119,15 @@ async def test_discovery_form_reports_an_app_that_does_not_list_the_model(
     assert result["step_id"] == "bluetooth_confirm"
     with patch(_HISTORY, return_value=None):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {CONF_BED_TYPE: f"{BED_TYPE_REMACRO}:jeromes"},
+            result["flow_id"], {CONF_BED_TYPE: BED_TYPE_REMACRO}
         )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "bluetooth_confirm"
-    # The app entry chose the route, so the error belongs to the whole form.
-    assert result["errors"]["base"] == "remacro_model_not_in_app"
+    # The Remacro row asks the app; Jerome's does not list company ID 55.
+    assert result["step_id"] == "remacro_family"
+    assert result["description_placeholders"]["model"] == "CS-B200M(ASI)"
+    assert result["data_schema"].schema["choice"].config["options"] == [
+        "slumberland",
+        "the_brick",
+    ]
 
 
 async def test_options_keep_or_fix_the_app_of_a_fallback_entry(
@@ -1181,7 +1182,6 @@ def _remacro_pair(hass: HomeAssistant, left_model: int | None, right_model: int 
         CONF_PAIR_ID,
         CONF_PAIR_MEMBER_ADDRESSES,
         CONF_PAIR_MODE,
-        CONF_PAIR_SCHEMA_VERSION,
         CONF_SIDE,
         PAIR_MODE_SEPARATE_ADDRESS,
     )
@@ -1207,7 +1207,6 @@ def _remacro_pair(hass: HomeAssistant, left_model: int | None, right_model: int 
         data={
             CONF_PAIR_ID: "pair_remacro",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-            CONF_PAIR_SCHEMA_VERSION: 1,
             CONF_BED_TYPE: BED_TYPE_REMACRO,
             CONF_NAME: "Remacro Pair",
             CONF_PREFERRED_ADAPTER: "auto",

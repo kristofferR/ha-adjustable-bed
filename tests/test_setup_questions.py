@@ -1,6 +1,7 @@
 """Profile-declared setup questions and owned generic fields (#779)."""
 
 import json
+import re
 from dataclasses import replace
 from pathlib import Path
 
@@ -41,14 +42,68 @@ def test_the_most_specific_declaration_wins():
 
 
 def test_every_declared_question_has_its_labels():
-    """Labels come from strings.json, so a declared field cannot ship unlabelled."""
+    """Labels come from strings.json, so a declared field cannot ship unlabelled.
+
+    A question with choices or free text also explains itself in setup; a yes or
+    no question may rely on its label.
+    """
     step = _STRINGS["config"]["step"]["profile_questions"]
     settings = _STRINGS["options"]["step"]["settings"]["data"]
     for key, profile in SETUP_PROFILES.items():
         for question in profile.questions:
-            labels = step["sections"]["advanced"]["data"] if question.advanced else step["data"]
-            assert question.key in labels, (key, question.key)
+            strings = step["sections"]["advanced"] if question.advanced else step
+            assert question.key in strings["data"], (key, question.key)
+            if question.choices is not None or question.text:
+                assert question.key in strings["data_description"], (key, question.key)
             assert question.key in settings, (key, question.key)
+
+
+def test_every_generic_step_string_belongs_to_a_declared_question():
+    """The generic step labels only declared questions, so none outlives its field."""
+    step = _STRINGS["config"]["step"]["profile_questions"]
+    advanced = step["sections"]["advanced"]
+    questions = [question for profile in SETUP_PROFILES.values() for question in profile.questions]
+    assert set(step["data"]) == {q.key for q in questions if not q.advanced}
+    assert set(advanced["data"]) == {q.key for q in questions if q.advanced}
+    settings = _STRINGS["options"]["step"]["settings"]
+    for strings in (step, advanced, settings):
+        assert set(strings["data_description"]) <= set(strings["data"])
+    # Configure also labels settings no profile declares; tests/test_config_keys.py
+    # checks each of its labels against the CONF_* audit.
+
+
+def _documented_steps(design: str, section: str) -> list[str]:
+    body = design.split(f"\n## {section}\n", 1)[1].split("\n## ", 1)[0]
+    return [
+        step
+        for line in body.splitlines()
+        if line.startswith("| ") and not line.startswith("| Step")
+        for step in re.findall(r"`([a-z0-9_]+)`", line.split("|")[1])
+    ]
+
+
+def test_every_flow_step_is_recorded_with_its_reason():
+    """A new per-app step needs its reason in the design note before it ships."""
+    from custom_components.adjustable_bed.config_flow import (
+        AdjustableBedConfigFlow,
+        AdjustableBedOptionsFlow,
+    )
+
+    design = (Path(__file__).parents[1] / "docs/design/setup-questions.md").read_text()
+    documented = [
+        *_documented_steps(design, "Dedicated steps"),
+        *_documented_steps(design, "Shared steps"),
+    ]
+    steps = {
+        name.removeprefix("async_step_")
+        for flow in (AdjustableBedConfigFlow, AdjustableBedOptionsFlow)
+        for klass in flow.__mro__
+        if klass.__module__.startswith("custom_components.adjustable_bed")
+        for name in vars(klass)
+        if name.startswith("async_step_")
+    }
+    assert len(documented) == len(set(documented))
+    assert set(documented) == steps
 
 
 def test_jiecang_questions_follow_the_chosen_app():
