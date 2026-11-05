@@ -438,7 +438,7 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
-from .setup_questions import GENERIC_FIELDS, Question, SetupProfile
+from .setup_questions import GENERIC_FIELDS, Question, SetupProfile, setup_profile_for
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -2770,9 +2770,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # version 3 marks older entries for the one-time app profile review. v5
     # stores the profile id each entry runs (profile_id.py); setup derives it
     # for new entries. Minor version 2 drops the obsolete keys recorded in
-    # docs/design/config-keys.md.
+    # docs/design/config-keys.md; minor version 3 turns Massage off on layouts
+    # whose profile has no massage.
     VERSION = 5
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -10131,6 +10132,13 @@ class AdjustableBedOptionsFlow(
                 # longer allows or an Auto choice stored as no value, leaves the
                 # saved entry too, even when the form submitted it.
                 stale_profile_keys = frozenset(before) - frozenset(app_data)
+            elif not separate_address_pair and (
+                owner := setup_profile_for({**current_data, **user_input, CONF_BED_TYPE: bed_type})
+            ) is not None:
+                # A profile without questions still fixes the generic fields it
+                # owns, such as MC3's missing massage, even when an entry
+                # switches in from a bed type that had them on.
+                user_input.update(owner.fixed_values())
             if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
                 from .beds.starcode_abm5_4_profiles import SELECTORS
 
