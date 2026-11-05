@@ -59,6 +59,7 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -116,6 +117,9 @@ from .const import (
     CONF_PAIR_MODE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_REMOTE,
+    CONF_RMCONTROL_PRODUCT,
+    CONF_RMCONTROL_SIDE,
     CONF_SLEEPTRACKER_FOUNDATION,
     CONF_SLEEPTRACKER_PROCESSOR_TYPE,
     CONF_SLEEPTRACKER_RESTRICTED,
@@ -158,10 +162,16 @@ from .const import (
     MALOUF_MEMORY_SLOTS_AUTO,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     PAIR_MODE_SINGLE_ADDRESS,
+    RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
+    RICHMAT_REMOTE_AUTO,
+    RICHMAT_REMOTES,
+    RICHMAT_VARIANT_NORDIC,
+    RICHMAT_VARIANT_WILINKE,
     SLEEPYS_ELITE_SELECTORS,
     STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
+    VARIANT_AUTO,
     VIBRADORM_RESTORED_CONTROLS,
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_PROFILES,
@@ -1126,6 +1136,74 @@ def _reverie_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     return REVERIE_MODEL_CHOICES
 
 
+# The RMControl app's standing-desk products run a separate desk protocol.
+_RMCONTROL_DESKS: Final = frozenset({"FWRM", "WFRM"})
+# The app's command side; Home Assistant's paired sides route separately.
+_RMCONTROL_SIDES: Final[Mapping[Any, str]] = {"left": "Left", "right": "Right", "both": "Both"}
+_RMCONTROL_CHOSEN: Final[FieldCondition] = {
+    "field": CONF_RMCONTROL_PRODUCT,
+    "operator": ConditionOperator.EXISTS,
+}
+_NO_RMCONTROL: Final[FieldCondition] = {
+    "field": CONF_RMCONTROL_PRODUCT,
+    "operator": ConditionOperator.NOT_EXISTS,
+}
+
+
+def _rmcontrol_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .richmat_profiles import RICHMAT_PRODUCT_CODES
+
+    return {
+        "": "None: Richmat remote controls",
+        **{code: code for code in RICHMAT_PRODUCT_CODES if code not in _RMCONTROL_DESKS},
+    }
+
+
+def _rmcontrol_default(data: Mapping[str, Any]) -> Any:
+    """The RMControl answer still names its product; the remote answer has none.
+
+    The Richmat question stages ``None`` for the RMControl app until the product
+    is chosen, so nothing is saved without one.
+    """
+    if CONF_RMCONTROL_PRODUCT in data and data[CONF_RMCONTROL_PRODUCT] is None:
+        return REQUIRED
+    return ""
+
+
+def _richmat_remotes(data: Mapping[str, Any]) -> Mapping[Any, str]:
+    """The listed remote codes, plus a detected or saved code the list lacks."""
+    remotes: dict[Any, str] = dict(RICHMAT_REMOTES)
+    current = data.get(CONF_RICHMAT_REMOTE)
+    if isinstance(current, str) and current not in remotes:
+        remotes[current] = f"{current.upper()} (detected code)"
+    return remotes
+
+
+def _richmat_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """An RMControl product runs only over the app's Nordic or WiLinke transport."""
+    if data.get(CONF_RMCONTROL_PRODUCT) and data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO) not in (
+        VARIANT_AUTO,
+        RICHMAT_VARIANT_NORDIC,
+        RICHMAT_VARIANT_WILINKE,
+    ):
+        return {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
+    return {}
+
+
+def _richmat_mh_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Report a model the app's name rule cannot resolve from the raw name."""
+    from .beds.richmat_mh import resolve_model
+    from .detection import is_mac_like_name
+
+    app = RICHMAT_MH_APPS.get(str(data.get(CONF_BED_TYPE)))
+    if app is None:
+        return {}
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    name = name if isinstance(name, str) and not is_mac_like_name(name) else None
+    _model, problem = resolve_model(app, data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO), name)
+    return {CONF_PROTOCOL_VARIANT: f"richmat_mh_{problem}"} if problem else {}
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -1363,6 +1441,31 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             questions=(Question(CONF_PROTOCOL_VARIANT, _reverie_models, "Other"),),
         )
         for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
+    },
+    # The Richmat question picks RMControl or the remote controls. RMControl
+    # names the exact product and the side the app commands; the remote code
+    # picks a remote's buttons. Configure asks the same, so an entry can opt in
+    # to RMControl or leave it. The packet dialect belongs to each receiver, as
+    # every answer here does in a two-address pair.
+    BED_TYPE_RICHMAT: _asking(
+        BED_TYPE_RICHMAT,
+        questions=(
+            Question(CONF_RMCONTROL_PRODUCT, _rmcontrol_products, _rmcontrol_default),
+            Question(CONF_RMCONTROL_SIDE, _RMCONTROL_SIDES, "left", when=_RMCONTROL_CHOSEN),
+            Question(CONF_RICHMAT_REMOTE, _richmat_remotes, RICHMAT_REMOTE_AUTO, when=_NO_RMCONTROL),
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_RICHMAT), "auto", advanced=True),
+        ),
+        validate=_richmat_errors,
+    ),
+    # Each Richmat MH app's model sets its controls. Auto applies the app's name
+    # rule to the raw Bluetooth name setup stores.
+    **{
+        bed_type: _asking(
+            bed_type,
+            questions=(Question(CONF_PROTOCOL_VARIANT, _routes(bed_type), "auto"),),
+            validate=_richmat_mh_errors,
+        )
+        for bed_type in RICHMAT_MH_BED_TYPES
     },
     # A Fuzion entry controls one side; a standalone BAM/MCR entry exposes both,
     # so only Fuzion asks. Auto keeps the left side, as before.

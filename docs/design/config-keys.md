@@ -35,7 +35,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | Key | Class | Set by | Read by |
 |---|---|---|---|
 | `bed_type` | Profile | Bed-type list in setup, a family step, Configure, Reconfigure | `profile_id.py`, `controller_factory.py`, entity platforms |
-| `protocol_variant` | Profile | Route choice in setup (`route` step), a family step, Configure; a question of `bedsense`, `okin_uuid`, `okimat`, `okin_dot`, `sleepys_box25` and `doublesleep`; owned by the declarations that fix it | `profile_id.py`, controllers |
+| `protocol_variant` | Profile | Route choice in setup (`route` step), a family step, Configure; a question of `bedsense`, `okin_uuid`, `okimat`, `okin_dot`, `sleepys_box25`, `doublesleep`, `richmat` and the Richmat MH apps; owned by the declarations that fix it | `profile_id.py`, controllers |
 | `jiecang_app_profile` | Profile | `jiecang_family` | `profile_id.py`, `beds/jiecang_app.py` |
 | `leggett_app_profile` | Profile | `leggett_family`, Configure | `profile_id.py`, `controller_factory.py` |
 | `logicdata_app_profile` | Profile | `logicdata_family`; a question of `logicdata_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
@@ -104,9 +104,9 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
 | `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py` |
-| `richmat_remote` | User | Richmat setup fields, Configure | `coordinator.py`, `profile_recommendations.py` |
-| `rmcontrol_product` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |
-| `rmcontrol_side` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |
+| `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
+| `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
+| `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
 | `cb24_bed_selection` | User | Configure, for CB24 | `coordinator.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | `controller_factory.py` |
 | `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | `controller_factory.py` |

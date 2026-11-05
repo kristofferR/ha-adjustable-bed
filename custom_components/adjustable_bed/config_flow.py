@@ -97,6 +97,7 @@ from .bond_verification import (
     bond_owner_from_entry,
     build_bond_context,
 )
+from .cluster018_profiles import APP_NAMES as CLUSTER018_APP_NAMES
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -483,26 +484,6 @@ _EXPLICIT_APP_HINTS = frozenset(
 def _is_valid_rmcontrol_variant(product: object, variant: str) -> bool:
     """Validate the opt-in against the transports supported by its controller."""
     return not product or variant in (VARIANT_AUTO, RICHMAT_VARIANT_NORDIC, RICHMAT_VARIANT_WILINKE)
-
-
-def _rmcontrol_schema_fields(data: dict[str, Any] | None = None) -> dict[vol.Optional, Any]:
-    """Offer an explicit app profile without changing established remote behavior."""
-    from .richmat_profiles import RICHMAT_PRODUCT_CODES
-
-    current = data or {}
-    return {
-        vol.Optional(
-            CONF_RMCONTROL_PRODUCT, default=current.get(CONF_RMCONTROL_PRODUCT, "")
-        ): vol.In(
-            {
-                "": "Legacy remote profile (default)",
-                **{code: code for code in RICHMAT_PRODUCT_CODES if code not in {"FWRM", "WFRM"}},
-            }
-        ),
-        vol.Optional(CONF_RMCONTROL_SIDE, default=current.get(CONF_RMCONTROL_SIDE, "left")): vol.In(
-            {"left": "Left", "right": "Right", "both": "Both"}
-        ),
-    }
 
 
 def _classify_connection_failure(err: BaseException) -> OperationOutcome:
@@ -953,22 +934,36 @@ def _bed_type_selector(
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
     if show_saved_id:
-        # The StarCode apps and the Reverie and Sleep Number receivers have no
-        # guided change, and another bed type reaches the Jensen JMC400 route
-        # only here, so Configure lists each by its own label; setup asks
-        # behind the family row.
+        # The StarCode and Richmat apps and the Reverie and Sleep Number
+        # receivers have no guided change, and another bed type reaches the
+        # Jensen JMC400 route only here, so Configure lists each by its own
+        # label; setup asks behind the family row.
         unguided = {
             *(bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()),
             *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
             *(bed_type for bed_type, _service in _SLEEP_NUMBER_ROUTES.values()),
+            *RICHMAT_MH_BED_TYPES,
             BED_TYPE_JENSEN,
+        }
+        # The classic Richmat apps are app rows, each with the app's own label.
+        unguided_apps = {
+            bed_type_choice(BED_TYPE_CLUSTER018, app): APP_VARIANT_CHOICES[BED_TYPE_CLUSTER018, app]
+            for app in CLUSTER018_APP_NAMES
         }
         options = sorted(
             [
-                *(option for option in options if option["value"] not in unguided),
+                *(
+                    option
+                    for option in options
+                    if option["value"] not in unguided and option["value"] not in unguided_apps
+                ),
                 *(
                     SelectOptionDict(value=bed_type, label=bed_type_label(bed_type))
                     for bed_type in unguided
+                ),
+                *(
+                    SelectOptionDict(value=value, label=label)
+                    for value, label in unguided_apps.items()
                 ),
             ],
             key=lambda option: option["label"].lower(),
@@ -1181,12 +1176,7 @@ def _condition_owned_generic_fields(
             schema.update(_shown_for({marker: schema.pop(marker)}, owners))
 
 
-def _bed_specific_fields(
-    rows: Mapping[str, tuple[str | None, str]],
-    *,
-    richmat_remote: str = RICHMAT_REMOTE_AUTO,
-    richmat_remotes: Mapping[str, str] = RICHMAT_REMOTES,
-) -> dict[vol.Marker, Any]:
+def _bed_specific_fields(rows: Mapping[str, tuple[str | None, str]]) -> dict[vol.Marker, Any]:
     """Return every bed type's own setup fields, each shown only for its rows."""
     groups: list[tuple[Callable[[str | None, str], bool], dict[vol.Marker, Any]]] = [
         (
@@ -1198,15 +1188,6 @@ def _bed_specific_fields(
                 vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto"): vol.In(
                     _OCTO_MOTOR_OVERRIDES
                 ),
-            },
-        ),
-        (
-            lambda bed_type, _variant: bed_type == BED_TYPE_RICHMAT,
-            {
-                vol.Optional(CONF_RICHMAT_REMOTE, default=richmat_remote): vol.In(
-                    dict(richmat_remotes)
-                ),
-                **_rmcontrol_schema_fields(),
             },
         ),
     ]
@@ -1284,11 +1265,6 @@ def _bed_specific_errors(user_input: Mapping[str, Any], bed_type: str | None) ->
         normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
     ):
         return {CONF_OCTO_PIN: "invalid_pin"}
-    if bed_type == BED_TYPE_RICHMAT and not _is_valid_rmcontrol_variant(
-        user_input.get(CONF_RMCONTROL_PRODUCT),
-        user_input.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
-    ):
-        return {"base": "invalid_variant_for_bed_type"}
     return {}
 
 
@@ -1296,7 +1272,6 @@ def _add_bed_specific_entry_data(
     entry_data: dict[str, Any],
     user_input: Mapping[str, Any],
     bed_type: str | None,
-    advertised_name: str | None = None,
 ) -> None:
     """Save the selected bed type's own answers from the one setup form."""
     if bed_type == BED_TYPE_OCTO:
@@ -1306,14 +1281,6 @@ def _add_bed_specific_entry_data(
         entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(
             user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
         )
-    elif bed_type == BED_TYPE_RICHMAT:
-        entry_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
-        entry_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
-        remote = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
-        if remote == RICHMAT_REMOTE_AUTO and advertised_name:
-            # Auto keeps the code the advertised name carries, when it has one.
-            remote = detect_richmat_remote_from_name(advertised_name) or RICHMAT_REMOTE_AUTO
-        entry_data[CONF_RICHMAT_REMOTE] = remote
 
 
 def _hide_owned_generic_fields(
@@ -1449,6 +1416,8 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_SLEEP_NUMBER: "sleep_number_family",
     BED_TYPE_SLEEP_NUMBER_MCR: "sleep_number_family",
     **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
+    # The classic apps keep their own declared questions above.
+    **dict.fromkeys({BED_TYPE_RICHMAT, *RICHMAT_MH_BED_TYPES}, "richmat_family"),
     **dict.fromkeys(JENSEN_FAMILY.bed_types, "jensen_family"),
     **dict.fromkeys(MALOUF_FAMILY.bed_types, "malouf_family"),
 }
@@ -2284,6 +2253,14 @@ _REMACRO_APPS: Final[dict[str, str]] = {
     "the_brick": REMACRO_VARIANT_THE_BRICK,
     "jeromes": REMACRO_VARIANT_JEROMES,
 }
+# The Richmat question's answers: each app's bed type and variant. RMControl and
+# the remote controls share the Richmat route; the RMControl product tells them apart.
+_RICHMAT_APPS: Final[dict[str, tuple[str, str | None]]] = {
+    "rmcontrol": (BED_TYPE_RICHMAT, None),
+    **{app: (bed_type, None) for bed_type, app in RICHMAT_MH_APPS.items()},
+    **{app: (BED_TYPE_CLUSTER018, app) for app in CLUSTER018_APP_NAMES},
+    "remote": (BED_TYPE_RICHMAT, None),
+}
 # Each app family's picker row, by the routes behind it. The first answer is the row.
 _APP_FAMILY_ROWS: Final[dict[str, str]] = {
     **{
@@ -2588,6 +2565,7 @@ _FAMILY_STEPS: Final = frozenset(
         "remacro_family",
         "jensen_family",
         "reverie_family",
+        "richmat_family",
         "sleep_number_family",
     }
 )
@@ -3954,6 +3932,68 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
 
+    async def async_step_richmat_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which Richmat app or remote runs the bed; shared names and services cannot tell.
+
+        An app chosen elsewhere, such as from a brand's list, already answered.
+        """
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._app_family_incoming is None:
+            self._app_family_incoming = data[CONF_BED_TYPE]
+            if self._app_family_incoming != BED_TYPE_RICHMAT:
+                return await self._async_continue_richmat_route()
+        choice = (user_input or {}).get("choice")
+        if isinstance(choice, str) and choice in _RICHMAT_APPS:
+            bed_type, variant = _RICHMAT_APPS[choice]
+            self._select_family_route(bed_type, variant)
+            if bed_type == BED_TYPE_RICHMAT:
+                # RMControl still names its product; the remote controls have none.
+                data[CONF_RMCONTROL_PRODUCT] = None if choice == "rmcontrol" else ""
+            else:
+                for key in (CONF_RMCONTROL_PRODUCT, CONF_RMCONTROL_SIDE, CONF_RICHMAT_REMOTE):
+                    data.pop(key, None)
+            return await self._async_continue_richmat_route()
+        return self.async_show_form(
+            step_id="richmat_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=list(_RICHMAT_APPS),
+                            translation_key="richmat_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def _async_continue_richmat_route(self) -> ConfigFlowResult:
+        """Stage what the chosen Richmat route reads from the bed's name, then ask its questions."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        bed_type = data[CONF_BED_TYPE]
+        info = self._discovery_info or bluetooth.async_last_service_info(
+            self.hass, data[CONF_ADDRESS], connectable=False
+        )
+        name = info.name if info is not None else None
+        if bed_type in RICHMAT_MH_APPS:
+            # The app's name rule reads the raw advertised name.
+            data.update(_name_rule_setup_name(bed_type, name))
+        elif bed_type == BED_TYPE_RICHMAT and CONF_RICHMAT_REMOTE not in data:
+            # A listed code the name carries is the default; an unlisted one is
+            # kept as detected.
+            code = detect_richmat_remote_from_name(name)
+            data[CONF_RICHMAT_REMOTE] = (
+                code.upper()
+                if code and code.upper() in RICHMAT_REMOTES
+                else code or RICHMAT_REMOTE_AUTO
+            )
+        return await self.async_step_profile_questions()
+
     async def async_step_remacro_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -5125,19 +5165,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ):
                 errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
 
-            if selected_bed_type == BED_TYPE_RICHMAT and not _is_valid_rmcontrol_variant(
-                user_input.get(CONF_RMCONTROL_PRODUCT), protocol_variant
-            ):
-                errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
             if variant_error := self._remacro_variant_error(
                 selected_bed_type,
                 protocol_variant,
                 self._discovery_info.address,
                 self._discovery_info.manufacturer_data,
-            ):
-                errors[CONF_PROTOCOL_VARIANT] = variant_error
-            if variant_error := _richmat_mh_variant_error(
-                selected_bed_type, protocol_variant, self._discovery_info.name
             ):
                 errors[CONF_PROTOCOL_VARIANT] = variant_error
 
@@ -5231,9 +5263,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ):
                     return app_step
                 _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
-                _add_bed_specific_entry_data(
-                    entry_data, user_input, selected_bed_type, self._discovery_info.name
-                )
+                _add_bed_specific_entry_data(entry_data, user_input, selected_bed_type)
                 entry_data = self._maybe_add_advertisement_metadata(
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
@@ -5314,29 +5344,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         schema_dict[vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count)] = vol.All(
             vol.Coerce(int), vol.In([1, 2, 3, 4])
         )
-        # A Richmat name can carry its remote code. Only a listed code is the
-        # default; Auto stores an unlisted one when saving.
         if detected_remote:
             _LOGGER.info(
                 "Auto-detected Richmat remote code '%s' from device name '%s'",
                 detected_remote,
                 self._discovery_info.name,
             )
-        default_remote = (
-            detected_remote.upper()
-            if detected_remote and detected_remote.upper() in RICHMAT_REMOTES
-            else RICHMAT_REMOTE_AUTO
-        )
-        remotes_options = dict(RICHMAT_REMOTES)
-        if detected_remote and detected_remote.upper() not in RICHMAT_REMOTES:
-            remotes_options[RICHMAT_REMOTE_AUTO] = f"Auto (detected: {detected_remote.upper()})"
         # Every row's own fields are on the one form, shown only for that row.
         rows = _row_profiles(bed_type_select, detected_bed_type)
-        schema_dict.update(
-            _bed_specific_fields(
-                rows, richmat_remote=default_remote, richmat_remotes=remotes_options
-            )
-        )
+        schema_dict.update(_bed_specific_fields(rows))
 
         # Build description placeholders with optional ambiguity warning
         description_placeholders = {
@@ -6019,10 +6035,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._discovery_info.manufacturer_data,
             ):
                 errors[CONF_PROTOCOL_VARIANT] = variant_error
-            if variant_error := _richmat_mh_variant_error(
-                bed_type, protocol_variant, self._discovery_info.name
-            ):
-                errors[CONF_PROTOCOL_VARIANT] = variant_error
 
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = get_motor_pulse_defaults(
@@ -6284,10 +6296,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 manual_info = bluetooth.async_last_service_info(
                     self.hass, address, connectable=False
                 )
-                if variant_error := _richmat_mh_variant_error(
-                    bed_type, protocol_variant, manual_info.name if manual_info else None
-                ):
-                    errors[CONF_PROTOCOL_VARIANT] = variant_error
 
                 # Get bed-specific defaults for motor pulse settings
                 pulse_defaults = get_motor_pulse_defaults(
@@ -9474,26 +9482,6 @@ class AdjustableBedOptionsFlow(
                     default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
                 )
             ] = TextSelector(TextSelectorConfig())
-
-        # Add remote selection for Richmat beds
-        if bed_type == BED_TYPE_RICHMAT:
-            # Exact product and side belong to each physical controller. A
-            # separate-address pair must not propagate the first child's values.
-            if (
-                not is_paired(self.config_entry.data)
-                or self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
-            ):
-                schema_dict.update(_rmcontrol_schema_fields(current_data).items())
-            current_remote = current_data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
-            remote_options = dict(RICHMAT_REMOTES)
-            if current_remote not in remote_options:
-                remote_options[current_remote] = f"{current_remote.upper()} (current detected code)"
-            schema_dict[
-                vol.Optional(
-                    CONF_RICHMAT_REMOTE,
-                    default=current_remote,
-                )
-            ] = vol.In(remote_options)
 
         # Each route's own fields are on the form, shown only for that route.
         route_rows = {
