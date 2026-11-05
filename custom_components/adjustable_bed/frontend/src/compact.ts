@@ -2,6 +2,7 @@
 import { bedEntitiesForDevice, isSingleAddressPairedDevice,
   pairedChildDeviceIds, resolvePairedParentId, splitSide } from "./discovery";
 import { localize } from "./localize";
+import { deviceName } from "./names";
 import type { AdjustableBedCardConfig, BedEntities, HomeAssistant } from "./types";
 
 export type CompactPreset = "glance" | "quick" | "controls";
@@ -85,7 +86,7 @@ export function compactTargets(hass: HomeAssistant, deviceId?: string): CompactT
   if (parent && children.length) {
     return [{ key: "both", label: localize(hass, "card.both_sides"),
       bed: bedEntitiesForDevice(hass, parent) }, ...children.map((id) => ({
-        key: id, label: hass.devices[id]?.name_by_user ?? hass.devices[id]?.name ?? id,
+        key: id, label: deviceName(hass, id) ?? id,
         bed: bedEntitiesForDevice(hass, id),
       }))];
   }

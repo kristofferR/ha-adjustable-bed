@@ -3248,6 +3248,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and can_keep:
             if self._migration is not None:
                 return await self.async_step_migration_keep()
+            if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
+                return await self.async_step_profile_questions()
             return await self._async_finish_family_route()
         if choice in _OKIN_ROUTES or choice in apps:
             bed_type, variant = (

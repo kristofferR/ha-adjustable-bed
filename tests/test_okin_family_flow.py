@@ -113,10 +113,35 @@ async def test_detected_receiver_offers_routes_review_apps_and_keep(hass):
     # The apps the app review suggests for this route are one answer away.
     assert {"serenity", "tranquil", "adjustable_lumbar"} <= set(offered)
     assert offered[-1] == "keep"
-    with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-        await flow.async_step_okin_family({"choice": "keep"})
-    pairing.assert_awaited_once()
+    result = await flow.async_step_okin_family({"choice": "keep"})
+    assert result["step_id"] == "profile_questions"
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_UUID
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "variant"),
+    [
+        (const.BED_TYPE_OKIN_UUID, "auto"),
+        (const.BED_TYPE_OKIMAT, "62612"),
+        (const.BED_TYPE_OKIN_DOT, "97450"),
+    ],
+)
+@pytest.mark.parametrize("motor_count", [3, 4])
+async def test_keep_detected_controls_collects_motors_without_changing_route(
+    hass, bed_type, variant, motor_count
+):
+    flow = setup_flow(hass, bed_type)
+    assert flow._manual_data is not None
+    flow._manual_data[const.CONF_PROTOCOL_VARIANT] = variant
+    before = dict(flow._manual_data)
+    result = await flow.async_step_okin_family({"choice": "keep"})
+    assert result["step_id"] == "profile_questions"
+    assert result["data_schema"] is not None
+    answers = result["data_schema"]({const.CONF_MOTOR_COUNT: str(motor_count)})
+    with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions(answers)
+    finish.assert_awaited_once()
+    assert flow._manual_data == {**before, const.CONF_MOTOR_COUNT: motor_count}
 
 
 async def test_family_row_has_no_route_to_keep(hass):
