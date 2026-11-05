@@ -200,6 +200,7 @@ class MotoMotionController(BedController):
             "bind_code": self._bind_code,
             "side": self._side,
             "posture": self._posture,
+            "targets": asdict(self._targets) if self._targets is not None else None,
             "custom_eq": self._custom_eq.copy(),
             "rgb": self._rgb.copy(),
             "dimensions": self._dimensions.copy(),
@@ -226,6 +227,14 @@ class MotoMotionController(BedController):
         ):
             raise ValueError("Invalid MotoMotion selected posture")
         self._select_posture(selected_posture)
+        targets = state.get("targets")
+        if targets is not None and (
+            not isinstance(targets, dict)
+            or set(targets) != set(FINE_LIMITS)
+            or any(type(v) is not int or not 0 <= v <= 65535 for v in targets.values())
+        ):
+            raise ValueError("Invalid MotoMotion working targets")
+        self._targets = Position(**targets) if targets is not None else None
         bind = state.get("bind_code", "")
         if not isinstance(bind, str) or (
             bind and (len(bind) != 16 or any(c not in "0123456789abcdef" for c in bind))

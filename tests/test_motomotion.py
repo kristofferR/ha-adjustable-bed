@@ -313,6 +313,32 @@ def test_restore_rejects_invalid_posture(coordinator, value):
         c.restore_persisted_app_state({"posture": value})
 
 
+def test_restore_working_targets_defaults_for_existing_state(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    c.restore_persisted_app_state(
+        {"targets": {"head": 300, "base": 100, "back": 200, "lumbar": 0, "tilt": 0}}
+    )
+    c.restore_persisted_app_state({})
+    assert c.persisted_app_state["targets"] is None
+
+
+@pytest.mark.parametrize(
+    "targets",
+    [
+        [],
+        {"head": 300},
+        *[
+            {"head": value, "base": 100, "back": 200, "lumbar": 0, "tilt": 0}
+            for value in (-1, 65536, True, 1.5)
+        ],
+    ],
+)
+def test_restore_rejects_invalid_working_targets(coordinator, targets):
+    c = controller(coordinator, "SOFA000001A000H")
+    with pytest.raises(ValueError, match="working targets"):
+        c.restore_persisted_app_state({"targets": targets})
+
+
 async def test_number_and_select_callbacks_are_callable(coordinator, instant):
     c = controller(coordinator, "BT2010000")
     spec = next(s for s in c.controller_number_specs if s.key == "motomotion_treble")

@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.motomotion import MotoMotionControlle
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.motomotion_protocol import (
+    Position,
     ascii_command,
     binary_command,
     posture,
@@ -152,6 +153,60 @@ async def test_selection_survives_disconnect_and_controller_replacement(
         )
     assert selection.current_option == value
     assert c._client.write_gatt_char.await_args.args[1] == expected
+    c._client.is_connected = False
+    await c.async_shutdown()
+
+
+@pytest.mark.parametrize("selected_posture", ["upright", "tv"])
+async def test_fine_tune_targets_survive_disconnect_and_controller_replacement(hass, selected_posture):
+    from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+
+    c = runtime(hass)
+    await c.async_prime_offline_controller()
+    ctrl = c._controller = MotoMotionController(c)
+    await c._async_restore_app_state(ctrl)
+    ctrl.restore_persisted_app_state(
+        {"dimensions": {"height": 170, "buttocks": 100, "knee": 55}, "posture": selected_posture}
+    )
+    c._client = MagicMock()
+    c._client.is_connected = True
+    c._client.write_gatt_char = AsyncMock()
+    c._client.stop_notify = AsyncMock()
+    c._client.disconnect = AsyncMock(side_effect=lambda: setattr(c._client, "is_connected", False))
+    char = SimpleNamespace(uuid="ffe1", handle=13)
+    ctrl._session = (c._client, char, char)
+    sliders = {
+        key: AdjustableBedControllerNumber(
+            c, next(s for s in ctrl.controller_number_specs if s.key == "motomotion_target_" + key)
+        )
+        for key in ("head", "back")
+    }
+    with (
+        patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
+        patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
+    ):
+        await sliders["head"].async_set_native_value(300)
+    await c.async_disconnect("idle_timeout")
+    assert c.controller is None
+
+    replacement = c._controller = MotoMotionController(c)
+    await c._async_restore_app_state(replacement)
+    assert sliders["head"].native_value == 300
+    c._client = MagicMock()
+    c._client.is_connected = True
+    c._client.write_gatt_char = AsyncMock()
+    c._client.stop_notify = AsyncMock()
+    c._client.disconnect = AsyncMock()
+    replacement._session = (c._client, char, char)
+    with (
+        patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
+        patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
+    ):
+        await sliders["back"].async_set_native_value(400)
+    original = posture(selected_posture, 170, 100, 55)
+    expected = Position(300, original.base, 400, original.lumbar, original.tilt)
+    assert c._client.write_gatt_char.await_args.args[1] == expected.to_bytes()
+    assert sliders["head"].native_value == 300
     c._client.is_connected = False
     await c.async_shutdown()
 
