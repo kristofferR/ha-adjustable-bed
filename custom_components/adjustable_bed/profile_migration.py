@@ -56,6 +56,8 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -82,6 +84,10 @@ from .const import (
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
     CONF_LEGGETT_APP_PROFILE,
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
     CONF_MALOUF_APP_PROFILE,
     CONF_PROTOCOL_VARIANT,
     CONF_SLEEPYS_ELITE_SELECTOR,
@@ -265,6 +271,23 @@ MALOUF_FAMILY: Final = ManagedFamily(
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_MALOUF_APP,
 )
 
+_LOGICDATA_ROUTES: Final = frozenset({BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_APP})
+# SimplicityFrame writes its one encrypted characteristic after the bond the
+# pairing step proves, and each LOGICDATA app needs its selected transport, so a
+# change checks the link first. The Sleep Smart air pump is a separate physical
+# device with its own entry, never a route of a bed entry.
+LOGICDATA_FAMILY: Final = ManagedFamily(
+    key="logicdata_family",
+    bed_types=_LOGICDATA_ROUTES,
+    route_keys=(
+        CONF_LOGICDATA_APP_PROFILE,
+        CONF_LOGICDATA_APP_FAMILY,
+        CONF_LOGICDATA_APP_LAYOUT,
+        CONF_LOGICDATA_APP_TRANSPORT,
+    ),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) in _LOGICDATA_ROUTES,
+)
+
 MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     VIBRADORM_FAMILY,
     JIECANG_FAMILY,
@@ -276,6 +299,7 @@ MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     CUSTOMATIC_FAMILY,
     JORDANS_FAMILY,
     MALOUF_FAMILY,
+    LOGICDATA_FAMILY,
 )
 
 

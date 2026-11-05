@@ -83,6 +83,10 @@ from .const import (
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
@@ -123,6 +127,10 @@ from .const import (
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
+    LOGICDATA_APP_FAMILIES,
+    LOGICDATA_APP_LAYOUTS,
+    LOGICDATA_APP_PROFILES,
+    LOGICDATA_APP_TRANSPORTS,
     MALOUF_APP_MODELS,
     MALOUF_APP_PROFILES,
     MALOUF_APP_TRANSPORTS,
@@ -399,6 +407,84 @@ def _jiecang_title(data: Mapping[str, Any]) -> str:
     return JIECANG_APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""), "Jiecang app")
 
 
+def _logicdata_profile(data: Mapping[str, Any]):  # noqa: ANN202 - a profiles.logicdata LogicdataProfile
+    from .profiles.logicdata import APP_PROFILES
+
+    return APP_PROFILES.get(data.get(CONF_LOGICDATA_APP_PROFILE, ""))
+
+
+def _logicdata_layouts(data: Mapping[str, Any]) -> Mapping[str, str]:
+    """The chosen app's layouts. A MOTIONrelax app's middle layout is its P2 answer."""
+    profile = _logicdata_profile(data)
+    keys = profile.layouts if profile is not None else LOGICDATA_APP_LAYOUTS
+    if profile is not None and profile.session == "motionrelax":
+        keys = [key for key in keys if key != "middle"]
+    return {key: LOGICDATA_APP_LAYOUTS[key] for key in keys}
+
+
+def _logicdata_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    """A MOTIONrelax app's P2 family runs the middle layout, which it never asks."""
+    data = {**previous, **answers}
+    profile = _logicdata_profile(data)
+    if (
+        profile is not None
+        and profile.session == "motionrelax"
+        and data.get(CONF_LOGICDATA_APP_FAMILY) == "p2"
+    ):
+        data[CONF_LOGICDATA_APP_LAYOUT] = "middle"
+    return data
+
+
+def _logicdata_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Require the app's own family, layout and transport; nothing is inferred."""
+    profile = _logicdata_profile(data)
+    if profile is None:
+        return {CONF_LOGICDATA_APP_PROFILE: "logicdata_app_required"}
+    errors = {}
+    family = data.get(CONF_LOGICDATA_APP_FAMILY)
+    layout = data.get(CONF_LOGICDATA_APP_LAYOUT)
+    if family not in LOGICDATA_APP_FAMILIES:
+        errors[CONF_LOGICDATA_APP_FAMILY] = "logicdata_app_required"
+    elif layout not in profile.layouts:
+        errors[CONF_LOGICDATA_APP_LAYOUT] = (
+            "logicdata_app_sleep_smart_layout"
+            if profile.session == "sleep_smart"
+            else "logicdata_app_family_layout"
+        )
+    elif profile.session == "motionrelax" and (family == "p2") != (layout == "middle"):
+        errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_family_layout"
+    if data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto") not in LOGICDATA_APP_TRANSPORTS:
+        errors[CONF_LOGICDATA_APP_TRANSPORT] = "logicdata_app_required"
+    return errors
+
+
+def _logicdata_title(data: Mapping[str, Any]) -> str:
+    return LOGICDATA_APP_PROFILES.get(data.get(CONF_LOGICDATA_APP_PROFILE, ""), "LOGICDATA app")
+
+
+# A MOTIONrelax app asks its layout only for the P1 family.
+_LOGICDATA_P1: Final[FieldCondition] = {"field": CONF_LOGICDATA_APP_FAMILY, "value": "p1"}
+# The app's layout sets the axes and its own cadence; its pulse count still
+# bounds each held movement, and none of these apps reports positions.
+_LOGICDATA_OWNS: Final[Mapping[str, Any]] = {
+    CONF_MOTOR_COUNT: SET_BY_PROFILE,
+    CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+    CONF_DISABLE_ANGLE_SENSING: True,
+}
+
+
+def _logicdata_questions(
+    *, app: bool = False, layout_when: FieldCondition | None = None
+) -> tuple[Question, ...]:
+    return (
+        *((Question(CONF_LOGICDATA_APP_PROFILE, LOGICDATA_APP_PROFILES),) if app else ()),
+        Question(CONF_LOGICDATA_APP_FAMILY, LOGICDATA_APP_FAMILIES),
+        Question(CONF_LOGICDATA_APP_LAYOUT, _logicdata_layouts, when=layout_when),
+        Question(CONF_HAS_LIGHT, default=HAS_LIGHT_DEFAULTS[BED_TYPE_LOGICDATA_APP]),
+        Question(CONF_LOGICDATA_APP_TRANSPORT, LOGICDATA_APP_TRANSPORTS, "auto", advanced=True),
+    )
+
+
 _DECLARED: Final[dict[str, SetupProfile]] = {
     # The family step asks the app; the app's layout sets the axes and its own
     # cadence, and none of these apps reports positions.
@@ -415,6 +501,31 @@ _DECLARED: Final[dict[str, SetupProfile]] = {
         ),
         validate=_jiecang_errors,
         title=_jiecang_title,
+    ),
+    # The family step asks the app. An entry switched in from another bed type
+    # with Configure's bed-type list answers the app here too.
+    BED_TYPE_LOGICDATA_APP: SetupProfile(
+        owns=_LOGICDATA_OWNS,
+        questions=_logicdata_questions(app=True),
+        validate=_logicdata_errors,
+        title=_logicdata_title,
+    ),
+    **{
+        f"{BED_TYPE_LOGICDATA_APP}@{app}": SetupProfile(
+            owns=_LOGICDATA_OWNS,
+            questions=_logicdata_questions(layout_when=_LOGICDATA_P1),
+            normalize=_logicdata_normalize,
+            validate=_logicdata_errors,
+            title=_logicdata_title,
+        )
+        for app in ("phone", "tablet")
+    },
+    # Sleep Smart's two-motor layout or split series, under either family.
+    f"{BED_TYPE_LOGICDATA_APP}@sleep_smart": SetupProfile(
+        owns=_LOGICDATA_OWNS,
+        questions=_logicdata_questions(),
+        validate=_logicdata_errors,
+        title=_logicdata_title,
     ),
 }
 

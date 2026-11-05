@@ -129,6 +129,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
@@ -308,11 +309,6 @@ from .const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     LIMOSS_REMOTE_CONFIG_KEYS,
-    LOGICDATA_APP_FAMILIES,
-    LOGICDATA_APP_LAYOUTS,
-    LOGICDATA_APP_PROFILES,
-    LOGICDATA_APP_TRANSPORTS,
-    LOGICDATA_SLEEP_SMART_LAYOUTS,
     MALOUF_APP_MODELS,
     MALOUF_APP_PROFILES,
     MALOUF_APP_TRANSPORTS,
@@ -428,6 +424,7 @@ from .profile_migration import (
     JORDANS_FAMILY,
     KEESON_FAMILY,
     LEGGETT_FAMILY,
+    LOGICDATA_FAMILY,
     MALOUF_FAMILY,
     MANAGED_FAMILIES,
     OKIN_FAMILY,
@@ -995,6 +992,8 @@ def _bed_type_selector(
         and not show_saved_id
         else BED_TYPE_MALOUF_APP
         if default in MALOUF_FAMILY.bed_types - {BED_TYPE_MALOUF_APP} and not show_saved_id
+        else BED_TYPE_LOGICDATA_APP
+        if default in (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_AIR_PUMP) and not show_saved_id
         else _APP_FAMILY_ROWS.get(default or "")
         if not show_saved_id
         else None
@@ -1388,6 +1387,17 @@ def _validate_vibradorm_setup_roles(client: BleakClient, data: dict[str, Any]) -
     validate_app_roles(client, profile)
 
 
+def _checked_family(migrating: ManagedFamily, staged: Mapping[str, Any]) -> ManagedFamily:
+    """The family whose check a staged route needs.
+
+    A LOGICDATA route reached from another family's change, as the Comfort Motion
+    review suggests one, still needs its own link check.
+    """
+    if staged.get(CONF_BED_TYPE) in LOGICDATA_FAMILY.bed_types:
+        return LOGICDATA_FAMILY
+    return migrating
+
+
 def _require_app_family_roles(client: BleakClient, data: Mapping[str, Any]) -> None:
     """Run the staged Customatic or Jordan's app's own GATT role check."""
     bed_type = data[CONF_BED_TYPE]
@@ -1430,7 +1440,11 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_CLUSTER018: "profile_questions",
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
     BED_TYPE_VIBRADORM: "vibradorm",
-    BED_TYPE_LOGICDATA_APP: "logicdata_app",
+    # The LOGICDATA question asks the app, and for Sleep Smart the bed base or pump.
+    **dict.fromkeys(
+        (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_APP, BED_TYPE_LOGICDATA_AIR_PUMP),
+        "logicdata_family",
+    ),
     **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
     **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
     # A new Okin CST bed answers the Okin question with its apps first; CST is
@@ -1618,52 +1632,6 @@ def _add_leggett_app_schema_field(
             default=current_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
         )
     ] = vol.In(LEGGETT_APP_PROFILES)
-
-
-def _add_logicdata_app_schema_fields(
-    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
-) -> None:
-    """Require the app and physical layout, neither is identified by shared UUIDs."""
-    current_data = current_data or {}
-    for key, choices in (
-        (CONF_LOGICDATA_APP_PROFILE, LOGICDATA_APP_PROFILES),
-        (CONF_LOGICDATA_APP_FAMILY, LOGICDATA_APP_FAMILIES),
-        (CONF_LOGICDATA_APP_LAYOUT, LOGICDATA_APP_LAYOUTS),
-    ):
-        default = current_data.get(key, vol.UNDEFINED)
-        schema[vol.Required(key, default=default)] = vol.In(choices)
-    schema[
-        vol.Optional(
-            CONF_LOGICDATA_APP_TRANSPORT,
-            default=current_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
-        )
-    ] = vol.In(LOGICDATA_APP_TRANSPORTS)
-    schema[
-        vol.Optional(
-            CONF_HAS_LIGHT,
-            default=current_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_LOGICDATA_APP]),
-        )
-    ] = bool
-
-
-def _logicdata_app_errors(data: dict[str, Any]) -> dict[str, str]:
-    """Require explicit app and layout selection without inferring hardware."""
-    errors = {}
-    if data.get(CONF_LOGICDATA_APP_PROFILE) not in LOGICDATA_APP_PROFILES:
-        errors[CONF_LOGICDATA_APP_PROFILE] = "logicdata_app_required"
-    if data.get(CONF_LOGICDATA_APP_FAMILY) not in LOGICDATA_APP_FAMILIES:
-        errors[CONF_LOGICDATA_APP_FAMILY] = "logicdata_app_required"
-    if data.get(CONF_LOGICDATA_APP_LAYOUT) not in LOGICDATA_APP_LAYOUTS:
-        errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_required"
-    elif data.get(CONF_LOGICDATA_APP_PROFILE) == "sleep_smart":
-        # Either command family uses the final two-motor layout in this app.
-        if data.get(CONF_LOGICDATA_APP_LAYOUT) not in LOGICDATA_SLEEP_SMART_LAYOUTS:
-            errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_sleep_smart_layout"
-    elif (data.get(CONF_LOGICDATA_APP_FAMILY) == "p2") != (
-        data.get(CONF_LOGICDATA_APP_LAYOUT) == "middle"
-    ):
-        errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_family_layout"
-    return errors
 
 
 def _add_starcode_app_schema_fields(schema: dict[vol.Marker, Any], data: dict[str, Any]) -> None:
@@ -2506,6 +2474,17 @@ _SLEEPYS_ROUTES: Final[dict[str, str]] = {
 }
 
 
+# The LOGICDATA question's answers: each app's bed type and app profile. Sleep
+# Smart's bed base and air mattress pump are separate devices.
+_LOGICDATA_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
+    "silvermotion": (BED_TYPE_LOGICDATA, None),
+    "phone": (BED_TYPE_LOGICDATA_APP, "phone"),
+    "tablet": (BED_TYPE_LOGICDATA_APP, "tablet"),
+    "sleep_smart": (BED_TYPE_LOGICDATA_APP, "sleep_smart"),
+    "sleep_smart_pump": (BED_TYPE_LOGICDATA_AIR_PUMP, None),
+}
+
+
 # The app-family questions' answers: each app's bed type, variant and own step.
 _AppAnswer = tuple[str, str | None, str | None]
 _CUSTOMATIC_APPS: Final[dict[str, _AppAnswer]] = {
@@ -2900,7 +2879,6 @@ def _normalize_cluster033_data(data: dict[str, Any]) -> None:
 # Options fields of app profiles whose adder needs only the current data.
 _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]] = {
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, _add_cluster033_schema_fields),
-    BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
     BED_TYPE_MOTION_BED: _add_motion_bed_schema_fields,
     BED_TYPE_DOUBLESLEEP: _add_doublesleep_schema_fields,
@@ -3335,14 +3313,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        return self._migration_family is not None and self._migration_family.requires_check(
-            staged or {}
-        )
+        if self._migration_family is None:
+            return False
+        return _checked_family(self._migration_family, staged or {}).requires_check(staged or {})
 
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the migrating family's exact endpoint check on the candidate link."""
         self._migration_preview = {}
-        if self._migration_family is VIBRADORM_FAMILY:
+        if self._migration_family is None:
+            return
+        family = _checked_family(self._migration_family, data)
+        if family is LOGICDATA_FAMILY:
+            from .controller_factory import require_logicdata_route
+
+            require_logicdata_route(client, data)
+        elif self._migration_family is VIBRADORM_FAMILY:
             _validate_vibradorm_setup_roles(client, data)
         elif self._migration_family is JIECANG_FAMILY:
             from .beds.jiecang_app import require_app_transport
@@ -3518,28 +3503,73 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self.hass.config_entries.async_schedule_reload(entry.entry_id)
         return result
 
-    async def async_step_logicdata_app(
+    async def async_step_logicdata_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Collect the explicit app profile and physical controls for any setup path."""
+        """Ask which LOGICDATA app runs the bed, and for Sleep Smart the bed base or pump.
+
+        The apps share Bluetooth services, so nothing about the bed chooses one.
+        """
         assert self._manual_data is not None
-        errors = _logicdata_app_errors(user_input) if user_input is not None else {}
-        if user_input is not None and not errors:
-            self._manual_data.update(user_input)
-            self._manual_data[CONF_DISABLE_ANGLE_SENSING] = True
-            return await self._finish_with_verify(
-                self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
-            )
-        schema: dict[vol.Marker, Any] = {}
-        _add_logicdata_app_schema_fields(schema, user_input)
+        data = self._manual_data
+        if self._logicdata_incoming is None:
+            self._logicdata_incoming = data[CONF_BED_TYPE]
+        incoming = self._logicdata_incoming
+        guided = self._migration is not None
+        # Keep saves the route detection or the saved setup chose; the family
+        # row alone chose no app to keep.
+        can_keep = guided or incoming != BED_TYPE_LOGICDATA_APP
+        # The pump is its own physical device, never a route a bed entry changes to.
+        answers = [
+            answer
+            for answer, (bed_type, _app) in _LOGICDATA_ROUTES.items()
+            if not (guided and bed_type == BED_TYPE_LOGICDATA_AIR_PUMP)
+        ]
+        choice = (user_input or {}).get("choice")
+        if choice == "keep" and can_keep:
+            if guided:
+                return await self.async_step_migration_keep()
+            return await self._async_continue_logicdata_route()
+        if choice in answers:
+            bed_type, app = _LOGICDATA_ROUTES[choice]
+            if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_LOGICDATA_APP_PROFILE)):
+                # Another app's command family, layout and transport mean nothing here.
+                for key in LOGICDATA_FAMILY.route_keys:
+                    data.pop(key, None)
+            self._select_family_route(bed_type, None)
+            if app is not None:
+                data[CONF_LOGICDATA_APP_PROFILE] = app
+            return await self._async_continue_logicdata_route()
         return self.async_show_form(
-            step_id="logicdata_app", data_schema=vol.Schema(schema), errors=errors
+            step_id="logicdata_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[*answers, *(["keep"] if can_keep else [])],
+                            translation_key="logicdata_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
         )
+
+    async def _async_continue_logicdata_route(self) -> ConfigFlowResult:
+        """Ask an app's own command family and layout, then finish the route."""
+        assert self._manual_data is not None
+        if self._manual_data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA_APP:
+            return await self.async_step_profile_questions()
+        # SimplicityFrame continues to its pairing step; the pump to its check.
+        return await self._async_finish_family_route()
 
     async def async_step_jiecang_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote controls the bed; never infer it from the bed's name."""
+        from .profile_review import suggested_apps
+
         assert self._manual_data is not None
         if self._jiecang_incoming is None:
             self._jiecang_incoming = self._manual_data.get(CONF_BED_TYPE)
@@ -3548,7 +3578,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # row alone chose no route to keep.
         can_keep = self._migration is not None or incoming in _JIECANG_LEGACY_ROUTES.values()
         choices = [*JIECANG_APP_PROFILES, *_JIECANG_LEGACY_ROUTES, *(["keep"] if can_keep else [])]
+        # Another family's app the review suggests for this route, such as the
+        # LOGICDATA app for a Comfort Motion bed, continues in that family's question.
+        apps = [
+            app
+            for app in suggested_apps(self.hass, self._manual_data)
+            if resolve_bed_type_choice(app)[0] not in JIECANG_FAMILY.bed_types
+        ]
         choice = (user_input or {}).get("choice")
+        if choice in apps:
+            data = self._manual_data
+            for key in JIECANG_FAMILY.route_keys:
+                data.pop(key, None)
+            bed_type, variant = resolve_bed_type_choice(choice)
+            self._select_family_route(bed_type, variant)
+            if (step := _APP_SETUP_STEPS.get(bed_type)) is not None:
+                return await getattr(self, f"async_step_{step}")()
+            return await self._async_finish_family_route()
         if choice in choices:
             data = self._manual_data
             if choice == "keep":
@@ -3579,7 +3625,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 {
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
-                            options=choices,
+                            # Each suggested app is translated as a choice of its own.
+                            options=[
+                                *(key for key in choices if key != "keep"),
+                                *apps,
+                                *(["keep"] if can_keep else []),
+                            ],
                             translation_key="jiecang_family_choice",
                             mode=SelectSelectorMode.LIST,
                         )
@@ -4607,6 +4658,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # What the connection check resolved for the staged route, for the
         # confirm step's control list only.
         self._migration_preview: dict[str, Any] = {}
+        self._logicdata_incoming: str | None = None
         self._app_family_incoming: str | None = None
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
@@ -10191,13 +10243,6 @@ class AdjustableBedOptionsFlow(
                             errors={CONF_LEGGETT_APP_PROFILE: "leggett_app_invalid_profile"},
                         )
                     user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
-            if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
-                app_errors = _logicdata_app_errors({**current_data, **user_input})
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
-                    )
-                user_input[CONF_DISABLE_ANGLE_SENSING] = True
             if (
                 not separate_address_pair
                 and not _malouf_app_switch_in(bed_type, self.config_entry.data)

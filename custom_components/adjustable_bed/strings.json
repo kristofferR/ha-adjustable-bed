@@ -417,24 +417,6 @@
           "name": "Name for the combined bed"
         }
       },
-      "logicdata_app": {
-        "title": "Logicdata bed app and layout",
-        "description": "Choose the app, command family and physical controls that match this bed. SimplicityFrame entries keep their existing protocol.",
-        "data": {
-          "logicdata_app_profile": "Bed app",
-          "logicdata_app_family": "Command family",
-          "logicdata_app_layout": "Physical actuator layout",
-          "logicdata_app_transport": "BLE transport",
-          "has_light": "Enable light controls"
-        },
-        "data_description": {
-          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
-          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
-          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
-          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "has_light": "Expose under-bed light controls when the selected standard layout has lighting."
-        }
-      },
       "profile_questions": {
         "title": "{profile} settings",
         "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
@@ -461,6 +443,9 @@
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
           "product_type": "App layout code",
           "sleepys_elite_selector": "Control box the app lists",
+          "logicdata_app_profile": "Bed app",
+          "logicdata_app_family": "Command family",
+          "logicdata_app_layout": "Physical actuator layout",
           "malouf_app_model": "Bed model",
           "malouf_app_primary": "Primary bed in the app",
           "malouf_layout": "Malouf/Lucid actuator layout",
@@ -486,6 +471,9 @@
           "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout.",
           "has_massage": "Show the massage controls. For retained Caresse Diamant settings, match the massage setting saved in the app.",
           "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box.",
+          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. A MOTIONrelax app's P2 family is the middle layout, so it asks no layout.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport. These app profiles come from the Android apps and are not yet verified on hardware.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
           "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
@@ -498,12 +486,14 @@
               "jiecang_app_transport": "BLE transport",
               "cluster018_third_service": "Allow the app’s third-service fallback",
               "protocol_variant": "Packet dialect",
+              "logicdata_app_transport": "BLE transport",
               "malouf_app_transport": "Bluetooth transport"
             },
             "data_description": {
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
               "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
               "protocol_variant": "Auto reads the receiver's manufacturer name: text containing star selects StarCode, anything else the legacy CB25 packets. Change it only if Auto picks the wrong one.",
+              "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
               "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous."
             }
           }
@@ -796,6 +786,13 @@
           "choice": "App or receiver"
         }
       },
+      "logicdata_family": {
+        "title": "Which LOGICDATA app controls this bed?",
+        "description": "The LOGICDATA apps share the bed's Bluetooth services, so the bed doesn't tell them apart. Choose the app you use on your phone or tablet. For the Sleep Smart Air Mattress app, choose the bed base or the air mattress pump: the pump is its own device, added as a separate entry. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App"
+        }
+      },
       "customatic_family": {
         "title": "Which Customatic app controls this bed?",
         "description": "The Customatic apps share the bed's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone, and for Z-Series the model chosen on the app's selection screen.",
@@ -901,7 +898,7 @@
       "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
-      "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
+      "logicdata_app_family_layout": "For MOTIONrelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
       "comfort_motion_selection": "Comfort Motion supports back/legs, back/legs/neck, or back/legs/neck/lumbar with Auto, G1 or G2 transport.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
@@ -1088,7 +1085,7 @@
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
           "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged.",
-          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
@@ -1219,6 +1216,10 @@
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
           "vmatbasic_profile": "V-MAT Basic product profile",
+          "logicdata_app_profile": "Bed app",
+          "logicdata_app_family": "Command family",
+          "logicdata_app_layout": "Physical actuator layout",
+          "logicdata_app_transport": "BLE transport",
           "malouf_app_model": "Bed model",
           "malouf_app_primary": "Primary bed in the app",
           "malouf_app_transport": "Bluetooth transport",
@@ -1249,6 +1250,10 @@
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
+          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
           "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
@@ -1295,6 +1300,10 @@
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
           "vmatbasic_profile": "V-MAT Basic product profile",
+          "logicdata_app_profile": "Bed app",
+          "logicdata_app_family": "Command family",
+          "logicdata_app_layout": "Physical actuator layout",
+          "logicdata_app_transport": "BLE transport",
           "malouf_app_model": "Bed model",
           "malouf_app_primary": "Primary bed in the app",
           "malouf_app_transport": "Bluetooth transport",
@@ -1325,6 +1334,10 @@
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
+          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
           "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
@@ -1453,7 +1466,7 @@
       "single_address_pairing_unsupported": "This bed's current Bluetooth protocol does not expose paired-side controls.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
-      "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
+      "logicdata_app_family_layout": "For MOTIONrelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
       "comfort_motion_selection": "Comfort Motion supports back/legs, back/legs/neck, or back/legs/neck/lumbar with Auto, G1 or G2 transport.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
@@ -9241,6 +9254,7 @@
         "comfort_motion": "Comfort Motion app",
         "legacy_jiecang": "No app: Glide or Comfort Motion remote (legacy Jiecang controls)",
         "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
+        "logicdata_app": "LOGICDATA app: MOTIONrelax, or the Sleep Smart Air Mattress bed base",
         "keep": "I don't know: keep the current controls"
       }
     },
@@ -9304,6 +9318,16 @@
         "keep": "I don't know: keep the detected controls"
       }
     },
+    "logicdata_family_choice": {
+      "options": {
+        "silvermotion": "SILVERmotion app: SimplicityFrame bed (pairing required)",
+        "phone": "MOTIONrelax phone app",
+        "tablet": "MOTIONrelax tablet app",
+        "sleep_smart": "Sleep Smart Air Mattress app: bed base",
+        "sleep_smart_pump": "Sleep Smart Air Mattress app: air mattress pump (its own device)",
+        "keep": "I don't know: keep the detected controls"
+      }
+    },
     "customatic_family_choice": {
       "options": {
         "clarity": "Clarity app (Rize Clarity): back and legs, memory page and light",
@@ -9335,6 +9359,13 @@
         "jeromes": "Jerome's app"
       }
     },
+    "reverie_family_choice": {
+      "options": {
+        "protocol_110": "Protocol 110 receiver (Nightstand service)",
+        "protocol_108": "Protocol 108 receiver (older service)",
+        "keep": "I don't know: keep the detected receiver"
+      }
+    },
     "malouf_family_choice": {
       "options": {
         "malouf": "Malouf Base app: the model it lists",
@@ -9342,13 +9373,6 @@
         "nordic_uart": "Malouf or Lucid receiver on the Nordic UART service",
         "ffe5": "Malouf or Lucid receiver on the FFE5 service",
         "keep": "I don't know: keep the detected controls"
-      }
-    },
-    "reverie_family_choice": {
-      "options": {
-        "protocol_110": "Protocol 110 receiver (Nightstand service)",
-        "protocol_108": "Protocol 108 receiver (older service)",
-        "keep": "I don't know: keep the detected receiver"
       }
     }
   }

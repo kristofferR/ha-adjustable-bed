@@ -33,8 +33,6 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
-    BED_TYPE_LOGICDATA,
-    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTOSLEEP,
@@ -438,28 +436,9 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         "variants": None,  # The family step asks for the app or receiver.
     },
     "logicdata": {
-        "display": "Logicdata",
-        "description": "SimplicityFrame, MotionRelax and Sleep Smart beds",
-        "variants": [
-            {
-                "type": BED_TYPE_LOGICDATA,
-                "label": "SimplicityFrame (SILVERmotion)",
-                "description": "Existing encrypted SimplicityFrame protocol",
-                "hint": "Keep this choice for an existing working SimplicityFrame bed.",
-            },
-            {
-                "type": BED_TYPE_LOGICDATA_APP,
-                "label": "MotionRelax / Sleep Smart bed apps",
-                "description": "Explicit app, command family and physical layout",
-                "hint": "Choose the app and its configuration in the next step.",
-            },
-            {
-                "type": BED_TYPE_LOGICDATA_AIR_PUMP,
-                "label": "Sleep Smart air mattress pump",
-                "description": "Inflate, deflate, firmness 30, pressure memory and pressure",
-                "hint": "Add the pump as its own device; its shared service cannot identify it.",
-            },
-        ],
+        "display": "LOGICDATA",
+        "description": "SILVERmotion (SimplicityFrame), MOTIONrelax and Sleep Smart Air Mattress apps",
+        "variants": None,  # The family step asks for the app, bed base or pump.
     },
     "motosleep": {
         "display": "MotoSleep",
@@ -643,6 +622,7 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "jensen": BED_TYPE_JENSEN,
     "linak": BED_TYPE_LINAK,
     "malouf": BED_TYPE_MALOUF_APP,
+    "logicdata": BED_TYPE_LOGICDATA_APP,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,
     "reverie": BED_TYPE_REVERIE_NIGHTSTAND,

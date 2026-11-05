@@ -997,9 +997,28 @@ configurations retain their previous behavior.
 
 #### Setup
 
-1. Select **Logicdata → MotionRelax / Sleep Smart bed apps**.
-2. Choose the phone, tablet or Sleep Smart app, the packet family, the physical
-   layout and the transport.
+1. Select **LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and
+   tablet, and Sleep Smart Air Mattress apps** in the bed-type list, or
+   **LOGICDATA** under the brands. Searching for SILVERmotion, MOTIONrelax or Sleep
+   Smart finds the same row.
+2. Choose the app: the MOTIONrelax phone or tablet app, or the Sleep Smart Air
+   Mattress app's bed base. SILVERmotion runs the [SimplicityFrame](logicdata.md)
+   protocol and the Sleep Smart air mattress pump is
+   [its own device](logicdata-sleep-smart.md), so both are answers of the same
+   question.
+3. Answer the app's own questions: the packet family, then the physical layout
+   the app offers (see each profile below), the light and, under Advanced, the
+   transport.
+
+- Configure keeps the light setting. Another app, family, layout or transport
+  goes through **Reconfigure**, which checks that the link has the chosen app's
+  transport before it saves and lists the controls that change. A bed entry
+  never changes into the pump.
+- A Comfort Motion entry's profile review suggests this family. Its Repairs
+  issue opens the Reconfigure question with **LOGICDATA app: MOTIONrelax, or the
+  Sleep Smart Air Mattress bed base** as one more answer; that answer continues
+  with these questions and the LOGICDATA transport check. The issue stays open
+  until a change is saved or you choose **Keep**.
 
 - Detection: none. The Bluetooth service alone cannot identify those choices; the
   `ff12` and `fe60` services are shared with other Jiecang/Lierda-based apps, and
@@ -1045,27 +1064,27 @@ The tables below come from the profile data.
 
 | Profile | P2 payload `00 00` on | Presets (P1 / P2) | Memory | Massage | Clock request | Alarm | Name rule | Name writes |
 |---|---|---|---|---|---|---|---|---|
-| Phone app | back and legs movement, presets, memory, light | flat, zero_g, anti_snore / flat | 2 slots | P1 | 6+ bytes | P1 | `[ -~]{1,255}` (ascii) | +0 ms; T1 bare |
-| Tablet app | back and legs movement, presets, memory, light | flat, zero_g, anti_snore / flat | 2 slots | P1 | none | none | `[ -~]{1,255}` (ascii) | +0 ms, +500 ms; T1 bare |
-| Sleep Smart Air Mattress app (bed) | back and legs movement | flat, zero_g, anti_snore / flat, zero_g, anti_snore | 1 slot | P1, P2 | 3+ bytes | none | `[0-9a-zA-ZäöüÄÖÜß]{1,20}` (utf-8) | +0 ms; always wrapped |
+| MOTIONrelax phone app | back and legs movement, presets, memory, light | flat, zero_g, anti_snore / flat | 2 slots | P1 | 6+ bytes | P1 | `[ -~]{1,255}` (ascii) | +0 ms; T1 bare |
+| MOTIONrelax tablet app | back and legs movement, presets, memory, light | flat, zero_g, anti_snore / flat | 2 slots | P1 | none | none | `[ -~]{1,255}` (ascii) | +0 ms, +500 ms; T1 bare |
+| Sleep Smart Air Mattress app (bed base) | back and legs movement | flat, zero_g, anti_snore / flat, zero_g, anti_snore | 1 slot | P1, P2 | 3+ bytes | none | `[0-9a-zA-ZäöüÄÖÜß]{1,20}` (utf-8) | +0 ms; always wrapped |
 
 **LOGICDATA timing**
 
 | Profile | Movement refresh | Hold until release | Touch release | Held presets (P1 / P2) | Hold refresh | Memory save | Light | Massage mode | Massage query |
 |---|---|---|---|---|---|---|---|---|---|
-| Phone app | 100 ms, final frame | renewable lease | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | none |
-| Tablet app | 100 ms, final frame | renewable lease | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | none | none |
-| Sleep Smart Air Mattress app (bed) | 100 ms, final frame | renewable lease | +100 ms short release | flat, zero_g, anti_snore, memory_1 / flat, zero_g, anti_snore, memory_1 (buttons hold) | flat 200 ms, zero_g 200 ms, anti_snore 200 ms, memory_1 200 ms | +0 ms, no payload | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | +100 ms, +250 ms, +450 ms |
+| MOTIONrelax phone app | 100 ms, final frame | renewable lease | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | none |
+| MOTIONrelax tablet app | 100 ms, final frame | renewable lease | +100 ms short release | none / flat, memory_1, memory_2 | flat 100 ms + final frame, memory_1 200 ms, memory_2 200 ms | +0 ms, +30 ms, +60 ms | +80 ms short release, +80 ms long release, +100 ms short release | none | none |
+| Sleep Smart Air Mattress app (bed base) | 100 ms, final frame | renewable lease | +100 ms short release | flat, zero_g, anti_snore, memory_1 / flat, zero_g, anti_snore, memory_1 (buttons hold) | flat 200 ms, zero_g 200 ms, anti_snore 200 ms, memory_1 200 ms | +0 ms, no payload | +80 ms short release, +80 ms long release, +100 ms short release | +1000 ms long release, +1100 ms short release | +100 ms, +250 ms, +450 ms |
 
 **LOGICDATA startup**
 
 | Profile | Wait, then subscribe | T3 name subscription | Clock |
 |---|---|---|---|
-| Phone app | 1000 ms | at +3000 ms | at +3000 ms, +3100 ms |
-| Tablet app | 1000 ms | at +3000 ms | none |
-| Sleep Smart Air Mattress app (bed) | 300 ms | 100 ms after T3 data; queries only once both succeed | on request |
+| MOTIONrelax phone app | 1000 ms | at +3000 ms | at +3000 ms, +3100 ms |
+| MOTIONrelax tablet app | 1000 ms | at +3000 ms | none |
+| Sleep Smart Air Mattress app (bed base) | 300 ms | 100 ms after T3 data; queries only once both succeed | on request |
 
-**Phone app P1**
+**MOTIONrelax phone app P1**
 
 | Offsets | Query | Bytes (hex) |
 |---|---|---|
@@ -1073,7 +1092,7 @@ The tables below come from the profile data.
 | 1200 ms, 1300 ms | Hardware | `F1 F1 00 01 40 41 7E` |
 | 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
 
-**Phone app P2**
+**MOTIONrelax phone app P2**
 
 | Offsets | Query | Bytes (hex) |
 |---|---|---|
@@ -1081,7 +1100,7 @@ The tables below come from the profile data.
 | 1200 ms, 1300 ms | Software | `F1 F1 00 02 40 00 42 7E` |
 | 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
 
-**Tablet app P1**
+**MOTIONrelax tablet app P1**
 
 | Offsets | Query | Bytes (hex) |
 |---|---|---|
@@ -1089,7 +1108,7 @@ The tables below come from the profile data.
 | 1200 ms, 1300 ms | Hardware | `F1 F1 00 01 40 41 7E` |
 | 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
 
-**Tablet app P2**
+**MOTIONrelax tablet app P2**
 
 | Offsets | Query | Bytes (hex) |
 |---|---|---|
@@ -1097,7 +1116,7 @@ The tables below come from the profile data.
 | 1200 ms, 1300 ms | Software | `F1 F1 00 02 40 00 42 7E` |
 | 1400 ms, 1500 ms | Vibration (massage) | `F1 F1 00 01 08 09 7E` |
 
-**Sleep Smart Air Mattress app (bed) P1**
+**Sleep Smart Air Mattress app (bed base) P1**
 
 | Offsets | Query | Bytes (hex) |
 |---|---|---|
@@ -1108,7 +1127,7 @@ The tables below come from the profile data.
 | 1800 ms, 2100 ms | Light | `F1 F1 00 02 01 00 03 7E` |
 | 2400 ms, 2700 ms | Device status | `F1 F1 00 00 00 7E` |
 
-**Sleep Smart Air Mattress app (bed) P2**
+**Sleep Smart Air Mattress app (bed base) P2**
 
 | Offsets | Query | Bytes (hex) |
 |---|---|---|
@@ -1123,15 +1142,15 @@ The tables below come from the profile data.
 
 | Layout | Axes | Massage zones | Profiles |
 |---|---|---|---|
-| `standard_2` (Back and legs (2 motors)) | back, legs, both | back, legs | Phone app, Tablet app, Sleep Smart Air Mattress app (bed) |
-| `standard_3_neck` (Back, legs and neck) | back, legs, head | back, legs | Phone app, Tablet app |
-| `standard_3_lumbar` (Back, legs and lumbar) | back, legs, lumbar | back, legs | Phone app, Tablet app |
-| `standard_3_hi_low` (Back, legs and height) | back, legs, bed_height | back, legs | Phone app, Tablet app |
-| `standard_3_split_upper` (Split upper (3 motors)) | back, right_back, both_backs, legs | back, legs | Phone app, Tablet app |
-| `standard_4` (Back, legs, neck and lumbar) | head, back, lumbar, legs | back, legs | Phone app, Tablet app |
-| `split_series` (Split series) | back, right_back, legs | back, right | Phone app, Tablet app |
-| `split_series` (Split series) | back, legs, both | back, right | Sleep Smart Air Mattress app (bed) |
-| `middle` (Middle layout) | back, legs | none | Phone app, Tablet app |
+| `standard_2` (Back and legs (2 motors)) | back, legs, both | back, legs | MOTIONrelax phone app, MOTIONrelax tablet app, Sleep Smart Air Mattress app (bed base) |
+| `standard_3_neck` (Back, legs and neck) | back, legs, head | back, legs | MOTIONrelax phone app, MOTIONrelax tablet app |
+| `standard_3_lumbar` (Back, legs and lumbar) | back, legs, lumbar | back, legs | MOTIONrelax phone app, MOTIONrelax tablet app |
+| `standard_3_hi_low` (Back, legs and height) | back, legs, bed_height | back, legs | MOTIONrelax phone app, MOTIONrelax tablet app |
+| `standard_3_split_upper` (Split upper (3 motors)) | back, right_back, both_backs, legs | back, legs | MOTIONrelax phone app, MOTIONrelax tablet app |
+| `standard_4` (Back, legs, neck and lumbar) | head, back, lumbar, legs | back, legs | MOTIONrelax phone app, MOTIONrelax tablet app |
+| `split_series` (Split series) | back, right_back, legs | back, right | MOTIONrelax phone app, MOTIONrelax tablet app |
+| `split_series` (Split series) | back, legs, both | back, right | Sleep Smart Air Mattress app (bed base) |
+| `middle` (Middle layout) | back, legs | none | MOTIONrelax phone app, MOTIONrelax tablet app |
 <!-- /generated -->
 
 - Movement repeats at the refresh interval for the motor pulse count; on normal
@@ -1167,7 +1186,8 @@ Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
 
 #### Setup
 
-- Choose the dedicated middle layout with P2; the remaining layouts use P1.
+- P2 is the dedicated middle layout, so setup asks no layout for it; the
+  remaining layouts use P1.
 - The standard family supports two motors; three motors with neck, lumbar, height
   or split-upper controls; four motors; and split-series controls. Standard
   layouts have independent massage and under-bed light settings. The middle-motor
