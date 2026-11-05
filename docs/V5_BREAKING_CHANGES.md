@@ -304,7 +304,8 @@ Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pu
   routes named after an Okin protocol leave the app list: discovery, the brand
   list and Configure still offer them. Good Vibe Sleep's 877 product rows and
   HJBed's 43 become one row each, which asks the exact product in a searchable
-  list. Saved entries keep their bed type, product and ID.
+  list. The Casper Base and Comfort Enhancements apps, which no row reached
+  before, get one row each that asks the product or layout. Saved entries keep their bed type, product and ID.
 - The bed type list is searchable by label, including app names such as
   MotoSleep / Power Bob. Compatibility IDs such as `okimat` and `dewertokin`
   show friendly labels, and **Configure** adds "(saved as `<id>`)".

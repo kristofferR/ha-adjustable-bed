@@ -27,6 +27,7 @@ from .const import (
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
+    BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
     BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -1619,10 +1620,23 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
     ),
+    # The app's layout is its route, asked on the app's one row.
+    BED_TYPE_COMFORT_ENHANCEMENTS: _asking(
+        BED_TYPE_COMFORT_ENHANCEMENTS,
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORT_ENHANCEMENTS)),),
+    ),
     # MC3 has no massage page; the other layouts' controllers turn massage on.
     f"{BED_TYPE_COMFORT_ENHANCEMENTS}:mc3": _asking(
         BED_TYPE_COMFORT_ENHANCEMENTS,
         owns={**_BASE[BED_TYPE_COMFORT_ENHANCEMENTS].owns, CONF_HAS_MASSAGE: False},
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORT_ENHANCEMENTS)),),
+    ),
+    # The Casper Base app's product is its route, a long list searched by label.
+    BED_TYPE_CASPER_BASE: _asking(
+        BED_TYPE_CASPER_BASE,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_CASPER_BASE), searchable=True),
+        ),
     ),
     # The app's product sets every control, so its one row asks it.
     BED_TYPE_GOODVIBE: _asking(

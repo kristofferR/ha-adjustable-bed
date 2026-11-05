@@ -4249,7 +4249,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         if user_input is not None and not errors:
             # What normalizing dropped stays dropped.
-            self._manual_data = {**candidate, **profile.settled(candidate)}
+            # An answer that picks the route settles what that route's profile owns.
+            self._manual_data = {
+                **candidate,
+                **(setup_profile_for(candidate) or profile).settled(candidate),
+            }
             return await self._async_finish_family_route()
         return self.async_show_form(
             step_id="profile_questions",
@@ -9738,7 +9742,9 @@ class AdjustableBedOptionsFlow(
                 user_input.update(
                     {key: value for key, value in app_data.items() if before.get(key) != value}
                 )
-                profile_settled = declared.settled(app_data)
+                # An answer that picks the route, such as MC3, settles what that
+                # route's own profile owns.
+                profile_settled = (setup_profile_for(app_data) or declared).settled(app_data)
                 user_input.update(profile_settled)
                 # What normalizing dropped, such as retained settings an answer no
                 # longer allows or an Auto choice stored as no value, leaves the

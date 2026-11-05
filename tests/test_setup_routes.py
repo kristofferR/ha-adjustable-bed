@@ -113,9 +113,18 @@ async def test_a_generic_route_offers_only_its_own_routes(hass, enable_custom_in
 
 
 def test_a_choice_without_an_automatic_route_is_shown_open():
-    assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "").options == {"collapsed": False}
+    # Every bed type that runs only on a chosen route asks it as its app's
+    # question now, so a route list without Auto is drawn for one here.
+    with patch(
+        "custom_components.adjustable_bed.config_flow._setup_routes",
+        return_value={"mc2": "MC2", "mc3": "MC3"},
+    ):
+        assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "").options == {
+            "collapsed": False
+        }
     assert _route_section(const.BED_TYPE_OKIN_CB24, "").options == {"collapsed": True}
     assert _route_section(const.BED_TYPE_SOLACE, "") is None
+    assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "") is None
 
 
 def test_okin_cst_asks_its_app_instead_of_a_route_list():

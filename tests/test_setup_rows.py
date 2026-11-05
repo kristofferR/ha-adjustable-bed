@@ -137,3 +137,38 @@ async def test_configure_keeps_a_saved_good_vibe_product(hass):
     assert result["type"] == "create_entry"
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == "selector-0002"
     assert "Good Vibe" in bed_type_label(const.BED_TYPE_GOODVIBE)
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "variant"),
+    [(const.BED_TYPE_CASPER_BASE, "caspermax"), (const.BED_TYPE_COMFORT_ENHANCEMENTS, "mc3")],
+)
+async def test_an_app_whose_route_is_its_product_is_reachable_from_the_app_list(
+    hass, bed_type, variant
+):
+    """Its row is in the app list, and the app's product or layout is asked next."""
+    from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await flow.async_step_select_app()
+    assert bed_type in result["data_schema"].schema[const.CONF_BED_TYPE].rows().values()
+    result = await start_new_bed(flow, "typed", bed_type, ADDRESS)
+    assert result["step_id"] == "profile_questions"
+    assert {m.schema for m in form_fields(result["data_schema"])} == {const.CONF_PROTOCOL_VARIANT}
+    # Nothing is guessed.
+    assert suggested(result, const.CONF_PROTOCOL_VARIANT) is None
+    marker = next(m for m in result["data_schema"].schema if m == const.CONF_PROTOCOL_VARIANT)
+    picker = result["data_schema"].schema[marker]
+    label = get_variants_for_bed_type(bed_type)[variant]
+    result = await flow.async_step_profile_questions(
+        {const.CONF_PROTOCOL_VARIANT: label if hasattr(picker, "rows") else variant}
+    )
+    assert result["step_id"] == "finish_settings"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_finish_settings({CONF_NAME: "Bed"})
+    saved = finish.call_args.args[0]
+    assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (bed_type, variant)
+    if variant == "mc3":
+        # The answered layout's own profile settles what it owns: MC3 has no massage.
+        assert saved[const.CONF_HAS_MASSAGE] is False

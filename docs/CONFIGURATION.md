@@ -31,8 +31,9 @@ The first screen lists the discovered beds, each named with its family, then:
 - **Set up by app or remote** asks which app controls the bed: one searchable
   list of the apps, remotes and brands in the bed-type list. A row of a family
   names its family after a dot, such as **Heal Every Night app · Keeson**, and
-  a family's own row lists its apps the same way. Good Vibe Sleep and HJBed
-  have one row each, which then asks the exact product. Its last answer,
+  a family's own row lists its apps the same way. Good Vibe Sleep, HJBed,
+  Casper Base and Comfort Enhancements have one row each, which then asks the
+  exact product or layout. Its last answer,
   **My app isn't listed, or I don't know**, asks which brand is on the bed:
   each family, named with its apps, then opens its own question, and **Not
   sure** runs diagnostics.

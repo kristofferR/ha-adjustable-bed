@@ -28,6 +28,7 @@ from .const import (
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
     BED_TYPE_BF,
+    BED_TYPE_CASPER_BASE,
     BED_TYPE_CASPER_SLEEP_MM,
     BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_CHERISH,
@@ -876,7 +877,9 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 # Configure still accepts a hidden app row by its value, as a repair submits it.
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
-PRODUCT_QUESTION_BED_TYPES: Final = frozenset({BED_TYPE_GOODVIBE, BED_TYPE_HJBED})
+PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
+    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
+)
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
