@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bluetooth_freshness import FreshnessStatus
 from custom_components.adjustable_bed.config_flow import (
@@ -64,10 +64,10 @@ async def test_every_finish_path_requires_the_app_handset_before_probe(hass, sca
     flow._verification_possible = lambda: scanner_available
     data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE}
     result = await flow._finish_with_verify(data, "Bed receiver")
-    assert result["step_id"] == "furnimove"
+    assert result["step_id"] == "profile_questions"
     assert {marker.schema for marker in result["data_schema"].schema} == {CONF_FURNIMOVE_REMOTE}
     assert not requires_pairing(BED_TYPE_FURNIMOVE)
-    result = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "not-captured"})
+    result = await flow.async_step_profile_questions({CONF_FURNIMOVE_REMOTE: "not-captured"})
     assert result["errors"] == {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
     assert flow._pending_entry is None
 
@@ -81,7 +81,7 @@ async def test_shipped_offline_layout_creates_both_axes_without_a_bond_gate(hass
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE,
         CONF_NAME: "Bed", CONF_MOTOR_COUNT: 1,
     }
-    result = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "00000"})
+    result = await flow.async_step_profile_questions({CONF_FURNIMOVE_REMOTE: "00000"})
     assert result["type"] == "create_entry"
     assert result["data"][CONF_MOTOR_COUNT] == 2
     assert result["data"][CONF_HAS_MASSAGE] is False
@@ -124,10 +124,10 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
     flow.context = {}
     flow._verification_possible = lambda: False
     flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE}
-    result = await flow.async_step_furnimove()
+    result = await flow.async_step_profile_questions()
     marker = next(iter(result["data_schema"].schema))
     offered = set(result["data_schema"].schema[marker].container)
-    saved = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "82417"})
+    saved = await flow.async_step_profile_questions({CONF_FURNIMOVE_REMOTE: "82417"})
     assert saved["type"] == "create_entry"
     assert saved["data"][CONF_FURNIMOVE_REMOTE] == "82417"
     assert saved["data"][CONF_MOTOR_COUNT] == 2
@@ -191,11 +191,17 @@ async def test_dot_options_keep_a_stored_furnimove_handset_only_for_that_entry(h
         flow.handler = entry.entry_id
         return flow
 
+    from custom_components.adjustable_bed.setup_questions import setup_profile_for
+
     for stored, expected in (("93558", True), ("97450", False)):
         flow = options_flow(stored)
         form = await flow._async_options_form(None, step_id="settings")
-        marker = next(m for m in form["data_schema"].schema if m.schema == CONF_PROTOCOL_VARIANT)
-        container = form["data_schema"].schema[marker].container
+        # The code is the Okin route, which only the guided change changes.
+        assert CONF_PROTOCOL_VARIANT not in {m.schema for m in form["data_schema"].schema}
+        data = {CONF_BED_TYPE: BED_TYPE_OKIN_DOT, CONF_PROTOCOL_VARIANT: stored}
+        profile = setup_profile_for(data)
+        assert profile is not None
+        container = profile.questions[0].options(data) or {}
         assert ("93558" in container) is expected
         assert {"90167", "91983"}.isdisjoint(container)
         assert stored in container

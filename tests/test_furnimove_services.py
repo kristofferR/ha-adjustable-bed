@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import BED_TYPE_FURNIMOVE, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

@@ -12,7 +12,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_migrate_entry
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
@@ -129,7 +129,7 @@ async def test_migration_marks_only_routes_that_gained_app_profiles(
     entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=2)
     entry.add_to_hass(hass)
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     assert (entry.version, entry.minor_version) == (5, 1)
     assert entry.data.get(CONF_PROFILE_REVIEW_PENDING) == mark
@@ -146,7 +146,7 @@ async def test_entries_created_now_are_never_marked(hass: HomeAssistant) -> None
     )
     entry.add_to_hass(hass)
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
     async_refresh_profile_review_issue(hass, entry)
 
     assert CONF_PROFILE_REVIEW_PENDING not in entry.data

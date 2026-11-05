@@ -279,7 +279,7 @@ def test_app_sensors_share_translations_and_keep_app_identities():
 @pytest.mark.parametrize("bed_type", [BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES])
 async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(hass, bed_type):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import (
@@ -321,7 +321,7 @@ async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(h
 @pytest.mark.parametrize(("count", "error"), [("0", True), ("601", True), ("1", False), ("600", False)])
 async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass, count, error):
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import (
         AdjustableBedConfigFlow,
@@ -684,7 +684,7 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
 
 async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import (

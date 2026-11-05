@@ -8,7 +8,7 @@ import pytest
 from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import (
@@ -113,10 +113,35 @@ async def test_detected_receiver_offers_routes_review_apps_and_keep(hass):
     # The apps the app review suggests for this route are one answer away.
     assert {"serenity", "tranquil", "adjustable_lumbar"} <= set(offered)
     assert offered[-1] == "keep"
-    with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-        await flow.async_step_okin_family({"choice": "keep"})
-    pairing.assert_awaited_once()
+    result = await flow.async_step_okin_family({"choice": "keep"})
+    assert result["step_id"] == "profile_questions"
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_UUID
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "variant"),
+    [
+        (const.BED_TYPE_OKIN_UUID, "auto"),
+        (const.BED_TYPE_OKIMAT, "62612"),
+        (const.BED_TYPE_OKIN_DOT, "97450"),
+    ],
+)
+@pytest.mark.parametrize("motor_count", [3, 4])
+async def test_keep_detected_controls_collects_motors_without_changing_route(
+    hass, bed_type, variant, motor_count
+):
+    flow = setup_flow(hass, bed_type)
+    assert flow._manual_data is not None
+    flow._manual_data[const.CONF_PROTOCOL_VARIANT] = variant
+    before = dict(flow._manual_data)
+    result = await flow.async_step_okin_family({"choice": "keep"})
+    assert result["step_id"] == "profile_questions"
+    assert result["data_schema"] is not None
+    answers = result["data_schema"]({const.CONF_MOTOR_COUNT: str(motor_count)})
+    with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions(answers)
+    finish.assert_awaited_once()
+    assert flow._manual_data == {**before, const.CONF_MOTOR_COUNT: motor_count}
 
 
 async def test_family_row_has_no_route_to_keep(hass):
@@ -124,18 +149,18 @@ async def test_family_row_has_no_route_to_keep(hass):
     result = await flow.async_step_okin_family()
     assert "keep" not in choices(result)
     result = await flow.async_step_okin_family({"choice": "furnimove"})
-    assert result["step_id"] == "furnimove"
+    assert result["step_id"] == "profile_questions"
 
 
 async def test_dot_remote_asks_its_code_and_motors_with_its_own_cadence(hass):
     flow = setup_flow(hass, const.BED_TYPE_FURNIMOVE)
     result = await flow.async_step_okin_family({"choice": "okin_dot"})
-    assert result["step_id"] == "okin_remote"
-    codes = result["data_schema"].schema[const.CONF_PROTOCOL_VARIANT].config["options"]
+    assert result["step_id"] == "profile_questions"
+    codes = result["data_schema"].schema[const.CONF_PROTOCOL_VARIANT].container
     # FurniMove's DOT handsets belong to the app answer, not this one.
-    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(option["value"] for option in codes)
+    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(codes)
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_okin_remote(
+        await flow.async_step_profile_questions(
             {const.CONF_PROTOCOL_VARIANT: "97450", const.CONF_MOTOR_COUNT: "2"}
         )
     saved = finish.call_args.args[0]
@@ -181,7 +206,7 @@ async def test_okin_uuid_entry_changes_to_furnimove_after_checking_its_endpoint(
         assert result["step_id"] == "okin_family"
         assert "keep" in choices(result)
         result = await manager.async_configure(result["flow_id"], {"choice": "furnimove"})
-        assert result["step_id"] == "furnimove"
+        assert result["step_id"] == "profile_questions"
         result = await manager.async_configure(
             result["flow_id"], {const.CONF_FURNIMOVE_REMOTE: "82417"}
         )
@@ -253,7 +278,7 @@ async def test_okimat_code_change_keeps_the_saved_id_and_needs_the_bond(
         bluetooth_patches(stack, okin_client(OKIN))
         result = await reconfigure(hass, entry)
         result = await manager.async_configure(result["flow_id"], {"choice": "okin_uuid"})
-        assert result["step_id"] == "okin_remote"
+        assert result["step_id"] == "profile_questions"
         result = await manager.async_configure(
             result["flow_id"], {const.CONF_PROTOCOL_VARIANT: "62612", const.CONF_MOTOR_COUNT: 4}
         )

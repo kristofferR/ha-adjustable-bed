@@ -15,7 +15,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.cluster033 import AppController
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PAIR_ID, DOMAIN

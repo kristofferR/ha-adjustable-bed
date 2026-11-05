@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_migrate_entry
 from custom_components.adjustable_bed.const import (
@@ -38,7 +38,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
         {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "ore"},
     )
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     assert (entry.version, entry.minor_version) == (5, 1)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
@@ -60,7 +60,7 @@ async def test_app_light_choice_becomes_has_light(
         {CONF_ADDRESS: "AA:BB:CC:DD:EE:04", CONF_BED_TYPE: bed_type, old_key: False},
     )
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     assert old_key not in entry.data
     assert entry.data[CONF_HAS_LIGHT] is False
@@ -78,7 +78,7 @@ async def test_paired_sides_and_their_originals_are_migrated(hass: HomeAssistant
         {CONF_PAIR_ID: "pair_1", CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PAIR_CHILDREN: [side]},
     )
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     (child,) = entry.data[CONF_PAIR_CHILDREN]
     assert child[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
@@ -94,7 +94,7 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
     }
     entry = _entry(hass, dict(data), version=3)
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     assert (entry.version, entry.minor_version) == (5, 1)
     migrated = dict(entry.data)

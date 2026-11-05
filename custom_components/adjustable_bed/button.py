@@ -28,7 +28,7 @@ from .const import (
     SIDE_BOTH,
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
-from .entity import AdjustableBedEntity, hold_lease_attributes
+from .entity import AdjustableBedEntity, RenamesInPlace, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
@@ -1553,7 +1553,7 @@ def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str
     return f"{coordinator.pair_id}_{key}"
 
 
-class PairedBedStopButton(ButtonEntity):
+class PairedBedStopButton(RenamesInPlace, ButtonEntity):
     """Combined STOP for a paired bed.
 
     Lives on the synthetic parent device and stops BOTH sides with the resilient
@@ -1582,7 +1582,7 @@ class PairedBedStopButton(ButtonEntity):
         await self._coordinator.async_stop_command(side=SIDE_BOTH)
 
 
-class PairedBedCombinedButton(ButtonEntity):
+class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
     """A 'both sides' movement/preset button on the paired parent device.
 
     Reuses the per-side button's translation_key (the parent device name keeps it
@@ -1692,7 +1692,7 @@ class PairedBedCombinedButton(ButtonEntity):
         return attributes
 
 
-class PairedBedCombinedMotorButton(ButtonEntity):
+class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
     """A 'move both sides' up/down motion button on the paired parent device.
 
     Cover-based pairs (Linak etc.) have no discrete motor buttons and no combined

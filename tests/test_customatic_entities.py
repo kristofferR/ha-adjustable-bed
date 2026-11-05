@@ -121,7 +121,7 @@ async def test_cross_axis_cover_stop_preempts_shared_mask_with_production_schedu
     from unittest.mock import AsyncMock, MagicMock, patch
 
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_DISABLE_ANGLE_SENSING
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

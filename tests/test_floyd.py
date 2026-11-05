@@ -340,7 +340,7 @@ async def test_service_routes_two_address_overwrite_and_conditional_presets(hass
 
 
 async def test_room_service_persists_disconnects_and_confirms(hass, floyd: FloydController) -> None:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.services import async_register_services
@@ -418,7 +418,7 @@ async def test_gatt_write_properties_and_subscription(floyd: FloydController, pr
 
 
 async def test_room_assignment_failure_disconnects_without_persisting(hass, floyd: FloydController) -> None:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.services import async_register_services
@@ -477,7 +477,7 @@ def test_floyd_discovery_requires_exact_company_and_rssi(company: int, rssi: int
 
 async def test_acknowledged_room_persistence_suppresses_mid_service_reload(hass) -> None:
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,
@@ -517,7 +517,7 @@ async def test_signed_target_domains_differ_for_normal_and_conditional_paths(flo
 async def test_preempted_assignment_never_persists_or_confirms(hass, floyd: FloydController) -> None:
     from homeassistant.const import CONF_ADDRESS
     from homeassistant.exceptions import ServiceValidationError
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

@@ -5,7 +5,7 @@ from copy import copy
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     CONF_DISCONNECT_AFTER_COMMAND,

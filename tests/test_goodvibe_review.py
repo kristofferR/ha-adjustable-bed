@@ -268,7 +268,7 @@ async def test_repeat_execution_keeps_each_targets_preflighted_slot(hass):
 
 async def test_single_address_paired_card_release_keeps_its_short_callback_and_side(hass):
     from homeassistant.helpers import device_registry as dr
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
@@ -355,7 +355,7 @@ async def test_single_address_paired_card_release_keeps_its_short_callback_and_s
 
 @pytest.mark.parametrize("native_both", (False, True))
 async def test_combined_pair_uses_only_sides_admitted_by_the_product(hass, native_both):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
@@ -530,7 +530,7 @@ async def test_public_caller_abort_then_release_cannot_revive_short_during_clean
 
 async def test_other_side_button_does_not_revoke_active_right_release(hass):
     from homeassistant.helpers import device_registry as dr
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
@@ -635,7 +635,7 @@ async def test_other_side_button_does_not_revoke_active_right_release(hass):
 
 async def test_public_release_and_other_side_button_concurrently(hass):
     from homeassistant.helpers import device_registry as dr
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
@@ -728,7 +728,7 @@ async def test_public_release_and_other_side_button_concurrently(hass):
 
 async def test_other_side_button_after_release_waits_for_short_wire(hass):
     from homeassistant.helpers import device_registry as dr
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,

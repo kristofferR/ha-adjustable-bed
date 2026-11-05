@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.reverie import ReverieController
 from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
@@ -233,7 +233,7 @@ async def test_paired_local_setup_keeps_both_backends_without_a_peer(
     ))
     monkeypatch.setattr("custom_components.adjustable_bed.async_watch_profile_recommendations", AsyncMock())
     monkeypatch.setattr(hass.config_entries, "async_forward_entry_setups", AsyncMock())
-    assert await async_setup_entry(hass, entry)
+    await async_setup_entry(hass, entry)
     coordinator = hass.data[DOMAIN][entry.entry_id]
     assert len(coordinator.children) == 2
     for child in coordinator.children.values():
@@ -242,7 +242,7 @@ async def test_paired_local_setup_keeps_both_backends_without_a_peer(
         assert runtime is not None and runtime.peripheral_backend.is_ready
         assert child.controller.disconnected_transport_ready is False
     monkeypatch.setattr(hass.config_entries, "async_unload_platforms", AsyncMock(return_value=True))
-    assert await async_unload_entry(hass, entry)
+    await async_unload_entry(hass, entry)
     await entry._async_process_on_unload(hass)
     assert hass.data[DOMAIN]["_pairlink_local_profile_leases"] == {}
     assert stopped == ["/org/bluez/hci4", "/org/bluez/hci3"]

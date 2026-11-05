@@ -181,7 +181,7 @@ async def test_rollback_is_idempotent_and_keeps_a_failed_row_with_its_device(
     hass: HomeAssistant,
     caplog,
 ) -> None:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     entry, rows, devices = _registered_pair(hass)
     target = MockConfigEntry(domain=DOMAIN)
@@ -210,7 +210,7 @@ async def test_rollback_restores_replaced_placeholder_and_original_device(
     hass: HomeAssistant,
     failure: str,
 ) -> None:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     entry, rows, devices = _registered_pair(hass)
     target = MockConfigEntry(domain=DOMAIN)
@@ -259,7 +259,7 @@ async def test_single_address_unpair_restores_config_and_preserves_original_erro
     failure: str,
     caplog,
 ) -> None:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
 

@@ -12,7 +12,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bluetooth_transport import (
     ConnectionPath,
@@ -437,7 +437,7 @@ class TestCoordinatorConnection:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """Test connection fails when device not found."""
         with patch(
@@ -498,7 +498,7 @@ class TestCoordinatorConnection:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """Test connection handles BleakError."""
         with patch(
@@ -515,7 +515,7 @@ class TestCoordinatorConnection:
         self,
         hass: HomeAssistant,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ) -> None:
         """A pre-connect auth failure has no proven transport owner."""
         entry = MockConfigEntry(
@@ -564,11 +564,11 @@ class TestCoordinatorConnection:
     async def test_connect_detects_existing_bond_and_skips_pairing(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         mock_bleak_client: MagicMock,
     ):
         """Pair-required beds should skip pair=True when BlueZ already reports a bond."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -648,12 +648,12 @@ class TestCoordinatorConnection:
     async def test_leggett_gen2_connects_discovers_then_pairs(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         mock_bleak_client: MagicMock,
         bond_data: dict[str, bool],
     ) -> None:
         """Gen2 coordinator pairing must follow the LP Control app ordering."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1124,7 +1124,7 @@ class TestCoordinatorConnection:
     async def test_leggett_gen2_pair_failure_keeps_the_live_link(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         mock_bleak_client: MagicMock,
         pair_error: Exception,
         max_retries: int,
@@ -1137,7 +1137,7 @@ class TestCoordinatorConnection:
         power-cycled. LP Control itself fires ``createBond()`` and continues on
         the same link without ever checking the result.
         """
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         entry = MockConfigEntry(
             domain=DOMAIN,

@@ -27,7 +27,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.setup import async_setup_component
 from probatio import to_field_list
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
 from custom_components.adjustable_bed.bluetooth_bond import (
@@ -3509,11 +3509,11 @@ class TestUserFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Retrying entries should surface recovery instructions instead of disappearing."""
-        del mock_bluetooth_adapters, enable_custom_integrations
+        del mock_bluetooth_api, enable_custom_integrations
         existing_entry = MockConfigEntry(
             domain=DOMAIN,
             title="Retrying Bed",
@@ -6423,7 +6423,7 @@ async def test_typed_address_setup_previews_the_transport_once_it_is_valid(
         result = await flow.async_step_manual_entry(
             {
                 CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
                 # An explicit route, so the route step does not come first.
                 CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
                 CONF_MOTOR_COUNT: 99,

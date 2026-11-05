@@ -14,7 +14,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed import (
@@ -61,6 +61,9 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_ID,
+    CONF_PAIR_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
@@ -80,6 +83,8 @@ from custom_components.adjustable_bed.const import (
     LINAK_TIMER_SERVICE_UUID,
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
+    PAIR_MODE_SEPARATE_ADDRESS,
+    PAIR_MODE_SINGLE_ADDRESS,
 )
 from custom_components.adjustable_bed.pairing import is_paired
 
@@ -164,7 +169,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Test setup fails on connection timeout."""
@@ -185,7 +190,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A setup timeout must tear down the half-open connection."""
@@ -215,7 +220,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A stalled cleanup disconnect must not block the setup retry."""
@@ -265,7 +270,7 @@ class TestIntegrationSetup:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
         attempts,
         expected,
@@ -293,7 +298,7 @@ class TestIntegrationSetup:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Test setup fails when connection fails."""
@@ -312,7 +317,7 @@ class TestIntegrationSetup:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Setup-retry entries should still have a device registry target for diagnostics."""
@@ -334,7 +339,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_connect_failure_creates_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """An unbonded Gen2 timeout gets the guided pairing repair from #385."""
@@ -373,7 +378,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_connect_failure_with_bond_skips_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A bonded Gen2 entry that cannot connect is a transient failure, not
@@ -412,7 +417,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_failure_after_bond_skips_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A bond established during this setup attempt must be observed dynamically."""
@@ -465,7 +470,7 @@ class TestIntegrationSetup:
     async def test_setup_non_gated_pairing_bed_connect_failure_skips_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Ordinary pairing-required beds (e.g. Okin CST) keep the existing
@@ -503,7 +508,7 @@ class TestIntegrationSetup:
     async def test_setup_entry_loads_diagnostic_device_without_connection(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Diagnostic entries should still load so they can be targeted by actions."""
@@ -753,6 +758,65 @@ class TestIntegrationSetup:
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert coordinator.controller.__class__.__name__ == "BedTechController"
 
+    async def test_paired_entry_without_sides_fails_permanently(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A pair with no saved sides cannot recover, so setup does not retry."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Empty pair",
+            data={
+                CONF_PAIR_ID: "pair_empty",
+                CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+                CONF_PAIR_CHILDREN: [],
+            },
+            version=5,
+            minor_version=1,
+        )
+        entry.add_to_hass(hass)
+
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+
+        assert entry.state is ConfigEntryState.SETUP_ERROR
+        assert entry.error_reason_translation_key == "paired_entry_has_no_sides"
+
+    async def test_single_address_pair_without_side_selector_fails_permanently(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A protocol without a side selector cannot expose sides on any retry."""
+        from custom_components.adjustable_bed.beds.linak import LinakController
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="One-address pair",
+            data={
+                **mock_config_entry_data,
+                CONF_PAIR_ID: "pair_one_address",
+                CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            },
+            version=5,
+            minor_version=1,
+        )
+        entry.add_to_hass(hass)
+
+        with patch.object(
+            LinakController,
+            "supports_single_address_pairing",
+            new_callable=PropertyMock,
+            return_value=False,
+        ):
+            assert not await hass.config_entries.async_setup(entry.entry_id)
+
+        assert entry.state is ConfigEntryState.SETUP_ERROR
+        assert entry.error_reason_translation_key == "single_address_pair_unsupported"
+        assert entry.entry_id not in hass.data[DOMAIN]
+
 
 class TestIntegrationUnload:
     """Test integration unload."""
@@ -775,6 +839,26 @@ class TestIntegrationUnload:
         assert result is True
         assert mock_config_entry.state == ConfigEntryState.NOT_LOADED
         mock_bleak_client.disconnect.assert_called()
+
+    async def test_failed_platform_unload_keeps_the_bed(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A platform that fails to unload leaves the coordinator in charge of the bed."""
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        mock_bleak_client.disconnect.reset_mock()
+
+        with patch.object(hass.config_entries, "async_unload_platforms", return_value=False):
+            assert not await hass.config_entries.async_unload(mock_config_entry.entry_id)
+
+        assert mock_config_entry.state is ConfigEntryState.FAILED_UNLOAD
+        assert mock_config_entry.entry_id in hass.data[DOMAIN]
+        mock_bleak_client.disconnect.assert_not_called()
 
     async def test_unload_last_entry_keeps_services_available(
         self,
@@ -808,7 +892,7 @@ class TestIntegrationUnload:
         enable_custom_integrations,
     ):
         """Test services are kept when other entries remain."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         # Set up first entry
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -867,9 +951,8 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
         assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
@@ -893,9 +976,8 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
         assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
@@ -918,9 +1000,8 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
         assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
@@ -944,9 +1025,8 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
         assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
@@ -970,9 +1050,8 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
         assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
@@ -1012,9 +1091,8 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
         assert entry.version == 5
         # Byte-identical apart from the later minor-version review mark, which
         # only routes that gained app profiles receive, and the schema 5 profile
@@ -1031,7 +1109,7 @@ class TestMigration:
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """An entry from a newer (v6) schema must be refused, not silently mangled."""
+        """An entry from a newer (v6) schema is refused before migration runs."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Future version",
@@ -1042,9 +1120,12 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        with patch("custom_components.adjustable_bed.async_migrate_entry") as migrate:
+            assert not await hass.config_entries.async_setup(entry.entry_id)
 
-        assert result is False
+        migrate.assert_not_called()
+        assert entry.state is ConfigEntryState.MIGRATION_ERROR
+        assert (entry.version, dict(entry.data)) == (6, mock_config_entry_data)
 
 
 class TestServices:
@@ -1120,12 +1201,12 @@ class TestServices:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
         tmp_path: Path,
     ):
         """Support bundles should still target devices whose entry is in SETUP_RETRY."""
-        del mock_bluetooth_adapters, enable_custom_integrations
+        del mock_bluetooth_api, enable_custom_integrations
         from homeassistant.helpers import device_registry as dr
 
         with patch(

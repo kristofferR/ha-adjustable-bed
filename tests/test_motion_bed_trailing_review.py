@@ -3,7 +3,7 @@ import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow

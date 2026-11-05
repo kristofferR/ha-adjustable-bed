@@ -9,16 +9,11 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
-
-# HA 2026.9 defines this here; 2026.10 re-exports it from const.
-from homeassistant.components.light import (
-    ATTR_RGB_COLOR,  # pyright: ignore[reportPrivateImportUsage]
-    ATTR_RGBW_COLOR,  # pyright: ignore[reportPrivateImportUsage]
-)
+from homeassistant.components.light import ATTR_RGB_COLOR, ATTR_RGBW_COLOR
 from homeassistant.components.light.const import ColorMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds import octo as octo_module
 from custom_components.adjustable_bed.beds.base import BedController
@@ -4100,6 +4095,34 @@ class TestOctoPinLockDiagnostics:
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
+    async def test_setup_links_an_older_repair_so_removal_clears_it(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry_data: dict,
+    ):
+        """A repair raised before issues had entries goes with its entry."""
+        from homeassistant.helpers import issue_registry as ir
+
+        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.unsupported import (
+            update_octo_pin_required_issue,
+        )
+
+        issue_id = "octo_pin_required_aa_bb_cc_dd_ee_ff"
+        registry = ir.async_get(hass)
+        update_octo_pin_required_issue(hass, "AA:BB:CC:DD:EE:FF", "Bed", True)
+        data = {k: v for k, v in mock_octo_config_entry_data.items() if k != CONF_OCTO_PIN}
+        entry = MockConfigEntry(domain=DOMAIN, data=data, unique_id="AA:BB:CC:DD:EE:FF")
+        entry.add_to_hass(hass)
+
+        # The bed stays unreachable, so only setup can link the repair.
+        _async_clear_stale_octo_pin_issue(hass, entry)
+        issue = registry.async_get_issue(DOMAIN, issue_id)
+        assert issue is not None and issue.config_entry_id == entry.entry_id
+
+        await hass.config_entries.async_remove(entry.entry_id)
+        assert registry.async_get_issue(DOMAIN, issue_id) is None
+
     async def test_removing_the_entry_clears_the_repair(
         self,
         hass: HomeAssistant,
@@ -4108,17 +4131,18 @@ class TestOctoPinLockDiagnostics:
         """A leftover issue would keep nagging about a bed that is gone."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import async_remove_entry
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
 
         issue_id = "octo_pin_required_aa_bb_cc_dd_ee_ff"
         registry = ir.async_get(hass)
-        update_octo_pin_required_issue(hass, "AA:BB:CC:DD:EE:FF", "Bed", True)
+        update_octo_pin_required_issue(
+            hass, "AA:BB:CC:DD:EE:FF", "Bed", True, entry_id=mock_octo_config_entry.entry_id
+        )
         assert registry.async_get_issue(DOMAIN, issue_id) is not None
 
-        await async_remove_entry(hass, mock_octo_config_entry)
+        await hass.config_entries.async_remove(mock_octo_config_entry.entry_id)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 

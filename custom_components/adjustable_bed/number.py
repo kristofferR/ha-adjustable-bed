@@ -41,7 +41,7 @@ from .const import (
     SIDE_BOTH,
     bed_type_has_position_feedback,
 )
-from .entity import AdjustableBedEntity
+from .entity import AdjustableBedEntity, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
@@ -893,7 +893,7 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         )
 
 
-class PairedBedCombinedPositionNumber(NumberEntity):
+class PairedBedCombinedPositionNumber(RenamesInPlace, NumberEntity):
     """A 'both sides' position slider on the paired parent device.
 
     Reports the mean of the sides' positions, so the slider sits between them

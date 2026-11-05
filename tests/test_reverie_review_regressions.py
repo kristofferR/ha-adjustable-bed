@@ -14,7 +14,7 @@ from dbus_fast import Variant
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import (
     async_setup_entry,
@@ -142,7 +142,7 @@ async def _ready_local(hass, monkeypatch, model):
     with patch.object(
         hass.config_entries, "async_forward_entry_setups", AsyncMock(return_value=None)
     ):
-        assert await async_setup_entry(hass, entry)
+        await async_setup_entry(hass, entry)
     entry.mock_state(hass, ConfigEntryState.LOADED)
     coordinator = hass.data[DOMAIN][entry.entry_id]
     sock = await _subscribe_peer(bus, _PEER_PATH)

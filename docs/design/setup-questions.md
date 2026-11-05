@@ -17,6 +17,7 @@ A `SetupProfile` has:
 | `owns` | Each generic field the profile owns (`GENERIC_FIELDS`): a fixed value, applied when setup or Configure saves, or `SET_BY_PROFILE` when the profile derives it. No form shows an owned field. |
 | `questions` | The `Question`s to ask, in order. |
 | `validate` | Errors by field for the staged setup with the answers applied. |
+| `derive` | The owned fields the profile computes from its answers, such as a FurniMove handset table's motor count and massage. |
 | `title` | The name the step shows for the staged route. |
 
 A `Question` stores its answer under `key`. Its `choices` are fixed labels or a
@@ -29,7 +30,10 @@ section in setup.
 Declarations are keyed like a [profile id](profile-id.md): `bed_type`,
 `bed_type:variant`, `bed_type@app` or `bed_type:variant@app`, and the most
 specific key that matches a route wins, so a variant entry replaces its bed
-type's entry. `app_profiles.hidden_generic_fields` reads `owns`.
+type's entry. `app_profiles.hidden_generic_fields` reads `owns` plus the generic
+fields the profile asks itself (motor count, variant), so no generic form asks
+them twice. A question with whole-number choices accepts the text a select
+returns.
 
 ## Setup and Configure
 
@@ -50,12 +54,21 @@ recorded here as each family converts:
 | Step | Why it is not data |
 |---|---|
 | Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
+| `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 
 ## Converted
 
 | Profile | Questions |
 |---|---|
 | `jiecang_app` | Layout (the chosen app's), light, transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
+| `furnimove` | Handset ID; the handset table derives the motor count and massage, and angle sensing is off. |
+| `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice) and motor count. |
+| `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
+| `bedsense` | Layout, or the layout from the Bluetooth name. |
 
-The other profiles declare only the generic fields they own, converted from the
-former side tables; their own steps follow in later changes.
+Still on their own steps, and next to convert: the Vibradorm app and V-MAT
+Basic steps, which need questions shown only for some answers and a form that
+redraws when one changes, and the L&P legacy step, which asks free-text
+characteristic UUIDs. The other profiles declare only the generic fields they
+own, converted from the former side tables.

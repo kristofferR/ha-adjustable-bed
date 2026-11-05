@@ -1,5 +1,5 @@
 // Card-owned translations for section headers and editor labels. Entity display
-// names come from Home Assistant's own localized friendly_name, so this only
+// names come from Home Assistant's entity naming (see names.ts), so this only
 // covers the card's structural chrome.
 import en from "./translations/en.json";
 import nb from "./translations/nb.json";

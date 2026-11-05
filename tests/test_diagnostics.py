@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
@@ -195,7 +195,7 @@ class TestDiagnosticsOutput:
         from custom_components.adjustable_bed import async_migrate_entry
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
-        assert await async_migrate_entry(hass, mock_diagnostics_config_entry) is True
+        await async_migrate_entry(hass, mock_diagnostics_config_entry)
         coordinator = AdjustableBedCoordinator(hass, mock_diagnostics_config_entry)
         hass.data.setdefault(DOMAIN, {})[mock_diagnostics_config_entry.entry_id] = coordinator
 

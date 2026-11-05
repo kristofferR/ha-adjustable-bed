@@ -22,7 +22,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
-from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers import selector
 
@@ -498,6 +497,7 @@ class ProfileRecommendationWatch:
             self.hass,
             DOMAIN,
             self.issue_id,
+            config_entry_id=self.entry.entry_id,
             is_fixable=True,
             is_persistent=False,
             severity=ir.IssueSeverity.WARNING,
@@ -772,13 +772,11 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     reason="review_started", next_flow=(FlowType.OPTIONS_FLOW, result["flow_id"])
                 )
             return self.async_abort(reason="recommendation_changed")
-        # Use HA's schema class across its 2026.9/2026.10 validation-engine change.
-        schema_type = type(cv.PLATFORM_SCHEMA)
         return self.async_show_form(
             step_id="paired" if is_paired(watch.entry.data) else "init",
             description_placeholders=watch.placeholders(),
             errors=errors,
-            data_schema=schema_type(
+            data_schema=vol.Schema(
                 {
                     vol.Required("action"): selector.SelectSelector(
                         selector.SelectSelectorConfig(

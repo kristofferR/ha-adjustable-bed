@@ -493,7 +493,7 @@ async def test_configuration_and_actual_entity_exposure(hass):
 
 
 async def test_options_cannot_switch_paired_p1_to_p2(hass):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import DOMAIN
@@ -575,7 +575,7 @@ def test_discovery_ledger_has_complete_coverage_and_resolvable_proofs():
 
 
 async def test_native_paired_runtime_routes_left_right_and_both_on_one_connection(hass, hold_clock):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -630,7 +630,7 @@ async def test_native_paired_runtime_routes_left_right_and_both_on_one_connectio
 @pytest.mark.parametrize("bed_type,variant", (("ergomotion", "auto"), ("keeson", "ergomotion")))
 @pytest.mark.parametrize("stored_preference", (False, None))
 async def test_legacy_split_suppresses_unscoped_positions(hass, bed_type, variant, stored_preference):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

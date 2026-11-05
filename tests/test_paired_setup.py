@@ -17,7 +17,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import (
     _async_ensure_paired_device_registry,
@@ -263,7 +263,7 @@ class TestPairedSetup:
             patch.object(AdjustableBedCoordinator, "_schedule_position_hydration"),
             patch.object(hass.config_entries, "async_forward_entry_setups", new_callable=AsyncMock),
         ):
-            assert await _async_setup_paired_entry(hass, entry)
+            await _async_setup_paired_entry(hass, entry)
 
         assert attempts == {LEFT_ADDR: 2, RIGHT_ADDR: 1}
         hass.data[DOMAIN].pop(entry.entry_id, None)

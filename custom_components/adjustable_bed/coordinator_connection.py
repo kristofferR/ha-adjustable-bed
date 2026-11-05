@@ -1505,6 +1505,7 @@ class CoordinatorConnectionMixin:
                             self._address,
                             self._name,
                             cast(Any, self._controller).pin_locked_without_pin,
+                            entry_id=self.entry.entry_id,
                         )
 
                 # Startup discovery can change which work is safe to schedule.

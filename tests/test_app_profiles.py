@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.config_flow import (
@@ -212,7 +212,7 @@ async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(
         }
     )
     # These apps' screen sets the motor count before setup finishes.
-    await flow.async_step_keeson_screen({CONF_MOTOR_COUNT: "2"})
+    await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT]) == (
         BED_TYPE_KEESON,
@@ -260,7 +260,8 @@ def test_americanstar_profile_owns_massage_and_per_side_layout() -> None:
     assert options[choice] == "AMERICANSTAR app (Keeson)"
     assert resolve_bed_type_choice(choice) == (BED_TYPE_KEESON, variant)
     assert CONF_HAS_MASSAGE in hidden_generic_fields(BED_TYPE_KEESON, variant)
-    assert CONF_MOTOR_COUNT not in hidden_generic_fields(BED_TYPE_KEESON, variant)
+    # The app's screen question asks the motor count, so the generic form hides it.
+    assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_KEESON, variant)
     sides = [(BED_TYPE_KEESON, variant)] * 2
     assert _per_side_refusal(sides[0], sides, {CONF_MOTOR_COUNT: 3}) == (
         CONF_MOTOR_COUNT, "AMERICANSTAR"

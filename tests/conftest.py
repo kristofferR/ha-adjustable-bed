@@ -10,25 +10,16 @@ import os
 import struct
 import warnings
 from collections.abc import AsyncGenerator, Callable, Generator
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-# Enable custom component loading
-pytest_plugins = "pytest_homeassistant_custom_component"
-
-# Re-export enable_custom_integrations fixture so it's available in tests
-from pytest_homeassistant_custom_component.plugins import (  # noqa: E402
-    enable_custom_integrations,  # noqa: F401
-)
-
-from custom_components.adjustable_bed.beds.jensen import JensenCommands  # noqa: E402
-from custom_components.adjustable_bed.const import (  # noqa: E402
+from custom_components.adjustable_bed.beds.jensen import JensenCommands
+from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
@@ -112,9 +103,9 @@ def controller_mock() -> Callable[..., MagicMock]:
 
 
 @pytest.fixture
-def hass_config_dir(tmp_path: Path) -> str:
-    """Keep HA files private to each test without copying the plugin's template."""
-    return str(tmp_path)
+def hass_config_dir(hass_tmp_config_dir: str) -> str:
+    """Keep HA files private to each test."""
+    return hass_tmp_config_dir
 
 
 _WORKER_MEMORY_BYTES = 512 * 1024 * 1024
@@ -167,7 +158,7 @@ async def _shutdown_coordinators(
     """Shut down every coordinator created during a test.
 
     Cancels idle-disconnect/reconnect timers armed by connects so the
-    lingering-timer check in pytest-homeassistant-custom-component passes
+    lingering-timer check in pytest-homeassistant passes
     without each test having to disconnect manually. Depending on
     verify_cleanup orders this teardown before the lingering-timer check;
     hass_storage keeps persistence mocked until coordinator shutdown finishes.
@@ -826,9 +817,13 @@ def mock_async_ble_device_from_address() -> Generator[MagicMock]:
         yield mock
 
 
-@pytest.fixture
-def mock_bluetooth_adapters() -> Generator[None]:
-    """Mock bluetooth adapter functions."""
+@pytest.fixture(autouse=True)
+def mock_bluetooth_api() -> Generator[None]:
+    """Keep HA's Bluetooth stack from starting and stub the API the integration reads.
+
+    The plugin's own autouse ``mock_bluetooth_adapters`` only fakes the host
+    adapters for a real stack. Tests that need other answers patch these again.
+    """
     patches = [
         patch("homeassistant.components.bluetooth.async_register_callback"),
         patch(
@@ -844,8 +839,8 @@ def mock_bluetooth_adapters() -> Generator[None]:
             return_value=None,
         ),
         patch(
-            "custom_components.adjustable_bed.coordinator.bluetooth.async_register_connection_params",
-            create=True,  # Allow patching even if attribute doesn't exist
+            "homeassistant.components.bluetooth.async_register_advertisement_callback",
+            return_value=lambda: None,
         ),
         patch(
             "homeassistant.components.bluetooth.async_setup",
@@ -870,7 +865,7 @@ def mock_bluetooth_adapters() -> Generator[None]:
 def mock_coordinator_connected(
     mock_establish_connection: AsyncMock,
     mock_async_ble_device_from_address: MagicMock,
-    mock_bluetooth_adapters: None,
+    mock_bluetooth_api: None,
 ) -> None:
     """Provide all mocks needed for a connected coordinator.
 
@@ -879,7 +874,7 @@ def mock_coordinator_connected(
     aren't accessed directly in this function body.
     """
     # Fixtures are activated via dependency injection - no explicit usage needed
-    del mock_establish_connection, mock_async_ble_device_from_address, mock_bluetooth_adapters
+    del mock_establish_connection, mock_async_ble_device_from_address, mock_bluetooth_api
     return None
 
 

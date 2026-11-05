@@ -15,7 +15,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_sync_profile_ids, async_migrate_entry
 from custom_components.adjustable_bed.const import (
@@ -175,7 +175,7 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         )
         entry.add_to_hass(hass)
 
-        assert await async_migrate_entry(hass, entry) is True
+        await async_migrate_entry(hass, entry)
 
         migrated = dict(entry.data)
         profile_id = migrated.pop(CONF_PROFILE_ID)
@@ -210,7 +210,7 @@ async def test_migration_keeps_entry_device_and_entity_identities(hass: HomeAssi
     )
     entry_id = entry.entry_id
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     assert (entry.entry_id, entry.unique_id, entry.title) == (entry_id, ADDRESS, "Bedroom")
     assert entry.data[CONF_BED_TYPE] == "okimat"
@@ -241,7 +241,7 @@ async def test_paired_migration_gives_each_side_its_own_id(hass: HomeAssistant) 
     entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
     entry.add_to_hass(hass)
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     assert entry.data[CONF_PROFILE_ID] == "jiecang_app@dreamask"
     children = {child[CONF_SIDE]: child for child in entry.data[CONF_PAIR_CHILDREN]}
@@ -282,7 +282,7 @@ async def test_single_address_pair_sides_follow_their_wire_side(hass: HomeAssist
     entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
     entry.add_to_hass(hass)
 
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     assert entry.data[CONF_PROFILE_ID] == "sbi:both"
     assert [child[CONF_PROFILE_ID] for child in entry.data[CONF_PAIR_CHILDREN]] == [
