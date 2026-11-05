@@ -576,9 +576,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
         "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
         "some Ergomotion Sync beds)"
     ),
-    BED_TYPE_ISLEEP: "ISleep (com.kaidi_test4)",
-    BED_TYPE_KAIDI: "Kaidi (Rize, Floyd; legacy ISleep)",
-    BED_TYPE_LINAK: "Linak (Bed Control and Performance Series apps)",
+    BED_TYPE_ISLEEP: "ISleep app (Kaidi, com.kaidi_test4)",
+    BED_TYPE_KAIDI: "Kaidi (Rize Beds and Floyd Home apps; legacy ISleep)",
+    BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
@@ -602,10 +602,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Climate 360 / FlexFit",
     BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number 360 / i8 FlexFit (BAM/MCR)",
     BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
-    BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
-    BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
-    BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
-    BED_TYPE_SLEEPYS_ELITE_APP: "Sleepy's Elite app (explicit selector)",
+    BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite BOX15 receiver (FFE5 service)",
+    BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver (OKIN 64-bit service)",
+    BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite BOX25 receiver (Nordic UART)",
+    BED_TYPE_SLEEPYS_ELITE_APP: "MFRM Sleepy's Elite app (control box selector)",
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
@@ -638,7 +638,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
     **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
-    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (product 139)",
+    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (Kaidi product 139)",
     (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",
@@ -703,6 +703,9 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_OKIN_RF_ECO_BT,
         BED_TYPE_LEGGETT_GEN2,
         BED_TYPE_LEGGETT_WILINKE,
+        BED_TYPE_SLEEPYS_BOX15,
+        BED_TYPE_SLEEPYS_BOX24,
+        BED_TYPE_SLEEPYS_BOX25,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -714,6 +717,9 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_OKIN: (
         "Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and "
         "L&P Adjustable Base apps"
+    ),
+    BED_TYPE_SLEEPYS_ELITE_APP: (
+        "Sleepy's Elite: MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers"
     ),
 }
 

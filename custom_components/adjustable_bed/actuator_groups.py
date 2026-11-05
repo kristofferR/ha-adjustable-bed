@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_GMMOTOR_SLEEP_SXB,
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -58,9 +59,7 @@ from .const import (
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
-    BED_TYPE_SLEEPYS_BOX15,
-    BED_TYPE_SLEEPYS_BOX24,
-    BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -68,6 +67,7 @@ from .const import (
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
     GLIDEAWAY_MOTION_MODELS,
+    KAIDI_VARIANT_FLOYD,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
@@ -244,8 +244,28 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "kaidi": {
         "display": "Kaidi",
-        "description": "Rize Remedy III, Floyd Home, ISleep (Mouselet devices)",
-        "variants": None,  # Single protocol
+        "description": "Rize Beds, Floyd Home and ISleep apps (Mouselet devices)",
+        "variants": [
+            {
+                "type": BED_TYPE_KAIDI,
+                "label": "Rize Beds app",
+                "description": "Rize Beds bases; detects the advertised Kaidi product",
+                "hint": "Keep this choice for an existing working Kaidi device.",
+            },
+            {
+                "type": BED_TYPE_KAIDI,
+                "variant": KAIDI_VARIANT_FLOYD,
+                "label": "Floyd Home app",
+                "description": "Floyd Home product 139 (Tranquility II)",
+                "hint": "Select this for a bed set up in the Floyd Home app.",
+            },
+            {
+                "type": BED_TYPE_ISLEEP,
+                "label": "ISleep app",
+                "description": "ISleep bases with an explicit product and room ID",
+                "hint": "Select this for a bed set up in the ISleep app.",
+            },
+        ],
     },
     "keeson": {
         "display": "Keeson",
@@ -627,27 +647,8 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "sleepys": {
         "display": "Sleepy's",
-        "description": "Sleepy's Elite adjustable bases",
-        "variants": [
-            {
-                "type": BED_TYPE_SLEEPYS_BOX15,
-                "label": "BOX15 (9-byte)",
-                "description": "Sleepy's Elite with BOX15 protocol",
-                "hint": "Try this first if unsure",
-            },
-            {
-                "type": BED_TYPE_SLEEPYS_BOX24,
-                "label": "BOX24 (7-byte)",
-                "description": "Sleepy's Elite with BOX24 protocol",
-                "hint": "Try BOX15 first, use this if it doesn't work",
-            },
-            {
-                "type": BED_TYPE_SLEEPYS_BOX25,
-                "label": "BOX25 Star (full-featured)",
-                "description": "Sleepy's Elite with BOX25 Star controller (lights, massage, positions)",
-                "hint": "Device name starts with 'Star'",
-            },
-        ],
+        "description": "MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers",
+        "variants": None,  # The family step asks for the app or receiver.
     },
     "solace": {
         "display": "Solace",
@@ -662,11 +663,11 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "comfort_motion": BED_TYPE_COMFORT_MOTION,
     "ergomotion": BED_TYPE_ERGOMOTION,
     "jensen": BED_TYPE_JENSEN,
-    "kaidi": BED_TYPE_KAIDI,
     "linak": BED_TYPE_LINAK,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,
     "richmat": BED_TYPE_RICHMAT,
+    "sleepys": BED_TYPE_SLEEPYS_ELITE_APP,
     "solace": BED_TYPE_SOLACE,
 }
 
