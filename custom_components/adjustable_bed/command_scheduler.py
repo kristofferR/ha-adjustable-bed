@@ -489,6 +489,12 @@ class _MergedStream:
         """Run every ending member's cleanup, then raise the first failure."""
         first_error: BaseException | None = None
         while self.ending:
+            handle = self.handle
+            if handle is not None and handle.context.cancel_event.is_set():
+                # STOP, replacement or shutdown ends every member: no reduced
+                # frame may carry a motor that is about to stop.
+                for live in tuple(self.members.values()):
+                    self.retire(live, handle.context.cancel_reason or CommandOutcome.STOPPED)
             if not self.members:
                 # Last ones out: newcomers queue behind this release instead
                 # of joining while it is under way.
@@ -712,6 +718,20 @@ def _clamp(deadline: float, ceiling: float | None) -> float:
 
 def _strategy(handle: CommandHandle) -> str:
     return "merged_stream" if handle.stream is not None else "serial_opaque"
+
+
+def _motion_scope(resources: Collection[str]) -> frozenset[str]:
+    """Every motor of each motor resource's bed or side: ``motor:back`` is ``motor:*``.
+
+    A motor-scoped STOP pre-empts motion on any motor in this scope, since one
+    writer serves them all. ``side:left:motor:back`` stays on its side.
+    """
+    scope = set()
+    for resource in resources:
+        prefix, marker, motor = resource.rpartition("motor:")
+        if marker and motor and (not prefix or prefix.endswith(":")):
+            scope.add(f"{prefix}motor:*")
+    return frozenset(scope)
 
 
 def _resources_overlap(left: Collection[str], right: Collection[str]) -> bool:
@@ -1051,18 +1071,33 @@ class DeviceCommandScheduler:
         *,
         group_id: str | None = None,
     ) -> asyncio.Task[None]:
-        """Invalidate matching work and synchronously start a safety STOP."""
+        """Invalidate matching work and synchronously start a safety STOP.
+
+        The STOP needs the one writer at once, so it also pre-empts motion on
+        any other motor of its bed or side (#516): the in-flight write and that
+        command's own cleanup finish, then the STOP's frames go out, ahead of
+        anything queued. A merged stream that owns a stopped motor keeps the
+        writer and ends only that member.
+        """
         if self._closed:
             raise RuntimeError(f"Command scheduler for {self._name} is shut down")
         normalized_resources = command_resources(*resources)
         active = self._active
-        preempted_contexts = (
-            (active.context,)
-            if active is not None
-            and _resources_overlap(active.intent.resources, normalized_resources)
-            else ()
+        overlaps = active is not None and _resources_overlap(
+            active.intent.resources, normalized_resources
         )
+        holds_motion = (
+            active is not None
+            and not overlaps
+            and _resources_overlap(active.intent.resources, _motion_scope(normalized_resources))
+        )
+        preempted_contexts = (active.context,) if active is not None and (
+            overlaps or holds_motion
+        ) else ()
         stop_epoch = self.request_stop(normalized_resources)
+        if active is not None and holds_motion and not active.future.done():
+            active.context.request_cancel(CommandOutcome.STOPPED)
+            active.invalidated_stop_epoch = stop_epoch
         handle = self._new_handle(
             CommandIntent(
                 operation,

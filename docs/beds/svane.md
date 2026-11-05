@@ -210,7 +210,8 @@ position, save position, recall position and flatten.
   feet run together: P1 refreshes head at the start of each 100 ms pass and feet
   100 ms into it; P2 sends one mask carrying both. A renewable hold lease
   ([Renewable holds](../SERVICES.md#renewable-holds)) keeps an axis moving until
-  the lease runs out.
+  the lease runs out. A new head press is written at once and never delays
+  feet's next refresh, so pressing head again and again cannot stall feet.
 - All selected targets validate before dispatch, including the existing
   delayed-feet minimum; the explicit service accepts 0.1–60 seconds. Feet-only
   actions and P1 combinations require more than 0.1 seconds.

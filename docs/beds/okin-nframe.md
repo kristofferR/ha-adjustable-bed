@@ -89,7 +89,7 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 | Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
-| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ (`customatic_move_simultaneously`) | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
+| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ `customatic_move_simultaneously`, and `timed_move` calls on different motors run together | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
 | Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
 | Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
@@ -1356,16 +1356,25 @@ See the [Customatic table](#customatic-keys).
 #### Timing
 
 See the [timing tables](#hold-and-release-timing). Explicit Stop sends the zero
-mask immediately.
+mask at once, after the own release of any move it pre-empts.
 
 - Cleanup runs after cancellation and outside the requested movement deadline.
   HA's duration is an elapsed-time ceiling for the refresh, so no extra refresh
   follows the deadline.
 - The configured pulse count applies to ordinary cover actions; the interval
   stays the app's.
-- All motor covers of one physical bed share the global scheduler resource,
-  because zero releases every motor: a Stop from any axis preempts movement on
-  another. Two-address paired children keep separate physical-side resources.
+- Each motor has its own scheduler resource. A Stop from any axis still
+  pre-empts a move on another axis at once (that move sends its own release,
+  then the zero mask), because a Stop never waits behind another motor's
+  command. Two-address paired children keep separate physical-side resources.
+- Each app ORs held motors into one mask and clears only a released motor's
+  bit (#516). `timed_move` calls on different motors, renewable or not, run
+  together: each 120 ms frame is the OR of every moving motor's key, for
+  example `04 02 00 00 00 05` for back and legs up. When one motor ends, the
+  next frame drops its bit at once and the others keep moving; the zero write
+  follows 100 ms after the last motor ends. A motor's own Stop ends only that
+  motor, while Stop All ends them all. HA uses one 120 ms lane instead of the
+  app's duplicate phase-offset chains.
 - Each app streams a held mask until release, so `timed_move` and
   `hold_control` accept a renewable hold lease
   ([Renewable holds](../SERVICES.md#renewable-holds)). The mask refreshes at

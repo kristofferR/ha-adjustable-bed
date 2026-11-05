@@ -129,7 +129,11 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
-    "OkinNFrameProfile:clarity": {"hold": ("clarity", "row028")},
+    # Customatic: held motor keys OR into one shared mask; a release clears one bit (#516).
+    "OkinNFrameProfile:clarity": {
+        "hold": ("clarity", "row028"),
+        "concurrent": ("clarity", "row028"),
+    },
     "OkinNFrameProfile:cst_aviada": {"hold": ("aviada",)},
     "OkinNFrameProfile:cst_bob": {"hold": ("bob",)},
     "OkinNFrameProfile:cst_carefree": {"hold": ("carefree",)},
@@ -140,7 +144,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:cst_resident": {"hold": ("resident",)},
     "OkinNFrameProfile:cst_sanctuary": {"hold": ("sanctuary",)},
     "OkinNFrameProfile:cst_support": {"hold": ("support",)},
-    "OkinNFrameProfile:jeromes": {"hold": ("jeromes", "row028")},
+    "OkinNFrameProfile:jeromes": {
+        "hold": ("jeromes", "row028"),
+        "concurrent": ("jeromes", "row028"),
+    },
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
     "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
     "OkinNFrameProfile:prodigy4": {
@@ -150,7 +157,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         # Normal keys combine by OR; release removes one key (#516).
         "concurrent": ("p4", "#516c"),
     },
-    "OkinNFrameProfile:remedy": {"hold": ("remedy", "row028")},
+    "OkinNFrameProfile:remedy": {
+        "hold": ("remedy", "row028"),
+        "concurrent": ("remedy", "row028"),
+    },
     "OkinNFrameProfile:serenity": {"hold": ("serenity",)},
     "OkinNFrameProfile:simmons_okin": {"hold": ("simmons",)},
     "OkinNFrameProfile:simmons_smartbed": {"hold": ("simmons",)},
@@ -333,7 +343,6 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/malouf.py:<module>.NEW_OKIN": ("MaloufRouteProfile:malouf_new_okin",),
     "profiles/okin_5a.py:<module>.ELEVATE": ("Okin5AProfile:star_elevate",),
     "profiles/okin_nframe.py:<module>.CU170_EXECUTION": ("OkinNFrameProfile:prodigy4",),
-    "profiles/okin_nframe.py:<module>.CUSTOMATIC_EXECUTION": _CUSTOMATIC,
     "profiles/okin_nframe.py:<module>.LEGGETT_EXECUTION": _LEGGETT_STREAM,
     "profiles/okin_nframe.py:<module>.USERIES_EXECUTION": ("OkinNFrameProfile:useries",),
     "profiles/okin_nframe.py:<module>._abm": _ABM,

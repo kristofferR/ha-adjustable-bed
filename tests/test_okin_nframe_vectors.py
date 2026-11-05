@@ -224,7 +224,21 @@ def test_composed_chords_partial_release_and_zero_are_frozen():
         profile = profiles.LEGGETT_PROFILES[key]
         assert codec.frame(profile.keys["head_up"]).hex() in FROZEN_FRAMES[key]
         assert codec.STOP.hex() in FROZEN_FRAMES[key]
+    # Customatic's reports freeze the back-and-legs chord (and Remedy's with
+    # lumbar) as literals; a reduced mask is a frozen single key.
+    for key, customatic in profiles.CUSTOMATIC_PROFILES.items():
+        keys = customatic.keys
+        chord = 0
+        for axis in customatic.axes:
+            chord |= keys[f"{axis}_up"]
+            assert codec.frame(keys[f"{axis}_up"]).hex() in FROZEN_FRAMES[key]
+        assert {
+            codec.frame(keys["back_up"] | keys["legs_up"]).hex(),
+            codec.frame(chord).hex(),
+            codec.STOP.hex(),
+        } <= FROZEN_FRAMES[key]
     assert {key for key, profile in PROFILES.items() if profile.execution.concurrent} == {
         "prodigy4",
         "useries",
+        *profiles.CUSTOMATIC_PROFILES,
     }
