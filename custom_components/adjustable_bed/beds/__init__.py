@@ -131,6 +131,8 @@ _EXPORT_MODULES = {
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
     "CasperBaseController": "casper_base",
+    "HushBaseController": "hush_base",
+    "HushSleepController": "hush_sleep",
     "CasperSleepController": "casper_sleep",
     "ComfortEnhancementsController": "comfort_enhancements",
     "EshineController": "eshine",

@@ -2966,3 +2966,93 @@ motomotion:
       selector:
         select:
           options: [left, right]
+
+hush_base:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    operation:
+      required: true
+      selector:
+        select:
+          options: [remote_find, light_rgb, light_seconds, light_off, rgb_power, rgb_color, rgb_timer, rgb_mode, rgb_groove, rgb_breathe, alarm, alarm_cancel, repeat_alarm, repeat_delete, repeat_query, time_sync, sleep_name, snore_detector, sensor_time, sensor_part, sensor_query_part, sensor_live, sensor_report, sensor_stop, sensor_query_time, sensor_sensitivity, sensor_query_anti_snore, sensor_anti_snore]
+    value:
+      selector:
+        number:
+          min: 0
+          max: 65535
+          mode: box
+    rgb_color:
+      selector:
+        color_rgb:
+    enabled:
+      selector:
+        boolean:
+    hour:
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    mode:
+      selector:
+        select:
+          options: [tv, zero_g, anti_snore, lounge, memory_1, memory_2, memory_3]
+    slot:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    days:
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    part:
+      selector:
+        number:
+          min: 1
+          max: 13
+          mode: box
+    report_type:
+      selector:
+        number:
+          min: 1
+          max: 2
+          mode: box
+    year:
+      selector:
+        number:
+          min: 1970
+          max: 2225
+          mode: box
+    month:
+      selector:
+        number:
+          min: 1
+          max: 12
+          mode: box
+    day:
+      selector:
+        number:
+          min: 1
+          max: 31
+          mode: box
+    source:
+      selector:
+        entity:
+          domain: sensor
+    side:
+      selector:
+        select:
+          options: [left, right, both]

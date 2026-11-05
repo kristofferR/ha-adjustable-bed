@@ -94,3 +94,5 @@ hardware evidence.
 and opt-in P1 split-side controls.
 
 [eShine E2000/E3000/E3100/E5000 protocol and setup](beds/eshine-okin.md), with the complete [row122 disposition ledger](apk-analysis/dispositions/row122-eshine.md).
+
+[Hush Base setup and protocol](beds/hush-base.md), including the [row126 exhaustive dispositions](apk-analysis/dispositions/row126-hush-base.md).
