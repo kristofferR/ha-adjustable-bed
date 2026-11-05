@@ -308,7 +308,7 @@ async def test_profile_setup_and_options_reject_other_layouts(hass, options):
     else:
         flow = AdjustableBedConfigFlow()
         flow._manual_data = entry_data()
-        step = flow.async_step_jiecang_app
+        step = flow.async_step_profile_questions
     flow.hass = hass
     flow.context = {}
     result = await step(
@@ -416,7 +416,7 @@ async def test_profile_setup_accepts_comfort_motion(hass, layout):
     flow.context = {}
     flow._manual_data = entry_data()
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jiecang_app({**entry_data(layout), CONF_JIECANG_APP_TRANSPORT: "g2"})
+        await flow.async_step_profile_questions({**entry_data(layout), CONF_JIECANG_APP_TRANSPORT: "g2"})
     saved = finish.call_args.args[0]
     assert saved[CONF_JIECANG_APP_PROFILE] == "comfort_motion"
     assert saved[CONF_JIECANG_APP_LAYOUT] == layout

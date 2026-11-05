@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import logging
 import math
 import sys
@@ -272,9 +273,7 @@ from .const import (
     DOMAIN,
     HAS_LIGHT_DEFAULTS,
     IDLE_DISCONNECT_KEEP_CONNECTED,
-    JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
-    JIECANG_APP_TRANSPORTS,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
@@ -431,6 +430,7 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
+from .setup_questions import Question, SetupProfile
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -2132,31 +2132,6 @@ def _show_profile_fields(
     _hide_owned_generic_fields(schema, bed_type, variant)
 
 
-def _add_jiecang_app_schema_fields(
-    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
-) -> None:
-    """Require the app and physical layout, neither is identified by shared UUIDs."""
-    current_data = current_data or {}
-    for key, choices in (
-        (CONF_JIECANG_APP_PROFILE, JIECANG_APP_PROFILES),
-        (CONF_JIECANG_APP_LAYOUT, JIECANG_APP_LAYOUTS),
-    ):
-        default = current_data.get(key, vol.UNDEFINED)
-        schema[vol.Required(key, default=default)] = vol.In(choices)
-    schema[
-        vol.Optional(
-            CONF_JIECANG_APP_TRANSPORT,
-            default=current_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
-        )
-    ] = vol.In(JIECANG_APP_TRANSPORTS)
-    schema[
-        vol.Optional(
-            CONF_HAS_LIGHT,
-            default=current_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
-        )
-    ] = bool
-
-
 # The Okin family's own routes, by the answer that selects each.
 _OKIN_ROUTES: Final[dict[str, str]] = {
     "furnimove": BED_TYPE_FURNIMOVE,
@@ -2312,58 +2287,68 @@ _JIECANG_LEGACY_ROUTES: Final[dict[str, str]] = {
 }
 
 
-def _jiecang_app_setup_schema(data: Mapping[str, Any]) -> dict[vol.Marker, Any]:
-    """Offer only the chosen app's layouts, with its transports kept under Advanced."""
-    from .profiles.jiecang import APP_PROFILES
+def _configure_questions(data: Mapping[str, Any]) -> SetupProfile | None:
+    """Return the declared questions Configure asks: a family's route ones change
+    only through the guided change, so Configure leaves them out."""
+    from .setup_questions import setup_profile_for
 
-    profile = APP_PROFILES[data[CONF_JIECANG_APP_PROFILE]]
-    layouts = {key: JIECANG_APP_LAYOUTS[key] for key in profile.layouts}
-    transports = {
-        key: JIECANG_APP_TRANSPORTS[key] for key in ("auto", *profile.transports)
-    }
-    layout = data.get(CONF_JIECANG_APP_LAYOUT)
-    transport = data.get(CONF_JIECANG_APP_TRANSPORT, "auto")
-    return {
-        vol.Required(
-            CONF_JIECANG_APP_LAYOUT, default=layout if layout in layouts else vol.UNDEFINED
-        ): vol.In(layouts),
-        vol.Optional(
-            CONF_HAS_LIGHT,
-            default=data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
-        ): bool,
-        vol.Optional("advanced"): section(
-            vol.Schema(
-                {
-                    vol.Optional(
-                        CONF_JIECANG_APP_TRANSPORT,
-                        default=transport if transport in transports else "auto",
-                    ): vol.In(transports)
-                }
-            ),
-            {"collapsed": True},
-        ),
-    }
+    profile = setup_profile_for(data)
+    if profile is None or not profile.questions:
+        return None
+    family = next(
+        (family for family in MANAGED_FAMILIES if data.get(CONF_BED_TYPE) in family.bed_types),
+        None,
+    )
+    route_keys = set(family.route_keys) if family is not None else set()
+    return dataclasses.replace(
+        profile,
+        questions=tuple(q for q in profile.questions if q.key not in route_keys),
+    )
 
 
-def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
-    """Require explicit app and layout selection without inferring hardware."""
-    from .profiles.jiecang import APP_PROFILES, COMFORT_MOTION
+def _question_field(question: Question, data: Mapping[str, Any]) -> tuple[vol.Marker, Any]:
+    """Return one declared question's form marker and validator."""
+    from .setup_questions import REQUIRED
 
-    errors = {}
-    if data.get(CONF_JIECANG_APP_PROFILE) not in JIECANG_APP_PROFILES:
-        errors[CONF_JIECANG_APP_PROFILE] = "jiecang_app_required"
-    if data.get(CONF_JIECANG_APP_LAYOUT) not in JIECANG_APP_LAYOUTS:
-        errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
-    profile = APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""))
-    if profile is None:
-        return errors
-    # Each app profile declares the layouts and transports it can drive.
-    error = "comfort_motion_selection" if profile is COMFORT_MOTION else "jiecang_app_required"
-    if data.get(CONF_JIECANG_APP_LAYOUT) not in profile.layouts:
-        errors[CONF_JIECANG_APP_LAYOUT] = error
-    if data.get(CONF_JIECANG_APP_TRANSPORT, "auto") not in ("auto", *profile.transports):
-        errors[CONF_JIECANG_APP_TRANSPORT] = error
-    return errors
+    default = question.default_for(data)
+    marker_type = vol.Required if default is REQUIRED else vol.Optional
+    marker = marker_type(question.key, default=vol.UNDEFINED if default is REQUIRED else default)
+    options = question.options(data)
+    return marker, (bool if options is None else vol.In(dict(options)))
+
+
+def _profile_question_schema(
+    profile: SetupProfile, data: Mapping[str, Any], *, advanced_section: bool = True
+) -> dict[vol.Marker, Any]:
+    """Render a profile's questions, its advanced ones in a collapsed section."""
+    schema: dict[vol.Marker, Any] = {}
+    advanced: dict[vol.Marker, Any] = {}
+    for question in profile.questions:
+        marker, validator = _question_field(question, data)
+        (advanced if question.advanced and advanced_section else schema)[marker] = validator
+    if advanced:
+        schema[vol.Optional("advanced")] = section(vol.Schema(advanced), {"collapsed": True})
+    return schema
+
+
+def _profile_answers(
+    profile: SetupProfile, user_input: Mapping[str, Any], data: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Return the submitted answers, flattening the Advanced section.
+
+    An untouched Advanced section submits nothing, so its questions keep their
+    staged or declared default.
+    """
+    from .setup_questions import REQUIRED
+
+    submitted = {**user_input, **(user_input.get("advanced") or {})}
+    answers = {}
+    for question in profile.questions:
+        if question.key in submitted:
+            answers[question.key] = submitted[question.key]
+        elif user_input and (default := question.default_for(data)) is not REQUIRED:
+            answers[question.key] = default
+    return answers
 
 
 def _malouf_app_model_choices(
@@ -2592,7 +2577,6 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, _add_cluster033_schema_fields),
     BED_TYPE_FURNIMOVE: _add_furnimove_schema_field,
     BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
-    BED_TYPE_JIECANG_APP: _add_jiecang_app_schema_fields,
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
     BED_TYPE_MOTION_BED: _add_motion_bed_schema_fields,
     BED_TYPE_DOUBLESLEEP: _add_doublesleep_schema_fields,
@@ -3260,7 +3244,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self._async_finish_family_route()
             data[CONF_BED_TYPE] = BED_TYPE_JIECANG_APP
             data[CONF_JIECANG_APP_PROFILE] = choice
-            return await self.async_step_jiecang_app()
+            return await self.async_step_profile_questions()
         return self.async_show_form(
             step_id="jiecang_family",
             data_schema=vol.Schema(
@@ -3730,31 +3714,31 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={"current": bed_type_label(incoming)},
         )
 
-    async def async_step_jiecang_app(
+    async def async_step_profile_questions(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Collect the chosen app's physical layout, light and transport."""
+        """Ask the staged profile's declared questions, then finish its route."""
+        from .setup_questions import setup_profile_for
+
         assert self._manual_data is not None
         data = self._manual_data
-        submitted = dict(user_input or {})
-        submitted.update(submitted.pop("advanced", None) or {})
-        if user_input is not None:
-            # An untouched Advanced section keeps the automatic transport.
-            submitted.setdefault(
-                CONF_JIECANG_APP_TRANSPORT, data.get(CONF_JIECANG_APP_TRANSPORT, "auto")
-            )
-        candidate = {**data, **submitted}
-        errors = _jiecang_app_errors(candidate) if user_input is not None else {}
+        profile = setup_profile_for(data)
+        assert profile is not None and profile.questions
+        answers = _profile_answers(profile, user_input or {}, data)
+        candidate = {**data, **answers}
+        errors = (
+            profile.validate(candidate) if user_input is not None and profile.validate else {}
+        )
         if user_input is not None and not errors:
-            data.update(submitted)
-            data[CONF_DISABLE_ANGLE_SENSING] = True
-            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
+            data.update(answers)
+            data.update(profile.fixed_values())
+            return await self._async_finish_family_route()
         return self.async_show_form(
-            step_id="jiecang_app",
-            data_schema=vol.Schema(_jiecang_app_setup_schema(candidate)),
+            step_id="profile_questions",
+            data_schema=vol.Schema(_profile_question_schema(profile, candidate)),
             errors=errors,
             description_placeholders={
-                "app": JIECANG_APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""), "")
+                "profile": profile.title(data) if profile.title else bed_type_label(data[CONF_BED_TYPE])
             },
         )
 
@@ -9650,6 +9634,12 @@ class AdjustableBedOptionsFlow(
                 )
             elif add_app_fields := _OPTIONS_APP_FIELDS.get(bed_type):
                 add_app_fields(schema_dict, current_data)
+            elif (
+                questions := _configure_questions({**current_data, CONF_BED_TYPE: bed_type})
+            ) is not None:
+                schema_dict.update(
+                    _profile_question_schema(questions, current_data, advanced_section=False)
+                )
 
         if bed_type in MALOUF_BED_TYPES:
             schema_dict[
@@ -10026,13 +10016,15 @@ class AdjustableBedOptionsFlow(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
                     )
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
-            if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
-                app_errors = _jiecang_app_errors({**current_data, **user_input})
-                if app_errors:
+            if not separate_address_pair and (
+                declared := _configure_questions({**current_data, CONF_BED_TYPE: bed_type})
+            ) is not None:
+                app_data = {**current_data, **user_input}
+                if declared.validate and (app_errors := declared.validate(app_data)):
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
                     )
-                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+                user_input.update(declared.fixed_values())
             if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
                 from .beds.starcode_abm5_4_profiles import SELECTORS
 

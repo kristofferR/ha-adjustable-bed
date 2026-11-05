@@ -216,6 +216,12 @@ the STOP pair until a 20 s cap, which Home Assistant does not copy. Home
 Assistant also sends STOP when a flat is interrupted, because the motors keep
 moving on their own after its frames.
 
+Releasing a held control ends the current 800 ms interval at once and sends the
+STOP pair, as the app does when it clears its repeat timer on release. A
+[renewable hold](../SERVICES.md#renewable-holds) (`timed_move` with
+`hold_owner` and `hold_generation`) refreshes every 800 ms until its lease runs
+out, then sends the STOP pair.
+
 The app offers more than reaches the bed. Its light intensity slider crashes
 the app instead of writing, its favourite recall stalls before its first write,
 and it never subscribes to position reports. Home Assistant therefore offers

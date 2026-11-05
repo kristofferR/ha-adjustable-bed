@@ -207,7 +207,11 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "sleepys_elite_app": {"hold": ("sleepy",)},
     "starcode_m1x12": {"hold": ("m1x12",)},
     "starcode_m5x5": {"hold": ("abm5_5",)},
-    "svane": {"hold": ("svane", "svane-guide"), "concurrent": ("svane", "svane-guide")},
+    # The Svane Remote routes, and the Jensen LinOn route's hold (jensen_linon).
+    "svane": {
+        "hold": ("svane", "svane-guide", "jensen", "jensen-disp"),
+        "concurrent": ("svane", "svane-guide"),
+    },
     "timotion_ahf": {"hold": ("ahf",)},
     "vibradorm_app": {"hold": ("diamant", "werkmeister", "vmat")},
     "vmatbasic": {"hold": ("vmatbasic",)},
@@ -253,6 +257,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/kaidi.py:<module>.KaidiController.execution": ("kaidi",),
     "beds/leggett_gen2.py:<module>.LeggettGen2Controller": ("leggett_gen2",),
     "beds/leggett_gen2.py:<module>.LeggettGen2Controller.execution": ("leggett_gen2",),
+    "beds/jensen_linon.py:<module>.JensenLinonController": ("svane",),
+    "beds/jensen_linon.py:<module>.JensenLinonController.execution": ("svane",),
     "beds/linak.py:<module>.LinakController": ("linak",),
     "beds/linak.py:<module>.LinakController.execution": ("linak",),
     "beds/octo.py:<module>.OctoController": ("octo",),

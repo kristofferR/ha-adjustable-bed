@@ -1,10 +1,8 @@
 """What each bed type or app profile owns in the setup and options forms.
 
-Two tables, read by every setup route and the options flow:
-
 - ``hidden_generic_fields``: generic fields a profile sets itself or never
-  reads, so no form shows them. A profile that needs one of them asks for it
-  in its own app step instead.
+  reads, so no form shows them. Each profile declares them in
+  ``setup_questions.py`` with its setup questions.
 - ``per_side_profile``: app settings that belong to one physical bed. The
   shared form of a two-address pair refuses to change them, or to change
   either side to, from or between such profiles; each side is configured
@@ -42,17 +40,14 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
-    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTION_BED,
-    BED_TYPE_OCTO,
     BED_TYPE_OKIN_CST,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
-    BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -62,12 +57,10 @@ from .const import (
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
-    BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    CLUSTER033_BED_TYPES,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FSM_RELAX_MEMORY_NAMES,
@@ -95,8 +88,6 @@ from .const import (
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
     CONF_MOTOR_COUNT,
-    CONF_MOTOR_PULSE_COUNT,
-    CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PAIRLINK_HOME_ID,
     CONF_PAIRLINK_HOST_SOURCE,
     CONF_PAIRLINK_PASSWORD_HEX,
@@ -129,117 +120,17 @@ from .const import (
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_VARIANT_M1X12,
     STARCODE_APP_CONFIG_KEYS,
-    SVANE_VARIANT_JENSEN_LINON,
     VIBRADORM_APP_CONFIG_KEYS,
     VMATBASIC_CONFIG_KEYS,
 )
 from .profiles.keeson import SERTA_MEMORY_KEYS
 
-# The generic fields a profile can own.
-GENERIC_FIELDS: Final = frozenset(
-    {
-        CONF_MOTOR_COUNT,
-        CONF_HAS_MASSAGE,
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-        CONF_PROTOCOL_VARIANT,
-    }
-)
-# The app fixes the layout and its own refresh interval.
-_FIXED_LAYOUT: Final = frozenset({CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS})
-# The app step defines every control and its held behavior.
-_APP_DEFINED: Final = GENERIC_FIELDS
-_ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
-# The pulse count stays visible: it bounds each HA movement at the app's cadence.
-_NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
-
-_HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
-    "ergomotion_4": _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    "gmmotor": GENERIC_FIELDS,
-    "gmmotor_sleep_mm": GENERIC_FIELDS,
-    "gmmotor_sleep_sxb": GENERIC_FIELDS,
-    BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
-    # OCTO motor layout comes from its advertised capability record, with an
-    # OCTO-specific explicit override in the profile's own setup/options UI.
-    BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
-    "casper_remote": GENERIC_FIELDS,
-    "casper_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
-    "casper_sleep_mm": GENERIC_FIELDS,
-    "casper_sleep_sxb": GENERIC_FIELDS,
-    BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
-    BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
-    BED_TYPE_SERENITY: _FIXED_LAYOUT,
-    BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
-    BED_TYPE_ZSERIES: _FIXED_LAYOUT,
-    BED_TYPE_SIMMONS: _FIXED_LAYOUT,
-    **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
-    BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
-    # AHF has no massage. Motor count still sizes the legacy covers.
-    BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
-    # These apps always show their massage page.
-    BED_TYPE_ADJUSTAMATTRESS: _FIXED_LAYOUT | {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING},
-    BED_TYPE_ADJUSTABLE_LUMBAR: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
-    BED_TYPE_STARCODE_ABM5_4: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
-    # The handset table sets the layout and massage; the receiver sets the protocol.
-    BED_TYPE_FURNIMOVE: _FIXED_LAYOUT | {CONF_HAS_MASSAGE, CONF_PROTOCOL_VARIANT},
-    BED_TYPE_STARCODE_M5X5: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_STARCODE_M1X12: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    # The app step asks for massage; the pulse count bounds a held control.
-    BED_TYPE_FSM_RELAX: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_LIMOSS_REMOTE: _APP_DEFINED,
-    BED_TYPE_VIBRADORM_APP: _APP_DEFINED,
-    BED_TYPE_VMATBASIC: _APP_DEFINED,
-    BED_TYPE_MOTION_BED: _APP_DEFINED,
-    BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
-    BED_TYPE_SLEEPYS_ELITE_APP: _APP_DEFINED,
-    # The variant selects the Svane Remote app profile or Jensen LinOn.
-    BED_TYPE_SVANE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
-    # The app's layout or model sets the axes and its own command cadence. The
-    # Logicdata pulse count still bounds each held movement.
-    BED_TYPE_JIECANG_APP: _FIXED_LAYOUT,
-    BED_TYPE_MALOUF_APP: _FIXED_LAYOUT,
-    BED_TYPE_LOGICDATA_APP: _FIXED_LAYOUT,
-}
-_HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
-    # Nectar Move fixes two axes, has massage, and uses its own refresh interval.
-    (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): _NECTAR_MOVE,
-    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS},
-    (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
-    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): _FIXED_LAYOUT | {CONF_PROTOCOL_VARIANT},
-    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(
-        {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
-    ),
-    **{
-        (BED_TYPE_KEESON, variant): _ALWAYS_MASSAGE
-        for variant in (
-            KEESON_VARIANT_INNOVA,
-            KEESON_VARIANT_MAXCOIL_UNA,
-            KEESON_VARIANT_DYNASTY_BASES,
-            KEESON_VARIANT_AMERICANSTAR,
-            KEESON_VARIANT_BEDSENSE_BASES,
-            KEESON_VARIANT_HEAL_EVERY_NIGHT,
-        )
-    },
-}
-
 
 def hidden_generic_fields(bed_type: str | None, variant: str | None) -> frozenset[str]:
     """Return the generic fields no form shows for this profile."""
-    if bed_type is None:
-        return frozenset()
-    if variant is not None and (bed_type, variant) in _HIDDEN_BY_VARIANT:
-        return _HIDDEN_BY_VARIANT[bed_type, variant]
-    return _HIDDEN_BY_BED_TYPE.get(bed_type, frozenset())
+    from .setup_questions import owned_fields
+
+    return owned_fields(bed_type, variant)
 
 
 @dataclass(frozen=True, slots=True)
