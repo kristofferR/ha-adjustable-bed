@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, patch
 
 import voluptuous as vol
+from homeassistant.const import CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.adjustable_bed import const
@@ -28,14 +29,18 @@ async def test_the_product_is_asked_with_the_apps_own_twelve_first(
     # Nothing detects the product, so the question has no default.
     assert isinstance(markers[const.CONF_PROTOCOL_VARIANT], vol.Required)
     assert markers[const.CONF_PROTOCOL_VARIANT].default is vol.UNDEFINED
-    with patch.object(
-        AdjustableBedConfigFlow,
-        "_finish_with_verify",
-        new=AsyncMock(return_value={"type": FlowResultType.ABORT, "reason": "test"}),
-    ) as finish:
-        await hass.config_entries.flow.async_configure(
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_setup",
+        new=AsyncMock(return_value=True),
+    ):
+        result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {const.CONF_PROTOCOL_VARIANT: "hushs575sh"}
         )
-    saved = finish.call_args.args[0]
-    assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_HUSH_BASE
-    assert saved[const.CONF_PROTOCOL_VARIANT] == "hushs575sh"
+        assert result["step_id"] == "finish_settings"
+        with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {CONF_NAME: "Hush"}
+            )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_HUSH_BASE
+    assert result["data"][const.CONF_PROTOCOL_VARIANT] == "hushs575sh"
