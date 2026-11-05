@@ -97,6 +97,8 @@ export interface AdjustableBedCardConfig {
   memory_save?: boolean;
   // Memory positions (slot numbers) to show. Omitted/empty = show all.
   memory_slots?: number[];
+  // A tap on a motor arrow starts it and the next tap stops it (default false).
+  tap_to_move?: boolean;
 }
 
 export interface LovelaceCard extends HTMLElement {

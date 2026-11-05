@@ -288,6 +288,27 @@ export class AdjustableBedCardEditor
     `;
   }
 
+  // Tap to move (#609). Off is the default, so it is stored only when on.
+  private _tapToMoveToggle(): TemplateResult {
+    return html`<div class="row">
+        <ha-switch .checked=${this._config?.tap_to_move === true}
+          @change=${(e: Event) => this._setOption("tap_to_move",
+            (e.target as HTMLInputElement).checked || undefined)}
+        >${localize(this.hass, "editor.tap_to_move")}</ha-switch>
+      </div>
+      <p class="hint">${localize(this.hass, "editor.tap_to_move_hint")}</p>`;
+  }
+
+  private _motorsGroup(bed: BedEntities): TemplateResult | typeof nothing {
+    if (this._config?.show_motors === false || !this._presentKeys(bed).includes("motors")) {
+      return nothing;
+    }
+    return html`<div class="group">
+      <div class="group-title">${localize(this.hass, "editor.motors_group")}</div>
+      ${this._tapToMoveToggle()}
+    </div>`;
+  }
+
   private _setOption<K extends keyof AdjustableBedCardConfig>(
     key: K, value: AdjustableBedCardConfig[K],
   ): void {
@@ -348,6 +369,7 @@ export class AdjustableBedCardEditor
             </select>
           </label>` : nothing}
         ${this._compactToggle("show_motors", false)}
+        ${c.show_motors === true ? this._tapToMoveToggle() : nothing}
         ${this._compactToggle("show_lighting", false)}
         ${this._compactToggle("show_connection", false)}
         <p class="hint">${localize(this.hass, "editor.compact_stop_hint")}</p>
@@ -411,6 +433,7 @@ export class AdjustableBedCardEditor
       ></ha-form>
       ${this._layoutGroup()}
       ${this._config.layout === "compact" ? this._compactGroup() : html`
+        ${bed ? this._motorsGroup(bed) : nothing}
         ${bed ? this._sectionsGroup(bed) : nothing}
         ${bed ? this._memoryGroup(bed) : nothing}
       `}

@@ -46,6 +46,18 @@ export function hasHoldLease(motor: MotorEntity, direction: Direction): boolean 
   return !!(motor.timedMove ?? motor.holdLease.motor);
 }
 
+// Tap to move (#609) ends after 30 s, the backend's ceiling for a streamed
+// hold. A latched hold's backend ceiling ends it sooner.
+export const TAP_MOVE_MAX_MS = 30_000;
+
+// Whether a tap may start this motor: it must stop on its own when the card
+// vanishes. A renewable hold lapses within one lease and a finite pulse ends
+// by itself, but a held control without a lease opens a 60 s window that only
+// a release ends, so it keeps press-and-hold.
+export function canTapMove(motor: MotorEntity, direction: Direction): boolean {
+  return !(motor.heldControls?.[direction] ?? motor.heldControl) || hasHoldLease(motor, direction);
+}
+
 // Starts or renews this press's hold. The starting call lasts as long as the
 // hold; a renewal returns at once.
 export function movementLease(
@@ -219,6 +231,8 @@ export interface HoldActions {
   // paired bed is the side's own stop rather than the parent's; omitted falls
   // back to the single bed's stop.
   stopBed: (stopEntityId?: string) => void;
+  // Called when a tap move starts or ends, so the card can show it.
+  changed?: () => void;
 }
 
 export interface HoldTimers {
@@ -447,6 +461,10 @@ export class MotorHold {
   private _repeatBlocked = false;
   private _startTimer?: ReturnType<typeof setTimeout>;
   private _renewTimer?: ReturnType<typeof setTimeout>;
+  // A tap move has no pointer or key to release: a tap, a Stop, the hold
+  // ending on its own or the 30 s bound ends it.
+  private _tapDirection: Direction | null = null;
+  private _tapTimer?: ReturnType<typeof setTimeout>;
   // Names this card instance to the hold service; a press's generation is the
   // hold generation, which only ever increases.
   private readonly _leaseOwner = `card-${Math.random().toString(36).slice(2, 12)}`;
@@ -520,6 +538,59 @@ export class MotorHold {
     else void this._repeat(this._motor, dir, generation);
   }
 
+  get tapMoving(): boolean {
+    return this._tapDirection !== null;
+  }
+
+  // The direction this motor's tap move runs in, if it has one.
+  tapDirection(motor: MotorEntity): Direction | undefined {
+    return this._tapDirection !== null && this._motorId === motorIdentity(motor)
+      ? this._tapDirection
+      : undefined;
+  }
+
+  // Tap to move (#609). A tap while a tap move runs stops it, whichever motor
+  // control was tapped, and never starts another. Otherwise it starts this
+  // motor, if it can stop on its own when the card vanishes.
+  tap(
+    motor: MotorEntity,
+    dir: Direction,
+    stopEntityId?: string,
+    scope: readonly string[] = stopEntityId ? [stopEntityId] : [],
+    remainingStopEntityIds: readonly string[] = [],
+    target?: HoldTarget,
+  ): void {
+    if (this._tapDirection !== null) {
+      this.endTap();
+      return;
+    }
+    // A press-and-hold owns the controls until its release.
+    if (this._key !== null) return;
+    const held = motor.heldControls?.[dir] ?? motor.heldControl;
+    if (held && !(this.actions.lease && hasHoldLease(motor, dir))) return;
+    // Set first: a pulse the card cannot send ends the move inside start().
+    this._tapDirection = dir;
+    this.start(motor, dir, null, stopEntityId, scope, remainingStopEntityIds, null, target);
+    if (this._tapDirection === null) return;
+    const generation = this._generation;
+    this._tapTimer = this.timers.setTimeout(() => {
+      if (generation === this._generation) this.endTap();
+    }, TAP_MOVE_MAX_MS);
+    this.actions.changed?.();
+  }
+
+  // Ends a running tap move as a release ends a press: with its STOP.
+  endTap(): void {
+    if (this._tapDirection !== null && this._motor) this.end(this._motor);
+  }
+
+  // Ends a tap move without a STOP, when the hold already ended or a command
+  // the card sends next replaces it: a STOP could cancel that command. The
+  // lease lapses and a finite pulse ends by itself.
+  retireTap(): void {
+    if (this._tapDirection !== null) this._reset();
+  }
+
   private _targetScope(target: HoldTarget | undefined): string[] {
     if (!target) return [];
     const sides = target.side === "left" || target.side === "right"
@@ -563,10 +634,13 @@ export class MotorHold {
     let live = true;
     const ended = (): void => {
       live = false;
-      if (generation === this._generation && this._renewTimer !== undefined) {
+      if (generation !== this._generation) return;
+      if (this._renewTimer !== undefined) {
         this.timers.clearTimeout(this._renewTimer);
         this._renewTimer = undefined;
       }
+      // The backend ended the hold with its own release, or replaced it.
+      this.retireTap();
     };
     const starting = this.actions.lease?.(motor, dir, lease);
     if (!starting) return;
@@ -609,19 +683,21 @@ export class MotorHold {
     if (!motor) return;
     // Plain controls repeat one finite movement at a time. Controllers with
     // declared start/release timing use the separate held-control path.
-    while (generation === this._generation && !this._repeatBlocked) {
-      try {
+    try {
+      while (generation === this._generation && !this._repeatBlocked) {
         const pending = this.actions.pulse(motor, dir);
         if (!pending) return;
         this._pulseInFlight = pending;
         try { await pending; } finally {
           if (this._pulseInFlight === pending) this._pulseInFlight = undefined;
         }
-      } catch {
-        // The bed rejected the command (usually a dropped BLE link). Stop
-        // hammering it; the user can press again.
-        return;
       }
+    } catch {
+      // The bed rejected the command (usually a dropped BLE link). Stop
+      // hammering it; the user can press again.
+    } finally {
+      // A tap move ends with its pulses; the last one stopped by itself.
+      if (generation === this._generation) this.retireTap();
     }
   }
 
@@ -765,7 +841,8 @@ export class MotorHold {
     stopEntityId?: string,
     keyboardKey?: string,
   ): void {
-    if (this._pointerId !== null || !this._motor) return;
+    // A key release cannot end a tap move: Enter and Space are what start it.
+    if (this._pointerId !== null || this._tapDirection !== null || !this._motor) return;
     if (motor && !this._ownsRelease(motor, stopEntityId)) return;
     if (stopEntityId !== undefined && this._stop !== stopEntityId) return;
     if (keyboardKey !== undefined && this._keyboardKey !== null &&
@@ -1015,6 +1092,10 @@ export class MotorHold {
     this._startTimer = undefined;
     if (this._renewTimer !== undefined) this.timers.clearTimeout(this._renewTimer);
     this._renewTimer = undefined;
+    if (this._tapTimer !== undefined) this.timers.clearTimeout(this._tapTimer);
+    this._tapTimer = undefined;
+    const tapped = this._tapDirection !== null;
+    this._tapDirection = null;
     this._key = null;
     this._motor = null;
     this._scopeStops = [];
@@ -1031,6 +1112,7 @@ export class MotorHold {
     this._heldControl = undefined;
     this._releaseButton = undefined;
     this._generation++;
+    if (tapped) this.actions.changed?.();
   }
 }
 

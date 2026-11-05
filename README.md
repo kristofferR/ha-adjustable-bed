@@ -271,6 +271,27 @@ integration stops it when its short lease runs out if the browser goes away.
 Other beds repeat finite movements, so a hold can have short pauses between them.
 Position sliders appear only when the selected controller exposes them.
 
+#### Tap to move
+
+Turn on **Tap to start and stop movement** in the card editor (`tap_to_move:
+true`) to move without holding. Tap an arrow to start the motor. The arrow stays
+highlighted and the row reads **Moving up · tap to stop**. The next tap on any
+arrow or Stop stops it, and never starts another motor. Movement also stops:
+
+- after at most 30 seconds, or 10 seconds on beds that keep moving after one
+  start command (`latched` holds);
+- when you press a preset, memory or other button on the card, which takes over
+  from the movement;
+- when you hide the page, switch apps, navigate away, remove the card or switch
+  the side tab of a paired bed;
+- when the browser, phone or network disappears. A bed with a renewable hold
+  stops within one 750 ms lease; any other bed stops after its current finite
+  movement.
+
+A control whose only hold is a fixed 60-second window that the card cannot
+renew stays press-and-hold, because it would keep moving if the page
+disappeared. Presets and memory are unchanged.
+
 For a combined bed, the card offers **Left / Both sides / Right**. Selecting
 either the parent device or a side's child device opens the paired card. Both-side
 controls expose shared capabilities; select a side for its additional features.
@@ -374,6 +395,7 @@ name: Bedroom Bed              # optional, overrides the card title
 section_order: [motors, memory, lighting]  # optional, render order (default order otherwise)
 memory_save: true              # optional, show the "Save…" button (default: true)
 memory_slots: [1, 2, 3]        # optional, which memory positions to show (default: all)
+tap_to_move: false             # optional, a tap starts a motor and the next tap stops it (default: false)
 # Each section defaults to shown; set to false to hide:
 show_graphic: true
 show_motors: true

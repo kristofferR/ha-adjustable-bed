@@ -32,6 +32,7 @@ import {
 import {
   activateWithoutPointer,
   attachHoldLifecycle,
+  canTapMove,
   heldButtonMotor,
   holdTargetForEntity,
   pairedPeerStopEntityIds,
@@ -138,6 +139,8 @@ export class AdjustableBedCard extends LitElement {
   @state() private _estimateDialog?: EstimateDialog;
   // Saved-positions section (by its device) currently in edit mode.
   @state() private _savedEditFor?: string;
+  // Bumped when a tap move starts or ends, so its render is never coalesced away.
+  @state() private _tapRevision = 0;
 
   private _watched: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
@@ -157,6 +160,7 @@ export class AdjustableBedCard extends LitElement {
     stopBed: (stopEntityId) => {
       if (stopEntityId) this._stopCompactTarget(stopEntityId);
     },
+    changed: () => { this._tapRevision++; },
   });
   private _focusLossCleanup: (() => void) | null = null;
   private _removeHoldLifecycle?: () => void;
@@ -257,7 +261,8 @@ export class AdjustableBedCard extends LitElement {
       changed.has("_synchronizingTo") ||
       changed.has("_synchronizationFailed") ||
       changed.has("_estimateDialog") ||
-      changed.has("_savedEditFor")
+      changed.has("_savedEditFor") ||
+      changed.has("_tapRevision")
     )
       return true;
     if (!changed.has("hass") || !this.hass) return true;
@@ -694,6 +699,8 @@ export class AdjustableBedCard extends LitElement {
 
   private _selectPairedPane(key: string): void {
     if (this._activePairedPane === key) return;
+    // A tap move must stay in view, where a tap can stop it.
+    this._hold.endTap();
     this._activePairedPane = key;
     // Save mode is intentionally local to the visible side. Leaving a side
     // cancels it so returning later can never expose a stale destructive mode.
@@ -1132,7 +1139,7 @@ export class AdjustableBedCard extends LitElement {
         bed.stop
           ? html`<button class="stop-all" @click=${() => stopCardMotorHold(
               this._hold, bed.stop, routedStopScope, undefined, this.hass,
-            )}>
+            )} ?data-armed=${this._hold.tapMoving}>
               <ha-icon icon="mdi:stop"></ha-icon>
               <span>${localize(this.hass, "action.stop_all")}</span>
             </button>`
@@ -1161,11 +1168,14 @@ export class AdjustableBedCard extends LitElement {
     stopScope?: string[],
     remainingStopIds?: string[],
   ): TemplateResult {
-    const readout = this._readout(m);
+    const tapping = this._hold.tapDirection(m);
+    const readout = tapping ? localize(this.hass, `tap.moving_${tapping}`) : this._readout(m);
     const canStop = !!m.cover || !!stopId;
     const label = html`
       <span>${this._motorName(m)}</span>
-      ${readout && !compact ? html`<span class="readout">${readout}</span>` : nothing}
+      ${readout && !compact
+        ? html`<span class="readout ${tapping ? "moving" : ""}">${readout}</span>`
+        : nothing}
     `;
     return html`
       <div class="row">
@@ -1202,6 +1212,24 @@ export class AdjustableBedCard extends LitElement {
   ): TemplateResult {
     const entityId = m.cover ?? m[direction];
     const canStop = !!m.cover || !!stopId;
+    const disabled = !entityId ||
+      (this._config?.layout === "compact" && (!canStop || !this._available(entityId)));
+    if (this._config?.tap_to_move === true && canTapMove(m, direction)) {
+      // A click, not pointerdown, so a scroll that starts on the arrow never
+      // starts the bed. Keyboard and assistive activation click too.
+      const moving = this._hold.tapDirection(m) === direction;
+      return html`
+        <button class="cg-btn tap ${moving ? "moving" : ""}"
+          aria-label=${localize(this.hass, `action.${direction}`)}
+          aria-pressed=${moving ? "true" : "false"}
+          @keydown=${(e: KeyboardEvent) => {
+            // A held Enter repeats native clicks; one keypress is one tap.
+            if (e.repeat && (e.key === "Enter" || e.key === " ")) e.preventDefault();
+          }}
+          @click=${() => this._tapMove(m, direction, stopId, stopScope, remainingStopIds)}
+          ?disabled=${disabled && !moving}
+        ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
+    }
     return html`
       <button class="cg-btn"
         aria-label=${localize(this.hass, `action.${direction}`)}
@@ -1216,7 +1244,7 @@ export class AdjustableBedCard extends LitElement {
         @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m, stopId)}
         @blur=${() => this._hold.endKeyboard(m, stopId)}
         @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, direction, stopId, stopScope)}
-        ?disabled=${!entityId || (this._config?.layout === "compact" && (!canStop || !this._available(entityId)))}
+        ?disabled=${disabled}
       ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
   }
 
@@ -2070,11 +2098,12 @@ export class AdjustableBedCard extends LitElement {
       e.preventDefault();
       ownerPointerId = e.pointerId;
     }
-    if (this._config?.layout === "compact") {
-      if (stopId) this._compactStopTargets.set(stopId, Symbol());
-      else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
-      this.requestUpdate();
+    // Tap to move: any movement control stops a running tap move (#609).
+    if (this._hold.tapMoving) {
+      this._hold.endTap();
+      return;
     }
+    this._markCompactTarget(m, stopId);
     this._hold.start(
       m,
       dir,
@@ -2100,18 +2129,48 @@ export class AdjustableBedCard extends LitElement {
     stopId?: string,
     stopScope?: string[],
   ): void {
-    if (e.detail !== 0 || this._hold.heldKey !== null) return;
-    if (this._config?.layout === "compact") {
-      if (stopId) this._compactStopTargets.set(stopId, Symbol());
-      else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
-      this.requestUpdate();
+    if (e.detail !== 0) return;
+    // Like a press, assistive activation stops a running tap move (#609).
+    if (this._hold.tapMoving) {
+      this._hold.endTap();
+      return;
     }
+    if (this._hold.heldKey !== null) return;
+    this._markCompactTarget(m, stopId);
     this._hold.claimStopScope([
       ...(stopScope ?? []),
       ...(stopId ? [stopId] : []),
       ...(m.cover ? [m.cover] : []),
     ], holdTargetForEntity(this.hass, stopId ?? m.holdEntityId ?? m.cover ?? m[dir]));
     activateWithoutPointer(this.hass, m, dir);
+  }
+
+  // Tap to move (#609): a tap starts the motor, and the next tap on any
+  // movement control stops it. MotorHold owns when it ends.
+  private _tapMove(
+    m: MotorEntity,
+    dir: "up" | "down",
+    stopId?: string,
+    stopScope?: string[],
+    remainingStopIds?: string[],
+  ): void {
+    if (!this._hold.tapMoving) this._markCompactTarget(m, stopId);
+    this._hold.tap(
+      m,
+      dir,
+      stopId,
+      stopScope ?? (stopId ? [stopId] : []),
+      remainingStopIds,
+      holdTargetForEntity(this.hass, stopId ?? m.holdEntityId ?? m.cover ?? m[dir]),
+    );
+  }
+
+  // The compact Stop must reach movement this card started.
+  private _markCompactTarget(m: MotorEntity, stopId?: string): void {
+    if (this._config?.layout !== "compact") return;
+    if (stopId) this._compactStopTargets.set(stopId, Symbol());
+    else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
+    this.requestUpdate();
   }
 
   private _endPointerHold(e: PointerEvent, m: MotorEntity, stopId?: string): void {
@@ -2141,6 +2200,9 @@ export class AdjustableBedCard extends LitElement {
     stopId?: string,
     stopScope?: string[],
   ): void {
+    // Any Stop ends a tap move (#609). This row's own Stop already reaches
+    // its motor below; another row's Stop may be scoped to its own motor.
+    if (this._hold.tapMoving && this._hold.tapDirection(m) === undefined) this._hold.endTap();
     if (m.cover) {
       if (stopScope?.length) {
         stopCardMotorHold(this._hold, m.cover, [
@@ -2192,6 +2254,8 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _press(entityId: string): void {
+    // A preset or other command replaces a tap move; a STOP could cancel it.
+    this._hold.retireTap();
     this._call("button", "press", entityId);
   }
 
@@ -2952,6 +3016,20 @@ export class AdjustableBedCard extends LitElement {
       color: var(--disabled-text-color);
       cursor: default;
     }
+    /* A tap move starts on click, so a drag that begins on the arrow may
+       scroll the page instead. */
+    .cg-btn.tap {
+      touch-action: manipulation;
+    }
+    .cg-btn.moving,
+    .cg-btn.moving:hover {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: var(--text-primary-color, #fff);
+    }
+    .row-label .readout.moving {
+      color: var(--primary-color);
+    }
     .stop-all {
       display: flex;
       align-items: center;
@@ -2973,8 +3051,13 @@ export class AdjustableBedCard extends LitElement {
     .stop-all:hover {
       background: var(--secondary-background-color);
     }
-    .stop-all:active {
+    .stop-all:active,
+    .stop-all[data-armed] {
       border-color: var(--error-color);
+    }
+    /* A tap move is running and waits for a tap to stop it. */
+    .stop-all[data-armed] {
+      background: color-mix(in srgb, var(--error-color) 12%, var(--ab-control-surface));
     }
     .tiles {
       display: grid;
