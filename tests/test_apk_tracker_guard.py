@@ -156,6 +156,27 @@ def test_queue_view_mirrors_436_and_keeps_members() -> None:
     assert "Run journal" not in page and "stale" not in page
 
 
+def test_queue_view_regenerates_from_its_own_output() -> None:
+    first = view.render(clean_body(436), OLD_VIEW)
+    assert MEMBERS in view.render(clean_body(436), first)
+
+
+def test_status_page_bakes_active_and_held_units_and_keeps_its_run_note() -> None:
+    body = clean_body(436).replace(
+        QUEUE_ROW,
+        QUEUE_ROW + "\n| 061 | BLOCKED | `com.richmat.tx` | Standalone FULL | NOT STARTED · held |"
+        "\n| 113 | IN PROGRESS | `com.HHC.MotoMotion` | Standalone FULL | NOT STARTED · under audit |",
+    )
+    old = '<h2>Run</h2>\n<div class="panel"><p>Run window note.</p></div>'
+    page = view.render_status(body, old)
+    assert '<section id="run" class="panel"><p>Run window note.</p></section>' in page
+    active = page.split('id="active">')[1].split("</tbody>")[0]
+    held = page.split('id="held">')[1].split("</tbody>")[0]
+    assert "com.HHC.MotoMotion" in active and "cluster-018" not in active
+    assert "com.richmat.tx" in held and "com.HHC.MotoMotion" not in held
+    assert "Run window note." in view.render_status(body, page)
+
+
 def test_queue_view_refuses_units_it_cannot_expand() -> None:
     with pytest.raises(SystemExit, match="066"):
         view.render(clean_body(436), "<html></html>")

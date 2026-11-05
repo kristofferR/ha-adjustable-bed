@@ -21,7 +21,7 @@ task:
 2. Put the same PR link in the unit's evidence row, in the Implementation column
    of #443 (scheduled rows) or #447 (early and post-cutoff work).
 3. Regenerate and publish the [queue view](https://plans.kristofferr.com/d/ch8geif5zzyg)
-   from #436, then update the [live status page](https://plans.kristofferr.com/d/1aydd9y2s65x).
+   and the [live status page](https://plans.kristofferr.com/d/1aydd9y2s65x) from #436.
 
 A unit is not finished, and its task is not complete, until #436, its evidence
 row and the queue view all show the PR link. The guard rejects a `MERGED` or
@@ -29,14 +29,20 @@ row and the queue view all show the PR link. The guard rejects a `MERGED` or
 
 ```sh
 gh issue view 436 --json body --jq .body > 436.md
-curl -s https://plans.kristofferr.com/d/ch8geif5zzyg/raw > current-view.html
-python3 .github/scripts/apk_queue_view.py 436.md current-view.html > queue.html
-# then publish queue.html with the html-communication skill's scripts/publish.sh
+curl -s https://plans.kristofferr.com/d/ch8geif5zzyg/raw > queue-current.html
+curl -s https://plans.kristofferr.com/d/1aydd9y2s65x/raw > status-current.html
+python3 .github/scripts/apk_queue_view.py queue 436.md queue-current.html > queue.html
+python3 .github/scripts/apk_queue_view.py status 436.md status-current.html > status.html
+# then publish both with the html-communication skill's scripts/publish.sh
 ```
 
-The view keeps each unit's APK member list from the current page. When a single
-member changes status, edit that member's `member-status` span in
-`current-view.html` before regenerating.
+Both pages read #436 live in the browser, and the status page also reads the
+GitHub pull request list, so a #436 edit shows on the next page load. Publishing
+refreshes the snapshot that `/raw` readers see. The queue view keeps each unit's
+APK member list from the current page: when one member changes status, edit its
+`member-status` span in `queue-current.html` before regenerating. The status
+page keeps its run note, the `<section id="run">` paragraph, which is the only
+part edited by hand.
 
 ## Where run status goes
 
@@ -49,6 +55,9 @@ They never go in a tracker body or a tracker comment.
 
 Change only what moved, in place:
 
+- Work on a unit starts, resumes or stops: set its Analysis to `IN PROGRESS`, or
+  back to `QUEUED` or `BLOCKED` with the reason, as soon as it happens. The live
+  pages read #436, so this edit is what keeps them current.
 - A unit changes stage: edit its queue row in #436, and the counts in #436's
   Status table if they changed.
 - A report or cluster is accepted: add one row to the matching evidence table
