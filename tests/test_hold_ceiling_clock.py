@@ -143,6 +143,8 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
         "keeson:simon_li",
         # Good Vibe Sleep's sustained press counts 100 ms ticks (#860).
         "goodvibe:selector-0004",
+        # The classic Richmat apps' keep buttons count worker ticks (row066).
+        "richmat_classic_apps",
     ],
     indirect=True,
 )

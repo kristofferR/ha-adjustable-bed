@@ -106,7 +106,7 @@ def test_every_member_alias_preserves_name_manual_and_scan_boundaries():
 
 
 def test_options_validate_member_specific_layout_before_mutation():
-    exclusive = next(iter(set(MODEL_CHOICES['fortywinks']) - set(MODEL_CHOICES['milemont'])))
+    exclusive = min(set(_layouts('fortywinks')) - set(_layouts('milemont')) - {"ZRS6:CORN", "ZRS6:CPRN"})
     assert exclusive in _layouts('fortywinks') and exclusive not in _layouts('milemont')
     with pytest.raises(ValueError):
         _setup({'protocol_variant': 'milemont', 'product_type': exclusive})
@@ -205,10 +205,9 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     )
     assert result["step_id"] == "profile_questions"
     assert result["description_placeholders"] == {"profile": "Forty Winks"}
-    milemont_only = next(iter(set(MODEL_CHOICES["milemont"]) - set(MODEL_CHOICES["fortywinks"])), None)
-    if milemont_only is not None:
-        invalid = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: milemont_only})
-        assert invalid["errors"] == {CONF_PRODUCT_TYPE: "cluster018_layout"}
+    # Forty Winks ships every other app's layouts, so a diagnostic one is the refusal.
+    invalid = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "TEST"})
+    assert invalid["errors"] == {CONF_PRODUCT_TYPE: "cluster018_layout"}
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "ZRS6:CORN"})
     assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -255,7 +254,7 @@ async def test_configure_rejects_another_apps_layout_and_saves_the_fallback(hass
     shown = {str(key) for key in form["data_schema"].schema}
     assert {CONF_PRODUCT_TYPE, CONF_CLUSTER018_THIRD_SERVICE} <= shown
     assert not {CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING} & shown
-    exclusive = next(iter(set(MODEL_CHOICES["fortywinks"]) - set(MODEL_CHOICES["milemont"])))
+    exclusive = min(set(_layouts("fortywinks")) - set(_layouts("milemont")) - {"ZRS6:CORN", "ZRS6:CPRN"})
     result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "milemont", CONF_PRODUCT_TYPE: exclusive})
     assert result["errors"]
     result = await flow.async_step_settings(
