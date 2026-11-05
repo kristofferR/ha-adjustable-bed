@@ -5116,9 +5116,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             route = None
         default = picker.shown(route) if isinstance(picker, _SearchableSelect) else route
         if detection.confidence < 0.7 and detection.ambiguous_types:
-            detection_note = await self._get_config_translation(
+            # A paragraph of its own; translations carry no surrounding space.
+            detection_note = "\n\n" + await self._get_config_translation(
                 "step.bluetooth_confirm.data.uncertain",
-                "\n\nDetection is not certain, so check that the app below is yours.",
+                "Detection is not certain, so check that the app below is yours.",
             )
         else:
             detection_note = ""

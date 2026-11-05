@@ -78,3 +78,19 @@ def test_no_flow_aborts_with_a_standard_reason_under_its_own_domain():
         and reason.value in HOMEASSISTANT_REASONS
     ]
     assert not own
+
+
+def test_no_string_has_leading_or_trailing_space():
+    """Hassfest refuses a string with surrounding whitespace, newlines included."""
+
+    def strings(node, path=""):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                yield from strings(value, f"{path}.{key}" if path else key)
+        elif isinstance(node, str):
+            yield path, node
+
+    for name in ("strings.json", "translations/en.json"):
+        data = json.loads((PACKAGE / name).read_text())
+        padded = [path for path, text in strings(data) if text != text.strip()]
+        assert not padded, (name, padded)

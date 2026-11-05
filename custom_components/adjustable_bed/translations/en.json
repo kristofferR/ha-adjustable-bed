@@ -26,7 +26,7 @@
         "data": {
           "bed_type": "App or remote",
           "another": "Another app or remote: search every app",
-          "uncertain": "\n\nDetection is not certain, so check that the app below is yours."
+          "uncertain": "Detection is not certain, so check that the app below is yours."
         },
         "data_description": {
           "bed_type": "Your choice sets the bed's controls. You can change it later in Reconfigure."
