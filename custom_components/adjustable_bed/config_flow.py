@@ -2972,14 +2972,28 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         from .profile_review import route_label
 
         data = self._manual_data
+
+        async def text(key: str, default: str) -> str:
+            return await _async_translation(
+                self.hass, "config", f"step.keep_detected.data_description.{key}", default
+            )
+
         pairing = ""
         if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
-            pairing = " " + await _async_translation(
-                self.hass,
-                "config",
-                "step.keep_detected.data_description.pairing",
-                "It requires Bluetooth pairing.",
+            pairing = " " + await text("pairing", "It requires Bluetooth pairing.")
+        # Only a route with a guided change can choose its app in Reconfigure.
+        later = (
+            await text(
+                "later_reconfigure",
+                "To choose your app later, open **Reconfigure** from this entry's "
+                "three-dot menu. **Configure › Change app or layout** points there too.",
             )
+            if reconfigure_family(data) is not None
+            else await text(
+                "later_configure",
+                "To choose your app later, change **Bed type** in **Configure › Change settings**.",
+            )
+        )
         return self.async_show_menu(
             step_id="keep_detected",
             menu_options=["keep_back", "keep_continue"],
@@ -2987,6 +3001,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "name": data.get(CONF_NAME) or data[CONF_ADDRESS],
                 "route": route_label(data),
                 "pairing": pairing,
+                "later": later,
             },
         )
 

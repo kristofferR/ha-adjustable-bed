@@ -680,16 +680,20 @@
       },
       "keep_detected": {
         "title": "Keep the detected controls?",
-        "description": "**{name}** will use the detected **{route}** controls.{pairing} They are generic and may not match your app's layout.\n\nTo choose your app later, open **Reconfigure** from this entry's three-dot menu. **Configure › Change app or layout** points there too.",
+        "description": "**{name}** will use the detected **{route}** controls.{pairing} They are generic and may not match your app's layout.\n\n{later}",
         "menu_options": {
           "keep_back": "Back",
           "keep_continue": "Continue"
         },
         "data": {
-          "pairing": "Pairing"
+          "pairing": "Pairing",
+          "later_reconfigure": "Later, with Reconfigure",
+          "later_configure": "Later, with Configure"
         },
         "data_description": {
-          "pairing": "It requires Bluetooth pairing."
+          "pairing": "It requires Bluetooth pairing.",
+          "later_reconfigure": "To choose your app later, open **Reconfigure** from this entry's three-dot menu. **Configure › Change app or layout** points there too.",
+          "later_configure": "To choose your app later, change **Bed type** in **Configure › Change settings**."
         }
       },
       "migration_split": {
