@@ -249,6 +249,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "sensor":
+        if (key.startsWith("motomotion_")) { (bed.utilityStates ??= []).push(id); break; }
         if (key === "eshine_okin_massage") { (bed.massage.states ??= []).push(id); break; }
         if (key === "eshine_okin_alarm") { bed.utilityStates?.push(id); break; }
         if (key.startsWith("goodvibe_")) { bed.utilityStates?.push(id); break; }
@@ -307,6 +308,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "number":
+        if (key.startsWith("motomotion_")) { (bed.utilityNumbers ??= []).push(id); break; }
         if (key.startsWith("goodvibe_")) { (bed.utilityNumbers ??= []).push(id); break; }
         if (key.startsWith("adjustamattress_")) {
           (bed.utilityNumbers ??= []).push(id);
@@ -356,6 +358,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "button":
+        if (key === "motomotion_action" || key === "motomotion_release") { bed.utility.push(id); break; }
         if (key === "doublesleep_massage_action") { bed.massage.buttons.push(id); break; }
         if (key === "doublesleep_light_action") { (bed.lights.buttons ??= []).push(id); break; }
         if (key === "doublesleep_action") { bed.utility.push(id); break; }
@@ -569,6 +572,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
+        if (key.startsWith("motomotion_")) { (bed.utilitySelects ??= []).push(id); break; }
         if (key === "doublesleep_child_lock") { (bed.utilitySelects ??= []).push(id); break; }
         if (/^adjustamattress_(head|foot|wave)_selector$/.test(key)) {
           (bed.massage.selects ??= []).push(id);

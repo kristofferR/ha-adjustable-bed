@@ -66,6 +66,7 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -705,6 +706,11 @@ async def create_controller(
         await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
         return Cluster018Controller(coordinator, device_name=device_name)
 
+
+    if bed_type == BED_TYPE_MOTOMOTION:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.motomotion", __package__)
+        from .beds.motomotion import MotoMotionController
+        return MotoMotionController(coordinator, device_name=device_name if client is not None else None, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_HJBED:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)

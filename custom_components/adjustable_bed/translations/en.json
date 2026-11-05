@@ -757,6 +757,13 @@
           "product_type": "Layout code",
           "cluster018_third_service": "Allow the app’s third-service fallback"
         }
+      },
+      "motomotion": {
+        "title": "MotoMotion",
+        "description": "Enter the exact Bluetooth local name shown in MotoMotion. It selects the panel and independent feature flags. Hardware support needs testing.",
+        "data": {
+          "ble_device_name": "Bluetooth local name"
+        }
       }
     },
     "progress": {
@@ -857,7 +864,8 @@
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
-      "cluster018_layout": "Choose a layout shipped in the selected app."
+      "cluster018_layout": "Choose a layout shipped in the selected app.",
+      "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name."
     }
   },
   "options": {
@@ -3114,6 +3122,12 @@
       },
       "cluster018_release": {
         "name": "Release held action"
+      },
+      "motomotion_action": {
+        "name": "{action}"
+      },
+      "motomotion_release": {
+        "name": "Release"
       }
     },
     "cover": {
@@ -4894,6 +4908,21 @@
       },
       "cluster018_status": {
         "name": "App connection and state"
+      },
+      "motomotion_status": {
+        "name": "MotoMotion status"
+      },
+      "motomotion_heat_left": {
+        "name": "Left heat level"
+      },
+      "motomotion_massage_left": {
+        "name": "Left massage level"
+      },
+      "motomotion_heat_right": {
+        "name": "Right heat level"
+      },
+      "motomotion_massage_right": {
+        "name": "Right massage level"
       }
     },
     "light": {
@@ -5490,6 +5519,45 @@
       },
       "goodvibe_snore_time": {
         "name": "Snore intervention time"
+      },
+      "motomotion_volume": {
+        "name": "Volume"
+      },
+      "motomotion_treble": {
+        "name": "Treble"
+      },
+      "motomotion_bass": {
+        "name": "Bass"
+      },
+      "motomotion_vibration": {
+        "name": "Vibration"
+      },
+      "motomotion_red": {
+        "name": "Red"
+      },
+      "motomotion_green": {
+        "name": "Green"
+      },
+      "motomotion_blue": {
+        "name": "Blue"
+      },
+      "motomotion_timer": {
+        "name": "Light timer (seconds)"
+      },
+      "motomotion_target_head": {
+        "name": "Target head (Hall units)"
+      },
+      "motomotion_target_base": {
+        "name": "Target base (Hall units)"
+      },
+      "motomotion_target_back": {
+        "name": "Target back (Hall units)"
+      },
+      "motomotion_target_lumbar": {
+        "name": "Target lumbar (Hall units)"
+      },
+      "motomotion_target_tilt": {
+        "name": "Target tilt (Hall units)"
       }
     },
     "select": {
@@ -6046,6 +6114,31 @@
         "state": {
           "head": "Head",
           "foot": "Foot"
+        }
+      },
+      "motomotion_side": {
+        "name": "Side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
+      },
+      "motomotion_music_mode": {
+        "name": "Music mode",
+        "state": {
+          "custom": "Custom",
+          "wide": "Wide",
+          "electric": "Electric",
+          "live": "Live"
+        }
+      },
+      "motomotion_posture": {
+        "name": "Posture",
+        "state": {
+          "upright": "Upright",
+          "recline": "Recline",
+          "tv": "Tv",
+          "lay": "Lay"
         }
       }
     },
@@ -8123,6 +8216,40 @@
         "duration_ms": {
           "name": "Desk button duration",
           "description": "Bounded duration in milliseconds."
+        }
+      }
+    },
+    "motomotion": {
+      "name": "MotoMotion posture and users",
+      "description": "Manage local measurements and custom Hall targets for a MotoMotion name with the users tab. Dimensions are height, buttocks height and knee height in centimetres. This does not report measured motor positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "MotoMotion devices with the users tab."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Save, select or delete a user, or recall, save, reset or fine tune a posture."
+        },
+        "user": {
+          "name": "User",
+          "description": "Name of the local user to save or select."
+        },
+        "dimensions": {
+          "name": "Body measurements",
+          "description": "Three finite numbers in order: height, buttocks height and knee height, in centimetres."
+        },
+        "posture": {
+          "name": "Posture",
+          "description": "Upright, recline, TV or lay posture."
+        },
+        "targets": {
+          "name": "Raw Hall targets",
+          "description": "All five keys: head, base, back, lumbar and tilt. Each value must fit its app slider bounds."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side, when supported by this device."
         }
       }
     }

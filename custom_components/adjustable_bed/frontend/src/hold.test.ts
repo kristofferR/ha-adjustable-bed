@@ -23,6 +23,7 @@ import {
 } from "./hold";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant, MotorEntity } from "./types";
+import { pointerTrace } from "./fixtures/motomotion-hold-driver";
 
 interface Recorder {
   actions: HoldActions;
@@ -168,6 +169,20 @@ function heldActions(events: string[]): HoldActions {
 }
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+for (const releaseAt of [50, 99, 150, 250]) {
+  test(`MotoMotion admits once and releases immediately at ${releaseAt}ms`, () => {
+    const trace = pointerTrace({
+      held_control: "motomotion_home", hold_start_delay_ms: 0,
+      hold_release_delay_ms: 0, hold_release_button_key: "motomotion_release",
+    }, releaseAt);
+    expect(trace).toEqual([
+      { at: 0, domain: "adjustable_bed", service: "hold_control",
+        data: { device_id: ["chair"], control: "motomotion_home", duration: 60 } },
+      { at: releaseAt, domain: "button", service: "press", data: { entity_id: "button.release" } },
+    ]);
+  });
+}
 
 test("button hold metadata uses the bounded side-scoped service", async () => {
   const calls: unknown[] = [];

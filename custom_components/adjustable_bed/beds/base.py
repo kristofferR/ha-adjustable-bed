@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from ..goodvibe_services import Request as GoodVibeRequest
     from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
+    from ..motomotion_requests import Request as MotoMotionRequest
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
 from ..alarm_table import (
@@ -1563,6 +1564,25 @@ class BedController(ABC):
 
     def on_gesture_release(self) -> None:  # noqa: B027
         """Mark the current admitted gesture as released before STOP invalidates it."""
+
+    async def async_execute_motomotion_action(self, key: str) -> None:
+        raise NotImplementedError("MotoMotion actions are unavailable")
+
+    async def async_set_motomotion_number(self, key: str, value: float) -> None:
+        raise NotImplementedError("MotoMotion settings are unavailable")
+
+    async def async_select_motomotion(self, key: str, value: str) -> None:
+        raise NotImplementedError("MotoMotion selections are unavailable")
+
+    @property
+    def supports_motomotion_users(self) -> bool:
+        return False
+
+    def validate_motomotion_request(self, request: MotoMotionRequest) -> None:
+        raise NotImplementedError("MotoMotion users are unavailable")
+
+    async def async_execute_motomotion_request(self, request: MotoMotionRequest) -> None:
+        raise NotImplementedError("MotoMotion users are unavailable")
 
     @property
     def supports_hjbed(self) -> bool:

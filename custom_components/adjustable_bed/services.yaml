@@ -2934,3 +2934,35 @@ richmat_classic:
           min: 1
           max: 60000
           mode: box
+
+motomotion:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [save_user, select_user, delete_user, recall, save_posture, reset_posture, fine_tune]
+    user:
+      selector:
+        text:
+    dimensions:
+      selector:
+        object:
+    posture:
+      default: upright
+      selector:
+        select:
+          options: [upright, recline, tv, lay]
+    targets:
+      selector:
+        object:
+    side:
+      selector:
+        select:
+          options: [left, right]
