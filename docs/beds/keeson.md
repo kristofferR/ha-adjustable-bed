@@ -135,7 +135,8 @@ use. Shared names and Bluetooth services never decide it.
 | I don't know: keep the detected controls | | The detected or chosen route |
 
 An app row in the bed-type list answers the question itself; the one
-**Restonic BT app** row still asks the remote style.
+**Restonic BT app** row still asks the remote style. A Keeson brand list entry
+that names an app, a remote route or a Restonic remote style answers both.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).

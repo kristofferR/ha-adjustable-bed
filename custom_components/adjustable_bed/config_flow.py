@@ -2083,6 +2083,30 @@ def _show_profile_fields(
         _hide_owned_generic_fields(schema, bed_type, variant, keep)
 
 
+def _ask_angle_sensing_where_reported(
+    schema: dict[vol.Marker, Any], rows: Mapping[str, tuple[str | None, str]]
+) -> None:
+    """Show angle sensing only for the rows whose routes can report positions.
+
+    The field is drawn at reading positions, every such route's own default, so
+    turning it off is always the user's change and is kept. A route without
+    position reports saves its own default, as Configure never shows it there.
+    """
+
+    def reported(bed_type: str | None, variant: str) -> bool:
+        return any(
+            bed_type_has_position_feedback(bed_type, route)
+            for route in (variant, *_setup_routes(bed_type))
+        )
+
+    for marker in tuple(schema):
+        if marker.schema == CONF_DISABLE_ANGLE_SENSING:
+            field = {marker: schema.pop(marker)}
+            if (visible := _rows_where(rows, reported)) is not None:
+                schema.update(_shown_for(field, visible))
+            return
+
+
 # The Okin family's own routes, by the answer that selects each.
 _OKIN_ROUTES: Final[dict[str, str]] = {
     "furnimove": BED_TYPE_FURNIMOVE,
@@ -2737,7 +2761,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         selected_default = disconnect_after_command_default_enabled(bed_type, protocol_variant)
         submitted = user_input.get(CONF_DISCONNECT_AFTER_COMMAND)
         if self._disconnect_choice_confirmed:
+            self._disconnect_left = False
             return bool(submitted)
+        # A route a family question picks later takes its own default instead.
+        self._disconnect_left = submitted is None or bool(submitted) == rendered_default
         if submitted is None:
             return selected_default
         if bool(submitted) == rendered_default and selected_default != rendered_default:
@@ -3002,9 +3029,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self.async_step_profile_questions()
             if choice == "vmatbasic":
                 self._manual_data[CONF_BED_TYPE] = BED_TYPE_VMATBASIC
-                return await self.async_step_profile_questions()
-            self._manual_data[CONF_BED_TYPE] = BED_TYPE_VIBRADORM_APP
-            self._manual_data[CONF_VIBRADORM_APP_PROFILE] = choice
+            else:
+                self._manual_data[CONF_BED_TYPE] = BED_TYPE_VIBRADORM_APP
+                self._manual_data[CONF_VIBRADORM_APP_PROFILE] = choice
+            self._follow_route_disconnect_default()
             return await self.async_step_profile_questions()
         return self.async_show_form(
             step_id="vibradorm",
@@ -3358,6 +3386,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._migration_verified = False
             if choice in _JIECANG_LEGACY_ROUTES:
                 data[CONF_BED_TYPE] = _JIECANG_LEGACY_ROUTES[choice]
+                self._follow_route_disconnect_default()
                 if incoming == BED_TYPE_JIECANG_APP:
                     # The apps set the layout and cadence themselves, so the
                     # saved motor count means nothing here: ask the route's own.
@@ -3365,6 +3394,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self._async_finish_family_route()
             data[CONF_BED_TYPE] = BED_TYPE_JIECANG_APP
             data[CONF_JIECANG_APP_PROFILE] = choice
+            self._follow_route_disconnect_default()
             return await self.async_step_profile_questions()
         return self.async_show_form(
             step_id="jiecang_family",
@@ -3485,7 +3515,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if bed_type != data[CONF_BED_TYPE]:
                 for key in (*OKIN_FAMILY.route_keys, CONF_STAIRCASE_LAYOUT_CONFIRMED):
                     data.pop(key, None)
-                _apply_route_defaults(data, bed_type, variant)
+                self._select_family_route(bed_type, variant)
             if bed_type == BED_TYPE_FURNIMOVE:
                 return await self.async_step_profile_questions()
             if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
@@ -3538,8 +3568,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
             )
             incoming, variant = self._keeson_incoming
-            if self._migration is None and (incoming, variant) in APP_VARIANT_CHOICES:
-                # An app row already answered the question.
+            if self._migration is None and (
+                (incoming, variant) in APP_VARIANT_CHOICES or self._brand_named(incoming, variant)
+            ):
+                # An app row, or the exact route a brand list named, already
+                # answered the question.
                 return await self._async_continue_keeson_route()
         incoming, _variant = self._keeson_incoming
         choice = (user_input or {}).get("choice")
@@ -3593,6 +3626,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if bed_type == data[CONF_BED_TYPE] and variant in (None, data.get(CONF_PROTOCOL_VARIANT)):
             return
         _apply_route_defaults(data, bed_type, variant)
+        self._follow_route_disconnect_default()
+
+    def _follow_route_disconnect_default(self) -> None:
+        """Give a new entry the staged route's disconnect default unless the user changed it.
+
+        The setup form was drawn for the family row. Configure keeps an existing
+        entry's own value, so a guided change does too.
+        """
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._migration is None and self._disconnect_left:
+            data[CONF_DISCONNECT_AFTER_COMMAND] = disconnect_after_command_default_enabled(
+                data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)
+            )
 
     async def _async_continue_keeson_route(self) -> ConfigFlowResult:
         """Ask what the staged route still needs, then finish it."""
@@ -3603,9 +3650,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if bed_type in _APP_SETUP_STEPS and bed_type not in KEESON_FAMILY.bed_types:
             # Its own app step owns the layout.
             return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
-        if variant in _KEESON_RESTONIC:
+        if variant in _KEESON_RESTONIC and not self._brand_named(bed_type, variant):
             return await self.async_step_keeson_restonic()
         return await self._async_ask_keeson_route()
+
+    def _brand_named(self, bed_type: str, variant: str | None) -> bool:
+        """Whether a brand list named exactly this staged route, which answers its question."""
+        return self._brand_app_choice is not None and (bed_type, variant) == (
+            self._selected_bed_type,
+            self._selected_protocol_variant,
+        )
 
     async def _async_ask_keeson_route(self) -> ConfigFlowResult:
         """Ask the staged route's declared questions, such as an app screen's motor count."""
@@ -4496,6 +4550,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._pending_disconnect_resume_step: str | None = None
         self._pending_disconnect_default: bool = DEFAULT_DISCONNECT_AFTER_COMMAND
         self._disconnect_choice_confirmed: bool = False
+        # Whether the setup form's disconnect answer was left as drawn.
+        self._disconnect_left: bool = False
         # True once the verify_connection form has actually been rendered, so a
         # replayed submission from the previous form cannot be read as a
         # confirmation of a result the user never saw.
@@ -5377,12 +5433,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
-        # Default angle sensing to enabled for beds that support position feedback.
-        # The variant selector below always defaults to VARIANT_AUTO here (detection
-        # does not resolve a variant), so the Keeson/ergomotion case cannot apply yet
-        # and this matches plain BEDS_WITH_POSITION_FEEDBACK membership. Going through
-        # the shared predicate keeps this in step with the paths that do know a variant.
-        default_disable_angle = not bed_type_has_position_feedback(bed_type, VARIANT_AUTO)
         # Get bed-type-specific motor pulse defaults
         pulse_defaults = get_motor_pulse_defaults(
             bed_type,
@@ -5420,7 +5470,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             bed_type_marker: bed_type_select,
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
+            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=False): bool,
             vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
             vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(default_pulse_count)): TextSelector(
                 TextSelectorConfig()
@@ -5521,6 +5571,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
 
         _show_profile_fields(schema_dict, defaults_bed_type, form_variant, rows)
+        _ask_angle_sensing_where_reported(schema_dict, rows)
         _add_route_section(schema_dict, defaults_bed_type, form_variant, rows)
         if errors:
             # A refused route is asked again on the next submission.
@@ -6254,11 +6305,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Auto-detect default resolves to. Otherwise a one-click "accept the
         # default" would persist generic timing/angle options for a known bed.
         if defaults_bed_type:
-            # Keeson with Ergomotion variant supports position feedback
-            has_position_feedback = bed_type_has_position_feedback(
-                defaults_bed_type, preselected_protocol_variant
-            )
-            default_disable_angle = not has_position_feedback
             # Use bed-specific motor pulse defaults if available
             pulse_defaults = get_motor_pulse_defaults(
                 defaults_bed_type,
@@ -6267,7 +6313,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             default_pulse_count, default_pulse_delay = pulse_defaults
         else:
-            default_disable_angle = DEFAULT_DISABLE_ANGLE_SENSING
             default_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
             default_pulse_delay = DEFAULT_MOTOR_PULSE_DELAY_MS
 
@@ -6288,7 +6333,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     default=_default_motor_count(defaults_bed_type, device_name),
                 ): vol.All(vol.Coerce(int), vol.In([1, 2, 3, 4])),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-                vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
+                vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=False): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
                 vol.Optional(
                     CONF_MOTOR_PULSE_COUNT, default=str(default_pulse_count)
@@ -6308,6 +6353,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         rows = _row_profiles(bed_type_select, defaults_bed_type)
         schema_dict.update(_bed_specific_fields(rows))
         _show_profile_fields(schema_dict, defaults_bed_type, preselected_protocol_variant, rows)
+        _ask_angle_sensing_where_reported(schema_dict, rows)
         _add_route_section(schema_dict, defaults_bed_type, preselected_protocol_variant, rows)
         if errors:
             # A refused route is asked again on the next submission.
@@ -6515,11 +6561,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         # Determine smart defaults based on preselected bed type and variant
         if preselected_bed_type:
-            # Keeson with Ergomotion variant supports position feedback
-            has_position_feedback = bed_type_has_position_feedback(
-                preselected_bed_type, preselected_protocol_variant
-            )
-            default_disable_angle = not has_position_feedback
             # Use bed-specific motor pulse defaults if available
             pulse_defaults = get_motor_pulse_defaults(
                 preselected_bed_type,
@@ -6527,7 +6568,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             default_pulse_count, default_pulse_delay = pulse_defaults
         else:
-            default_disable_angle = DEFAULT_DISABLE_ANGLE_SENSING
             default_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
             default_pulse_delay = DEFAULT_MOTOR_PULSE_DELAY_MS
 
@@ -6539,7 +6579,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     vol.Coerce(int), vol.In([1, 2, 3, 4])
                 ),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-                vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
+                vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=False): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
                 vol.Optional(
                     CONF_MOTOR_PULSE_COUNT, default=str(default_pulse_count)
@@ -6559,6 +6599,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         rows = _row_profiles(bed_type_select, None)
         schema_dict.update(_bed_specific_fields(rows))
         _show_profile_fields(schema_dict, preselected_bed_type, preselected_protocol_variant, rows)
+        _ask_angle_sensing_where_reported(schema_dict, rows)
         _add_route_section(schema_dict, preselected_bed_type, preselected_protocol_variant, rows)
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
         if errors:
