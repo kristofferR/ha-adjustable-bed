@@ -21,18 +21,23 @@
 
 ## Features
 
-- **Native Dashboard Card** - Auto-loading Lovelace card that adapts to your bed ([details](#dashboard-card))
-- **Paired Beds** - Left, Right, and Both controls for compatible split beds, with reversible conversion of existing entries
-- **Motor Control** - Raise/lower head, back, legs, and feet
-- **Position Control** - Position sliders in degrees or percentages, according to the controller
-- **Memory Presets** - Jump to saved positions with one tap
-- **Under-bed Lights** - RGB color control on supported beds, toggle on/off on others
-- **Climate Controls** - Cooling, heating, and footwarming on supported beds
-- **Massage Control** - Adjust massage intensity and patterns
-- **Position Feedback** - See current angles on supported beds
-- **Presence Sensors** - Occupancy sensors on supported beds
-- **Firmness Controls** - Sleep Number settings on supported beds
-- **Automations** - "Flat when leaving", "TV mode at 8pm", etc.
+- **Set up by app** - Pick the app or remote you use; setup asks only the questions that app needs
+- **Native dashboard card** - Auto-loading Lovelace card that adapts to your bed ([details](docs/DASHBOARD_CARD.md))
+- **Paired beds** - Left, Right and Both controls for compatible split beds, with reversible conversion of existing entries
+- **Motor control** - Raise and lower the head, back, legs and feet
+- **Renewable holds** - On beds whose app holds a key until release, a held control keeps the motor running while you hold and stops on its own if the browser goes away ([details](docs/SERVICES.md#renewable-holds))
+- **Concurrent motors** - A standalone bed whose app moves several motors at once does so here too ([details](docs/COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors))
+- **Position control** - Position sliders in degrees or percentages, according to the controller
+- **Estimated positions** - Calibrated travel-time estimates and saved positions for beds without position feedback ([details](docs/ESTIMATED_POSITIONS.md))
+- **Memory presets** - Jump to saved positions with one tap
+- **Guided changes** - Switch an existing bed to another app or layout through **Reconfigure** ([details](docs/CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed))
+- **Under-bed lights** - RGB color control on supported beds, on and off on others
+- **Climate controls** - Cooling, heating and foot warming on supported beds
+- **Massage control** - Adjust massage intensity and patterns
+- **Position feedback** - See current angles on supported beds
+- **Presence sensors** - Occupancy sensors on supported beds
+- **Firmness controls** - Sleep Number settings on supported beds
+- **Automations** - "Flat when leaving", "TV mode at 8pm" and more
 
 ## Need Help?
 
@@ -42,6 +47,7 @@
 | **[Getting Help](docs/GETTING_HELP.md)** | Bug reports, support requests, diagnostics |
 | **[Connection Guide](docs/CONNECTION_GUIDE.md)** | ESPHome proxy setup, finding your bed's address |
 | **[Configuration](docs/CONFIGURATION.md)** | Settings, choosing your remote, combining and splitting beds |
+| **[Dashboard Card](docs/DASHBOARD_CARD.md)** | Adding the card, compact room cards, editor and YAML options |
 | **[Actions and Automations](docs/SERVICES.md)** | Movement, memory, side targeting, and bed-specific actions |
 | **[Wake-up automation](docs/WAKE_UP.md)** | Import a scheduled bed raise or memory recall with optional lighting |
 | **[Apple Home and Siri](docs/HOMEKIT.md)** | Raise, lower, and stop commands through HomeKit scenes or Siri Shortcuts |
@@ -83,98 +89,64 @@ Enjoying Adjustable Bed? Sponsoring its development is a lovely way to say thank
 
 ## Supported Beds
 
-Find your manufacturer, brand or app below. Related models and apps are grouped
-together; the linked guides explain which selection to use during setup. If you
-only know your bed's retail brand, check the [Supported Actuators guide](docs/SUPPORTED_ACTUATORS.md).
+Each row is a family, named as setup names it under **Set up by app or remote**.
+Find the app you use, the remote or receiver on your bed, or the brand on the
+base. The marks show what has been tested on real hardware:
 
-| Manufacturer or brand | Supported brands, models and apps |
-|-----------------------|----------------------------------|
-| ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
-| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive, [OKIN FFE 13/15 series](docs/beds/keeson.md#okin-ffe); [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](docs/beds/keeson.md#ore-comfort-bed-profiles), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
-| 🧪 [Casper Base app](docs/beds/casper-base.md) | PRO / MAX, conditional stored products, separate MM/SXB sensors and RCRM remote; artifact-proven, hardware unverified |
-| 🧪 [GM Control app](docs/beds/gmmotor.md) | Exact product catalogs, FWRM/WFRM desks, separate MM/SXB sleep modules; hardware unverified |
-| 🧪 [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](docs/beds/richmat.md#classic-richmat-apps) | Explicit app and four-character layout; separate package-local catalogs, direct BLE controls and settings; hardware unverified |
-| ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/richmat.md#rmcontrol), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat.md#richmat-mh-apps) |
-| ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
-| ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
-| ✅ [Solace](docs/beds/ff_frame.md#solace-name-routes) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/ff_frame.md#woosa-sleep) |
-| ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Prodigy LBR (LP Comfort Connect), Prodigy Comfort Elite / CE, [MlRM (WiLinke)](docs/beds/richmat.md#lp-mlrm); [Prodigy 2L / 2 / 4 and U / Ultra Series](docs/beds/okin-nframe.md#leggett-okin-family), [L&P Adjustable Base](docs/beds/lp-legacy.md) |
-| ✅ [Reverie](docs/beds/reverie.md) | Reverie app (Protocol 108), Reverie Nightstand app (Protocol 110), R510L / Harmoniq Upgrade (Pairlink) |
-| ✅ [Okimat/Okin](docs/beds/okin-nframe.md#okimat) | Lucid, CVB, Smartbed, RF ECO BT bed receivers; [OKIN SmartBed CB24 / Amada](docs/beds/okin-nframe.md#okin-smartbed-cb24) |
-| ✅ [Customatic](docs/beds/okin-nframe.md#customatic-family) | Clarity, Jerome's C, Remedy; [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) |
-| 🧪 [AdjustaMattress](docs/beds/keeson.md#adjustamattress) | AdjustaMattress app, four BLE models and seven product layouts (hardware unverified) |
-| 🧪 [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) | Comfort Enhancements app, explicit MC2/MC3/MC4/MC5 layouts (hardware unverified) |
-| ✅ Jordan's | [Serenity](docs/beds/okin-nframe.md#jordans-serenity), [Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) |
-| ✅ [SIMMONS](docs/beds/okin-nframe.md#simmons) | SIMMONS app, regular and inclined beds |
-| ✅ [Adjustable bed (Lumbar)](docs/beds/okin-nframe.md#adjustable-bed-lumbar) | Adjustable bed (Lumbar) app, head/foot/lumbar controls |
-| 🧪 [eShine E2000 / E3000 / E3100 / E5000](docs/beds/eshine-okin.md) | eShine app (`com.okin.eshine`), explicit products, held presets, massage/light feedback and local alarm (needs testing) |
-| 🧪 [Eshine E6000](docs/beds/eshine.md) | Eshine app, fixed four-axis controls and received-state diagnostics (hardware unverified) |
-| ✅ [FSM Relax](docs/beds/limoss.md#fsm-relax) | Chair and bed layouts, eight local memories |
-| ✅ [Okin 64-Bit](docs/beds/okin-nframe.md#okin-64-bit) | NORA_CON / NORACON Mattress Firm controllers |
-| 🧪 [Good Vibe Sleep](docs/beds/goodvibe.md) | Exact app catalog, remote aliases and independent RM-/HJ- sleep sensors; hardware unverified |
-| 🧪 [MotoMotion](docs/beds/motomotion.md) | 13 panel classes, independent name flags, local postures and ASCII/binary music; hardware unverified |
-| 🧪 [HJBed app](docs/beds/richmat.md#hjbed) | 19 current and 24 conditionally restored profiles; artifact-proven, hardware unverified |
-| 🧪 [Glideaway Motion / Montion app](docs/beds/keeson.md#glideaway-motion) | MOTION 400 / 450 / 500 / 600, artifact-proven and hardware unverified; separate from the legacy Okin ORE (A5 5A) bed type |
-| ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA; [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask), [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) and [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) apps |
-| ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, [Floyd Home](docs/beds/floyd.md); legacy ISleep entries |
-| 🧪 [ISleep](docs/beds/isleep.md) | Explicit com.kaidi_test4 1.6.3 profile, products 129–134, 142, 143 (artifact verified, hardware unverified) |
-| ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett; [Limoss Remote](docs/beds/limoss.md#limoss-remote) bed and chair layouts |
-| ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
-| ✅ [Svane](docs/beds/svane.md) | Svane Remote, JMC400, Jensen LinOn |
-| ✅ [DewertOkin](docs/beds/okin-nframe.md#dewertokin) | Many older Rize models, Simmons, Nectar, Resident, Symphony, A H Beard ([brands](docs/beds/okin-nframe.md#dewertokin-brands)) |
-| ✅ [Serta](docs/beds/keeson.md#serta) | Serta Motion Perfect |
-| ✅ [Mattress Firm 900](docs/beds/okin-5a.md#mattress-firm-900--iflex) | iFlex / older Nordic UART bases |
-| ✅ [Nectar](docs/beds/okin-5a.md#nectar) | Nectar |
-| ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf.md#malouf-base--lucid-base-family) |
-| ✅ [BedTech](docs/beds/richmat.md#bedtech) | BedTech |
-| ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
-| 🧪 [BedSense app](docs/beds/ff_frame.md#bedsense) | `com.fenmenbielei.bedsense`, nine layouts, memory, circulation, massage and light durations; artifact-proven, hardware unverified |
-| 🧪 [OKIN SleepEase](docs/beds/okin-nframe.md#okin-sleepease) | DoubleSleep / XiaoBao and sensor-only XiaoBao Only; artifact-proven, hardware unverified |
-| ⚠️ [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, partly user-confirmed on an ActiveBreeze STS-60 |
-| ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's BOX15 / BOX24 / BOX25 and the explicit Sleepy's Elite app profile |
-| ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/okin-nframe.md#adjustablem5x4); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |
-| 🧪 [Adjustable Comfort M1X12 app](docs/beds/starcode-m1x12.md) | Explicit CB25, F23 or kneading app profile, with up to two explicitly configured M1X12 ELEVATE accessories |
-| ✅ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |
-| ✅ [Vibradorm](docs/beds/vibradorm.md) | [Caresse / Werkmeister](docs/beds/vibradorm_app.md), [VMAT](docs/beds/vmat.md), [V-MAT Basic / CBI / XT-Box](docs/beds/vmatbasic.md) |
-| ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
-| ✅ [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION |
-| ✅ [Rondure](docs/beds/keeson.md#rondure) | 1500 Tilt Base |
-| ✅ [Remacro](docs/beds/remacro.md) | Slumberland, The Brick, Jerome's |
-| ✅ [Cool Base](docs/beds/keeson.md#cool-base) | Cool Base (Keeson with fan) |
-| ✅ [Scott Living](docs/beds/keeson.md#scott-living) | Scott Living |
-| ✅ [SBI/Q-Plus](docs/beds/keeson.md#sbi--q-plus-costco) | Q-Plus (Costco) |
-| 🧪 [Tempur Curve app](docs/beds/keeson.md#tempur-curve) | Explicit com.ore.tempur app profile; static artifact proven, hardware unverified |
-| 🧪 [Q-Plus Adjustable Remote app](docs/beds/keeson.md#q-plus-adjustable-remote) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
-| 🧪 [Serta MP Remote app](docs/beds/keeson.md#serta-mp-remote) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
-| 🧪 [Omazz Adjusto III app](docs/beds/keeson.md#omazz-adjusto-iii) | Reachable RemoteB controls and alarm tables; hardware unverified |
-| 🧪 [Ergomotion 4.0](docs/beds/keeson.md#ergomotion-40) | Explicit H/M1–M22/M30 layouts and 21 catalog products; P1 Left/Right/Both, RGB, massage and alarms; hardware unverified |
-| 🧪 [Ergomotion app](docs/beds/keeson.md#ergomotion-app) | Explicit B1/B2/C1/D1 app layouts; hardware unverified |
-| 🧪 [ROW Control app](docs/beds/keeson.md#row-control) | Elevate, Lifestyle, Curve, Lifestyle Plus and Zero-G Box; hardware unverified |
-| 🧪 [Ergo Slim app](docs/beds/keeson.md#ergo-slim) | Explicit A/B/C app layouts; hardware unverified |
-| 🧪 [TEMPUR AU app](docs/beds/keeson.md#tempur-au) | Explicit B1/B2/C1/D1/E1 app layouts; hardware unverified |
-| ✅ [LOGICDATA](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame; [MOTIONrelax](docs/beds/jiecang.md#motionrelax-phone-and-tablet), [Sleep Smart](docs/beds/jiecang.md#sleep-smart-air-mattress-bed) Vienna / Toronto / Middle Rail and [air mattress pump](docs/beds/logicdata-sleep-smart.md) |
-| ✅ [Okin CB35](docs/beds/okin-5a.md#sealy-posturematic-cb35) | Sealy Posturematic |
-| ✅ [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift; M1X12 app groups require its explicit M1X12 variant |
-| 🧪 [BF / Cherish](docs/beds/keeson.md#bf-and-cherish) | BF 1.2.3 and Cherish 1.0.4 apps, explicit profiles; hardware unverified |
-| ✅ [Okin CST](docs/beds/okin-nframe.md#okin-cst) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile |
-| ✅ [Motion Bed](docs/beds/ff_frame.md#motion-bed) | QMS/SealyMF and TL beds, air and thermal controls |
-| ✅ [FurniMove / OKIN Smart Remote](docs/beds/furnimove.md) | App handset layouts, including RF ECO BT adjustable-bed receivers |
-| ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-nframe.md#rf-eco-bt-stair-lift) | Elda BTH / MEGAMAT staircase actuator |
-| ✅ [Okin DOT](docs/beds/okin-nframe.md#okin-dot) | DewertOkin RF34/RF6707 handset beds (new RF1058 setups use FurniMove) |
-| ✅ [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | BedJet PowerLayer adjustable frame (not the BedJet climate unit) |
+- ✅ tested on real hardware
+- 🧪 implemented from app evidence, not yet tested on hardware
+- ⚠️ partly tested: real beds confirmed some controls or models, not all
 
-✅ means supported by the integration. 🧪 marks app behavior implemented from
-accepted artifact evidence while hardware remains unverified. ⚠️ marks partial
-testing: real beds have confirmed some controls or models, not all. Each linked
-guide's Status line records which routes and profiles are tested.
+Each linked guide has a Status line with the details.
+
+| Family | Apps, remotes and receivers | Brands sold with it |
+|--------|-----------------------------|---------------------|
+| [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) ✅ | BedJet (the frame, not the BedJet climate unit) |
+| [BedTech](docs/beds/richmat.md#bedtech) | [BedTech](docs/beds/richmat.md#bedtech) ✅ | BedTech |
+| [Casper Base](docs/beds/casper-base.md) | [Casper Base app](docs/beds/casper-base.md) 🧪, [Casper Base sleep sensor, MM or SXB](docs/beds/casper-base.md#separate-sleep-sensors-and-remote-finder) 🧪, [Casper Base remote finder (RCRM handset)](docs/beds/casper-base.md#remote-finder) 🧪 | Casper |
+| [Customatic](docs/beds/okin-nframe.md#customatic-family) | [Clarity](docs/beds/okin-nframe.md#customatic-clarity) 🧪, [Jerome's C](docs/beds/okin-nframe.md#customatic-jeromes) 🧪, [Remedy](docs/beds/okin-nframe.md#customatic-remedy) 🧪, [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) 🧪 | Customatic, Rize (Clarity, Remedy), Jerome's |
+| [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | [DewertOkin ELEVATE two-actuator lift](docs/beds/okin-5a.md#dewertokin-elevate) 🧪, [Adjustable Comfort M1X12 ELEVATE](docs/beds/starcode-m1x12.md) 🧪 | DewertOkin |
+| [eShine](docs/beds/eshine-okin.md) | [eShine app: E2000, E3000 / E3100 and E5000](docs/beds/eshine-okin.md) 🧪 | eShine |
+| [Eshine E6000](docs/beds/eshine.md) | [Eshine app: E6000](docs/beds/eshine.md) 🧪 | Eshine |
+| [GM Control](docs/beds/gmmotor.md) | [GM Control app](docs/beds/gmmotor.md) 🧪, [GM Control sleep module, MM or SXB](docs/beds/gmmotor.md#sleep-modules) 🧪 | GM Control |
+| [Good Vibe Sleep](docs/beds/goodvibe.md) | [Good Vibe Sleep app](docs/beds/goodvibe.md) 🧪, [Good Vibe Sleep sleep sensor, RM- or HJ-](docs/beds/goodvibe.md#sleep-controls-and-reports) 🧪 | Good Vibe Sleep |
+| [HJBed](docs/beds/richmat.md#hjbed) | [HJBed app](docs/beds/richmat.md#hjbed) 🧪 | HJBed |
+| [Jensen / Svane](docs/beds/jensen.md) | [Jensen Adjustable Sleep app, JMC400 bed](docs/beds/jensen.md) ⚠️, [Jensen Adjustable Sleep app, LinOn bed](docs/beds/jensen.md) 🧪, [Svane Remote app](docs/beds/svane.md) 🧪 | Jensen (JMC400, LinON Entry, LinOn), Svane |
+| [Jiecang](docs/beds/jiecang.md) | [ERGOBALANCE](docs/beds/jiecang.md#ergobalance-dreamask) 🧪, [Dream Motion](docs/beds/jiecang.md#dream-motion-dreamotion) 🧪, [Dream Motion HD](docs/beds/jiecang.md#dream-motion-hd) 🧪, [Comfort Motion](docs/beds/jiecang.md#comfort-motion-app) 🧪, [Glide and Lierda remotes (legacy Jiecang, Comfort Motion / Lierda)](docs/beds/jiecang.md#legacy-route) 🧪 | Jiecang, Glideaway, Dream Motion, LOGICDATA |
+| [Jordan's](docs/beds/okin-nframe.md#jordans-serenity) | [Jordan's Serenity](docs/beds/okin-nframe.md#jordans-serenity) 🧪, [Jordan's Tranquil](docs/beds/okin-nframe.md#jordans-tranquil) 🧪 | Jordan's |
+| [Kaidi](docs/beds/kaidi.md) | [Rize Beds app (Mouselet beds)](docs/beds/kaidi.md) 🧪, [Floyd Home app](docs/beds/floyd.md) 🧪, [ISleep app](docs/beds/isleep.md) 🧪 | Rize (Remedy III and newer Mouselet-based beds), Floyd |
+| [Keeson](docs/beds/keeson.md) | [Keeson remotes (Base)](docs/beds/keeson.md#base-basei4i5) ✅, [Member's Mark](docs/beds/keeson.md#base-basei4i5) ✅, [Purple](docs/beds/keeson.md#purple-variant) 🧪, [Sleep Harmony](docs/beds/keeson.md#sleep-harmony-variant) 🧪, [Linx / Juna Sleep](docs/beds/keeson.md#jsona00a-variant-juna-linx-ergo-health) 🧪, [KSBT remotes and Ergomotion Sync](docs/beds/keeson.md#ksbt-family) ⚠️, [Sino and BetterLiving](docs/beds/keeson.md#sino-and-betterliving) 🧪, [Ergomotion](docs/beds/keeson.md#ergomotion) ✅, [Ergomotion app](docs/beds/keeson.md#ergomotion-app) 🧪, [Ergomotion 4.0 app](docs/beds/keeson.md#ergomotion-40) 🧪, [Serta Motion Perfect](docs/beds/keeson.md#serta) 🧪, [Serta MP Remote](docs/beds/keeson.md#serta-mp-remote) 🧪, [Tempur Curve](docs/beds/keeson.md#tempur-curve) 🧪, [TEMPUR AU](docs/beds/keeson.md#tempur-au) 🧪, [ROW Control](docs/beds/keeson.md#row-control) 🧪, [Ergo Slim](docs/beds/keeson.md#ergo-slim) 🧪, [Omazz Adjusto III](docs/beds/keeson.md#omazz-adjusto-iii) 🧪, [Q-Plus Adjustable Remote](docs/beds/keeson.md#q-plus-adjustable-remote) 🧪, [SBI/Q-Plus (Costco)](docs/beds/keeson.md#sbi--q-plus-costco) 🧪, [1500 Tilt Base (Rondure)](docs/beds/keeson.md#rondure) 🧪, [Cool Base](docs/beds/keeson.md#cool-base) 🧪, [Scott Living](docs/beds/keeson.md#scott-living) 🧪, [Okin FFE (13/15 series)](docs/beds/keeson.md#okin-ffe) 🧪, [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile) 🧪, [Simon Li, Heal Every Night and OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) 🧪, [INNOVA](docs/beds/keeson.md#innova-profile) 🧪, [Restonic BT, remote A or B](docs/beds/keeson.md#restonic-bt-profiles) 🧪, [MaxCoil Una, Dynasty Bases, Bedsense Bases, Avanti Bases and AMERICANSTAR](docs/beds/keeson.md#ore-comfort-bed-profiles) 🧪, [Glideaway Motion / Montion](docs/beds/keeson.md#glideaway-motion) 🧪, [AdjustaMattress](docs/beds/keeson.md#adjustamattress) 🧪, [Comfort Enhancements](docs/beds/keeson.md#comfort-enhancements) 🧪, [BF](docs/beds/keeson.md#bf-and-cherish) 🧪, [Cherish](docs/beds/keeson.md#bf-and-cherish) 🧪 | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive, Serta, Costco, Restonic, Glideaway, OKIN FFE 13/15 series |
+| [Leggett & Platt](docs/beds/leggett-platt.md) | [LP Control and LP Comfort Connect (Leggett & Platt Gen2)](docs/beds/leggett-platt.md#gen2-variant) ⚠️, [Prodigy CE (Okin receiver)](docs/beds/okin-nframe.md#prodigy-ce-prodigy-4) ⚠️, [Prodigy 2](docs/beds/okin-nframe.md#prodigy-2) 🧪, [Prodigy 2L](docs/beds/okin-nframe.md#prodigy-2l) 🧪, [U Series](docs/beds/okin-nframe.md#u-series) 🧪, [L&P Adjustable Base](docs/beds/lp-legacy.md) 🧪, [MlRM (Leggett & Platt WiLinke)](docs/beds/richmat.md#lp-mlrm) ✅ | Leggett & Platt, Prodigy LBR, Prodigy Comfort Elite, Prodigy 4, Ultra Series |
+| [Limoss / Stawett](docs/beds/limoss.md) | [Limoss Remote](docs/beds/limoss.md#limoss-remote) 🧪, [FSM Relax](docs/beds/limoss.md#fsm-relax) 🧪, [Stawett and older Limoss controls](docs/beds/limoss.md#legacy-route) 🧪 | Limoss, Stawett |
+| [Linak](docs/beds/linak.md) | [Bed Control, Bed Connect and Performance Series apps](docs/beds/linak.md) ✅ | Tempur-Pedic, Bedre Nætter, Jensen |
+| [LOGICDATA](docs/beds/logicdata.md) | [SILVERmotion (Logicdata SimplicityFrame)](docs/beds/logicdata.md) 🧪, [MOTIONrelax phone and tablet](docs/beds/jiecang.md#motionrelax-phone-and-tablet) 🧪, [Sleep Smart Air Mattress](docs/beds/jiecang.md#sleep-smart-air-mattress-bed) 🧪, [Sleep Smart air mattress pump](docs/beds/logicdata-sleep-smart.md) 🧪 | LOGICDATA, SILVERmotion, SimplicityFrame, Sleep Smart Vienna / Toronto / Middle Rail |
+| [Malouf / Lucid](docs/beds/malouf.md) | [Malouf Base](docs/beds/malouf.md#malouf-base) 🧪, [Lucid Base](docs/beds/malouf.md#lucid-base) 🧪, [Nordic UART receiver](docs/beds/malouf.md#new_okin) ✅, [FFE5 receiver](docs/beds/malouf.md#legacy-ffe5-route) ✅ | Malouf, Lucid, Structures |
+| [MotoMotion](docs/beds/motomotion.md) | [MotoMotion app](docs/beds/motomotion.md) 🧪 | MotoMotion |
+| [MotoSleep / Power Bob](docs/beds/motosleep.md) | [MotoSleep / Power Bob app, HHC and binary MOTO models](docs/beds/motosleep.md) ⚠️ | HHC, Power Bob |
+| [OCTO Smart Control](docs/beds/octo.md) | [OCTO Smart Control](docs/beds/octo.md) ⚠️, [Octo Remote Star2](docs/beds/octo.md#star2-variant-octo-remote-star2) ⚠️ | OCTO |
+| [Okin](docs/beds/okin-nframe.md) | [FurniMove / OKIN Smart Remote app](docs/beds/furnimove.md) 🧪, [Okimat and Lucid remotes (Okin UUID)](docs/beds/okin-nframe.md#okimat) ✅, [DOT remotes (Okin DOT)](docs/beds/okin-nframe.md#okin-dot) 🧪, [RF ECO BT stair lift (OKIN Smart Remote / RF ECO BT single actuator)](docs/beds/okin-nframe.md#rf-eco-bt-stair-lift) ✅, [Okin Handle (DewertOkin)](docs/beds/okin-nframe.md#dewertokin) 🧪, [Okin CB24 (OKIN SmartBed, Amada)](docs/beds/okin-nframe.md#okin-smartbed-cb24) 🧪, [Okin 64-Bit](docs/beds/okin-nframe.md#okin-64-bit) 🧪, [Okin 7-Byte (Nectar)](docs/beds/okin-5a.md#nectar) 🧪, [Okin Nordic (Mattress Firm 900, iFlex)](docs/beds/okin-5a.md#mattress-firm-900--iflex) 🧪, [Okin CB35 (Sealy Posturematic)](docs/beds/okin-5a.md#sealy-posturematic-cb35) ✅, [Okin ORE (legacy A5 5A)](docs/CONFIGURATION.md#initial-setup) 🧪, [SIMMONS app](docs/beds/okin-nframe.md#simmons) 🧪, [OKIN SleepEase (DoubleSleep / XiaoBao)](docs/beds/okin-nframe.md#okin-sleepease) 🧪, [Adjustable bed (Lumbar) app](docs/beds/okin-nframe.md#adjustable-bed-lumbar) 🧪 | Okimat, Lucid, CVB, Smartbed, Amada, DewertOkin, A H Beard, Hankook Gallery, Rize, Simmons, Nectar, Resident, Symphony, Mattress Firm 900, iFlex, NORA_CON / NORACON, Sealy Posturematic, Elda BTH / MEGAMAT ([all DewertOkin brands](docs/beds/okin-nframe.md#dewertokin-brands)) |
+| [Okin CST](docs/beds/okin-nframe.md#okin-cst) | [MFirm 900 - O, Jordan's Sanctuary - O, Resident Adjustable Bed, Rize Aviada - O, POWER BOB ULTRA-O, Rize Contemporary III - O, Carefree, Rize Clarity II - O and Support 挺你 科技調整床 apps](docs/beds/okin-nframe.md#okin-cst) 🧪, [Nectar Move](docs/beds/okin-nframe.md#okin-cst) 🧪 | Rize (Sanctuary, Aviada, Bob, Contempo, II Carefree, II Clarity), Resident, Mattress Firm 900-O, Power Bob, Nectar |
+| [Remacro](docs/beds/remacro.md) | [Slumberland, The Brick and Jerome's apps](docs/beds/remacro.md) 🧪 | Slumberland, The Brick, Jerome's |
+| [Reverie](docs/beds/reverie.md) | [Reverie Nightstand app (Protocol 110)](docs/beds/reverie.md#protocol-110-and-stk) 🧪, [Reverie app (Protocol 108)](docs/beds/reverie.md#protocol-108) 🧪, [Reverie Pairlink (R510L / Harmoniq)](docs/beds/reverie-pairlink-sdk.md) 🧪 | Reverie, Harmoniq |
+| [Richmat](docs/beds/richmat.md) | [Richmat remotes, SleepFunction and SVEN & SON apps](docs/beds/richmat.md#richmat-remotes) ✅, [Richmat / RMControl app](docs/beds/richmat.md#rmcontrol) 🧪, [Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed](docs/beds/richmat.md#richmat-mh-apps) 🧪, [Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior](docs/beds/richmat.md#classic-richmat-apps) 🧪 | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
+| [Sleep Number](docs/beds/sleep_number.md) | [SleepIQ app, Sleep Number Fuzion (Climate 360, FlexFit, FlexFit Smart)](docs/beds/sleep_number.md#fuzion--climate-360--flexfit) ⚠️, [Sleep Number BAM/MCR (i8, 360 FlexFit 2)](docs/beds/sleep_number.md#bam--mcr-older-i8--360-flexfit-2) ⚠️ | Sleep Number |
+| [SleepSpa S9000AI](docs/beds/sleepstar.md) | [SleepSpa S9000AI (SLEEPSTAR)](docs/beds/sleepstar.md) 🧪 | SleepSpa |
+| [Sleepy's Elite](docs/beds/sleepys.md) | [MFRM Sleepy's Elite app](docs/beds/sleepys.md#explicit-sleepys-elite-app-profile) 🧪, [Sleepy's Elite BOX15, BOX24 and BOX25 receivers](docs/beds/sleepys.md#protocol-variants) 🧪 | Sleepy's, Mattress Firm |
+| [Solace](docs/beds/ff_frame.md) | [Solace remotes and the HomeKobo, Sealy MotionFlex and Sweet Night apps](docs/beds/ff_frame.md#solace-name-routes) ⚠️, [Woosa Sleep app](docs/beds/ff_frame.md#woosa-sleep) ⚠️, [BedSense app](docs/beds/ff_frame.md#bedsense) 🧪, [Motion Bed app](docs/beds/ff_frame.md#motion-bed) 🧪 | Solace, Sealy, QMS, SealyMF, TL, Woosa |
+| [StarCode apps](docs/beds/okin-nframe.md#adjustablem5x4) | [AdjustableM5X4](docs/beds/okin-nframe.md#adjustablem5x4) 🧪, [AdjustableM5X5](docs/beds/starcode-m5x5.md) 🧪, [Adjustable Comfort M1X12](docs/beds/starcode-m1x12.md) 🧪 | StarCode |
+| [SUTA Smart Home](docs/beds/suta.md) | [SUTA Smart Home](docs/beds/suta.md) ✅ | SUTA |
+| [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | [Tempur Sleeptracker-AI processor](docs/beds/sleeptracker.md) ⚠️ | Tempur ProSmart / ProSmart Air, ActiveBreeze |
+| [TiMOTION AHF](docs/beds/timotion-ahf.md) | [TiMOTION AHF](docs/beds/timotion-ahf.md) 🧪 | TiMOTION |
+| [Vibradorm](docs/beds/vibradorm.md) | [Vibradorm remotes](docs/beds/vibradorm.md) ✅, [VMAT](docs/beds/vmat.md) 🧪, [Caresse Diamant and Werkmeister](docs/beds/vibradorm_app.md) 🧪, [V-MAT Basic (CBI / XT-Box)](docs/beds/vmatbasic.md) 🧪 | Vibradorm, Caresse, Werkmeister |
+
 When setup asks for an app, model or remote, choose the one supplied with your
-bed. Grouping them here does not make their commands interchangeable.
+bed. A family groups apps that setup asks about together; their commands are
+not interchangeable.
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 
-Some brands use more than one controller family. Let auto-detection identify
-the controller, or consult the [brand and protocol guide](docs/SUPPORTED_ACTUATORS.md)
-when choosing manually.
+Some brands use more than one family. Let setup detect the bed, or look up the
+brand in the [brand and protocol guide](docs/SUPPORTED_ACTUATORS.md).
 
 ## Will This Work With My Bed?
 
@@ -186,7 +158,7 @@ when choosing manually.
 
 **Other beds:** [Eight Sleep](https://github.com/lukas-clarke/eight_sleep) has its own integration.
 
-**WiFi and cloud-based beds [won't be supported](https://github.com/kristofferR/ha-adjustable-bed/issues/167)** — this is a Bluetooth-only integration for the reasons stated in the link.
+**WiFi and cloud-based beds [won't be supported](https://github.com/kristofferR/ha-adjustable-bed/issues/167).** This is a Bluetooth-only integration, for the reasons stated in the link.
 
 ## Installation
 
@@ -216,7 +188,11 @@ Your bed should auto-discover via Bluetooth. If not:
 
 1. Go to **Settings** → **Devices & Services** → **Add Integration**
 2. Search for "Adjustable Bed"
-3. Enter your bed's Bluetooth address or select from discovered devices
+3. Choose **Set up by app or remote**, or **Pick any Bluetooth device**
+
+Setup asks which app or remote controls the bed, then that app's own questions,
+such as a layout or handset ID. The final settings come last. See
+[Initial Setup](docs/CONFIGURATION.md#initial-setup) for the whole journey.
 
 To adjust settings after setup, click **Configure** (the gear icon) for the
 integration entry in Settings → Devices & Services, then **Change settings**.
@@ -230,15 +206,16 @@ for the list.
 
 | Setting | Description |
 |---------|-------------|
-| Motor Count | Layout for profiles that expose a configurable count; Standard OCTO follows its advertised count unless an explicit override is selected |
-| Has Massage | Enable if your bed has massage |
-| Protocol Variant | Usually auto-detected, override if needed; families with a guided change use **Reconfigure** |
-| Motor Pulse Settings | Fine-tune movement timing |
-| Disable Angle Sensing | Turn off for supported position feedback; turn on if monitoring conflicts with the remote |
-| Disconnect After Command | Release the connection one second after operations finish, where supported |
-| Jensen PIN | 4-digit PIN for Jensen beds (default: 3060) |
-| Octo PIN | 4-digit PIN for Octo beds that require authentication |
-| Richmat Remote | Remote model code for Richmat beds |
+| App or remote | Asked first. It decides the commands, layout and features. Change it later with **Reconfigure** where the family has a guided change |
+| App questions | The layout, product, handset ID or remote style the app shows |
+| Name, Bluetooth adapter | The entry's name, and a preferred adapter or proxy. Home Assistant may still reroute |
+| Disconnect after each command | Release the connection one second after operations finish, so the remote or app can connect |
+| Motor count, massage | Asked only when the app or remote does not set them |
+| Bed-specific fields | Fields one bed type needs, such as a PIN |
+| Advanced: receiver route | For a bed type with several receiver routes. An app sets its own route |
+| Advanced connection and timing | Motor pulse count and delay, and the idle disconnect timeout |
+| Disable angle sensing | Turn off position feedback if monitoring conflicts with the remote |
+| Estimated positions | Calibrate travel-time estimates on beds without position feedback |
 
 See the [Configuration Guide](docs/CONFIGURATION.md) for all options.
 
@@ -246,188 +223,21 @@ See the [Configuration Guide](docs/CONFIGURATION.md) for all options.
 
 ## Dashboard Card
 
-The integration ships a native Lovelace card, **Adjustable Bed Card**, that
-gives you a complete control panel for your bed — position controls, presets,
-memory, lighting, massage, climate, and connection — all in the Home Assistant
-theme. It registers and loads automatically; you do not need to add a
-dashboard resource manually. If Home Assistant was open in your browser
-during an integration update, reload that page once after restarting Home
-Assistant so the browser picks up the updated card module.
+The integration ships a native Lovelace card, **Adjustable Bed Card**. It loads
+automatically and shows only the controls your bed has: positions, presets,
+memory, lighting, massage, climate and connection. Paired beds get Left, Both
+sides and Right, and compact room cards give a glance or quick actions.
 
-If the card is missing or shows a configuration error, see the
-[dashboard card troubleshooting guide](docs/TROUBLESHOOTING.md#dashboard-card-missing-or-configuration-error).
-
-To add it: edit a dashboard → **Add Card** → search for **Adjustable Bed**, then
-pick your bed device. Selecting one of the
-bed's entities first also suggests the Adjustable Bed Card. Or in YAML:
+To add it, edit a dashboard, select **Add Card** and search for
+**Adjustable Bed**. Or in YAML:
 
 ```yaml
 type: custom:adjustable-bed-card
 device_id: <your bed device>
 ```
 
-The card adapts to your bed — it only shows the sections your bed actually
-exposes (e.g. massage and climate appear only on beds that support them), so the
-same card works for every supported bed.
-
-### Movement and paired beds
-
-Hold an Up/Down control to move; release it to send STOP. On beds whose app is
-proven to stream a held key until release, the card holds the motor in one
-continuous [renewable hold](docs/SERVICES.md#renewable-holds), and the
-integration stops it when its short lease runs out if the browser goes away.
-Other beds repeat finite movements, so a hold can have short pauses between them.
-Position sliders appear only when the selected controller exposes them.
-
-#### Tap to move
-
-Turn on **Tap to start and stop movement** in the card editor (`tap_to_move:
-true`) to move without holding. Tap an arrow to start the motor. The arrow stays
-highlighted and the row reads **Moving up · tap to stop**. The next tap on any
-arrow or Stop stops it, and never starts another motor. Movement also stops:
-
-- after at most 30 seconds, or 10 seconds on beds that keep moving after one
-  start command (`latched` holds);
-- when you press a preset, memory or other button on the card, which takes over
-  from the movement;
-- when you hide the page, switch apps, navigate away, remove the card or switch
-  the side tab of a paired bed;
-- when the browser, phone or network disappears. A bed with a renewable hold
-  stops within one 750 ms lease; any other bed stops after its current finite
-  movement.
-
-A control whose only hold is a fixed 60-second window that the card cannot
-renew stays press-and-hold, because it would keep moving if the page
-disappeared. Presets and memory are unchanged.
-
-For a combined bed, the card offers **Left / Both sides / Right**. Selecting
-either the parent device or a side's child device opens the paired card. Both-side
-controls expose shared capabilities; select a side for its additional features.
-The **Match both to** controls copy the selected side's reported positions to the
-other side when both provide the required feedback. This is a one-time move.
-
-Beds without position feedback can show [estimated positions and saved
-positions](docs/ESTIMATED_POSITIONS.md#in-the-card) once calibrated.
-
-See [paired-bed configuration](docs/CONFIGURATION.md#two-independent-frames)
-and [action targeting](docs/SERVICES.md#targeting-a-bed-or-side) for setup and
-automation behavior.
-
-### Compact room cards
-
-In the visual editor, choose **A · Glance only**, **B · Quick actions**, or
-**C · Compact controls**. These are starting points for the same card, and every
-option remains editable. Existing cards keep their full layout.
-
-- **Glance:** both bed positions, with optional title and side names. Turn off the
-  title and readouts for a graphic-only tile.
-- **Quick actions:** the dual graphic, side selector, selected presets or memory
-  recalls, and Stop. Choose and reorder favourites in the editor.
-- **Controls:** adds the supported hold-to-move motor rows.
-
-Both silhouettes remain visible when switching the action target. Hide the side
-selector to use a fixed target; the card labels that target when controls are
-shown. Native pairs store a child device ID, so renaming a side cannot reroute
-commands. Stop remains available with movement controls and retains targets of
-movement started by this card across side changes. Compact mode never saves
-memory positions. Preset buttons are disabled when the target exposes neither a
-Stop action nor motor covers that can be stopped.
-
-Title, graphic, readouts, motor rows, lighting, and connection status are optional.
-Configure a local **Full view path** to open another dashboard view from the title
-or graphic. Position animation follows real degree readings, honours reduced
-motion, and does not loop while idle. Unknown positions show an explicit fallback;
-percentage feedback is shown as text rather than converted into an invented angle.
-
-```yaml
-type: custom:adjustable-bed-card
-device_id: <your bed device>
-layout: compact
-show_header: true
-compact_labels: angles        # angles, names, or none
-show_side_selector: true
-default_target: both          # both, child device ID, or left/right for a one-address pair
-compact_actions:             # ordered preset translation keys; [] for no quick actions
-  - preset_flat
-  - preset_memory_1
-show_motors: false
-show_lighting: false
-show_connection: false        # compact side statuses, not connection buttons
-animate: true
-navigation_path: /dashboard-bedroom/bed  # optional local HA path
-open_dialog: false            # optional, open the full card in a dialog instead
-dialog_config:                # optional, full-card options for the dialog only
-  show_massage: false
-```
-
-Omit `compact_actions` for Flat plus the first available memory recall (or another
-preset when no memory recall exists). Only actions supported by the selected target
-appear; entity names and icons are preserved. Compact controls are off by default
-except for these quick actions. The other `show_*` sections and `section_order`
-apply to the full layout. Memory saving and position synchronization stay there.
-
-The optional percentage and lumbar graphics and the full card in a dialog are
-described in [Dashboard Card Graphics and Dialog](docs/CONFIGURATION.md#dashboard-card-graphics-and-dialog).
-
-For frontend development, run `bun run check`, `bun test`, and `bun run test:browser`
-from `custom_components/adjustable_bed/frontend`. The browser checks use synthetic
-HA state and recorded service calls, and require Chromium (or `CHROMIUM_PATH`).
-
-### Customizing the card
-
-Everything is configurable from the card's **visual editor** (no YAML needed):
-
-- **Show/hide sections** — toggle Position, Firmness, Presets, Memory, Lighting,
-  Massage, Utility, Climate, Connection, and the bed-angle graphic on or off. Only the
-  sections your bed has are listed.
-- **Reorder sections** — use the up/down arrows next to each section to change
-  the order they appear on the card.
-- **Choose which memory positions to show** — pick exactly the memory slots you
-  use instead of showing all of them.
-
-**Recalling and saving positions.** In the Memory section, tap a position to
-move the bed to it. To store the bed's *current* position, tap **Save…** in the
-Memory header, then tap the position you want to overwrite (tap **Cancel** to
-back out). The Save button only appears for beds that support saving.
-
-**Names and icons follow your entities.** The card displays each control using
-its entity's own name and icon, so to relabel something you just rename the
-entity (Settings → Devices & Services → your bed → the entity → ⚙). For example,
-rename **Memory 1** to *"Flat"* and give it a bed icon, and the card's first
-memory tile becomes a bed icon labelled "Flat". This is purely cosmetic and
-local to you — the card finds entities by the integration's internal keys, so
-renaming or re-icon-ing never breaks it, and other users keep the tidy defaults
-(*Memory 1–6* with numbered icons).
-
-<details>
-<summary><b>YAML options</b></summary>
-
-```yaml
-type: custom:adjustable-bed-card
-device_id: <your bed device>   # the bed to control (the card prompts you to pick one if omitted)
-name: Bedroom Bed              # optional, overrides the card title
-section_order: [motors, memory, lighting]  # optional, render order (default order otherwise)
-memory_save: true              # optional, show the "Save…" button (default: true)
-memory_slots: [1, 2, 3]        # optional, which memory positions to show (default: all)
-tap_to_move: false             # optional, a tap starts a motor and the next tap stops it (default: false)
-show_percentage_graphic: false # optional, draw percentage positions as a schematic pose (default: false)
-show_lumbar_graphic: false     # optional, draw a separate lumbar section (default: false)
-show_graphic_labels: true      # optional, labels beneath the bed graphic (default: true)
-# Each section defaults to shown; set to false to hide:
-show_graphic: true
-show_motors: true
-show_firmness: true
-show_presets: true
-show_saved_positions: true
-show_memory: true
-show_lighting: true
-show_massage: true
-show_utility: true
-show_climate: true
-show_connection: true
-```
-
-</details>
+The [Dashboard Card guide](docs/DASHBOARD_CARD.md) covers holds and tap to
+move, paired beds, compact cards, the editor and every YAML option.
 
 ## Bluetooth Setup
 

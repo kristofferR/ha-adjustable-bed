@@ -9,7 +9,8 @@ These guides describe `main`. The integration requires **Home Assistant
 
 | Guide | Contents |
 |-------|----------|
-| [Project README](../README.md) | Installation, supported beds, dashboard card and YAML options |
+| [Project README](../README.md) | Installation, features and the supported beds table |
+| [Dashboard card](DASHBOARD_CARD.md) | Adding the card, holds and tap to move, paired and compact cards, editor and YAML options |
 | [Connection guide](CONNECTION_GUIDE.md) | Discovery, adapters, proxies and Bluetooth bonds |
 | [Configuration](CONFIGURATION.md) | Options, choosing your remote, combined beds and restoring standalone controls |
 | [Actions and automations](SERVICES.md) | Memory, movement, side targeting and specialized actions |
@@ -22,8 +23,8 @@ These guides describe `main`. The integration requires **Home Assistant
 
 ## Controller and Protocol Reference
 
-Start with the [Supported Beds table](../README.md#supported-beds), where related
-brands, models and apps are grouped together. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
+Start with the [Supported Beds table](../README.md#supported-beds), which groups
+every app, remote and brand by the family setup shows. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
 to identify your controller and compare features.
 
 Bed support is split into wire codecs and app profiles: a wire format shared by

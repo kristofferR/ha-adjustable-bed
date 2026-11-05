@@ -1551,6 +1551,8 @@ firmware interpretation are unverified.
 
 **App:** [Tempur Curve](https://play.google.com/store/apps/details?id=com.ore.tempur) 1.7, `com.ore.tempur`
 
+**Status:** ❓ Needs testing (static artifact evidence, hardware unverified)
+
 Bed type `tempur_curve`, one layout. Shared behavior is in the
 [cluster033 app family](#cluster033-app-family).
 
@@ -1580,6 +1582,8 @@ Bed type `tempur_curve`, one layout. Shared behavior is in the
 ### Q-Plus Adjustable Remote
 
 **App:** [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) 1.8, `com.sbi.costco`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `qplus_app`. The generic `sbi` bed type is a separate route over the
 same frame.
@@ -1675,6 +1679,8 @@ alarm scheduling stays outside the integration.
 ### Serta MP Remote
 
 **App:** [Serta MP Remote](https://play.google.com/store/apps/details?id=com.ore.serta330) 1.1, `com.ore.serta330`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `serta_mp_remote`, one layout. `SertaMPRemoteController` adds
 calibrated position feedback, pulse targets and four local memories to the
@@ -1795,6 +1801,8 @@ physical meaning is assumed for it.
 
 **App:** [Omazz Adjusto III](https://play.google.com/store/apps/details?id=com.sfd.Omazz) 1.0.5, `com.sfd.Omazz`
 
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+
 Bed type `omazz_adjusto_iii`, one layout. The app has no reachable name writer,
 so rename is unavailable.
 
@@ -1825,6 +1833,8 @@ so rename is unavailable.
 ### Ergomotion app
 
 **App:** [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) 1.6.4, `com.sfd.ergomotion`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `ergomotion_app` (setup label **Ergomotion (app)**). It is separate from
 the `ergomotion` bed type, which uses the [Ergomotion](#ergomotion) profile.
@@ -1865,6 +1875,8 @@ the `ergomotion` bed type, which uses the [Ergomotion](#ergomotion) profile.
 
 **App:** [ROW Control](https://play.google.com/store/apps/details?id=com.sfd.row) 2.0, `com.sfd.row`
 
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+
 Bed type `row_control`. The Zero-G Box layout has no **App timer status** sensor.
 
 #### Controls
@@ -1896,6 +1908,8 @@ Bed type `row_control`. The Zero-G Box layout has no **App timer status** sensor
 ### Ergo Slim
 
 **App:** [Ergo Slim](https://play.google.com/store/apps/details?id=com.sfd.slim) 1.3, `com.sfd.slim`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `ergo_slim`. The report proves a clock write when the session starts but
 no delay before it, so the clock is written at connect.
@@ -1937,6 +1951,8 @@ no delay before it, so the clock is written at connect.
 ### TEMPUR AU
 
 **App:** [TEMPUR AU](https://play.google.com/store/apps/details?id=com.sfd.tempur_au) 1.6, `com.sfd.tempur_au`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 Bed type `tempur_au`. Memory Level 1-3 on B2 are opaque keys.
 
@@ -2003,6 +2019,8 @@ frames of other families and keep it.
 ### Glideaway Motion
 
 **App:** [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (code 11), `com.ore.bedding.glideawaymontion`
+
+**Status:** ❓ Needs testing (artifact-proven, hardware unverified)
 
 Choose **Glideaway Motion / Montion app** and the model selected in the Android
 app (the archive label misspells Motion as "Montion"). It is separate from the
@@ -2148,6 +2166,8 @@ with the same zero frame.
 ### Scott Living
 
 **App:** Scott Living, `com.keeson.scottlivingrelease`
+
+**Status:** ❓ Needs testing (no accepted app report; hardware unverified)
 
 Bed type `scott_living`, selected manually: it shares the FFE5 service with
 other Keeson beds and has no distinct name. It writes FFE9 and subscribes to

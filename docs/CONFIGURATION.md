@@ -943,7 +943,7 @@ so on an estimated bed the lumbar section is unknown.
 The dialog shows the full card for the same bed and side, with live state and
 every section the bed has. It opens and closes without sending a command, and
 closes with **Close**, Escape or a click on the backdrop. Holds, renewable
-holds, [tap to move](../README.md#tap-to-move) and Stop work as on the full
+holds, [tap to move](DASHBOARD_CARD.md#tap-to-move) and Stop work as on the full
 card. Closing the dialog during a movement sends STOP.
 
 In the compact editor, turn on **Open full card in a dialog**, then select
