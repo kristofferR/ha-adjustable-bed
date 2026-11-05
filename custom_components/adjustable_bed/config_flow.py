@@ -1149,6 +1149,10 @@ def _condition_owned_generic_fields(
         def owns(bed_type: str | None, variant: str, key: str = key) -> bool:
             return key in hidden_generic_fields(bed_type, variant)
 
+        if not asked_routes and all(owns(*profile) for profile in rows.values()):
+            # Every row sets it, so no choice on this form can show it.
+            del schema[marker]
+            continue
         conditions = [
             condition
             for condition in (

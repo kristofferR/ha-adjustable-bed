@@ -70,7 +70,8 @@ a native conditional field on the bed-type field, listing both each row's label
 - a bed type's own settings (Octo PIN and motor count, Jensen PIN, Richmat
   remote and RMControl product, Malouf layout and memory slots, CB24 side) show
   only for its rows;
-- a generic field shows except for the rows whose profile owns it;
+- a generic field shows except for the rows whose profile owns it, and a
+  field every row owns is left out;
 - the Advanced route section shows only for the drawn bed type's generic rows.
   Another bed type with several routes asks for them in the `route` step;
 - Svane's app profiles are asked on the form for its generic row. For that
