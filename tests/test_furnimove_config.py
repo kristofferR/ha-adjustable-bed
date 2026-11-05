@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_detailed,
     refine_okin_shared_uuid_protocol_from_gatt,
 )
+from tests.form_helpers import shown_markers
 
 
 @pytest.mark.parametrize("chosen", [BED_TYPE_FURNIMOVE, BED_TYPE_OKIN_RF_ECO_BT])
@@ -45,7 +46,7 @@ async def test_bluetooth_confirm_uses_the_selected_app_fields(hass, chosen):
     )
     flow._disambiguated_bed_type = chosen
     result = await flow.async_step_bluetooth_confirm()
-    fields = {marker.schema for marker in result["data_schema"].schema}
+    fields = set(shown_markers(result))
     if chosen == BED_TYPE_FURNIMOVE:
         assert fields.isdisjoint({
             CONF_PROTOCOL_VARIANT, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_DELAY_MS,

@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
     is_valid_variant_for_bed_type,
 )
+from tests.form_helpers import shown_markers
 from tests.test_controller_contract import _FactoryCoordinator
 
 
@@ -105,7 +106,7 @@ async def test_setup_hides_motor_count_and_the_fixed_refresh_delay(hass, step):
     flow._async_transport_note = AsyncMock(return_value="")
     form = await getattr(flow, f"async_step_{step}")()
     assert form["type"] == "form"
-    markers = {marker.schema for marker in form["data_schema"].schema}
+    markers = shown_markers(form)
     assert CONF_MOTOR_COUNT not in markers
     assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
@@ -141,7 +142,7 @@ async def test_options_switch_to_simmons_keeps_the_layout_choice(hass):
     flow.handler = entry.entry_id
     rebuilt = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_SIMMONS}, step_id="settings")
     assert rebuilt["type"] == "form"
-    markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+    markers = shown_markers(rebuilt)
     assert CONF_MOTOR_COUNT not in markers and CONF_MOTOR_PULSE_DELAY_MS not in markers
     assert CONF_PROTOCOL_VARIANT in markers
     saved = await flow._async_options_form(

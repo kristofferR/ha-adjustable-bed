@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_BROADCAST,
     KaidiAdvertisement,
 )
+from tests.form_helpers import shown_markers
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -70,8 +71,12 @@ def test_routes_are_the_familys_own_and_exclude_its_apps():
 async def test_fresh_forms_have_no_global_variant_field(hass, enable_custom_integrations):
     result = await _manual_entry(hass)
     assert result["step_id"] == "manual_entry"
-    assert const.CONF_PROTOCOL_VARIANT not in _fields(result)
-    assert "advanced" not in _fields(result)
+    assert const.CONF_PROTOCOL_VARIANT not in shown_markers(result)
+    assert "advanced" not in shown_markers(result)
+    # Svane's app profiles are the one route asked on the form itself.
+    assert const.CONF_PROTOCOL_VARIANT in shown_markers(
+        result, **{const.CONF_BED_TYPE: const.BED_TYPE_SVANE}
+    )
 
 
 async def test_generic_choice_asks_only_its_own_routes(hass, enable_custom_integrations):
@@ -280,16 +285,9 @@ async def test_fitting_the_form_keeps_every_app_entrys_route(hass, choice):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {"source": SOURCE_USER}
-    shown_type, shown_variant = None, const.VARIANT_AUTO
-    for _ in range(2):
-        submitted = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: choice}
-        _apply_setup_bed_type_choice(submitted, shown_type, shown_variant)
-        if await flow._async_fit_setup_form(submitted, shown_type, shown_variant, "manual_entry") is None:
-            break
-        # The form is drawn again for the app, and submitted as shown.
-        shown_type, shown_variant = flow._selected_bed_type, flow._selected_protocol_variant
-    else:
-        pytest.fail("the form was drawn again for the app it was drawn for")
+    submitted = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: choice}
+    _apply_setup_bed_type_choice(submitted, None, const.VARIANT_AUTO)
+    flow._drop_owned_answers(submitted, None, const.VARIANT_AUTO)
     assert (submitted[const.CONF_BED_TYPE], submitted[const.CONF_PROTOCOL_VARIANT]) == (
         resolve_bed_type_choice(choice)
     )

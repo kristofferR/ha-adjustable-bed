@@ -534,14 +534,29 @@ async def test_invalid_replacement_pin_stays_on_form(hass, invalid_pin):
     assert flow._pending_entry[CONF_OCTO_PIN] == "1234"
 
 
-@pytest.mark.parametrize("step", ["manual_octo", "bluetooth_octo"])
-async def test_pin_collection_routes_through_verification(hass, step):
-    flow = pin_flow(hass, None)
-    assert flow._pending_entry is not None
-    flow._manual_data = dict(flow._pending_entry)
+async def test_pin_collection_routes_through_verification(hass):
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": "user"}
+    flow._disconnect_choice_confirmed = True
     with patch.object(flow, "_finish_with_verify", AsyncMock()) as verify:
-        await getattr(flow, f"async_step_{step}")({CONF_OCTO_PIN: "1234"})
-    verify.assert_awaited_once_with(flow._manual_data, "Octo bed")
+        # The PIN is on the setup form itself, shown only for the Octo rows.
+        result = await flow.async_step_manual_entry(
+            {
+                "address": "AA:BB:CC:DD:EE:FF",
+                "bed_type": "octo",
+                "name": "Octo bed",
+                "disconnect_after_command": False,
+                # An explicit route, so the route step does not come first.
+                "protocol_variant": "auto",
+                CONF_OCTO_PIN: " 1234 ",
+            }
+        )
+    assert verify.await_args is not None, result
+    data, title = verify.await_args.args
+    assert title == "Octo bed"
+    assert data[CONF_OCTO_PIN] == "1234"
 
 
 async def test_no_scanner_cannot_bypass_octo_pin_check(hass):

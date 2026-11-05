@@ -14,7 +14,7 @@ A `SetupProfile` has:
 
 | Field | Meaning |
 |---|---|
-| `owns` | Each generic field the profile owns (`GENERIC_FIELDS`): a fixed value, applied when setup or Configure saves, or `SET_BY_PROFILE` when the profile derives it. No form shows an owned field. |
+| `owns` | Each generic field the profile owns (`GENERIC_FIELDS`): a fixed value, applied when setup or Configure saves, or `SET_BY_PROFILE` when the profile derives it. No form shows an owned field while that profile is chosen. |
 | `questions` | The `Question`s to ask, in order. |
 | `normalize` | Builds the staged setup from the previous one and the submitted answers, for answers that need cleaning or that clear other settings. |
 | `validate` | Errors by field for the staged setup with the answers applied. |
@@ -60,6 +60,35 @@ returns.
   `strings.json` label in the generic step (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
 
+## Generic forms
+
+The generic setup forms (`bluetooth_confirm`, `manual_config`, `manual_entry`)
+are drawn once for every bed-type row. Each field that belongs to some rows is
+a native conditional field on the bed-type field, listing both each row's label
+(what the picker submits) and its choice (what the API may submit):
+
+- a bed type's own settings (Octo PIN and motor count, Jensen PIN, Richmat
+  remote and RMControl product, Malouf layout and memory slots, CB24 side) show
+  only for its rows;
+- a generic field shows except for the rows whose profile owns it, and a
+  field every row owns is left out;
+- the Advanced route section shows only for the drawn bed type's generic rows.
+  Another bed type with several routes asks for them in the `route` step;
+- Svane's app profiles are asked on the form for its generic row. For that
+  row, a generic field hinges on the route field instead, which reads as
+  absent for other rows. A Svane app row sets its own route.
+
+Defaults cannot follow a changed row. A field whose default depends on the bed
+type (motor count, angle sensing, pulse count and delay) that is left at the
+default it was drawn with saves the chosen profile's default instead; a value
+the user changed is kept. Disconnect after each command asks again instead
+when the two defaults differ.
+
+Configure conditions owned generic fields, and the L&P app field, on its route
+field the same way. It still redraws after a bed-type change, and after a route
+change that alters the motor count choices or position feedback: those change
+defaults and the route list, which a field condition cannot.
+
 ## Dedicated steps
 
 A dedicated step remains only for what data cannot express, with its reason
@@ -78,7 +107,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | `starcode_m5x5`, `starcode_m1x12` | Their lift groups name other config entries, which a declaration's checks cannot see |
 | `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
 | `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
-| `manual_octo`, `manual_richmat`, `manual_malouf`, `bluetooth_octo`, `bluetooth_richmat`, `bluetooth_malouf` | A bed type's own fields (PIN, remote code, layout), asked after the generic form picks the bed type, until native conditional fields put them on that form |
+| `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
 
 ### Not converted yet
 
@@ -104,7 +133,6 @@ These steps serve every bed type or route, so no profile owns them.
 |---|---|
 | `user`, `scan`, `scan_result`, `manual`, `select_actuator`, `select_variant`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its bed type |
 | `bluetooth_confirm`, `manual_config`, `manual_entry` | The generic setup forms |
-| `route` | The route of a bed type the form was not drawn for |
 | `disconnect_after_command` | The connection-lifetime choice |
 | `profile_questions` | The declared questions |
 | `bluetooth_pairing`, `manual_pairing`, `pairing_replace_confirm`, `pairing_progress`, `pairing_result` | Bonding |
@@ -122,6 +150,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `pair_sides`, `revert_sides`, `unpair` | Side controls and splitting a pair |
 | `remove_bond_side`, `remove_bond`, `remove_bond_progress`, `remove_bond_result` | Bond removal |
 | `estimated_positions`, `left_estimated_positions`, `right_estimated_positions`, `estimate_top`, `estimate_bottom`, `estimate_raise`, `estimate_lower`, `estimate_lowering`, `estimate_lowered`, `estimate_flat`, `estimate_flat_lower`, `estimate_flat_confirm`, `estimate_review`, `estimate_retry`, `estimate_retry_again`, `estimate_cancel` | Measuring estimated positions |
+||||||| 95ea4ef3
 
 ## Converted
 
