@@ -63,7 +63,7 @@ async def test_additional_accepted_names_require_explicit_choice(hass, name, adv
     result = await flow.async_step_bluetooth_confirm(
         {CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_NAME: "Bedroom"}
     )
-    assert result["step_id"] == "motion_bed"
+    assert result["step_id"] == "profile_questions"
     marker = next(key for key in result["data_schema"].schema if key.schema == CONF_BLE_DEVICE_NAME)
     assert marker.default() == name
 
