@@ -1,4 +1,9 @@
 {
+  "action.close": "Lukk",
+  "editor.open_dialog": "Åpne hele kortet i en dialog",
+  "editor.show_percentage_graphic": "Vis prosentposisjoner (skjematisk)",
+  "editor.show_lumbar_graphic": "Vis en egen korsryggseksjon",
+  "editor.show_graphic_labels": "Vis etiketter under grafikken",
   "section.position": "Posisjon",
   "section.firmness": "Fasthet",
   "section.presets": "Forhåndsvalg",
@@ -153,5 +158,9 @@
   "estimate.update_blocked": "«Oppdater til nåværende» krever at alle sidene den dekker er bekreftet. Sett en referanse først.",
   "estimate.delete": "Slett",
   "estimate.update": "Oppdater til nåværende",
-  "estimate.ref_lowering_running": "Sengen senkes lenger enn hele bevegelsestiden. Vent til den har stoppet, eller trykk Stopp."
+  "estimate.ref_lowering_running": "Sengen senkes lenger enn hele bevegelsestiden. Vent til den har stoppet, eller trykk Stopp.",
+  "editor.configure_dialog": "Konfigurer fullt kort i dialogen",
+  "editor.dialog_configuration": "Fullt kort i dialogen",
+  "editor.dialog_configuration_hint": "Disse innstillingene gjelder bare det fulle kortet i dialogen. Det kompakte kortet beholder sine egne innstillinger.",
+  "editor.back_to_compact": "Tilbake til kompakt konfigurasjon"
 }

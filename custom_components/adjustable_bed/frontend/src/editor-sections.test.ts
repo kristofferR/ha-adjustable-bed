@@ -72,7 +72,7 @@ test("visual editor offers bounded mood, pending floor timer and massage-only se
   expect(presentSections(bed, hass).massage).toBe(true);
 });
 
-test("visual editor offers the graphic only for two degree panel groups", () => {
+test("visual editor offers the graphic for degree and percentage panel groups", () => {
   const bed = emptyBed();
   bed.motors = [
     { key: "back", position: "number.bed_back" },
@@ -86,6 +86,7 @@ test("visual editor offers the graphic only for two degree panel groups", () => 
   } as HomeAssistant;
 
   expect(presentSections(bed, hass).graphic).toBe(false);
+  expect(presentSections(bed, hass, {type: "custom:adjustable-bed-card", show_percentage_graphic: true}).graphic).toBe(true);
   hass.states["number.bed_legs"] = state("number.bed_legs", "°");
   expect(presentSections(bed, hass).graphic).toBe(true);
   bed.motors.pop();

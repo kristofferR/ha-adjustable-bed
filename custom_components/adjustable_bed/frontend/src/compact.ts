@@ -1,5 +1,5 @@
 // Compact layouts use the same entity buckets and commands as the full card.
-import { bedEntitiesForDevice, isSingleAddressPairedDevice,
+import { SECTION_ORDER, bedEntitiesForDevice, isSingleAddressPairedDevice,
   pairedChildDeviceIds, resolvePairedParentId, splitSide } from "./discovery";
 import { localize } from "./localize";
 import { deviceName } from "./names";
@@ -7,6 +7,36 @@ import type { AdjustableBedCardConfig, BedEntities, HomeAssistant } from "./type
 
 export type CompactPreset = "glance" | "quick" | "controls";
 export const COMPACT_PRESETS: readonly CompactPreset[] = ["glance", "quick", "controls"];
+
+// Every full-card section is shown, whatever the compact card hides.
+const FULL_CARD_SECTIONS: Partial<AdjustableBedCardConfig> = Object.fromEntries(
+  SECTION_ORDER.map((key) => [`show_${key}`, true]),
+);
+
+// A full card's value for each option its editor sets. The dialog editor
+// stores these explicitly, so clearing an option there never re-inherits a
+// different compact setting when the dialog opens.
+export const FULL_CARD_EDITOR_DEFAULTS: Partial<AdjustableBedCardConfig> = {
+  name: "", show_header: true, animate: true, show_graphic_labels: true,
+  show_percentage_graphic: false, show_lumbar_graphic: false, ...FULL_CARD_SECTIONS,
+  section_order: [], memory_save: true, memory_slots: [], tap_to_move: false,
+};
+
+export function fullCardDialogConfig(config: AdjustableBedCardConfig): AdjustableBedCardConfig {
+  return {
+    ...config,
+    show_header: true,
+    ...FULL_CARD_SECTIONS,
+    ...config.dialog_config,
+    // A dialog must not recursively open dialogs or silently target another bed.
+    type: config.type,
+    device_id: config.device_id,
+    layout: "full",
+    open_dialog: false,
+    navigation_path: undefined,
+    dialog_config: undefined,
+  };
+}
 
 // Recipes write ordinary options so later customization has one source of truth.
 export function applyCompactPreset(

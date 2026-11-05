@@ -78,8 +78,14 @@ export interface AdjustableBedCardConfig {
   // Stable preset translation keys; omitted = flat + first recall, [] = none.
   compact_actions?: string[];
   navigation_path?: string;
+  open_dialog?: boolean;
+  // Optional full-card settings inside the dialog, scoped to the same bed.
+  dialog_config?: Partial<AdjustableBedCardConfig>;
   animate?: boolean;
   show_graphic?: boolean;
+  show_graphic_labels?: boolean;
+  show_percentage_graphic?: boolean;
+  show_lumbar_graphic?: boolean;
   show_motors?: boolean;
   show_firmness?: boolean;
   show_presets?: boolean;

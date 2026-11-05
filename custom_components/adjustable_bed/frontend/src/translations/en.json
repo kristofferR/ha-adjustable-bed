@@ -1,4 +1,9 @@
 {
+  "action.close": "Close",
+  "editor.open_dialog": "Open full card in a dialog",
+  "editor.show_percentage_graphic": "Draw percentage positions (schematic)",
+  "editor.show_lumbar_graphic": "Show a separate lumbar section",
+  "editor.show_graphic_labels": "Show labels beneath the graphic",
   "section.position": "Position",
   "section.firmness": "Firmness",
   "section.presets": "Presets",
@@ -153,5 +158,9 @@
   "estimate.update_blocked": "\"Update to current\" needs every side it covers confirmed. Set a reference first.",
   "estimate.delete": "Delete",
   "estimate.update": "Update to current",
-  "estimate.ref_lowering_running": "The bed is lowering past its full travel time. Wait until it has stopped, or press Stop."
+  "estimate.ref_lowering_running": "The bed is lowering past its full travel time. Wait until it has stopped, or press Stop.",
+  "editor.configure_dialog": "Configure dialog full card",
+  "editor.dialog_configuration": "Dialog full card",
+  "editor.dialog_configuration_hint": "These full-card settings apply only inside the dialog. The compact card keeps its own settings.",
+  "editor.back_to_compact": "Back to compact configuration"
 }

@@ -15,6 +15,7 @@ newer.
 - [Bed-Specific Settings](#bed-specific-settings)
 - [Single-Address Left / Right Controls](#single-address-left--right-controls)
 - [Split-King / Controller Sync](#split-king--controller-sync)
+- [Dashboard Card Graphics and Dialog](#dashboard-card-graphics-and-dialog)
 - [Troubleshooting Tips](#troubleshooting-tips)
 
 ---
@@ -867,6 +868,76 @@ This runs each cover's normal movement action; it does not make movement
 continuous or synchronize positions. To stop, call `cover.stop_cover` targeting
 both covers. Unlike the paired-bed controls, this simple script does not stop
 the other side automatically if one side fails.
+
+## Dashboard Card Graphics and Dialog
+
+These card options are off by default, so an existing card looks and behaves
+as before. Each one is in the card's visual editor, for both layouts unless
+noted.
+
+| Option | Default | Effect |
+|--------|---------|--------|
+| `show_percentage_graphic` | `false` | Draws percentage position feedback and estimates as a schematic pose, from flat at 0% to fully raised at 100%. Labels keep the percentage. Degree feedback keeps its measured angle |
+| `show_lumbar_graphic` | `false` | Adds a separate lumbar section between head and feet, with its own label, and orders readouts head, lumbar, feet. Beds without a lumbar motor keep two panels |
+| `show_graphic_labels` | `true` | `false` hides only the labels beneath the graphic. Compact readouts, tooltips and controls stay |
+| `open_dialog` | `false` | Compact layout only. Clicking the bed graphic or the expand button opens the full card in a dialog instead of following `navigation_path` |
+| `dialog_config` | none | Full-card options used only inside the dialog |
+
+The percentage pose uses a fixed 0 to 75° drawing range. It is not your bed's
+physical angle, and the lumbar geometry is not a model of the bed's linkage.
+If either the head or feet panel has no numeric feedback, the card shows the
+unavailable placeholder, never a flat bed. Unknown lumbar feedback draws only
+the lumbar section faint, dotted and flat, with `?`. With either option on,
+each label shows the motor name above its value.
+
+On a bed with [estimated positions](ESTIMATED_POSITIONS.md), an estimate never
+looks like measured feedback. Without the percentage graphic, the card draws
+only a tracking estimate, dashed and in degrees, when the axis' maximum angle
+is set. With it, every estimate state is drawn as a percentage pose, and a
+compact card shows the matching chip on its graphic:
+
+| Position | Drawn as | Label |
+|----------|----------|-------|
+| Measured | Solid | `40%` |
+| Estimated | Dashed and translucent | `≈ 40%` |
+| Unconfirmed after a restart | Grey and dashed, at the last estimate | `Was ≈ 40%` |
+| Unknown, or not calibrated | Faint, dotted and flat | `?` |
+
+A measured position gets no chip or caption, only its labels. The lumbar
+section follows the same rule. Only back, legs, head and feet have estimates,
+so on an estimated bed the lumbar section is unknown.
+
+### Full card in a dialog
+
+The dialog shows the full card for the same bed and side, with live state and
+every section the bed has. It opens and closes without sending a command, and
+closes with **Close**, Escape or a click on the backdrop. Holds, renewable
+holds, [tap to move](../README.md#tap-to-move) and Stop work as on the full
+card. Closing the dialog during a movement sends STOP.
+
+In the compact editor, turn on **Open full card in a dialog**, then select
+**Configure dialog full card** to edit the dialog with the full-card editor.
+Those changes are saved under `dialog_config`, and **Back to compact
+configuration** returns to the compact settings. Turning the dialog off keeps
+`dialog_config` for later. The dialog always uses the card's bed and the full
+layout, and it never opens another dialog or navigates.
+
+```yaml
+type: custom:adjustable-bed-card
+device_id: YOUR_BED_DEVICE_ID
+layout: compact
+show_percentage_graphic: true
+show_lumbar_graphic: true
+open_dialog: true
+dialog_config:
+  show_massage: false
+  show_connection: false
+  section_order:
+    - graphic
+    - motors
+    - presets
+    - memory
+```
 
 ---
 
