@@ -27,6 +27,7 @@ from .const import (
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
     BED_TYPE_CHERISH,
+    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE,
@@ -70,6 +71,7 @@ from .const import (
     BED_TYPE_ZSERIES,
     CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
+    CONF_CLUSTER018_THIRD_SERVICE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
@@ -85,6 +87,7 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
+    CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_METADATA,
@@ -608,6 +611,53 @@ _FLOOR_PRODUCTS: Final[FieldCondition] = {
 }
 
 
+# Diagnostic layouts, and the ZRS6 screen that only picks another layout.
+_CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
+
+
+def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
+    """The chosen app's own layout codes, aliases and ZRS6 layout picks."""
+    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+
+    app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
+    codes = {
+        *MODEL_CHOICES.get(app, ()),
+        *MANUAL_ALIASES.get(app, {}),
+        *LAYOUT_PICKER_CHOICES.get(app, {}),
+    } - _CLASSIC_EXCLUDED
+    return {code: code for code in sorted(codes)}
+
+
+def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    """Resolve an alias or a ZRS6 pick to the layout the app opens."""
+    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES
+
+    data = {**previous, **answers}
+    if CONF_PRODUCT_TYPE in answers:
+        app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
+        layout = str(data[CONF_PRODUCT_TYPE]).strip().upper()
+        layout = MANUAL_ALIASES.get(app, {}).get(layout, layout)
+        data[CONF_PRODUCT_TYPE] = LAYOUT_PICKER_CHOICES.get(app, {}).get(layout, layout)
+    return data
+
+
+def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Require a layout the chosen app ships; a shared service never selects one."""
+    from .cluster018_models import MODEL_CHOICES
+
+    layout = data.get(CONF_PRODUCT_TYPE)
+    shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
+    if layout in _CLASSIC_EXCLUDED or layout not in shipped:
+        return {CONF_PRODUCT_TYPE: "cluster018_layout"}
+    return {}
+
+
+def _classic_title(data: Mapping[str, Any]) -> str:
+    from .cluster018_profiles import APP_NAMES
+
+    return APP_NAMES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), "Classic Richmat app")
+
+
 # The app's control box selectors, named as the app names them.
 _SLEEPYS_SELECTORS: Final[Mapping[Any, str]] = {
     selector: selector for selector in SLEEPYS_ELITE_SELECTORS
@@ -743,6 +793,23 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_vmatbasic_normalize,
         validate=_vmatbasic_errors,
+    ),
+    # The app is the variant, chosen from the bed-type list. Its layout owns
+    # every control and the app its own refresh; none reports positions.
+    BED_TYPE_CLUSTER018: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+        },
+        questions=(
+            Question(CONF_PRODUCT_TYPE, _classic_layouts),
+            Question(CONF_CLUSTER018_THIRD_SERVICE, default=False, advanced=True),
+        ),
+        normalize=_classic_normalize,
+        validate=_classic_errors,
+        title=_classic_title,
     ),
     # The Sleepy's family step picks the app or receiver. The app's control box
     # selector sets its routes; it belongs to one physical bed.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from custom_components.adjustable_bed import cluster018_protocol as classic
 from custom_components.adjustable_bed import hjbed_protocol as hj
 from custom_components.adjustable_bed.beds import richmat_mh as mh_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh
@@ -21,6 +22,7 @@ PROFILES = {
     **FIXED_ROUTES,
     "hjbed": profiles.HJBED,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
+    **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
 }
 
 
@@ -87,9 +89,38 @@ def _hjbed_census() -> set[str]:
     return frames
 
 
+def _classic_census() -> set[str]:
+    """The classic apps' fixed frames, in mode 0.
+
+    Catalog controls are data: each is ``codec.command(operand, mode)`` for an
+    operand and mode its layout ships. The accepted reports freeze 127 of the 206
+    operand and mode pairs, so the census covers the frames no catalog selects.
+    """
+    frames = {classic.release("RAW"), classic.release("FRAMED"), *classic.alarm(0, 0)}
+    frames |= {
+        classic.INITIALIZE,
+        classic.DESK_QUERY,
+        classic.ALARM_QUERY,
+        classic.LAMP_QUERY,
+        classic.AROMA_QUERY,
+        classic.lamp_timer(0),
+    }
+    frames |= {classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP}
+    frames |= {classic.desk_unit(inches) for inches in (False, True)}
+    frames |= {classic.desk_button(slot) for slot in (1, 2, 3, 4)}
+    frames |= {
+        classic.massage_timer(layout, progress)
+        for layout in ("D1RM", "D9RM")
+        for progress in range(6)
+    }
+    return {frame.hex() for frame in frames}
+
+
 def _census(key: str) -> set[str]:
     if key == "hjbed":
         return _hjbed_census()
+    if key.startswith("richmat_classic_"):
+        return _classic_census()
     if key.startswith("richmat_mh_"):
         return _mh_census(key.removeprefix("richmat_mh_"))
     return _fixed_census(PROFILES[key])

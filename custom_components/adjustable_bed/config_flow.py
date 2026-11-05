@@ -96,6 +96,7 @@ from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -470,7 +471,7 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_CLUSTER018, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -1071,6 +1072,8 @@ def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
 
 
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
+    # Declared questions only: the app is its variant, chosen from the bed-type list.
+    BED_TYPE_CLUSTER018: "profile_questions",
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
     BED_TYPE_VIBRADORM: "vibradorm",
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
