@@ -359,7 +359,8 @@ match the report's per-descriptor `timing.gesture`, and the five Y6RM menu
 controls match the ledger's derived-menu table. The one sustained descriptor
 without a BLE release is the local Mlily menu, which is never a held control.
 A lease reuses the existing press loop: expiry ends the refresh through the
-cancel event, and the release follows with a fresh cleanup write.
+cancel event, the 30-second ceiling is clock time rather than a tick count, and
+the release follows with a fresh cleanup write.
 
 ### Scheduler and coordinator
 

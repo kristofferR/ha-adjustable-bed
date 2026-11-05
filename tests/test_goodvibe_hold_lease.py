@@ -138,6 +138,17 @@ async def test_a_lease_streams_every_100_ms_and_expiry_sends_one_release(
     assert wire.after[0].at_ms == wire.ended_ms
 
 
+async def test_a_lease_stops_streaming_at_the_30_second_ceiling() -> None:
+    # Each stubbed write takes 7 ms, so counting 100 ms ticks alone would overrun.
+    wire = await leased_hold("goodvibe:selector-0004", _hold(HEAD_UP), end_after_s=40, end="expire")
+    frames = [write for write in wire.held if write.data == _packet(HEAD_UP)]
+
+    assert frames[-1].at_ms <= HOLD_CEILING_MS
+    assert wire.held[-1].data == RELEASE
+    assert wire.held[-1].at_ms <= HOLD_CEILING_MS + 110
+    assert wire.after == ()
+
+
 async def test_stop_preempts_a_lease_with_the_release() -> None:
     wire = await leased_hold("goodvibe:selector-0004", _hold(HEAD_UP), end_after_s=1, end="stop")
 
