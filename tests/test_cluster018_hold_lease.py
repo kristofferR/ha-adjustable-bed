@@ -88,10 +88,11 @@ def test_the_scope_follows_the_accepted_caller_vectors() -> None:
             }
         )
         selection = Selection(**down["selection"])
-        stub = SimpleNamespace(
-            _session=SimpleNamespace(wire=down["wire"]), layout=down["layout"], app=None
-        )
-        assert Cluster018Controller._keeps(cast(Any, stub), control, selection) is expected, down
+        stub = SimpleNamespace(layout=down["layout"], app=None)
+        assert (
+            Cluster018Controller._keeps_on(cast(Any, stub), control, selection, down["wire"])
+            is expected
+        ), down
         checked += 1
         kept += expected
     assert checked > 10_000 and 0 < kept < checked
@@ -138,6 +139,41 @@ def test_the_foot_selection_takes_its_null_getter_controls_out() -> None:
     assert tagged.isdisjoint(ctrl.execution.hold_controls or frozenset())
 
 
+def test_offline_the_last_session_wire_keeps_its_raw_only_controls() -> None:
+    """Some GVRM controls ship only a legacy operand, which only the RAW wire sends."""
+    ctrl, _ = controller(layout="GVRM", wire="RAW")
+    ctrl._wire = "RAW"
+    raw_only = {
+        f"cluster018_{button.node}"
+        for button in ctrl._controls
+        if button.short is None and button.short_old is not None and button.tag is None
+    } & set(ctrl.held_control_options)
+    assert raw_only and raw_only <= (ctrl.execution.hold_controls or frozenset())
+    ctrl.on_disconnect()
+    assert ctrl._session is None
+    assert raw_only <= (ctrl.execution.hold_controls or frozenset())
+    # Before any session either wire may keep a control; the press decides once connected.
+    fresh, _ = controller(layout="GVRM")
+    fresh._session = None
+    assert raw_only <= (fresh.execution.hold_controls or frozenset())
+    framed, _ = controller(layout="GVRM", wire="FRAMED")
+    assert raw_only.isdisjoint(framed.execution.hold_controls or frozenset())
+
+
+async def test_a_framed_session_refuses_a_raw_only_lease_without_writing() -> None:
+    errors: list[str] = []
+    wire = await leased_hold(
+        SCENARIO,
+        _hold("cluster018_7", errors),
+        end_after_s=1,
+        end="expire",
+        entry_data={"product_type": "GVRM"},
+    )
+
+    assert errors == ["This control does not support renewable holds"]
+    assert wire.held == wire.after == ()
+
+
 def test_a_layout_without_keep_buttons_declares_nothing() -> None:
     ctrl, _ = controller(layout="FWRM")
     ctrl._controls = tuple(button for button in ctrl._controls if button.status != 1)
@@ -160,16 +196,6 @@ async def test_a_lease_keeps_refreshing_and_expiry_releases_50_ms_later(
     assert wire.held[-1].at_ms >= wire.ended_ms - 160
     assert [write.data for write in wire.after] == [release]
     assert wire.after[0].at_ms == wire.ended_ms + 50
-
-
-async def test_a_lease_stops_refreshing_at_the_30_second_ceiling() -> None:
-    wire = await leased_hold(SCENARIO, _hold(HEAD_UP), end_after_s=40, end="expire")
-    frames = [write for write in wire.held if write.data == FRAME]
-
-    assert frames[-1].at_ms <= HOLD_CEILING_MS
-    assert wire.held[-1].data == RELEASE
-    assert wire.held[-1].at_ms <= HOLD_CEILING_MS + 210
-    assert wire.after == ()
 
 
 async def test_stop_preempts_a_lease_with_the_release() -> None:

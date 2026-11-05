@@ -383,8 +383,11 @@ mode a press runs, so the scope is recomputed from them on every read:
 
 The scope comes from the accepted caller transition (`cluster018_caller`), and
 `tests/test_cluster018_hold_lease.py` checks it against every accepted DOWN and
-UP caller vector. The press refuses a lease when a selector changed after
-admission, and a leased hold ends at its clock ceiling. Outside the scope:
+UP caller vector. Some controls send only on one wire (GVRM ships a few with
+only the legacy operand, which only RAW sends), so offline the last session's
+wire decides; before any session either wire may, and the press checks the
+session's own. The press also refuses a lease when a selector changed after
+admission. Outside the scope:
 
 | Control | Disposition |
 |---|---|

@@ -31,6 +31,7 @@ from ..cluster018_protocol import (
     STARTUP_MS,
     TAP_RELEASE_MS,
     TICK_MS,
+    Wire,
     Worker,
     alarm,
     alarm_delay,
@@ -111,6 +112,8 @@ class Cluster018Controller(BedController):
         self._worker = Worker()
         self._receive = ReceiveState()
         self._session: Transport | None = None
+        # The wire of the last session, which still decides the hold scope offline.
+        self._wire: Wire | None = None
         self._rejection: str | None = None
         self._preferences: dict[str, object] = {"lamp_minutes": 0, "lamp_rgb": "ffffff", "alarm_selection": None, "massage_progress": 0}
         self._pending_alarm: str | None = None
@@ -270,6 +273,7 @@ class Cluster018Controller(BedController):
         name = self._device_name if self._device_name is not None else self._coordinator.entry.data.get("ble_device_name")
         self._worker.set_interval(worker_interval(name, session.wire))
         self._session = session
+        self._wire = session.wire
         # The bed's query replies proved these settings rows; a new session keeps
         # them, since with a disconnect between calls it could never prove one.
         self._receive = ReceiveState(menu=set(self._receive.menu))
@@ -382,9 +386,16 @@ class Cluster018Controller(BedController):
         The keep mode (mode 1) sends its payload every worker tick until UP; UP
         sets mode 0, which sends the release 50 ms later. The Hold/Release
         selector, memory arming and head/foot selection change which mode a
-        press runs. Offline, the framed wire stands in for the session's.
+        press runs. Offline the last session's wire decides; before any session
+        either wire may, and the press checks the session's own once connected.
         """
-        wire = self._session.wire if self._session is not None else "FRAMED"
+        wire = self._session.wire if self._session is not None else self._wire
+        return any(
+            self._keeps_on(button, selection, candidate)
+            for candidate in ((wire,) if wire is not None else ("FRAMED", "RAW"))
+        )
+
+    def _keeps_on(self, button: Control, selection: Selection, wire: Wire) -> bool:
         down = transition(button, self.layout, wire, selection, "DOWN", app=self.app)
         if down.local or down.mode != 1 or not isinstance(down.payload, bytes):
             return False
@@ -422,8 +433,7 @@ class Cluster018Controller(BedController):
         # and getter context through cleanup while later choices await the next.
         mode, selection = self._mode, self._selection
         context = current_command_context()
-        leased = context is not None and context.lease is not None
-        if leased and not self._keeps(button, selection):
+        if context is not None and context.lease is not None and not self._keeps(button, selection):
             # Admission checks the scope too; a selector may change after it.
             raise ValueError("This control does not support renewable holds")
         status = effective_status(button, self.layout, selection)
@@ -436,10 +446,6 @@ class Cluster018Controller(BedController):
                 selection = self._apply(button, "UP", selection)
                 up_applied = True
             duration = hold_ms if hold_ms is not None else int(self._coordinator.entry.data.get(CONF_MOTOR_PULSE_COUNT, 10)) * self._worker.tick_ms
-            # A lease's ceiling is clock time, however long each write takes;
-            # a finite hold keeps its tick count.
-            loop = asyncio.get_running_loop()
-            ceiling = loop.time() + duration / 1000 if leased else None
             elapsed = 0
             while not cancel.is_set():
                 await self._iteration(cancel, mode)
@@ -448,8 +454,6 @@ class Cluster018Controller(BedController):
                 if self._worker.mode == 1 and elapsed >= duration:
                     break
                 if not await self._wait(self._worker.tick_ms, cancel):
-                    break
-                if ceiling is not None and loop.time() > ceiling:
                     break
                 elapsed += self._worker.tick_ms
             if not cancel.is_set():
