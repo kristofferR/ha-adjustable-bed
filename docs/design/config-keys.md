@@ -103,7 +103,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
 | `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
-| `jensen_pin` | User | Jensen setup fields, Configure | `coordinator.py` |
+| `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py` |
 | `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
