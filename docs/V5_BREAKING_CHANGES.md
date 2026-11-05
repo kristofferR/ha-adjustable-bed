@@ -218,9 +218,11 @@ Customatic Z-Series. See the
 pre-empts a move on another motor of the same bed, or of the same side of a
 paired bed: that move ends with its own release, then the Stop's frames go out.
 In 4.x the Stop queued behind the other motor's pulses, about a second on a
-Leggett Okin bed. It never pre-empts the other side of a one-address pair, nor
-a native Both move that drives it, and a sequential pair's cycling side halts
-on its link drop after the move's release instead of taking another frame.
+Leggett Okin bed. It never pre-empts work on the other side of a one-address
+pair alone. A native Both move drives both sides in one frame, so a Stop on
+either side ends it on both, as a side Stop already did. A sequential pair's
+cycling side halts on its link drop after the move's release instead of taking
+another frame.
 Customatic covers now have one scheduler resource per motor; before, any
 Customatic cover action replaced a move on another motor, and now a second
 motor's cover move queues behind the first, as on other beds. A declared

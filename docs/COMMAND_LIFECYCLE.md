@@ -144,8 +144,9 @@ a prepared reservation, where a streamer cannot start.
   or side, a serial move on another motor included: the write in flight and
   that command's own cleanup finish, then the STOP's frames go out, ahead of
   anything queued. Commands on other resources, such as lighting or
-  configuration, are not pre-empted, and neither is the other side of a
-  one-address pair, nor a native Both move that drives it.
+  configuration, are not pre-empted, and neither is work confined to the
+  other side of a one-address pair. A native Both move drives both sides in
+  one frame, so a Stop on either side ends it on both, as a side STOP does.
 - On a pair, a side's cover Stop bypasses the side lanes, as a side STOP does.
   A two-address receiver takes it as a STOP admission. The two sides of a
   one-address pair share one scheduler, so there it is a queued STOP that

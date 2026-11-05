@@ -236,10 +236,15 @@ async def test_a_one_address_stop_never_preempts_the_other_side(
     assert after[after.index(ZERO) :] == RELEASE + RELEASE
 
 
-async def test_a_one_address_stop_never_preempts_a_native_both_move(
-    hass: HomeAssistant, clock: Any
+@pytest.mark.parametrize("resource", ["motor:feet", "motor:head", "motor:*"])
+async def test_a_one_address_side_stop_ends_a_native_both_move(
+    hass: HomeAssistant, clock: Any, resource: str
 ) -> None:
-    """A native Both move drives the other side too, so a side Stop follows it."""
+    """A native Both move drives this side in the same frame as the other.
+
+    So a Stop on this side, for another motor, the same motor or side-wide,
+    ends it on both sides, as overlapping replacement and a side STOP do.
+    """
     wire = Wire()
     pair = _one_address(hass, wire)
     both = _move(pair, SIDE_BOTH)
@@ -247,10 +252,30 @@ async def test_a_one_address_stop_never_preempts_a_native_both_move(
     active = pair._single_inner._command_scheduler._active
     assert active is not None and any(r.startswith("side:right:") for r in active.intent.resources)
     requested = wire.mark()
-    await asyncio.gather(_stop(pair, SIDE_LEFT), both)
+    await _proxy(pair, SIDE_LEFT).async_stop_motor(_spec(pair, "feet").stop_fn, resource)
+    await both
 
-    after = [frame for _at, frame in wire.since(requested, "I")]
-    assert after[: after.index(ZERO)] == [HEAD] * (10 - 3)
+    after = wire.since(requested, "I")
+    assert {frame for _at, frame in after} == {ZERO}
+    assert after[0][0] <= WRITE_S * 1000
+
+
+async def test_a_side_wide_stop_drops_a_move_queued_on_that_side(
+    hass: HomeAssistant, clock: Any
+) -> None:
+    """A move still waiting on the side lane behind a linked Both move never starts."""
+    wire = Wire()
+    pair = _two_address(hass, wire, "concurrent")
+    both = _move(pair, SIDE_BOTH)
+    await wire.until("L", HEAD, 3)
+    queued = _move(pair, SIDE_LEFT, "feet")
+    await asyncio.sleep(0)
+    requested = wire.mark()
+    await _proxy(pair, SIDE_LEFT).async_stop_motor(_spec(pair, "feet").stop_fn, "motor:*")
+    await asyncio.gather(both, queued)
+
+    feet = codec.frame(KEYS["feet_up"]).hex()
+    assert feet not in [frame for _at, frame in wire.since(requested, "L")]
 
 
 async def test_a_sequential_stop_on_the_disconnected_side_sends_nothing(

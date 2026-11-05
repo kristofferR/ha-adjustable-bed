@@ -432,13 +432,17 @@ positions, so seeks join later; holds and timed moves come first.
 motor-scoped STOP admission (`DeviceCommandScheduler.admit_stop`) or a queued
 `CommandKind.STOP` command pre-empts whatever motion holds the writer in its
 bed or side: any active command on `motor:*` of that namespace, not only the
-stopped motor, provided all of it lies in that namespace. The in-flight write
-and that command's own cleanup finish, then the STOP's frames go out, ahead of
-anything queued. A merged stream that owns the stopped motor keeps the writer
-and ends only that member, with its cleanup next, before any further tick.
-Commands on other resources (lighting, configuration), the other side of a
-one-address pair, and a native Both move that also drives that side are never
-pre-empted. A declared side-wide cover Stop is a `motor:*` STOP that ends every
+stopped motor. The in-flight write and that command's own cleanup finish, then
+the STOP's frames go out, ahead of anything queued. A merged stream that owns
+the stopped motor keeps the writer and ends only that member, with its cleanup
+next, before any further tick. Commands on other resources (lighting,
+configuration) and work confined to the other side of a one-address pair are
+never pre-empted. A native Both move drives both sides in one frame, so it
+cannot end on one side alone: a Stop on either side ends it on both, as
+overlapping replacement and a side STOP always have. Waiting it out instead
+would leave the stopping side moving for up to its lease ceiling. A pair's
+side-lane admission matches wildcards, so a side-wide Stop also drops a move
+still queued on that side's lane. A declared side-wide cover Stop is a `motor:*` STOP that ends every
 motor's work, the stream included. Uncontended, a cover Stop writes exactly
 what it wrote before.
 

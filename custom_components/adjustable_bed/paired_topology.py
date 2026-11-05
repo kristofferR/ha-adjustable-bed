@@ -122,14 +122,29 @@ class PairAdmission:
             resource_counters[resource] = resource_counters.get(resource, 0) + 1
 
     def generation(self, side: str, resources: Collection[str]) -> tuple[int, ...]:
-        """Snapshot cancellation state relevant to queued resources."""
+        """Snapshot cancellation state relevant to queued resources.
+
+        A bump on ``motor:*`` also invalidates a queued ``motor:feet``, and a
+        bump on ``motor:feet`` a queued ``motor:*``. Counters only grow and
+        keys are never removed, so a new overlapping key changes the length.
+        """
         if "*" in resources:
             return (self.cancel_counter[side],)
+
+        def overlaps(key: str) -> bool:
+            return any(
+                key == resource
+                or (key.endswith(":*") and resource.startswith(key[:-1]))
+                or (resource.endswith(":*") and key.startswith(resource[:-1]))
+                for resource in resources
+            )
+
         return (
             self.global_cancel_counter[side],
             *(
-                self.resource_cancel_counter[side].get(resource, 0)
-                for resource in sorted(resources)
+                count
+                for key, count in sorted(self.resource_cancel_counter[side].items())
+                if overlaps(key)
             ),
         )
 

@@ -614,8 +614,8 @@ async def test_repeated_scoped_cancellation_keeps_distinct_generation_and_latest
         ("lighting", "motor:legs", False),
         ("configuration", "motor:legs", False),
         ("side:right:motor:back", "side:left:motor:legs", False),
-        # A native Both move drives the other side too.
-        ("side:left:motor:back,side:right:motor:back", "side:left:motor:legs", False),
+        # A native Both move drives this side too, in the same frame.
+        ("side:left:motor:back,side:right:motor:back", "side:left:motor:legs", True),
     ],
 )
 @pytest.mark.parametrize("via", ["admitted", "queued"])

@@ -735,18 +735,13 @@ def _motion_scope(resources: Collection[str]) -> frozenset[str]:
 
 
 def _holds_motion_within(active: Collection[str], stop: Collection[str]) -> bool:
-    """Whether ``active`` drives motion only inside the STOP's bed or side.
+    """Whether ``active`` drives motion in the STOP's bed or side.
 
-    A STOP on one side of a one-address pair never pre-empts a command that
-    also drives the other side, such as a native Both move.
+    Work confined to the other side of a one-address pair is never pre-empted.
+    A native Both move also drives this side in the same frame, so it is, and
+    ends on both sides, as overlapping replacement and a side STOP end it.
     """
-    scope = _motion_scope(stop)
-    if not _resources_overlap(active, scope):
-        return False
-    namespaces = {item.removesuffix("motor:*") for item in scope}
-    return "" in namespaces or all(
-        any(resource.startswith(namespace) for namespace in namespaces) for resource in active
-    )
+    return _resources_overlap(active, _motion_scope(stop))
 
 
 def _resources_overlap(left: Collection[str], right: Collection[str]) -> bool:
