@@ -564,46 +564,19 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         # A Stop never waits behind another motor's command (#516). A motor
         # streaming with others ends alone, its cleanup in the streamer;
-        # otherwise the STOP pre-empts the motion holding the writer. A
-        # side-wide declared Stop ends every motor's work, the stream too.
-        from .coordinator import AdjustableBedCoordinator
-
+        # otherwise the STOP pre-empts the motion holding the writer, on a
+        # standalone bed or one side of a pair. A side-wide declared Stop ends
+        # every motor's work, the stream too.
         hold = self.entity_description.hold
-        if isinstance(self._coordinator, AdjustableBedCoordinator):
-            motor_scoped = hold is None or hold.stop_scope == "motor"
-            try:
-                await self._coordinator.async_stop_motor(
-                    self.entity_description.stop_fn,
-                    self._motor_resource if motor_scoped else "motor:*",
-                    stream_member=motor_scoped,
-                )
-            except Exception:
-                _LOGGER.exception("Failed to stop cover %s", self.entity_description.key)
-                raise
-            finally:
-                if self._movement_generation == stop_generation:
-                    self._is_moving = False
-                    self._move_direction = None
-                    self.async_write_ha_state()
-            return
-
+        motor_scoped = hold is None or hold.stop_scope == "motor"
         try:
-            _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
-            # cancel_running=True (the default) cancels the in-flight movement
-            # first, then sends this motor's specific stop. For a paired side this
-            # routes through the proxy → the parent preempts the in-flight pulse
-            # (round-16 cancel) before the lock, so the stop is both immediate and
-            # motor-specific (not a side-wide stop_all).
-            await self._coordinator.async_execute_controller_command(
+            await self._coordinator.async_stop_motor(
                 self.entity_description.stop_fn,
-                resource=self._motor_resource,
+                self._motor_resource if motor_scoped else "motor:*",
+                stream_member=motor_scoped,
             )
-            _LOGGER.debug("Stop command sent for %s", self.entity_description.key)
         except Exception:
-            _LOGGER.exception(
-                "Failed to stop cover %s",
-                self.entity_description.key,
-            )
+            _LOGGER.exception("Failed to stop cover %s", self.entity_description.key)
             raise
         finally:
             # Only clear state if no newer movement has started since stop was called

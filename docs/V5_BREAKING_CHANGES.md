@@ -219,10 +219,15 @@ every other bed stay serialized, including Leggett Okin Prodigy 2 and 2L
 Customatic Z-Series. See the
 [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
 
-**A cover's Stop never waits behind another motor.** On a standalone bed, a
-cover's own Stop now pre-empts a move on another motor of the same bed: that
-move ends with its own release, then the Stop's frames go out. In 4.x the Stop
-queued behind the other motor's pulses, about a second on a Leggett Okin bed.
+**A cover's Stop never waits behind another motor.** A cover's own Stop now
+pre-empts a move on another motor of the same bed, or of the same side of a
+paired bed: that move ends with its own release, then the Stop's frames go out.
+In 4.x the Stop queued behind the other motor's pulses, about a second on a
+Leggett Okin bed. It never pre-empts work on the other side of a one-address
+pair alone. A native Both move drives both sides in one frame, so a Stop on
+either side ends it on both, as a side Stop already did. A sequential pair's
+cycling side halts on its link drop after the move's release instead of taking
+another frame.
 Customatic covers now have one scheduler resource per motor; before, any
 Customatic cover action replaced a move on another motor, and now a second
 motor's cover move queues behind the first, as on other beds. A declared
