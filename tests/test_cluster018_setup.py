@@ -125,3 +125,26 @@ def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
     assert 'richmat_classic_apps' in found.ambiguous_types
     raw.name = 'Test Device'
     assert detect_bed_type_detailed(raw).bed_type is None
+
+
+@pytest.mark.parametrize("app", tuple(APP_NAMES))
+def test_app_hint_preserves_explicit_member_selection(app):
+    from custom_components.adjustable_bed.const import (
+        BED_TYPE_CLUSTER018,
+        CONF_BED_TYPE,
+        CONF_PROTOCOL_VARIANT,
+    )
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+
+    advert = SimpleNamespace(
+        address="AA:BB:CC:DD:EE:66",
+        name="QRRM157738",
+        service_uuids=["0000fee9-0000-1000-8000-00805f9b34fb"],
+        manufacturer_data={19543: bytes.fromhex("54307651")},
+        service_data={},
+    )
+    assert BED_TYPE_CLUSTER018 in (detect_bed_type_detailed(advert).ambiguous_types or ())
+    assert recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_CLUSTER018, CONF_PROTOCOL_VARIANT: app}, advert, {}
+    ) is None
