@@ -169,6 +169,7 @@ const rows=body.slice(a,b).split('\\n').filter(l=>l.startsWith('| ')&&!l.startsW
 const st=(body.split('\\n## Status\\n')[1]||'').split('\\n## ')[0].split('\\n')
 .filter(l=>/^\\| .+ \\| .+ \\|$/.test(l)&&!l.startsWith('| Scope')).map(l=>l.slice(2,-2).split(' | '));
 return {rows,status:st};}
+document.querySelector('#freshness').textContent='Reading live data…';
 const stamp=()=>new Date().toISOString().slice(0,16).replace('T',' ')+' UTC';
 """
 
