@@ -338,11 +338,6 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
                     const.CONF_DISCONNECT_AFTER_COMMAND: False,
                 },
             )
-            if route == "manual":
-                assert result["step_id"] == "manual_octo"
-                result = await hass.config_entries.flow.async_configure(
-                    result["flow_id"], user_input={}
-                )
             assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_OCTO
         assert result["data"][const.CONF_MOTOR_PULSE_COUNT] == 3
