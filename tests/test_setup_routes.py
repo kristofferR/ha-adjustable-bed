@@ -341,15 +341,15 @@ def test_a_generic_row_never_inherits_the_app_entry_it_replaces(key):
 
 
 @pytest.mark.parametrize(
-    ("index", "bed_type", "variant"),
+    ("choice", "bed_type", "variant"),
     [
-        (0, const.BED_TYPE_KAIDI, const.VARIANT_AUTO),
-        (1, const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD),
-        (2, const.BED_TYPE_ISLEEP, const.VARIANT_AUTO),
+        (const.BED_TYPE_KAIDI, const.BED_TYPE_KAIDI, const.VARIANT_AUTO),
+        (f"{const.BED_TYPE_KAIDI}:{const.KAIDI_VARIANT_FLOYD}", const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD),
+        (const.BED_TYPE_ISLEEP, const.BED_TYPE_ISLEEP, const.VARIANT_AUTO),
     ],
 )
 async def test_kaidi_brand_lists_each_app(
-    hass, enable_custom_integrations, index, bed_type, variant
+    hass, enable_custom_integrations, choice, bed_type, variant
 ):
     with patch(
         "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
@@ -360,10 +360,10 @@ async def test_kaidi_brand_lists_each_app(
         )
         for step_input in (
             {CONF_ADDRESS: "select_by_app"},
-            # The brand list is the fallback of the app question.
+            # The brand list is the fallback of the app question. Kaidi has no
+            # family question, so its apps are rows of the list themselves.
             {const.CONF_BED_TYPE: "not_listed"},
-            {"actuator_brand": "kaidi"},
-            {"variant": str(index)},
+            {const.CONF_BED_TYPE: choice},
         ):
             result = await hass.config_entries.flow.async_configure(result["flow_id"], step_input)
     assert result["step_id"] == "manual_entry"

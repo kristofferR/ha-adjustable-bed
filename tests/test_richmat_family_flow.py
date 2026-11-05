@@ -303,7 +303,7 @@ async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_in
     assert child(entry, "right")[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
 
 
-async def test_an_mh_app_from_the_brand_list_reaches_its_model_question(
+async def test_an_mh_app_from_the_app_question_reaches_its_model_question(
     hass, enable_custom_integrations
 ):
     """The first form leaves the model to the app's question, which knows no name here."""
@@ -312,7 +312,6 @@ async def test_an_mh_app_from_the_brand_list_reaches_its_model_question(
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {"source": SOURCE_USER}
     flow._selected_bed_type = const.BED_TYPE_RICHMAT_REVIVE
-    flow._brand_app_choice = const.BED_TYPE_RICHMAT_REVIVE
     form = await flow.async_step_manual_entry()
     schema = form["data_schema"]
     assert schema is not None

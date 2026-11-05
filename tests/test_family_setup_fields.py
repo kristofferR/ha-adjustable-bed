@@ -20,7 +20,6 @@ from homeassistant.helpers.field_visibility import get_hidden_fields
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
     _FAMILY_STEPS,
@@ -444,26 +443,28 @@ async def test_disconnect_after_command_follows_the_route_unless_changed(hass, r
     assert not gaps, gaps
 
 
-def _brand_entries() -> list[tuple[str, int]]:
-    """Each brand-list entry naming an exact route that a family question offers."""
-    return [
-        (brand, index)
-        for brand, group in ACTUATOR_GROUPS.items()
-        for index, entry in enumerate(group["variants"] or ())
-        if entry.get("variant") and _APP_SETUP_STEPS.get(entry["type"]) in _ROUTE_STEPS
-    ]
+def _app_rows() -> list[str]:
+    """Each app row of the app question whose bed type has a family question.
+
+    Restonic BT's row asks the app's remote style, which is its own question.
+    """
+    return sorted(
+        option["value"]
+        for option in get_bed_type_options()
+        if (route := resolve_bed_type_choice(option["value"]))[1] is not None
+        and _APP_SETUP_STEPS.get(route[0]) in _ROUTE_STEPS
+        and route[1] not in (const.KEESON_VARIANT_RESTONIC_A, const.KEESON_VARIANT_RESTONIC_B)
+    )
 
 
-@pytest.mark.parametrize(("brand", "index"), _brand_entries())
-async def test_a_route_a_brand_list_names_is_not_asked_again(hass, brand, index):
-    """Naming the exact route in a brand list answers its family question, and its style."""
-    entry = ACTUATOR_GROUPS[brand]["variants"][index]
+@pytest.mark.parametrize("choice", _app_rows())
+async def test_an_app_row_is_not_asked_its_family_question_again(hass, choice):
+    """Picking an app's own row in the app question answers its family question."""
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {"source": "user"}
     flow._async_transport_note = AsyncMock(return_value="")
     flow._disconnect_choice_confirmed = True
-    await flow.async_step_select_actuator({"actuator_brand": brand})
-    form = await flow.async_step_select_variant({"variant": str(index)})
+    form = await flow.async_step_select_app({const.CONF_BED_TYPE: choice})
     assert form["step_id"] == "manual_entry"
     marker = next(m for m in form["data_schema"].schema if m.schema == const.CONF_BED_TYPE)
     row = form["data_schema"].schema[marker].rows()[_default(marker)]
@@ -488,8 +489,7 @@ async def test_a_route_a_brand_list_names_is_not_asked_again(hass, brand, index)
             )
     saved = finished.value.data
     assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (
-        entry["type"],
-        entry["variant"],
+        resolve_bed_type_choice(choice)
     )
 
 
