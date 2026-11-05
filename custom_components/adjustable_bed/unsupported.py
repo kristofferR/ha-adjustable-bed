@@ -324,6 +324,20 @@ def update_octo_pin_required_issue(
     )
 
 
+def link_octo_pin_required_issue(
+    hass: HomeAssistant, address: str, name: str, entry_id: str
+) -> None:
+    """Link an existing PIN-locked warning to the entry, so removing it removes the warning.
+
+    Covers a warning raised before issues were linked to entries, for a bed
+    that has not connected since.
+    """
+    if async_get_issue_registry(hass).async_get_issue(
+        DOMAIN, _octo_pin_required_issue_id(address)
+    ) is not None:
+        update_octo_pin_required_issue(hass, address, name, True, entry_id=entry_id)
+
+
 def clear_octo_pin_required_issue(hass: HomeAssistant, address: str) -> None:
     """Drop the PIN-locked repair without needing a successful connection.
 

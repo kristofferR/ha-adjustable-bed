@@ -15,7 +15,7 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigEntryState,
 )
-from homeassistant.const import CONF_ADDRESS, Platform
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
@@ -165,6 +165,7 @@ from .unsupported import (
     async_clear_unsupported_device_issues,
     clear_octo_pin_required_issue,
     create_pairing_required_issue,
+    link_octo_pin_required_issue,
 )
 
 # Re-exported for backwards compatibility: these moved to .services, but are
@@ -1840,7 +1841,8 @@ def _async_clear_stale_octo_pin_issue(hass: HomeAssistant, entry: ConfigEntry) -
     """Drop the Octo PIN repair when the configuration already resolves it.
 
     Runs on every setup, so saving a PIN (which reloads the entry) clears the
-    issue even when the bed is unreachable and the connect path never runs.
+    issue even when the bed is unreachable and the connect path never runs. A
+    repair that still applies is linked to the entry instead.
     """
     address = entry.data.get(CONF_ADDRESS)
     if not address:
@@ -1854,6 +1856,10 @@ def _async_clear_stale_octo_pin_issue(hass: HomeAssistant, entry: ConfigEntry) -
     )
     if not is_standard_octo or entry.data.get(CONF_OCTO_PIN):
         clear_octo_pin_required_issue(hass, address)
+    else:
+        link_octo_pin_required_issue(
+            hass, address, entry.data.get(CONF_NAME, entry.title), entry.entry_id
+        )
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
