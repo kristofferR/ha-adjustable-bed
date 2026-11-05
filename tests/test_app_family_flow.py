@@ -149,14 +149,13 @@ async def test_choosing_the_rows_own_app_keeps_the_settings_the_form_collected(
 @pytest.mark.parametrize(
     ("bed_type", "step"),
     [
-        (const.BED_TYPE_CUSTOMATIC_CLARITY, "customatic_family"),
+        (const.BED_TYPE_CUSTOMATIC_JEROMES, "customatic_family"),
         (const.BED_TYPE_TRANQUIL, "jordans_family"),
     ],
 )
 async def test_an_app_already_chosen_is_not_asked_again(hass, bed_type, step):
+    # An app other than the family row's own arrives as the app itself.
     flow = setup_flow(hass, bed_type)
-    # Chosen from the brand's app list, or arriving as the app itself.
-    flow._brand_app_choice = bed_type
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await getattr(flow, f"async_step_{step}")()
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == bed_type

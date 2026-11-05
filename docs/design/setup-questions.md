@@ -53,14 +53,13 @@ returns.
 - Setup asks every declared question. A family step (see
   [Guided setup changes](guided-setup-changes.md)) chooses the app first, then
   hands the staged route to `profile_questions`.
-- A brand list that names an app, or an exact route, answers the family
-  question, so the question is not asked again. The choice is explicit, it
-  saves the same route as answering the question, and rows are named by app,
-  so a named app there is the same answer. This covers the Customatic,
-  Jordan's and StarCode app lists, the Richmat app profiles, and the Keeson
-  apps and remote routes, including the Restonic BT remote style. A brand
-  entry that names only a receiver, such as an Okin or L&P one, still leads to
-  the question, since the receiver does not decide the app.
+- The app question (`select_app`) and the brand list (`select_family`) offer
+  rows of the bed-type list, so a row picked there acts as picking it on the
+  form: an app's own row answers the family question, so it is not asked
+  again, and a family row, which names its apps, leads to the question. The
+  brand list shows each brand group's family rows, or the group's own rows
+  when it has no family question; protocol rows stay in the app question's
+  full list.
 - A family row's form is drawn for one route, and the family step resets angle
   sensing and the pulse settings to the chosen route's defaults. A route the
   question can choose therefore declares each generic field its own old row
@@ -152,7 +151,7 @@ These steps serve every bed type or route, so no profile owns them.
 
 | Step | Purpose |
 |---|---|
-| `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_actuator`, `select_variant`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_actuator`) |
+| `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_family`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_family`), whose rows are the family rows and the brands without one |
 | `bluetooth_confirm`, `manual_config`, `manual_entry` | The generic setup forms |
 | `disconnect_after_command` | The connection-lifetime choice |
 | `profile_questions` | The declared questions |

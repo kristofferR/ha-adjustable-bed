@@ -434,7 +434,7 @@ controller's.
 
 ##### Home Assistant setup
 
-Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile.
+Answer **Limoss Remote app** in the [Limoss question](#home-assistant-setup). Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile.
 
 #### Controls
 
@@ -639,8 +639,10 @@ controls immediately; optional version queries cannot revoke them on timeout.
 
 ##### Home Assistant setup
 
-Select the explicit FSM Relax app bed type, then choose chair/bed layout, optional
-light/massage controls and four reversal flags. These settings are local app
+Choose the **Limoss / Stawett** row and answer **FSM Relax app** in the
+[Limoss question](#home-assistant-setup); FSM Relax is not a row of its own.
+Then choose the chair/bed layout, optional light/massage controls and four
+reversal flags on its own step. These settings are local app
 configuration, not inferred hardware identity. Options include eight local memory
 names, with blank names resetting M1–M8. Raw memory values have no known units.
 This profile section covers exact controls, quarantine and calibration.

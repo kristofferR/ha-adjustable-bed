@@ -1040,8 +1040,10 @@ FurniMove app profile lacks.
 > [!NOTE]
 > Six codes that share the handset backend use a different transport and frame
 > ("DOT PROTOCOL" / RF1058 / RF34 / RF6707: 90167, 91983, 93558, 97450, 97544,
-> 98035). They are the separate [Okin DOT](#okin-dot) bed type: if that number
-> is printed on your remote, select "Okin DOT" instead of Okimat.
+> 98035). They are the separate [Okin DOT](#okin-dot) bed type. If 97450, 97544
+> or 98035 is printed on your remote, answer **No app: DOT remote (RF34 or
+> RF6707)** in the [Okin question](#home-assistant-setup) instead of the Okimat
+> handset code; the RF1058 codes belong to the FurniMove answer.
 
 #### Timing
 
@@ -1312,8 +1314,8 @@ command characteristic, and **Configure** no longer changes the app.
 | Z-Series app with the Z-230 or Z-280 model | [Z-Series](#customatic-z-series), that model's page |
 
 The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
-[Tranquil](#jordans-tranquil). An app picked from a brand's app list is not
-asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
+[Tranquil](#jordans-tranquil). An app's own row in the app question, such as
+Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
 characteristic; Z-Series, Serenity and Tranquil check their command and
 notification characteristics.
 
@@ -1844,8 +1846,11 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
 
 ##### Detection / Setup
 
-- If the code printed on your remote is **97450, 97544 or 98035**, select the
-  **Okin DOT** bed type and pick that code as the protocol variant.
+- If the code printed on your remote is **97450, 97544 or 98035**, choose the
+  **Okin** row and answer **No app: DOT remote (RF34 or RF6707)** in the
+  [Okin question](#home-assistant-setup), then pick that code. Okin DOT is not
+  a row of its own. An existing entry changes its code through
+  **Reconfigure**; Configure refuses a route or code change in the Okin family.
 - For **90167, 91983 or 93558**, new setups use the [FurniMove](furnimove.md)
   app profile instead: its pinned catalog covers those handsets and follows the
   app's per-control frame format. Existing Okin DOT entries with those codes
@@ -1855,7 +1860,8 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
   connected box has no Okin `62741525` characteristic but does expose Nordic
   UART, the integration promotes the entry to the Okin DOT bed type (persisted,
   which also drops the Okimat pairing requirement) and falls back to the default
-  DOT remote (`97450`) until a printed DOT code is selected. Standard Okimat
+  DOT remote (`97450`) until a printed DOT code is selected through
+  **Reconfigure**, under **No app: DOT remote (RF34 or RF6707)**. Standard Okimat
   keycodes are never wrapped in DOT frames.
 
 #### Controls
@@ -4087,8 +4093,9 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 
 ##### Detection / Setup
 
-- Select **Customatic Z-Series app (Z-230)** or **Customatic Z-Series app
-  (Z-280)** manually.
+- Choose the **Customatic** row and answer **Z-Series app with the Z-230
+  model** or **Z-280 model** in the [Customatic question](#customatic-family).
+  The Z-Series apps are not rows of their own.
 - Pick the model you chose on the app's selection screen; it is stored as
   protocol variant `z230` or `z280`, which has no automatic choice.
 - Shared OKIN names and GATT UUIDs do not identify the app or the model.

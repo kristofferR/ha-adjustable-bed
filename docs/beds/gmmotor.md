@@ -84,7 +84,8 @@ literal prefix, so background advertisements use the corresponding prefix
 patterns. Manual discovery and the callback retain the substring rule. Existing
 receiver matches keep priority and offer the app as an additional explicit choice.
 
-For a single Bluetooth address, **Pair sides** appears only for exact products
+For a single Bluetooth address, **Enable Left / Right / Both controls** in
+**Configure** appears only for exact products
 that admit Right. If the product has Left and Right without Both, HA serializes
 the two admitted sides. Separate physical receivers retain independent products,
 side settings and session state.
@@ -105,7 +106,8 @@ motor-count or inferred-axis settings. FWRM/WFRM select a dedicated desk route.
 
 **GM Control MM sleep module** and **GM Control SXB sleep module** are separate
 Bluetooth entries. Each physical address owns its session, and a paired bed
-retains each receiver's product and wire side. **Pair sides** for one address
+retains each receiver's product and wire side. **Enable Left / Right / Both
+controls** for one address
 requires the selected product's actual side choices. This guide
 covers commands, raw state and static-only status.
 
