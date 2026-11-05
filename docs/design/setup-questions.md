@@ -16,13 +16,14 @@ A `SetupProfile` has:
 |---|---|
 | `owns` | Each generic field the profile owns (`GENERIC_FIELDS`): a fixed value, applied when setup or Configure saves, or `SET_BY_PROFILE` when the profile derives it. No form shows an owned field. |
 | `questions` | The `Question`s to ask, in order. |
+| `normalize` | Builds the staged setup from the previous one and the submitted answers, for answers that need cleaning or that clear other settings. |
 | `validate` | Errors by field for the staged setup with the answers applied. |
 | `derive` | The owned fields the profile computes from its answers, such as a FurniMove handset table's motor count and massage. |
 | `title` | The name the step shows for the staged route. |
 
 A `Question` stores its answer under `key`. Its `choices` are fixed labels or a
 function of the staged setup, such as the layouts the chosen app supports;
-without choices it is yes or no. Its `default` is a value, a function of the
+without choices it is yes or no, or free `text`. Its `default` is a value, a function of the
 staged setup, or `REQUIRED`. A staged answer the choices no longer offer falls
 back to the default. An `advanced` question sits in a collapsed Advanced
 section in setup.
@@ -67,8 +68,11 @@ recorded here as each family converts:
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
 | `bedsense` | Layout, or the layout from the Bluetooth name. |
 
+| `leggett_lp_legacy` | Model code, protocol mode and the confirmed write and notification characteristics (free text). Its `normalize` cleans the code and UUIDs before they are checked. |
+
 Still on their own steps, and next to convert: the Vibradorm app and V-MAT
-Basic steps, which need questions shown only for some answers and a form that
-redraws when one changes, and the L&P legacy step, which asks free-text
-characteristic UUIDs. The other profiles declare only the generic fields they
-own, converted from the former side tables.
+Basic steps. Their questions depend on earlier answers, so they wait for the
+`when` condition to render as Home Assistant's native conditional field
+(2026.11). Their `normalize` clears retained settings when the app changes and
+derives flags from the V-MAT remote. The other profiles declare only the
+generic fields they own, converted from the former side tables.

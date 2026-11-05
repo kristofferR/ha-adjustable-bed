@@ -12,8 +12,6 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _lp_legacy_schema,
-    _validate_lp_legacy_settings,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
@@ -32,6 +30,15 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
+
+_LEGACY = SETUP_PROFILES[BED_TYPE_LEGGETT_LP_LEGACY]
+
+
+def _validate_lp_legacy_settings(data: dict) -> dict[str, str]:
+    """The declaration's own cleaning and checks, as setup and Configure run them."""
+    assert _LEGACY.validate is not None
+    return _LEGACY.validate(_LEGACY.staged({}, data))
 
 _WRITE_UUID = "11111111-2222-3333-4444-555555555555"
 _READ_UUID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -54,7 +61,12 @@ def test_explicit_choices_have_no_guessed_defaults() -> None:
         CONF_LP_LEGACY_MODE,
         CONF_LP_LEGACY_WRITE_UUID,
     }
-    assert _lp_legacy_schema({})
+    assert [question.key for question in _LEGACY.questions] == [
+        CONF_LP_LEGACY_MODEL,
+        CONF_LP_LEGACY_MODE,
+        CONF_LP_LEGACY_WRITE_UUID,
+        CONF_LP_LEGACY_READ_UUID,
+    ]
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
     assert options[BED_TYPE_LEGGETT_LP_LEGACY] == "L&P Adjustable Base (legacy app)"
     assert BED_TYPE_RICHMAT in options
@@ -87,12 +99,12 @@ async def test_manual_entry_collects_and_saves_legacy_settings(hass: HomeAssista
             CONF_DISCONNECT_AFTER_COMMAND: False,
         }
     )
-    assert result["step_id"] == "lp_legacy"
-    invalid = await flow.async_step_lp_legacy({})
-    assert invalid["step_id"] == "lp_legacy"
+    assert result["step_id"] == "profile_questions"
+    invalid = await flow.async_step_profile_questions({CONF_LP_LEGACY_MODE: "framed"})
+    assert invalid["step_id"] == "profile_questions"
     assert CONF_LP_LEGACY_MODEL in invalid["errors"]
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-        result = await flow.async_step_lp_legacy(_settings())
+        result = await flow.async_step_profile_questions(_settings())
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_BED_TYPE] == BED_TYPE_LEGGETT_LP_LEGACY
     assert {key: result["data"][key] for key in _settings()} == _settings()

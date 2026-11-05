@@ -479,14 +479,22 @@
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
           "protocol_variant": "Remote code or layout",
-          "motor_count": "Number of motors or app screen"
+          "motor_count": "Number of motors or app screen",
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
           "has_light": "Expose light controls when this bed has under-bed lighting.",
           "furnimove_remote": "The handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label doesn't identify the motor layout.",
           "protocol_variant": "The code of the remote that controls the bed, or the layout its app shows. Keep Auto-detect if you don't know it.",
-          "motor_count": "How many motors the bed has. For an app with 2M, 3M and 4M screens, the screen you use in the app."
+          "motor_count": "How many motors the bed has. For an app with 2M, 3M and 4M screens, the screen you use in the app.",
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
         },
         "sections": {
           "advanced": {
@@ -498,22 +506,6 @@
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only."
             }
           }
-        }
-      },
-      "lp_legacy": {
-        "title": "L&P Adjustable Base (legacy app)",
-        "description": "Configure the exact legacy app profile and confirmed Bluetooth characteristics. Do not use UUIDs from another bed protocol.",
-        "data": {
-          "lp_legacy_model": "Legacy app model code",
-          "lp_legacy_mode": "Legacy app protocol mode",
-          "lp_legacy_write_uuid": "Write characteristic UUID",
-          "lp_legacy_read_uuid": "Notification characteristic UUID"
-        },
-        "data_description": {
-          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
-          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
-          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
-          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
         }
       },
       "verify_octo_pin": {
