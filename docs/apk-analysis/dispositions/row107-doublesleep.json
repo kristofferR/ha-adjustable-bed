@@ -206,7 +206,7 @@
         "custom_components/adjustable_bed/beds/doublesleep.py:controller_select_specs",
         "custom_components/adjustable_bed/beds/doublesleep.py:controller_state_sensor_specs",
         "custom_components/adjustable_bed/beds/doublesleep.py:controller_state_binary_sensor_specs",
-        "custom_components/adjustable_bed/config_flow.py:async_step_doublesleep",
+        "custom_components/adjustable_bed/setup_questions.py:_doublesleep_models",
         "custom_components/adjustable_bed/doublesleep_services.py:async_register_doublesleep_services",
         "custom_components/adjustable_bed/frontend/src/discovery.ts:bedEntitiesForDevice"
       ],

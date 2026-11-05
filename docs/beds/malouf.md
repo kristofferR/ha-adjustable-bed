@@ -55,11 +55,19 @@ The app profiles ship 16 model constructors; see [Models](#models).
 
 ## Choosing a profile
 
-`malouf_new_okin` is detected from the advertised service; see
-[NEW_OKIN](#new_okin). The app profiles are an explicit choice: select
-**Malouf Base / Lucid Base app** under Malouf/Lucid, then the app, model,
-transport and physical role (see the [app family](#malouf-base--lucid-base-family)).
-Existing entries keep their route.
+Choose **Malouf / Lucid** in the bed-type list (a detected receiver is shown
+there too), then answer which app or receiver controls the bed: the Malouf Base
+app, the Lucid Base app, the receiver on the Nordic UART service
+([NEW_OKIN](#new_okin)) or the receiver on the FFE5 service
+([Legacy FFE5 route](#legacy-ffe5-route)). A detected receiver also offers Keep.
+An app then asks its exact model, physical role and transport (see the
+[app family](#malouf-base--lucid-base-family)); a receiver asks its motor count,
+layout and memory positions. Neither a retail model name nor the Bluetooth
+services identify the app or the hardware.
+
+Existing entries keep their route. **Reconfigure** changes an existing bed's
+app or receiver; a change to an app first checks that its transport resolves on
+the bed.
 
 The tables below come from the profile data.
 
@@ -313,14 +321,13 @@ selected app and transport.
 
 #### Setup
 
-Select **Malouf Base / Lucid Base app** under Malouf/Lucid, then choose the
-Android app and exact model used with your bed. Detection: none, this is an
-explicit choice.
+Answer the Malouf question with the Android app used with your bed, then choose
+its exact model. Detection: none, this is an explicit choice.
 
 - Setup offers the app's packaged model picker (see [Models](#models)). Some
   models are only reachable through the apps' persisted model selection; options
-  keep an existing persisted-only model for that same app. Changing apps
-  refreshes the model choices before saving.
+  keep an existing persisted-only model for that same app. The app changes only
+  through Reconfigure, which offers the new app's models.
 - Choose the physical primary/secondary role used in the app. Home Assistant's
   Left/Right names do not prove that role.
 - Automatic transport selection uses the observed Bluetooth name (`X1RM` or

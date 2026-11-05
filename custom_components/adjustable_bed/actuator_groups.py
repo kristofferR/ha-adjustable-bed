@@ -35,8 +35,6 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
-    BED_TYPE_MALOUF_LEGACY_OKIN,
-    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIN_7BYTE,
@@ -434,27 +432,8 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "malouf": {
         "display": "Malouf / Lucid",
-        "description": "Malouf and Lucid adjustable bases",
-        "variants": [
-            {
-                "type": BED_TYPE_MALOUF_APP,
-                "label": "Malouf Base / Lucid Base apps",
-                "description": "App model controls, status feedback and alarms",
-                "hint": "Choose the app and model shown in your app in the next step.",
-            },
-            {
-                "type": BED_TYPE_MALOUF_NEW_OKIN,
-                "label": "New (Nordic UART)",
-                "description": "Newer Malouf bases",
-                "hint": "Device name contains 'Malouf' - try this first",
-            },
-            {
-                "type": BED_TYPE_MALOUF_LEGACY_OKIN,
-                "label": "Legacy (FFE5)",
-                "description": "Older Malouf bases",
-                "hint": "Try 'New' first, use this if it doesn't work",
-            },
-        ],
+        "description": "Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers",
+        "variants": None,  # The family step asks for the app or receiver.
     },
     "logicdata": {
         "display": "LOGICDATA",
@@ -642,6 +621,7 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "ergomotion": BED_TYPE_ERGOMOTION,
     "jensen": BED_TYPE_JENSEN,
     "linak": BED_TYPE_LINAK,
+    "malouf": BED_TYPE_MALOUF_APP,
     "logicdata": BED_TYPE_LOGICDATA_APP,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,

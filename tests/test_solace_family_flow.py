@@ -66,7 +66,7 @@ async def test_woosa_shows_its_own_controls_before_choosing_it(hass):
 async def test_motion_bed_and_bedsense_stay_their_own_bed_types(hass):
     flow = setup_flow(hass)
     result = await flow.async_step_solace_family({"choice": "motion_bed"})
-    assert result["step_id"] == "motion_bed"
+    assert result["step_id"] == "profile_questions"
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_MOTION_BED
 
     flow = setup_flow(hass)
