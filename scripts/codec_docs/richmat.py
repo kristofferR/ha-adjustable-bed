@@ -135,6 +135,9 @@ def _recall(profile: richmat_profiles.RichmatProfile) -> str:
 
 
 def _lease(profile: richmat_profiles.RichmatProfile) -> str:
+    if profile.key.startswith("richmat_classic_"):
+        # The controller scopes its lease to the keep buttons of the selected layout.
+        return "renewable lease on keep buttons"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
 
 

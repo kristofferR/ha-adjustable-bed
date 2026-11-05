@@ -79,7 +79,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed | Classic apps |
 |---------|-----------------|---------|----------|-----------|------------|-------|------------|
 | Motor Control | ✅ (up to 7 motors) | ✅ Head, Foot, Leg/Pillow | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout |
-| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ❌ (bounded held buttons; not declared, see [execution capabilities](../design/execution-capabilities.md)) |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ✅ Keep buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds), release 50 ms after it ends); short, long and armed presses keep their gestures |
 | [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks |
 | Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates |
@@ -128,11 +128,11 @@ sends STOP.
 | Richmat MH Blvd Home | `richmat_blvd_home` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH HARMONY | `richmat_harmony` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Idealbed | `richmat_idealbed` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
-| Classic Avocado Eco Base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
-| Classic CoasterSleep | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
-| Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
-| Classic Milemont | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
-| Classic Superior | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
+| Classic Avocado Eco Base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic CoasterSleep | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic Milemont | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic Superior | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -1613,6 +1613,14 @@ Native buttons carry each node's app label. A node's tag, selector,
 visibility, current mode and short or long gesture decide what it sends. Local
 mode, head/foot, memory-arm and Hold/Release selectors appear where the layout
 has them.
+
+A keep button, including a recall preset or Flat under Hold, accepts a
+[renewable hold](../SERVICES.md#renewable-holds): it repeats its payload every
+worker tick until the lease ends, then releases 50 ms later. Short, long and
+armed presses, and a head/foot selection that leaves a control with nothing to
+send, keep their own gestures and refuse a lease, including when the selector
+changed after the hold was admitted. See the
+[per-control scope](../design/execution-capabilities.md#per-control-hold-scope).
 
 | Path | Frame |
 |---|---|
