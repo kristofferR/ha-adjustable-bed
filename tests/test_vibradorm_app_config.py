@@ -45,6 +45,7 @@ from custom_components.adjustable_bed.pairing import (
 from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from custom_components.adjustable_bed.vibradorm_app_state import clear_vibradorm_app_session_intent
+from tests.hold_lease_wire import virtual_clock
 
 PREFIX = "custom_components.adjustable_bed.config_flow."
 ADDRESS = "11:22:33:44:55:66"
@@ -386,6 +387,9 @@ async def test_information_precedes_native_pair_and_shares_connection_deadline(h
         patch(PREFIX + "async_verify_authenticated_access", new=AsyncMock()) as auth,
         patch("custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing", side_effect=info),
         patch(PREFIX + "VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04 if failure == "deadline" else 10.0),
+        # The 40 ms deadline falls inside the native pair on virtual time, never
+        # earlier because the loop was busy.
+        virtual_clock(),
     ):
         kwargs = {"request_bond": True, "track_for_flow_cleanup": False, "device": BLEDevice(ADDRESS, "Bed", {}), "preferred_adapter": "auto"}
         if failure is None:
@@ -599,6 +603,9 @@ async def test_setup_retains_completed_metadata_before_later_information_failure
         patch(PREFIX + "async_verify_native_bond", new=AsyncMock(return_value=unknown)),
         patch(PREFIX + "async_verify_authenticated_access", new=AsyncMock()) as authenticated,
         patch(PREFIX + "VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04 if failure == "timeout" else 10.0),
+        # The deadline ends the blocked fifth read on virtual time, never an
+        # earlier read that a busy loop delayed.
+        virtual_clock(),
     ):
         expected = asyncio.CancelledError if failure == "cancel" else TimeoutError if failure == "timeout" else ValueError
         with pytest.raises(expected):

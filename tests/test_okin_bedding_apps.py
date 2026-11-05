@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.beds.serenity import (
     alarm_repeat_bit,
     clock_frame,
 )
+from tests.hold_lease_wire import virtual_clock
 
 STOP = "0c02000000000000000000000000"
 
@@ -156,18 +157,28 @@ ZSERIES_ROWS = (
 @pytest.mark.parametrize(("row", "action", "expected"), TRANQUIL_ROWS)
 async def test_tranquil_every_artifact_row_with_safe_voice_stop(row, action, expected) -> None:
     controller = tranquil()
-    with patch("asyncio.sleep", new=AsyncMock()) as sleep:
+    times: list[float] = []
+
+    async def record(*_args, **_kwargs) -> None:
+        times.append(asyncio.get_running_loop().time())
+
+    controller.client.write_gatt_char.side_effect = record
+    # On virtual time each write's time is exact: the two STOPs land 100 and
+    # 200 ms after the action ends, however busy the loop is.
+    with virtual_clock():
         if action is None:
             await controller.stop_all()
         else:
             await controller.hold_control(action, 250)
     frames = written(controller)
+    ended = 0.0 if action is None else 0.25
     assert frames[-2:] == [STOP, STOP]
-    assert [call.args[0] for call in sleep.call_args_list[-2:]] == pytest.approx([0.1, 0.2], abs=0.01)
+    assert times[-2:] == pytest.approx([ended + 0.1, ended + 0.2])
     if action is None:
         assert frames == [STOP, STOP]
     else:
         assert set(frames[:-2]) == {expected}
+        assert all(time < ended for time in times[:-2])
 
 
 @pytest.mark.parametrize(("row", "models", "action", "expected"), ZSERIES_ROWS)

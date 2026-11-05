@@ -60,6 +60,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -1307,6 +1308,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
     },
+    # A Fuzion entry controls one side; a standalone BAM/MCR entry exposes both,
+    # so only Fuzion asks. Auto keeps the left side, as before.
+    BED_TYPE_SLEEP_NUMBER: _asking(
+        BED_TYPE_SLEEP_NUMBER,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_SLEEP_NUMBER), "auto"),
+        ),
+    ),
     # The Limoss Remote app's bed or chair, its local light and massage choices,
     # reversals and artwork theme. The connected device supplies the key layout.
     BED_TYPE_LIMOSS_REMOTE: _asking(
