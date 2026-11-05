@@ -167,7 +167,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 3. **Discovery or Manual Entry**
    - **Automatic:** Select your bed from the discovered list
    - **Scan again for beds:** Request a fresh active scan from Home Assistant, then return to the discovered list
-   - **Manual:** Choose **Select by actuator brand** or **Show all BLE devices**, then select the bed or enter its Bluetooth MAC address (format: `AA:BB:CC:DD:EE:FF`)
+   - **Manual:** Choose **Set up by app or remote** (the app first) or **Pick any Bluetooth device** (the device first), then select the bed or enter its Bluetooth MAC address (format: `AA:BB:CC:DD:EE:FF`)
 
 4. **Configure Settings**
    - **Bed type**: Type part of your app, brand or controller name to search the
@@ -233,7 +233,7 @@ If your bed isn't auto-discovered:
 
 **Using the Integration (Recommended):**
 1. Go to Settings → Integrations → Add Integration → Adjustable Bed
-2. Choose **Show all BLE devices** (or **Browse unsupported BLE devices** for inspection only)
+2. Choose **Pick any Bluetooth device** (or **Browse unsupported BLE devices** for inspection only)
 3. The integration displays all discovered Bluetooth devices with their MAC addresses
 4. Find your bed in the list (look for names like "Desk XXXXX", "HHC...", your bed brand, etc.)
 

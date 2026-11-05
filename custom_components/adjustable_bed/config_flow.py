@@ -1064,6 +1064,20 @@ class _SearchableSelect(SelectSelector):
         return self._choices.get(value, value)
 
 
+_APP_NOT_LISTED: Final = "not_listed"
+
+
+def _family_name(info: BluetoothServiceInfoBleak) -> str:
+    """Name a discovered bed's family as its row in the bed-type list names it.
+
+    A family row reads "<Family>: <its apps>" and another row "<Name> (<apps or
+    models>)", so the part before the colon or parenthesis names the family.
+    """
+    bed_type = detect_bed_type(info) or BED_TYPE_DIAGNOSTIC
+    label = str(_bed_type_selector(bed_type).shown(bed_type))
+    return label.split(": ", 1)[0].split(" (", 1)[0]
+
+
 def _bed_type_field(
     marker: type[vol.Required] | type[vol.Optional],
     default: str | None,
@@ -4534,6 +4548,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # The app the user picked from a brand's app list. A refitted form also
         # sets _selected_bed_type, so only this one means an app was chosen.
         self._brand_app_choice: str | None = None
+        # The step that continues once the app is chosen, when the device came first.
+        self._app_after_device: Literal["manual_config", "manual_entry"] | None = None
         self._selected_protocol_variant: str | None = None
         # For disambiguation UI when BLE detection is ambiguous
         self._disambiguation_types: list[str] | None = None
@@ -5610,15 +5626,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     address.removeprefix(CONFIGURED_RETRY_PREFIX)
                 )
             if address == "manual":
-                _LOGGER.debug("User selected manual entry (full list)")
-                # Reset two-tier selection state - show all BLE devices with full bed type dropdown
+                _LOGGER.debug("User chose to pick any Bluetooth device")
+                # The device comes first here; the app question follows it.
                 self._selected_actuator = None
                 self._selected_bed_type = None
                 self._selected_protocol_variant = None
                 return await self.async_step_manual()
-            if address == "select_by_brand":
-                _LOGGER.debug("User selected two-tier brand selection")
-                return await self.async_step_select_actuator()
+            if address == "select_by_app":
+                _LOGGER.debug("User chose to set up by app or remote")
+                self._selected_bed_type = None
+                self._selected_protocol_variant = None
+                self._app_after_device = None
+                return await self.async_step_select_app()
             if address == "diagnostic":
                 _LOGGER.debug("User selected diagnostic mode")
                 return await self.async_step_diagnostic()
@@ -5718,48 +5737,98 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         retrying_suffix = await self._get_retrying_option_suffix()
 
-        # Build device list - discovered beds first when available, then manual options
-        devices: dict[str, str] = {}
-        if sorted_beds:
-            devices.update(
-                {address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_beds}
+        # Discovered beds come first, named with their family; the fixed choices
+        # are translated through the selector's translation key.
+        options = [
+            SelectOptionDict(
+                value=address,
+                label=f"{info.name or 'Unknown'} ({address}) · {_family_name(info)}",
             )
-            devices.update(
-                {
-                    f"{CONFIGURED_RETRY_PREFIX}{address}": self._format_retrying_option_label(
-                        address,
-                        entry,
-                        info,
-                        suffix=retrying_suffix,
-                    )
-                    for address, (entry, info) in sorted_retrying_devices
-                }
+            for address, info in sorted_beds
+        ]
+        options += [
+            SelectOptionDict(
+                value=f"{CONFIGURED_RETRY_PREFIX}{address}",
+                label=self._format_retrying_option_label(
+                    address, entry, info, suffix=retrying_suffix
+                ),
             )
-            devices["select_by_brand"] = "Select by actuator brand"
-        else:
-            devices.update(
-                {
-                    f"{CONFIGURED_RETRY_PREFIX}{address}": self._format_retrying_option_label(
-                        address,
-                        entry,
-                        info,
-                        suffix=retrying_suffix,
-                    )
-                    for address, (entry, info) in sorted_retrying_devices
-                }
-            )
-            devices["select_by_brand"] = "Select by actuator brand (recommended)"
-        devices["scan"] = "Scan again for beds"
-        devices["manual"] = "Show all BLE devices"
-        devices["diagnostic"] = "Browse unsupported BLE devices"
+            for address, (entry, info) in sorted_retrying_devices
+        ]
+        options += [
+            SelectOptionDict(value=key, label=key)
+            for key in ("select_by_app", "scan", "manual", "diagnostic")
+        ]
         if len(self._pairable_single_entries()) >= 2:
-            devices["pair_beds"] = "Combine two beds into one (Dual Bed)"
+            options.append(SelectOptionDict(value="pair_beds", label="pair_beds"))
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_ADDRESS): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            translation_key="setup_start",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
             errors={"base": self._scan_error} if self._scan_error else {},
         )
+
+    async def async_step_select_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app or remote controls the bed, from the bed-type list itself.
+
+        A row picked here is the bed-type row the later form shows, so an app's
+        row answers its family question and a family row still asks it.
+        """
+        not_listed = await self._get_config_translation(
+            "step.select_app.data.not_listed", "My app isn't listed, or I don't know"
+        )
+        # A device picked first suggests its confidently detected route, and its
+        # family row keeps that route, as the generic form's list does.
+        detected = (
+            _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
+            if self._app_after_device == "manual_config" and self._discovery_info is not None
+            else None
+        )
+        rows = _bed_type_selector(detected).rows()
+        picker = _SearchableSelect(
+            [
+                *(SelectOptionDict(value=choice, label=label) for label, choice in rows.items()),
+                SelectOptionDict(value=_APP_NOT_LISTED, label=not_listed),
+            ]
+        )
+        if user_input is not None:
+            choice = picker(user_input[CONF_BED_TYPE])
+            if choice == _APP_NOT_LISTED:
+                return await self.async_step_select_actuator()
+            bed_type, variant = resolve_bed_type_choice(choice)
+            self._selected_bed_type = bed_type
+            self._selected_protocol_variant = variant
+            return await self._async_after_app_choice()
+        marker = (
+            vol.Required(CONF_BED_TYPE, default=picker.shown(detected))
+            if detected is not None
+            else vol.Required(CONF_BED_TYPE)
+        )
+        return self.async_show_form(
+            step_id="select_app",
+            data_schema=vol.Schema({marker: picker}),
+        )
+
+    async def _async_after_app_choice(self) -> ConfigFlowResult:
+        """Continue with the device, or with the device already picked first."""
+        step, self._app_after_device = self._app_after_device, None
+        if step == "manual_config":
+            return await self.async_step_manual_config()
+        if step == "manual_entry":
+            return await self.async_step_manual_entry()
+        return await self.async_step_manual()
 
     async def async_step_scan(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Run an explicit discovery sweep behind the existing progress view."""
@@ -5935,7 +6004,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # Single protocol - go directly to device selection
                 self._selected_bed_type = SINGLE_TYPE_GROUPS[selected]
                 self._selected_protocol_variant = None
-                return await self.async_step_manual()
+                return await self._async_after_app_choice()
 
         # Build options for actuator brand selection
         options: list[SelectOptionDict] = [
@@ -5975,7 +6044,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._selected_bed_type = variant["type"]
             self._selected_protocol_variant = variant.get("variant")
             self._brand_app_choice = variant["type"]
-            return await self.async_step_manual()
+            return await self._async_after_app_choice()
 
         # Build options for variant selection
         options: list[SelectOptionDict] = [
@@ -6017,6 +6086,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 )
             if address == "manual_entry":
                 _LOGGER.debug("User selected manual address entry")
+                if self._selected_bed_type is None:
+                    self._app_after_device = "manual_entry"
+                    return await self.async_step_select_app()
                 return await self.async_step_manual_entry()
 
             _LOGGER.info("User selected device for manual setup: %s", address)
@@ -6030,6 +6102,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._set_device_title_placeholders(
                 self._discovery_info.name, self._discovery_info.address
             )
+            if self._selected_bed_type is None:
+                # Pick any Bluetooth device: the app question follows the device.
+                self._app_after_device = "manual_config"
+                return await self.async_step_select_app()
             return await self.async_step_manual_config()
 
         # Get ALL BLE devices (not just beds)
@@ -6064,6 +6140,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         if not self._all_ble_devices and not self._retrying_devices:
             _LOGGER.info("No BLE devices found in either scanner view, showing manual entry form")
+            if self._selected_bed_type is None:
+                # Nothing to pick, so the address is typed after the app question.
+                self._app_after_device = "manual_entry"
+                return await self.async_step_select_app()
             return await self.async_step_manual_entry()
 
         # Sort devices: named devices first (alphabetically), then MAC-only/unnamed
