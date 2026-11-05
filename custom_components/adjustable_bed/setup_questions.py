@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any, Final
+from uuid import UUID
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -35,6 +36,7 @@ from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
@@ -68,6 +70,10 @@ from .const import (
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_READ_UUID,
+    CONF_LP_LEGACY_WRITE_UUID,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -207,15 +213,20 @@ class Question:
     """One setup question; its answer is stored under ``key``.
 
     ``choices`` lists the answers and their labels, or derives them from the
-    staged setup; without choices the question is yes or no. ``default`` is a
-    value, a function of the staged setup, or :data:`REQUIRED`. An ``advanced``
-    question sits in a collapsed Advanced section.
+    staged setup; without choices the question is yes or no, or free ``text``.
+    ``default`` is a value, a function of the staged setup, or :data:`REQUIRED`.
+    An ``advanced`` question sits in a collapsed Advanced section. ``when`` is
+    the condition for asking it. It will render as Home Assistant's native
+    conditional field once the minimum version is 2026.11; until then no
+    declaration uses one.
     """
 
     key: str
     choices: Choices | None = None
     default: Any = REQUIRED
     advanced: bool = False
+    text: bool = False
+    when: Callable[[Mapping[str, Any]], bool] | None = None
 
     def options(self, data: Mapping[str, Any]) -> Mapping[Any, str] | None:
         if self.choices is None or isinstance(self.choices, Mapping):
@@ -241,14 +252,23 @@ class SetupProfile:
     ``owns`` maps each generic field the profile owns to its fixed value, or to
     :data:`SET_BY_PROFILE` when the profile derives it. ``validate`` returns
     errors by field for the staged setup with the answers applied, and
-    ``derive`` returns the fields the profile computes from them.
+    ``derive`` returns the fields the profile computes from them. ``normalize``
+    builds the staged setup from the previous one and the submitted answers,
+    for a profile whose answers need cleaning or clear other settings.
     """
 
     owns: Mapping[str, Any] = field(default_factory=dict)
     questions: tuple[Question, ...] = ()
     validate: Callable[[Mapping[str, Any]], dict[str, str]] | None = None
+    normalize: Callable[[Mapping[str, Any], Mapping[str, Any]], dict[str, Any]] | None = None
     derive: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None
     title: Callable[[Mapping[str, Any]], str] | None = None
+
+    def staged(self, previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+        """Return the staged setup with the answers applied."""
+        if self.normalize is not None:
+            return self.normalize(previous, answers)
+        return {**previous, **answers}
 
     def fixed_values(self) -> dict[str, Any]:
         """Return the owned fields that have a fixed value."""
@@ -378,6 +398,53 @@ def _furnimove_table(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+_LP_LEGACY_MODES: Final[Mapping[Any, str]] = {"legacy": "Legacy", "framed": "Framed"}
+
+
+def _lp_legacy_codes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+
+    return {code: code for code in LP_LEGACY_PROFILE_CODES}
+
+
+def _uuid_text(value: object) -> str:
+    """Return a UUID in canonical form, or the trimmed text when it is not one."""
+    raw = str(value or "").strip()
+    try:
+        return str(UUID(raw))
+    except ValueError:
+        return raw
+
+
+def _lp_legacy_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    data = {**previous, **answers}
+    # Only answered fields are cleaned, so an unanswered one stays required.
+    if CONF_LP_LEGACY_MODEL in data:
+        data[CONF_LP_LEGACY_MODEL] = str(data[CONF_LP_LEGACY_MODEL]).strip().upper()
+    for key in (CONF_LP_LEGACY_WRITE_UUID, CONF_LP_LEGACY_READ_UUID):
+        if key in data:
+            data[key] = _uuid_text(data[key])
+    return data
+
+
+def _lp_legacy_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Reject incomplete protocol settings; nothing is guessed from the bed."""
+    errors: dict[str, str] = {}
+    if data.get(CONF_LP_LEGACY_MODEL) not in _lp_legacy_codes(data):
+        errors[CONF_LP_LEGACY_MODEL] = "invalid_lp_legacy_model"
+    if data.get(CONF_LP_LEGACY_MODE) not in _LP_LEGACY_MODES:
+        errors[CONF_LP_LEGACY_MODE] = "invalid_lp_legacy_mode"
+    for key in (CONF_LP_LEGACY_WRITE_UUID, CONF_LP_LEGACY_READ_UUID):
+        value = data.get(key, "")
+        if key == CONF_LP_LEGACY_READ_UUID and not value:
+            continue
+        try:
+            UUID(str(value))
+        except ValueError:
+            errors[key] = "invalid_characteristic_uuid"
+    return errors
+
+
 # The 2M, 3M and 4M screens of the ORE and INNOVA apps (keeson.md).
 _APP_SCREENS: Final[Mapping[Any, str]] = {
     2: "2M: back and feet",
@@ -434,6 +501,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for variant in _SCREEN_VARIANTS
     },
+    # The legacy app's model code, protocol mode and confirmed characteristics.
+    BED_TYPE_LEGGETT_LP_LEGACY: _asking(
+        BED_TYPE_LEGGETT_LP_LEGACY,
+        questions=(
+            Question(CONF_LP_LEGACY_MODEL, _lp_legacy_codes),
+            Question(CONF_LP_LEGACY_MODE, _LP_LEGACY_MODES),
+            Question(CONF_LP_LEGACY_WRITE_UUID, text=True),
+            Question(CONF_LP_LEGACY_READ_UUID, default="", text=True),
+        ),
+        normalize=_lp_legacy_normalize,
+        validate=_lp_legacy_errors,
+    ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,

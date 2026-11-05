@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import math
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import pytest
 
@@ -23,9 +24,17 @@ from custom_components.adjustable_bed.command_scheduler import (
     StreamMember,
     command_resources,
 )
+from tests.hold_lease_wire import virtual_clock
 
 CONCURRENT = command_resources("motor:back", "motor:legs", "motor:head")
 TICK = 0.01
+
+
+@pytest.fixture
+async def clock() -> AsyncIterator[Any]:
+    """Virtual time: ticks, member deadlines and leases are exact, never real timers."""
+    with virtual_clock() as fake:
+        yield fake
 
 
 class FakeDriver:
@@ -101,7 +110,7 @@ async def settle(driver: FakeDriver, ticks: int = 2) -> None:
         await asyncio.wait_for(driver.ticked.wait(), 1)
 
 
-async def test_every_member_appears_in_each_composed_tick() -> None:
+async def test_every_member_appears_in_each_composed_tick(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("compose")
     driver = FakeDriver()
     back = join(scheduler, driver, member("back"))
@@ -117,7 +126,7 @@ async def test_every_member_appears_in_each_composed_tick() -> None:
     assert (await last_record(scheduler)).scheduler_strategy == "merged_stream"
 
 
-async def test_replacing_one_member_leaves_the_other_streaming() -> None:
+async def test_replacing_one_member_leaves_the_other_streaming(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("replace")
     driver = FakeDriver()
     back_up = join(scheduler, driver, member("back"))
@@ -134,7 +143,7 @@ async def test_replacing_one_member_leaves_the_other_streaming() -> None:
     await asyncio.gather(legs, back_down)
 
 
-async def test_members_expire_independently_and_the_last_one_releases() -> None:
+async def test_members_expire_independently_and_the_last_one_releases(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("expire")
     driver = FakeDriver()
     short = join(scheduler, driver, member("back", seconds=0.03))
@@ -147,7 +156,7 @@ async def test_members_expire_independently_and_the_last_one_releases() -> None:
     assert (await last_record(scheduler)).outcome is CommandOutcome.COMPLETED
 
 
-async def test_bed_wide_stop_clears_every_member_before_a_later_member() -> None:
+async def test_bed_wide_stop_clears_every_member_before_a_later_member(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("stop")
     driver = FakeDriver()
     back = join(scheduler, driver, member("back"))
@@ -169,7 +178,7 @@ async def test_bed_wide_stop_clears_every_member_before_a_later_member() -> None
     await later
 
 
-async def test_motor_scoped_stop_ends_only_its_member() -> None:
+async def test_motor_scoped_stop_ends_only_its_member(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("motor-stop")
     driver = FakeDriver()
     back = join(scheduler, driver, member("back"))
@@ -184,7 +193,7 @@ async def test_motor_scoped_stop_ends_only_its_member() -> None:
     await legs
 
 
-async def test_member_cleanup_failure_ends_the_stream_and_releases() -> None:
+async def test_member_cleanup_failure_ends_the_stream_and_releases(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("failure")
     driver = FakeDriver(fail_end="back")
     back = join(scheduler, driver, member("back", seconds=0.03))
@@ -199,7 +208,7 @@ async def test_member_cleanup_failure_ends_the_stream_and_releases() -> None:
     assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
 
 
-async def test_serial_command_on_a_member_motor_replaces_the_stream() -> None:
+async def test_serial_command_on_a_member_motor_replaces_the_stream(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("serial")
     driver = FakeDriver()
     back = join(scheduler, driver, member("back"))
@@ -215,7 +224,7 @@ async def test_serial_command_on_a_member_motor_replaces_the_stream() -> None:
     assert driver.events[-1] == ("release",)
 
 
-async def test_lease_renewal_moves_a_member_deadline_without_a_frame() -> None:
+async def test_lease_renewal_moves_a_member_deadline_without_a_frame(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("lease")
     driver = FakeDriver()
     held = HoldLease(owner="card", generation=1, action="up", duration_s=0.05)
@@ -237,7 +246,7 @@ async def test_lease_renewal_moves_a_member_deadline_without_a_frame() -> None:
         )
 
 
-async def test_disconnect_ends_the_stream_without_replay() -> None:
+async def test_disconnect_ends_the_stream_without_replay(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("disconnect")
     driver = FakeDriver()
     back = join(scheduler, driver, member("back"))
@@ -250,7 +259,7 @@ async def test_disconnect_ends_the_stream_without_replay() -> None:
     assert driver.events[-1] == ("release",)
 
 
-async def test_tick_failure_reaches_every_member() -> None:
+async def test_tick_failure_reaches_every_member(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("tick-failure")
     driver = FakeDriver()
     back = join(scheduler, driver, member("back"))
@@ -268,7 +277,7 @@ async def test_tick_failure_reaches_every_member() -> None:
     assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
 
 
-async def test_stop_runs_every_member_cleanup_despite_a_failure() -> None:
+async def test_stop_runs_every_member_cleanup_despite_a_failure(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("drain")
     driver = FakeDriver(fail_end="back")
     back = join(scheduler, driver, member("back"))
@@ -282,7 +291,7 @@ async def test_stop_runs_every_member_cleanup_despite_a_failure() -> None:
     assert driver.events[-1] == ("release",)
 
 
-async def test_slow_cleanup_never_lets_an_expired_member_tick() -> None:
+async def test_slow_cleanup_never_lets_an_expired_member_tick(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("slow-cleanup")
     driver = FakeDriver()
     original_end = driver.end_stream_member
@@ -300,20 +309,18 @@ async def test_slow_cleanup_never_lets_an_expired_member_tick() -> None:
     assert not any(event[0] == "tick" for event in driver.events[back_end:])
 
 
-async def test_overdue_stream_lease_is_not_renewed() -> None:
-    import time
-
+async def test_overdue_stream_lease_is_not_renewed(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("overdue-member")
     driver = FakeDriver()
     held = HoldLease(owner="card", generation=1, action="up", duration_s=0.02)
     back = join(scheduler, driver, member("back", lease=held))
     await settle(driver, 1)
-    time.sleep(0.04)  # block the loop past the deadline before the streamer wakes
+    clock.advance_to(clock.now + 0.04)  # past the deadline before the streamer wakes
     assert scheduler.claim_hold(held, ("motor:back",)) is HoldClaim.STALE
     assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
 
 
-async def test_motor_stop_keeps_a_queued_stream_for_its_other_members() -> None:
+async def test_motor_stop_keeps_a_queued_stream_for_its_other_members(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("queued-stream")
     blocker_started = asyncio.Event()
     release_blocker = asyncio.Event()
@@ -340,7 +347,7 @@ async def test_motor_stop_keeps_a_queued_stream_for_its_other_members() -> None:
     assert not any(event[:2] == ("end", "back:up") for event in driver.events)
 
 
-async def test_stop_during_the_final_release_lets_it_finish() -> None:
+async def test_stop_during_the_final_release_lets_it_finish(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("release-cancel")
     driver = FakeDriver()
     release_started = asyncio.Event()
@@ -377,7 +384,7 @@ async def test_stop_during_the_final_release_lets_it_finish() -> None:
     assert driver.events[-1] == ("release",)
 
 
-async def test_last_member_returns_before_a_newcomer_streams() -> None:
+async def test_last_member_returns_before_a_newcomer_streams(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("closing")
     driver = FakeDriver()
     original_end = driver.end_stream_member
@@ -399,12 +406,14 @@ async def test_last_member_returns_before_a_newcomer_streams() -> None:
     assert driver.events.index(("release",)) < driver.events.index(("tick", "legs:up"))
 
 
-async def test_members_ending_back_to_back_close_the_stream() -> None:
+async def test_members_ending_back_to_back_close_the_stream(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("back-to-back")
     driver = FakeDriver()
     original_end = driver.end_stream_member
     back_cleanup = asyncio.Event()
     finish_back_cleanup = asyncio.Event()
+
+    legs_ended = asyncio.Event()
 
     async def slow_end(item: StreamMember, remaining: tuple[StreamMember, ...]) -> None:
         if item.motor == "back":
@@ -413,6 +422,8 @@ async def test_members_ending_back_to_back_close_the_stream() -> None:
         else:
             await asyncio.sleep(0.02)
         await original_end(item, remaining)
+        if item.motor == "legs":
+            legs_ended.set()
 
     driver.end_stream_member = slow_end  # type: ignore[method-assign]
     back = join(scheduler, driver, member("back", seconds=0.02))
@@ -421,8 +432,12 @@ async def test_members_ending_back_to_back_close_the_stream() -> None:
     # legs stops while back's cleanup is still on the wire.
     scheduler.finish_stop(scheduler.request_stop(command_resources("motor:legs")))
     finish_back_cleanup.set()
-    while not legs.done() and ("end", "legs:up") not in driver.events:
-        await asyncio.sleep(0)
+    # Wait for legs to end rather than spinning: a zero sleep loop keeps virtual
+    # time from reaching the 20 ms cleanup it is waiting for.
+    legs_end = asyncio.ensure_future(legs_ended.wait())
+    await asyncio.wait({legs, legs_end}, timeout=1, return_when=asyncio.FIRST_COMPLETED)
+    legs_end.cancel()
+    await asyncio.gather(legs_end, return_exceptions=True)
     head = join(scheduler, driver, member("head", seconds=0.02))
     assert await asyncio.wait_for(back, 1) is CommandOutcome.EXPIRED
     assert await asyncio.wait_for(legs, 1) is CommandOutcome.STOPPED
@@ -431,7 +446,7 @@ async def test_members_ending_back_to_back_close_the_stream() -> None:
     assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
 
 
-async def test_newcomer_ready_as_the_last_member_expires_waits_for_release() -> None:
+async def test_newcomer_ready_as_the_last_member_expires_waits_for_release(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("ready-newcomer")
     driver = FakeDriver()
     held = HoldLease(owner="card", generation=1, action="up", duration_s=0.01)
@@ -452,7 +467,7 @@ async def test_newcomer_ready_as_the_last_member_expires_waits_for_release() -> 
     assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
 
 
-async def test_stopping_the_last_member_during_cleanup_closes_admission() -> None:
+async def test_stopping_the_last_member_during_cleanup_closes_admission(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("stop-last")
     driver = FakeDriver()
     entered = asyncio.Event()
@@ -480,7 +495,7 @@ async def test_stopping_the_last_member_during_cleanup_closes_admission() -> Non
     assert driver.events.index(("release",)) < driver.events.index(("tick", "head:up"))
 
 
-async def test_a_cancelled_cleanup_write_still_settles_its_caller() -> None:
+async def test_a_cancelled_cleanup_write_still_settles_its_caller(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("cancelled-cleanup")
     driver = FakeDriver()
     entered = asyncio.Event()
@@ -508,7 +523,7 @@ async def test_a_cancelled_cleanup_write_still_settles_its_caller() -> None:
     assert (await last_record(scheduler)).outcome is CommandOutcome.FAILED
 
 
-async def test_an_unexpected_write_cancellation_fails_the_stream() -> None:
+async def test_an_unexpected_write_cancellation_fails_the_stream(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("unexpected-cancel")
     driver = FakeDriver()
     pending: list[asyncio.Future[None]] = []
@@ -529,7 +544,7 @@ async def test_an_unexpected_write_cancellation_fails_the_stream() -> None:
     assert driver.events[-2:] == [("end", "back:up"), ("release",)]
 
 
-async def test_a_failed_write_reaches_a_member_retired_just_before() -> None:
+async def test_a_failed_write_reaches_a_member_retired_just_before(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("failed-retired")
     driver = FakeDriver()
     reported: list[float | None] = []
@@ -558,7 +573,7 @@ async def test_a_failed_write_reaches_a_member_retired_just_before() -> None:
     assert reported == [None]
 
 
-async def test_a_write_failing_after_a_stop_preemption_reports_the_failure() -> None:
+async def test_a_write_failing_after_a_stop_preemption_reports_the_failure(clock: Any) -> None:
     scheduler = DeviceCommandScheduler("fail-after-preempt")
     driver = FakeDriver()
     reported: list[float | None] = []

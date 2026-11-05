@@ -191,8 +191,9 @@ show why browser JavaScript failed to load.
 
 - [Home Assistant frontend #53890](https://github.com/home-assistant/frontend/issues/53890)
   documents that elements defined by an `extra_module_url` module before the
-  scoped registry polyfill loads are invisible to Lovelace. The card handles
-  this itself.
+  scoped registry polyfill loads are invisible to Lovelace. Home Assistant
+  2026.11 fixes this by loading extra modules after the polyfill
+  ([frontend #54444](https://github.com/home-assistant/frontend/pull/54444)).
 - [Home Assistant frontend #52570](https://github.com/home-assistant/frontend/issues/52570)
   documents custom-module loading races, especially panel views and custom
   dashboard strategies. Resource registration alone does not guarantee that
