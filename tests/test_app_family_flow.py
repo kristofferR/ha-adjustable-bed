@@ -118,6 +118,31 @@ async def test_the_starcode_row_hands_each_app_to_its_own_step(hass):
 
 
 @pytest.mark.parametrize(
+    ("bed_type", "step", "choice"),
+    [
+        (const.BED_TYPE_CUSTOMATIC_CLARITY, "customatic_family", "clarity"),
+        (const.BED_TYPE_SERENITY, "jordans_family", "serenity"),
+    ],
+)
+async def test_choosing_the_rows_own_app_keeps_the_settings_the_form_collected(
+    hass, bed_type, step, choice
+):
+    # Fresh setup stages the automatic route and the user's pulse settings.
+    flow = setup_flow(hass, bed_type, const.VARIANT_AUTO)
+    assert flow._manual_data is not None
+    flow._manual_data.update(
+        {const.CONF_MOTOR_PULSE_COUNT: 37, const.CONF_MOTOR_PULSE_USER_SET: True}
+    )
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await getattr(flow, f"async_step_{step}")({"choice": choice})
+    saved = finish.call_args.args[0]
+    assert (saved[const.CONF_MOTOR_PULSE_COUNT], saved[const.CONF_MOTOR_PULSE_USER_SET]) == (
+        37,
+        True,
+    )
+
+
+@pytest.mark.parametrize(
     ("bed_type", "step"),
     [
         (const.BED_TYPE_CUSTOMATIC_CLARITY, "customatic_family"),

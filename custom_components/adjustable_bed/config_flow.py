@@ -3365,12 +3365,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
 
     def _select_family_route(self, bed_type: str, variant: str | None) -> None:
-        """Stage one family route, with Configure's defaults when it changes."""
+        """Stage one family route, with Configure's defaults when it changes.
+
+        An answer without a variant on the staged bed type keeps the staged
+        route, so choosing it again keeps the settings the form collected.
+        """
         assert self._manual_data is not None
         data = self._manual_data
         self._migration_verified = False
-        if (bed_type, variant) != (data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
-            _apply_route_defaults(data, bed_type, variant)
+        if bed_type == data[CONF_BED_TYPE] and variant in (None, data.get(CONF_PROTOCOL_VARIANT)):
+            return
+        _apply_route_defaults(data, bed_type, variant)
 
     async def _async_continue_keeson_route(self) -> ConfigFlowResult:
         """Ask what the staged route still needs, then finish it."""
