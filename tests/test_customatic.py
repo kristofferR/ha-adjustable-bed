@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.customatic import (
 from custom_components.adjustable_bed.codec.okin_nframe import SERVICE_UUID as COMMAND_SERVICE
 from custom_components.adjustable_bed.codec.okin_nframe import WRITE_UUID as COMMAND_CHARACTERISTIC
 from custom_components.adjustable_bed.codec.okin_nframe import frame as command_frame
+from tests.hold_lease_wire import virtual_clock
 
 
 def make_controller(
@@ -265,13 +266,14 @@ async def test_numbered_memory_rejected(profile: str) -> None:
 async def test_timed_motor_deadline_and_release_outside_deadline() -> None:
     controller = make_controller("remedy")
     timestamps = []
-    start = asyncio.get_running_loop().time()
 
     async def record(*args, **kwargs) -> None:
         timestamps.append(asyncio.get_running_loop().time() - start)
 
     controller.client.write_gatt_char.side_effect = record
-    await controller.hold_control("back_up+legs_down+lumbar_up", 250)
+    with virtual_clock():
+        start = asyncio.get_running_loop().time()
+        await controller.hold_control("back_up+legs_down+lumbar_up", 250)
     assert written(controller) == ["040200000019"] * 3 + ["040200000000"]
     assert all(timestamp < 0.25 for timestamp in timestamps[:-1])
     assert timestamps[-1] >= 0.35

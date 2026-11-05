@@ -152,6 +152,7 @@ from .const import (
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -331,6 +332,8 @@ from .const import (
     RUNTIME_BOND_KEYS,
     SIDE_LEFT,
     SIDE_RIGHT,
+    SLEEP_NUMBER_MCR_SERVICE_UUID,
+    SLEEP_NUMBER_SERVICE_UUID,
     SLEEPTRACKER_CONFIG_KEYS,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONFIG_KEYS,
@@ -951,12 +954,14 @@ def _bed_type_selector(
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
     if show_saved_id:
-        # The StarCode apps and Reverie receivers have no guided change, and
-        # another bed type reaches the Jensen JMC400 route only here, so
-        # Configure lists each by its own label; setup asks behind the family row.
+        # The StarCode apps and the Reverie and Sleep Number receivers have no
+        # guided change, and another bed type reaches the Jensen JMC400 route
+        # only here, so Configure lists each by its own label; setup asks
+        # behind the family row.
         unguided = {
             *(bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()),
             *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
+            *(bed_type for bed_type, _service in _SLEEP_NUMBER_ROUTES.values()),
             BED_TYPE_JENSEN,
         }
         options = sorted(
@@ -1442,6 +1447,8 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_REMACRO: "remacro_family",
     BED_TYPE_REVERIE: "reverie_family",
     BED_TYPE_REVERIE_NIGHTSTAND: "reverie_family",
+    BED_TYPE_SLEEP_NUMBER: "sleep_number_family",
+    BED_TYPE_SLEEP_NUMBER_MCR: "sleep_number_family",
     **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
     **dict.fromkeys(JENSEN_FAMILY.bed_types, "jensen_family"),
     **dict.fromkeys(MALOUF_FAMILY.bed_types, "malouf_family"),
@@ -2266,6 +2273,11 @@ _REVERIE_ROUTES: Final[dict[str, tuple[str, str]]] = {
     "protocol_110": (BED_TYPE_REVERIE_NIGHTSTAND, REVERIE_NIGHTSTAND_SERVICE_UUID),
     "protocol_108": (BED_TYPE_REVERIE, REVERIE_SERVICE_UUID),
 }
+# The Sleep Number question's answers: each transport and the service it advertises.
+_SLEEP_NUMBER_ROUTES: Final[dict[str, tuple[str, str]]] = {
+    "fuzion": (BED_TYPE_SLEEP_NUMBER, SLEEP_NUMBER_SERVICE_UUID),
+    "mcr": (BED_TYPE_SLEEP_NUMBER_MCR, SLEEP_NUMBER_MCR_SERVICE_UUID),
+}
 # The Remacro question's answers: the variant that selects each store app.
 _REMACRO_APPS: Final[dict[str, str]] = {
     # Auto is the Slumberland app, as in v4.0.2.
@@ -2283,6 +2295,7 @@ _APP_FAMILY_ROWS: Final[dict[str, str]] = {
         if variant is None
     },
     BED_TYPE_REVERIE: BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_SLEEP_NUMBER_MCR: BED_TYPE_SLEEP_NUMBER,
 }
 
 
@@ -2657,6 +2670,7 @@ _FAMILY_STEPS: Final = frozenset(
         "remacro_family",
         "jensen_family",
         "reverie_family",
+        "sleep_number_family",
     }
 )
 APP_SETTINGS_BED_TYPES: Final = (
@@ -3956,11 +3970,31 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_reverie_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Confirm the Reverie receiver from the service the bed advertises.
+        """Confirm the Reverie receiver from the service the bed advertises."""
+        return await self._async_service_family("reverie_family", _REVERIE_ROUTES, user_input)
+
+    async def async_step_sleep_number_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm the Sleep Number transport from the service the bed advertises."""
+        return await self._async_service_family(
+            "sleep_number_family", _SLEEP_NUMBER_ROUTES, user_input
+        )
+
+    async def _async_service_family(
+        self,
+        step_id: str,
+        routes: Mapping[str, tuple[str, str]],
+        user_input: dict[str, Any] | None,
+    ) -> ConfigFlowResult:
+        """Confirm a family's route from the service the bed advertises.
 
         The receiver's service, not the app or name, decides the route. Only a
-        bed whose advertisement shows neither service, or both, is asked.
+        bed whose advertisement shows none of the services, or several, is
+        asked. The first route is the family's picker row.
         """
+        from .setup_questions import setup_profile_for
+
         assert self._manual_data is not None
         data = self._manual_data
         if self._app_family_incoming is None:
@@ -3970,26 +4004,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self.hass, data[CONF_ADDRESS], connectable=False
         )
         advertised = {uuid.lower() for uuid in (info.service_uuids if info else ())}
-        confirmed = [
-            key for key, (_bed_type, service) in _REVERIE_ROUTES.items() if service in advertised
-        ]
+        confirmed = [key for key, (_bed_type, service) in routes.items() if service in advertised]
         choice = (user_input or {}).get("choice")
         if choice is None and len(confirmed) == 1:
             choice = confirmed[0]
-        if choice == "keep" or (isinstance(choice, str) and choice in _REVERIE_ROUTES):
+        if choice == "keep" or (isinstance(choice, str) and choice in routes):
             if choice != "keep":
-                self._select_family_route(_REVERIE_ROUTES[choice][0], None)
-            return await self.async_step_profile_questions()
+                self._select_family_route(routes[choice][0], None)
+            profile = setup_profile_for(self._manual_data)
+            if profile is not None and profile.questions:
+                return await self.async_step_profile_questions()
+            return await self._async_finish_family_route()
         # A route detection or the saved setup chose stays one answer away.
-        can_keep = incoming != BED_TYPE_REVERIE_NIGHTSTAND
+        can_keep = incoming != next(iter(routes.values()))[0]
         return self.async_show_form(
-            step_id="reverie_family",
+            step_id=step_id,
             data_schema=vol.Schema(
                 {
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
-                            options=[*_REVERIE_ROUTES, *(["keep"] if can_keep else [])],
-                            translation_key="reverie_family_choice",
+                            options=[*routes, *(["keep"] if can_keep else [])],
+                            translation_key=f"{step_id}_choice",
                             mode=SelectSelectorMode.LIST,
                         )
                     )
