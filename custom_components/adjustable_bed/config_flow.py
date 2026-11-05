@@ -328,6 +328,8 @@ from .const import (
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     PRODUCT_TYPES,
+    REMACRO_VARIANT_JEROMES,
+    REMACRO_VARIANT_THE_BRICK,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
@@ -1128,6 +1130,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_LP_LEGACY: "profile_questions",
     **dict.fromkeys(CUSTOMATIC_FAMILY.bed_types, "customatic_family"),
     **dict.fromkeys(JORDANS_FAMILY.bed_types, "jordans_family"),
+    BED_TYPE_REMACRO: "remacro_family",
     **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
 }
 
@@ -2147,6 +2150,13 @@ _STARCODE_APPS: Final[dict[str, _AppAnswer]] = {
     "m5x5": (BED_TYPE_STARCODE_M5X5, None, "starcode_m5x5"),
     "m1x12": (BED_TYPE_STARCODE_M1X12, None, "starcode_m1x12"),
 }
+# The Remacro question's answers: the variant that selects each store app.
+_REMACRO_APPS: Final[dict[str, str]] = {
+    # Auto is the Slumberland app, as in v4.0.2.
+    "slumberland": VARIANT_AUTO,
+    "the_brick": REMACRO_VARIANT_THE_BRICK,
+    "jeromes": REMACRO_VARIANT_JEROMES,
+}
 # Each app family's picker row, by the routes behind it. The first answer is the row.
 _APP_FAMILY_ROWS: Final[dict[str, str]] = {
     bed_type: next(iter(apps.values()))[0]
@@ -2531,6 +2541,7 @@ _FAMILY_STEPS: Final = frozenset(
         "sleepys_family",
         "customatic_family",
         "jordans_family",
+        "remacro_family",
     }
 )
 APP_SETTINGS_BED_TYPES: Final = frozenset(
@@ -3668,6 +3679,66 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Ask which StarCode app runs the bed, then that app's own settings."""
         return await self._async_app_family("starcode_family", _STARCODE_APPS, user_input)
+
+    async def async_step_remacro_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which store app runs a Remacro bed, offering the apps that list its model.
+
+        The advertisement picks the model, never the app. A model no app lists,
+        or none seen yet, runs the fallback controls on any app.
+        """
+        from .beds.remacro_protocol import (
+            MODELS,
+            advertised_model_id,
+            app_for_variant,
+            apps_listing,
+        )
+
+        assert self._manual_data is not None
+        data = self._manual_data
+        manufacturer_data = remacro_manufacturer_data(
+            self.hass,
+            data[CONF_ADDRESS],
+            self._discovery_info.manufacturer_data if self._discovery_info is not None else None,
+        )
+        model_id = advertised_model_id(manufacturer_data)
+        listing = apps_listing(model_id)
+        apps = [
+            key
+            for key, variant in _REMACRO_APPS.items()
+            if not listing or app_for_variant(variant) in listing
+        ]
+        choice = (user_input or {}).get("choice")
+        if isinstance(choice, str) and choice in apps:
+            # The bed type stays; only the app changes, so the form's settings stay.
+            data[CONF_PROTOCOL_VARIANT] = _REMACRO_APPS[choice]
+            self._manual_data = self._maybe_add_advertisement_metadata(
+                data, manufacturer_data=manufacturer_data
+            )
+            return await self._async_finish_family_route()
+        model = (
+            MODELS[model_id].name
+            if model_id in MODELS
+            else f"company ID {model_id}"
+            if model_id is not None
+            else "none seen yet"
+        )
+        return self.async_show_form(
+            step_id="remacro_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=apps,
+                            translation_key="remacro_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"model": model},
+        )
 
     async def _async_app_family(
         self, step_id: str, apps: Mapping[str, _AppAnswer], user_input: dict[str, Any] | None
