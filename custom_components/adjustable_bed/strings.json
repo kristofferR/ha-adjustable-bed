@@ -44,7 +44,20 @@
           "octo_motor_count_override": "OCTO motor count",
           "cb24_bed_selection": "CB24 bed side",
           "preferred_adapter": "Bluetooth adapter",
-          "disconnect_after_command": "Disconnect after each command"
+          "disconnect_after_command": "Disconnect after each command",
+          "transport_direct": "Transport: direct Bluetooth",
+          "transport_proxy": "Transport: Bluetooth proxy",
+          "transport_unknown": "Transport: Bluetooth",
+          "transport_likely": "Likely connection",
+          "transport_signal": "Signal strength",
+          "transport_none": "No adapter can see this device",
+          "transport_local_alternative": "Local adapter also in range",
+          "transport_preferred_unavailable": "Selected adapter unavailable",
+          "transport_not_guaranteed": "Path is a prediction",
+          "transport_proxy_pairing_warning": "Pairing over a proxy",
+          "transport_all_busy": "No free Bluetooth connections",
+          "transport_actual": "Connected over",
+          "transport_actual_differs": "Path differed from the prediction"
         },
         "data_description": {
           "motor_count": "Number of physical actuators.",
