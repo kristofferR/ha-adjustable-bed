@@ -1766,8 +1766,8 @@ REMACRO_VARIANTS: Final = {
     REMACRO_VARIANT_JEROMES: "Jerome's app",
 }
 LINAK_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Bed Control)",
-    LINAK_VARIANT_BED_CONTROL: "Bed Control (modern, auto-detected capabilities)",
+    VARIANT_AUTO: "Auto (Bed Control or Bed Connect app)",
+    LINAK_VARIANT_BED_CONTROL: "Bed Control or Bed Connect app (modern, auto-detected capabilities)",
     LINAK_VARIANT_PERFORMANCE: "Performance Series (legacy, 300 ms hold cadence)",
 }
 

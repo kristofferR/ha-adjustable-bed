@@ -91,7 +91,7 @@
 
 ## Detection / Setup
 
-- Select **Floyd Home app (product 139)**, or leave Kaidi on Auto when the bed
+- Select **Floyd Home app (Kaidi product 139)**, or leave Kaidi on Auto when the bed
   advertises product 139.
 - Existing Kaidi discovery rules continue to apply to its other profiles.
 
@@ -126,7 +126,7 @@
 
 ### Home Assistant setup
 
-Choose **Floyd Home app (product 139)** under the Kaidi transport. Auto selects
+Choose **Floyd Home app (Kaidi product 139)** under the Kaidi transport. Auto selects
 this profile for advertised product 139. It owns its two-axis layout and disables
 unsupported massage/position controls. Pulse count and delay bound an HA hold,
 not a hardware repeat loop. Each physical address keeps its own BLE room and

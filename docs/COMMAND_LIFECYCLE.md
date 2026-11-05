@@ -83,8 +83,9 @@ before reservations can cancel newer work, and before committing movement.
 
 A renewable hold (#483) is a `CommandKind.HOLD` intent with a lease: an owner,
 a generation and a deadline on the event loop's monotonic clock. It is opt-in
-per controller through `ExecutionCapabilities.hold`; every other controller
-keeps finite pulses. The device scheduler owns the lease:
+per controller through `ExecutionCapabilities.hold`, or per held control
+through its `hold_controls` scope; every other controller and control keeps
+finite pulses. The device scheduler owns the lease:
 
 - A request that names a live lease's owner, resources, generation and action
   replaces its deadline and returns. No frame is written and nothing is

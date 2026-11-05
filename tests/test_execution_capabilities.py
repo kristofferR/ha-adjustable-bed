@@ -194,6 +194,9 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "eshine": {"hold": ("eshine",)},
     "eshine_okin": {"hold": ("eshine-okin",)},
     "furnimove": {"hold": ("fm157",)},
+    # Scoped to held controls whose effective gesture is a sustained press:
+    # short, long and short-and-long gestures and memory mode keep theirs.
+    "goodvibe": {"hold": ("goodvibe",), "hold_controls": ("goodvibe",)},
     "isleep": {"hold": ("kaidi",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
     # Latched; Floyd (no report) and dual-seat beds stay finite.
@@ -249,6 +252,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/eshine_okin.py:<module>.EshineOkinController.execution": ("eshine_okin",),
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
+    "beds/goodvibe.py:<module>.GoodVibeController": ("goodvibe",),
+    "beds/goodvibe.py:<module>.GoodVibeController.execution": ("goodvibe",),
     "beds/isleep.py:<module>.IsleepController": ("isleep",),
     "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
     "beds/jensen.py:<module>.JensenController": ("jensen",),
@@ -346,10 +351,10 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
 }
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
-CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent"})
+CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent", "hold_controls"})
 # Family profiles have their own ``hold`` timing field, so only these names
 # identify a replace() of a declaration.
-DISTINCT_FIELDS = frozenset({"execution", "sustain_ms", "concurrent"})
+DISTINCT_FIELDS = frozenset({"execution", "sustain_ms", "concurrent", "hold_controls"})
 
 
 def _design_evidence_keys() -> frozenset[str]:
@@ -646,6 +651,21 @@ def test_default_declares_nothing() -> None:
     assert ExecutionCapabilities(
         hold="stream", sustain_ms=217, concurrent=frozenset({"motor:back", "motor:legs"})
     ).declared == {"hold", "sustain_ms", "concurrent"}
+    assert ExecutionCapabilities(hold="stream", hold_controls=frozenset({"x"})).declared == {
+        "hold",
+        "hold_controls",
+    }
+
+
+def test_a_scoped_hold_admits_only_its_controls() -> None:
+    scoped = ExecutionCapabilities(hold="stream", hold_controls=frozenset({"held"}))
+    assert scoped.hold_for("held") == "stream"
+    assert scoped.hold_for("gesture") is None
+    # A motor route is outside every control scope.
+    assert scoped.hold_for() is None
+    whole = ExecutionCapabilities(hold="latched")
+    assert whole.hold_for("any") == whole.hold_for() == "latched"
+    assert NO_EXECUTION_CAPABILITIES.hold_for("any") is None
 
 
 @pytest.mark.parametrize(
@@ -656,6 +676,9 @@ def test_default_declares_nothing() -> None:
         {"hold": "stream", "sustain_ms": 0},
         {"concurrent": frozenset({"motor:back"})},
         {"concurrent": frozenset({"motor:back", ""})},
+        {"hold_controls": frozenset({"held"})},
+        {"hold": "stream", "hold_controls": frozenset()},
+        {"hold": "stream", "hold_controls": frozenset({""})},
     ],
 )
 def test_invalid_declarations_are_rejected(kwargs: dict[str, object]) -> None:

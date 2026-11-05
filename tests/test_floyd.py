@@ -55,7 +55,7 @@ def notify(controller: FloydController, value: str) -> None:
 def test_profile_selection_and_capability_boundaries(floyd: FloydController) -> None:
     assert resolve_kaidi_variant("auto", product_id=139).variant == "floyd"
     assert resolve_kaidi_variant("seat_2", product_id=139).variant == "seat_2"
-    assert "Floyd Home app (product 139)" in [option["label"] for option in get_bed_type_options()]
+    assert "Floyd Home app (Kaidi product 139)" in [option["label"] for option in get_bed_type_options()]
     assert floyd.supports_lights and floyd.supports_discrete_light_control
     assert floyd.memory_slot_count == 3
     assert not floyd.supports_direct_position_control
