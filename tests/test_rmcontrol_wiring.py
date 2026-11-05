@@ -10,10 +10,7 @@ from homeassistant.helpers.entity import Entity
 
 from custom_components.adjustable_bed.beds.base import BedController, ProductButtonSpec
 from custom_components.adjustable_bed.button import AdjustableBedProductButton
-from custom_components.adjustable_bed.config_flow import (
-    AdjustableBedOptionsFlow,
-    _rmcontrol_schema_fields,
-)
+from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_RICHMAT,
@@ -30,19 +27,25 @@ from custom_components.adjustable_bed.rmcontrol_services import (
     handle_rmcontrol_alarm,
     handle_rmcontrol_anti_snore,
 )
+from custom_components.adjustable_bed.setup_questions import setup_profile
+
+
+def _richmat_question(key: str):
+    profile = setup_profile(BED_TYPE_RICHMAT)
+    assert profile is not None
+    return next(question for question in profile.questions if question.key == key)
 
 
 def test_profile_opt_in_and_exact_selection() -> None:
-    schema = vol.Schema(_rmcontrol_schema_fields())
-    assert schema({}) == {CONF_RMCONTROL_PRODUCT: "", CONF_RMCONTROL_SIDE: "left"}
-    assert schema({CONF_RMCONTROL_PRODUCT: "A3RM", CONF_RMCONTROL_SIDE: "right"}) == {
-        CONF_RMCONTROL_PRODUCT: "A3RM",
-        CONF_RMCONTROL_SIDE: "right",
-    }
-    with pytest.raises(vol.Invalid):
-        schema({CONF_RMCONTROL_PRODUCT: "unknown-app-product"})
-    with pytest.raises(vol.Invalid):
-        schema({CONF_RMCONTROL_SIDE: "auto"})
+    product = _richmat_question(CONF_RMCONTROL_PRODUCT)
+    side = _richmat_question(CONF_RMCONTROL_SIDE)
+    products = product.options({})
+    assert products is not None
+    assert "" in products and "A3RM" in products and "unknown-app-product" not in products
+    # The legacy remote controls stay the default; the RMControl answer names a product.
+    assert product.default_for({}) == ""
+    assert side.default_for({}) == "left"
+    assert set(side.options({}) or {}) == {"left", "right", "both"}
 
 
 def test_profile_removed_only_when_changing_protocol() -> None:
@@ -240,8 +243,7 @@ async def test_factory_rejects_profile_with_unrelated_frame_variant(hass) -> Non
 
 @pytest.mark.parametrize("code", ["FWRM", "WFRM"])
 def test_desk_products_are_not_selectable(code: str) -> None:
-    with pytest.raises(vol.Invalid):
-        vol.Schema(_rmcontrol_schema_fields())({CONF_RMCONTROL_PRODUCT: code})
+    assert code not in (_richmat_question(CONF_RMCONTROL_PRODUCT).options({}) or {})
 
 
 @pytest.mark.parametrize("variant", ["prefix55", "prefixaa"])
@@ -399,11 +401,16 @@ async def test_light_without_reported_color_uses_power_only(
 
 @pytest.mark.parametrize("variant", ["prefix55", "prefixaa", "auto", "nordic", "wilinke"])
 def test_initial_product_answer_validates_transport(variant: str) -> None:
-    from custom_components.adjustable_bed.config_flow import _bed_specific_errors
-    from custom_components.adjustable_bed.const import BED_TYPE_RICHMAT, CONF_PROTOCOL_VARIANT
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
 
-    errors = _bed_specific_errors(
-        {CONF_RMCONTROL_PRODUCT: "A0RM", CONF_PROTOCOL_VARIANT: variant}, BED_TYPE_RICHMAT
+    profile = setup_profile(BED_TYPE_RICHMAT)
+    assert profile is not None and profile.validate is not None
+    errors = profile.validate(
+        {
+            CONF_BED_TYPE: BED_TYPE_RICHMAT,
+            CONF_RMCONTROL_PRODUCT: "A0RM",
+            CONF_PROTOCOL_VARIANT: variant,
+        }
     )
     assert errors == (
         {"base": "invalid_variant_for_bed_type"} if variant.startswith("prefix") else {}
@@ -491,8 +498,11 @@ async def test_bluetooth_confirmation_rejects_incompatible_product(
     result = await flow.async_step_bluetooth_confirm({
         CONF_BED_TYPE: BED_TYPE_RICHMAT,
         CONF_PROTOCOL_VARIANT: variant,
-        CONF_RMCONTROL_PRODUCT: "A0RM",
     })
+    assert result["step_id"] == "richmat_family"
+    result = await flow.async_step_richmat_family({"choice": "rmcontrol"})
+    assert result["step_id"] == "profile_questions"
+    result = await flow.async_step_profile_questions({CONF_RMCONTROL_PRODUCT: "A0RM"})
     assert result["errors"] == {"base": "invalid_variant_for_bed_type"}
     flow._finish_with_verify.assert_not_awaited()
 

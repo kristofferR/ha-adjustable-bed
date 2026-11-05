@@ -104,9 +104,9 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
 | `jensen_pin` | User | Jensen setup fields, Configure | `coordinator.py` |
-| `richmat_remote` | User | Richmat setup fields, Configure | `coordinator.py`, `profile_recommendations.py` |
-| `rmcontrol_product` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |
-| `rmcontrol_side` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |
+| `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
+| `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
+| `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
 | `cb24_bed_selection` | User | Configure, for CB24 | `coordinator.py` |
 | `gmmotor_side` | User | `gmmotor` step, Configure | `controller_factory.py` |
 | `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | `controller_factory.py` |

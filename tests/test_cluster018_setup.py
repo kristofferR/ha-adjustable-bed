@@ -44,9 +44,11 @@ def _setup(data: dict) -> dict:
 
 
 def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
-    choices = get_bed_type_options()
+    # Each app is an answer of the one Richmat row, which names it.
+    richmat_row = next(o for o in get_bed_type_options() if o['value'] == 'richmat')
     for app, name in APP_NAMES.items():
-        assert any(o['value'] == 'richmat_classic_apps:' + app and name in o['label'] for o in choices)
+        assert name in richmat_row['label']
+        assert not any(o['value'] == 'richmat_classic_apps:' + app for o in get_bed_type_options())
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
     }
