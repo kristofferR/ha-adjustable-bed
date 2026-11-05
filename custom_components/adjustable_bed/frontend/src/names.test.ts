@@ -6,7 +6,11 @@ import type { EntityNameItem, HassEntity, HomeAssistant } from "./types";
 const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 Object.defineProperty(globalThis, "window", {
   configurable: true,
-  value: { customElements: { get: () => undefined, define: () => undefined } },
+  value: { customElements: {
+    get: () => undefined,
+    define: () => undefined,
+    whenDefined: () => new Promise<CustomElementConstructor>(() => {}),
+  } },
 });
 const { AdjustableBedCard } = await import("./adjustable-bed-card");
 if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
