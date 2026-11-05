@@ -4,6 +4,7 @@
 // is robust across all supported bed types — a section only appears when its
 // entities exist.
 import { heldReleaseButton, holdLeaseRoute } from "./hold";
+import { deviceName } from "./names";
 import type {
   BedSide,
   BedEntities,
@@ -677,10 +678,7 @@ export function pairedChildDeviceIds(
   parentId: string | undefined,
 ): string[] {
   if (!parentId || !hass?.devices) return [];
-  const name = (id: string): string => {
-    const d = hass.devices[id];
-    return (d?.name_by_user ?? d?.name ?? id).toLowerCase();
-  };
+  const name = (id: string): string => (deviceName(hass, id) ?? id).toLowerCase();
   const sideOrder = (id: string): number => {
     for (const entry of Object.values(hass.entities ?? {})) {
       if (entry.device_id !== id || entry.platform !== "adjustable_bed") continue;

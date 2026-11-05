@@ -59,6 +59,7 @@ import {
   savedPositions,
 } from "./estimates";
 import { localize } from "./localize";
+import { deviceName, entityLabel } from "./names";
 import {
   type AdjustableBedCardConfig,
   type BedEntities,
@@ -266,6 +267,9 @@ export class AdjustableBedCard extends LitElement {
     // registry change — sides linked/relinked or a device renamed — must
     // re-render even when no entity or watched state changed.
     if (old.devices !== this.hass.devices) return true;
+    // HA installs a new name formatter after a rename, a hass update later than
+    // the registry change itself.
+    if (old.formatEntityName !== this.hass.formatEntityName) return true;
     for (const id of this._watched) {
       if (old.states[id] !== this.hass.states[id]) return true;
     }
@@ -356,7 +360,7 @@ export class AdjustableBedCard extends LitElement {
     const parentBed = bedEntitiesForDevice(hass, parentId);
     const sides = childIds.map((id, index) => ({
       key: id,
-      label: this._deviceLabel(id),
+      label: deviceName(hass, id) ?? id,
       bed: bedEntitiesForDevice(hass, id),
       graphicTone: index === 0 ? ("left" as const) : ("right" as const),
       // Target the selected child device instead of inferring its backend side
@@ -571,7 +575,7 @@ export class AdjustableBedCard extends LitElement {
             ${actions.map(({ entityId }) => html`<button class="tile"
               ?disabled=${!canStop || !this._available(entityId)}
               @click=${() => this._compactRecall(entityId, bed!)}>
-              ${this._icon(entityId)}<span class="tile-label">${this._name(entityId)}</span>
+              ${this._icon(entityId)}<span class="tile-label">${entityLabel(this.hass, entityId)}</span>
             </button>`)}
             <button class="tile compact-stop"
               ?disabled=${!canStop && this._compactStopTargets.size === 0}
@@ -988,11 +992,6 @@ export class AdjustableBedCard extends LitElement {
     return hasLightingControls(bed.lights);
   }
 
-  private _deviceLabel(id: string): string {
-    const d = this.hass?.devices[id];
-    return d?.name_by_user ?? d?.name ?? id;
-  }
-
   // Section keys in render order: the configured order first, then any default
   // sections the config didn't mention (so new sections are never dropped).
   private _orderedSections(): string[] {
@@ -1173,7 +1172,7 @@ export class AdjustableBedCard extends LitElement {
         ${m.position
           ? html`<button
               class="row-label position-label"
-              aria-label=${this._name(m.position)}
+              aria-label=${entityLabel(this.hass, m.position)}
               @click=${() => this._moreInfo(m.position!)}
             >${label}</button>`
           : html`<div class="row-label">${label}</div>`}
@@ -1265,7 +1264,7 @@ export class AdjustableBedCard extends LitElement {
     stopId?: string,
   ): TemplateResult {
     return html`<button class="tile"
-      aria-label=${this._name(entityId)}
+      aria-label=${entityLabel(this.hass, entityId)}
       @pointerdown=${(e: PointerEvent) => this._startHold(e, motor, "up", stopId)}
       @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor, stopId)}
       @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor, stopId)}
@@ -1275,7 +1274,7 @@ export class AdjustableBedCard extends LitElement {
       @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
       ?disabled=${!stopId || !this._available(entityId)}>
       ${this._icon(entityId)}
-      <span class="tile-label">${this._name(entityId)}</span>
+      <span class="tile-label">${entityLabel(this.hass, entityId)}</span>
     </button>`;
   }
 
@@ -1332,7 +1331,7 @@ export class AdjustableBedCard extends LitElement {
           @click=${() => savable && this._saveMemory(slot)}
         >
           <ha-icon class="icon" icon="mdi:content-save"></ha-icon>
-          <span class="tile-label">${this._name(labelId)}</span>
+          <span class="tile-label">${entityLabel(this.hass, labelId)}</span>
         </button>
       `;
     }
@@ -1347,7 +1346,7 @@ export class AdjustableBedCard extends LitElement {
         @click=${() => slot.goto && this._press(slot.goto)}
       >
         ${this._icon(labelId)}
-        <span class="tile-label">${this._name(labelId)}</span>
+        <span class="tile-label">${entityLabel(this.hass, labelId)}</span>
       </button>
     `;
   }
@@ -1450,7 +1449,7 @@ export class AdjustableBedCard extends LitElement {
     return html`
       <button class="tile ${opts.cls ?? ""}" @click=${onClick}>
         ${this._icon(entityId, opts.icon)}
-        <span class="tile-label">${this._name(entityId)}</span>
+        <span class="tile-label">${entityLabel(this.hass, entityId)}</span>
       </button>
     `;
   }
@@ -1469,7 +1468,7 @@ export class AdjustableBedCard extends LitElement {
   private _toggleRow(entityId: string): TemplateResult {
     const st = this._state(entityId);
     const on = st?.state === "on";
-    const name = this._name(entityId);
+    const name = entityLabel(this.hass, entityId);
     return html`
       <div
         class="entity-row"
@@ -1502,7 +1501,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _moreInfoRow(entityId: string): TemplateResult {
-    const name = this._name(entityId);
+    const name = entityLabel(this.hass, entityId);
     return html`
       <div
         class="entity-row"
@@ -1938,32 +1937,9 @@ export class AdjustableBedCard extends LitElement {
     return this.hass?.states[entityId];
   }
 
-  private _title(deviceId?: string): string {
+  private _title(deviceId = this._config?.device_id): string {
     if (this._config?.name) return this._config.name;
-    return this._deviceName(deviceId) ?? localize(this.hass, "card.default_name");
-  }
-
-  private _deviceName(deviceId = this._config?.device_id): string | undefined {
-    const dev = deviceId ? this.hass?.devices[deviceId] : undefined;
-    return dev?.name_by_user || dev?.name || undefined;
-  }
-
-  // Entity name with the device-name prefix stripped (the card already shows the
-  // bed name in its header). Falls back to the registry name or entity_id.
-  private _name(entityId: string): string {
-    const friendly =
-      this._state(entityId)?.attributes.friendly_name ??
-      this.hass?.entities[entityId]?.name ??
-      entityId;
-    // Use the entity's own device, not the card's configured device. This is
-    // essential for paired beds where the visible controls may belong to the
-    // parent, left child, or right child.
-    const entityDeviceId = this.hass?.entities[entityId]?.device_id;
-    const device = this._deviceName(entityDeviceId);
-    if (device && friendly.startsWith(device + " ")) {
-      return friendly.slice(device.length + 1);
-    }
-    return friendly;
+    return deviceName(this.hass, deviceId) ?? localize(this.hass, "card.default_name");
   }
 
   private _motorName(m: MotorEntity): string {

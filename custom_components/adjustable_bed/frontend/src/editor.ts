@@ -4,7 +4,8 @@
 // selector). Everything else is rendered with native HA controls (ha-switch,
 // ha-checkbox, ha-icon) so we keep full, predictable control over the grouped
 // layout, the per-section on/off + reordering, and the memory options — and
-// avoid ha-form's expandable/flatten quirks entirely.
+// avoid ha-form's expandable/flatten quirks entirely. ha-switch and ha-checkbox
+// render their label from the default slot, so it names and toggles the control.
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { SECTION_ORDER } from "./discovery";
@@ -13,6 +14,7 @@ import { applyCompactPreset, COMPACT_PRESETS, compactActionOptions,
 import { presentSections } from "./editor-sections";
 import { defineElement } from "./registration";
 import { localize } from "./localize";
+import { entityLabel } from "./names";
 import type {
   AdjustableBedCardConfig,
   BedEntities,
@@ -86,19 +88,11 @@ export class AdjustableBedCardEditor
     return bed ? bed.memory.map((s) => s.slot) : [];
   }
 
-  // Label for a memory slot — the entity's friendly name with the device prefix
-  // stripped (so a renamed slot shows e.g. "Flat", not "Memory 1").
+  // A renamed slot shows its name, e.g. "Flat", not "Memory 1".
   private _slotLabel(slot: MemorySlot): string {
     const id = slot.goto ?? slot.save;
-    const friendly =
-      (id && this.hass?.states[id]?.attributes.friendly_name) ||
-      `Memory ${slot.slot}`;
-    const deviceId = id && this.hass?.entities[id]?.device_id;
-    const dev = deviceId ? this.hass?.devices[deviceId] : undefined;
-    const device = dev?.name_by_user || dev?.name;
-    return device && friendly.startsWith(`${device} `)
-      ? friendly.slice(device.length + 1)
-      : friendly;
+    const fallback = `Memory ${slot.slot}`;
+    return id ? entityLabel(this.hass, id, fallback) : fallback;
   }
 
   // ---- config emit --------------------------------------------------------
@@ -231,12 +225,11 @@ export class AdjustableBedCardEditor
                   <svg viewBox="0 0 24 24"><path d=${CHEVRON_DOWN}></path></svg>
                 </button>
               </div>
-              <span class="label">${localize(this.hass, `editor.show_${key}`)}</span>
               <ha-switch
                 .checked=${shown}
                 @change=${(e: Event) =>
                   this._toggleSection(key, (e.target as HTMLInputElement).checked)}
-              ></ha-switch>
+              >${localize(this.hass, `editor.show_${key}`)}</ha-switch>
             </div>
           `;
         })}
@@ -259,12 +252,11 @@ export class AdjustableBedCardEditor
         ${
           canSave
             ? html`<div class="row">
-                <span class="label">${localize(this.hass, "editor.memory_save")}</span>
                 <ha-switch
                   .checked=${this._config?.memory_save !== false}
                   @change=${(e: Event) =>
                     this._setMemorySave((e.target as HTMLInputElement).checked)}
-                ></ha-switch>
+                >${localize(this.hass, "editor.memory_save")}</ha-switch>
               </div>`
             : nothing
         }
@@ -276,7 +268,7 @@ export class AdjustableBedCardEditor
                 </div>
                 ${bed.memory.map(
                   (s) => html`
-                    <label class="check-row">
+                    <div class="row">
                       <ha-checkbox
                         .checked=${this._slotChecked(s.slot)}
                         @change=${(e: Event) =>
@@ -285,9 +277,8 @@ export class AdjustableBedCardEditor
                             s.slot,
                             (e.target as HTMLInputElement).checked,
                           )}
-                      ></ha-checkbox>
-                      <span>${this._slotLabel(s)}</span>
-                    </label>
+                      >${this._slotLabel(s)}</ha-checkbox>
+                    </div>
                   `,
                 )}
               </div>`
@@ -308,9 +299,10 @@ export class AdjustableBedCardEditor
       "show_lighting" | "show_connection" | "animate",
     defaultValue: boolean,
   ): TemplateResult {
-    return html`<div class="row"><span class="label">${localize(this.hass, key === "show_connection" ? "editor.compact_connection" : `editor.${key}`)}</span>
+    return html`<div class="row">
       <ha-switch .checked=${this._config?.[key] ?? defaultValue}
-        @change=${(e: Event) => this._setOption(key, (e.target as HTMLInputElement).checked)}></ha-switch>
+        @change=${(e: Event) => this._setOption(key, (e.target as HTMLInputElement).checked)}
+      >${localize(this.hass, key === "show_connection" ? "editor.compact_connection" : `editor.${key}`)}</ha-switch>
     </div>`;
   }
 
@@ -376,11 +368,10 @@ export class AdjustableBedCardEditor
             [next[index], next[index + delta]] = [next[index + delta], next[index]];
             this._setOption("compact_actions", next);
           };
-          const entity = this.hass!.states[action.entityId];
           return html`<div class="row">
             <ha-checkbox .checked=${checked} @change=${(e: Event) => this._setOption("compact_actions",
-              (e.target as HTMLInputElement).checked ? [...selected, key] : selected.filter((k) => k !== key))}></ha-checkbox>
-            <span class="label">${entity?.attributes.friendly_name ?? key}</span>
+              (e.target as HTMLInputElement).checked ? [...selected, key] : selected.filter((k) => k !== key))}
+            >${entityLabel(this.hass, action.entityId, key)}</ha-checkbox>
             <button class="icon-btn" ?disabled=${!checked || index === 0}
               aria-label=${localize(this.hass, "editor.move_up")} @click=${() => move(-1)}>↑</button>
             <button class="icon-btn" ?disabled=${!checked || index === selected.length - 1}
@@ -459,8 +450,11 @@ export class AdjustableBedCardEditor
       gap: 10px;
       min-height: 40px;
     }
-    .label {
+    .label,
+    .row > ha-switch,
+    .row > ha-checkbox {
       flex: 1;
+      min-width: 0;
       color: var(--primary-text-color);
     }
     .reorder {
@@ -501,12 +495,6 @@ export class AdjustableBedCardEditor
       font-size: 0.8rem;
       color: var(--secondary-text-color);
       padding-bottom: 4px;
-    }
-    .check-row {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
     }
   `;
 }

@@ -2,7 +2,6 @@
 // custom-card-helpers so the bundle stays small and dependency-light.
 
 export interface HassEntityAttributes {
-  friendly_name?: string;
   icon?: string;
   current_position?: number;
   rgb_color?: [number, number, number];
@@ -24,6 +23,7 @@ export interface EntityRegistryDisplayEntry {
   area_id?: string;
   platform?: string;
   translation_key?: string;
+  // The entity's own name, without its device's name.
   name?: string;
   hidden?: boolean;
   entity_category?: "config" | "diagnostic";
@@ -31,14 +31,19 @@ export interface EntityRegistryDisplayEntry {
 
 export interface DeviceRegistryEntry {
   id: string;
-  name?: string;
-  name_by_user?: string;
+  name?: string | null;
+  name_by_user?: string | null;
   // Set on a paired side's child device, pointing at the synthetic parent.
   parent_device_id?: string | null;
   via_device_id?: string | null;
 }
 
 export type BedSide = "left" | "right" | "both";
+
+// One part of a composed entity name (see hass.formatEntityName).
+export type EntityNameItem =
+  | { type: "floor" | "area" | "parent_device" | "device" | "entity" }
+  | { type: "text"; text: string };
 
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
@@ -47,6 +52,11 @@ export interface HomeAssistant {
   locale: { language: string };
   language: string;
   themes: unknown;
+  formatEntityName(
+    stateObj: HassEntity,
+    name?: string | EntityNameItem | EntityNameItem[],
+    options?: { separator?: string },
+  ): string;
   callService: (
     domain: string,
     service: string,

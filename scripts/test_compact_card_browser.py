@@ -40,6 +40,7 @@ customElements.define('ha-state-icon', class extends HTMLElement {
 window.calls = [];
 window.hass = { entities: {}, devices: {}, states: {}, language: 'en',
   locale: {language: 'en'}, themes: {},
+  formatEntityName: (stateObj) => hass.entities[stateObj.entity_id]?.name || stateObj.entity_id,
   callService: (domain, service, data) => {
     calls.push({domain, service, ...data});
     if (service === 'open_cover' || data.entity_id.endsWith('_up')) return new Promise(() => {});
@@ -50,8 +51,9 @@ for (const [id, name] of [['pair','Bed'], ['left','Left'], ['right','Right']]) {
   hass.devices[id] = {id, name, ...(id === 'pair' ? {} : {parent_device_id:'pair'})};
   const add = (domain,key,state,attrs={}) => {
     const entity_id = `${domain}.${id}_${key}`;
-    hass.entities[entity_id] = {entity_id, device_id:id, translation_key:key, platform:'adjustable_bed'};
-    hass.states[entity_id] = {entity_id, state, attributes:{...(id === 'pair' ? {} : {bed_side:id}),friendly_name:`${name} ${key==='preset_flat'?'Flat':key==='preset_memory_1'?'Sit':key}`, ...attrs}, last_changed:'', last_updated:''};
+    const entityName = key==='preset_flat'?'Flat':key==='preset_memory_1'?'Sit':key;
+    hass.entities[entity_id] = {entity_id, device_id:id, translation_key:key, platform:'adjustable_bed', name:entityName};
+    hass.states[entity_id] = {entity_id, state, attributes:{...(id === 'pair' ? {} : {bed_side:id}), ...attrs}, last_changed:'', last_updated:''};
   };
   if (id !== 'pair') add('binary_sensor','ble_connection','off',{state_detail:'idle'});
   add('button','stop','unknown'); add('button','preset_flat','unknown');
