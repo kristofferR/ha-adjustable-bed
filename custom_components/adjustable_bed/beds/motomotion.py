@@ -134,7 +134,7 @@ class MotoMotionController(BedController):
         self._custom_eq = [8, 2, 2, 7]
         self._rgb = [255, 255, 255]
         self._timer = 15
-        self._posture = "upright"
+        self._posture: str | None = "upright"
         self._dimensions: dict[str, float] = {}
         self._users: dict[str, tuple[float, float, float]] = {}
         self._user: str | None = None
@@ -200,7 +200,17 @@ class MotoMotionController(BedController):
             "bind_code": self._bind_code,
             "side": self._side,
             "posture": self._posture,
-            "targets": asdict(self._targets) if self._targets is not None else None,
+            "working_targets": {
+                "user": self._user,
+                "posture": self._posture,
+                "dimensions": self._dimensions.copy(),
+                "positions": asdict(self._targets),
+            }
+            if self._targets is not None
+            else None,
+            "music_mode": self._music_mode,
+            "eq": self._eq.copy(),
+            "timer": self._timer,
             "custom_eq": self._custom_eq.copy(),
             "rgb": self._rgb.copy(),
             "dimensions": self._dimensions.copy(),
@@ -214,33 +224,28 @@ class MotoMotionController(BedController):
         }
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
-        side = state.get("side", "left")
-        if not isinstance(side, str) or side not in ("left", "right"):
-            raise ValueError("Invalid MotoMotion selected side")
-        self._side = side
-        selected_posture = state.get("posture", "upright")
-        if not isinstance(selected_posture, str) or selected_posture not in (
-            "upright",
-            "recline",
-            "tv",
-            "lay",
-        ):
-            raise ValueError("Invalid MotoMotion selected posture")
-        self._select_posture(selected_posture)
-        targets = state.get("targets")
-        if targets is not None and (
-            not isinstance(targets, dict)
-            or set(targets) != set(FINE_LIMITS)
-            or any(type(v) is not int or not 0 <= v <= 65535 for v in targets.values())
-        ):
-            raise ValueError("Invalid MotoMotion working targets")
-        self._targets = Position(**targets) if targets is not None else None
         bind = state.get("bind_code", "")
         if not isinstance(bind, str) or (
             bind and (len(bind) != 16 or any(c not in "0123456789abcdef" for c in bind))
         ):
             raise ValueError("Invalid MotoMotion binding")
         self._bind_code = bind
+        side = state.get("side", "left")
+        if side not in ("left", "right"):
+            raise ValueError("Invalid MotoMotion saved side")
+        self._side = side if self.profile.sides else "left"
+        selected_posture = state.get("posture", "upright")
+        # An invalid optional selector must not reset the address's valid side.
+        self._posture = (
+            (
+                selected_posture
+                if isinstance(selected_posture, str)
+                and selected_posture in ("upright", "recline", "tv", "lay")
+                else None
+            )
+            if self.profile.users
+            else "upright"
+        )
         for key, target, limits in (
             (
                 "custom_eq",
@@ -317,6 +322,51 @@ class MotoMotionController(BedController):
             self._user_positions[user] = parsed
         if self._user is not None:
             self._custom = self._user_positions.setdefault(self._user, self._custom)
+        self._targets = None
+        working = state.get("working_targets")
+        if self.profile.users and self._posture is not None and isinstance(working, dict):
+            positions = working.get("positions")
+            dimensions_owner = working.get("dimensions")
+            if (
+                set(working) == {"user", "posture", "dimensions", "positions"}
+                and working["user"] == self._user
+                and working["posture"] == self._posture
+                and isinstance(dimensions_owner, dict)
+                and dimensions_owner == self._dimensions
+                and all(type(v) in (int, float) and isfinite(v) for v in dimensions_owner.values())
+                and isinstance(positions, dict)
+                and set(positions) == set(FINE_LIMITS)
+                # Generated helper targets have a wider domain than slider edits.
+                and all(type(v) is int and 0 <= v <= 65535 for v in positions.values())
+            ):
+                self._targets = Position(**positions)
+        if self.profile.music:
+            mode = state.get("music_mode", "custom")
+            valid_mode = isinstance(mode, str) and mode in MUSIC
+            if not isinstance(mode, str) or mode not in MUSIC:
+                mode = "custom"
+            self._music_mode = mode
+            self._eq = (
+                self._custom_eq.copy()
+                if self._music_mode == "custom"
+                else list(MUSIC[self._music_mode])
+            )
+            levels = state.get("eq")
+            limits = (63, 31, 31, 31) if self.profile.panel == "Binary music" else (22, 15, 15, 15)
+            if (
+                valid_mode
+                and isinstance(levels, list)
+                and len(levels) == 4
+                and all(
+                    type(v) is int and 0 <= v <= maximum
+                    for v, maximum in zip(levels, limits, strict=True)
+                )
+            ):
+                self._eq = levels.copy()
+        timer = state.get("timer", 15)
+        self._timer = (
+            timer if self.profile.rgb and type(timer) is int and 0 <= timer <= 7259 else 15
+        )
         self._publish()
 
     def _publish(self) -> None:
@@ -829,6 +879,8 @@ class MotoMotionController(BedController):
                 binary_command({"music_play": 14, "music_next": 12, "music_previous": 13}[key])
             )
         elif key.startswith("posture_"):
+            if self._posture is None:
+                raise ValueError("Select a MotoMotion posture before using posture controls")
             if key == "posture_save":
                 if self._targets is None:
                     raise ValueError("Recall or fine tune a posture first")
@@ -876,6 +928,8 @@ class MotoMotionController(BedController):
             self._posture = value
 
     def _position(self) -> Position:
+        if self._posture is None:
+            raise ValueError("Select a MotoMotion posture before using posture controls")
         if self._posture in self._custom:
             return self._custom[self._posture]
         if set(self._dimensions) != {"height", "buttocks", "knee"}:
@@ -1072,6 +1126,8 @@ class MotoMotionController(BedController):
         elif key == "timer":
             self._timer = v
         elif key in ("height", "buttocks", "knee"):
+            if self._dimensions.get(key) != value:
+                self._targets = None
             self._dimensions[key] = value
         elif key.startswith("target_"):
             current = self._targets or self._position()

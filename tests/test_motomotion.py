@@ -295,7 +295,7 @@ def test_restore_side_defaults_for_existing_state(coordinator):
 @pytest.mark.parametrize("side", ["both", "", None, 1, ["right"]])
 def test_restore_rejects_invalid_side(coordinator, side):
     c = controller(coordinator, "SOFA000001SB00H")
-    with pytest.raises(ValueError, match="selected side"):
+    with pytest.raises(ValueError, match="saved side"):
         c.restore_persisted_app_state({"side": side})
 
 
@@ -307,36 +307,86 @@ def test_restore_posture_defaults_for_existing_state(coordinator):
 
 
 @pytest.mark.parametrize("value", ["unknown", "", None, 1, ["tv"]])
-def test_restore_rejects_invalid_posture(coordinator, value):
-    c = controller(coordinator, "SOFA000001A000H")
-    with pytest.raises(ValueError, match="selected posture"):
-        c.restore_persisted_app_state({"posture": value})
-
-
-def test_restore_working_targets_defaults_for_existing_state(coordinator):
+async def test_restore_rejects_invalid_posture(coordinator, value):
     c = controller(coordinator, "SOFA000001A000H")
     c.restore_persisted_app_state(
-        {"targets": {"head": 300, "base": 100, "back": 200, "lumbar": 0, "tilt": 0}}
+        {"posture": value, "dimensions": {"height": 170, "buttocks": 100, "knee": 55}}
     )
-    c.restore_persisted_app_state({})
-    assert c.persisted_app_state["targets"] is None
+    assert c._posture is None
+    with pytest.raises(ValueError, match="Select a MotoMotion posture"):
+        await c.action("motomotion_posture_recall")
+    assert written(coordinator) == []
+    await c.select("posture", "tv")
+    await c.action("motomotion_posture_recall")
+    assert written(coordinator) == [posture("tv", 170, 100, 55).to_bytes()]
 
 
-@pytest.mark.parametrize(
-    "targets",
-    [
-        [],
-        {"head": 300},
-        *[
-            {"head": value, "base": 100, "back": 200, "lumbar": 0, "tilt": 0}
-            for value in (-1, 65536, True, 1.5)
-        ],
-    ],
-)
-def test_restore_rejects_invalid_working_targets(coordinator, targets):
+@pytest.mark.parametrize("mismatch", ["user", "posture", "dimensions", "range", "bool", "shape"])
+async def test_working_target_owner_or_shape_mismatch_cannot_save_old_targets(
+    coordinator, instant, mismatch
+):
+    from copy import deepcopy
+
     c = controller(coordinator, "SOFA000001A000H")
-    with pytest.raises(ValueError, match="working targets"):
-        c.restore_persisted_app_state({"targets": targets})
+    await c.async_execute_motomotion_request(
+        Request("save_user", user="A", dimensions=(170, 100, 55))
+    )
+    await c.async_execute_motomotion_request(
+        Request("save_user", user="B", dimensions=(160, 90, 50))
+    )
+    await c.async_execute_motomotion_request(Request("select_user", user="A", posture="tv"))
+    await c.async_execute_motomotion_request(
+        Request("fine_tune", posture="tv", targets=Position(300, 400, 500, 600, 200))
+    )
+    saved = deepcopy(c.persisted_app_state)
+    working = saved["working_targets"]
+    assert isinstance(working, dict)
+    dimensions = working["dimensions"]
+    positions = working["positions"]
+    assert isinstance(dimensions, dict) and isinstance(positions, dict)
+    if mismatch == "user":
+        working["user"] = "B"
+    elif mismatch == "posture":
+        working["posture"] = "lay"
+    elif mismatch == "dimensions":
+        dimensions["height"] = 160
+    elif mismatch == "range":
+        positions["head"] = 65536
+    elif mismatch == "bool":
+        positions["head"] = True
+    else:
+        del positions["tilt"]
+    restored = controller(coordinator, "SOFA000001A000H")
+    coordinator.client.write_gatt_char.reset_mock()
+    restored.restore_persisted_app_state(saved)
+    assert restored._user == "A" and restored._posture == "tv" and restored._targets is None
+    with pytest.raises(ValueError, match="Recall or fine tune"):
+        await restored.action("motomotion_posture_save")
+    assert written(coordinator) == []
+
+
+async def test_measurement_and_user_change_invalidate_working_targets(coordinator, instant):
+    c = controller(coordinator, "SOFA000001A000H")
+    for user, dims in [("A", (170, 100, 55)), ("B", (160, 90, 50))]:
+        await c.async_execute_motomotion_request(Request("save_user", user=user, dimensions=dims))
+    await c.async_execute_motomotion_request(Request("select_user", user="A", posture="tv"))
+    await c.set_number("target_head", 300)
+    await c.action("motomotion_posture_save")
+    await c.set_number("height", 175)
+    assert c._targets is None
+    assert c._custom["tv"].head == 300
+    await c.async_execute_motomotion_request(Request("select_user", user="B", posture="tv"))
+    assert c._targets is None and c._custom == {}
+    await c.async_execute_motomotion_request(Request("select_user", user="A", posture="tv"))
+    assert c._custom["tv"].head == 300
+
+
+async def test_legacy_music_preferences_restore_without_new_optional_fields(coordinator, instant):
+    c = controller(coordinator, "BT2010000")
+    c.restore_persisted_app_state({"custom_eq": [17, 13, 14, 15]})
+    assert c._music_mode == "custom" and c._eq == [17, 13, 14, 15]
+    await c.select("music_mode", "wide")
+    assert written(coordinator)[-1] == binary_command(9, 17)
 
 
 async def test_number_and_select_callbacks_are_callable(coordinator, instant):
@@ -875,3 +925,48 @@ async def test_native_selector2_index_with_surrogate_pair_keeps_ascii_branch(
     monkeypatch.setattr(bed.asyncio, "sleep", sleep)
     await c.hold_control("motomotion_headrest_up", 150)
     assert written(coordinator) == [ascii_command(32), *([ascii_command(0)] * 3)]
+
+
+async def test_restore_working_targets_defaults_for_existing_state(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    raw = {"head": 300, "base": 100, "back": 200, "lumbar": 0, "tilt": 0}
+    dimensions = {"height": 170, "buttocks": 100, "knee": 55}
+    selected = {"users": {"K": [170, 100, 55]}, "user": "K", "posture": "tv", "dimensions": dimensions}
+    c.restore_persisted_app_state({**selected, "targets": raw})
+    assert c._targets is None
+    assert c.persisted_app_state["working_targets"] is None
+    assert "targets" not in c.persisted_app_state
+    c.restore_persisted_app_state({
+        **selected,
+        "working_targets": {"user": "K", "posture": "tv", "dimensions": dimensions, "positions": raw},
+        "targets": {**raw, "head": 1},
+    })
+    assert c._targets == Position(**raw)
+    await c.set_number("target_back", 400)
+    assert written(coordinator) == [Position(300, 100, 400, 0, 0).to_bytes()]
+    c.restore_persisted_app_state({})
+    assert c.persisted_app_state["working_targets"] is None
+
+
+@pytest.mark.parametrize(
+    "targets",
+    [
+        [],
+        {"head": 300},
+        *[
+            {"head": value, "base": 100, "back": 200, "lumbar": 0, "tilt": 0}
+            for value in (-1, 65536, True, 1.5)
+        ],
+    ],
+)
+async def test_restore_rejects_invalid_working_targets(coordinator, targets):
+    c = controller(coordinator, "SOFA000001A000H")
+    dimensions = {"height": 170, "buttocks": 100, "knee": 55}
+    c.restore_persisted_app_state({
+        "posture": "tv", "dimensions": dimensions,
+        "working_targets": {"user": None, "posture": "tv", "dimensions": dimensions, "positions": targets},
+    })
+    assert c._posture == "tv" and c._targets is None
+    with pytest.raises(ValueError, match="Recall or fine tune"):
+        await c.action("motomotion_posture_save")
+    assert written(coordinator) == []

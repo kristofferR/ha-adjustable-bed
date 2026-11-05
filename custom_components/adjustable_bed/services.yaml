@@ -2936,8 +2936,6 @@ richmat_classic:
           mode: box
 
 motomotion:
-  name: MotoMotion posture and users
-  description: Manage local measurements and custom Hall targets for a MotoMotion name with the users tab. Dimensions are height, buttocks height and knee height in centimetres. This does not report measured motor positions.
   fields:
     device_id:
       required: true
@@ -2954,7 +2952,6 @@ motomotion:
       selector:
         text:
     dimensions:
-      description: Three finite numbers in order, height, buttocks height, knee height (cm).
       selector:
         object:
     posture:
@@ -2963,7 +2960,6 @@ motomotion:
         select:
           options: [upright, recline, tv, lay]
     targets:
-      description: Raw Hall units for all five keys, head, base, back, lumbar, tilt. Slider bounds apply.
       selector:
         object:
     side:

@@ -7576,5 +7576,129 @@
       "tests/test_motomotion.py::test_name_predicates_and_receive_use_native_string_code_unit_indices",
       "tests/test_motomotion.py::test_native_selector2_index_with_surrogate_pair_keeps_ascii_branch"
     ]
+  },
+  "ha_runtime_repairs": [
+    {
+      "id": "GH1",
+      "disposition": "IMPLEMENTED",
+      "problem": "A standalone right-side selection was lost when the HA coordinator discarded its controller after an idle disconnect; the next physical command reverted to left.",
+      "evidence": "Required Codex discussion_r4476832081, independently reproduced with loaded HA coordinator idle disconnect and actual factory replacement. The accepted left/right parameter bytes and all native name gates are unchanged.",
+      "resolution": "Persist valid left/right selection using the existing store keyed by physical address and exact name/profile. Reject invalid stored values, use source default left for a profile without sides, and retain paired command-side precedence. This is HA controller-lifetime correctness; it introduces no protocol frame or new physical mapping.",
+      "code": [
+        "custom_components/adjustable_bed/beds/motomotion.py::persisted_app_state",
+        "custom_components/adjustable_bed/beds/motomotion.py::restore_persisted_app_state"
+      ],
+      "tests": [
+        "tests/test_motomotion_ha.py::test_selected_right_survives_idle_disconnect_and_real_controller_replacement",
+        "tests/test_motomotion_ha.py::test_side_preferences_are_owned_by_exact_address_and_profile",
+        "tests/test_motomotion_ha.py::test_invalid_saved_side_cannot_become_a_physical_target",
+        "tests/test_motomotion_ha.py::test_non_side_profile_cannot_restore_a_right_side_target"
+      ]
+    },
+    {
+      "id": "CI001",
+      "disposition": "IMPLEMENTED",
+      "problem": "Leading-wildcard local_name hints invalidate HA IntegrationMatcher registration for the whole integration.",
+      "evidence": "HA installed bluetooth/match.py::_local_name_to_index_key requires three literal leading characters. Existing real host-matcher tests and both CI runs failed.",
+      "resolution": "Register only HA-valid SOFA*, BT201*, MOTO* name hints. Exact case-sensitive contains/length/Profile predicates are unchanged. Prefixed names reach automatic discovery through existing advertised service hints, without inferring an app from transport; name-only prefixed devices remain selectable via Show all BLE devices/manual setup with their exact native name. This is an explicit HA host-registration adaptation, not a claim that app contains rules are prefixes.",
+      "code": [
+        "custom_components/adjustable_bed/manifest.json",
+        "custom_components/adjustable_bed/detection.py::detect_bed_type_detailed",
+        "custom_components/adjustable_bed/config_flow.py::async_step_manual"
+      ],
+      "tests": [
+        "tests/test_manifest.py::test_manifest_bluetooth_matchers_are_accepted_by_home_assistant",
+        "tests/test_manifest.py::test_motomotion_host_hints_preserve_explicit_app_choice",
+        "tests/test_motomotion_ha.py::test_manual_discovery_keeps_substring_candidates_without_advertised_services"
+      ]
+    },
+    {
+      "id": "CI002",
+      "disposition": "IMPLEMENTED",
+      "problem": "MotoMotion service UI text lived in services.yaml and lacked its required services translation entry.",
+      "evidence": "test_generic_services.py::test_service_text_lives_only_in_translations failed in both CI runs.",
+      "resolution": "Move service name/description and meaningful labels/descriptions for all seven fields into strings.json and translations/en.json. Keep services.yaml structural; service ID, field keys, validators, options and defaults are unchanged.",
+      "code": [
+        "custom_components/adjustable_bed/services.yaml",
+        "custom_components/adjustable_bed/strings.json::services.motomotion",
+        "custom_components/adjustable_bed/translations/en.json::services.motomotion"
+      ],
+      "tests": [
+        "tests/test_generic_services.py::test_service_text_lives_only_in_translations",
+        "tests/test_generic_services.py::test_every_registered_action_is_described",
+        "tests/test_motomotion_ha.py::test_public_user_action_validates_all_targets_before_any_write"
+      ]
+    },
+    {
+      "id": "CI003",
+      "disposition": "IMPLEMENTED",
+      "problem": "The factory contract fixture used a non-side profile, hiding four reachable side-state sensor keys from the translation reachability guard.",
+      "evidence": "Actual typed controller_state_sensor_specs declare left/right heat and massage only for the exact native S profile; actual HA sensors retain the spec translation key. Non-S profiles and bound children have narrower admission.",
+      "resolution": "Use an admitted S profile in the owned MotoMotion factory fixture and prove actual S/non-S sensor entities and bound-right specs. Keep the reachability guard and all reachable translations unchanged, with no whitelist.",
+      "code": [
+        "tests/test_controller_contract.py::_create_controller_for_bed_type",
+        "custom_components/adjustable_bed/beds/motomotion.py::controller_state_sensor_specs"
+      ],
+      "tests": [
+        "tests/test_entity_translation_reachability.py::test_every_side_variant_is_reachable",
+        "tests/test_motomotion_ha.py::test_side_state_translations_belong_to_real_declared_sensors"
+      ]
+    },
+    {
+      "id": "GH2",
+      "disposition": "IMPLEMENTED",
+      "problem": "Selected TV/recline/lay reverted to upright after controller replacement, changing the next physical posture command.",
+      "evidence": "Required Codex discussion_r4477077658 and external2c4 basic posture persistence. Actual selected-posture reconnect tests retained and extended, with no external approval inheritance.",
+      "resolution": "Retain enum posture in the existing address/exact-name slot, only for users profiles. Missing legacy posture uses upright; malformed present posture becomes unavailable until explicit valid selection. Optional malformed state is handled locally so a valid side is not reset by the coordinator invalid-slot fallback. Public Request posture defaults remain unchanged.",
+      "tests": [
+        "tests/test_motomotion_ha.py::test_selection_survives_disconnect_and_controller_replacement",
+        "tests/test_motomotion.py::test_restore_rejects_invalid_posture",
+        "tests/test_motomotion_ha.py::test_invalid_optional_intent_cannot_reset_valid_right_side"
+      ]
+    },
+    {
+      "id": "GH3",
+      "disposition": "IMPLEMENTED",
+      "problem": "Unsaved working targets vanished on reconnect; changing only back regenerated head72 instead of preserving the selected300.",
+      "evidence": "Required Codex discussion_r4477149892; source-review005-prefix-intent.log independently reproduced actual loaded HA idle/factory/next-axis loss before correction.",
+      "resolution": "Persist the existing five-axis working snapshot with exact selected user/posture/measurements ownership through the existing address/profile store. Mismatched or malformed working snapshots are discarded without resetting other preferences; save requires a new recall or fine-tune. Measurements/user/posture changes invalidate working targets while saved per-user/posture targets remain. Restore raw canonical16bit helper values without slider clamping, including helper head867 versus edit max863. No parser/comfort/notification/client/session/held-operation state is persisted.",
+      "tests": [
+        "tests/test_motomotion_ha.py::test_working_targets_survive_real_idle_replacement_next_axis_and_save",
+        "tests/test_motomotion.py::test_working_target_owner_or_shape_mismatch_cannot_save_old_targets",
+        "tests/test_motomotion.py::test_measurement_and_user_change_invalidate_working_targets",
+        "tests/test_motomotion_ha.py::test_working_intent_address_and_exact_profile_isolation"
+      ],
+      "related_proven_intent_losses": [
+        {
+          "fields": [
+            "music_mode",
+            "eq"
+          ],
+          "before": "Both ASCII/binary loaded HA mode/current-volume restoration failed; next mode packet reverted volume to8.",
+          "fix": "Retain active mode/vector separately from saved custom_eq with existing per-format bounds. Malformed optional state falls back locally; no BLE replay on restore.",
+          "test": "tests/test_motomotion_ha.py::test_active_music_intent_survives_replacement_and_next_mode_packet"
+        },
+        {
+          "fields": [
+            "timer"
+          ],
+          "before": "Actual next timer_apply sent15 rather than selected127 after real controller replacement.",
+          "fix": "Retain existing RGB timer seconds0..7259; malformed optional values use local default15 without dropping valid side.",
+          "test": "tests/test_motomotion_ha.py::test_selected_timer_survives_replacement_before_explicit_apply"
+        }
+      ]
+    }
+  ],
+  "ha_runtime_repairs_counting": "These four HA integration defects are scoped repairs of existing coverage, not new artifact discoveries or extra credit for the316candidate/144command coverage views.",
+  "composed_source_review_scope": {
+    "historical": "R4 approved local full429/scoped087 preserved in triage-f861-001, not approval for external ancestry.",
+    "published_ancestry_retained": [
+      "70b988a8e800906a3504b7dcdb824e997e70ca0f",
+      "f8615767ec08b7b8092d095d4925bf95e9cc6409",
+      "2c4af41ac9a7a020a9bbc88d935b76339009f968"
+    ],
+    "external_producer": "UNKNOWN; no authority or approval inferred from author identity.",
+    "test_reconciliation": "Keep both external side/posture restore tests and latest four-case reconnect successor plus all R4 tests. Side error assertion deliberately follows R4 saved-side wording; malformed posture test now proves fail-closed action admission and valid reselection instead of generic whole-slot reset. Retain corrected restored-TV expectation.",
+    "new_review": "Actual composed runtime/lifecycle/owned CI/test interactions require authorized independent R5; no approval inferred from this ledger, no budget reset/round6."
   }
 }

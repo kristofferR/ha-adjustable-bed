@@ -11,6 +11,8 @@
 - `BT201` selects binary music first. Otherwise zero-based name index 9 selects `1`, `2`, `3`, `5`, `6`, `7`, `8`, `9`, `A`, `D`, `E`, `G`, `H`, or `J`. `MM` at indices 9 and 10 selects ASCII music. Other selectors use the One panel.
 - No physical brand/model equivalence is inferred from those selectors. MotoSleep and Power Bob remain separate app profiles.
 
+Home Assistant's automatic name index requires three literal leading characters, so its name-only hints are `SOFA*`, `BT201*` and `MOTO*`. Names with another prefix can still reach discovery through advertised service hints, or through **Show all BLE devices** and manual setup. The app's case-sensitive substring rules and exact Bluetooth name remain the profile inputs; a shared service does not select the MotoMotion app automatically.
+
 ## Apps
 
 | Analyzed | App | Package ID |
@@ -29,7 +31,7 @@
 | Lights | ✅ Panel light cycle/toggle, RGB and timer where admitted |
 | Music | ✅ ASCII or binary equalizer controls; binary playback buttons |
 | User postures | ✅ Local measurements, four generated/custom raw Hall target postures, fine tuning |
-| Side selection | ✅ Left/right when `SOFA` name index 10 is `S` |
+| Side selection | ✅ Left/right when `SOFA` name index 10 is `S`; retained per address and exact profile across reconnections, with paired child routing taking precedence |
 | Binding | ✅ Eight-byte application binding and explicit application unbinding |
 
 ## Protocol Details
@@ -162,6 +164,10 @@ The status sensor retains RGB/D/comfort/HSW fields and parse errors. Heat, massa
 ## Command Timing
 
 Held movement refreshes every 100 ms, first write after 100 ms. HA button presses are bounded to one second; the hold action accepts an explicit duration. STOP cleanup uses a fresh cancellation event. The shared Home control refreshes every 100 ms and ends by stopping refresh, without a release frame. The controller owns the first-tick and release timing; the card adds no extra delay. Card gesture release cancels the admitted hold and lets that hold own its cleanup; a separate explicit STOP still sends the source STOP packets. Normal settings are one-shots; source nonrepeat controls use a 200 ms delay. RGB components are sent at 0/100/200 ms. Notify callbacks and pending commands are tied to the current connection session.
+
+The selected side and posture, current music mode/EQ, RGB timer and user-owned working Hall targets survive an idle disconnect and controller replacement. Working targets belong to the selected user, posture and current measurements; changing those inputs invalidates the working edit while saved custom postures stay with their user. Raw helper targets retain their full 16-bit domain, including values outside an individual edit slider's range. Live bed feedback and connection/hold state are refreshed for each session.
+
+A malformed saved posture requires an explicit valid posture selection before posture controls can move the bed. Malformed optional working/music/timer state is handled locally and cannot reset a valid side selection. Restoring preferences sends no BLE settings or movement frames.
 
 HA deliberately cancels delayed writes on release/cancellation, always performs admitted movement cleanup, and separates saving from recall. The shipped app can retain a delayed write after release, suppress queued STOP on re-press, or recall on the release of a save gesture. Those hazards are not reproduced. Exact findings and negative tests are in the ledger.
 

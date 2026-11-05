@@ -8218,6 +8218,40 @@
           "description": "Bounded duration in milliseconds."
         }
       }
+    },
+    "motomotion": {
+      "name": "MotoMotion posture and users",
+      "description": "Manage local measurements and custom Hall targets for a MotoMotion name with the users tab. Dimensions are height, buttocks height and knee height in centimetres. This does not report measured motor positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "MotoMotion devices with the users tab."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Save, select or delete a user, or recall, save, reset or fine tune a posture."
+        },
+        "user": {
+          "name": "User",
+          "description": "Name of the local user to save or select."
+        },
+        "dimensions": {
+          "name": "Body measurements",
+          "description": "Three finite numbers in order: height, buttocks height and knee height, in centimetres."
+        },
+        "posture": {
+          "name": "Posture",
+          "description": "Upright, recline, TV or lay posture."
+        },
+        "targets": {
+          "name": "Raw Hall targets",
+          "description": "All five keys: head, base, back, lumbar and tilt. Each value must fit its app slider bounds."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side, when supported by this device."
+        }
+      }
     }
   },
   "exceptions": {

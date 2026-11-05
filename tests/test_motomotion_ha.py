@@ -779,3 +779,387 @@ async def loaded_runtime(hass, name, client):
     c = hass.data[DOMAIN][entry.entry_id]
     assert isinstance(c.controller, MotoMotionController)
     return c, c.controller
+
+
+async def test_selected_right_survives_idle_disconnect_and_real_controller_replacement(
+    hass, protocol_clock, mock_bleak_client, mock_coordinator_connected, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
+    from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+
+    c, original = await loaded_runtime(hass, "SOFA000001SC00M", mock_bleak_client)
+    selected = AdjustableBedControllerSelect(
+        c, next(s for s in original.controller_select_specs if s.key == "motomotion_side")
+    )
+    await selected.async_select_option("right")
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+    assert c.controller is None and c._last_disconnect_reason == "idle_timeout"
+    mock_bleak_client.write_gatt_char.reset_mock()
+
+    async def movement(controller):
+        await controller.hold_control("motomotion_headrest_up", 150)
+
+    async def comfort(controller):
+        await controller.action("motomotion_heat_up")
+
+    await c.async_execute_controller_command(movement, read_positions_after_operation=False)
+    replacement = c.controller
+    assert replacement is not original
+    await c.async_execute_controller_command(comfort, read_positions_after_operation=False)
+    assert [call.args[1] for call in mock_bleak_client.write_gatt_char.await_args_list] == [
+        ascii_command(2, 10000),
+        *([ascii_command(0, 10000)] * 3),
+        ascii_command(332, 10000),
+    ]
+    assert c.controller_state["motomotion_side"] == "right"
+    # A physical child owns its side even when the standalone preference is right.
+    paired = MockConfigEntry(
+        domain=DOMAIN, data=build_single_address_pair_entry_data(c.entry.data, name="Chair pair")
+    )
+    parent = SingleAddressPairedCoordinator(hass, paired, c)
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await parent.async_execute_controller_command(comfort, side="left")
+    await parent.async_execute_controller_command(comfort, side="right")
+    assert [call.args[1] for call in mock_bleak_client.write_gatt_char.await_args_list] == [
+        ascii_command(332, 0),
+        ascii_command(332, 10000),
+    ]
+    assert replacement.persisted_app_state["side"] == "right"
+    await parent.async_shutdown()
+
+
+async def test_side_preferences_are_owned_by_exact_address_and_profile(hass):
+    name = "SOFA000001SC00M"
+    c = runtime(hass, name)
+    await c.async_prime_offline_controller()
+    original = c.capability_controller
+    await original.select("side", "right")
+    for profile, address, expected in (
+        (name, c.address, "right"),
+        ("SOFA000003SC00M", c.address, "left"),
+        (name, "AA:BB:CC:DD:EE:14", "left"),
+        ("SOFA000001MC00M", c.address, "left"),
+    ):
+        other = runtime(hass, profile, address)
+        await other.async_prime_offline_controller()
+        assert other.capability_controller.persisted_app_state["side"] == expected
+        await other.async_shutdown()
+    await c.async_shutdown()
+
+
+@pytest.mark.parametrize("saved_side", ["both", "RIGHT", "", None, True, 1, ["right"]])
+async def test_invalid_saved_side_cannot_become_a_physical_target(hass, saved_side):
+    from custom_components.adjustable_bed.app_state_store import app_state_slot
+
+    c = runtime(hass, "SOFA000001SC00M")
+    await c.async_prime_offline_controller()
+    original = c.capability_controller
+    slot = app_state_slot("motomotion", None, original.persisted_app_state_key)
+    c._app_state_store.update(slot, {"side": saved_side})
+    replacement = MotoMotionController(c)
+    await c._async_restore_app_state(replacement)
+    assert replacement._parameter() == 0
+    assert replacement.persisted_app_state["side"] == "left"
+    assert (await c._app_state_store.async_slot(slot))["side"] == "left"
+    await c.async_shutdown()
+
+
+async def test_non_side_profile_cannot_restore_a_right_side_target(hass):
+    c = runtime(hass, "SOFA000001MC00M")
+    await c.async_prime_offline_controller()
+    ctrl = c.capability_controller
+    ctrl.restore_persisted_app_state({"side": "right"})
+    assert ctrl.persisted_app_state["side"] == "left"
+    assert ctrl._parameter() == 0
+    assert all(s.key != "motomotion_side" for s in ctrl.controller_select_specs)
+    await c.async_shutdown()
+
+
+@pytest.mark.parametrize("sided", [True, False])
+async def test_side_state_translations_belong_to_real_declared_sensors(hass, sided):
+    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+
+    c = runtime(hass, "SOFA000001SC00M" if sided else "SOFA000001MC00M")
+    await c.async_prime_offline_controller()
+    ctrl = c.capability_controller
+    keys = {
+        f"motomotion_{kind}_{side}" for side in ("left", "right") for kind in ("heat", "massage")
+    }
+    sensors = {
+        s.key: AdjustableBedControllerStateSensor(c, s)
+        for s in ctrl.controller_state_sensor_specs
+        if s.key in keys
+    }
+    assert set(sensors) == (keys if sided else set())
+    for key, sensor in sensors.items():
+        assert sensor.translation_key == key
+        assert sensor.unique_id == c.entity_unique_id(key)
+        c.handle_controller_state_update(key, 2)
+        assert sensor.native_value == 2
+    if sided:
+        right = ctrl.bind_side("right")
+        assert {s.key for s in right.controller_state_sensor_specs} & keys == {
+            "motomotion_heat_right",
+            "motomotion_massage_right",
+        }
+    await c.async_shutdown()
+
+
+async def test_manual_discovery_keeps_substring_candidates_without_advertised_services(
+    hass, mock_coordinator_connected
+):
+    from custom_components.adjustable_bed import config_flow
+    from custom_components.adjustable_bed.motomotion_profile import Profile
+    from tests.test_detection import _make_service_info
+
+    names = ["xSOFA00001SC00M", "xBT201000", "xMOTO0000100000"]
+    infos = [
+        _make_service_info(name=name, address=f"AA:BB:CC:DD:EE:{index:02X}", service_uuids=[])
+        for index, name in enumerate(names, 0x20)
+    ]
+    flow = config_flow.AdjustableBedConfigFlow()
+    flow.hass = hass
+    with patch.object(config_flow, "get_discovered_service_info", return_value=infos):
+        result = await flow.async_step_manual()
+    assert result["type"] == "form" and result["step_id"] == "manual"
+    assert [info.name for info in flow._all_ble_devices.values()] == names
+    # The host's prefix index does not replace the exact native contains rules.
+    for info in infos:
+        assert Profile(info.name).name == info.name
+        assert config_flow._name_rule_setup_name("motomotion", info.name) == {
+            CONF_BLE_DEVICE_NAME: info.name
+        }
+
+
+@pytest.mark.parametrize("dimensions,edited_head", [((170, 100, 55), 300), ((140, 100, 55), None)])
+async def test_working_targets_survive_real_idle_replacement_next_axis_and_save(
+    hass,
+    protocol_clock,
+    mock_bleak_client,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+    dimensions,
+    edited_head,
+):
+    from dataclasses import replace
+
+    from custom_components.adjustable_bed.button import ControllerActionButton
+    from custom_components.adjustable_bed.motomotion_requests import Request
+    from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+
+    c, ctrl = await loaded_runtime(hass, "SOFA000001A000H", mock_bleak_client)
+
+    async def select_user(controller):
+        await controller.async_execute_motomotion_request(
+            Request("save_user", user="K", dimensions=dimensions)
+        )
+        await controller.async_execute_motomotion_request(Request("select_user", user="K"))
+        await controller.action("motomotion_posture_recall")
+
+    await c.async_execute_controller_command(select_user, read_positions_after_operation=False)
+    baseline = posture("upright", *dimensions)
+    if edited_head is not None:
+        number = AdjustableBedControllerNumber(
+            c, next(s for s in ctrl.controller_number_specs if s.key == "motomotion_target_head")
+        )
+        await number.async_set_native_value(edited_head)
+        baseline = replace(baseline, head=edited_head)
+    else:
+        assert baseline.head == 867  # Helper output exceeds the head edit slider's 863 limit.
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+    assert await c.async_ensure_connected()
+    assert c.controller._targets == baseline
+    back = AdjustableBedControllerNumber(
+        c, next(s for s in ctrl.controller_number_specs if s.key == "motomotion_target_back")
+    )
+    await back.async_set_native_value(500)
+    expected = replace(baseline, back=500)
+    assert c.controller is not ctrl
+    assert mock_bleak_client.write_gatt_char.await_args.args[1] == expected.to_bytes()
+    save = ControllerActionButton(
+        c,
+        next(s for s in c.controller.controller_button_specs if s.key == "motomotion_posture_save"),
+    )
+    await save.async_press()
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+
+    async def recall(controller):
+        await controller.action("motomotion_posture_recall")
+
+    await c.async_execute_controller_command(recall, read_positions_after_operation=False)
+    assert mock_bleak_client.write_gatt_char.await_args.args[1] == expected.to_bytes()
+    assert c.controller._user == "K"
+    await hass.config_entries.async_unload(c.entry.entry_id)
+
+
+@pytest.mark.parametrize("name", ["BT2010000", "SOFA00000MM0000"])
+async def test_active_music_intent_survives_replacement_and_next_mode_packet(
+    hass,
+    protocol_clock,
+    mock_bleak_client,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+    name,
+):
+    from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+
+    c, ctrl = await loaded_runtime(hass, name, mock_bleak_client)
+    mode = AdjustableBedControllerSelect(
+        c, next(s for s in ctrl.controller_select_specs if s.key == "motomotion_music_mode")
+    )
+    volume = AdjustableBedControllerNumber(
+        c, next(s for s in ctrl.controller_number_specs if s.key == "motomotion_volume")
+    )
+    await mode.async_select_option("wide")
+    await volume.async_set_native_value(17)
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+    assert await c.async_ensure_connected()
+    assert c.controller is not ctrl
+    assert mode.current_option == "wide"
+    assert volume.native_value == 17
+    assert c.controller._custom_eq == [8, 2, 2, 7]
+
+    async def edit_bass(controller):
+        await controller.set_number("bass", 3)
+
+    before = mock_bleak_client.write_gatt_char.await_count
+    with pytest.raises(ValueError, match="custom music mode"):
+        await c.async_execute_controller_command(edit_bass)
+    assert mock_bleak_client.write_gatt_char.await_count == before
+    await mode.async_select_option("electric")
+    if name.startswith("BT201"):
+        assert mock_bleak_client.write_gatt_char.await_args.args[1] == binary_command(9, 17)
+    else:
+        assert (
+            mock_bleak_client.write_gatt_char.await_args.args[1] == b"$#M17\r$#T13\r$#B14\r$#V15\r"
+        )
+    await hass.config_entries.async_unload(c.entry.entry_id)
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        {"posture": []},
+        {"music_mode": []},
+        {"eq": [True, 0, 0, 0]},
+        {"timer": True},
+        {"working_targets": {"positions": {"head": 1}}},
+    ],
+)
+async def test_invalid_optional_intent_cannot_reset_valid_right_side(
+    hass,
+    protocol_clock,
+    mock_bleak_client,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+    invalid,
+):
+    from custom_components.adjustable_bed.app_state_store import app_state_slot
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+
+    c, ctrl = await loaded_runtime(hass, "SOFA000001SD00M", mock_bleak_client)
+    side = AdjustableBedControllerSelect(
+        c, next(s for s in ctrl.controller_select_specs if s.key == "motomotion_side")
+    )
+    await side.async_select_option("right")
+    slot = app_state_slot("motomotion", None, ctrl.persisted_app_state_key)
+    c._app_state_store.update(slot, {**ctrl.persisted_app_state, **invalid})
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+
+    async def comfort(controller):
+        await controller.action("motomotion_heat_up")
+
+    await c.async_execute_controller_command(comfort, read_positions_after_operation=False)
+    assert c.controller_state["motomotion_side"] == "right"
+    assert mock_bleak_client.write_gatt_char.await_args.args[1] == ascii_command(332, 10000)
+    await hass.config_entries.async_unload(c.entry.entry_id)
+
+
+async def test_working_intent_address_and_exact_profile_isolation(hass):
+    from custom_components.adjustable_bed.motomotion_protocol import Position
+    from custom_components.adjustable_bed.motomotion_requests import Request
+
+    name = "SOFA000001A000H"
+    c, ctrl = await connected_runtime(hass, name)
+    await ctrl.async_execute_motomotion_request(
+        Request("save_user", user="K", dimensions=(170, 100, 55))
+    )
+    await ctrl.async_execute_motomotion_request(Request("select_user", user="K", posture="tv"))
+    targets = Position(300, 400, 500, 600, 200)
+    await ctrl.async_execute_motomotion_request(Request("fine_tune", posture="tv", targets=targets))
+    for profile, address, owns in [
+        (name, c.address, True),
+        ("SOFA000003A000H", c.address, False),
+        (name, "AA:BB:CC:DD:EE:14", False),
+    ]:
+        other = runtime(hass, profile, address)
+        await other.async_prime_offline_controller()
+        restored = other.capability_controller
+        assert restored._targets == (targets if owns else None)
+        assert restored._user == ("K" if owns else None)
+        assert restored._posture == ("tv" if owns else "upright")
+        await other.async_shutdown()
+    c._client.is_connected = False
+    await c.async_shutdown()
+
+
+async def test_selected_timer_survives_replacement_before_explicit_apply(
+    hass, protocol_clock, mock_bleak_client, mock_coordinator_connected, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.button import ControllerActionButton
+    from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+
+    c, ctrl = await loaded_runtime(hass, "SOFA000001SD00M", mock_bleak_client)
+    timer = AdjustableBedControllerNumber(
+        c, next(s for s in ctrl.controller_number_specs if s.key == "motomotion_timer")
+    )
+    await timer.async_set_native_value(127)
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+    mock_bleak_client.write_gatt_char.reset_mock()
+    apply = ControllerActionButton(
+        c, next(s for s in ctrl.controller_button_specs if s.key == "motomotion_timer_apply")
+    )
+    await apply.async_press()
+    assert [call.args[1] for call in mock_bleak_client.write_gatt_char.await_args_list] == [
+        b"$z",
+        ascii_command(32999, 127),
+    ]
+    await hass.config_entries.async_unload(c.entry.entry_id)
+
+
+@pytest.mark.parametrize("name", ["BT2010000", "SOFA00000MM0000"])
+async def test_muted_music_survives_idle_before_next_wide_mode_packet(
+    hass, protocol_clock, mock_bleak_client, mock_coordinator_connected,
+    enable_custom_integrations, name
+):
+    from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+
+    c, original = await loaded_runtime(hass, name, mock_bleak_client)
+    volume = AdjustableBedControllerNumber(
+        c, next(s for s in original.controller_number_specs if s.key == "motomotion_volume")
+    )
+    mode = AdjustableBedControllerSelect(
+        c, next(s for s in original.controller_select_specs if s.key == "motomotion_music_mode")
+    )
+    await volume.async_set_native_value(0)
+    c._cancel_disconnect_timer()
+    await c._async_idle_disconnect()
+    assert c.controller is None
+    await mode.async_select_option("wide")
+    assert c.controller is not original
+    assert volume.native_value == 0 and mode.current_option == "wide"
+    if name.startswith("BT201"):
+        assert mock_bleak_client.write_gatt_char.await_args.args[1] == binary_command(9, 0)
+    else:
+        assert mock_bleak_client.write_gatt_char.await_args.args[1] == b"$#M00\r$#T10\r$#B05\r$#V05\r"
+    await hass.config_entries.async_unload(c.entry.entry_id)

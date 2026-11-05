@@ -230,7 +230,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
         )
 
     if bed_type == const.BED_TYPE_MOTOMOTION:
-        coordinator.entry.data = {**coordinator.entry.data, const.CONF_BLE_DEVICE_NAME: "SOFA0000010000H"}
+        # Include the source-declared side-state specs in translation reachability.
+        coordinator.entry.data = {**coordinator.entry.data, const.CONF_BLE_DEVICE_NAME: "SOFA000001SC00M"}
 
     if bed_type == const.BED_TYPE_MOTION_BED:
         # The app's identity is the exact advertised name.
