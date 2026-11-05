@@ -44,8 +44,7 @@ def test_the_most_specific_declaration_wins():
 def test_every_declared_question_has_its_labels():
     """Labels come from strings.json, so a declared field cannot ship unlabelled.
 
-    A question with choices or free text also explains itself in setup; a yes or
-    no question may rely on its label.
+    Any question but a yes or no one also explains itself in setup.
     """
     step = _STRINGS["config"]["step"]["profile_questions"]
     settings = _STRINGS["options"]["step"]["settings"]["data"]
@@ -53,7 +52,7 @@ def test_every_declared_question_has_its_labels():
         for question in profile.questions:
             strings = step["sections"]["advanced"] if question.advanced else step
             assert question.key in strings["data"], (key, question.key)
-            if question.choices is not None or question.text:
+            if question.choices is not None or question.text or question.validator is not None:
                 assert question.key in strings["data_description"], (key, question.key)
             assert question.key in settings, (key, question.key)
 

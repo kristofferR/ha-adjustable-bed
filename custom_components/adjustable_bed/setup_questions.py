@@ -15,10 +15,11 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 import voluptuous as vol
+from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers.field_visibility import ConditionOperator, FieldCondition
 
 from .const import (
@@ -35,6 +36,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GLIDEAWAY_MOTION,
+    BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
@@ -75,14 +77,18 @@ from .const import (
     BED_TYPE_ZSERIES,
     CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_CLUSTER018_THIRD_SERVICE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FURNIMOVE_REMOTE,
+    CONF_GMMOTOR_SIDE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
@@ -97,12 +103,21 @@ from .const import (
     CONF_MALOUF_APP_TRANSPORT,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
+    CONF_MOTION_BED_MOVEMENT,
+    CONF_MOTION_BED_PRESET,
+    CONF_MOTION_BED_RESTORED,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
+    CONF_PAIR_MODE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_SLEEPTRACKER_FOUNDATION,
+    CONF_SLEEPTRACKER_PROCESSOR_TYPE,
+    CONF_SLEEPTRACKER_RESTRICTED,
+    CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+    CONF_SLEEPTRACKER_UNIT,
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
@@ -139,6 +154,7 @@ from .const import (
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
     OKIN_CST_VARIANT_NECTAR_MOVE,
+    PAIR_MODE_SINGLE_ADDRESS,
     RICHMAT_MH_BED_TYPES,
     SLEEPYS_ELITE_SELECTORS,
     STAR_ELEVATE_VARIANT_M1X12,
@@ -147,6 +163,10 @@ from .const import (
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_PROFILES,
 )
+
+if TYPE_CHECKING:
+    from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+    from homeassistant.core import HomeAssistant
 
 # The generic fields a profile can own.
 GENERIC_FIELDS: Final = frozenset(
@@ -337,7 +357,9 @@ class SetupProfile:
     errors by field for the staged setup with the answers applied, and
     ``derive`` returns the fields the profile computes from them. ``normalize``
     builds the staged setup from the previous one and the submitted answers,
-    for a profile whose answers need cleaning or clear other settings.
+    for a profile whose answers need cleaning or clear other settings. ``seed``
+    fills setup's defaults from the bed's advertisement (the discovery that
+    started setup, if any) before the first form; Configure never runs it.
     """
 
     owns: Mapping[str, Any] = field(default_factory=dict)
@@ -346,6 +368,12 @@ class SetupProfile:
     normalize: Callable[[Mapping[str, Any], Mapping[str, Any]], dict[str, Any]] | None = None
     derive: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None
     title: Callable[[Mapping[str, Any]], str] | None = None
+    seed: (
+        Callable[
+            [HomeAssistant, Mapping[str, Any], BluetoothServiceInfoBleak | None], dict[str, Any]
+        ]
+        | None
+    ) = None
 
     def staged(self, previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
         """Return the staged setup with the answers applied."""
@@ -802,6 +830,229 @@ def _sleepys_app_features(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _gmmotor_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .gmmotor_profiles import profile_choices
+
+    return profile_choices()
+
+
+def _gmmotor_product_default(data: Mapping[str, Any]) -> str:
+    """The product the raw Bluetooth name selects, or the app's empty fallback."""
+    from .gmmotor_discovery import resolve_selection, selector_from_name
+
+    product = data.get(CONF_PRODUCT_TYPE)
+    if product is None:
+        try:
+            product = resolve_selection(selector_from_name(data.get(CONF_BLE_DEVICE_NAME, "")))
+        except ValueError:
+            product = ""
+    return product if product in _gmmotor_products(data) else ""
+
+
+_GMMOTOR_SIDES: Final[Mapping[Any, str]] = {"left": "Left", "right": "Right", "both": "Both"}
+
+
+def _gmmotor_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Require a catalog product, and an app side the product exposes."""
+    from .gmmotor_profiles import load_profile
+
+    try:
+        profile = load_profile(data.get(CONF_PRODUCT_TYPE, ""))
+    except ValueError:
+        return {CONF_PRODUCT_TYPE: "gmmotor_product"}
+    if {"left": 0, "right": 1, "both": 2}.get(data.get(CONF_GMMOTOR_SIDE, "left")) not in profile.sides:
+        return {CONF_GMMOTOR_SIDE: "gmmotor_side"}
+    return {}
+
+
+def _isleep_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .isleep_profile import ISLEEP_PRODUCTS
+
+    return {product: str(product) for product in ISLEEP_PRODUCTS}
+
+
+def _isleep_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """The advertised product, room and actuator descriptor, never over a chosen one."""
+    from homeassistant.components import bluetooth
+
+    from .isleep_profile import add_isleep_metadata
+
+    info = discovered or bluetooth.async_last_service_info(
+        hass, data[CONF_ADDRESS], connectable=False
+    )
+    return add_isleep_metadata(data, info.manufacturer_data if info else {})
+
+
+def _isleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .isleep_profile import validate_isleep_profile
+
+    try:
+        profile = validate_isleep_profile(data)
+    except ValueError:
+        return {"base": "isleep_profile"}
+    # A single-address pair needs the product's separate side controls.
+    if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS and not profile.split:
+        return {"base": "isleep_unpair_first"}
+    return {}
+
+
+def _isleep_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """The product's rendered axes set the motor count."""
+    from .isleep_profile import validate_isleep_profile
+
+    return {
+        CONF_MOTOR_COUNT: len(validate_isleep_profile(data).axes),
+        CONF_MOTOR_PULSE_USER_SET: False,
+    }
+
+
+def _doublesleep_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .doublesleep_protocol import MODELS
+
+    return {str(key): label for key, label in MODELS.items()}
+
+
+def _doublesleep_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """The app model the platform name and advertisement select, unless one is chosen."""
+    if discovered is None:
+        return dict(data)
+    from .doublesleep_protocol import select_model
+
+    model = select_model(discovered.device.name or "", discovered.manufacturer_data)
+    return {CONF_PRODUCT_TYPE: str(model), **data}
+
+
+def _doublesleep_normalize(
+    previous: Mapping[str, Any], answers: Mapping[str, Any]
+) -> dict[str, Any]:
+    data = {**previous, **answers}
+    if CONF_PRODUCT_TYPE in data:
+        data[CONF_PRODUCT_TYPE] = str(data[CONF_PRODUCT_TYPE])
+    return data
+
+
+def _doublesleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    if data.get(CONF_PRODUCT_TYPE) not in _doublesleep_models(data) or data.get(
+        CONF_PROTOCOL_VARIANT, "auto"
+    ) not in ("auto", "p1", "p2", "p3"):
+        return {"base": "doublesleep_profile"}
+    return {}
+
+
+def _sleeptracker_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .sleeptracker_protocol import MODELS
+
+    return {key: model.label for key, model in MODELS.items()}
+
+
+def _sleeptracker_foundations(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .sleeptracker_protocol import FOUNDATIONS
+
+    return {foundation: foundation for foundation in FOUNDATIONS}
+
+
+# A signed 32-bit value, as the apps store their mesh and processor identities.
+_INT32_RANGE: Final = vol.Range(min=-(2**31), max=2**31 - 1)
+_INT32: Final = vol.All(int, _INT32_RANGE)
+
+
+def _sleeptracker_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .sleeptracker_protocol import FOUNDATIONS, MODELS
+
+    if data.get(CONF_PRODUCT_TYPE) not in MODELS:
+        return {CONF_PRODUCT_TYPE: "sleeptracker_profile"}
+    if type(
+        snapshot := data.get(CONF_SLEEPTRACKER_SNAPSHOT_SIDE, 0)
+    ) is not int or snapshot not in range(4):
+        return {CONF_SLEEPTRACKER_SNAPSHOT_SIDE: "sleeptracker_profile"}
+    if (
+        type(processor := data.get(CONF_SLEEPTRACKER_PROCESSOR_TYPE, 0)) is not int
+        or not -(2**31) <= processor < 2**31
+    ):
+        return {CONF_SLEEPTRACKER_PROCESSOR_TYPE: "sleeptracker_profile"}
+    if type(unit := data.get(CONF_SLEEPTRACKER_UNIT, 0)) is not int or not -(2**31) <= unit < 2**31:
+        return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_profile"}
+    if data.get(CONF_SLEEPTRACKER_RESTRICTED, False) and unit != 0:
+        return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_restricted_unit"}
+    if data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified") not in FOUNDATIONS:
+        return {CONF_SLEEPTRACKER_FOUNDATION: "sleeptracker_profile"}
+    if not isinstance(data.get(CONF_SLEEPTRACKER_RESTRICTED, False), bool):
+        return {CONF_SLEEPTRACKER_RESTRICTED: "sleeptracker_profile"}
+    return {}
+
+
+def _sleeptracker_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """A layout with lumbar adds the third motor."""
+    from .sleeptracker_protocol import MODELS
+
+    return {
+        CONF_MOTOR_COUNT: 3 if MODELS[data[CONF_PRODUCT_TYPE]].lumbar else 2,
+        CONF_MOTOR_PULSE_USER_SET: False,
+    }
+
+
+def _motion_bed_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """The advertised name, unless one is saved; the editable title is no identity."""
+    if discovered is None or not discovered.name:
+        return dict(data)
+    return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
+
+
+def _motion_bed_choices(layouts: tuple[str, ...]) -> Mapping[Any, str]:
+    return {layout: layout for layout in ("auto", *layouts)}
+
+
+def _motion_bed_presets(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .motion_bed_models import PRESET_VARIANTS
+
+    return _motion_bed_choices(tuple(PRESET_VARIANTS))
+
+
+def _motion_bed_movements(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .motion_bed_models import MOVEMENT_LAYOUTS
+
+    return _motion_bed_choices(tuple(MOVEMENT_LAYOUTS))
+
+
+def _motion_bed_normalize(
+    previous: Mapping[str, Any], answers: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Auto follows the name, so it is stored as no retained layout."""
+    data = {**previous, **answers}
+    for key in (CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT):
+        if data.get(key) == "auto":
+            data.pop(key)
+    return data
+
+
+def _motion_bed_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .motion_bed_models import select_motion_bed
+
+    try:
+        select_motion_bed(
+            data.get(CONF_BLE_DEVICE_NAME, ""),
+            restored=data.get(CONF_MOTION_BED_RESTORED, False),
+            preset_override=None
+            if data.get(CONF_MOTION_BED_PRESET, "auto") == "auto"
+            else data[CONF_MOTION_BED_PRESET],
+            movement_override=None
+            if data.get(CONF_MOTION_BED_MOVEMENT, "auto") == "auto"
+            else data[CONF_MOTION_BED_MOVEMENT],
+        )
+    except ValueError:
+        return {"base": "motion_bed_profile"}
+    return {}
+
+
+_NO_PULSE_CHOICE: Final[Mapping[str, Any]] = {CONF_MOTOR_PULSE_USER_SET: False}
+
+
 def _malouf_models(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's model picker, plus a stored model the picker no longer lists."""
     from .profiles.malouf import APP_PROFILES
@@ -1045,6 +1296,113 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_BEDSENSE), "auto"),),
+    ),
+    # The exact catalog product sets the layout; the raw Bluetooth name suggests it.
+    BED_TYPE_GMMOTOR: _asking(
+        BED_TYPE_GMMOTOR,
+        owns={**_BASE[BED_TYPE_GMMOTOR].owns, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(
+            Question(CONF_PRODUCT_TYPE, _gmmotor_products, _gmmotor_product_default),
+            Question(CONF_GMMOTOR_SIDE, _GMMOTOR_SIDES, "left"),
+        ),
+        validate=_gmmotor_errors,
+    ),
+    # The app's product and the mesh room it joins; the advertisement suggests both.
+    BED_TYPE_ISLEEP: _asking(
+        BED_TYPE_ISLEEP,
+        owns={
+            **_BASE[BED_TYPE_ISLEEP].owns,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+        },
+        questions=(
+            Question(CONF_PRODUCT_TYPE, _isleep_products, 129),
+            Question(
+                CONF_KAIDI_ROOM_ID, default=10000, validator=vol.All(vol.Coerce(int), _INT32_RANGE)
+            ),
+            Question(
+                CONF_KAIDI_SOFA_ACU_NO,
+                default=2,
+                validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535)),
+            ),
+        ),
+        validate=_isleep_errors,
+        derive=_isleep_layout,
+        seed=_isleep_seed,
+    ),
+    # The app saves its model apart from the BLE driver the bed advertises.
+    BED_TYPE_DOUBLESLEEP: _asking(
+        BED_TYPE_DOUBLESLEEP,
+        owns={
+            **{
+                key: value
+                for key, value in _BASE[BED_TYPE_DOUBLESLEEP].owns.items()
+                if key != CONF_PROTOCOL_VARIANT
+            },
+            # Controller-declared app actions own these controls.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 300,
+        },
+        questions=(
+            Question(
+                CONF_PRODUCT_TYPE,
+                _doublesleep_models,
+                lambda data: str(data.get(CONF_PRODUCT_TYPE, "3")),
+            ),
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_DOUBLESLEEP), "auto"),
+        ),
+        normalize=_doublesleep_normalize,
+        validate=_doublesleep_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_doublesleep_seed,
+    ),
+    # The processor's app layout and the selectors the app recorded for it.
+    BED_TYPE_SLEEPTRACKER: _asking(
+        BED_TYPE_SLEEPTRACKER,
+        owns={
+            **_BASE[BED_TYPE_SLEEPTRACKER].owns,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+        },
+        questions=(
+            Question(CONF_SLEEPTRACKER_FOUNDATION, _sleeptracker_foundations, "Unspecified"),
+            Question(CONF_PRODUCT_TYPE, _sleeptracker_models, "unknown"),
+            Question(CONF_SLEEPTRACKER_UNIT, default=0, validator=_INT32),
+            Question(
+                CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+                default=0,
+                validator=vol.All(int, vol.Range(min=0, max=3)),
+            ),
+            Question(CONF_SLEEPTRACKER_RESTRICTED, default=False),
+            Question(CONF_SLEEPTRACKER_PROCESSOR_TYPE, default=0, validator=_INT32),
+        ),
+        validate=_sleeptracker_errors,
+        derive=_sleeptracker_layout,
+    ),
+    # The exact Bluetooth name identifies the app's model; a restored profile or a
+    # retained layout is the user's explicit choice.
+    BED_TYPE_MOTION_BED: _asking(
+        BED_TYPE_MOTION_BED,
+        owns={
+            **_BASE[BED_TYPE_MOTION_BED].owns,
+            # Named app controls own their capabilities.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+        },
+        questions=(
+            Question(
+                CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True
+            ),
+            Question(CONF_MOTION_BED_RESTORED, default=False),
+            Question(CONF_MOTION_BED_PRESET, _motion_bed_presets, "auto"),
+            Question(CONF_MOTION_BED_MOVEMENT, _motion_bed_movements, "auto"),
+        ),
+        normalize=_motion_bed_normalize,
+        validate=_motion_bed_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_motion_bed_seed,
     ),
 }
 

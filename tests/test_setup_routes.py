@@ -371,8 +371,8 @@ async def test_kaidi_brand_lists_each_app(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: const.VARIANT_AUTO}}
             )
-        if result.get("step_id") == "isleep":
-            # The ISleep app step asks for its product and room, as shown.
+        if result.get("step_id") == "profile_questions":
+            # ISleep asks for its product and room, as shown.
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], result["data_schema"]({})
             )

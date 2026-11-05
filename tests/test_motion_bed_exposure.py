@@ -40,7 +40,7 @@ async def test_explicit_app_step_checks_identity_and_retained_layout_before_conn
     flow.hass = hass
     flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Bed", CONF_BED_TYPE: BED_TYPE_MOTION_BED}
     flow._finish_with_verify = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
-    result = await flow.async_step_motion_bed(input_data)
+    result = await flow.async_step_profile_questions(input_data)
     if valid:
         flow._finish_with_verify.assert_awaited_once()
         data = flow._finish_with_verify.call_args.args[0]
@@ -94,3 +94,24 @@ async def test_hub_surface_select_requires_present_module_and_changes_only_therm
     assert controller.protocol_diagnostics["active_module"] == "thermal"
     assert controller._module_is_active("thermal")
     assert not controller._module_is_active("motor")
+
+
+@pytest.mark.parametrize("saved", [None, "K1"])
+async def test_configure_stores_auto_as_no_retained_layout(hass, saved):
+    """Auto follows the name; Configure never saves it as a layout override."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+
+    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "QMS-IQ"}
+    if saved is not None:
+        data[CONF_MOTION_BED_PRESET] = saved
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    result = await flow._async_options_form(
+        {CONF_BLE_DEVICE_NAME: "QMS-IQ", CONF_MOTION_BED_PRESET: "auto", CONF_MOTION_BED_MOVEMENT: "auto"},
+        step_id="settings",
+    )
+    assert result["type"] == "create_entry", result
+    assert CONF_MOTION_BED_PRESET not in entry.data
+    assert CONF_MOTION_BED_MOVEMENT not in entry.data

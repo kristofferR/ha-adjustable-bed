@@ -14,7 +14,6 @@ from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepCont
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    _gmmotor_errors,
     _name_rule_setup_name,
 )
 from custom_components.adjustable_bed.const import DOMAIN
@@ -31,6 +30,7 @@ from custom_components.adjustable_bed.pairing import (
     supports_single_address_pairing,
 )
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+from custom_components.adjustable_bed.setup_questions import _gmmotor_errors
 
 
 def physical(hass, product="6BRM", address="AA:BB:CC:DD:EE:01"):
@@ -79,15 +79,15 @@ async def test_real_app_step_preserves_raw_name_and_rejects_incompatible_nested_
         "bed_type": "gmmotor",
         "ble_device_name": "V9RM-raw",
     }
-    result = await flow.async_step_gmmotor()
-    assert result["type"] == "form" and result["step_id"] == "gmmotor"
+    result = await flow.async_step_profile_questions()
+    assert result["type"] == "form" and result["step_id"] == "profile_questions"
     with patch.object(
         flow, "_finish_with_verify", AsyncMock(return_value={"type": "create_entry"})
     ) as finish:
-        result = await flow.async_step_gmmotor({"product_type": "V9RM:0", "gmmotor_side": "right"})
+        result = await flow.async_step_profile_questions({"product_type": "V9RM:0", "gmmotor_side": "right"})
         assert result["errors"] == {"gmmotor_side": "gmmotor_side"}
         finish.assert_not_awaited()
-        await flow.async_step_gmmotor({"product_type": "V9RM:1", "gmmotor_side": "right"})
+        await flow.async_step_profile_questions({"product_type": "V9RM:1", "gmmotor_side": "right"})
     data = finish.await_args.args[0]
     assert data["product_type"] == "V9RM:1" and data["gmmotor_side"] == "right"
     assert data["ble_device_name"] == "V9RM-raw" and data["disable_angle_sensing"] is True
