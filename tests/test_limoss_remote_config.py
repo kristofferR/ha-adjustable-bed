@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.pairing import (
     inheritable_child_fields,
     supports_single_address_pairing,
 )
+from tests.form_helpers import shown_markers
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -211,3 +212,14 @@ def test_limoss_group_requires_explicit_app_or_legacy_selection():
     assert get_actuator_group_for_bed_type(BED_TYPE_LIMOSS_REMOTE) == (
         "limoss", "Limoss Remote app",
     )
+
+
+async def test_options_keep_the_apps_own_massage_question(hass):
+    """The app asks massage itself, so the form shows its field for the stored route."""
+    entry = MockConfigEntry(domain=const.DOMAIN, data=app_data())
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    form = await flow.async_step_settings()
+    assert const.CONF_HAS_MASSAGE in shown_markers(form)

@@ -7,7 +7,7 @@ import contextlib
 import dataclasses
 import logging
 import sys
-from collections.abc import AsyncIterator, Callable, Iterable, Mapping
+from collections.abc import AsyncIterator, Callable, Collection, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
@@ -31,6 +31,11 @@ from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.field_visibility import (
+    ConditionOperator,
+    ConditionValue,
+    FieldCondition,
+)
 from homeassistant.helpers.selector import (
     SelectOptionDict,
     SelectSelector,
@@ -432,7 +437,7 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
-from .setup_questions import Question, SetupProfile
+from .setup_questions import GENERIC_FIELDS, Question, SetupProfile
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -906,6 +911,33 @@ def _route_section(bed_type: str | None, default: str) -> section | None:
     )
 
 
+def _add_route_section(
+    schema: dict[vol.Marker, Any],
+    bed_type: str | None,
+    default: str,
+    rows: Mapping[str, tuple[str | None, str]],
+) -> None:
+    """Add the drawn bed type's route section, shown only for its own generic rows.
+
+    Another bed type asks for its routes in the route step, and an app row
+    sets its own route.
+    """
+    if (advanced := _route_section(bed_type, default)) is None:
+        return
+    own_rows = _rows_where(
+        rows,
+        lambda row_bed_type, variant: (
+            row_bed_type == bed_type and (row_bed_type, variant) not in APP_VARIANT_CHOICES
+        ),
+    )
+    marker: vol.Marker = vol.Optional("advanced")
+    if own_rows is not None:
+        from homeassistant import data_entry_flow
+
+        marker = data_entry_flow.Optional("advanced", visible=own_rows)
+    schema[marker] = advanced
+
+
 def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
     """Show a route error on a form that has no route field."""
     if (error := errors.pop(CONF_PROTOCOL_VARIANT, None)) is not None:
@@ -968,7 +1000,7 @@ def _bed_type_selector(
 class _SearchableSelect(SelectSelector):
     """A long select users can search by label, showing labels only.
 
-    Home Assistant 2026.9 filters a select only when it allows a custom value,
+    Home Assistant 2026.11 filters a select only when it allows a custom value,
     and that picker shows the submitted value as its text. Each option's value
     is therefore its label; validation maps it back to the choice, and also
     accepts the choice itself. A custom value is never accepted.
@@ -989,6 +1021,10 @@ class _SearchableSelect(SelectSelector):
                 custom_value=True,
             )
         )
+
+    def rows(self) -> Mapping[str, str]:
+        """Return each row's submitted value (its label) and the choice it selects."""
+        return dict(self._choices)
 
     def shown(self, choice: object) -> object:
         """Return the value the picker shows for a choice."""
@@ -1015,17 +1051,288 @@ def _bed_type_field(
     return marker(CONF_BED_TYPE, default=selector.shown(default)), selector
 
 
-def _hide_owned_generic_fields(
-    schema: dict[vol.Marker, Any], bed_type: str | None, variant: str | None
+_OCTO_MOTOR_OVERRIDES: Final[dict[str, str]] = {
+    "auto": "Use advertised motor count",
+    "1": "1 motor",
+    "2": "2 motors",
+    "3": "3 motors",
+    "4": "4 motors",
+}
+
+
+def _row_profiles(
+    select: _SearchableSelect, detected: str | None
+) -> dict[str, tuple[str | None, str]]:
+    """Return the bed type and variant each submittable bed-type value selects.
+
+    The picker submits a row's label and the API may submit its choice, so both
+    are listed. The Auto-detect row stands for the profile detection resolves to.
+    """
+    rows: dict[str, tuple[str | None, str]] = {}
+    for label, choice in select.rows().items():
+        if choice == BED_TYPE_AUTO_DETECT:
+            profile: tuple[str | None, str] = (detected, VARIANT_AUTO)
+        else:
+            bed_type, variant = resolve_bed_type_choice(choice)
+            profile = (bed_type, variant or VARIANT_AUTO)
+        rows[label] = rows[choice] = profile
+    return rows
+
+
+def _rows_where(
+    rows: Mapping[str, tuple[str | None, str]],
+    test: Callable[[str | None, str], bool],
+    operator: Literal["in", "not_in"] = "in",
+    field: str = CONF_BED_TYPE,
+) -> FieldCondition | None:
+    """Return a condition on ``field`` for the rows that pass ``test``."""
+    matching: list[ConditionValue] = [
+        label for label, (bed_type, variant) in rows.items() if test(bed_type, variant)
+    ]
+    if not matching:
+        return None
+    return FieldCondition(field=field, operator=ConditionOperator(operator), value=matching)
+
+
+def _shown_for(fields: Mapping[vol.Marker, Any], visible: FieldCondition) -> dict[vol.Marker, Any]:
+    """Return the fields as native conditional fields shown only when ``visible`` holds.
+
+    A field that already has a condition is shown only when both hold.
+    """
+    from homeassistant import data_entry_flow
+
+    shown: dict[vol.Marker, Any] = {}
+    for marker, validator in fields.items():
+        condition: FieldCondition | list[FieldCondition] = visible
+        if (existing := getattr(marker, "visible", None)) is not None:
+            condition = [*(existing if isinstance(existing, list) else [existing]), visible]
+        if not isinstance(marker, vol.Required | vol.Optional):
+            raise TypeError(f"{marker.schema} is not a form field")
+        marker_type = (
+            data_entry_flow.Required
+            if isinstance(marker, vol.Required)
+            else data_entry_flow.Optional
+        )
+        shown[
+            marker_type(
+                marker.schema,
+                default=marker.default,
+                description=marker.description,
+                visible=condition,
+            )
+        ] = validator
+    return shown
+
+
+def _condition_owned_generic_fields(
+    schema: dict[vol.Marker, Any],
+    rows: Mapping[str, tuple[str | None, str]],
+    field: str = CONF_BED_TYPE,
+    asked_routes: Mapping[str, tuple[str | None, str]] | None = None,
+    keep: Collection[str] = frozenset(),
 ) -> None:
-    """Drop the generic fields the selected app profile sets itself."""
-    hidden = hidden_generic_fields(bed_type, variant)
+    """Hide each generic field for the rows of ``field`` whose profile sets it itself.
+
+    One form serves every row, so nothing redraws when another row is chosen.
+    ``asked_routes`` are the routes of a bed type whose route the form asks
+    itself: its generic rows are decided by that route field, which reads as
+    absent while another row is chosen.
+    """
+    asked_bed_type = next(iter(asked_routes.values()))[0] if asked_routes else None
+    for marker in tuple(schema):
+        key = marker.schema
+        if key not in GENERIC_FIELDS or key == field or key in keep:
+            continue
+        if asked_routes and key == CONF_PROTOCOL_VARIANT:
+            continue
+
+        def owns(bed_type: str | None, variant: str, key: str = key) -> bool:
+            return key in hidden_generic_fields(bed_type, variant)
+
+        if not asked_routes and all(owns(*profile) for profile in rows.values()):
+            # Every row sets it, so no choice on this form can show it.
+            del schema[marker]
+            continue
+        conditions = [
+            condition
+            for condition in (
+                _rows_where(
+                    rows,
+                    lambda bed_type, variant: (
+                        (bed_type != asked_bed_type or variant != VARIANT_AUTO)
+                        and owns(bed_type, variant)
+                    ),
+                    "not_in",
+                    field,
+                ),
+                _rows_where(asked_routes or {}, owns, "not_in", CONF_PROTOCOL_VARIANT),
+            )
+            if condition is not None
+        ]
+        if conditions:
+            shown = {marker: schema.pop(marker)}
+            for condition in conditions:
+                shown = _shown_for(shown, condition)
+            schema.update(shown)
+
+
+def _bed_specific_fields(
+    rows: Mapping[str, tuple[str | None, str]],
+    *,
+    richmat_remote: str = RICHMAT_REMOTE_AUTO,
+    richmat_remotes: Mapping[str, str] = RICHMAT_REMOTES,
+) -> dict[vol.Marker, Any]:
+    """Return every bed type's own setup fields, each shown only for its rows."""
+    groups: list[tuple[Callable[[str | None, str], bool], dict[vol.Marker, Any]]] = [
+        (
+            lambda bed_type, _variant: bed_type == BED_TYPE_OCTO,
+            {
+                vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): TextSelector(
+                    TextSelectorConfig()
+                ),
+                vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto"): vol.In(
+                    _OCTO_MOTOR_OVERRIDES
+                ),
+            },
+        ),
+        (
+            lambda bed_type, _variant: bed_type == BED_TYPE_JENSEN,
+            {vol.Optional(CONF_JENSEN_PIN, default=""): TextSelector(TextSelectorConfig())},
+        ),
+        (
+            lambda bed_type, _variant: bed_type == BED_TYPE_RICHMAT,
+            {
+                vol.Optional(CONF_RICHMAT_REMOTE, default=richmat_remote): vol.In(
+                    dict(richmat_remotes)
+                ),
+                **_rmcontrol_schema_fields(),
+            },
+        ),
+    ]
+    malouf: dict[vol.Marker, Any] = {}
+    _add_malouf_schema_fields(malouf)
+    groups.append((lambda bed_type, _variant: bed_type in MALOUF_BED_TYPES, malouf))
+    cb24: dict[vol.Marker, Any] = {}
+    _add_cb24_side_schema_field(cb24)
+    groups.append((lambda bed_type, _variant: bed_type == BED_TYPE_OKIN_CB24, cb24))
+    fields: dict[vol.Marker, Any] = {}
+    for test, group in groups:
+        if (visible := _rows_where(rows, test)) is not None:
+            fields.update(_shown_for(group, visible))
+    return fields
+
+
+# Generic setup fields whose default depends on the bed type.
+_PROFILE_DEFAULTED_FIELDS: Final = (
+    CONF_MOTOR_COUNT,
+    CONF_DISABLE_ANGLE_SENSING,
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_MOTOR_PULSE_DELAY_MS,
+)
+
+
+def _drawn_defaults(schema: Mapping[vol.Marker, Any]) -> dict[str, Any]:
+    """Return the defaults a setup form shows for its bed-type-dependent fields."""
+    return {
+        marker.schema: marker.default()
+        for marker in schema
+        if marker.schema in _PROFILE_DEFAULTED_FIELDS
+        and isinstance(marker, vol.Optional | vol.Required)
+        and not isinstance(marker.default, vol.Undefined)
+    }
+
+
+def _take_selected_defaults(
+    user_input: dict[str, Any],
+    drawn: tuple[str | None, dict[str, Any]] | None,
+    bed_type: str | None,
+    variant: str | None,
+    *,
+    signals: list[str] | None = None,
+    device_name: str | None = None,
+) -> None:
+    """Give a field left at the default it was drawn with the selected profile's default.
+
+    A setup form is drawn once, with the shown bed type's defaults, and a row
+    change cannot update them. An untouched field would otherwise save that
+    bed type's value for another one. A field the user changed keeps its value.
+    """
+    if drawn is None or bed_type is None:
+        return
+    drawn_bed_type, shown = drawn
+    pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, variant, signals)
+    selected: dict[str, Any] = {
+        CONF_DISABLE_ANGLE_SENSING: not bed_type_has_position_feedback(bed_type, variant),
+        CONF_MOTOR_PULSE_COUNT: pulse_count,
+        CONF_MOTOR_PULSE_DELAY_MS: pulse_delay,
+    }
+    if bed_type != drawn_bed_type:
+        # The drawn count can come from the advertised remote, so only another
+        # bed type replaces it.
+        selected[CONF_MOTOR_COUNT] = _default_motor_count(bed_type, device_name)
+    for key, value in selected.items():
+        if (
+            key in shown
+            and key in user_input
+            and str(user_input[key]) == str(shown[key])
+            and str(value) != str(shown[key])
+        ):
+            user_input[key] = value
+
+
+def _bed_specific_errors(user_input: Mapping[str, Any], bed_type: str | None) -> dict[str, str]:
+    """Check the selected bed type's own answers."""
+    if bed_type == BED_TYPE_OCTO and not is_valid_octo_pin(
+        normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
+    ):
+        return {CONF_OCTO_PIN: "invalid_pin"}
+    if bed_type == BED_TYPE_RICHMAT and not _is_valid_rmcontrol_variant(
+        user_input.get(CONF_RMCONTROL_PRODUCT),
+        user_input.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+    ):
+        return {"base": "invalid_variant_for_bed_type"}
+    return {}
+
+
+def _add_bed_specific_entry_data(
+    entry_data: dict[str, Any],
+    user_input: Mapping[str, Any],
+    bed_type: str | None,
+    advertised_name: str | None = None,
+) -> None:
+    """Save the selected bed type's own answers from the one setup form."""
+    if bed_type == BED_TYPE_OCTO:
+        entry_data[CONF_OCTO_PIN] = normalize_octo_pin(
+            user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
+        )
+        entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(
+            user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
+        )
+    elif bed_type == BED_TYPE_JENSEN:
+        entry_data[CONF_JENSEN_PIN] = user_input.get(CONF_JENSEN_PIN, "")
+    elif bed_type == BED_TYPE_RICHMAT:
+        entry_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
+        entry_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
+        remote = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
+        if remote == RICHMAT_REMOTE_AUTO and advertised_name:
+            # Auto keeps the code the advertised name carries, when it has one.
+            remote = detect_richmat_remote_from_name(advertised_name) or RICHMAT_REMOTE_AUTO
+        entry_data[CONF_RICHMAT_REMOTE] = remote
+
+
+def _hide_owned_generic_fields(
+    schema: dict[vol.Marker, Any],
+    bed_type: str | None,
+    variant: str | None,
+    keep: Collection[str] = frozenset(),
+) -> None:
+    """Drop the generic fields the selected app profile sets itself, except ``keep``."""
+    hidden = hidden_generic_fields(bed_type, variant) - set(keep)
     for marker in tuple(schema):
         if marker.schema in hidden:
             del schema[marker]
 
 
-# Steps that collect a bed type's own app settings after the generic form.
 def _validate_vibradorm_setup_roles(client: BleakClient, data: dict[str, Any]) -> None:
     """Reuse runtime role validation for the exact user-selected app/product."""
     if data[CONF_BED_TYPE] == BED_TYPE_VMATBASIC:
@@ -1972,21 +2279,56 @@ def _vmatbasic_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 
 def _show_profile_fields(
-    schema: dict[vol.Marker, Any], bed_type: str | None, variant: str | None
+    schema: dict[vol.Marker, Any],
+    bed_type: str | None,
+    variant: str | None,
+    rows: Mapping[str, tuple[str | None, str]] | None = None,
+    field: str = CONF_BED_TYPE,
+    keep: Collection[str] = frozenset(),
 ) -> None:
     """Fit a generic form to the selected profile.
 
-    Svane offers its app profiles by name rather than every variant slug, and
-    every profile drops the generic fields it sets itself.
+    Svane offers its app profiles by name rather than every variant slug; a
+    setup form shows them whenever a Svane row is chosen. A form with a
+    bed-type or route choice (``field``) hides each generic field for the rows
+    whose profile sets it itself; a form for one profile drops them. Fields in
+    ``keep`` are the profile's own questions and stay as they are.
     """
-    if bed_type == BED_TYPE_SVANE:
-        if variant not in SVANE_VARIANTS:
+    # An app row sets its own route, so only the generic Svane row asks it.
+    svane_rows = (
+        _rows_where(
+            rows,
+            lambda row_bed_type, row_variant: (
+                row_bed_type == BED_TYPE_SVANE and row_variant == VARIANT_AUTO
+            ),
+        )
+        if rows is not None and field == CONF_BED_TYPE
+        else None
+    )
+    if bed_type == BED_TYPE_SVANE or svane_rows is not None:
+        if bed_type != BED_TYPE_SVANE or variant not in SVANE_VARIANTS:
             variant = VARIANT_AUTO
         for marker in tuple(schema):
             if marker.schema == CONF_PROTOCOL_VARIANT:
                 del schema[marker]
-        schema[vol.Optional(CONF_PROTOCOL_VARIANT, default=variant)] = vol.In(SVANE_VARIANTS)
-    _hide_owned_generic_fields(schema, bed_type, variant)
+        svane: dict[vol.Marker, Any] = {
+            vol.Optional(CONF_PROTOCOL_VARIANT, default=variant): vol.In(SVANE_VARIANTS)
+        }
+        schema.update(svane if svane_rows is None else _shown_for(svane, svane_rows))
+    if rows is not None:
+        if field != CONF_BED_TYPE and CONF_PROTOCOL_VARIANT in hidden_generic_fields(
+            bed_type, variant
+        ):
+            # A route field cannot hide itself; the profile owns the route.
+            _hide_owned_generic_fields(schema, bed_type, variant, keep)
+        asked_routes = (
+            {route: (BED_TYPE_SVANE, route) for route in SVANE_VARIANTS}
+            if svane_rows is not None
+            else None
+        )
+        _condition_owned_generic_fields(schema, rows, field, asked_routes, keep)
+    else:
+        _hide_owned_generic_fields(schema, bed_type, variant, keep)
 
 
 # The Okin family's own routes, by the answer that selects each.
@@ -2740,42 +3082,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             raise RuntimeError(f"Unknown disconnect choice resume step: {resume_step}")
         finally:
             self._disconnect_choice_confirmed = False
-
-    @staticmethod
-    def _needs_malouf_step(bed_type: str | None, user_input: dict[str, Any]) -> bool:
-        """Return True when the Malouf layout/memory fields still need collecting.
-
-        The layout and memory-slot fields are only shown inline when the form was
-        built already knowing the bed is Malouf (pre-selected brand or a confident
-        detection). When the user instead picks a Malouf protocol from the bed-type
-        dropdown, the inline fields were never rendered, so ``user_input`` lacks
-        them and we must collect them in a dedicated follow-up step. Otherwise the
-        entry silently persists the default layout, dropping Hi-Lo / four-motor
-        controls until the user discovers the options flow.
-        """
-        return bed_type in MALOUF_BED_TYPES and CONF_MALOUF_LAYOUT not in user_input
-
-    async def _async_malouf_step(
-        self, step_id: str, user_input: dict[str, Any] | None
-    ) -> ConfigFlowResult:
-        """Collect Malouf layout/memory fields, then finish setup."""
-        assert self._manual_data is not None
-
-        if user_input is not None:
-            _add_malouf_entry_data(
-                self._manual_data, user_input, self._manual_data.get(CONF_BED_TYPE)
-            )
-            return await self._finish_with_verify(
-                self._manual_data,
-                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-            )
-
-        schema_dict: dict[vol.Marker, Any] = {}
-        _add_malouf_schema_fields(schema_dict)
-        return self.async_show_form(
-            step_id=step_id,
-            data_schema=vol.Schema(schema_dict),
-        )
 
     async def _async_app_setup_step(
         self,
@@ -3930,6 +4236,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ) = None
         self._pending_route_bed_type: str | None = None
         self._route_chosen: tuple[str | None, str] | None = None
+        # The bed type a generic setup form was last drawn for, and its
+        # bed-type-dependent defaults.
+        self._drawn_defaults: tuple[str | None, dict[str, Any]] | None = None
         self._pending_disconnect_resume_step: str | None = None
         self._pending_disconnect_default: bool = DEFAULT_DISCONNECT_AFTER_COMMAND
         self._disconnect_choice_confirmed: bool = False
@@ -4563,71 +4872,28 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             },
         )
 
-    async def _async_fit_setup_form(
-        self,
-        user_input: dict[str, Any] | None,
-        shown_bed_type: str | None,
-        shown_variant: str | None,
-        step: Literal["bluetooth_confirm", "manual_config", "manual_entry"],
-    ) -> ConfigFlowResult | None:
-        """Fit a submitted generic form to the profile the user selected.
+    def _drop_owned_answers(
+        self, user_input: dict[str, Any] | None, shown_bed_type: str | None, shown_variant: str
+    ) -> None:
+        """Drop answers to generic fields the selected profile sets itself.
 
-        Values in generic fields the selected profile sets itself are dropped,
-        since the form may have been drawn for another profile. When the
-        selected profile needs a field the form did not show, the form is drawn
-        again for it with the entered values as suggestions.
+        The form hides those fields for that profile, so a value only arrives
+        from a client that ignores the field conditions.
         """
         if user_input is None:
-            return None
+            return
         requested = user_input.get(CONF_BED_TYPE, shown_bed_type)
         if requested == BED_TYPE_AUTO_DETECT:
-            requested = None
-            detected = self._disambiguated_bed_type
-            if detected is None and self._discovery_info is not None:
-                detected = _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
-            # Auto-detect is an effective profile once there is a confident
-            # unambiguous result. Compare ownership against that profile so an
-            # equivalent selection does not rebuild the form and lose its
-            # variant-specific defaults.
-            if detected is not None:
-                requested = detected
-        requested_variant = user_input.get(CONF_PROTOCOL_VARIANT, shown_variant or VARIANT_AUTO)
-        owned = hidden_generic_fields(requested, requested_variant)
-        if not hidden_generic_fields(shown_bed_type, shown_variant) - owned:
-            # An app entry's variant is the route it chose, not a stale field.
-            if (requested, requested_variant) in APP_VARIANT_CHOICES:
-                owned -= {CONF_PROTOCOL_VARIANT}
-            for key in owned:
-                user_input.pop(key, None)
-            return None
-        self._selected_bed_type = requested
-        self._selected_protocol_variant = (
-            requested_variant
-            if requested is not None and is_valid_variant_for_bed_type(requested, requested_variant)
-            else None
-        )
-        if step == "bluetooth_confirm":
-            self._disambiguated_bed_type = self._selected_bed_type
-            self._show_full_bed_type_list = True
-            result = await self.async_step_bluetooth_confirm()
-        elif step == "manual_config":
-            result = await self.async_step_manual_config()
-        else:
-            result = await self.async_step_manual_entry()
-        if isinstance(schema := result.get("data_schema"), vol.Schema):
-            suggestions = dict(user_input)
-            if self._selected_protocol_variant is None:
-                suggestions.pop(CONF_PROTOCOL_VARIANT, None)
-            elif requested is not None:
-                suggestions[CONF_BED_TYPE] = bed_type_choice(
-                    requested, self._selected_protocol_variant
-                )
-            for marker, validator in schema.schema.items():
-                if marker == CONF_BED_TYPE and isinstance(validator, _SearchableSelect):
-                    if CONF_BED_TYPE in suggestions:
-                        suggestions[CONF_BED_TYPE] = validator.shown(suggestions[CONF_BED_TYPE])
-            result["data_schema"] = self.add_suggested_values_to_schema(schema, suggestions)
-        return result
+            requested = self._disambiguated_bed_type
+            if requested is None and self._discovery_info is not None:
+                requested = _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
+        variant = user_input.get(CONF_PROTOCOL_VARIANT, shown_variant)
+        owned = hidden_generic_fields(requested, variant)
+        # An app entry's variant is the route it chose, not a stale field.
+        if (requested, variant) in APP_VARIANT_CHOICES:
+            owned -= {CONF_PROTOCOL_VARIANT}
+        for key in owned:
+            user_input.pop(key, None)
 
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
@@ -4680,10 +4946,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is not None:
             self._take_route_section(user_input, defaults_bed_type, form_variant)
             _apply_setup_bed_type_choice(user_input, defaults_bed_type, form_variant)
-        if rebuilt := await self._async_fit_setup_form(
-            user_input, defaults_bed_type, form_variant, "bluetooth_confirm"
-        ):
-            return rebuilt
+        self._drop_owned_answers(user_input, defaults_bed_type, form_variant)
         default_disconnect_after_command = disconnect_after_command_default_enabled(
             defaults_bed_type, form_variant
         )
@@ -4707,13 +4970,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 else:
                     errors["base"] = "auto_detect_failed"
                     selected_bed_type = None
-            octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-            if (
-                selected_bed_type == BED_TYPE_OCTO
-                and bed_type == BED_TYPE_OCTO
-                and not is_valid_octo_pin(octo_pin)
-            ):
-                errors[CONF_OCTO_PIN] = "invalid_pin"
+            errors.update(_bed_specific_errors(user_input, selected_bed_type))
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
             # Collect the route first: validation below depends on it.
@@ -4724,6 +4981,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ):
                 return route
 
+            _take_selected_defaults(
+                user_input,
+                self._drawn_defaults,
+                selected_bed_type,
+                protocol_variant,
+                signals=detection_result.signals,
+                device_name=self._discovery_info.name,
+            )
             motor_count = _normalize_fixed_motor_count(
                 selected_bed_type,
                 protocol_variant,
@@ -4837,10 +5102,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                     ),
                 }
-                if selected_bed_type == BED_TYPE_OCTO and detected_bed_type == BED_TYPE_OCTO:
-                    entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(
-                        user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
-                    )
                 if selected_bed_type == BED_TYPE_SOLACE and self._discovery_info.name:
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
                 entry_data.update(
@@ -4864,44 +5125,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     return app_step
                 _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
                 _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
-                # Malouf layout/memory fields weren't shown inline (user overrode the
-                # detected type to Malouf), so collect them in a follow-up step.
-                if self._needs_malouf_step(selected_bed_type, user_input):
-                    self._manual_data = entry_data
-                    return await self.async_step_bluetooth_malouf()
-                # Handle bed-type-specific configuration when user overrides detected type
-                # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
-                if selected_bed_type == BED_TYPE_OCTO and detected_bed_type != BED_TYPE_OCTO:
-                    self._manual_data = entry_data
-                    return await self.async_step_bluetooth_octo()
-                # If user selected Richmat but detection wasn't Richmat, collect remote in follow-up step
-                if selected_bed_type == BED_TYPE_RICHMAT and detected_bed_type != BED_TYPE_RICHMAT:
-                    self._manual_data = entry_data
-                    return await self.async_step_bluetooth_richmat()
-                # Add Octo PIN if configured (when detected as Octo, field was shown inline)
-                if selected_bed_type == BED_TYPE_OCTO:
-                    entry_data[CONF_OCTO_PIN] = octo_pin
-                # Add Jensen PIN if configured (when detected as Jensen, field was shown inline)
-                if selected_bed_type == BED_TYPE_JENSEN:
-                    entry_data[CONF_JENSEN_PIN] = user_input.get(CONF_JENSEN_PIN, "")
-                # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
-                if selected_bed_type == BED_TYPE_RICHMAT:
-                    entry_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
-                    entry_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
-                    user_selected_remote = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
-                    # If user selected "auto", try to use auto-detected code instead
-                    if user_selected_remote == RICHMAT_REMOTE_AUTO:
-                        detected_code = detect_richmat_remote_from_name(self._discovery_info.name)
-                        if detected_code:
-                            _LOGGER.info(
-                                "Using auto-detected remote code '%s' for Richmat bed",
-                                detected_code,
-                            )
-                            entry_data[CONF_RICHMAT_REMOTE] = detected_code
-                        else:
-                            entry_data[CONF_RICHMAT_REMOTE] = RICHMAT_REMOTE_AUTO
-                    else:
-                        entry_data[CONF_RICHMAT_REMOTE] = user_selected_remote
+                _add_bed_specific_entry_data(
+                    entry_data, user_input, selected_bed_type, self._discovery_info.name
+                )
                 entry_data = self._maybe_add_advertisement_metadata(
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
@@ -4979,63 +5205,32 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
         }
 
-        if bed_type == BED_TYPE_OCTO:
-            schema_dict[vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto")] = vol.In(
-                {
-                    "auto": "Use advertised motor count",
-                    "1": "1 motor",
-                    "2": "2 motors",
-                    "3": "3 motors",
-                    "4": "4 motors",
-                }
+        schema_dict[vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count)] = vol.All(
+            vol.Coerce(int), vol.In([1, 2, 3, 4])
+        )
+        # A Richmat name can carry its remote code. Only a listed code is the
+        # default; Auto stores an unlisted one when saving.
+        if detected_remote:
+            _LOGGER.info(
+                "Auto-detected Richmat remote code '%s' from device name '%s'",
+                detected_remote,
+                self._discovery_info.name,
             )
-        else:
-            schema_dict[vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count)] = vol.All(
-                vol.Coerce(int), vol.In([1, 2, 3, 4])
+        default_remote = (
+            detected_remote.upper()
+            if detected_remote and detected_remote.upper() in RICHMAT_REMOTES
+            else RICHMAT_REMOTE_AUTO
+        )
+        remotes_options = dict(RICHMAT_REMOTES)
+        if detected_remote and detected_remote.upper() not in RICHMAT_REMOTES:
+            remotes_options[RICHMAT_REMOTE_AUTO] = f"Auto (detected: {detected_remote.upper()})"
+        # Every row's own fields are on the one form, shown only for that row.
+        rows = _row_profiles(bed_type_select, detected_bed_type)
+        schema_dict.update(
+            _bed_specific_fields(
+                rows, richmat_remote=default_remote, richmat_remotes=remotes_options
             )
-
-        if bed_type in MALOUF_BED_TYPES:
-            _add_malouf_schema_fields(schema_dict)
-        if bed_type == BED_TYPE_OKIN_CB24:
-            _add_cb24_side_schema_field(schema_dict)
-
-        # Add PIN field for Octo beds
-        if bed_type == BED_TYPE_OCTO:
-            schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = TextSelector(
-                TextSelectorConfig()
-            )
-
-        # Add PIN field for Jensen beds (default PIN "3060" is used if empty)
-        if bed_type == BED_TYPE_JENSEN:
-            schema_dict[vol.Optional(CONF_JENSEN_PIN, default="")] = TextSelector(
-                TextSelectorConfig()
-            )
-
-        # Add remote selection for Richmat beds with auto-detected default
-        # Uses detected_remote from detection result or from earlier name-based detection
-        if bed_type == BED_TYPE_RICHMAT:
-            if detected_remote:
-                _LOGGER.info(
-                    "Auto-detected Richmat remote code '%s' from device name '%s'",
-                    detected_remote,
-                    self._discovery_info.name,
-                )
-            # Only use detected code as default if it's in the dropdown options
-            # Otherwise, "auto" will be used and the detected code stored when saving
-            default_remote = (
-                detected_remote.upper()
-                if detected_remote and detected_remote.upper() in RICHMAT_REMOTES
-                else RICHMAT_REMOTE_AUTO
-            )
-            # Create modified remotes dict with auto-detected info in the label
-            remotes_options = dict(RICHMAT_REMOTES)
-            if detected_remote and detected_remote.upper() not in RICHMAT_REMOTES:
-                # Modify "Auto" label to show detected code
-                remotes_options[RICHMAT_REMOTE_AUTO] = f"Auto (detected: {detected_remote.upper()})"
-            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=default_remote)] = vol.In(
-                remotes_options
-            )
-            schema_dict.update(_rmcontrol_schema_fields(user_input).items())
+        )
 
         # Build description placeholders with optional ambiguity warning
         description_placeholders = {
@@ -5108,12 +5303,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             f"Wrong device, or not a bed? [Report a misidentified device]({report_url})"
         )
 
-        _show_profile_fields(schema_dict, defaults_bed_type, form_variant)
-        if (advanced := _route_section(defaults_bed_type, form_variant)) is not None:
-            schema_dict[vol.Optional("advanced")] = advanced
+        _show_profile_fields(schema_dict, defaults_bed_type, form_variant, rows)
+        _add_route_section(schema_dict, defaults_bed_type, form_variant, rows)
         if errors:
             # A refused route is asked again on the next submission.
             self._route_chosen = None
+        self._drawn_defaults = (bed_type, _drawn_defaults(schema_dict))
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
@@ -5657,10 +5852,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _apply_setup_bed_type_choice(
                 user_input, defaults_bed_type, preselected_protocol_variant
             )
-        if rebuilt := await self._async_fit_setup_form(
-            user_input, defaults_bed_type, preselected_protocol_variant, "manual_config"
-        ):
-            return rebuilt
+        self._drop_owned_answers(user_input, defaults_bed_type, preselected_protocol_variant)
         default_disconnect_after_command = disconnect_after_command_default_enabled(
             defaults_bed_type, preselected_protocol_variant
         )
@@ -5694,6 +5886,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ):
                 return route
 
+            _take_selected_defaults(
+                user_input,
+                self._drawn_defaults,
+                bed_type,
+                protocol_variant,
+                signals=detection_result.signals,
+                device_name=self._discovery_info.name,
+            )
             motor_count = _normalize_fixed_motor_count(
                 bed_type,
                 protocol_variant,
@@ -5739,6 +5939,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors["base"] = "invalid_number"
             if not errors and _invalid_pulse_count(bed_type, motor_pulse_count):
                 errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+            if not errors:
+                errors.update(_bed_specific_errors(user_input, bed_type))
 
             if not errors:
                 disconnect_after_command = self._disconnect_after_command_choice(
@@ -5797,19 +5999,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     return app_step
                 _add_malouf_entry_data(entry_data, user_input, bed_type)
                 _add_cb24_entry_data(entry_data, user_input, bed_type)
-                # Malouf layout/memory fields weren't shown inline (bed type was
-                # chosen from the dropdown), so collect them in a follow-up step.
-                if self._needs_malouf_step(bed_type, user_input):
-                    self._manual_data = entry_data
-                    return await self.async_step_manual_malouf()
-                # For Octo beds, collect PIN in a separate step
-                if bed_type == BED_TYPE_OCTO:
-                    self._manual_data = entry_data
-                    return await self.async_step_manual_octo()
-                # For Richmat beds, collect remote code in a separate step
-                if bed_type == BED_TYPE_RICHMAT:
-                    self._manual_data = entry_data
-                    return await self.async_step_manual_richmat()
+                _add_bed_specific_entry_data(entry_data, user_input, bed_type)
                 # If bed requires pairing, show pairing instructions
                 if requires_pairing(bed_type, protocol_variant):
                     self._manual_data = entry_data
@@ -5903,17 +6093,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
             }
         )
-        if defaults_bed_type in MALOUF_BED_TYPES:
-            _add_malouf_schema_fields(schema_dict)
-        if defaults_bed_type == BED_TYPE_OKIN_CB24:
-            _add_cb24_side_schema_field(schema_dict)
-
-        _show_profile_fields(schema_dict, defaults_bed_type, preselected_protocol_variant)
-        if (advanced := _route_section(defaults_bed_type, preselected_protocol_variant)) is not None:
-            schema_dict[vol.Optional("advanced")] = advanced
+        # Every row's own fields are on the one form, shown only for that row.
+        rows = _row_profiles(bed_type_select, defaults_bed_type)
+        schema_dict.update(_bed_specific_fields(rows))
+        _show_profile_fields(schema_dict, defaults_bed_type, preselected_protocol_variant, rows)
+        _add_route_section(schema_dict, defaults_bed_type, preselected_protocol_variant, rows)
         if errors:
             # A refused route is asked again on the next submission.
             self._route_chosen = None
+        self._drawn_defaults = (defaults_bed_type, _drawn_defaults(schema_dict))
         return self.async_show_form(
             step_id="manual_config",
             data_schema=vol.Schema(schema_dict),
@@ -5950,10 +6138,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _apply_setup_bed_type_choice(
                 user_input, preselected_bed_type, preselected_protocol_variant
             )
-        if rebuilt := await self._async_fit_setup_form(
-            user_input, preselected_bed_type, preselected_protocol_variant, "manual_entry"
-        ):
-            return rebuilt
+        self._drop_owned_answers(user_input, preselected_bed_type, preselected_protocol_variant)
         default_disconnect_after_command = disconnect_after_command_default_enabled(
             preselected_bed_type, preselected_protocol_variant
         )
@@ -5976,6 +6161,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ):
                     return route
 
+                _take_selected_defaults(
+                    user_input, self._drawn_defaults, bed_type, protocol_variant
+                )
                 motor_count = _normalize_fixed_motor_count(
                     bed_type,
                     protocol_variant,
@@ -6018,6 +6206,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     errors["base"] = "invalid_number"
                 if not errors and _invalid_pulse_count(bed_type, motor_pulse_count):
                     errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+                if not errors:
+                    errors.update(_bed_specific_errors(user_input, bed_type))
 
                 if not errors:
                     disconnect_after_command = self._disconnect_after_command_choice(
@@ -6091,19 +6281,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         return app_step
                     _add_malouf_entry_data(entry_data, user_input, bed_type)
                     _add_cb24_entry_data(entry_data, user_input, bed_type)
-                    # Malouf layout/memory fields weren't shown inline (bed type was
-                    # chosen from the dropdown), so collect them in a follow-up step.
-                    if self._needs_malouf_step(bed_type, user_input):
-                        self._manual_data = entry_data
-                        return await self.async_step_manual_malouf()
-                    # For Octo beds, collect PIN in a separate step
-                    if bed_type == BED_TYPE_OCTO:
-                        self._manual_data = entry_data
-                        return await self.async_step_manual_octo()
-                    # For Richmat beds, collect remote code in a separate step
-                    if bed_type == BED_TYPE_RICHMAT:
-                        self._manual_data = entry_data
-                        return await self.async_step_manual_richmat()
+                    _add_bed_specific_entry_data(entry_data, user_input, bed_type)
                     # If bed requires pairing, show pairing instructions
                     if requires_pairing(bed_type, protocol_variant):
                         self._manual_data = entry_data
@@ -6168,17 +6346,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         schema_dict[
             vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=default_disconnect_after_command)
         ] = bool
-        if preselected_bed_type in MALOUF_BED_TYPES:
-            _add_malouf_schema_fields(schema_dict)
-        if preselected_bed_type == BED_TYPE_OKIN_CB24:
-            _add_cb24_side_schema_field(schema_dict)
-        _show_profile_fields(schema_dict, preselected_bed_type, preselected_protocol_variant)
-        if (advanced := _route_section(preselected_bed_type, preselected_protocol_variant)) is not None:
-            schema_dict[vol.Optional("advanced")] = advanced
+        # Every row's own fields are on the one form, shown only for that row.
+        rows = _row_profiles(bed_type_select, None)
+        schema_dict.update(_bed_specific_fields(rows))
+        _show_profile_fields(schema_dict, preselected_bed_type, preselected_protocol_variant, rows)
+        _add_route_section(schema_dict, preselected_bed_type, preselected_protocol_variant, rows)
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
         if errors:
             # A refused route is asked again on the next submission.
             self._route_chosen = None
+        self._drawn_defaults = (preselected_bed_type, _drawn_defaults(schema_dict))
         return self.async_show_form(
             step_id="manual_entry",
             data_schema=vol.Schema(schema_dict),
@@ -6196,176 +6373,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ),
             },
         )
-
-    async def async_step_manual_octo(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle Octo-specific configuration (PIN)."""
-        assert self._manual_data is not None
-
-        errors: dict[str, str] = {}
-
-        if user_input is not None:
-            octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-            if not is_valid_octo_pin(octo_pin):
-                errors[CONF_OCTO_PIN] = "invalid_pin"
-            else:
-                self._manual_data[CONF_OCTO_PIN] = octo_pin
-                override = user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
-                self._manual_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(override)
-                return await self._finish_with_verify(
-                    self._manual_data,
-                    self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                )
-
-        return self.async_show_form(
-            step_id="manual_octo",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): TextSelector(
-                        TextSelectorConfig()
-                    ),
-                    vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto"): vol.In(
-                        {
-                            "auto": "Use advertised motor count",
-                            "1": "1 motor",
-                            "2": "2 motors",
-                            "3": "3 motors",
-                            "4": "4 motors",
-                        }
-                    ),
-                }
-            ),
-            errors=errors,
-        )
-
-    async def async_step_manual_richmat(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle Richmat-specific configuration (remote code)."""
-        assert self._manual_data is not None
-
-        errors: dict[str, str] = {}
-        if user_input is not None and not _is_valid_rmcontrol_variant(
-            user_input.get(CONF_RMCONTROL_PRODUCT),
-            self._manual_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
-        ):
-            errors["base"] = "invalid_variant_for_bed_type"
-
-        if user_input is not None and not errors:
-            self._manual_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
-            self._manual_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
-            self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
-                CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
-            )
-            return await self._finish_with_verify(
-                self._manual_data,
-                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-            )
-
-        return self.async_show_form(
-            step_id="manual_richmat",
-            errors=errors,
-            data_schema=vol.Schema(
-                {
-                    **_rmcontrol_schema_fields(user_input),
-                    vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
-                        RICHMAT_REMOTES
-                    ),
-                }
-            ),
-        )
-
-    async def async_step_manual_malouf(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect Malouf layout/memory fields for the manual-entry paths."""
-        return await self._async_malouf_step("manual_malouf", user_input)
-
-    async def async_step_bluetooth_octo(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle Octo-specific configuration (PIN) after Bluetooth discovery type override."""
-        assert self._manual_data is not None
-
-        errors: dict[str, str] = {}
-
-        if user_input is not None:
-            octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-            if not is_valid_octo_pin(octo_pin):
-                errors[CONF_OCTO_PIN] = "invalid_pin"
-            else:
-                self._manual_data[CONF_OCTO_PIN] = octo_pin
-                override = user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
-                self._manual_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(override)
-                return await self._finish_with_verify(
-                    self._manual_data,
-                    self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                )
-
-        return self.async_show_form(
-            step_id="bluetooth_octo",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): TextSelector(
-                        TextSelectorConfig()
-                    ),
-                    vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto"): vol.In(
-                        {
-                            "auto": "Use advertised motor count",
-                            "1": "1 motor",
-                            "2": "2 motors",
-                            "3": "3 motors",
-                            "4": "4 motors",
-                        }
-                    ),
-                }
-            ),
-            errors=errors,
-        )
-
-    async def async_step_bluetooth_richmat(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle Richmat-specific configuration (remote code) after Bluetooth discovery type override."""
-        assert self._manual_data is not None
-
-        errors: dict[str, str] = {}
-        if user_input is not None and not _is_valid_rmcontrol_variant(
-            user_input.get(CONF_RMCONTROL_PRODUCT),
-            self._manual_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
-        ):
-            errors["base"] = "invalid_variant_for_bed_type"
-
-        if user_input is not None and not errors:
-            self._manual_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
-            self._manual_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
-            self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
-                CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
-            )
-            return await self._finish_with_verify(
-                self._manual_data,
-                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-            )
-
-        return self.async_show_form(
-            step_id="bluetooth_richmat",
-            errors=errors,
-            data_schema=vol.Schema(
-                {
-                    **_rmcontrol_schema_fields(user_input),
-                    vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
-                        RICHMAT_REMOTES
-                    ),
-                }
-            ),
-        )
-
-    async def async_step_bluetooth_malouf(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect Malouf layout/memory fields after a Bluetooth-discovery override."""
-        return await self._async_malouf_step("bluetooth_malouf", user_input)
 
     async def _async_pairing_step(
         self,
@@ -9365,10 +9372,28 @@ class AdjustableBedOptionsFlow(
                 )
             ] = vol.In(remote_options)
 
-        _show_profile_fields(schema_dict, bed_type, form_variant)
+        # Each route's own fields are on the form, shown only for that route.
+        route_rows = {
+            variant: (bed_type, variant)
+            for variant in (SVANE_VARIANTS if bed_type == BED_TYPE_SVANE else variants or {})
+        }
+        # An app's own fields may ask a generic field its route sets, so the
+        # generic ones it owns wait until those fields are in.
+        held = {
+            marker: schema_dict.pop(marker)
+            for marker in tuple(schema_dict)
+            if marker.schema in hidden_generic_fields(bed_type, form_variant)
+        }
         # A two-address pair's shared form never shows one side's app settings.
+        leggett_routes = _rows_where(
+            route_rows, _is_leggett_app_type, field=CONF_PROTOCOL_VARIANT
+        )
         if not separate_address_pair:
-            if _is_leggett_app_type(bed_type, form_variant):
+            if leggett_routes is not None:
+                leggett: dict[vol.Marker, Any] = {}
+                _add_leggett_app_schema_field(leggett, current_data)
+                schema_dict.update(_shown_for(leggett, leggett_routes))
+            elif _is_leggett_app_type(bed_type, form_variant):
                 _add_leggett_app_schema_field(schema_dict, current_data)
             elif bed_type == BED_TYPE_STARCODE_M5X5:
                 _add_starcode_schema_fields(
@@ -9397,6 +9422,19 @@ class AdjustableBedOptionsFlow(
                 schema_dict.update(
                     _profile_question_schema(questions, current_data, advanced_section=False)
                 )
+
+        asked = {marker.schema for marker in schema_dict} & {marker.schema for marker in held}
+        schema_dict.update(
+            {marker: validator for marker, validator in held.items() if marker.schema not in asked}
+        )
+        _show_profile_fields(
+            schema_dict,
+            bed_type,
+            form_variant,
+            route_rows or None,
+            CONF_PROTOCOL_VARIANT,
+            keep=asked,
+        )
 
         if bed_type in MALOUF_BED_TYPES:
             schema_dict[
@@ -9611,17 +9649,11 @@ class AdjustableBedOptionsFlow(
                 bed_type,
                 {**current_data, **user_input},
             )
+            # The form showed these for the drawn route; the selected one sets them.
             owned = hidden_generic_fields(bed_type, requested_variant)
-            shown_owned = hidden_generic_fields(bed_type, form_variant)
-            if shown_owned - owned:
-                # The selected variant uses generic fields this form did not show.
-                self._remember_pending_changes(schema_dict, user_input)
-                self._pending_data = {**self._pending_data, **user_input}
-                if discovery_disabled_input is not None:
-                    self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
-                return await self._async_options_form(None, step_id=step_id)
-            # The form showed these for the previous variant; the new one sets them.
-            for key in owned - shown_owned - {CONF_PROTOCOL_VARIANT}:
+            for key in owned - hidden_generic_fields(bed_type, form_variant) - {
+                CONF_PROTOCOL_VARIANT
+            }:
                 user_input.pop(key, None)
             # Shared edits must be compatible with every separate-address side,
             # including a product that is absent from the representative side.
@@ -9693,12 +9725,6 @@ class AdjustableBedOptionsFlow(
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_PROTOCOL_VARIANT: remacro_error},
                 )
-            if _is_leggett_app_type(bed_type, requested_variant) and not _is_leggett_app_type(
-                bed_type, form_variant
-            ):
-                self._remember_pending_changes(schema_dict, user_input)
-                self._pending_data = {**self._pending_data, **user_input}
-                return await self._async_options_form(None, step_id=step_id)
             if variants:
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
             else:
