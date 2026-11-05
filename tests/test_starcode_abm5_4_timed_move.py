@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller

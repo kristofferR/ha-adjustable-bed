@@ -11,7 +11,7 @@ from bleak.exc import BleakError
 from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Commands
@@ -1467,7 +1467,7 @@ class TestButtonEntities:
         enable_custom_integrations,
     ):
         """Test massage button entities are created when has_massage=True."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         # Create entry with massage enabled
         mock_config_entry_data["has_massage"] = True
@@ -2974,7 +2974,7 @@ class TestSensorEntities:
         enable_custom_integrations,
     ):
         """Linak position numbers replace duplicate angle and model sensors."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         # Create entry with angle sensing enabled
         _configure_linak_advanced(mock_bleak_client)

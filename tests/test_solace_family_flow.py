@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow

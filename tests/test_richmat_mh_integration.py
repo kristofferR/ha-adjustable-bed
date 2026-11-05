@@ -219,7 +219,7 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
 
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
     from homeassistant.data_entry_flow import FlowResultType
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed import _build_paired_children
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
@@ -295,7 +295,7 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
 async def test_offline_side_mints_from_the_stored_snapshot(hass, snapshot, minted) -> None:
     """A paired side unreachable at reload keeps its catalog and page-gated entities."""
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,

@@ -451,7 +451,7 @@ async def test_disabled_only_demonstration_and_persisted_privacy():
 
 
 async def test_first_use_restore_and_reconnect_keep_local_choices(hass):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

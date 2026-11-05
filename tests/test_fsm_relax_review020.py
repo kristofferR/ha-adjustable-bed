@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.translation import async_get_translations
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_remove_entry, button, const
 from custom_components.adjustable_bed.app_state_store import app_state_store

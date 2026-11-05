@@ -16,7 +16,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import (
+from pytest_homeassistant.common import (
     async_fire_time_changed,
     async_mock_service,
 )

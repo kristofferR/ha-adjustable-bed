@@ -112,7 +112,7 @@ async def test_setup_hides_motor_count_and_the_fixed_refresh_delay(hass, step):
 
 async def test_options_switch_to_simmons_keeps_the_layout_choice(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import (

@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_update_listener, _build_paired_children
 from custom_components.adjustable_bed.button import ControllerActionButton, _button_entities_for
@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.profiles.keeson import APP_LAYOUTS, DEFAULT_LAYOUTS
 from custom_components.adjustable_bed.services import async_register_services
 
+from .entry_entities import async_add_entry_entities
 from .test_cluster033 import coordinator as transport
 
 NONDEFAULTS = [
@@ -476,7 +477,7 @@ async def test_row_reset_supplemental_production_paths(hass, monkeypatch, layout
     assert len(buttons) == 1
     button = buttons[0]
     button.entity_id = "button.row_reset"
-    await hass.data["button"].async_add_entities([button])
+    await async_add_entry_entities(hass, coord.entry, "button", [button])
     assert hass.states.get(button.entity_id).attributes["held_control"] == "reset"
     await hass.services.async_call(
         "button", "press", {"entity_id": button.entity_id}, blocking=True

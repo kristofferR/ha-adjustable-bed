@@ -14,7 +14,7 @@ from dbus_fast import Variant
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import (
     async_setup_entry,

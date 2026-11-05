@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_setup_entry, async_unload_entry
 from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport

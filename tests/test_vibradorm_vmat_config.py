@@ -28,7 +28,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     from contextlib import AsyncExitStack
 
     from bleak.backends.device import BLEDevice
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.adapter import AdapterSelectionResult
     from custom_components.adjustable_bed.address_lock import async_get_connect_lock
@@ -283,7 +283,7 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     """The profile switch now uses guided setup, retaining this ledger binding."""
     from homeassistant.config_entries import SOURCE_RECONFIGURE
     from homeassistant.data_entry_flow import FlowResultType
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -404,7 +404,7 @@ async def test_public_setup_accepts_native_closure_after_disconnect_rpc_error(ha
 
 async def test_separate_address_options_preserve_each_vmat_remote(hass):
     from homeassistant.data_entry_flow import FlowResultType
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.pairing import build_pair_entry_data

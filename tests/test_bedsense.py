@@ -422,7 +422,7 @@ async def test_other_axis_stop_preempts_held_movement_through_scheduler(hass):
     from unittest.mock import patch
 
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -519,7 +519,7 @@ async def test_reconnect_retains_timer_toggle_steps_and_indicators_per_address(h
 
 async def test_reconnected_memory_flags_reach_cached_service_preflight(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

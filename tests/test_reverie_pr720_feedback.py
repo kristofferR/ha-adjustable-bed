@@ -4,7 +4,7 @@ import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
 from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (

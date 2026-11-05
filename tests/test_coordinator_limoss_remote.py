@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children, const
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController

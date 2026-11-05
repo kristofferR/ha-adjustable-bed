@@ -301,7 +301,7 @@ async def test_registry_failure_after_connect_shuts_down_pair(
 @pytest.mark.parametrize("child", [False, True])
 async def test_service_rejects_devices_owned_by_another_domain(hass, child):
     from homeassistant.exceptions import ServiceValidationError
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.services import _resolve_sided_targets
 

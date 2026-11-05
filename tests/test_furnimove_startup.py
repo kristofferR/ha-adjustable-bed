@@ -6,7 +6,7 @@ import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
@@ -142,7 +142,7 @@ async def test_rf_eco_bt_receiver_holds_its_link_after_a_stalled_connect(
 
 @pytest.mark.parametrize("failure", ["disconnected", "timed_out"])
 async def test_initial_connection_failure_loads_selected_layout_and_diagnostics(
-    hass, mock_bluetooth_adapters, enable_custom_integrations, failure
+    hass, mock_bluetooth_api, enable_custom_integrations, failure
 ):
     """A catalog-backed layout must remain usable for reconnect and support capture."""
     entry = furnimove_entry(hass)
@@ -169,7 +169,7 @@ async def test_initial_connection_failure_loads_selected_layout_and_diagnostics(
 
 
 async def test_unknown_layout_does_not_mint_guessed_entities(
-    hass, mock_bluetooth_adapters, enable_custom_integrations
+    hass, mock_bluetooth_api, enable_custom_integrations
 ):
     entry = furnimove_entry(hass, "not-a-catalog-handset")
     with patch.object(AdjustableBedCoordinator, "async_connect", AsyncMock(return_value=False)):
@@ -207,7 +207,7 @@ async def test_offline_entities_reconnect_on_command_without_changing_identity(
 
 
 async def test_timeout_cleanup_failure_does_not_load_an_orphaned_live_session(
-    hass, mock_bluetooth_adapters, enable_custom_integrations
+    hass, mock_bluetooth_api, enable_custom_integrations
 ):
     entry = furnimove_entry(hass)
 

@@ -12,7 +12,7 @@ from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.command_scheduler import (
     CommandKind,
@@ -950,7 +950,7 @@ class TestCoordinatorWriteCommand:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """Test writing commands fails when not connected."""
         # Make connection fail
@@ -1035,10 +1035,10 @@ class TestCoordinatorWriteCommand:
         self,
         hass: HomeAssistant,
         mock_bleak_client: MagicMock,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """Startup auth failures must recover even after a cached probe timeout."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=TEST_NAME,
@@ -1131,10 +1131,10 @@ class TestCoordinatorWriteCommand:
         self,
         hass: HomeAssistant,
         mock_bleak_client: MagicMock,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """A disconnect that raises during auth recovery must not abort the retry path."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=TEST_NAME,
@@ -1230,7 +1230,7 @@ class TestCoordinatorWriteCommand:
     async def test_failed_pairing_does_not_persist_bond_marker(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """A failed pairing attempt must not poison the persisted bond marker.
 
@@ -1239,7 +1239,7 @@ class TestCoordinatorWriteCommand:
         which permanently prevented future pairing attempts on a still-unbonded
         bed. Now it only sets a transient in-memory skip flag.
         """
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -2235,10 +2235,10 @@ class TestRuntimeBedTypeCorrection:
         self,
         hass: HomeAssistant,
         mock_bleak_client: MagicMock,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """A corrected pairing-required profile should reconnect with pair=True first."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         entry = MockConfigEntry(
             domain=DOMAIN,
