@@ -447,7 +447,8 @@ a client vanishes and no renewal or STOP arrives; the lease still ends it
 sooner. No accepted report states a travel time or a firmware cutoff for a
 latched row, so no row justifies a different bound. The end of a lease sends
 each protocol's own STOP or release with a fresh event, as every other end of a
-hold does.
+hold does. The ceiling is clock time owned by the scheduler, not a refresh
+count: per-write latency would otherwise stretch a counted refresh past it.
 
 ### 3. #516 opt-in list
 
