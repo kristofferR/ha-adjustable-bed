@@ -57,3 +57,18 @@ def test_extended_integrity_fragmentation_and_nonprogress_rejection():
     assert HushMainReceive().feed(ordinary) == [ordinary]
     # Bad packet must not prevent the next well-framed callback from being read.
     assert decode(extra(17, 3, (1, 0, 45), operation=2)).values == {"position": 1, "value": 45}
+
+
+@pytest.mark.parametrize(
+    "ordinary",
+    ["6e09010078", "6e900000062500", "6e00000102030405060708090a0b0c00"],
+)
+@pytest.mark.parametrize("split", [5, 10])
+def test_hush_height_after_ordinary_frame(ordinary, split):
+    first = bytes.fromhex(ordinary)
+    height = bytes.fromhex("6e210a0f0102010200ae")
+    rx = HushMainReceive()
+    assert rx.feed(first + height[:split]) == ([first, height] if split == len(height) else [first])
+    if split < len(height):
+        assert rx.feed(height[split:]) == [height]
+    assert not rx.pending

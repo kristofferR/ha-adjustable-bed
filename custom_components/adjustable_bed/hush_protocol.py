@@ -52,11 +52,21 @@ class HushMainReceive(MainReceive):
                     out.append(packet)
             else:
                 # Retain complete ordinary frames, including marker-valued data.
-                # MainReceive also accepts a boundary between coalesced frames.
-                pending = bytes(self.pending)
-                self.pending.clear()
-                out.extend(super().feed(pending))
-                break
+                size = len(self.pending)
+                if size not in (5, 7, 16):
+                    size = next(
+                        (n for n in (5, 7, 16) if len(self.pending) > n and self.pending[n] == 0x6E),
+                        0,
+                    )
+                    if not size:
+                        if len(self.pending) < 16:
+                            break
+                        self.pending.clear()
+                        raise ValueError("Unsupported ordinary frame boundary")
+                packet = bytes(self.pending[:size])
+                del self.pending[:size]
+                # Leave subsequent frames to this loop's Hush length handling.
+                out.append(packet)
         return out
 
 
