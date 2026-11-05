@@ -83,7 +83,7 @@ receiver's advertised service decides the route, never the app or the name:
 When Home Assistant has seen the advertisement, setup confirms the route from
 it without asking. Otherwise it asks which receiver the bed has, and a detected
 route stays one answer away. Either route then asks the model the app shows,
-with **Auto-detect** as the default. **Configure** lists both receivers under
+with **Auto-detect** as the default, and whether to read the bed's positions. **Configure** lists both receivers under
 their own names, so an entry on the wrong one can move without being removed;
 a working entry needs no change. Pairlink (R510L / Harmoniq) keeps its own row
 and setup.

@@ -105,7 +105,8 @@ Detected automatically by:
 BLE pairing is required before the encrypted characteristic accepts commands.
 
 Setup shows a detected bed as the **LOGICDATA** row and asks which app runs it;
-**SILVERmotion app: SimplicityFrame bed** or Keep continues to the pairing step.
+**SILVERmotion app: SimplicityFrame bed** or Keep asks the motor count, then
+continues to the pairing step.
 A manually added bed is chosen the same way. An entry moves to a LOGICDATA app
 only through **Reconfigure**, which checks the link and lists the controls that
 change.

@@ -141,7 +141,10 @@ async def test_keep_detected_controls_collects_motors_without_changing_route(
     with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
         await flow.async_step_profile_questions(answers)
     finish.assert_awaited_once()
-    assert flow._manual_data == {**before, const.CONF_MOTOR_COUNT: motor_count}
+    # Only the answers change: the route stays, and the massage and angle
+    # sensing the FurniMove row's form never showed take their defaults.
+    assert answers[const.CONF_MOTOR_COUNT] == motor_count
+    assert flow._manual_data == {**before, **answers}
 
 
 async def test_family_row_has_no_route_to_keep(hass):

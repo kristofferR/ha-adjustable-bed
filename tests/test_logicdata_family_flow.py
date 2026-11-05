@@ -81,12 +81,16 @@ async def test_a_detected_simplicityframe_is_kept_and_still_pairs(hass):
     flow = setup_flow(hass, const.BED_TYPE_LOGICDATA)
     result = await flow.async_step_logicdata_family()
     assert choices(result)[-1] == "keep"
+    # The row's form was drawn for the apps, so SimplicityFrame asks its motors.
+    result = await flow.async_step_logicdata_family({"choice": "keep"})
+    assert result["step_id"] == "profile_questions"
     with patch.object(
         flow, "async_step_manual_pairing", new=AsyncMock(return_value={"step_id": "pair"})
     ) as pairing:
-        await flow.async_step_logicdata_family({"choice": "keep"})
+        await flow.async_step_profile_questions({const.CONF_MOTOR_COUNT: "3"})
     pairing.assert_awaited_once()
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_LOGICDATA
+    assert flow._manual_data[const.CONF_MOTOR_COUNT] == 3
     assert not set(APP_KEYS) & set(flow._manual_data)
 
 

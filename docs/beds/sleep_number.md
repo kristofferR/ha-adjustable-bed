@@ -198,8 +198,9 @@ The bed-type list has one **Sleep Number: SleepIQ app, Fuzion (Climate 360,
 FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases** row. When Home Assistant has
 seen the advertisement, setup confirms the transport from its service without
 asking; otherwise it asks which base the bed is, and a detected transport stays
-one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks
-nothing, since it exposes both sides. A model name alone never chooses the
+one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no
+side, since it exposes both. Either then asks whether to read the bed's
+positions. A model name alone never chooses the
 transport, and existing entries are not moved to the other one. **Configure**
 lists both transports under their own names.
 

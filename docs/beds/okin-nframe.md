@@ -163,9 +163,11 @@ RF remote to answer.
 
 1. **FurniMove / OKIN Smart Remote app:** choose the handset ID the app uses.
 2. **No app: Okimat or OKIN handset code:** choose the code printed on the
-   handset and the motor count. Requires Bluetooth pairing.
-3. **No app: DOT remote (RF34 or RF6707):** choose the remote code and the motor
-   count. The RF1058 handsets belong to the FurniMove answer.
+   handset, the motor count, whether massage motors are fitted and whether to
+   read positions. Requires Bluetooth pairing.
+3. **No app: DOT remote (RF34 or RF6707):** choose the remote code, the motor
+   count and whether massage motors are fitted. The RF1058 handsets belong to
+   the FurniMove answer.
 4. **No app: single-actuator staircase, RF ECO BT:** confirms the staircase.
    Requires Bluetooth pairing.
 5. The apps the [app review](../CONFIGURATION.md#profile-recommendations) lists

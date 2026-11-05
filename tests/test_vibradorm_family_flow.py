@@ -610,10 +610,17 @@ async def test_fresh_legacy_choice_keeps_existing_pairing_route(
         }
     )
     assert result["step_id"] == "vibradorm"
+    # The legacy setup asks its motors, massage and angle sensing, then pairs.
+    result = await flow.async_step_vibradorm({"app": "legacy"})
+    assert result["step_id"] == "profile_questions"
     with patch.object(flow, "async_step_" + pairing, new=AsyncMock()) as pair:
-        await flow.async_step_vibradorm({"app": "legacy"})
+        await flow.async_step_profile_questions(
+            {const.CONF_MOTOR_COUNT: "3", const.CONF_HAS_MASSAGE: True}
+        )
     pair.assert_awaited_once_with()
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
+    assert flow._manual_data[const.CONF_MOTOR_COUNT] == 3
+    assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
 
 
 async def test_repairs_does_not_link_to_a_terminated_reconfigure_flow(hass):

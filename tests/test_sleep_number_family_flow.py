@@ -62,9 +62,15 @@ async def test_a_fuzion_service_is_confirmed_and_asks_the_side(hass):
 
 async def test_an_mcr_service_is_confirmed_and_asks_no_side(hass):
     flow = setup_flow(hass, const.BED_TYPE_SLEEP_NUMBER, [const.SLEEP_NUMBER_MCR_SERVICE_UUID])
+    result = await flow.async_step_sleep_number_family()
+    # Only whether to read its positions, which the row's form drew for Fuzion.
+    assert [marker.schema for marker in result["data_schema"].schema] == [
+        const.CONF_DISABLE_ANGLE_SENSING
+    ]
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_sleep_number_family()
+        await flow.async_step_profile_questions({const.CONF_DISABLE_ANGLE_SENSING: True})
     saved = finish.call_args.args[0]
+    assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
     assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_SLEEP_NUMBER_MCR
     assert const.CONF_PROTOCOL_VARIANT not in saved
 
