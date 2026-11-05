@@ -32,10 +32,10 @@ function fixture() {
       "button.right_stop": { entity_id: "button.right_stop", platform: "adjustable_bed", device_id: "right-child", translation_key: "stop" },
     },
     states: {
-      "button.mx_memory1": { entity_id: "button.mx_memory1", state: "unknown", attributes: { friendly_name: "MX Memory 1", held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0, bed_side: "right" } },
+      "button.mx_memory1": { entity_id: "button.mx_memory1", state: "unknown", attributes: { held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0, bed_side: "right" } },
       "button.right_stop": { entity_id: "button.right_stop", state: "unknown", attributes: {} },
     },
-    devices: {}, themes: {}, language: "en", locale: { language: "en" },
+    devices: {}, themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id, language: "en", locale: { language: "en" },
     callService: async (domain: string, service: string, data: Record<string, unknown>) => {
       calls.push({ domain, service, data });
       if (service === "hold_control") await new Promise<void>((resolve) => { finish = resolve; });
@@ -146,7 +146,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
     add(`button.${side}_mx`, side, "remote_action", { held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0 });
     add(`button.${side}_angle`, side, "remote_action", { held_control: "head_target_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0 });
   }
-  const hass: HomeAssistant = { entities, states, devices, themes: {}, language: "en", locale: { language: "en" },
+  const hass: HomeAssistant = { entities, states, devices, themes: {}, formatEntityName: (s) => s.entity_id, language: "en", locale: { language: "en" },
     callService: (domain, service, data = {}) => {
       calls.push({ domain, service, data });
       if (service === "hold_control" || service === "timed_move" || service === "open_cover" || data.entity_id === "button.finite_both") {
@@ -211,7 +211,6 @@ for (const mode of ["native", "legacy", "via"] as const) {
   for (const action of ["mx", "angle"] as const) test(`${mode}: ${action} utility release keeps source timing and exact owner after opposite STOP`, async () => withKeyboard(async () => {
     const f = ownershipFixture(mode);
     const id = `button.right_${action}`;
-    f.hass.states[id].attributes.friendly_name = id;
     const button = matchingTile(f.card._utility(f.bed("right")), id);
     handler(button, "keydown")(new KeyEvent("Enter"));
     f.stop("left");

@@ -195,7 +195,7 @@ function nativePairCardFixture(
     },
     locale: { language: "en" },
     language: "en",
-    themes: {},
+    themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id,
     callService: (domain, service, data) => {
       calls.push({ domain, service, data });
       if (service === "hold_control") {
@@ -272,7 +272,7 @@ function singleAddressOctoCardFixture(calls: RecordedServiceCall[]): {
     devices: { bed: { id: "bed" } },
     locale: { language: "en" },
     language: "en",
-    themes: {},
+    themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id,
     callService: (domain, service, data) => {
       calls.push({ domain, service, data });
       if (service === "hold_control") {
@@ -366,7 +366,7 @@ for (const scenario of [
       devices: {},
       locale: { language: "en" },
       language: "en",
-      themes: {},
+      themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id,
       callService: (domain, service, data) => {
         calls.push({ domain, service, data });
         // The bounded hold service stays in flight while the tile is held.
@@ -430,7 +430,7 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
       devices: {},
       locale: { language: "en" },
       language: "en",
-      themes: {},
+      themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id,
       callService: (domain, service, data) => {
         calls.push({ domain, service, data });
         if (service === "hold_control") {
@@ -982,7 +982,7 @@ test("a side STOP prevents the registered finite Both action from repeating", as
     },
     locale: { language: "en" },
     language: "en",
-    themes: {},
+    themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id,
     callService: (domain, service, data) => {
       calls.push({ domain, service, data });
       if (service === "timed_move") {
