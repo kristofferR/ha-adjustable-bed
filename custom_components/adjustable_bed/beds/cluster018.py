@@ -70,6 +70,10 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 
+# Settings rows a capability reply reveals (``ReceiveState.menu``).
+_MENU_ROWS = frozenset({"alarm", "light", "aroma"})
+
+
 async def _press(controller: BedController, node: int, long: bool = False) -> None:
     if not isinstance(controller, Cluster018Controller):
         raise TypeError("This action requires the selected app controller")
@@ -151,7 +155,7 @@ class Cluster018Controller(BedController):
         return {**self._preferences, "mode": self._mode, "selection": {
             "press_flag": self._selection.press_flag, "head": self._selection.head,
             "armed": self._selection.armed, "hold": self._selection.hold,
-        }}
+        }, "menu": sorted(self._receive.menu)}
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         minutes = state.get("lamp_minutes", 0)
@@ -177,9 +181,13 @@ class Cluster018Controller(BedController):
             raise ValueError("Saved alarm action is absent from this app layout")
         if type(progress) is not int or not 0 <= progress <= 5:
             raise ValueError("Invalid saved massage slider")
+        menu = state.get("menu", [])
+        if not isinstance(menu, list) or not set(menu) <= _MENU_ROWS:
+            raise ValueError("Invalid saved settings menu")
         self._preferences = {"lamp_minutes": minutes, "lamp_rgb": color, "alarm_selection": selected, "massage_progress": progress}
         self._mode = mode
         self._selection = Selection(press_flag=flag, head=head, armed=armed, hold=hold)
+        self._receive.menu = set(menu)
 
     def _publish(self) -> None:
         state = asdict(self._receive)
@@ -255,7 +263,9 @@ class Cluster018Controller(BedController):
         name = self._device_name if self._device_name is not None else self._coordinator.entry.data.get("ble_device_name")
         self._worker.set_interval(worker_interval(name, session.wire))
         self._session = session
-        self._receive = ReceiveState()
+        # The bed's query replies proved these settings rows; a new session keeps
+        # them, since with a disconnect between calls it could never prove one.
+        self._receive = ReceiveState(menu=set(self._receive.menu))
         self._unit_switch = False
         try:
             if session.has_notifications:
@@ -314,21 +324,23 @@ class Cluster018Controller(BedController):
             return True
         return False
 
-    async def _iteration(self, cancel: asyncio.Event, mode: int) -> None:
+    async def _iteration(self, cancel: asyncio.Event, mode: int) -> bool:
+        """Send one worker tick; False when a cancel stopped it before its last emission."""
         session = self._session
         if session is None:
             raise ConnectionError("No current app BLE session")
         for emission in self._worker.tick():
             if emission.delay_ms and not await self._wait(emission.delay_ms, cancel):
-                return
+                return False
             if cancel.is_set():
-                return
+                return False
             if emission.payload is None:
                 # RAW drops null at dispatch; FRAMED dereferences before enqueue.
                 if session.wire == "FRAMED":
                     raise ValueError("Selected app getter has no framed payload")
                 continue
             await self._send(control(emission.payload, session.wire, mode))
+        return True
 
     def _button(self, node: int) -> Control:
         for button in self._controls:
@@ -390,10 +402,13 @@ class Cluster018Controller(BedController):
                     break
                 elapsed += self._worker.tick_ms
             if not cancel.is_set():
-                if not up_applied:
+                if up_applied:
+                    completed = True
+                else:
                     self._apply(button, "UP", selection)
-                    await self._iteration(cancel, mode)
-                completed = True
+                    # A cancel during the UP tick's release delay skips that
+                    # release, so only a finished tick completes the gesture.
+                    completed = await self._iteration(cancel, mode)
         finally:
             # HA cancellation also cancels pending saves and refreshes. The app's
             # in-bounds CANCEL/pause can leave them running; that is unsafe here.
