@@ -5431,10 +5431,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._discovery_info.manufacturer_data,
             ):
                 errors[CONF_PROTOCOL_VARIANT] = variant_error
-            if variant_error := _richmat_mh_variant_error(
-                selected_bed_type, protocol_variant, self._discovery_info.name
-            ):
-                errors[CONF_PROTOCOL_VARIANT] = variant_error
 
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = get_motor_pulse_defaults(
@@ -6316,10 +6312,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._discovery_info.manufacturer_data,
             ):
                 errors[CONF_PROTOCOL_VARIANT] = variant_error
-            if variant_error := _richmat_mh_variant_error(
-                bed_type, protocol_variant, self._discovery_info.name
-            ):
-                errors[CONF_PROTOCOL_VARIANT] = variant_error
 
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = get_motor_pulse_defaults(
@@ -6582,10 +6574,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 manual_info = bluetooth.async_last_service_info(
                     self.hass, address, connectable=False
                 )
-                if variant_error := _richmat_mh_variant_error(
-                    bed_type, protocol_variant, manual_info.name if manual_info else None
-                ):
-                    errors[CONF_PROTOCOL_VARIANT] = variant_error
 
                 # Get bed-specific defaults for motor pulse settings
                 pulse_defaults = get_motor_pulse_defaults(

@@ -273,3 +273,35 @@ async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_in
     assert receiver_fields(right)[const.CONF_PROTOCOL_VARIANT].default() == "model_vorm"
     hass.config_entries.options.async_abort(right["flow_id"])
     assert child(entry, "right")[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
+
+
+async def test_an_mh_app_from_the_brand_list_reaches_its_model_question(
+    hass, enable_custom_integrations
+):
+    """The first form leaves the model to the app's question, which knows no name here."""
+    from homeassistant.config_entries import SOURCE_USER
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": SOURCE_USER}
+    flow._selected_bed_type = const.BED_TYPE_RICHMAT_REVIVE
+    flow._brand_app_choice = const.BED_TYPE_RICHMAT_REVIVE
+    form = await flow.async_step_manual_entry()
+    submission = form["data_schema"]({CONF_ADDRESS: ADDRESS})
+    with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
+        result = await flow.async_step_manual_entry(submission)
+        while result["step_id"] == "disconnect_after_command":
+            result = await flow.async_step_disconnect_after_command(
+                {const.CONF_DISCONNECT_AFTER_COMMAND: False}
+            )
+        assert result["step_id"] == "profile_questions"
+        result = await flow.async_step_profile_questions(
+            {const.CONF_PROTOCOL_VARIANT: const.VARIANT_AUTO}
+        )
+        assert result["errors"] == {const.CONF_PROTOCOL_VARIANT: "richmat_mh_no_name"}
+        with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+            await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "model_vorm"})
+    saved = finish.call_args.args[0]
+    assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (
+        const.BED_TYPE_RICHMAT_REVIVE,
+        "model_vorm",
+    )
