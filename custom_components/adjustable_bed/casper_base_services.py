@@ -65,7 +65,7 @@ def weekday(value: object) -> int:
     return day
 
 
-async def handle(call: ServiceCall) -> None:
+async def handle(call: ServiceCall, *, hush: bool = False) -> None:
     from .services import (
         _execute_sided,
         _missing_device_error,
@@ -109,7 +109,10 @@ async def handle(call: ServiceCall) -> None:
 
     try:
         preflighted = await _preflight_capability(
-            targets, "supports_casper_base_controls", "Casper Base controls", validate
+            targets,
+            "supports_hush_base_controls" if hush else "supports_casper_base_controls",
+            "Hush Base controls" if hush else "Casper Base controls",
+            validate,
         )
     except ValueError as err:
         raise ServiceValidationError(str(err)) from err
@@ -129,6 +132,8 @@ async def handle(call: ServiceCall) -> None:
 
 
 def async_register_casper_base_services(hass: HomeAssistant) -> None:
+    from functools import partial
+
     from .services import SIDE_FIELD
 
     schema = vol.Schema(
@@ -156,4 +161,21 @@ def async_register_casper_base_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, "casper_base", handle, schema=cast("VolSchemaType", schema)
+    )
+    hush_schema = schema.extend(
+        {
+            vol.Required("operation"): vol.In(
+                (
+                    *(operation for operation in OPERATIONS if operation != "sensor_info"),
+                    "sensor_query_time",
+                    "sensor_sensitivity",
+                    "sensor_query_anti_snore",
+                    "sensor_anti_snore",
+                )
+            ),
+            vol.Optional("part", default=1): vol.All(integer, vol.In((1, 2, 3, 11, 12, 13))),
+        }
+    )
+    hass.services.async_register(
+        DOMAIN, "hush_base", partial(handle, hush=True), schema=cast("VolSchemaType", hush_schema)
     )

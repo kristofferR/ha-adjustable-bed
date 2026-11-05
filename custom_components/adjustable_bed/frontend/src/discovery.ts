@@ -530,7 +530,7 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
-        } else if (key.startsWith("sleepys_app_") || key === "casper_base_action") {
+        } else if (key.startsWith("sleepys_app_") || (key === "casper_base_action" || key === "hush_base_action")) {
           bed.utility.push(id);
         } else if (key === "bf_cherish_both_up" || key === "bf_cherish_both_down") {
           motorButton(id, "back_legs", key.endsWith("_up") ? "up" : "down", entry.device_id);

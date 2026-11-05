@@ -598,6 +598,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_CHERISH: "Cherish (com.okin.ore.cherish app)",
     "casper_remote": "Casper Base remote finder (RCRM handset)",
     "casper_base": "Casper Base app (select product)",
+    "hush_base": "Hush Base app (select product)",
+    "hush_remote": "Hush Base remote finder (RCRM handset)",
+    "hush_sleep_mm": "Hush Base sleep sensor (RM / MM)",
+    "hush_sleep_sxb": "Hush Base sleep sensor (HJ / SXB)",
     "casper_sleep_mm": "Casper Base sleep sensor (RM- / MM)",
     "casper_sleep_sxb": "Casper Base sleep sensor (HJ- / SXB)",
 

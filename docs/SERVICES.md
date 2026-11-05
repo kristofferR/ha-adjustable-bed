@@ -673,3 +673,7 @@ Alarm delay is until the next chosen local wall-clock time; the same minute
 means tomorrow. There is no inferred weekly schedule. Desk actions require
 FWRM/WFRM. App mode labels do not authorize one-address side pairing. Wi-Fi,
 cloud and bed network/group administration are excluded.
+
+### Hush Base
+
+Use `adjustable_bed.hush_base` for Hush bed and independent sleep-module configuration. The [Hush guide](beds/hush-base.md#configuration-actions) lists the finite operations, profile gates, packet formats and sensor partition domains. Standard covers/buttons and the dashboard card expose the selected product controls.
