@@ -118,7 +118,10 @@ The 5.3 step turns Massage off where the saved route's profile settles it off:
 a FurniMove handset without massage rows, `comfort_enhancements:mc3` and a
 `sleepys_elite_app` control box other than BOX25. It reads the profile through
 `profile_massage` in `setup_questions.py`, the same data setup uses, for entry
-data, each paired side's effective settings and each side's `origin_data`. It
+data, each paired side's effective settings and each side's `origin_data`.
+These layouts own Massage per side from 5.3 on, so a pair with one of them
+first moves an old shared Massage option into the sides it reached and drops
+it; no side's effective value changes except the corrected ones. The step
 adds `massage_off` to the record by the same locations as `dropped_keys`, and
 deletes the massage buttons of each corrected entry or side from the entity
 registry, with the both-sides buttons of a corrected side. These are the only

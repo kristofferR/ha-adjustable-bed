@@ -104,6 +104,7 @@ from .pairing import (
     is_paired,
     iter_children,
     pair_member_addresses,
+    side_owned_profile_fields,
     with_updated_child,
 )
 from .position_estimate import (
@@ -414,22 +415,59 @@ def _massage_left_on(view: Mapping[str, Any]) -> bool:
     )
 
 
+def _without_shared_massage_option(
+    data: Mapping[str, Any], options: Mapping[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Move a paired entry's Massage option into the sides it reached.
+
+    These layouts own Massage per side from 5.3 on, so the option no longer
+    reaches them. Before, it overrode every side whose profile did not own
+    Massage: each such side keeps that value in its own descriptor, and the
+    option goes. A pair without these layouts keeps its option.
+    """
+    new_options = dict(options)
+    children = data.get(CONF_PAIR_CHILDREN)
+    if (
+        CONF_HAS_MASSAGE not in options
+        or not isinstance(children, list)
+        or not any(
+            isinstance(child, Mapping) and child.get(CONF_BED_TYPE) in _V5_3_MASSAGE_BED_TYPES
+            for child in children
+        )
+    ):
+        return dict(data), new_options
+    value = new_options.pop(CONF_HAS_MASSAGE)
+    updated: list[Any] = []
+    for child in children:
+        if isinstance(child, Mapping) and (
+            child.get(CONF_BED_TYPE) in _V5_3_MASSAGE_BED_TYPES
+            or CONF_HAS_MASSAGE not in side_owned_profile_fields(child)
+        ):
+            child = {**child, CONF_HAS_MASSAGE: value}
+        updated.append(child)
+    return {**data, CONF_PAIR_CHILDREN: updated}, new_options
+
+
 def migrate_v5_3_data(
     data: Mapping[str, Any],
     options: Mapping[str, Any],
     *,
     from_version: int,
     from_minor_version: int,
-) -> tuple[dict[str, Any], list[str]]:
-    """Return entry data with Massage off on the layouts that have no massage.
+) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    """Return entry data and options with Massage off on the layouts without massage.
 
     A paired side is judged by the settings it runs with, and the original entry
-    it restores on unpair is corrected too. The migration record lists each
-    place under ``massage_off``, which is also returned. Nothing to correct
-    leaves the data unchanged.
+    it restores on unpair is corrected too. A shared Massage option first moves
+    into the sides of a pair with these layouts, which own Massage per side, so
+    every side keeps the value it ran with. The migration record lists each
+    corrected place under ``massage_off``, which is also returned.
     """
-    new_data = dict(data)
+    new_options = dict(options)
     turned_off: list[str] = []
+    if is_paired(data):
+        data, new_options = _without_shared_massage_option(data, options)
+    new_data = dict(data)
     if not is_paired(data):
         if _massage_left_on(data):
             new_data[CONF_HAS_MASSAGE] = False
@@ -442,7 +480,7 @@ def migrate_v5_3_data(
                 updated.append(child)
                 continue
             child = dict(child)
-            if _massage_left_on(effective_child_data(data, side, options)):
+            if _massage_left_on(effective_child_data(data, side, new_options)):
                 child[CONF_HAS_MASSAGE] = False
                 turned_off.append(f"data.{side}")
             origin = child.get(KEY_ORIGIN_DATA)
@@ -458,7 +496,7 @@ def migrate_v5_3_data(
             from_minor_version=from_minor_version,
             massage_off=turned_off,
         )
-    return new_data, turned_off
+    return new_data, new_options, turned_off
 
 
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
@@ -577,8 +615,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     if entry.version == 5 and entry.minor_version < 3:
         # v5.2 -> v5.3: Massage off on layouts whose profile has no massage
-        # (#787), so their dead massage buttons leave with the next setup.
-        data, turned_off = migrate_v5_3_data(
+        # (#787), and their dead massage buttons leave the registry.
+        data, options, turned_off = migrate_v5_3_data(
             entry.data,
             entry.options,
             from_version=original_version[0],
@@ -591,7 +629,9 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             entity_id = registry.async_get_entity_id("button", DOMAIN, unique_id)
             if entity_id is not None:
                 registry.async_remove(entity_id)
-        hass.config_entries.async_update_entry(entry, data=data, minor_version=3)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=3
+        )
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",

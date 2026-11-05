@@ -35,7 +35,11 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KEESON_VARIANT_SINO,
 )
-from custom_components.adjustable_bed.pairing import KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS
+from custom_components.adjustable_bed.pairing import (
+    KEY_ORIGIN_DATA,
+    KEY_ORIGIN_OPTIONS,
+    effective_child_data,
+)
 
 
 def _entry(
@@ -268,6 +272,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
     # Running the step again changes nothing.
     assert migrate_v5_3_data(entry.data, entry.options, from_version=5, from_minor_version=3) == (
         dict(entry.data),
+        {},
         [],
     )
 
@@ -324,6 +329,58 @@ async def test_schema_5_3_turns_massage_off_on_a_paired_side_and_its_original(
         "data.left",
         "data.left.origin_data",
     ]
+
+
+_FURNIMOVE_OFF = NO_MASSAGE["furnimove handset without massage"]
+_FURNIMOVE_ON = WITH_MASSAGE["furnimove handset with massage"]
+_BOX25 = WITH_MASSAGE["sleepys app BOX25 selector"]
+_JIECANG = {CONF_BED_TYPE: BED_TYPE_JIECANG_APP, CONF_HAS_MASSAGE: True}
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "option", "expected", "massage_off"),
+    [
+        # A mixed pair: only the side without massage turns off.
+        (_FURNIMOVE_OFF, _BOX25, True, (False, True), ["data.left"]),
+        # The same layout on both sides.
+        (_FURNIMOVE_OFF, _FURNIMOVE_OFF, True, (False, False), ["data.left", "data.right"]),
+        # Handsets with massage keep the value the option gave them.
+        (_FURNIMOVE_ON, _FURNIMOVE_ON, False, (False, False), []),
+        # A side whose profile already owned Massage never took the option.
+        (_FURNIMOVE_OFF, _JIECANG, False, (False, True), []),
+    ],
+    ids=["mixed pair", "same layout", "with massage", "side owns massage"],
+)
+async def test_schema_5_3_moves_a_shared_massage_option_into_the_sides(
+    hass: HomeAssistant, left, right, option, expected, massage_off
+) -> None:
+    """A parent option cannot override a corrected side, and no side changes otherwise."""
+    entry = _entry(
+        hass,
+        {
+            CONF_PAIR_ID: "pair_5",
+            CONF_BED_TYPE: left[CONF_BED_TYPE],
+            CONF_HAS_MASSAGE: False,
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:20", **left},
+                {CONF_SIDE: "right", CONF_ADDRESS: "AA:BB:CC:DD:EE:21", **right},
+            ],
+        },
+        version=5,
+        minor_version=2,
+        options={CONF_HAS_MASSAGE: option, "idle_disconnect_seconds": 55},
+    )
+
+    await async_migrate_entry(hass, entry)
+
+    assert dict(entry.options) == {"idle_disconnect_seconds": 55}
+    effective = tuple(
+        effective_child_data(entry.data, side, entry.options)[CONF_HAS_MASSAGE]
+        for side in ("left", "right")
+    )
+    assert effective == expected
+    record = entry.data.get(CONF_PROFILE_MIGRATION, {})
+    assert record.get("massage_off", []) == massage_off
 
 
 async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistant) -> None:

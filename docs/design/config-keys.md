@@ -220,7 +220,12 @@ The 5.3 step (`migrate_v5_3_data` in `__init__.py`) sets it to false wherever
 `profile_massage` in `setup_questions.py` reads off from the saved route: entry
 data, each paired side's effective settings and each side's `origin_data`. That
 is the value setup and Configure save for the same route, so the two cannot
-disagree. The record lists each place under `massage_off`. The step deletes
+disagree. The layout, handset or control box decides one side's massage, so
+these profiles own `has_massage` per side of a pair (`app_profiles.py`). A
+paired entry with one of them first moves an old shared `has_massage` option
+into the sides it reached and drops it, so it cannot override a corrected side
+and every other side keeps its value. The record lists each corrected place
+under `massage_off`. The step deletes
 the massage buttons those runtimes had from the entity registry, and leaves
 every other layout and key alone.
 
