@@ -518,6 +518,23 @@ test("tap to move: a click starts the motor, the next click on any arrow stops i
   expect(calls.slice(1)).toEqual([{ domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } }]);
   expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
 
-  // A held control without a lease keeps press-and-hold in tap mode.
-  expect(row(api, hass, "left").template.strings.join("")).toContain("@pointerdown");
+  // A held control without a lease keeps press-and-hold in tap mode, and its
+  // assistive activation stops a running tap move like a press does.
+  const windowed = row(api, hass, "left").template;
+  expect(windowed.strings.join("")).toContain("@pointerdown");
+  handler(api._motorDirection(back, "up", "button.pair_stop"), "@click")(new Event("click"));
+  handler(windowed, "@click")(Object.assign(new Event("click"), { detail: 0 }));
+  expect(calls.slice(2)).toEqual([
+    { domain: "adjustable_bed", service: "timed_move", data: expect.any(Object) },
+    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } },
+  ]);
+
+  // Another row's Stop is scoped to its own motor, yet still ends the tap move.
+  handler(api._motorDirection(back, "up", "button.pair_stop"), "@click")(new Event("click"));
+  stopHandler(api._motorRow(legs, "button.pair_stop"))(new Event("click"));
+  expect(calls.slice(5)).toEqual([
+    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } },
+    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.legs" } },
+  ]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
 });

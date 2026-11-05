@@ -2125,7 +2125,13 @@ export class AdjustableBedCard extends LitElement {
     stopId?: string,
     stopScope?: string[],
   ): void {
-    if (e.detail !== 0 || this._hold.heldKey !== null) return;
+    if (e.detail !== 0) return;
+    // Like a press, assistive activation stops a running tap move (#609).
+    if (this._hold.tapMoving) {
+      this._hold.endTap();
+      return;
+    }
+    if (this._hold.heldKey !== null) return;
     this._markCompactTarget(m, stopId);
     this._hold.claimStopScope([
       ...(stopScope ?? []),
@@ -2190,6 +2196,9 @@ export class AdjustableBedCard extends LitElement {
     stopId?: string,
     stopScope?: string[],
   ): void {
+    // Any Stop ends a tap move (#609). This row's own Stop already reaches
+    // its motor below; another row's Stop may be scoped to its own motor.
+    if (this._hold.tapMoving && this._hold.tapDirection(m) === undefined) this._hold.endTap();
     if (m.cover) {
       if (stopScope?.length) {
         stopCardMotorHold(this._hold, m.cover, [
