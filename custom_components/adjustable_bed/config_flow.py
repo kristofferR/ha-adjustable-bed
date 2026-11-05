@@ -8924,13 +8924,20 @@ class AdjustableBedOptionsFlow(
                     )
                     if questions.validate:
                         errors.update(questions.validate(app_data))
-                    # The answers, what normalizing corrected and the profile's
-                    # own settled values belong to this receiver only.
-                    changes.update(
-                        {key: value for key, value in app_data.items() if before.get(key) != value}
-                    )
-                    changes.update(questions.settled(app_data))
-                    stale = frozenset(current) - frozenset(app_data)
+                    # A profile derives its settled values only from answers its
+                    # checks accepted, as setup and single-entry Configure do.
+                    if not errors:
+                        # The answers, what normalizing corrected and the profile's
+                        # own settled values belong to this receiver only.
+                        changes.update(
+                            {
+                                key: value
+                                for key, value in app_data.items()
+                                if before.get(key) != value
+                            }
+                        )
+                        changes.update(questions.settled(app_data))
+                        stale = frozenset(current) - frozenset(app_data)
             if not errors:
                 # Move shared overrides into both receivers before changing
                 # one side, keeping unrelated entry-level options intact.

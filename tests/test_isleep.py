@@ -721,3 +721,32 @@ async def test_massage_entity_state_survives_idle_disconnect_and_reconnect_per_s
     assert packets(client)[1][11] == 119
     assert lt.current_option == "Off" and rt.current_option == "30 min"
     await pair.async_shutdown()
+
+
+async def test_configure_rejects_an_out_of_range_room(hass, enable_custom_integrations):
+    """The room field itself rejects a room outside the signed 32-bit range."""
+    from homeassistant.const import CONF_ADDRESS
+    from homeassistant.data_entry_flow import InvalidData
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
+
+    data = {
+        CONF_ADDRESS: MAC,
+        CONF_BED_TYPE: BED_TYPE_ISLEEP,
+        CONF_PRODUCT_TYPE: 129,
+        CONF_KAIDI_ROOM_ID: 10000,
+        CONF_KAIDI_SOFA_ACU_NO: 2,
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "settings"}
+    )
+    with pytest.raises(InvalidData) as error:
+        await hass.config_entries.options.async_configure(
+            form["flow_id"], {**form["data_schema"]({}), CONF_KAIDI_ROOM_ID: 2**31}
+        )
+    assert CONF_KAIDI_ROOM_ID in error.value.schema_errors
+    assert dict(entry.data) == data

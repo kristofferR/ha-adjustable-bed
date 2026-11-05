@@ -107,3 +107,42 @@ def test_every_declared_question_has_a_receiver_label():
         steps = json.loads((Path("custom_components/adjustable_bed") / path).read_text())
         for side in ("left_settings", "right_settings"):
             assert keys <= set(steps["options"]["step"][side]["data"]), (path, side)
+
+
+ISLEEP = {
+    const.CONF_BED_TYPE: const.BED_TYPE_ISLEEP,
+    const.CONF_PRODUCT_TYPE: 129,
+    const.CONF_KAIDI_ROOM_ID: 10000,
+    const.CONF_KAIDI_SOFA_ACU_NO: 2,
+}
+OUT_OF_RANGE_ROOM = 2**31
+
+
+async def test_a_receiver_rejects_an_out_of_range_room(hass, enable_custom_integrations):
+    import pytest
+    from homeassistant.data_entry_flow import InvalidData
+
+    entry = pair_entry(hass, ISLEEP, ISLEEP)
+    left = await receiver_form(hass, entry, "left")
+    with pytest.raises(InvalidData) as error:
+        await hass.config_entries.options.async_configure(
+            left["flow_id"],
+            {**left["data_schema"]({}), const.CONF_KAIDI_ROOM_ID: OUT_OF_RANGE_ROOM},
+        )
+    assert const.CONF_KAIDI_ROOM_ID in error.value.schema_errors
+    assert child(entry, "left")[const.CONF_KAIDI_ROOM_ID] == 10000
+
+
+async def test_a_receiver_shows_a_failed_check_without_settling_it(
+    hass, enable_custom_integrations
+):
+    """An answer the form did not check still gets the profile's error, not a crash."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+
+    entry = pair_entry(hass, ISLEEP, ISLEEP)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    result = await flow.async_step_left_settings({const.CONF_KAIDI_ROOM_ID: OUT_OF_RANGE_ROOM})
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "isleep_profile"}
+    assert child(entry, "left")[const.CONF_KAIDI_ROOM_ID] == 10000

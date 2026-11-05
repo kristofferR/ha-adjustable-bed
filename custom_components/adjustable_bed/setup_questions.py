@@ -827,7 +827,9 @@ def _sleeptracker_foundations(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     return {foundation: foundation for foundation in FOUNDATIONS}
 
 
-_INT32: Final = vol.All(int, vol.Range(min=-(2**31), max=2**31 - 1))
+# A signed 32-bit value, as the apps store their mesh and processor identities.
+_INT32_RANGE: Final = vol.Range(min=-(2**31), max=2**31 - 1)
+_INT32: Final = vol.All(int, _INT32_RANGE)
 
 
 def _sleeptracker_errors(data: Mapping[str, Any]) -> dict[str, str]:
@@ -1111,7 +1113,9 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(
             Question(CONF_PRODUCT_TYPE, _isleep_products, 129),
-            Question(CONF_KAIDI_ROOM_ID, default=10000, validator=vol.Coerce(int)),
+            Question(
+                CONF_KAIDI_ROOM_ID, default=10000, validator=vol.All(vol.Coerce(int), _INT32_RANGE)
+            ),
             Question(
                 CONF_KAIDI_SOFA_ACU_NO,
                 default=2,
