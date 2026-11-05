@@ -323,8 +323,8 @@ the variant to 10 pulses 100 ms apart, so they are not aliases.
 Each keeps its own [profile id](../design/profile-id.md#aliases). `ergomotion` and `serta` create their
 entities before the first connection and the `keeson` variants do not, and the
 device manufacturer differs. Among the ORE apps, Avanti Bases hides more generic
-setup fields, AMERICANSTAR and Avanti keep the motor count per side, and each
-app has its own setup label.
+setup fields, and each app has its own setup label. Every ORE and INNOVA app
+keeps its motor count (the app's 2M, 3M or 4M screen) per side of a pair.
 
 ## Wire codec
 
