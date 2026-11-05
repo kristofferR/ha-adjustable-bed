@@ -103,7 +103,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `malouf_memory_slots` | User | Malouf setup fields, Configure | `coordinator.py` |
 | `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
-| `jensen_pin` | User | Jensen setup fields, Configure | `coordinator.py` |
+| `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py` |
 | `richmat_remote` | User | Richmat setup fields, Configure | `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |
 | `rmcontrol_side` | User | RMControl setup fields, Configure | `coordinator.py`, `coordinator_connection.py` |

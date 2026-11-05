@@ -38,6 +38,7 @@ from .const import (
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -78,6 +79,7 @@ from .const import (
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
+    CONF_JENSEN_PIN,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
@@ -929,6 +931,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         normalize=_classic_normalize,
         validate=_classic_errors,
         title=_classic_title,
+    ),
+    # The Jensen / Svane family step picks the app and bed. The JMC400 box asks
+    # for its PIN; empty uses the default PIN.
+    BED_TYPE_JENSEN: _asking(
+        BED_TYPE_JENSEN, questions=(Question(CONF_JENSEN_PIN, default="", text=True),)
     ),
     # The Sleepy's family step picks the app or receiver. The app's control box
     # selector sets its routes; it belongs to one physical bed.

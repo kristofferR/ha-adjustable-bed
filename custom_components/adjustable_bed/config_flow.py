@@ -424,6 +424,7 @@ from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profile_id import with_profile_ids
 from .profile_migration import (
     CUSTOMATIC_FAMILY,
+    JENSEN_FAMILY,
     JIECANG_FAMILY,
     JORDANS_FAMILY,
     KEESON_FAMILY,
@@ -995,6 +996,8 @@ def _bed_type_selector(
         and not show_saved_id
         else BED_TYPE_LOGICDATA_APP
         if default in (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_AIR_PUMP) and not show_saved_id
+        else BED_TYPE_SVANE
+        if default == BED_TYPE_JENSEN and not show_saved_id
         else _APP_FAMILY_ROWS.get(default or "")
         if not show_saved_id
         else None
@@ -1162,52 +1165,27 @@ def _condition_owned_generic_fields(
     schema: dict[vol.Marker, Any],
     rows: Mapping[str, tuple[str | None, str]],
     field: str = CONF_BED_TYPE,
-    asked_routes: Mapping[str, tuple[str | None, str]] | None = None,
     keep: Collection[str] = frozenset(),
 ) -> None:
     """Hide each generic field for the rows of ``field`` whose profile sets it itself.
 
     One form serves every row, so nothing redraws when another row is chosen.
-    ``asked_routes`` are the routes of a bed type whose route the form asks
-    itself: its generic rows are decided by that route field, which reads as
-    absent while another row is chosen.
     """
-    asked_bed_type = next(iter(asked_routes.values()))[0] if asked_routes else None
     for marker in tuple(schema):
         key = marker.schema
         if key not in GENERIC_FIELDS or key == field or key in keep:
-            continue
-        if asked_routes and key == CONF_PROTOCOL_VARIANT:
             continue
 
         def owns(bed_type: str | None, variant: str, key: str = key) -> bool:
             return key in hidden_generic_fields(bed_type, variant)
 
-        if not asked_routes and all(owns(*profile) for profile in rows.values()):
+        if all(owns(*profile) for profile in rows.values()):
             # Every row sets it, so no choice on this form can show it.
             del schema[marker]
             continue
-        conditions = [
-            condition
-            for condition in (
-                _rows_where(
-                    rows,
-                    lambda bed_type, variant: (
-                        (bed_type != asked_bed_type or variant != VARIANT_AUTO)
-                        and owns(bed_type, variant)
-                    ),
-                    "not_in",
-                    field,
-                ),
-                _rows_where(asked_routes or {}, owns, "not_in", CONF_PROTOCOL_VARIANT),
-            )
-            if condition is not None
-        ]
-        if conditions:
-            shown = {marker: schema.pop(marker)}
-            for condition in conditions:
-                shown = _shown_for(shown, condition)
-            schema.update(shown)
+        owners = _rows_where(rows, owns, "not_in", field)
+        if owners is not None:
+            schema.update(_shown_for({marker: schema.pop(marker)}, owners))
 
 
 def _bed_specific_fields(
@@ -1228,10 +1206,6 @@ def _bed_specific_fields(
                     _OCTO_MOTOR_OVERRIDES
                 ),
             },
-        ),
-        (
-            lambda bed_type, _variant: bed_type == BED_TYPE_JENSEN,
-            {vol.Optional(CONF_JENSEN_PIN, default=""): TextSelector(TextSelectorConfig())},
         ),
         (
             lambda bed_type, _variant: bed_type == BED_TYPE_RICHMAT,
@@ -1342,8 +1316,6 @@ def _add_bed_specific_entry_data(
         entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(
             user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
         )
-    elif bed_type == BED_TYPE_JENSEN:
-        entry_data[CONF_JENSEN_PIN] = user_input.get(CONF_JENSEN_PIN, "")
     elif bed_type == BED_TYPE_RICHMAT:
         entry_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
         entry_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
@@ -1480,6 +1452,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_REVERIE: "reverie_family",
     BED_TYPE_REVERIE_NIGHTSTAND: "reverie_family",
     **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
+    **dict.fromkeys(JENSEN_FAMILY.bed_types, "jensen_family"),
 }
 
 
@@ -2316,45 +2289,26 @@ def _show_profile_fields(
 ) -> None:
     """Fit a generic form to the selected profile.
 
-    Svane offers its app profiles by name rather than every variant slug; a
-    setup form shows them whenever a Svane row is chosen. A form with a
+    Configure offers Svane's app profiles by name rather than every variant
+    slug; setup asks them in the Jensen / Svane family step. A form with a
     bed-type or route choice (``field``) hides each generic field for the rows
     whose profile sets it itself; a form for one profile drops them. Fields in
     ``keep`` are the profile's own questions and stay as they are.
     """
-    # An app row sets its own route, so only the generic Svane row asks it.
-    svane_rows = (
-        _rows_where(
-            rows,
-            lambda row_bed_type, row_variant: (
-                row_bed_type == BED_TYPE_SVANE and row_variant == VARIANT_AUTO
-            ),
-        )
-        if rows is not None and field == CONF_BED_TYPE
-        else None
-    )
-    if bed_type == BED_TYPE_SVANE or svane_rows is not None:
-        if bed_type != BED_TYPE_SVANE or variant not in SVANE_VARIANTS:
+    if bed_type == BED_TYPE_SVANE and (rows is None or field != CONF_BED_TYPE):
+        if variant not in SVANE_VARIANTS:
             variant = VARIANT_AUTO
         for marker in tuple(schema):
             if marker.schema == CONF_PROTOCOL_VARIANT:
                 del schema[marker]
-        svane: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_PROTOCOL_VARIANT, default=variant): vol.In(SVANE_VARIANTS)
-        }
-        schema.update(svane if svane_rows is None else _shown_for(svane, svane_rows))
+        schema[vol.Optional(CONF_PROTOCOL_VARIANT, default=variant)] = vol.In(SVANE_VARIANTS)
     if rows is not None:
         if field != CONF_BED_TYPE and CONF_PROTOCOL_VARIANT in hidden_generic_fields(
             bed_type, variant
         ):
             # A route field cannot hide itself; the profile owns the route.
             _hide_owned_generic_fields(schema, bed_type, variant, keep)
-        asked_routes = (
-            {route: (BED_TYPE_SVANE, route) for route in SVANE_VARIANTS}
-            if svane_rows is not None
-            else None
-        )
-        _condition_owned_generic_fields(schema, rows, field, asked_routes, keep)
+        _condition_owned_generic_fields(schema, rows, field, keep)
     else:
         _hide_owned_generic_fields(schema, bed_type, variant, keep)
 
@@ -2465,6 +2419,37 @@ _LEGGETT_ALIAS_VARIANTS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_OKIN: LEGGETT_VARIANT_OKIN,
     BED_TYPE_LEGGETT_WILINKE: LEGGETT_VARIANT_MLRM,
 }
+
+
+# The Jensen / Svane question's answers: each app with the bed it runs, as the
+# bed type and variant each selects.
+_JENSEN_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
+    "jensen_jmc400": (BED_TYPE_JENSEN, None),
+    "jensen_linon": (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON),
+    "svane_bed": (BED_TYPE_SVANE, VARIANT_AUTO),
+    "svane_jmc400": (BED_TYPE_SVANE, SVANE_VARIANT_JMC),
+}
+
+
+def _jensen_suggestion(bed_type: str, variant: str, name: str | None) -> str:
+    """Return the answer the apps' own name rules pick for this bed.
+
+    The Svane Remote app picks its JMC400 profile for a name with ``JMC``, and
+    the Jensen app its LinOn profile for "Adjustable Bed" or "Jensen Bed".
+    Every setup route suggests the same answer; the user confirms it.
+    """
+    from .svane_state import svane_profile_for_selected_name
+
+    for answer, route in _JENSEN_ROUTES.items():
+        if route == (bed_type, variant) and variant != VARIANT_AUTO:
+            return answer
+    if bed_type == BED_TYPE_JENSEN:
+        return "jensen_jmc400"
+    if name != "Svane Bed" and is_jensen_linon_name(name):
+        return "jensen_linon"
+    if svane_profile_for_selected_name(name) == "jmc":
+        return "svane_jmc400"
+    return "svane_bed"
 
 
 # The Sleepy's question's answers: the app first, then the receiver routes.
@@ -2904,6 +2889,7 @@ _FAMILY_STEPS: Final = frozenset(
         "customatic_family",
         "jordans_family",
         "remacro_family",
+        "jensen_family",
         "reverie_family",
     }
 )
@@ -4020,6 +4006,62 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={"current": bed_type_label(incoming)},
         )
 
+    async def async_step_jensen_family(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which app and bed a Jensen or Svane controller runs.
+
+        The JMC400 name and the LinonPI services each occur with both apps, so
+        they never decide the profile; the apps' own name rules only suggest it.
+        """
+        assert self._manual_data is not None
+        data = self._manual_data
+        if self._jensen_incoming is None:
+            self._jensen_incoming = (
+                data[CONF_BED_TYPE],
+                data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO,
+            )
+        choice = (user_input or {}).get("choice")
+        if choice == "keep" and self._migration is not None:
+            return await self.async_step_migration_keep()
+        if isinstance(choice, str) and choice in _JENSEN_ROUTES:
+            self._select_family_route(*_JENSEN_ROUTES[choice])
+            if data[CONF_BED_TYPE] == BED_TYPE_JENSEN:
+                return await self.async_step_profile_questions()
+            return await self._async_finish_family_route()
+        name = (
+            self._discovery_info.name
+            if self._discovery_info is not None
+            else (
+                advertised.name
+                if (
+                    advertised := bluetooth.async_last_service_info(
+                        self.hass, data[CONF_ADDRESS], connectable=False
+                    )
+                )
+                else data.get(CONF_BLE_DEVICE_NAME)
+            )
+        )
+        return self.async_show_form(
+            step_id="jensen_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        "choice", default=_jensen_suggestion(*self._jensen_incoming, name)
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                *_JENSEN_ROUTES,
+                                *(["keep"] if self._migration is not None else []),
+                            ],
+                            translation_key="jensen_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+        )
+
     async def async_step_sleepys_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -4601,6 +4643,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._leggett_incoming: tuple[str, str] | None = None
         self._sleepys_incoming: str | None = None
         self._logicdata_incoming: str | None = None
+        self._jensen_incoming: tuple[str, str] | None = None
         self._app_family_incoming: str | None = None
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
@@ -5499,18 +5542,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 entry_data.update(
                     _name_rule_setup_name(selected_bed_type, self._discovery_info.name)
                 )
-                if (
-                    selected_bed_type == BED_TYPE_SVANE
-                    and protocol_variant == VARIANT_AUTO
-                    and self._discovery_info.name != "Svane Bed"
-                    and is_jensen_linon_name(self._discovery_info.name)
-                ):
-                    entry_data[CONF_PROTOCOL_VARIANT] = SVANE_VARIANT_JENSEN_LINON
-                if selected_bed_type == BED_TYPE_SVANE and protocol_variant == VARIANT_AUTO:
-                    from .svane_state import svane_profile_for_selected_name
-
-                    if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
-                        entry_data[CONF_PROTOCOL_VARIANT] = SVANE_VARIANT_JMC
                 if app_step := await self._async_app_setup_step(
                     entry_data, pairing_step="bluetooth_pairing"
                 ):
@@ -6266,11 +6297,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
-            if bed_type == BED_TYPE_SVANE and protocol_variant == VARIANT_AUTO:
-                from .svane_state import svane_profile_for_selected_name
-
-                if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
-                    protocol_variant = SVANE_VARIANT_JMC
             # Collect the route first: validation below depends on it.
             if not errors and (
                 route := self._request_route_choice(
@@ -9758,15 +9784,6 @@ class AdjustableBedOptionsFlow(
                 vol.Optional(
                     CONF_OCTO_PIN,
                     default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-                )
-            ] = TextSelector(TextSelectorConfig())
-
-        # Add PIN field for Jensen beds
-        if bed_type == BED_TYPE_JENSEN:
-            schema_dict[
-                vol.Optional(
-                    CONF_JENSEN_PIN,
-                    default=current_data.get(CONF_JENSEN_PIN, ""),
                 )
             ] = TextSelector(TextSelectorConfig())
 

@@ -48,9 +48,8 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.detection import bed_type_choice, is_jensen_linon_name
+from custom_components.adjustable_bed.detection import is_jensen_linon_name
 from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
-from tests.form_helpers import shown_markers
 
 HEAD = SVANE_HEAD_SERVICE_UUID
 FOOT = SVANE_FEET_SERVICE_UUID
@@ -299,25 +298,26 @@ async def test_bluetooth_setup_stores_the_app_profile(
     variant: str,
     expected: str,
 ) -> None:
-    """A new entry keeps the profile the device name selects; auto stays Svane."""
+    """The app's name rule suggests the profile; the confirmed answer is saved."""
     mock_bluetooth_service_info.name = name
     mock_bluetooth_service_info.service_uuids = [SVANE_HEAD_SERVICE_UUID]
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
+    flow.context = {}
     flow._discovery_info = mock_bluetooth_service_info
     finish = AsyncMock()
     flow._finish_with_verify = finish
+    answers = {VARIANT_AUTO: "svane_bed", SVANE_VARIANT_JENSEN_LINON: "jensen_linon"}
 
-    submitted = {
-        CONF_BED_TYPE: BED_TYPE_SVANE,
-        CONF_PROTOCOL_VARIANT: variant,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
-    }
-    form = await flow.async_step_bluetooth_confirm()
-    # Jensen LinOn shows the generic fields the other Svane routes set themselves.
-    shown = shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_SVANE, CONF_PROTOCOL_VARIANT: variant})
-    assert (CONF_MOTOR_COUNT in shown) is (variant == SVANE_VARIANT_JENSEN_LINON)
-    await flow.async_step_bluetooth_confirm(dict(submitted))
+    result = await flow.async_step_bluetooth_confirm(
+        {CONF_BED_TYPE: BED_TYPE_SVANE, CONF_DISCONNECT_AFTER_COMMAND: False}
+    )
+    assert result["step_id"] == "jensen_family"
+    choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
+    if variant == VARIANT_AUTO:
+        # The Jensen app's rule suggests LinOn for its names; Svane Bed stays Svane.
+        assert choice.default() == answers[expected]
+    await flow.async_step_jensen_family({"choice": answers[expected]})
 
     assert finish.await_args is not None
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
@@ -427,16 +427,3 @@ async def test_svane_light_slider_removed_for_linon(
     await hass.async_block_till_done()
 
     assert registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_light_level") is None
-
-
-async def test_the_linon_app_row_shows_its_generic_fields(hass: HomeAssistant) -> None:
-    """An app row sets its own route; the generic Svane route field stays out of it."""
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow.context = {}
-    form = await flow.async_step_manual_entry()
-    linon = bed_type_choice(BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON)
-    shown = shown_markers(form, **{CONF_BED_TYPE: linon})
-    assert CONF_MOTOR_COUNT in shown
-    assert CONF_PROTOCOL_VARIANT not in shown
-    assert CONF_MOTOR_COUNT not in shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_SVANE})
