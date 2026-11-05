@@ -1,11 +1,11 @@
-"""The app-first start screen and app question (#676 direction A, screens A1 and A2)."""
+"""The app-first new-bed journey (#676 direction A, screens A1 to A4 and A6)."""
 
 import json
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.config_entries import SOURCE_USER
+from homeassistant.config_entries import SOURCE_BLUETOOTH, SOURCE_USER
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 
@@ -100,7 +100,7 @@ async def test_the_app_question_ends_with_the_brand_list(hass, enable_custom_int
 
 
 async def _app_then_address(hass, choice: str):
-    """Answer the app question, then enter an address with the form's defaults."""
+    """Answer the app question, then type the address of a bed not in range."""
     result = await app_question(hass)
     label = next(label for label, row in app_rows(result).items() if row == choice)
     with patch(PATCH_DISCOVERED, return_value=[]):
@@ -109,17 +109,7 @@ async def _app_then_address(hass, choice: str):
         )
     # No Bluetooth device is in range, so the address is typed.
     assert result["step_id"] == "manual_entry"
-    assert suggested(result, const.CONF_BED_TYPE) == label
-    with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-        return await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                CONF_ADDRESS: ADDRESS,
-                const.CONF_BED_TYPE: label,
-                CONF_NAME: "Bed",
-                const.CONF_DISCONNECT_AFTER_COMMAND: False,
-            },
-        )
+    return await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_ADDRESS: ADDRESS})
 
 
 @pytest.mark.parametrize(
@@ -145,11 +135,15 @@ async def test_each_app_lands_in_its_familys_journey(
 
 
 async def test_an_app_row_with_no_more_questions_finishes(hass, enable_custom_integrations):
-    with patch(
-        "homeassistant.config_entries.ConfigEntries.async_setup",
-        new=AsyncMock(return_value=True),
+    result = await _app_then_address(hass, "keeson:heal_every_night")
+    assert result["step_id"] == "finish_settings"
+    with (
+        patch("homeassistant.config_entries.ConfigEntries.async_setup", new=AsyncMock(return_value=True)),
+        patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
     ):
-        result = await _app_then_address(hass, "keeson:heal_every_night")
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NAME: "Bed", const.CONF_DISCONNECT_AFTER_COMMAND: False}
+        )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert (result["data"][const.CONF_BED_TYPE], result["data"][const.CONF_PROTOCOL_VARIANT]) == (
         const.BED_TYPE_KEESON,
@@ -176,8 +170,9 @@ async def test_pick_any_bluetooth_device_asks_the_app_after_the_device(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {const.CONF_BED_TYPE: label}
     )
-    assert result["step_id"] == "manual_config"
-    assert suggested(result, const.CONF_BED_TYPE) == label
+    # Linak asks nothing more, so its final settings follow.
+    assert result["step_id"] == "finish_settings"
+    assert result["description_placeholders"]["address"] == device.address.upper()
 
 
 async def test_typing_an_address_asks_the_app_first(
@@ -197,7 +192,7 @@ async def test_typing_an_address_asks_the_app_first(
         result["flow_id"], {const.CONF_BED_TYPE: label}
     )
     assert result["step_id"] == "manual_entry"
-    assert suggested(result, const.CONF_BED_TYPE) == label
+    assert {marker.schema for marker in result["data_schema"].schema} == {CONF_ADDRESS}
 
 
 async def brand_list(hass):
@@ -244,16 +239,7 @@ async def test_a_brand_opens_its_familys_question(hass, enable_custom_integratio
             result["flow_id"], {const.CONF_BED_TYPE: label}
         )
     assert result["step_id"] == "manual_entry"
-    with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                CONF_ADDRESS: ADDRESS,
-                const.CONF_BED_TYPE: label,
-                CONF_NAME: "Bed",
-                const.CONF_DISCONNECT_AFTER_COMMAND: False,
-            },
-        )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_ADDRESS: ADDRESS})
     assert result["step_id"] == "okin_family"
 
 
@@ -266,7 +252,7 @@ async def test_a_detected_route_survives_the_brand_list(
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {"source": SOURCE_USER}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._app_after_device = "manual_config"
+    flow._app_after_device = "device"
     with patch(
         "custom_components.adjustable_bed.config_flow.detect_bed_type_detailed",
         return_value=MagicMock(),
@@ -277,3 +263,138 @@ async def test_a_detected_route_survives_the_brand_list(
         result = await flow.async_step_select_family()
     assert const.BED_TYPE_OKIN_UUID in app_rows(result).values()
     assert const.BED_TYPE_FURNIMOVE not in app_rows(result).values()
+
+
+async def discovered(hass, info):
+    return await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
+    )
+
+
+async def test_a_discovered_bed_lists_its_own_rows_and_every_other_app(
+    hass, enable_custom_integrations, mock_bluetooth_service_info
+):
+    """A3: a route with no family question offers its rows, then every app."""
+    result = await discovered(hass, mock_bluetooth_service_info)
+    assert result["step_id"] == "bluetooth_confirm"
+    assert result["description_placeholders"]["family"] == "Linak"
+    options = select_options(result, const.CONF_BED_TYPE)
+    assert list(options) == [const.BED_TYPE_LINAK, "another"]
+    assert options["another"] == _STRINGS["config"]["step"]["bluetooth_confirm"]["data"]["another"]
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: "another"}
+    )
+    assert result["step_id"] == "select_app"
+    # The device is known, so the chosen app's journey starts for it.
+    label = next(label for label, row in app_rows(result).items() if row == "keeson:heal_every_night")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: label}
+    )
+    assert result["step_id"] == "finish_settings"
+    assert result["description_placeholders"]["address"] == mock_bluetooth_service_info.address
+
+
+async def test_a_discovered_family_asks_its_question_with_another_app_and_keep(
+    hass, enable_custom_integrations, mock_bluetooth_service_info_okimat
+):
+    """A3: the detected family's question is the first one, never a guessed app."""
+    result = await discovered(hass, mock_bluetooth_service_info_okimat)
+    assert result["step_id"] == "okin_family"
+    choices = list(select_options(result, "choice"))
+    assert choices[-2:] == ["another", "keep"]
+    for selector in ("okin_family_choice", "jensen_family_choice", "remacro_family_choice"):
+        assert _STRINGS["selector"][selector]["options"]["another"]
+    # Keep saves the detected route, then its own questions and settings follow.
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+    flow = hass.config_entries.flow._progress[result["flow_id"]]
+    assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIMAT
+    assert result["step_id"] == "profile_questions"
+    hass.config_entries.flow.async_abort(result["flow_id"])
+
+
+async def test_another_app_restarts_the_journey_for_the_same_bed(
+    hass, enable_custom_integrations, mock_bluetooth_service_info_okimat
+):
+    result = await discovered(hass, mock_bluetooth_service_info_okimat)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"choice": "another"}
+    )
+    assert result["step_id"] == "select_app"
+    label = next(label for label, row in app_rows(result).items() if row == const.BED_TYPE_LINAK)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: label}
+    )
+    assert result["step_id"] == "finish_settings"
+    flow = hass.config_entries.flow._progress[result["flow_id"]]
+    assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_LINAK
+    # The Okin question's own state is gone, so nothing of it is kept.
+    assert flow._okin_incoming is None
+    hass.config_entries.flow.async_abort(result["flow_id"])
+
+
+async def test_a_route_the_receiver_settles_is_confirmed_before_its_questions(
+    hass, enable_custom_integrations, mock_bluetooth_service_info_reverie
+):
+    """A family that takes its route from the receiver asks nothing, so A3 confirms it."""
+    result = await discovered(hass, mock_bluetooth_service_info_reverie)
+    assert result["step_id"] == "bluetooth_confirm"
+    route = suggested(result, const.CONF_BED_TYPE)
+    assert "another" in select_options(result, const.CONF_BED_TYPE)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: route}
+    )
+    # Its own questions follow the confirmation.
+    assert result["step_id"] == "profile_questions"
+    hass.config_entries.flow.async_abort(result["flow_id"])
+
+
+async def test_the_final_settings_come_after_the_apps_questions(hass, enable_custom_integrations):
+    """A6: Restonic BT asks its remote style, then only the bed's own settings remain."""
+    result = await _app_then_address(hass, "keeson:restonic_a")
+    assert result["step_id"] == "keeson_restonic"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_PROTOCOL_VARIANT: const.KEESON_VARIANT_RESTONIC_B}
+    )
+    assert result["step_id"] == "finish_settings"
+    top = {marker.schema for marker in result["data_schema"].schema}
+    assert {CONF_NAME, const.CONF_PREFERRED_ADAPTER, const.CONF_DISCONNECT_AFTER_COMMAND} <= top
+    # What the app sets is not asked, its route least of all; timing is
+    # collapsed under Advanced connection and timing.
+    from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
+
+    owned = hidden_generic_fields(const.BED_TYPE_KEESON, const.KEESON_VARIANT_RESTONIC_B)
+    assert not (owned | {const.CONF_PROTOCOL_VARIANT, "advanced"}) & top
+    timing = result["data_schema"].schema[
+        next(marker for marker in result["data_schema"].schema if marker == "timing")
+    ]
+    assert timing.options == {"collapsed": True}
+    assert {marker.schema for marker in timing.schema.schema} >= {
+        const.CONF_MOTOR_PULSE_COUNT,
+        const.CONF_IDLE_DISCONNECT_SECONDS,
+    }
+    sections = _STRINGS["config"]["step"]["finish_settings"]["sections"]
+    assert sections["timing"]["name"] == "Advanced connection and timing"
+    with (
+        patch("homeassistant.config_entries.ConfigEntries.async_setup", new=AsyncMock(return_value=True)),
+        patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NAME: "Bedroom bed", "timing": {const.CONF_MOTOR_PULSE_COUNT: "7"}}
+        )
+    assert result["title"] == "Bedroom bed"
+    assert result["data"][const.CONF_PROTOCOL_VARIANT] == const.KEESON_VARIANT_RESTONIC_B
+    assert result["data"][const.CONF_MOTOR_PULSE_COUNT] == 7
+    assert result["data"][const.CONF_MOTOR_PULSE_USER_SET] is True
+
+
+async def test_the_vibradorm_question_offers_another_app(hass, mock_bluetooth_service_info):
+    """Vibradorm's question answers on its own field, and still searches every app."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._discovery_info = mock_bluetooth_service_info
+    flow._disambiguated_bed_type = const.BED_TYPE_VIBRADORM
+    result = await flow.async_step_bluetooth_confirm()
+    assert result["step_id"] == "vibradorm"
+    assert list(select_options(result, "app"))[-1] == "another"
+    result = await flow.async_step_vibradorm({"app": "another"})
+    assert result["step_id"] == "select_app"

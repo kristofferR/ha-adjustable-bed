@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.detection import bed_type_label, get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_migration import SLEEPYS_FAMILY
+from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.test_sleepys_family_flow import finish_check, gatt_client, reconfigure
 from tests.test_vibradorm_family_flow import bluetooth_patches
 
@@ -161,11 +162,9 @@ async def test_an_app_already_chosen_is_not_asked_again(hass, bed_type, step):
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == bed_type
 
 
-async def test_choosing_the_jordans_row_on_a_form_preselected_for_another_app_asks(hass):
+async def test_the_jordans_row_asks_which_jordans_app(hass):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
-    # The form was preselected for AdjustableM5X4; the user picked the Jordan's row.
-    flow._selected_bed_type = const.BED_TYPE_STARCODE_ABM5_4
     info = MagicMock()
     info.name = "OKIN-003444"
     info.address = ADDRESS
@@ -174,15 +173,12 @@ async def test_choosing_the_jordans_row_on_a_form_preselected_for_another_app_as
     info.source = "auto"
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
-    flow._disconnect_choice_confirmed = True
-    submitted = {CONF_ADDRESS: ADDRESS, CONF_NAME: "Bed", const.CONF_BED_TYPE: const.BED_TYPE_SERENITY}
-    result = await flow.async_step_manual_entry(dict(submitted))
-    if result["step_id"] == "manual_entry":
-        # A form shown again for the chosen row is not an app choice either.
-        result = await flow.async_step_manual_entry(dict(submitted))
+    result = await start_new_bed(flow, "picked", const.BED_TYPE_SERENITY)
     assert result["step_id"] == "jordans_family"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jordans_family({"choice": "tranquil"})
+        await finish_new_bed(
+            flow, await flow.async_step_jordans_family({"choice": "tranquil"}), {CONF_NAME: "Bed"}
+        )
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == const.BED_TYPE_TRANQUIL
 
 

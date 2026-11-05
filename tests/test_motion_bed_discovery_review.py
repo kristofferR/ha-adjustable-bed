@@ -2,12 +2,8 @@
 
 import pytest
 import voluptuous as vol
-from homeassistant.const import CONF_NAME
 
-from custom_components.adjustable_bed.config_flow import (
-    BED_TYPE_AUTO_DETECT,
-    AdjustableBedConfigFlow,
-)
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_MOTION_BED,
@@ -19,6 +15,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.motion_bed_models import RAW_NAME_MARKERS
+from tests.form_helpers import suggested
 from tests.test_detection import _make_service_info
 
 
@@ -39,15 +36,16 @@ def test_every_accepted_app_name_is_offered_on_shared_transport(name):
 @pytest.mark.parametrize("advertised", [False, True])
 async def test_additional_accepted_names_require_explicit_choice(hass, name, advertised):
     flow = AdjustableBedConfigFlow()
-    flow.hass = hass
+    flow.hass, flow.context = hass, {}
     flow._discovery_info = _make_service_info(
         name=name, service_uuids=[SOLACE_SERVICE_UUID] if advertised else []
     )
     solace = detect_bed_type_detailed(flow._discovery_info).bed_type == BED_TYPE_SOLACE
     result = await flow.async_step_bluetooth_confirm()
     if solace:
-        # A confirmed Solace name keeps its preselection; Motion Bed stays selectable.
-        assert result["step_id"] == "bluetooth_confirm"
+        # A confirmed Solace name asks the Solace question, whose apps include Motion Bed.
+        assert result["step_id"] == "solace_family"
+        result = await flow.async_step_solace_family({"choice": "motion_bed"})
     else:
         assert result["step_id"] == "bluetooth_disambiguate"
         assert flow._disambiguation_types is not None
@@ -60,24 +58,20 @@ async def test_additional_accepted_names_require_explicit_choice(hass, name, adv
         assert (
             await flow.async_step_bluetooth_disambiguate({"bed_type_choice": BED_TYPE_MOTION_BED})
         )["step_id"] == "bluetooth_confirm"
-    result = await flow.async_step_bluetooth_confirm(
-        {CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_NAME: "Bedroom"}
-    )
+        result = await flow.async_step_bluetooth_confirm({CONF_BED_TYPE: BED_TYPE_MOTION_BED})
     assert result["step_id"] == "profile_questions"
     marker = next(key for key in result["data_schema"].schema if key.schema == CONF_BLE_DEVICE_NAME)
     assert marker.default() == name
 
 
 @pytest.mark.parametrize("name", ["TL-Q", "QMS-430", "S5-Y"])
-async def test_manual_auto_cannot_submit_an_additional_shared_app_name(hass, name):
+async def test_a_picked_shared_app_name_is_not_suggested_an_app(hass, name):
     flow = AdjustableBedConfigFlow()
-    flow.hass = hass
+    flow.hass, flow.context = hass, {}
     flow._discovery_info = _make_service_info(name=name, service_uuids=[SOLACE_SERVICE_UUID])
-    result = await flow.async_step_manual_config()
-    marker = next(key for key in result["data_schema"].schema if key.schema == CONF_BED_TYPE)
-    assert result["data_schema"].schema[marker](marker.default()) == BED_TYPE_AUTO_DETECT
-    result = await flow.async_step_manual_config({CONF_BED_TYPE: BED_TYPE_AUTO_DETECT})
-    assert result["errors"] == {"base": "auto_detect_failed"}
+    flow._app_after_device = "device"
+    result = await flow.async_step_select_app()
+    assert suggested(result, CONF_BED_TYPE) is None
 
 
 @pytest.mark.parametrize("name", ["TL-Q", "QMS-430", "S5-Y"])

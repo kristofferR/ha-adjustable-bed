@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
     is_valid_variant_for_bed_type,
 )
-from tests.form_helpers import shown_markers
+from tests.form_helpers import NEW_BED_ROUTES, form_fields, shown_markers, start_new_bed
 from tests.test_controller_contract import _FactoryCoordinator
 
 
@@ -84,8 +84,8 @@ def test_shared_names_and_services_never_select_the_app(name, service):
     assert detect_bed_type(info) != BED_TYPE_SIMMONS
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_setup_hides_motor_count_and_the_fixed_refresh_delay(hass, step):
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_setup_hides_motor_count_and_the_fixed_refresh_delay(hass, route):
     from unittest.mock import AsyncMock
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
@@ -94,8 +94,6 @@ async def test_setup_hides_motor_count_and_the_fixed_refresh_delay(hass, step):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._selected_bed_type = BED_TYPE_SIMMONS
-    flow._disambiguated_bed_type = BED_TYPE_SIMMONS
     info = MagicMock()
     info.name = "OKIN-112233"
     info.address = "AA:BB:CC:DD:EE:FF"
@@ -104,11 +102,11 @@ async def test_setup_hides_motor_count_and_the_fixed_refresh_delay(hass, step):
     info.source = "auto"
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
-    form = await getattr(flow, f"async_step_{step}")()
-    assert form["type"] == "form"
-    markers = shown_markers(form)
-    assert CONF_MOTOR_COUNT not in markers
-    assert CONF_MOTOR_PULSE_DELAY_MS not in markers
+    form = await start_new_bed(flow, route, BED_TYPE_SIMMONS)
+    assert form["step_id"] == "finish_settings"
+    fields = {marker.schema for marker in form_fields(form["data_schema"])}
+    assert CONF_MOTOR_COUNT not in fields
+    assert CONF_MOTOR_PULSE_DELAY_MS not in fields
 
 
 async def test_options_switch_to_simmons_keeps_the_layout_choice(hass):

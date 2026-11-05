@@ -91,20 +91,17 @@ async def test_manual_entry_collects_and_saves_legacy_settings(hass: HomeAssista
     flow.hass = hass
     flow.context = {"source": "user"}
     flow._selected_bed_type = BED_TYPE_LEGGETT_LP_LEGACY
-    result = await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_NAME: "Legacy app bed",
-            CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-        }
-    )
+    result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:FF"})
     assert result["step_id"] == "profile_questions"
     invalid = await flow.async_step_profile_questions({CONF_LP_LEGACY_MODE: "framed"})
     assert invalid["step_id"] == "profile_questions"
     assert CONF_LP_LEGACY_MODEL in invalid["errors"]
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await flow.async_step_profile_questions(_settings())
+        assert result["step_id"] == "finish_settings"
+        result = await flow.async_step_finish_settings(
+            {CONF_NAME: "Legacy app bed", CONF_DISCONNECT_AFTER_COMMAND: False}
+        )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_BED_TYPE] == BED_TYPE_LEGGETT_LP_LEGACY
     assert {key: result["data"][key] for key in _settings()} == _settings()

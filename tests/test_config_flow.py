@@ -174,7 +174,7 @@ from custom_components.adjustable_bed.setup_operation import (
     OperationResult,
     SetupAction,
 )
-from tests.form_helpers import answer_app, select_options, shown_markers, suggested
+from tests.form_helpers import answer_app, form_fields, select_options, shown_markers, suggested
 
 
 def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
@@ -286,6 +286,81 @@ async def _keep_family_route(hass: HomeAssistant, result: Any) -> Any:
     if result.get("step_id") != "jiecang_family":
         return result
     return await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+
+
+async def _past_app_question(hass: HomeAssistant, result: Any) -> Any:
+    """Answer a discovered bed's app question with the row it suggests."""
+    if result.get("step_id") != "bluetooth_confirm":
+        return result
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_BED_TYPE: suggested(result, CONF_BED_TYPE)}
+    )
+
+
+def _settings_input(result: Any, settings: dict[str, Any]) -> dict[str, Any]:
+    """Return the settings the final settings form shows, timing in its section."""
+    schema = result["data_schema"].schema
+    top = {marker.schema for marker in schema}
+    timing = next(
+        ({m.schema for m in validator.schema.schema} for marker, validator in schema.items()
+         if marker.schema == "timing"),
+        set(),
+    )
+    values: dict[str, Any] = {key: value for key, value in settings.items() if key in top}
+    if nested := {key: value for key, value in settings.items() if key in timing}:
+        values["timing"] = nested
+    return values
+
+
+async def _settings(hass: HomeAssistant, result: Any, settings: dict[str, Any]) -> Any:
+    """Answer the app question as suggested, then submit the final settings it shows."""
+    result = await _past_app_question(hass, result)
+    assert result["step_id"] == "finish_settings", result
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], _settings_input(result, settings)
+    )
+
+
+async def _typed_address(
+    hass: HomeAssistant,
+    result: Any,
+    address: str,
+    settings: dict[str, Any],
+    steps: dict[str, dict[str, Any]] | None = None,
+) -> Any:
+    """Type the address, answer each named step, then submit the final settings."""
+    assert result["step_id"] == "manual_entry", result
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_ADDRESS: address}
+    )
+    steps = dict(steps or {})
+    while result["type"] == FlowResultType.FORM and result["step_id"] in steps:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], steps.pop(result["step_id"])
+        )
+    if result.get("step_id") == "finish_settings":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], _settings_input(result, settings)
+        )
+    return result
+
+
+async def _to_settings(hass: HomeAssistant, result: Any) -> Any:
+    """Keep a discovered bed's detected route or app, reaching its final settings."""
+    result = await _past_app_question(hass, await _keep_family_route(hass, result))
+    assert result["step_id"] == "finish_settings", result
+    return result
+
+
+async def _search_every_app(hass: HomeAssistant, result: Any, choice: str) -> Any:
+    """Answer a discovered bed's app question with a row of the full app list."""
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_BED_TYPE: "another"}
+    )
+    assert result["step_id"] == "select_app"
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_BED_TYPE: choice}
+    )
 
 
 async def _advance_progress(hass: HomeAssistant, result: Any) -> Any:
@@ -1522,14 +1597,14 @@ class TestBluetoothDiscoveryFlow:
     ) -> None:
         mock_bluetooth_service_info.name = "RTV Lift"
         flow = AdjustableBedConfigFlow()
-        flow.hass = hass
+        flow.hass, flow.context = hass, {"source": SOURCE_BLUETOOTH}
         flow._discovery_info = mock_bluetooth_service_info
         flow._disambiguated_bed_type = BED_TYPE_OCTO
-        flow._show_full_bed_type_list = True
-        flow._selected_protocol_variant = OCTO_VARIANT_STANDARD
 
         result = await flow.async_step_bluetooth_confirm()
+        result = await flow.async_step_bluetooth_confirm({CONF_BED_TYPE: BED_TYPE_OCTO})
 
+        assert result["step_id"] == "finish_settings"
         markers = {marker.schema: marker for marker in result["data_schema"].schema}
         assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
 
@@ -1545,18 +1620,17 @@ class TestBluetoothDiscoveryFlow:
 
         mock_bluetooth_service_info_octo_rc2.name = "RTV Lift"
         flow = AdjustableBedConfigFlow()
-        flow.hass = hass
+        flow.hass, flow.context = hass, {"source": SOURCE_BLUETOOTH}
         flow._discovery_info = mock_bluetooth_service_info_octo_rc2
         flow._disambiguated_bed_type = BED_TYPE_OCTO
-        flow._selected_protocol_variant = OCTO_VARIANT_STANDARD
 
         finished = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
         monkeypatch.setattr(flow, "_finish_with_verify", finished)
-        await flow.async_step_bluetooth_confirm(
+        await flow.async_step_bluetooth_confirm({CONF_BED_TYPE: BED_TYPE_OCTO})
+        await flow.async_step_finish_settings(
             {
-                CONF_BED_TYPE: BED_TYPE_OCTO,
                 CONF_NAME: "RTV Lift",
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                "advanced": {CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD},
                 CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
                 CONF_OCTO_PIN: "",
             }
@@ -1645,6 +1719,7 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
+        result = await _past_app_question(hass, result)
         override_marker = next(
             marker
             for marker in result["data_schema"].schema
@@ -1668,7 +1743,8 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
-        markers = {marker.schema: marker for marker in result["data_schema"].schema}
+        result = await _past_app_question(hass, result)
+        markers = {marker.schema: marker for marker in form_fields(result["data_schema"])}
         assert markers[CONF_MOTOR_PULSE_COUNT].default() == "3"
         assert markers[CONF_MOTOR_PULSE_DELAY_MS].default() == "50"
 
@@ -1766,6 +1842,7 @@ class TestBluetoothDiscoveryFlow:
         )
 
         assert result["step_id"] == "bluetooth_confirm"
+        result = await _past_app_question(hass, result)
         marker = next(
             marker
             for marker in result["data_schema"].schema
@@ -1773,115 +1850,29 @@ class TestBluetoothDiscoveryFlow:
         )
         assert marker.default() is True
 
-    def test_ambiguous_disconnect_choice_is_confirmed_after_bed_type_change(self):
-        """A second form distinguishes the old default from an explicit choice."""
-        from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
-
-        flow = AdjustableBedConfigFlow()
-
-        assert (
-            flow._disconnect_after_command_choice(
-                {CONF_DISCONNECT_AFTER_COMMAND: True},
-                BED_TYPE_LEGGETT_GEN2,
-                None,
-                True,
-            )
-            is None
-        )
-        assert (
-            flow._disconnect_after_command_choice(
-                {CONF_DISCONNECT_AFTER_COMMAND: False},
-                BED_TYPE_LINAK,
-                VARIANT_AUTO,
-                False,
-            )
-            is None
-        )
-
-        # Once the follow-up form has rendered the selected protocol's default,
-        # either old-default value is an unambiguous explicit choice.
-        flow._disconnect_choice_confirmed = True
-        assert (
-            flow._disconnect_after_command_choice(
-                {CONF_DISCONNECT_AFTER_COMMAND: True},
-                BED_TYPE_LEGGETT_GEN2,
-                None,
-                True,
-            )
-            is True
-        )
-        assert (
-            flow._disconnect_after_command_choice(
-                {CONF_DISCONNECT_AFTER_COMMAND: False},
-                BED_TYPE_LINAK,
-                VARIANT_AUTO,
-                False,
-            )
-            is False
-        )
-        flow._disconnect_choice_confirmed = False
-
-        # A value differing from the rendered default remains an explicit choice.
-        assert (
-            flow._disconnect_after_command_choice(
-                {CONF_DISCONNECT_AFTER_COMMAND: False},
-                BED_TYPE_LINAK,
-                VARIANT_AUTO,
-                True,
-            )
-            is False
-        )
-        # An absent value from direct callers follows the chosen bed type.
-        assert (
-            flow._disconnect_after_command_choice(
-                {},
-                BED_TYPE_LINAK,
-                VARIANT_AUTO,
-                False,
-            )
-            is True
-        )
-
-    async def test_manual_entry_without_preselected_type_confirms_ambiguous_choice(
+    async def test_a_typed_address_gets_its_chosen_beds_disconnect_default(
         self,
         hass: HomeAssistant,
         enable_custom_integrations,
     ):
-        """Raw manual entry keeps the option and confirms it for the selected bed."""
+        """The final settings are drawn for the chosen bed, and a change is kept."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
         flow.context = {"source": SOURCE_USER}
+        flow._selected_bed_type = BED_TYPE_LINAK
 
-        result = await flow.async_step_manual_entry()
+        result = await flow.async_step_manual_entry({CONF_ADDRESS: "11:22:33:44:55:66"})
+        assert result["step_id"] == "finish_settings"
         disconnect_marker = next(
             marker
             for marker in result["data_schema"].schema
             if marker.schema == CONF_DISCONNECT_AFTER_COMMAND
         )
-        assert disconnect_marker.default() is False
-
-        result = await flow.async_step_manual_entry(
-            {
-                CONF_ADDRESS: "11:22:33:44:55:66",
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_NAME: "Manual Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-                CONF_DISCONNECT_AFTER_COMMAND: False,
-            }
-        )
-        # Linak has several routes, and a raw manual entry has no suggested one.
-        assert result["step_id"] == "route"
-        result = await flow.async_step_route({"advanced": {CONF_PROTOCOL_VARIANT: VARIANT_AUTO}})
-        assert result["step_id"] == "disconnect_after_command"
-        confirm_marker = next(iter(result["data_schema"].schema))
-        assert confirm_marker.default() is True
+        assert disconnect_marker.default() is True
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-            result = await flow.async_step_disconnect_after_command(
-                {CONF_DISCONNECT_AFTER_COMMAND: False}
+            result = await flow.async_step_finish_settings(
+                {CONF_NAME: "Manual Bed", CONF_DISCONNECT_AFTER_COMMAND: False}
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -1900,9 +1891,10 @@ class TestBluetoothDiscoveryFlow:
             data=mock_bluetooth_service_info,
         )
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
+        result = await _settings(
+            hass,
+            result,
+            {
                 CONF_NAME: "My Bed",
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
@@ -1931,10 +1923,11 @@ class TestBluetoothDiscoveryFlow:
             data=mock_bluetooth_service_info,
         )
 
-        # Confirm with user input
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
+        # Confirm the detected app, then the final settings
+        result = await _settings(
+            hass,
+            result,
+            {
                 CONF_NAME: "My Bed",
                 CONF_MOTOR_COUNT: 4,
                 CONF_HAS_MASSAGE: True,
@@ -1965,9 +1958,8 @@ class TestBluetoothDiscoveryFlow:
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
         enable_custom_integrations,
     ):
-        """Regression for #385: the confirm dropdown showed raw type slugs from
-        SUPPORTED_BED_TYPES, with no "Diagnostic (unknown bed)" entry. It must use
-        the same display-name options as the other selection paths."""
+        """Regression for #385: the confirm step showed raw type slugs. The app
+        question lists the detected bed's rows by their display names."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": SOURCE_BLUETOOTH},
@@ -1975,17 +1967,11 @@ class TestBluetoothDiscoveryFlow:
         )
         assert result["step_id"] == "bluetooth_confirm"
 
-        bed_type_marker = next(
-            marker for marker in result["data_schema"].schema if marker.schema == CONF_BED_TYPE
-        )
-        selector = result["data_schema"].schema[bed_type_marker]
-        labels = {option["label"] for option in selector.config["options"]}
-
-        # The searchable picker shows labels and maps them back to bed types.
-        assert bed_type_marker.default() == BED_TYPE_DISPLAY_NAMES[BED_TYPE_LINAK]
-        assert selector(bed_type_marker.default()) == BED_TYPE_LINAK
-        assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_LINAK] in labels
-        assert selector("Diagnostic (unknown bed)") == BED_TYPE_DIAGNOSTIC
+        options = select_options(result, CONF_BED_TYPE)
+        assert suggested(result, CONF_BED_TYPE) == BED_TYPE_LINAK
+        assert options[BED_TYPE_LINAK] == BED_TYPE_DISPLAY_NAMES[BED_TYPE_LINAK]
+        # Every other app, Diagnostic included, is one answer away.
+        assert list(options)[-1] == "another"
 
     async def test_bluetooth_confirm_legacy_alias_default_stays_selectable(
         self,
@@ -1993,8 +1979,8 @@ class TestBluetoothDiscoveryFlow:
         mock_bluetooth_service_info_ambiguous_okin: MagicMock,
         enable_custom_integrations,
     ):
-        """A legacy-alias bed type (absent from the display-name list) chosen via
-        disambiguation must be prepended so the dropdown default stays valid."""
+        """A legacy alias chosen by disambiguation opens the Okin question, whose
+        Keep saves the alias unchanged."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": SOURCE_BLUETOOTH},
@@ -2006,17 +1992,11 @@ class TestBluetoothDiscoveryFlow:
             result["flow_id"],
             user_input={"bed_type_choice": BED_TYPE_OKIMAT},
         )
-        assert result["step_id"] == "bluetooth_confirm"
-
-        bed_type_marker = next(
-            marker for marker in result["data_schema"].schema if marker.schema == CONF_BED_TYPE
-        )
-        selector = result["data_schema"].schema[bed_type_marker]
-        option_values = [selector(option["value"]) for option in selector.config["options"]]
-
-        assert selector(bed_type_marker.default()) == BED_TYPE_OKIMAT
-        # The Okin family row keeps the saved alias it was drawn for.
-        assert option_values.count(BED_TYPE_OKIMAT) == 1
+        assert result["step_id"] == "okin_family"
+        assert "keep" in select_options(result, "choice")
+        flow = hass.config_entries.flow._progress[result["flow_id"]]
+        assert flow._manual_data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
+        hass.config_entries.flow.async_abort(result["flow_id"])
 
     async def test_bluetooth_confirm_diagnostic_bed_type_creates_entry(
         self,
@@ -2033,17 +2013,10 @@ class TestBluetoothDiscoveryFlow:
         )
         assert result["step_id"] == "bluetooth_confirm"
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
-                CONF_NAME: "Mystery Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
+        result = await _search_every_app(
+            hass, result, BED_TYPE_DISPLAY_NAMES[BED_TYPE_DIAGNOSTIC]
         )
+        result = await _settings(hass, result, {CONF_NAME: "Mystery Bed"})
 
         # A connectable scanner is mocked, so setup runs the probe behind a
         # progress view and then shows the verify_connection result step.
@@ -2080,17 +2053,10 @@ class TestBluetoothDiscoveryFlow:
             "_probe_capabilities",
             AsyncMock(return_value=CapabilityReport(device_found=False)),
         ):
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
-                    CONF_NAME: "Unreachable Bed",
-                    CONF_MOTOR_COUNT: 2,
-                    CONF_HAS_MASSAGE: False,
-                    CONF_DISABLE_ANGLE_SENSING: True,
-                    CONF_PREFERRED_ADAPTER: "auto",
-                },
+            result = await _search_every_app(
+                hass, result, BED_TYPE_DISPLAY_NAMES[BED_TYPE_DIAGNOSTIC]
             )
+            result = await _settings(hass, result, {CONF_NAME: "Unreachable Bed"})
 
             # The probe failed, but the verify step is informational only.
             assert result["type"] == FlowResultType.SHOW_PROGRESS
@@ -2122,9 +2088,10 @@ class TestBluetoothDiscoveryFlow:
             data=mock_bluetooth_service_info,
         )
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
+        result = await _settings(
+            hass,
+            result,
+            {
                 CONF_NAME: "My Bed",
                 # Frontend sends select-dropdown values as strings, not ints.
                 CONF_MOTOR_COUNT: "3",
@@ -2176,7 +2143,12 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
-        note = result["description_placeholders"]["detection_note"]
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[mock_bluetooth_service_info_octo_rc2, other_side],
+        ):
+            result = await _past_app_question(hass, result)
+        note = result["description_placeholders"]["setup_note"]
         assert "Split Octo beds often expose one BLE address per side" in note
         assert "Back + Legs Up" in note
 
@@ -2228,6 +2200,8 @@ class TestBluetoothDiscoveryFlow:
         )
 
         assert result["type"] == FlowResultType.FORM
+        result = await _past_app_question(hass, result)
+        assert result["step_id"] == "finish_settings"
         report_note = result["description_placeholders"]["report_note"]
         assert "issues/new?template=misidentified-bed.yml" in report_note
 
@@ -2321,7 +2295,12 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
-        note = result["description_placeholders"]["detection_note"]
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[mock_bluetooth_service_info_octo_rc2, other_side],
+        ):
+            result = await _past_app_question(hass, result)
+        note = result["description_placeholders"]["setup_note"]
         assert "Split Octo beds often expose one BLE address per side" in note
         assert "Back + Legs Up" in note
 
@@ -2397,9 +2376,9 @@ class TestBluetoothDiscoveryFlow:
             user_input={"bed_type_choice": BED_TYPE_OKIMAT},
         )
 
-        # Should proceed to confirm step
+        # Its family asks which app runs it
         assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "bluetooth_confirm"
+        assert result["step_id"] == "okin_family"
 
     async def test_bluetooth_disambiguate_show_all_option(
         self,
@@ -2407,8 +2386,7 @@ class TestBluetoothDiscoveryFlow:
         mock_bluetooth_service_info_ambiguous_okin: MagicMock,
         enable_custom_integrations,
     ):
-        """Test selecting 'show all' from disambiguation proceeds to confirm."""
-        # Start the flow
+        """Another app opens the full app list, which guesses nothing for an ambiguous bed."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": SOURCE_BLUETOOTH},
@@ -2416,23 +2394,15 @@ class TestBluetoothDiscoveryFlow:
         )
         assert result["step_id"] == "bluetooth_disambiguate"
 
-        # Select "show all bed types" option
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             user_input={"bed_type_choice": "show_all"},
         )
 
-        # Should proceed to confirm step with full bed type list available
         assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "bluetooth_confirm"
-        disconnect_marker = next(
-            marker
-            for marker in result["data_schema"].schema
-            if marker.schema == CONF_DISCONNECT_AFTER_COMMAND
-        )
-        # The low-confidence candidate would default this to True, but the form
-        # actually defaults to Auto-detect, whose conservative default is False.
-        assert disconnect_marker.default() is False
+        assert result["step_id"] == "select_app"
+        assert suggested(result, CONF_BED_TYPE) is None
+        hass.config_entries.flow.async_abort(result["flow_id"])
 
     async def test_bluetooth_disambiguate_creates_entry_with_selected_type(
         self,
@@ -2458,17 +2428,8 @@ class TestBluetoothDiscoveryFlow:
         )
         assert result["step_id"] == "bluetooth_confirm"
 
-        # Confirm with minimal input
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_NAME: "My Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
+        # Confirm the chosen protocol, then the final settings
+        result = await _settings(hass, result, {CONF_NAME: "My Bed", CONF_MOTOR_COUNT: 2})
 
         # A connectable scanner is mocked, so setup runs the probe behind a
         # progress view and then shows the verify_connection result step.
@@ -2503,237 +2464,56 @@ class TestBluetoothDiscoveryFlow:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={"bed_type_choice": "show_all"}
         )
-        assert result["step_id"] == "bluetooth_confirm"
+        assert result["step_id"] == "select_app"
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_BED_TYPE: choice,
-                    CONF_NAME: "Nectar Move",
-                    CONF_MOTOR_COUNT: 2,
-                    CONF_HAS_MASSAGE: False,
-                    CONF_DISABLE_ANGLE_SENSING: True,
-                    CONF_PREFERRED_ADAPTER: "auto",
-                },
+                result["flow_id"], {CONF_BED_TYPE: BED_TYPE_DISPLAY_NAMES.get(choice) or "Nectar Move"}
             )
+            result = await _settings(hass, result, {CONF_NAME: "Nectar Move"})
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_CST
         assert result["data"][CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
-
-    async def test_bluetooth_confirm_auto_detect_ambiguous_reprompts(
-        self,
-        hass: HomeAssistant,
-        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
-        enable_custom_integrations,
-    ):
-        """In the disambiguate -> show-all -> confirm path, 'Auto-detect' must not
-        silently resolve an ambiguous detection (issue #385, Codex round 3)."""
-        del enable_custom_integrations
-        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
-        from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-
-        # Sanity: the fixture is an ambiguous detection.
-        assert detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin).ambiguous_types
-
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": SOURCE_BLUETOOTH},
-            data=mock_bluetooth_service_info_ambiguous_okin,
-        )
-        assert result["step_id"] == "bluetooth_disambiguate"
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={"bed_type_choice": "show_all"},
-        )
-        assert result["step_id"] == "bluetooth_confirm"
-
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
-                CONF_NAME: "Auto Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
-
-        # Ambiguous → re-prompt on the confirm form rather than guessing.
-        assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "bluetooth_confirm"
-        assert result["errors"] == {"base": "auto_detect_failed"}
-
-    async def test_bluetooth_confirm_auto_detect_failure_reprompts(
-        self,
-        hass: HomeAssistant,
-        mock_bluetooth_service_info_unknown: MagicMock,
-    ):
-        """'Auto-detect' on an unidentifiable device re-shows the form with an error."""
-        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
-
-        flow = AdjustableBedConfigFlow()
-        flow.hass = hass
-        flow._discovery_info = mock_bluetooth_service_info_unknown
-        flow._show_full_bed_type_list = True
-
-        result = await flow.async_step_bluetooth_confirm(
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
-                CONF_NAME: "Mystery Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
-
-        assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "bluetooth_confirm"
-        assert result["errors"] == {"base": "auto_detect_failed"}
 
     async def test_bluetooth_confirm_normalizes_cst_profile_motor_count(
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: MagicMock,
     ) -> None:
-        """A two-motor CST profile must replace the detected three-motor default."""
+        """A two-motor CST profile must replace a submitted three-motor count."""
         flow = AdjustableBedConfigFlow()
-        flow.hass = hass
+        flow.hass, flow.context = hass, {"source": SOURCE_BLUETOOTH}
         flow._discovery_info = mock_bluetooth_service_info
 
-        result = await flow.async_step_bluetooth_confirm(
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_CAREFREE,
-                CONF_NAME: "Carefree Bed",
-                CONF_MOTOR_COUNT: 3,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
+        result = await flow._async_start_new_bed(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_CAREFREE)
+        assert result["step_id"] == "finish_settings"
+        result = await flow.async_step_finish_settings(
+            {CONF_NAME: "Carefree Bed", CONF_MOTOR_COUNT: 3}
         )
 
         assert result["step_id"] == "bluetooth_pairing"
         assert flow._manual_data is not None
         assert flow._manual_data[CONF_MOTOR_COUNT] == 2
 
-    async def test_manual_config_auto_detect_failure_reprompts(
-        self,
-        hass: HomeAssistant,
-        mock_bluetooth_service_info_unknown: MagicMock,
-    ):
-        """'Auto-detect' in the 'Show all BLE devices' manual path re-prompts on
-        failure rather than guessing (issue #385, Codex review)."""
-        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
-
-        flow = AdjustableBedConfigFlow()
-        flow.hass = hass
-        flow._discovery_info = mock_bluetooth_service_info_unknown
-
-        result = await flow.async_step_manual_config(
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
-                CONF_NAME: "Mystery Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
-
-        assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "manual_config"
-        assert result["errors"] == {"base": "auto_detect_failed"}
-
-    async def test_manual_config_normalizes_cst_profile_motor_count(
+    async def test_a_picked_device_normalizes_cst_profile_motor_count(
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: MagicMock,
     ) -> None:
         """A three-motor CST profile must replace the generic two-motor default."""
         flow = AdjustableBedConfigFlow()
-        flow.hass = hass
+        flow.hass, flow.context = hass, {"source": SOURCE_USER}
         flow._discovery_info = mock_bluetooth_service_info
+        flow._new_bed_origin = "picked"
 
-        result = await flow.async_step_manual_config(
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
-                CONF_NAME: "MF900 Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
+        result = await flow._async_start_new_bed(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_MF900)
+        assert result["step_id"] == "finish_settings"
+        result = await flow.async_step_finish_settings({CONF_NAME: "MF900 Bed", CONF_MOTOR_COUNT: 2})
 
         assert result["step_id"] == "manual_pairing"
         assert flow._manual_data is not None
         assert flow._manual_data[CONF_MOTOR_COUNT] == 3
-
-    async def test_manual_config_auto_detect_resolves(
-        self,
-        hass: HomeAssistant,
-        mock_bluetooth_service_info_leggett: MagicMock,
-    ):
-        """'Auto-detect' resolves to the detected type and leaves the manual form."""
-        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
-        from custom_components.adjustable_bed.detection import detect_bed_type
-
-        assert detect_bed_type(mock_bluetooth_service_info_leggett)  # fixture is detectable
-
-        flow = AdjustableBedConfigFlow()
-        flow.hass = hass
-        flow._discovery_info = mock_bluetooth_service_info_leggett
-
-        result = await flow.async_step_manual_config(
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
-                CONF_NAME: "Leggett Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
-
-        # Resolved to a real type and progressed past manual_config (no error).
-        assert not (result["type"] == FlowResultType.FORM and result["step_id"] == "manual_config")
-
-    async def test_manual_config_auto_detect_ambiguous_reprompts(
-        self,
-        hass: HomeAssistant,
-        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
-    ):
-        """Auto-detect must not silently resolve an ambiguous (shared-UUID)
-        detection to a guessed protocol (issue #385, Codex round 2)."""
-        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
-        from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-
-        # Sanity: the fixture is an ambiguous detection.
-        assert detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin).ambiguous_types
-
-        flow = AdjustableBedConfigFlow()
-        flow.hass = hass
-        flow._discovery_info = mock_bluetooth_service_info_ambiguous_okin
-
-        result = await flow.async_step_manual_config(
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
-                CONF_NAME: "Ambiguous Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
-
-        assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "manual_config"
-        assert result["errors"] == {"base": "auto_detect_failed"}
 
     async def test_bluetooth_disambiguate_okin_cst_requires_pairing(
         self,
@@ -2757,23 +2537,12 @@ class TestBluetoothDiscoveryFlow:
             result["flow_id"],
             user_input={"bed_type_choice": BED_TYPE_OKIN_CST},
         )
-        assert result["step_id"] == "bluetooth_confirm"
-
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_NAME: "My CST Bed",
-                CONF_MOTOR_COUNT: 3,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
         # The Okin question asks which app runs the CST bed (#573); keep it.
         assert result["step_id"] == "okin_family"
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={"choice": "keep"}
         )
+        result = await _settings(hass, result, {CONF_NAME: "My CST Bed", CONF_MOTOR_COUNT: 3})
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_pairing"
@@ -2912,7 +2681,7 @@ class TestManualFlow:
             )
 
         assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "manual_config"
+        assert result["step_id"] == "finish_settings"
         assert (
             "Split Octo beds often expose one BLE address per side"
             in result["description_placeholders"]["setup_note"]
@@ -2947,14 +2716,14 @@ class TestManualFlow:
             )
             result = await answer_app(hass, result, bed_type)
 
-        # The app question drew the form for this bed type, so it shows the bed
-        # type's own disconnect default and no follow-up asks it again.
+        # The final settings are drawn for this bed type, so they show its own
+        # disconnect default.
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_ADDRESS: "11:22:33:44:55:66",
-                    CONF_BED_TYPE: bed_type,
+            result = await _typed_address(
+                hass,
+                result,
+                "11:22:33:44:55:66",
+                {
                     CONF_NAME: "Manual Bed",
                     CONF_MOTOR_COUNT: 3,
                     CONF_HAS_MASSAGE: False,
@@ -2962,10 +2731,6 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
-            # The form was drawn for this bed type, so its routes were its own
-            # Advanced section and no route step follows.
-            assert result.get("step_id") != "route"
-            assert result.get("step_id") != "disconnect_after_command"
             result = await _advance_progress(hass, result)
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -2994,22 +2759,13 @@ class TestManualFlow:
             )
             result = await answer_app(hass, result, BED_TYPE_OKIN_CST)
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_ADDRESS: "11:22:33:44:55:66",
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_NAME: "MF900 Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
         # The Okin question names each CST product's app.
-        assert result["step_id"] == "okin_family"
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"choice": f"{BED_TYPE_OKIN_CST}:{OKIN_CST_VARIANT_MF900}"}
+        result = await _typed_address(
+            hass,
+            result,
+            "11:22:33:44:55:66",
+            {CONF_NAME: "MF900 Bed", CONF_MOTOR_COUNT: 2, CONF_PREFERRED_ADAPTER: "auto"},
+            {"okin_family": {"choice": f"{BED_TYPE_OKIN_CST}:{OKIN_CST_VARIANT_MF900}"}},
         )
 
         assert result["step_id"] == "manual_pairing"
@@ -3035,13 +2791,12 @@ class TestManualFlow:
             )
             result = await answer_app(hass, result, bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE))
 
-        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_ADDRESS: "11:22:33:44:55:67",
-                    CONF_BED_TYPE: choice,
+            result = await _typed_address(
+                hass,
+                result,
+                "11:22:33:44:55:67",
+                {
                     CONF_NAME: "Nectar Move",
                     CONF_MOTOR_COUNT: 3,
                     CONF_HAS_MASSAGE: False,
@@ -3061,7 +2816,6 @@ class TestManualFlow:
     ) -> None:
         """The app is findable by name in the app question."""
         del enable_custom_integrations
-        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
@@ -3080,23 +2834,20 @@ class TestManualFlow:
             )
 
         assert result["step_id"] == "manual_entry"
-        markers = shown_markers(result)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ADDRESS: "11:22:33:44:55:68"}
+        )
+        assert result["step_id"] == "finish_settings"
+        markers = {marker.schema: marker for marker in form_fields(result["data_schema"])}
         assert CONF_MOTOR_COUNT not in markers
         assert CONF_HAS_MASSAGE not in markers
         # The count bounds each HA movement; the app fixes the refresh interval.
         assert markers[CONF_MOTOR_PULSE_COUNT].default() == "10"
         assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
-        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_ADDRESS: "11:22:33:44:55:68",
-                    CONF_BED_TYPE: choice,
-                    CONF_NAME: "Nectar Move",
-                    CONF_PREFERRED_ADAPTER: "auto",
-                },
+                result["flow_id"], {CONF_NAME: "Nectar Move", CONF_PREFERRED_ADAPTER: "auto"}
             )
             result = await _advance_progress(hass, result)
 
@@ -3127,28 +2878,28 @@ class TestManualFlow:
             result = await answer_app(hass, result, BED_TYPE_MALOUF_APP)
 
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_ADDRESS: "11:22:33:44:55:66",
-                CONF_BED_TYPE: BED_TYPE_MALOUF_APP,
-                CONF_NAME: "Malouf Bed",
-                CONF_PREFERRED_ADAPTER: "auto",
-                CONF_DISCONNECT_AFTER_COMMAND: True,
-            },
+            result["flow_id"], user_input={CONF_ADDRESS: "11:22:33:44:55:66"}
         )
         assert result["step_id"] == "malouf_family"
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={"choice": "ffe5"}
         )
         assert result["step_id"] == "profile_questions"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_MOTOR_COUNT: "4",
+                CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
+                CONF_MALOUF_MEMORY_SLOTS: "2",
+            },
+        )
+        # The receiver's own settings come after its layout.
+        assert result["step_id"] == "finish_settings"
+        assert CONF_MOTOR_COUNT not in {marker.schema for marker in form_fields(result["data_schema"])}
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                user_input={
-                    CONF_MOTOR_COUNT: "4",
-                    CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
-                    CONF_MALOUF_MEMORY_SLOTS: "2",
-                },
+                {CONF_NAME: "Malouf Bed", CONF_PREFERRED_ADAPTER: "auto", CONF_DISCONNECT_AFTER_COMMAND: True},
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -3188,21 +2939,12 @@ class TestManualFlow:
             ),
             patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
         ):
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_ADDRESS: "11:22:33:44:55:66",
-                    CONF_BED_TYPE: BED_TYPE_KAIDI,
-                    CONF_NAME: "Kaidi Bed",
-                    CONF_MOTOR_COUNT: 2,
-                    CONF_HAS_MASSAGE: False,
-                    CONF_DISABLE_ANGLE_SENSING: True,
-                    CONF_PREFERRED_ADAPTER: "auto",
-                },
+            result = await _typed_address(
+                hass,
+                result,
+                "11:22:33:44:55:66",
+                {CONF_NAME: "Kaidi Bed", CONF_MOTOR_COUNT: 2, CONF_PREFERRED_ADAPTER: "auto"},
             )
-            # The form was drawn for this bed type, so its routes were its own
-            # Advanced section and no route step follows.
-            assert result.get("step_id") != "route"
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_KAIDI_ROOM_ID] == 0x12345678
@@ -3232,16 +2974,7 @@ class TestManualFlow:
             result = await answer_app(hass, result, BED_TYPE_LINAK)
 
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_ADDRESS: "invalid-mac",
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_NAME: "Manual Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
+            result["flow_id"], user_input={CONF_ADDRESS: "invalid-mac"}
         )
 
         assert result["type"] == FlowResultType.FORM
@@ -3269,21 +3002,12 @@ class TestManualFlow:
             result = await answer_app(hass, result, BED_TYPE_LINAK)
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_ADDRESS: "aa-bb-cc-dd-ee-ff",  # lowercase with dashes
-                    CONF_BED_TYPE: BED_TYPE_LINAK,
-                    CONF_NAME: "Manual Bed",
-                    CONF_MOTOR_COUNT: 2,
-                    CONF_HAS_MASSAGE: False,
-                    CONF_DISABLE_ANGLE_SENSING: True,
-                    CONF_PREFERRED_ADAPTER: "auto",
-                },
+            result = await _typed_address(
+                hass,
+                result,
+                "aa-bb-cc-dd-ee-ff",  # lowercase with dashes
+                {CONF_NAME: "Manual Bed", CONF_MOTOR_COUNT: 2, CONF_PREFERRED_ADAPTER: "auto"},
             )
-            # The form was drawn for this bed type, so its routes were its own
-            # Advanced section and no route step follows.
-            assert result.get("step_id") != "route"
             result = await _advance_progress(hass, result)
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -3879,10 +3603,11 @@ class TestOptionsFlow:
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
         flow.context = {}
+        flow._selected_bed_type = BED_TYPE_OCTO
 
-        result = await flow.async_step_manual_entry()
+        result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:96"})
 
-        markers = shown_markers(result, **{CONF_BED_TYPE: BED_TYPE_OCTO})
+        markers = {marker.schema: marker for marker in result["data_schema"].schema}
         assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
         assert CONF_MOTOR_COUNT not in markers
 
@@ -4707,7 +4432,7 @@ async def test_verify_connection_success_then_creates_entry(
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
     )
-    assert result["step_id"] == "bluetooth_confirm"
+    result = await _to_settings(hass, result)
 
     client = _fake_connected_client()
     with (
@@ -4758,7 +4483,7 @@ async def test_verify_connection_warns_when_no_writable_characteristic(
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
     )
-    assert result["step_id"] == "bluetooth_confirm"
+    result = await _to_settings(hass, result)
 
     # Service present, but only read/notify - nothing the integration can write to.
     char = MagicMock()
@@ -4788,6 +4513,7 @@ async def test_verify_connection_warns_when_no_writable_characteristic(
             AsyncMock(return_value=(None, None)),
         ),
     ):
+        result = await _to_settings(hass, result)
         verify = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
@@ -4813,7 +4539,7 @@ async def test_verify_connection_failure_still_creates_entry(
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
     )
-    assert result["step_id"] == "bluetooth_confirm"
+    result = await _to_settings(hass, result)
 
     with (
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=True),
@@ -4846,7 +4572,7 @@ async def test_verify_connection_skipped_without_scanner(
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
     )
-    assert result["step_id"] == "bluetooth_confirm"
+    result = await _to_settings(hass, result)
 
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         created = await hass.config_entries.flow.async_configure(
@@ -4889,6 +4615,7 @@ async def test_setup_shows_a_progress_view_before_the_result(
             AsyncMock(return_value=(None, None)),
         ),
     ):
+        result = await _to_settings(hass, result)
         progress = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
@@ -4936,6 +4663,7 @@ async def test_the_probe_runs_once_even_if_the_progress_step_is_re_entered(
             AsyncMock(return_value=(None, None)),
         ),
     ):
+        result = await _to_settings(hass, result)
         progress = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
@@ -4988,6 +4716,7 @@ async def test_a_not_advertising_bed_offers_retry_and_still_allows_finishing(
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=True),
         patch("bleak_retry_connector.establish_connection") as connects,
     ):
+        result = await _to_settings(hass, result)
         progress = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
@@ -5057,6 +4786,7 @@ async def test_an_advertising_bed_that_cannot_be_resolved_offers_retry(
             0.01,
         ),
     ):
+        result = await _to_settings(hass, result)
         progress = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
@@ -5109,6 +4839,7 @@ async def test_abandoning_the_flow_mid_probe_leaves_no_connected_client(
             _slow_discover,
         ),
     ):
+        result = await _to_settings(hass, result)
         progress = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
         )
@@ -6392,64 +6123,42 @@ async def test_the_preview_follows_the_adapter_the_user_actually_picked(
         )
         # An invalid timing value re-renders the form with everything the
         # user submitted still in hand.
-        rendered = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                # A pairing-required type, so the proxy warning is relevant.
-                CONF_BED_TYPE: BED_TYPE_VIBRADORM,
-                CONF_MOTOR_COUNT: 2,
-                CONF_MOTOR_PULSE_COUNT: "not a number",
-                CONF_PREFERRED_ADAPTER: "esphome_bedroom",
-            },
+        rendered = await _settings(
+            hass,
+            result,
+            {CONF_MOTOR_PULSE_COUNT: "not a number", CONF_PREFERRED_ADAPTER: "esphome_bedroom"},
         )
         assert rendered["type"] is FlowResultType.FORM
+        assert rendered["errors"] == {CONF_MOTOR_PULSE_COUNT: "invalid_number"}
 
     assert seen, "the form should have been re-rendered with a preview"
     _address, adapter, bed_type, _variant = seen[-1]
     assert adapter == "esphome_bedroom"
-    assert bed_type == BED_TYPE_VIBRADORM
+    assert bed_type == BED_TYPE_LINAK
 
 
-async def test_typed_address_setup_previews_the_transport_once_it_is_valid(
+async def test_typed_address_setup_previews_the_transport_in_the_final_settings(
     hass: HomeAssistant, enable_custom_integrations
 ) -> None:
     """Raw manual entry had no preview at all before connecting."""
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {"source": SOURCE_USER}
+    flow._selected_bed_type = BED_TYPE_LINAK
 
     with patch.object(
         AdjustableBedConfigFlow,
         "_async_transport_note",
         AsyncMock(return_value="Likely connection: Direct Bluetooth"),
     ):
+        result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:FF"})
+        assert result["step_id"] == "finish_settings"
         # An invalid motor count keeps us on the form, with the address known.
-        result = await flow.async_step_manual_entry(
-            {
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                # An explicit route, so the route step does not come first.
-                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-                CONF_MOTOR_COUNT: 99,
-            }
-        )
+        result = await flow.async_step_finish_settings({CONF_MOTOR_COUNT: 99})
 
     assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"}
     assert "Direct Bluetooth" in result["description_placeholders"]["transport"]
-
-
-async def test_typed_address_setup_previews_nothing_before_an_address_exists(
-    hass: HomeAssistant, enable_custom_integrations
-) -> None:
-    """There is nothing to predict until the user has typed a real address."""
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow.context = {"source": SOURCE_USER}
-
-    result = await flow.async_step_manual_entry(None)
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["description_placeholders"]["transport"] == ""
 
 
 async def test_a_replayed_confirmation_cannot_leave_a_removed_bond_marked(
@@ -7587,10 +7296,10 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
             context={"source": SOURCE_BLUETOOTH},
             data=mock_bluetooth_service_info_octo_rc2,
         )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
+        result = await _settings(
+            hass,
+            result,
             {
-                CONF_BED_TYPE: BED_TYPE_OCTO,
                 CONF_NAME: "Octo PIN test",
                 "advanced": {CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD},
                 CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",

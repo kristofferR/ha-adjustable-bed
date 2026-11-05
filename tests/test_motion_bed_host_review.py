@@ -11,10 +11,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
 from custom_components.adjustable_bed.beds.solace import SolaceController
 from custom_components.adjustable_bed.button import ControllerActionButton, async_setup_entry
-from custom_components.adjustable_bed.config_flow import (
-    BED_TYPE_AUTO_DETECT,
-    AdjustableBedConfigFlow,
-)
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     BED_TYPE_SOLACE,
@@ -27,6 +24,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
+from tests.form_helpers import finish_new_bed
 from tests.test_detection import _make_service_info
 from tests.test_motion_bed_lifecycle import real_coordinator
 
@@ -78,44 +76,45 @@ async def test_hub_reload_keeps_registry_customization_through_inventory_changes
 async def test_confirmed_solace_names_keep_solace_with_motion_bed_alternative(hass, name):
     """Hardware-confirmed Solace names must not regress into a forced chooser."""
     flow = AdjustableBedConfigFlow()
-    flow.hass = hass
+    flow.hass, flow.context = hass, {}
     flow._discovery_info = _make_service_info(name=name)
     result = await flow.async_step_bluetooth_confirm()
-    assert result["step_id"] == "bluetooth_confirm"
+    # The Solace question asks which app shares the name; Motion Bed is one answer.
+    assert result["step_id"] == "solace_family"
+    assert "motion_bed" in result["data_schema"].schema["choice"].config["options"]
     detected = detect_bed_type_detailed(flow._discovery_info)
     assert (detected.bed_type, detected.confidence) == (BED_TYPE_SOLACE, 0.9)
     assert detected.ambiguous_types == [BED_TYPE_MOTION_BED]
 
 
 @pytest.mark.parametrize("name", ["QMS-IQ", "SealyMF"])
-async def test_manual_auto_detect_keeps_confirmed_solace_names(hass, name):
+async def test_a_picked_confirmed_solace_name_suggests_solace(hass, name):
     flow = AdjustableBedConfigFlow()
-    flow.hass = hass
+    flow.hass, flow.context = hass, {}
     flow._discovery_info = _make_service_info(name=name)
-    result = await flow.async_step_manual_config()
+    flow._app_after_device = "device"
+    result = await flow.async_step_select_app()
     marker = next(k for k in result["data_schema"].schema if k.schema == CONF_BED_TYPE)
     assert result["data_schema"].schema[marker](marker.default()) == BED_TYPE_SOLACE
-    result = await flow.async_step_manual_config({CONF_BED_TYPE: BED_TYPE_AUTO_DETECT})
-    assert not result.get("errors")
 
 
 @pytest.mark.parametrize("app", [BED_TYPE_MOTION_BED, BED_TYPE_SOLACE])
 async def test_explicit_discovered_app_choice_reaches_its_real_factory(enable_custom_integrations, hass, app):
     flow = AdjustableBedConfigFlow()
-    flow.hass = hass
+    flow.hass, flow.context = hass, {}
     flow._discovery_info = _make_service_info(name="QMS-IQ")
     flow._finish_with_verify = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
-    # Solace stays preselected; Motion Bed is chosen on the same confirm form.
-    assert (await flow.async_step_bluetooth_confirm())["step_id"] == "bluetooth_confirm"
-    result = await flow.async_step_bluetooth_confirm({CONF_BED_TYPE: app, CONF_NAME: "QMS-IQ", CONF_DISCONNECT_AFTER_COMMAND: False})
+    # The Solace question asks which app shares the QMS name.
+    assert (await flow.async_step_bluetooth_confirm())["step_id"] == "solace_family"
+    settings = {CONF_NAME: "QMS-IQ", CONF_DISCONNECT_AFTER_COMMAND: False}
     if app == BED_TYPE_MOTION_BED:
+        result = await flow.async_step_solace_family({"choice": "motion_bed"})
         assert result["step_id"] == "profile_questions"
-        await flow.async_step_profile_questions({CONF_BLE_DEVICE_NAME: "QMS-IQ"})
+        result = await flow.async_step_profile_questions({CONF_BLE_DEVICE_NAME: "QMS-IQ"})
     else:
-        # The Solace row asks which app shares the QMS name.
-        assert result["step_id"] == "solace_family"
         result = await flow.async_step_solace_family({"choice": "name_route"})
-        assert result["type"] == FlowResultType.CREATE_ENTRY
+    result = await finish_new_bed(flow, result, settings)
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     flow._finish_with_verify.assert_awaited_once()
     data = flow._finish_with_verify.call_args.args[0]
     assert data[CONF_BED_TYPE] == app

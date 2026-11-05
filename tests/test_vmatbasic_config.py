@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.pairing_candidates import encode_pair_selection
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, form_fields, start_new_bed
 from tests.test_vmatbasic import make_controller
 
 ADDRESS = "11:22:33:44:55:66"
@@ -34,30 +35,20 @@ def app_data(profile="basic", **extra):
     }
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_all_setup_routes_collect_explicit_profile_without_bond(
-    hass, mock_bluetooth_service_info, step
+    hass, mock_bluetooth_service_info, route
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, "async_step_" + step)(
-        {
-            CONF_ADDRESS: ADDRESS,
-            CONF_NAME: "Basic",
-            const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
-    # The first editable selector change rebuilds its formerly generic form.
-    if result["step_id"] == step:
-        values = result["data_schema"]({CONF_ADDRESS: ADDRESS} if step == "manual_entry" else {})
-        assert const.CONF_MOTOR_COUNT not in values
-        assert const.CONF_MOTOR_PULSE_DELAY_MS not in values
-        result = await getattr(flow, "async_step_" + step)(values)
+    settings = {
+        CONF_NAME: "Basic",
+        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_PREFERRED_ADAPTER: "auto",
+    }
+    result = await start_new_bed(flow, route, const.BED_TYPE_VMATBASIC)
     assert result["step_id"] == "vibradorm"
     result = await flow.async_step_vibradorm({"app": "vmatbasic"})
     assert result["step_id"] == "profile_questions"
@@ -67,6 +58,10 @@ async def test_all_setup_routes_collect_explicit_profile_without_bond(
         new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
     ) as finish:
         result = await flow.async_step_profile_questions({const.CONF_VMATBASIC_PROFILE: "basic"})
+        # The app fixes the layout and cadence, so neither is asked after it.
+        fields = {marker.schema for marker in form_fields(result["data_schema"])}
+        assert {const.CONF_MOTOR_COUNT, const.CONF_MOTOR_PULSE_DELAY_MS}.isdisjoint(fields)
+        result = await finish_new_bed(flow, result, settings)
     assert result["type"] == FlowResultType.CREATE_ENTRY
     data = finish.call_args.args[0]
     assert data[const.CONF_VMATBASIC_PROFILE] == "basic"

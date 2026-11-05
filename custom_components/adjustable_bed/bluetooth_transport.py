@@ -532,7 +532,7 @@ def path_from_service_info(
 # Only the dynamic parts — scanner name, signal, adapter id — are interpolated
 # here; the prose itself is translated.
 
-_TRANSPORT_STRINGS_PREFIX = "step.bluetooth_confirm.data_description"
+_TRANSPORT_STRINGS_PREFIX = "step.finish_settings.data_description"
 
 _DEFAULT_STRINGS: dict[str, str] = {
     "transport_direct": "Direct Bluetooth",

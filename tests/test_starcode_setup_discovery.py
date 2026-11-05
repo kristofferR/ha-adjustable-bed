@@ -13,13 +13,10 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
 from custom_components.adjustable_bed.bluetooth_transport import TransportClass
-from custom_components.adjustable_bed.config_flow import (
-    BED_TYPE_AUTO_DETECT,
-    AdjustableBedConfigFlow,
-)
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from tests.form_helpers import answer_app, suggested
+from tests.form_helpers import answer_app, form_fields, select_options, suggested
 from tests.test_config_flow import _advance_only_progress, _fake_connected_client, _patch_gate
 
 _APP_PROBE_ROLES = {
@@ -54,6 +51,15 @@ async def _answer_starcode_family(hass, result):
             result["flow_id"], user_input={"choice": "m5x4"}
         )
     return result
+
+async def _settings_if_asked(hass, result):
+    """Submit a new bed's final settings, once its app's questions are answered."""
+    if result.get("step_id") == "finish_settings":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={const.CONF_DISCONNECT_AFTER_COMMAND: False}
+        )
+    return result
+
 
 def _app_probe_client(selector: str) -> MagicMock:
     service, write, notify = _APP_PROBE_ROLES[selector]
@@ -102,17 +108,16 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
                 else const.BED_TYPE_STARCODE_ABM5_4
             },
         )
-        assert result["step_id"] == "bluetooth_confirm"
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            **({CONF_ADDRESS: mock_bluetooth_service_info.address} if route == "manual" else {}),
-            CONF_NAME: "Explicit app bed",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
-    )
+    if route == "manual":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
+        )
+    elif route == "show_all":
+        # Every app, searched for this bed.
+        assert result["step_id"] == "select_app"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4}
+        )
     result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
     client = _app_probe_client("BOX3633")
@@ -147,6 +152,15 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
             user_input={
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",
+            },
+        )
+        assert result["step_id"] == "finish_settings"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "Explicit app bed",
+                const.CONF_PREFERRED_ADAPTER: "auto",
+                const.CONF_DISCONNECT_AFTER_COMMAND: False,
             },
         )
         assert result["type"] == FlowResultType.SHOW_PROGRESS
@@ -201,12 +215,15 @@ async def test_real_discovery_preserves_receiver_choice_and_blocks_show_all_auto
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={"bed_type_choice": receiver}
     )
-    assert result["step_id"] == "bluetooth_confirm"
-    schema = result["data_schema"]
-    assert schema is not None
-    defaults = schema({})
-    assert isinstance(defaults, dict)
-    assert defaults[const.CONF_BED_TYPE] == receiver
+    if receiver == const.BED_TYPE_SLEEPYS_BOX25:
+        # The Sleepy's question asks the app, and Keep saves the chosen receiver.
+        assert result["step_id"] == "sleepys_family"
+        assert "keep" in select_options(result, "choice")
+        flow = hass.config_entries.flow._progress[result["flow_id"]]
+        assert flow._manual_data[const.CONF_BED_TYPE] == receiver
+    else:
+        assert result["step_id"] == "bluetooth_confirm"
+        assert suggested(result, const.CONF_BED_TYPE) == receiver
     hass.config_entries.flow.async_abort(result["flow_id"])
     result = await hass.config_entries.flow.async_init(
         const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
@@ -214,17 +231,10 @@ async def test_real_discovery_preserves_receiver_choice_and_blocks_show_all_auto
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={"bed_type_choice": "show_all"}
     )
-    schema = result["data_schema"]
-    assert schema is not None
-    defaults = schema({})
-    assert isinstance(defaults, dict)
-    assert defaults[const.CONF_BED_TYPE] == BED_TYPE_AUTO_DETECT
-    rejected = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT}
-    )
-    assert rejected["type"] == FlowResultType.FORM
-    assert rejected["errors"] == {"base": "auto_detect_failed"}
-    hass.config_entries.flow.async_abort(rejected["flow_id"])
+    # Every app is listed, and the shared UART suggests none of them.
+    assert result["step_id"] == "select_app"
+    assert suggested(result, const.CONF_BED_TYPE) is None
+    hass.config_entries.flow.async_abort(result["flow_id"])
 
 
 async def test_unrelated_unique_receiver_still_reaches_normal_confirm(
@@ -303,13 +313,6 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
             )
-            # The app question suggests the confidently detected receiver.
-            assert result["step_id"] == "select_app"
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"],
-                user_input={const.CONF_BED_TYPE: suggested(result, const.CONF_BED_TYPE)},
-            )
-            assert result["step_id"] == "manual_config"
         else:
             # Preserve a full-list choice while the scanner gains the private service.
             mock_bluetooth_service_info.service_uuids = []
@@ -323,14 +326,19 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={"bed_type_choice": "show_all"}
             )
-            assert result["step_id"] == "bluetooth_confirm"
-        schema = result["data_schema"]
-        assert schema is not None
-        defaults = schema({})
-        assert isinstance(defaults, dict)
-        assert defaults[const.CONF_BED_TYPE] == const.BED_TYPE_OCTO
-        assert defaults[const.CONF_MOTOR_PULSE_COUNT] == "3"
-        assert defaults[const.CONF_MOTOR_PULSE_DELAY_MS] == "50"
+        # The app question suggests the confidently detected receiver.
+        assert result["step_id"] == "select_app"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={const.CONF_BED_TYPE: suggested(result, const.CONF_BED_TYPE)},
+        )
+        assert result["step_id"] == "finish_settings"
+        defaults = {
+            marker.schema: marker.default()
+            for marker in form_fields(result["data_schema"])
+            if marker.schema in (const.CONF_MOTOR_PULSE_COUNT, const.CONF_MOTOR_PULSE_DELAY_MS)
+        }
+        assert defaults == {const.CONF_MOTOR_PULSE_COUNT: "3", const.CONF_MOTOR_PULSE_DELAY_MS: "50"}
         with (
             patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
             patch(
@@ -341,11 +349,6 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
                 user_input={
-                    # The manual route answered the app question with the detected
-                    # Octo row; the full list leaves it to Auto-detect.
-                    const.CONF_BED_TYPE: (
-                        const.BED_TYPE_OCTO if route == "manual" else BED_TYPE_AUTO_DETECT
-                    ),
                     "advanced": {const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2},
                     const.CONF_DISCONNECT_AFTER_COMMAND: False,
                 },
@@ -410,7 +413,8 @@ async def test_star_scan_without_service_list_keeps_name_based_chooser(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={"bed_type_choice": const.BED_TYPE_STARCODE_ABM5_4}
     )
-    assert result["step_id"] == "bluetooth_confirm"
+    # The StarCode question asks which of its apps runs the bed.
+    assert result["step_id"] == "starcode_family"
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
@@ -431,12 +435,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
     result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     assert result["step_id"] == "manual_entry"
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
     result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
@@ -467,6 +466,10 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: selected_transport,
             },
+        )
+        assert result["step_id"] == "finish_settings"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={const.CONF_DISCONNECT_AFTER_COMMAND: False}
         )
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
@@ -646,12 +649,7 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
     )
     result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
     result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
@@ -674,6 +672,7 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220",
             },
         )
+        result = await _settings_if_asked(hass, result)
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
@@ -741,13 +740,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
     )
     result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            CONF_NAME: "Star display alias",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
     result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
@@ -783,6 +776,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
             },
         )
+        result = await _settings_if_asked(hass, result)
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
@@ -843,13 +837,7 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
     )
     result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            CONF_NAME: "Star display alias",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
     result = await _answer_starcode_family(hass, result)
     with (
@@ -872,6 +860,7 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}
         )
+        result = await _settings_if_asked(hass, result)
         assert result["type"] == FlowResultType.CREATE_ENTRY
     connect.assert_not_awaited()
     assert const.CONF_BLE_DEVICE_NAME not in result["data"]

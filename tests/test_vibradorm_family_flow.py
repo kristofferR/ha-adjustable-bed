@@ -45,6 +45,7 @@ from custom_components.adjustable_bed.profile_review import (
     async_refresh_profile_review_issue,
     profile_review_mark,
 )
+from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.test_vibradorm_app import make_controller as make_app
 from tests.test_vibradorm_app_config import app_data
 from tests.test_vibradorm_vmat import make_vmat
@@ -586,37 +587,29 @@ async def test_unchanged_rendered_options_keep_internal_family_route(hass, bed_t
 
 
 @pytest.mark.parametrize(
-    "step,pairing",
+    "route,pairing",
     [
-        ("manual_entry", "manual_pairing"),
-        ("manual_config", "manual_pairing"),
-        ("bluetooth_confirm", "bluetooth_pairing"),
+        ("typed", "manual_pairing"),
+        ("picked", "manual_pairing"),
+        ("discovered", "bluetooth_pairing"),
     ],
 )
 async def test_fresh_legacy_choice_keeps_existing_pairing_route(
-    hass, mock_bluetooth_service_info, step, pairing
+    hass, mock_bluetooth_service_info, route, pairing
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, "async_step_" + step)(
-        {
-            CONF_ADDRESS: ADDRESS,
-            CONF_NAME: "Bed",
-            const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        }
-    )
+    settings = {CONF_NAME: "Bed", const.CONF_PREFERRED_ADAPTER: "auto", const.CONF_DISCONNECT_AFTER_COMMAND: False}
+    result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM)
     assert result["step_id"] == "vibradorm"
     # The legacy setup asks its motors, massage and angle sensing, then pairs.
     result = await flow.async_step_vibradorm({"app": "legacy"})
     assert result["step_id"] == "profile_questions"
     with patch.object(flow, "async_step_" + pairing, new=AsyncMock()) as pair:
-        await flow.async_step_profile_questions(
+        await finish_new_bed(flow, await flow.async_step_profile_questions(
             {const.CONF_MOTOR_COUNT: "3", const.CONF_HAS_MASSAGE: True}
-        )
+        ), settings)
     pair.assert_awaited_once_with()
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
     assert flow._manual_data[const.CONF_MOTOR_COUNT] == 3

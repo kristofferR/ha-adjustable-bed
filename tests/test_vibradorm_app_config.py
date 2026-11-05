@@ -45,6 +45,7 @@ from custom_components.adjustable_bed.pairing import (
 from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from custom_components.adjustable_bed.vibradorm_app_state import clear_vibradorm_app_session_intent
+from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.hold_lease_wire import virtual_clock
 
 PREFIX = "custom_components.adjustable_bed.config_flow."
@@ -67,23 +68,18 @@ def app_data(app="caresse", control="2", **extra):
     }
 
 
-@pytest.mark.parametrize("step,pairing", [
-    ("manual_entry", "manual_pairing"),
-    ("manual_config", "manual_pairing"),
-    ("bluetooth_confirm", "bluetooth_pairing"),
+@pytest.mark.parametrize("route,pairing", [
+    ("typed", "manual_pairing"),
+    ("picked", "manual_pairing"),
+    ("discovered", "bluetooth_pairing"),
 ])
-async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_service_info, step, pairing):
+async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_service_info, route, pairing):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")({
-        CONF_ADDRESS: ADDRESS, CONF_NAME: "App bed",
-        const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        const.CONF_PREFERRED_ADAPTER: "auto",
-    })
+    settings = {CONF_NAME: "App bed", const.CONF_DISCONNECT_AFTER_COMMAND: False, const.CONF_PREFERRED_ADAPTER: "auto"}
+    result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM_APP)
     assert result["step_id"] == "vibradorm"
     result = await flow.async_step_vibradorm({"app": "caresse"})
     assert result["step_id"] == "profile_questions"
@@ -96,7 +92,7 @@ async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_se
         "value": True,
     }
     with patch.object(flow, f"async_step_{pairing}", new=AsyncMock()) as resume:
-        await flow.async_step_profile_questions({const.CONF_VIBRADORM_RESTORED: False})
+        await finish_new_bed(flow, await flow.async_step_profile_questions({const.CONF_VIBRADORM_RESTORED: False}), settings)
     resume.assert_awaited_once_with()
     assert flow._manual_data[const.CONF_VIBRADORM_CONTROL_TYPE] == "2"
     assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True

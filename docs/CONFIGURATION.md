@@ -39,23 +39,26 @@ The first screen lists the discovered beds, each named with its family, then:
 - **Scan again for beds** and **Browse unsupported BLE devices**, and
   **Combine two beds into one (Dual Bed)** when two beds are set up.
 
-You then choose the options that bed type asks for, such as motor count and
-massage support. The form shows only the fields of the row you choose.
+A discovered bed asks first which app or remote controls it, from its detected
+family: that family's own question, or the detected bed type's rows. **Another
+app or remote** opens the full app list for the same bed. The family question's
+**Keep** answer saves the detected route. Detection never picks an app by
+itself, because a bed's name and Bluetooth services do not tell these apps
+apart. The Reverie and Sleep Number rows settle the receiver from the bed's
+advertised service, and ask only when it does not.
 
-- The bed-type list is searchable: type part of an app, brand or controller
-  name. A discovered bed starts on the detected row.
-- For a family with a [guided change](#changing-the-app-or-layout-of-an-existing-bed),
-  choosing its row, or a discovered bed of that family, asks which app or
-  remote controls the bed, because a bed's name and Bluetooth services do not
-  tell these apps apart. Where offered, the question's keep answer saves the
-  detected route. The Okin CST, Remacro, Richmat and StarCode rows ask their
-  app the same way, and the Reverie and Sleep Number rows ask only when the
-  bed's advertised service does not settle the receiver.
-- An app row sets its own route. A bed type with several receiver routes lists
-  them in a collapsed **Advanced: receiver route** section, or in a short
-  **Receiver route** step (see [Protocol Variants](#protocol-variants)).
-- The app or remote you choose then asks its own questions, such as a layout,
-  handset ID or remote style.
+The app or remote you choose then asks its own questions, such as a layout,
+handset ID or remote style. The final settings come last, drawn for the route
+you chose:
+
+- **Name**, **Bluetooth adapter** and **Disconnect after each command**;
+- the settings the app or remote does not set itself, such as the motor count
+  or massage, and a bed type's own fields, such as the Octo PIN;
+- **Advanced: receiver route**, collapsed, for a bed type with several receiver
+  routes (see [Protocol Variants](#protocol-variants)). An app sets its own
+  route;
+- **Advanced connection and timing**, collapsed: the motor pulse count and
+  delay and the idle disconnect timeout.
 
 **Glideaway Motion / Montion app:** Select the explicit MOTION 400, 450, 500 or
 600 app entry matching the app's model selection. Layout, massage and light
@@ -417,9 +420,8 @@ Auto-detection usually works, but you can override if needed.
 
 Setup asks for a route only when the chosen bed type has more than one, and
 lists only that bed type's own labelled routes. An app chosen from the bed-type
-list sets its route itself. For a discovered or preselected bed the routes sit
-in a collapsed **Advanced: receiver route** section of the form; choosing
-another bed type with several routes adds a short route step. Configure lists
+list sets its route itself. The final settings list the routes in a collapsed
+**Advanced: receiver route** section. Configure lists
 the routes of the saved bed type. In a family with a
 [guided change](#changing-the-app-or-layout-of-an-existing-bed), the app question chooses the route and Configure
 refuses a route change; use **Reconfigure**. Additional

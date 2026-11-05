@@ -1113,20 +1113,18 @@ async def test_discovery_offers_only_the_apps_that_list_the_model(
     from homeassistant.config_entries import SOURCE_BLUETOOTH
 
     mock_bluetooth_service_info_remacro.manufacturer_data = {55: b""}
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info_remacro
-    )
-    assert result["step_id"] == "bluetooth_confirm"
     with patch(_HISTORY, return_value=None):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_BED_TYPE: BED_TYPE_REMACRO}
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info_remacro
         )
-    # The Remacro row asks the app; Jerome's does not list company ID 55.
+    # The Remacro question is the bed's app question; Jerome's does not list
+    # company ID 55, and every other app is one answer away.
     assert result["step_id"] == "remacro_family"
     assert result["description_placeholders"]["model"] == "CS-B200M(ASI)"
     assert result["data_schema"].schema["choice"].config["options"] == [
         "slumberland",
         "the_brick",
+        "another",
     ]
 
 
