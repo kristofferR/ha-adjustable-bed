@@ -830,6 +830,13 @@
           "choice": "App"
         }
       },
+      "reverie_family": {
+        "title": "Which Reverie receiver is in this bed?",
+        "description": "Reverie bases use a Protocol 110 or a Protocol 108 receiver, and the receiver's Bluetooth service, not the app or name, tells them apart. Home Assistant could not see which service this bed advertises. Check it with a Bluetooth scanner app such as nRF Connect: Protocol 110 receivers advertise the Nightstand service `db801000-...`, Protocol 108 receivers the service `1b1d9641-...`.",
+        "data": {
+          "choice": "Receiver"
+        }
+      },
       "jiecang_legacy": {
         "title": "Motors on this bed",
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
@@ -9305,6 +9312,13 @@
         "slumberland": "Slumberland app",
         "the_brick": "The Brick app",
         "jeromes": "Jerome's app"
+      }
+    },
+    "reverie_family_choice": {
+      "options": {
+        "protocol_110": "Protocol 110 receiver (Nightstand service)",
+        "protocol_108": "Protocol 108 receiver (older service)",
+        "keep": "I don't know: keep the detected receiver"
       }
     }
   }

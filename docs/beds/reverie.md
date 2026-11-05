@@ -71,6 +71,23 @@ app model remains the source of feature gates.
 The integration discovers Protocol 108 from its GATT service and Protocol 110
 from the Nightstand service.
 
+The bed-type list has one **Reverie: Nightstand app, Protocol 110 and Protocol
+108 receivers** row, and the **Reverie** brand opens the same question. The
+receiver's advertised service decides the route, never the app or the name:
+
+| Advertised service | Route |
+|---|---|
+| Nightstand `db801000-f324-29c3-38d1-85c0c2e86885` | Protocol 110 (`reverie_nightstand`) |
+| `1b1d9641-b942-4da8-89cc-98e6a58fbd93` | Protocol 108 (`reverie`) |
+
+When Home Assistant has seen the advertisement, setup confirms the route from
+it without asking. Otherwise it asks which receiver the bed has, and a detected
+route stays one answer away. Either route then asks the model the app shows,
+with **Auto-detect** as the default. **Configure** lists both receivers under
+their own names, so an entry on the wrong one can move without being removed;
+a working entry needs no change. Pairlink (R510L / Harmoniq) keeps its own row
+and setup.
+
 The selected profile controls which movement, position, massage, memory,
 preset, lumbar, and body-tilt entities are created. A model capability flag for
 the Pillow surface has no matching reachable direct BLE command in the accepted
