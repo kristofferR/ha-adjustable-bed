@@ -136,7 +136,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | S stream | U | U | revive, best, blvd, harmony, ideal, row055 | KEEP rows repeat until removed, STOP after 120 ms; speed rows are massage |
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
 | `hjbed` | S stream | U | U | row121 | per-action recovered release |
-| `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | B | B | row066 | held buttons refresh every 150 ms (110 ms for TWRM and MLRM names), then the mode's release 50 ms later; not declared yet: the same buttons also carry short, long and memory-arm gestures, and the Hold/Release selector changes a button's effective gesture, so a [per-control scope](#per-control-hold-scope) needs its own review against row066. #516 and #591 not assessed yet |
+| `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | B | B | avocado, coaster, fortywinks, milemont, superior, row066 | keep buttons repeat every 150 ms tick (110 ms for TWRM and MLRM names) until UP, then release 50 ms later; hold declared per control, on the held controls that run the keep mode under the current selection (see [per-control scope](#per-control-hold-scope)). #516 and #591 not assessed yet |
 | `bedtech` | B | B | B | bedtech | report PARTIAL |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
@@ -363,6 +363,38 @@ A lease reuses the existing press loop: expiry ends the refresh through the
 cancel event, the 30-second ceiling is clock time rather than a tick count, and
 the release follows with a fresh cleanup write.
 
+The classic Richmat apps are the second scoped row. All five accepted reports
+(avocado, coaster, fortywinks, milemont, superior) give one sender state
+machine: a keep button (worker mode 1) enqueues its payload every worker tick,
+150 ms or 110 ms for TWRM and MLRM names, with no fixed count until UP; UP sets
+mode 0, which waits 50 ms and sends the release (`6E` raw, or `6E 01 mode 6E
+sum8` framed). Once and short presses (mode 2), long presses (modes 3 and 4)
+and the one-shot mode 5 run their own gestures. Three selectors change which
+mode a press runs, so the scope is recomputed from them on every read:
+
+- **Hold/Release** (BRRM, YFRM, YGRM): Hold turns the recall presets and Flat
+  into keep buttons and reveals their separate save buttons; Release restores
+  long-press recall and single-shot Flat.
+- **Memory arming** (GXRM, JDRM, JFRM, JGRM SelectView): an armed action runs
+  forced mode 10, one short or long payload, so it leaves the scope until the
+  arm is used.
+- **Head/foot** (GVRM tag 63): the foot side reaches the null legacy-long
+  getter and sends nothing, so those controls leave the scope.
+
+The scope comes from the accepted caller transition (`cluster018_caller`), and
+`tests/test_cluster018_hold_lease.py` checks it against every accepted DOWN and
+UP caller vector. Some controls send only on one wire (GVRM ships a few with
+only the legacy operand, which only RAW sends), so offline the last session's
+wire decides; before any session either wire may, and the press checks the
+session's own. The press also refuses a lease when a selector changed after
+admission. Outside the scope:
+
+| Control | Disposition |
+|---|---|
+| E3RM tvMem recall | The app's keep mode while unarmed, but a tap control here because the same button saves once armed; it has no `hold_control` route a lease could renew |
+| Desk recall and reset (FWRM, WFRM) | A separate 200 ms sender with no release frame, run by the `richmat_classic` desk action rather than `hold_control` |
+| APRM, AQRM Release/Hold buttons | `setReleaseHold` has no branch for these layouts, so their buttons keep their ordinary gestures |
+
 ### Scheduler and coordinator
 
 **#483 hold lease.** A held intent carries a lease: owner, generation and a
@@ -551,6 +583,7 @@ Report workspaces are machine-local under
 | americanstar | `com.ore.americanstar` | 1.0 | COMPLETE | `com.ore.americanstar-1.0-2026-11-03-bulk061-001/report/` |
 | avanti | `com.ore.AvantiBases` | 1.0.5 | COMPLETE | `com.ore.AvantiBases-1.0.5-2026-11-03-bulk061-001/report/` |
 | aviada | `com.okin.bedding.rizeaviada` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeaviada-1.0.1-2026-08-30/report/` |
+| avocado | `com.richmat.avocadoecobase` | 1.0.4 | COMPLETE | `com.richmat.avocadoecobase-1.0.4-2026-11-03-bulk061-clean002/work/report-revision-sol-003/` |
 | bedsense | `com.fenmenbielei.bedsense` | 1.8 | COMPLETE | `com.fenmenbielei.bedsense-1.8-2026-11-03-bulk101-188-001/report/` |
 | bedtech | `com.richmat.bed_tech` | 2.8.3 | PARTIAL | `com.richmat.bed_tech-2.8.3-2026-11-03-bulk061-001/report/` |
 | best | `com.richmat.best_mattress` | 1.1.1 | COMPLETE | `com.richmat.best_mattress-1.1.1-2026-10-02-queue-e0bb6807-20261001-055-005/report/` |
@@ -563,6 +596,7 @@ Report workspaces are machine-local under
 | casper | `com.richmat.casperbase` | 1.0.8 | PARTIAL | `com.richmat.casperbase-1.0.8-2026-11-03-bulk101-188-001/report/` |
 | cherish | `com.okin.ore.cherish` | 1.0.4 | COMPLETE | `com.okin.ore.cherish-1.0.4-2026-11-03-bulk061-001/report/` |
 | clarity | `com.okin.bedding.customaticclarity` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticclarity-1.0.1-2026-08-30/report/` |
+| coaster | `com.richmat.coastersleep` | 1.0.10 | COMPLETE | `com.richmat.coastersleep-1.0.10-2026-11-03-bulk061-clean002/work/report-revision-sol-001/` |
 | contempo | `com.okin.bedding.rizecontempo` | 1.0.2 | COMPLETE | `com.okin.bedding.rizecontempo-1.0.2-2026-08-30/report/` |
 | coolbase | `com.keeson.coolbase` | 1.0.0 | COMPLETE | `com.keeson.coolbase-1.0.0-2026-10-01-queue-e0bb6807-20261001-047-002/report/` |
 | costco | `com.sbi.costco` | 1.8 | COMPLETE | `com.sbi.costco-1.8-2026-10-26-39bdcafa-repair-001/report/` |
@@ -577,6 +611,7 @@ Report workspaces are machine-local under
 | eshine | `com.richmat.eshinesleep` | 1.0.1 | COMPLETE | `com.richmat.eshinesleep-1.0.1-2026-11-03-bulk101-188-001/report/` |
 | eshine-okin | `com.okin.eshine` | 1.1.8 | COMPLETE | `com.okin.eshine-1.1.8-2026-11-03-bulk101-188-001/work/report-repair-sol-002/` |
 | floyd | `com.kaidi_test4.floyd` | 1.0.7 | PARTIAL | `com.kaidi_test4.floyd-1.0.7-2026-11-03-bulk101-188-001/report/` |
+| fortywinks | `com.richmat.fortywinks` | 1.0.1 | COMPLETE | `com.richmat.fortywinks-1.0.1-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | fsm | `com.limoss.fsmrelax` | 1.9 | COMPLETE | `com.limoss.fsmrelax-1.9-2026-09-30-extra-four-075-001/report/` |
 | glide | `com.ore.bedding.glideawaymontion` | 1.0.3 | COMPLETE | `com.ore.bedding.glideawaymontion-1.0.3-2026-11-03-bulk061-001/report/` |
 | goodvibe | `com.richmat.goodvibesleep` | 2.0.1 | COMPLETE | `com.richmat.goodvibesleep-2.0.1-2026-11-03-bulk101-188-001/work/report-repair-sol-003/` |
@@ -609,6 +644,7 @@ Report workspaces are machine-local under
 | mancini | `cn.com.mancini` | 1.0.5 | COMPLETE | `cn.com.mancini-1.0.5-20260722/report/` |
 | maxcoil | `com.ore.maxcoil` | 1.1.0 | COMPLETE | `com.ore.maxcoil-1.1.0-2026-10-02-queue-903926b6-20261002-056-002/report/` |
 | mf900 | `com.okin.bedding.rizemf900` | 1.1.2 | COMPLETE | `com.okin.bedding.rizemf900-1.1.2-20260826/report/` |
+| milemont | `com.richmat.milemont` | 1.0.4 | COMPLETE | `com.richmat.milemont-1.0.4-2026-11-03-bulk061-001/work/report-revision-sol-002/` |
 | minghua | `com.okin.minghua.R` | 1.0.1 | COMPLETE | `com.okin.minghua.R-1.0.1-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | motionflex | `com.sealy.motionflex` | 1.0.3 | COMPLETE | `com.sealy.motionflex-1.0.3-20260830/report/` |
 | moto | `com.HHC.MotoMotion` | 3.1.9 | BLOCKED | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/report/` |
@@ -638,6 +674,7 @@ Report workspaces are machine-local under
 | sleepy | `com.okin.bedding.sleepy` | 1.1.5 | COMPLETE | `com.okin.bedding.sleepy-1.1.5-2026-10-26-39bdcafa-repair-005/report/` |
 | slim | `com.sfd.slim` | 1.3 | COMPLETE | `com.sfd.slim-1.3-2026-10-26-39bdcafa-001/report/` |
 | slumber | `com.cheers.slumber` | v1.0 | COMPLETE | `com.cheers.slumber-v1.0-2026-10-01-queue-e0bb6807-20261001-050-001/report/` |
+| superior | `com.richmat.superior` | 1.0.9 | COMPLETE | `com.richmat.superior-1.0.9-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | support | `com.okin.bedding.support` | 1.0.4 | COMPLETE | `com.okin.bedding.support-1.0.4-2026-08-30/report/` |
 | svane | `com.svane.svaneremote` | Version 1.8 | COMPLETE | `com.svane.svaneremote-Version_1.8-2026-09-30-extra-four-b-130-003/report/` |
 | tempur | `com.ore.tempur` | 1.7 | COMPLETE | `com.ore.tempur-1.7-2026-10-26-39bdcafa-repair-001/report/` |

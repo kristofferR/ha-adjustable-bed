@@ -197,6 +197,12 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to held controls whose effective gesture is a sustained press:
     # short, long and short-and-long gestures and memory mode keep theirs.
     "goodvibe": {"hold": ("goodvibe",), "hold_controls": ("goodvibe",)},
+    # Scoped to the held controls that run the keep mode under the current
+    # Hold/Release, memory-arm and head/foot selection (row066, five reports).
+    "richmat_classic_apps": {
+        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
+        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
+    },
     "isleep": {"hold": ("kaidi",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
     # Latched; Floyd (no report) and dual-seat beds stay finite.
@@ -246,6 +252,8 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "beds/cluster018.py:<module>.Cluster018Controller": ("richmat_classic_apps",),
+    "beds/cluster018.py:<module>.Cluster018Controller.execution": ("richmat_classic_apps",),
     "beds/eshine.py:<module>.EshineController": ("eshine",),
     "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
     "beds/eshine_okin.py:<module>.EshineOkinController": ("eshine_okin",),

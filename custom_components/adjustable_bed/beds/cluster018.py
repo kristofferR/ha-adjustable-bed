@@ -31,6 +31,7 @@ from ..cluster018_protocol import (
     STARTUP_MS,
     TAP_RELEASE_MS,
     TICK_MS,
+    Wire,
     Worker,
     alarm,
     alarm_delay,
@@ -49,12 +50,14 @@ from ..cluster018_protocol import (
 from ..cluster018_receive import MalformedFrame, ReceiveState
 from ..cluster018_requests import Request
 from ..cluster018_transport import Transport, select
+from ..command_scheduler import current_command_context
 from ..const import (
     CONF_CLUSTER018_THIRD_SERVICE,
     CONF_MOTOR_PULSE_COUNT,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
 )
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..profiles.richmat import RICHMAT_CLASSIC
 from .base import (
     CONTROLLER_GESTURE_RELEASE,
@@ -68,6 +71,11 @@ from .base import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+
+
+def _node(control: str) -> int:
+    """The catalog node behind a held control key (``cluster018_<node>[_hold]``)."""
+    return int(control.removeprefix("cluster018_").removesuffix("_hold"))
 
 
 # Settings rows a capability reply reveals (``ReceiveState.menu``).
@@ -104,6 +112,8 @@ class Cluster018Controller(BedController):
         self._worker = Worker()
         self._receive = ReceiveState()
         self._session: Transport | None = None
+        # The wire of the last session, which still decides the hold scope offline.
+        self._wire: Wire | None = None
         self._rejection: str | None = None
         self._preferences: dict[str, object] = {"lamp_minutes": 0, "lamp_rgb": "ffffff", "alarm_selection": None, "massage_progress": 0}
         self._pending_alarm: str | None = None
@@ -263,6 +273,7 @@ class Cluster018Controller(BedController):
         name = self._device_name if self._device_name is not None else self._coordinator.entry.data.get("ble_device_name")
         self._worker.set_interval(worker_interval(name, session.wire))
         self._session = session
+        self._wire = session.wire
         # The bed's query replies proved these settings rows; a new session keeps
         # them, since with a disconnect between calls it could never prove one.
         self._receive = ReceiveState(menu=set(self._receive.menu))
@@ -369,6 +380,46 @@ class Cluster018Controller(BedController):
             selection = replace(selection, armed=False)
         return selection
 
+    def _keeps(self, button: Control, selection: Selection) -> bool:
+        """Whether a press runs the keep mode under ``selection`` (row066).
+
+        The keep mode (mode 1) sends its payload every worker tick until UP; UP
+        sets mode 0, which sends the release 50 ms later. The Hold/Release
+        selector, memory arming and head/foot selection change which mode a
+        press runs. Offline the last session's wire decides; before any session
+        either wire may, and the press checks the session's own once connected.
+        """
+        wire = self._session.wire if self._session is not None else self._wire
+        return any(
+            self._keeps_on(button, selection, candidate)
+            for candidate in ((wire,) if wire is not None else ("FRAMED", "RAW"))
+        )
+
+    def _keeps_on(self, button: Control, selection: Selection, wire: Wire) -> bool:
+        down = transition(button, self.layout, wire, selection, "DOWN", app=self.app)
+        if down.local or down.mode != 1 or not isinstance(down.payload, bytes):
+            return False
+        return transition(button, self.layout, wire, selection, "UP", app=self.app).mode == 0
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """Renewable holds on the held controls that run the keep mode (#483).
+
+        All five accepted reports (row066): a keep button repeats its payload
+        every 150 ms tick (110 ms for TWRM and MLRM names) with no fixed count
+        until UP, then releases 50 ms later. Short, long and armed presses keep
+        their own gestures, and the Hold/Release selector moves presets and Flat
+        between them, so the scope follows the current selection.
+        """
+        controls = frozenset(
+            control
+            for control in self.held_control_options
+            if self._keeps(self._button(_node(control)), self._selection)
+        )
+        if not controls:
+            return NO_EXECUTION_CAPABILITIES
+        return ExecutionCapabilities(hold="stream", hold_controls=controls)
+
     async def execute_action(self, node: int, *, long: bool = False, hold_ms: int | None = None) -> None:
         button = self._button(node)
         if button.status not in (1, 2, 3):
@@ -381,6 +432,10 @@ class Cluster018Controller(BedController):
         # Offline selectors remain usable; a gesture keeps its admitted target
         # and getter context through cleanup while later choices await the next.
         mode, selection = self._mode, self._selection
+        context = current_command_context()
+        if context is not None and context.lease is not None and not self._keeps(button, selection):
+            # Admission checks the scope too; a selector may change after it.
+            raise ValueError("This control does not support renewable holds")
         status = effective_status(button, self.layout, selection)
         programmed = button.mem_special and selection.armed or button.select_special and selection.armed
         up_applied = False
@@ -460,7 +515,7 @@ class Cluster018Controller(BedController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
-        await self.execute_action(int(control.removeprefix("cluster018_").removesuffix("_hold")), hold_ms=duration_ms)
+        await self.execute_action(_node(control), hold_ms=duration_ms)
 
     def controller_button_available(self, key: str) -> bool:
         if key == "cluster018_release":
