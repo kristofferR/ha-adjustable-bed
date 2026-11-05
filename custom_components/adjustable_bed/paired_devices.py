@@ -92,8 +92,8 @@ def async_register_children(hass: HomeAssistant, coordinator: PairedBedCoordinat
             entry, data={**entry.data, KEY_PHYSICAL_DEVICES: metadata}
         )
     for side in sides:
-        registry.async_get_or_create_child(
-            config_entry_id=entry.entry_id, **child_device_info(coordinator, side)
+        registry.async_get_or_create_child_from_info(
+            config_entry_id=entry.entry_id, device_info=child_device_info(coordinator, side)
         )
 
 

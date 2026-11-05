@@ -520,15 +520,8 @@ def _async_ensure_device_registry_entry(
     available when the initial connection fails and Home Assistant leaves the
     config entry in SETUP_RETRY.
     """
-    device_registry = dr.async_get(hass)
-    device_info = coordinator.device_info
-    device_registry.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers=device_info.get("identifiers"),
-        name=device_info.get("name"),
-        manufacturer=device_info.get("manufacturer"),
-        model=device_info.get("model"),
-        model_id=device_info.get("model_id"),
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
 
 
@@ -674,17 +667,9 @@ def _async_ensure_paired_device_registry(
     absorbed standalone devices have transferred ownership; other sides can be
     registered immediately for diagnostics during SETUP_RETRY.
     """
-    registry = dr.async_get(hass)
-    parent_info = coordinator.device_info
-    registry.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers=parent_info.get("identifiers"),
-        name=parent_info.get("name"),
-        manufacturer=parent_info.get("manufacturer"),
-        model=parent_info.get("model"),
-        model_id=parent_info.get("model_id"),
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
-
     async_register_children(hass, coordinator)
 
 
@@ -1060,14 +1045,8 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
     """Set up a left/right/both surface over one physical coordinator."""
     inner = AdjustableBedCoordinator(hass, entry)
     coordinator = SingleAddressPairedCoordinator(hass, entry, inner)
-    info = coordinator.device_info
-    dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers=info.get("identifiers"),
-        name=info.get("name"),
-        manufacturer=info.get("manufacturer"),
-        model=info.get("model"),
-        model_id=info.get("model_id"),
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
     async_register_children(hass, coordinator)
     await async_watch_profile_recommendations(hass, entry, ((None, inner),))
