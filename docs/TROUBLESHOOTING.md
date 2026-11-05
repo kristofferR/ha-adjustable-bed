@@ -274,11 +274,15 @@ show why browser JavaScript failed to load.
 3. Command format incompatible with your bed
 
 **Solutions:**
-1. **Try a different variant:** Go to integration options and try a different protocol variant
-   - Keeson and Leggett & Platt: open **Reconfigure** from the entry's three-dot
-     menu and answer the app question again; **Configure** refuses a route change
-     for these families (see [Keeson](#keeson-variant-selection) and
-     [Leggett & Platt](#leggett--platt-variant-selection) below)
+1. **Try a different variant:** For a family with a
+   [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+   (Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite,
+   Customatic, Jordan's, Malouf / Lucid, LOGICDATA, Jensen / Svane and Limoss),
+   open **Reconfigure** from the entry's three-dot menu and answer the app
+   question again; **Configure** refuses an app or route change for these
+   families (see [Keeson](#keeson-variant-selection) and
+   [Leggett & Platt](#leggett--platt-variant-selection) below). Other beds
+   change the protocol variant in **Configure → Change settings**.
    - Richmat: Try "nordic" vs "wilinke"
 2. **Reconnect:** Press the "Connect" button or restart the integration
 3. **Check diagnostics:** Download diagnostics and verify the controller type matches your bed
@@ -441,12 +445,13 @@ See [Motor Pulse Settings](CONFIGURATION.md#motor-pulse-settings) for default va
 
 ## Pairing Required Beds
 
-Some beds (Okimat / OKIN, Okin CST, Leggett & Platt Okin variant, Logicdata, Vibradorm, Sleep Number Climate 360 / FlexFit Fuzion) require an OS-level Bluetooth **bond** before they can be controlled. The integration requests pairing automatically; the steps below are for putting the bed into pairing mode and recovering when a bond fails.
+Some beds require an OS-level Bluetooth **bond** before they can be controlled: Okimat / OKIN, the OKIN Smart Remote / RF ECO BT stair lift, Okin CST (except the explicit Nectar Move app profile), the Leggett & Platt Okin and Gen2 (LP Comfort Connect) routes, Logicdata SimplicityFrame, Vibradorm (legacy setup and the VMAT, Caresse Diamant and Werkmeister apps) and Sleep Number Climate 360 / FlexFit Fuzion. The [connection guide](CONNECTION_GUIDE.md#beds-requiring-bluetooth-pairing) lists the beds that do not. The integration requests pairing automatically; the steps below are for putting the bed into pairing mode and recovering when a bond fails.
 
 ### Putting the bed in pairing mode
 
 - **OKIN bases (Okimat, Okin CST, Nectar / Mattress Firm 900-O / Rize MF900, etc.):** Power-cycle the control box — **unplug it for ~30 seconds, then plug it back in**. The status light blinks blue, then turns green after ~20 seconds. That window is when the base accepts a new Bluetooth bond. Some models instead use the under-bed **lamp/light button** (hold until it blinks blue). There is **no dedicated Bluetooth pairing button** — any "Pair"/"Learn" button on the control box only syncs the RF remote, not Bluetooth.
 - **Sleep Number Climate 360 / FlexFit Fuzion:** hold the side pairing button until the blue light blinks. (Older Sleep Number BAM/MCR i8 / 360 FlexFit 2 beds do **not** need OS-level pairing.)
+- **Leggett & Platt LP Comfort Connect (Gen2):** unplug the bed, remove any batteries from its power supply and plug it back in. A chime plays and a blue light pulses under the bed; pair while it pulses. LP Control can also reopen pairing mode. See [Gen2](beds/leggett-platt.md#gen2-variant).
 
 ### How the integration pairs
 
@@ -703,8 +708,12 @@ RF ECO BT and P1103 are receiver identities shared by beds and staircases.
 After upgrading, open **Settings → System → Repairs** and use **Confirm the
 control layout**. Choose FurniMove with its exact handset ID, the
 single-actuator staircase, or keep the current configuration if the bed already
-works. A full OKIMAT bed is promoted at runtime; set its printed handset code
-under Okin UUID in the integration options. This works while the bed is
-offline and preserves the same entry, device and matching entity IDs. For another app, select its documented
-profile in integration options. Do not infer the layout from the receiver
-label or configured motor count. See [FurniMove](beds/furnimove.md).
+works. The repair works while the bed is offline and preserves the same entry,
+device and matching entity IDs. A full OKIMAT bed is promoted at runtime;
+choose its printed handset code through **Reconfigure** in the entry's
+three-dot menu, under **No app: Okimat or OKIN handset code**. **Configure**
+refuses a route or handset change within the Okin family. Another Okin app is
+chosen through the same **Reconfigure** question; an app of another family is
+chosen from the bed-type list in **Configure**. Do not infer the layout from
+the receiver label or configured motor count. See [FurniMove](beds/furnimove.md)
+and [Okin setup](beds/okin-nframe.md#home-assistant-setup).

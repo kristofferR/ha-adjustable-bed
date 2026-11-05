@@ -692,9 +692,12 @@ the guide's command table lists each control key. Existing device/side targeting
 routes P1 commands and cleanup through the same Left/Right child. A parent
 target defaults to native Both. P2 products do not have a side field.
 
-The existing `rename`, `sync_clock`, `configure_alarm_schedule` and
-`stop_wake_routine` actions also support this profile, including P2 layouts.
-Rename accepts a trimmed 1–16 UTF-16-unit name, with the app's byte-copy rules.
+The existing `rename`, `sync_clock` and `configure_alarm_schedule` actions also
+support this profile, including P2 layouts. To end an active wake vibration,
+press the profile's **Dismiss wake vibration** button, which every product
+offers. No action stops it: `jiecang_stop_wake` accepts only the Jiecang app
+profiles and the Comfort Motion app. Rename accepts a trimmed 1–16
+UTF-16-unit name, with the app's byte-copy rules.
 Weekly/one-time alarm tables each hold three enabled records; both are
 validated before dispatch. One-time targets must be later today and unambiguous
 in the local timezone. These configuration frames have no side field: target

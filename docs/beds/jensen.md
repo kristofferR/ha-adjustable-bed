@@ -209,12 +209,15 @@ offers no timers.
 ## LinOn
 
 LinOn beds expose the LinonPI services that [Svane](svane.md) beds use, but the
-Jensen app writes its own one-byte frames to them. They use the **Svane /
-Jensen LinOn** bed type with protocol variant **`jensen_linon`**. Setup
-suggests it for new beds whose name contains "Adjustable Bed" or "Jensen Bed"
-(the app's rule); `auto` keeps the Svane app profile, so existing entries
-change only through **Reconfigure**. Beds named "Jensen
-Bed" are discovered by name; "Adjustable Bed" is too generic, so those beds are
+Jensen app writes its own one-byte frames to them. They use the `svane` bed
+type with protocol variant **`jensen_linon`**, shown as **Jensen Adjustable
+Sleep app (LinOn)**. Answer **Jensen Adjustable Sleep app with a LinOn bed
+named Adjustable Bed or Jensen Bed** in the
+[Jensen / Svane question](#home-assistant-setup); it is not a row of its own.
+Setup suggests it for new beds whose name contains "Adjustable Bed" or
+"Jensen Bed" (the app's rule); `auto` keeps the Svane app profile, so existing
+entries change only through **Reconfigure**. Beds named "Jensen Bed" are
+discovered by name; "Adjustable Bed" is too generic, so those beds are
 found by their head service UUID.
 
 All writes are with response. Head uses service `0000abcb`, foot `0000c258`

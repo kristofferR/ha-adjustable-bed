@@ -47,24 +47,26 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | Bed Type | Pairing Required |
 |----------|-----------------|
 | Okimat/Okin | ✅ Yes |
-| Okin CST (incl. OKIN-* Nectar Motion / Mattress Firm 900-O / Rize MF900) | ✅ Yes |
-| Leggett & Platt Okin variant | ✅ Yes |
+| OKIN Smart Remote / RF ECO BT single-actuator stair lift | ✅ Yes |
+| Okin CST (incl. OKIN-* Nectar Motion / Mattress Firm 900-O / Rize MF900) | ✅ Yes, except the explicit Nectar Move app profile |
+| Leggett & Platt Okin variant (Prodigy CE, Prodigy 2, Prodigy 2L, U Series, or LP Control with an LP BED receiver) | ✅ Yes |
+| Leggett & Platt Gen2 (LP Control with an LP Comfort Connect base) | ✅ Yes |
 | Logicdata SimplicityFrame | ✅ Yes |
-| Vibradorm | ✅ Yes |
+| Vibradorm (legacy setup and the VMAT, Caresse Diamant and Werkmeister apps) | ✅ Yes |
+| V-MAT Basic | ❌ No |
 | Sleep Number Climate 360 / FlexFit (Fuzion) | ✅ Yes |
 | Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) | ❌ No |
-| Leggett & Platt Gen2 | ❌ No |
 | Leggett & Platt MlRM | ❌ No |
 | Nectar (DewertOkin protocol) | ❌ No |
 | DewertOkin | ❌ No |
 | Most other beds | ❌ No |
 
-*Note: the two Sleep Number entries are separate bed types, not variants of the same one — Sleep Number Fuzion always requires pairing, Sleep Number BAM/MCR never does. Leggett & Platt only requires pairing on its Okin variant.*
+*Note: the two Sleep Number entries are separate bed types, not variants of the same one: Sleep Number Fuzion always requires pairing, and Sleep Number BAM/MCR never does. Leggett & Platt requires pairing on its Okin and Gen2 routes, not on MlRM.*
 
 > **Nectar is split across two rows on purpose.** "Nectar" branding covers more than one protocol. Bases that advertise as `OKIN-XXXXXX` are detected as **Okin CST** and **do** require pairing; older Nectar bases that use the DewertOkin protocol do **not**. The integration picks the right one by GATT signature — the brand on the bed is only a hint.
 
 **How to pair (if required):**
-1. Put your bed in pairing mode. For **OKIN** bases (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O, Rize MF900), **power-cycle the control box** — unplug it ~30 seconds, then plug it back in; the light blinks blue then turns green after ~20 s. There is **no Bluetooth pairing button**; any Pair/Learn button only syncs the RF remote. For **Sleep Number Climate 360 / FlexFit Fuzion**, hold the side pairing button until the blue light blinks.
+1. Put your bed in pairing mode. For **OKIN** bases (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O, Rize MF900), **power-cycle the control box**: unplug it ~30 seconds, then plug it back in; the light blinks blue then turns green after ~20 s. There is **no Bluetooth pairing button**; any Pair/Learn button only syncs the RF remote. For **Sleep Number Climate 360 / FlexFit Fuzion**, hold the side pairing button until the blue light blinks. For a **Leggett & Platt LP Comfort Connect** base (Gen2), unplug the bed, remove any batteries from its power supply and plug it back in: a chime plays and a blue light pulses under the bed. Pair while it pulses, or reopen pairing mode in LP Control (see [Gen2](beds/leggett-platt.md#gen2-variant)).
 2. On the device running Home Assistant's Bluetooth stack (HA host or proxy), let the integration pair, or pair manually in Bluetooth settings.
 3. The bed may appear as `OKIN`, `OKIN-XXXXXX`, `OKIN-Receiver`, `Okimat`, `Smart bed 123456`, or similar.
 
@@ -208,12 +210,16 @@ then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames).
 
 ## Advanced Options
 
-After setup, you can adjust additional settings via **Settings → Integrations → Adjustable Bed → Configure** (gear icon):
+After setup, you can adjust additional settings via **Settings → Devices & services → Adjustable Bed → Configure** (gear icon), then **Change settings**:
 
-- **Protocol variant** - Override if auto-detection fails
+- **Protocol variant** - Override if auto-detection fails. A family with a
+  [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed),
+  such as Okin, Keeson or Leggett & Platt, changes its app or route through
+  **Reconfigure** in the entry's three-dot menu instead; Configure refuses it
 - **Motor pulse settings** - Fine-tune movement behavior
 - **Bluetooth adapter** - Choose a specific adapter or proxy
-- **Angle sensing** - Disable to allow physical remote to work (recommended)
+- **Disable angle sensing** - Turn it on only if position monitoring interferes
+  with the physical remote; it removes position feedback
 
 The same menu has a **Remove the Bluetooth bond** action for beds that pair. It
 names the bed and the adapter the bond is stored on before asking you to

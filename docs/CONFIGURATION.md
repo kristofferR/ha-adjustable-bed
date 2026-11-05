@@ -96,8 +96,13 @@ the Okin question for an Okin CST entry, and the L&P question for an L&P
 legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
 to that family's other routes; Configure still changes their own settings.
 
-1. Choose the app you use, then the layout or remote the app shows. **Keep
-   current setup** leaves the entry exactly as it is.
+1. Choose the app you use, then the layout or remote the app shows. The
+   question's keep answer leaves the entry exactly as it is. Its label depends
+   on the family: **I don't know: keep the current controls** (Jiecang, Leggett
+   & Platt), **I don't know: keep the detected controls** (Okin, Keeson, Solace,
+   Sleepy's Elite, Malouf / Lucid, LOGICDATA), **Keep the current app**
+   (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
+   Limoss) or **Keep current setup** (Vibradorm).
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. Nothing
    is saved yet.
@@ -105,8 +110,8 @@ to that family's other routes; Configure still changes their own settings.
    entity IDs, and the automations and scripts that use a removed control.
 4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
 
-A failed check, a closed window, **Keep current setup** or a concurrent edit
-leaves the saved setup unchanged and working. Choosing a label that resolves to
+A failed check, a closed window, the keep answer, **Keep current setup** on a
+failed check, or a concurrent edit leaves the saved setup unchanged and working. Choosing a label that resolves to
 the saved setup changes nothing. A passed check does not prove the bed's
 physical layout or presets, so test the controls after applying a change.
 
@@ -122,7 +127,7 @@ app profile and side settings from before the beds were combined.
 Every configured bed is checked against the integration's existing Bluetooth
 identity and app-profile metadata. Under **Settings → System → Repairs**, Home
 Assistant may suggest **A better profile may be available**, or ask you to **Check
-the app or product profile** when several profiles fit. Weak or unknown identities
+the profile or protocol variant** when several profiles fit. Weak or unknown identities
 stay quiet. A shared Bluetooth service or a new app alone does not prove that
 another profile works better.
 
@@ -135,7 +140,7 @@ When every suggested profile belongs to the bed's family with a
 [guided change](#changing-the-app-or-layout-of-an-existing-bed), **Review
 profile settings** opens that guided change instead, because Configure refuses
 an app or route change within the family. Applying a change there confirms the
-review, and **Keep current setup** there keeps the current profile. Closing it
+review, and the question's keep answer there keeps the current profile. Closing it
 leaves the notice open. A suggestion of another bed type still opens Configure,
 which can make that change.
 
@@ -222,11 +227,11 @@ L600 is not a protocol name**: confirmed L600 hardware includes both OKIN CB24
 
 ## Toggle-Only Under-Bed Lights
 
-Beds whose existing light control is **Toggle light**, including Tempur/Keeson
-profiles without light-state feedback, also offer an optional **Under-bed lights**
-light entity. It is disabled by default because its on/off state is an estimate.
+Beds whose existing light control is the **Toggle Light** button, including
+Tempur/Keeson profiles without light-state feedback, also offer an optional
+**Under Bed Lights** light entity. It is disabled by default because its on/off state is an estimate.
 To enable it, open the bed's device page under **Settings → Devices & Services**,
-show disabled entities, select **Under-bed lights**, and enable it.
+show disabled entities, select **Under Bed Lights**, and enable it.
 
 On first use, set the physical light off with the remote before enabling the
 entity. Home Assistant initially assumes off and restores its last estimate on
@@ -236,7 +241,7 @@ Repeated on or off requests do not toggle the light again; a failed command
 leaves the estimate unchanged. The bed card uses the light once enabled.
 
 Home Assistant marks this entity's state as **assumed**. It cannot detect changes
-made with the physical remote, the manufacturer's app, the existing Toggle light
+made with the physical remote, the manufacturer's app, the existing Toggle Light
 button, or a hardware auto-off timer. Those changes can make its estimate wrong,
 and later on/off actions then rely on that incorrect estimate. Keep the existing
 toggle button if you need direct control without an estimated state. For a
@@ -835,7 +840,7 @@ ordinary disconnect does not remove the side's controls. Beds with saved or
 offline-safe capabilities still support setup with one side unavailable.
 
 Existing side entity IDs, device IDs, names, areas, and history are retained when
-combining entries. To undo it, choose **Split paired bed** in the pair's options;
+combining entries. To undo it, choose **Split into two beds** in the pair's options;
 the side entries are restored and combined controls are removed. Update any
 automation that targeted the combined controls.
 

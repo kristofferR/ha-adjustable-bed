@@ -120,7 +120,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
   handles differ by device/firmware and must not be hardcoded
 - **Nordic UART**: Many newer beds use the Nordic UART service
 
-**If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type.
+**If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type. To move between the Okin family's own routes (FurniMove, Okimat or Okin UUID, DOT and RF ECO BT), use **Reconfigure** in the entry's three-dot menu instead; Configure refuses that change (see [Okin setup](beds/okin-nframe.md#home-assistant-setup)).
 
 **Shared identifiers:** Generic `OKIN-*` and receiver names can require a
 protocol-selection prompt. An `OKIN-BLE` name alone does not distinguish
@@ -140,7 +140,7 @@ for the current family-specific rules.
 **[Won't be supported, read reasons here](https://github.com/kristofferR/ha-adjustable-bed/issues/167).** This is a Bluetooth-only integration. WiFi and cloud beds require fundamentally different architecture and would be better served by a separate integration.
 
 Beds that won't be supported:
-- **Sleeptracker AI** — Tempur-Pedic Ergo, BeautyRest SmartMotion, Serta Motion (cloud-connected models)
+- **Sleeptracker-AI cloud features**: accounts, sleep data, Wi-Fi setup and other cloud services of Tempur-Pedic Ergo, BeautyRest SmartMotion and Serta Motion bases. The Tempur Sleeptracker-AI processor's direct Bluetooth controls on TEMPUR-Ergo ProSmart / ProSmart Air and ActiveBreeze beds are supported; see the [Sleeptracker processor guide](beds/sleeptracker.md)
 - **Logicdata eLift / desk controllers** — Uses local UDP/HTTP, not Bluetooth
 - **ErgoWifi** — Uses Xlink cloud platform
 
