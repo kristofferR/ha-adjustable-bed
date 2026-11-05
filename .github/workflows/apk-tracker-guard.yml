@@ -1,0 +1,30 @@
+name: APK tracker guard
+
+# Keeps the APK Protocol Audit tracker issues readable. An edit that breaks the
+# rules in docs/apk-analysis/TRACKERS.md is reverted to the previous body.
+on:
+  issues:
+    types: [edited]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: apk-tracker-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Check tracker edit
+    if: contains(fromJSON('[436, 443, 447]'), github.event.issue.number)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Check the edit and restore a rule-breaking one
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/apk_tracker_guard.py guard "$GITHUB_EVENT_PATH"
