@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -33,6 +34,26 @@ async def apply_options(hass, entry, changes):
     if result["type"] == "form" and not result.get("errors"):
         result = await flow._async_options_form(dict(changes), step_id="settings")
     assert result["type"] == "create_entry", result
+
+
+async def change_profile(hass, entry, variant):
+    """Change an entry's Svane profile the way a user does: through Reconfigure."""
+    answer = {
+        VARIANT_AUTO: "svane_bed",
+        SVANE_VARIANT_JMC: "svane_jmc400",
+        SVANE_VARIANT_JENSEN_LINON: "jensen_linon",
+    }[variant]
+    manager = hass.config_entries.flow
+    result = await manager.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    )
+    result = await manager.async_configure(result["flow_id"], {"choice": answer})
+    if result["step_id"] == "profile_questions":
+        # LinOn asks its motor count; keep the staged one.
+        result = await manager.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "migration_confirm", result
+    result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    assert result["reason"] == "reconfigure_successful", result
 
 
 async def controller_for_entry(hass, entry):
@@ -87,7 +108,9 @@ async def test_effective_p1_alias_options_preserve_saved_slots_and_recall(hass, 
     (SVANE_VARIANT_JMC, SVANE_VARIANT_JENSEN_LINON),
     (SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC),
 ])
-async def test_profile_change_keeps_each_profiles_preferences(hass, old, new):
+async def test_profile_change_keeps_each_profiles_preferences(
+    hass, enable_custom_integrations, old, new
+):
     preferences = {"intensity": 95, "slots": ["00112233", "44556677"]}
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_NAME: "Svane", CONF_BED_TYPE: BED_TYPE_SVANE,
@@ -101,10 +124,10 @@ async def test_profile_change_keeps_each_profiles_preferences(hass, old, new):
     peer = get_svane_session(hass, "AA:BB:CC:DD:EE:02", "jmc")
     peer.restore(preferences)
 
-    await apply_options(hass, entry, {CONF_PROTOCOL_VARIANT: new})
+    await change_profile(hass, entry, new)
     # The old profile keeps its slot, so changing back restores it.
     assert await stored_app_state(original._coordinator, old_profile) == preferences
-    await apply_options(hass, entry, {CONF_PROTOCOL_VARIANT: old})
+    await change_profile(hass, entry, old)
     rebuilt = await controller_for_entry(hass, entry)
     assert rebuilt.session.preferences() == preferences
     assert get_svane_session(hass, "AA:BB:CC:DD:EE:02", "jmc") is peer

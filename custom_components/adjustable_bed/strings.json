@@ -61,7 +61,6 @@
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
-          "jensen_pin": "Jensen PIN",
           "auto_detect_option": "Auto-detect (recommended)",
           "transport_direct": "Transport: direct Bluetooth",
           "transport_proxy": "Transport: Bluetooth proxy",
@@ -76,8 +75,7 @@
           "transport_all_busy": "No free Bluetooth connections",
           "transport_actual": "Connected over",
           "transport_actual_differs": "Path differed from the prediction",
-          "cb24_bed_selection": "CB24 bed side",
-          "protocol_variant": "Svane app"
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "bed_type": "Auto-detected bed type. Change it if detection was incorrect. Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
@@ -95,7 +93,6 @@
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
-          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "transport_direct": "Direct Bluetooth",
           "transport_proxy": "Bluetooth proxy",
           "transport_unknown": "Bluetooth",
@@ -109,8 +106,7 @@
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "protocol_variant": "The app this Svane bed is used with. Leave it empty to choose from the Bluetooth name."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         },
         "sections": {
           "advanced": {
@@ -159,12 +155,10 @@
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
           "octo_motor_count_override": "OCTO motor count",
-          "jensen_pin": "Jensen PIN",
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl 21.3.7 product (optional)",
           "rmcontrol_side": "RMControl side",
-          "cb24_bed_selection": "CB24 bed side",
-          "protocol_variant": "Svane app"
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "bed_type": "Type part of an app, brand or controller name to search; some rows then ask which app or remote you use. See the Supported Actuators guide if unsure.",
@@ -179,12 +173,10 @@
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "protocol_variant": "The app this Svane bed is used with. Leave it empty to choose from the Bluetooth name."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         },
         "sections": {
           "advanced": {
@@ -217,12 +209,10 @@
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
           "octo_motor_count_override": "OCTO motor count",
-          "jensen_pin": "Jensen PIN",
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl 21.3.7 product (optional)",
           "rmcontrol_side": "RMControl side",
-          "cb24_bed_selection": "CB24 bed side",
-          "protocol_variant": "Svane app"
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
@@ -238,12 +228,10 @@
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "protocol_variant": "The app this Svane bed is used with. Leave it empty to choose from the Bluetooth name."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         },
         "sections": {
           "advanced": {
@@ -461,7 +449,9 @@
           "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
+          "motion_bed_movement": "Retained movement layout",
+          "jensen_pin": "Jensen PIN",
+          "disable_angle_sensing": "Disable angle sensing"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -501,7 +491,9 @@
           "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
         },
         "sections": {
           "advanced": {
@@ -812,6 +804,13 @@
         "description": "The Malouf Base and Lucid Base apps and the older receiver routes send different commands, and neither a retail model name nor the Bluetooth services tell them apart. Choose the app you use on your phone, or the receiver whose Bluetooth service the bed advertises. Current or detected route: **{current}**.",
         "data": {
           "choice": "App or receiver"
+        }
+      },
+      "jensen_family": {
+        "title": "Which app and bed is this?",
+        "description": "The Jensen Adjustable Sleep app and the Svane Remote app send different commands, and a JMC400 name or the LinonPI services occur with both. Choose the app you use on your phone and the bed it controls. The suggestion follows the apps' own name rules. A LinON Entry box is JMC400 hardware, not the LinOn bed.",
+        "data": {
+          "choice": "App and bed"
         }
       }
     },
@@ -1203,7 +1202,9 @@
           "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
+          "motion_bed_movement": "Retained movement layout",
+          "jensen_pin": "Jensen PIN",
+          "disable_angle_sensing": "Disable angle sensing"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1241,7 +1242,9 @@
           "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
         }
       },
       "right_settings": {
@@ -1298,7 +1301,9 @@
           "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
+          "motion_bed_movement": "Retained movement layout",
+          "jensen_pin": "Jensen PIN",
+          "disable_angle_sensing": "Disable angle sensing"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1336,7 +1341,9 @@
           "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
         }
       },
       "change_app": {
@@ -9374,6 +9381,15 @@
         "fuzion": "Fuzion base: Climate 360, FlexFit or FlexFit Smart",
         "mcr": "Older BAM/MCR base: i8 or 360 FlexFit 2",
         "keep": "I don't know: keep the detected transport"
+      }
+    },
+    "jensen_family_choice": {
+      "options": {
+        "jensen_jmc400": "Jensen Adjustable Sleep app with a JMC400 bed (asks for its PIN)",
+        "jensen_linon": "Jensen Adjustable Sleep app with a LinOn bed named Adjustable Bed or Jensen Bed",
+        "svane_bed": "Svane Remote app with a Svane Bed",
+        "svane_jmc400": "Svane Remote app with a JMC400 bed",
+        "keep": "Keep the current controls"
       }
     }
   }

@@ -74,7 +74,8 @@ def test_profiles_that_always_show_massage_hide_the_generic_choice() -> None:
 
 def test_a_variant_entry_replaces_its_bed_types_entry() -> None:
     assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_SVANE, VARIANT_AUTO)
-    assert hidden_generic_fields(BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON) == frozenset()
+    # LinOn owns none of Svane's fields; it asks only its own motor count.
+    assert hidden_generic_fields(BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON) == {CONF_MOTOR_COUNT}
     assert hidden_generic_fields(BED_TYPE_LINAK, VARIANT_AUTO) == frozenset()
 
 
