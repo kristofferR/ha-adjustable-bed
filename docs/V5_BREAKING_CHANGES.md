@@ -234,6 +234,12 @@ and keep their bed type and ID, and a saved entry shows its own route's label.
 
 Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pull/826), [#863](https://github.com/kristofferR/ha-adjustable-bed/pull/863)):
 
+- The first screen offers **Set up by app or remote** instead of **Select by
+  actuator brand**, and **Pick any Bluetooth device** instead of **Show all BLE
+  devices**. Both ask which app controls the bed, from the same searchable list
+  as the bed-type field; the brand list is the app question's last answer.
+  Discovered beds are named with their family.
+
 - Setup is one form for every bed-type row. A bed type's own fields, such as
   the Octo PIN and motor count or the CB24 side, show only when its row is
   chosen, using Home Assistant 2026.11's conditional form fields. The

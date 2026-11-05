@@ -152,7 +152,7 @@ These steps serve every bed type or route, so no profile owns them.
 
 | Step | Purpose |
 |---|---|
-| `user`, `scan`, `scan_result`, `manual`, `select_actuator`, `select_variant`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its bed type |
+| `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_actuator`, `select_variant`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_actuator`) |
 | `bluetooth_confirm`, `manual_config`, `manual_entry` | The generic setup forms |
 | `disconnect_after_command` | The connection-lifetime choice |
 | `profile_questions` | The declared questions |

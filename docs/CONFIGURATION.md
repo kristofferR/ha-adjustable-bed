@@ -26,9 +26,19 @@ You can configure the integration in two places:
 
 ### Initial Setup
 
-During initial setup you choose the bed type, then the options that bed type
-asks for, such as motor count and massage support. The form shows only the
-fields of the row you choose.
+The first screen lists the discovered beds, each named with its family, then:
+
+- **Set up by app or remote** asks which app controls the bed: one searchable
+  list of the apps, remotes and brands in the bed-type list. Its last answer,
+  **My app isn't listed, or I don't know**, opens the list of motor brands.
+  You then pick the Bluetooth device, or type its address.
+- **Pick any Bluetooth device** lets you choose any device first, then asks the
+  same app question. A confidently detected bed suggests its own row.
+- **Scan again for beds** and **Browse unsupported BLE devices**, and
+  **Combine two beds into one (Dual Bed)** when two beds are set up.
+
+You then choose the options that bed type asks for, such as motor count and
+massage support. The form shows only the fields of the row you choose.
 
 - The bed-type list is searchable: type part of an app, brand or controller
   name. A discovered bed starts on the detected row.
