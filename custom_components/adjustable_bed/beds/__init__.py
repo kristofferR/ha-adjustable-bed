@@ -12,6 +12,7 @@ from .base import BedController
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress import AdjustaMattressController as AdjustaMattressController
+    from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish import BfCherishController as BfCherishController
     from .casper_base import CasperBaseController as CasperBaseController
@@ -61,6 +62,7 @@ if TYPE_CHECKING:
     from .logicdata_app import LogicdataAppController as LogicdataAppController
     from .malouf_app import MaloufAppController as MaloufAppController
     from .motion_bed import MotionBedController as MotionBedController
+    from .motomotion import MotoMotionController as MotoMotionController
     from .motosleep import MotoSleepController as MotoSleepController
     from .octo import OctoController as OctoController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
@@ -112,6 +114,7 @@ if TYPE_CHECKING:
 
 _EXPORT_MODULES = {
     "GoodVibeController": "goodvibe",
+    "MotoMotionController": "motomotion",
     "HJBedController": "hjbed",
     "DoubleSleepController": "doublesleep",
     "GmmotorController": "gmmotor",
@@ -144,6 +147,7 @@ _EXPORT_MODULES = {
     "SimmonsController": "simmons",
     "AdjustaMattressController": "adjustamattress",
     "AdjustableLumbarController": "adjustable_lumbar",
+    "BedJetPowerLayerController": "bedjet_powerlayer",
     "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
@@ -224,6 +228,7 @@ __all__ = [
     # Base class
     "BedController",
     # Protocol-based controllers
+    "BedJetPowerLayerController",
     "DewertOkinRfGatewayController",
     "DewertOkinUuidRfGatewayController",
     "OkinCB24Controller",

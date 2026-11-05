@@ -138,6 +138,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
@@ -476,7 +477,7 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_CLUSTER018, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_CLUSTER018, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -1518,6 +1519,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
             BED_TYPE_SLEEPTRACKER,
             BED_TYPE_ISLEEP,
             BED_TYPE_GMMOTOR,
+            BED_TYPE_MOTOMOTION,
         ),
         "profile_questions",
     ),
@@ -1545,7 +1547,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type != BED_TYPE_GMMOTOR
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION)
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
@@ -9161,6 +9163,7 @@ class AdjustableBedOptionsFlow(
             data.get(CONF_PROTOCOL_VARIANT),
             resolved_variant=data.get(CONF_KAIDI_RESOLVED_VARIANT),
             product_type=data.get(CONF_PRODUCT_TYPE),
+            ble_device_name=data.get(CONF_BLE_DEVICE_NAME),
         ):
             menu_options.append("pair_sides")
         menu_options.extend(self.estimate_menu_options())
@@ -9435,8 +9438,10 @@ class AdjustableBedOptionsFlow(
         casper_not_connected = needs_casper_transport_proof and (
             runtime is None or not runtime.is_connected
         )
+        motomotion_unsupported = self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_MOTOMOTION and not supports_single_address_pairing(BED_TYPE_MOTOMOTION, ble_device_name=self.config_entry.data.get(CONF_BLE_DEVICE_NAME))
         if (
-            casper_not_connected
+            motomotion_unsupported
+            or casper_not_connected
             or (needs_casper_transport_proof and controller is None)
             or (
                 controller is not None
@@ -9449,7 +9454,7 @@ class AdjustableBedOptionsFlow(
                 errors={
                     "base": (
                         "casper_pairing_needs_connection"
-                        if casper_not_connected or controller is None
+                        if casper_not_connected or (needs_casper_transport_proof and controller is None)
                         else "single_address_pairing_unsupported"
                     )
                 },
@@ -9949,6 +9954,10 @@ class AdjustableBedOptionsFlow(
 
             bed_type = requested_bed_type
             stale_profile_keys: frozenset[str] = frozenset()
+            # What the declared profile sets itself, such as the generic fields it
+            # owns. A paired save keeps only shown fields that changed, so these
+            # are applied separately.
+            profile_settled: dict[str, Any] = {}
             if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
                 pairlink_errors = _validate_pairlink_option_values(
                     self.hass,
@@ -10127,7 +10136,8 @@ class AdjustableBedOptionsFlow(
                 user_input.update(
                     {key: value for key, value in app_data.items() if before.get(key) != value}
                 )
-                user_input.update(declared.settled(app_data))
+                profile_settled = declared.settled(app_data)
+                user_input.update(profile_settled)
                 # What normalizing dropped, such as retained settings an answer no
                 # longer allows or an Auto choice stored as no value, leaves the
                 # saved entry too, even when the form submitted it.
@@ -10265,6 +10275,7 @@ class AdjustableBedOptionsFlow(
                 ),
                 resolved_variant=current_data.get(CONF_KAIDI_RESOLVED_VARIANT),
                 product_type=user_input.get(CONF_PRODUCT_TYPE, current_data.get(CONF_PRODUCT_TYPE)),
+                ble_device_name=user_input.get(CONF_BLE_DEVICE_NAME, current_data.get(CONF_BLE_DEVICE_NAME)),
             ):
                 return self.async_show_form(
                     step_id=step_id,
@@ -10392,7 +10403,15 @@ class AdjustableBedOptionsFlow(
                     for key, value in user_input.items()
                     if key in shown and shown[key] != value
                 }
-                changed = {**self._pending_changed_data, **current_changed}
+                changed = {
+                    **self._pending_changed_data,
+                    **current_changed,
+                    **{
+                        key: value
+                        for key, value in profile_settled.items()
+                        if self.config_entry.data.get(key) != value
+                    },
+                }
                 new_data = {**self.config_entry.data, **changed}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True

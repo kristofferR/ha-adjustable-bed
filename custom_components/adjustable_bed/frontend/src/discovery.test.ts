@@ -1597,3 +1597,42 @@ test("eShine motor hold metadata uses one bounded controller stream per physical
   }
   expect(bedEntitiesForDevice(hass, "right").motors[0].heldControls).toBeUndefined();
 });
+
+
+test("MotoMotion controls retain device ownership and held metadata", () => {
+  const hass = hassWith([
+    entry("button.mm_head", "motomotion_action", "chair"),
+    entry("sensor.mm_state", "motomotion_status", "chair"),
+    entry("number.mm_volume", "motomotion_volume", "chair"),
+    entry("select.mm_mode", "motomotion_music_mode", "chair"),
+    entry("button.other", "motomotion_action", "other"),
+  ]);
+  hass.states["button.mm_head"] = {
+    entity_id: "button.mm_head", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "motomotion_headrest_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0 },
+  };
+  const chair = bedEntitiesForDevice(hass, "chair");
+  expect(chair.utility).toEqual(["button.mm_head"]);
+  expect(chair.utilityNumbers).toEqual(["number.mm_volume"]);
+  expect(chair.utilitySelects).toEqual(["select.mm_mode"]);
+  expect(chair.utilityStates).toEqual(["sensor.mm_state"]);
+  expect(heldButtonMotor(hass, chair.utility[0])?.heldControl?.control).toBe("motomotion_headrest_up");
+});
+
+
+test("MotoMotion Home hold resolves its source-specific release on the same device", () => {
+  const hass = hassWith([
+    entry("button.mm_home", "motomotion_action", "chair"),
+    entry("button.other_release", "motomotion_release", "other"),
+    entry("button.mm_release", "motomotion_release", "chair"),
+  ]);
+  hass.states["button.mm_home"] = {
+    entity_id: "button.mm_home", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "motomotion_home", hold_start_delay_ms: 0, hold_release_delay_ms: 0, hold_release_button_key: "motomotion_release" },
+  };
+  const control = heldButtonMotor(hass, "button.mm_home");
+  expect(control?.heldControl).toEqual({ control: "motomotion_home", startDelayMs: 0, releaseDelayMs: 0 });
+  expect(control?.releaseButton).toBe("button.mm_release");
+  delete hass.entities["button.mm_release"];
+  expect(heldButtonMotor(hass, "button.mm_home")).toBeUndefined();
+});

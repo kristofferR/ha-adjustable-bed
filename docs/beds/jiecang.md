@@ -580,9 +580,15 @@ None beyond the controller's own tests.
 
 #### MOTIONrelax beds on this route
 
-Detection never selects `logicdata_app`, so a MOTIONrelax bed that advertises the
-G1 or G3 service, or has a matching name, lands here. Compared with the accepted
-MOTIONrelax 1.0.6 and 1.0.4 apps it:
+The accepted MOTIONrelax 1.0.6 and 1.0.4 apps find a bed only by scanning for
+the G1 (T1) and G3 (T3) services; neither app has a name, manufacturer-data or
+service-data filter. Detection turns either service into `comfort_motion`, whose
+profile review and Jiecang question offer the
+[LOGICDATA app](#logicdata-app-family). A bed that lands on `jiecang` by its name
+alone has no evidence of being a MOTIONrelax bed.
+
+A MOTIONrelax bed that still runs this route, for example one whose services were
+missing from the advertisement, differs from the apps. This route:
 
 - sends P1 frames only, so a P2 (middle-motor) bed gets frames from the other
   packet family;
@@ -593,8 +599,8 @@ MOTIONrelax 1.0.6 and 1.0.4 apps it:
   transport service enumerates last, which can be T2;
 - subscribes to no notifications.
 
-Select `logicdata_app` for these beds. Guided migration belongs to
-[#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676).
+Set such a bed up with the LOGICDATA row, or choose the LOGICDATA app in
+Configure's bed-type list, which then asks the app, packet family and layout.
 
 ### Comfort Motion app
 

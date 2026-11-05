@@ -506,6 +506,7 @@ BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_CLUSTER018: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
 CONF_CLUSTER018_THIRD_SERVICE: Final = "cluster018_third_service"
+BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
@@ -669,6 +670,10 @@ BEDSENSE_VARIANTS: Final = {
     "bedsense_8": "BEDSENSE-350 (TYPE 8)",
     "bedsense_9": "Resten Hi-Low (TYPE 9)",
 }
+# BedJet PowerLayer adjustable frame. Shares BedJet's advertised service with the
+# BedJet climate blower, which this integration does not control; only the frame
+# exposes the 1001 GATT service.
+BED_TYPE_BEDJET_POWERLAYER: Final = "bedjet_powerlayer"
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # Bed types whose entry chooses light controls (CONF_HAS_LIGHT), with the default.
@@ -699,6 +704,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
     BED_TYPE_GOODVIBE,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
@@ -829,6 +835,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_STARCODE_ABM5_4,
+    # BedJet PowerLayer adjustable frame
+    BED_TYPE_BEDJET_POWERLAYER,
 ]
 
 
@@ -852,6 +860,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_MOTOMOTION,
         BED_TYPE_CLUSTER018,
         BED_TYPE_ERGOMOTION_4,
         *CLUSTER033_BED_TYPES,
@@ -883,6 +892,8 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SBI,
         BED_TYPE_SUTA,
         BED_TYPE_TIMOTION_AHF,
+        # One fixed frame layout; the GATT name is cosmetic and grants no controls.
+        BED_TYPE_BEDJET_POWERLAYER,
         BED_TYPE_LOGICDATA,
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
@@ -1101,6 +1112,22 @@ MOTOSLEEP_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 SUTA_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
 SUTA_NOTIFY_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
 SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff2-0000-1000-8000-00805f9b34fb"
+
+# BedJet PowerLayer UUIDs.
+# The frame and the BedJet climate blower both ADVERTISE the 1000 service, so the
+# advertisement alone cannot tell them apart; only the frame exposes 1001 once
+# connected. Detection therefore keys on the advertised local name and the
+# controller re-checks 1001 after connecting.
+BEDJET_ADVERTISED_SERVICE_UUID: Final = "00001000-bed0-0080-aa55-4265644a6574"
+BEDJET_POWERLAYER_SERVICE_UUID: Final = "00001001-bed0-0080-aa55-4265644a6574"
+# Reads the frame's user-settable name; "BEDFRM" from the factory.
+BEDJET_POWERLAYER_NAME_CHAR_UUID: Final = "00002001-bed0-0080-aa55-4265644a6574"
+# 20-byte status frame, readable and notifying.
+BEDJET_POWERLAYER_STATUS_CHAR_UUID: Final = "00002006-bed0-0080-aa55-4265644a6574"
+BEDJET_POWERLAYER_COMMAND_CHAR_UUID: Final = "00002007-bed0-0080-aa55-4265644a6574"
+# Travel limits measured against the BedJet LCD remote's own degree readout.
+BEDJET_POWERLAYER_HEAD_MAX_ANGLE: Final = 73.0
+BEDJET_POWERLAYER_FOOT_MAX_ANGLE: Final = 47.0
 
 # TiMOTION AHF protocol UUIDs (Nordic UART Service)
 TIMOTION_AHF_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
@@ -1554,6 +1581,13 @@ SUTA_UNSUPPORTED_NAME_PREFIXES: Final = (
     "suta-yogabed",
     "suta-rollsofa",
 )
+
+# BedJet PowerLayer advertised local names. "BEDJET_BF" is the factory name of the
+# frame; the climate blower advertises its own BEDJET_* name on the same service,
+# so only this prefix may claim the frame. Renaming the frame from the remote
+# changes the GATT name characteristic, and a renamed frame that no longer matches
+# is still reachable by selecting the bed type manually.
+BEDJET_POWERLAYER_NAME_PATTERNS: Final = ("bedjet_bf", "bedfrm")
 
 # TiMOTION AHF name patterns
 TIMOTION_AHF_NAME_PATTERNS: Final = ("ahf",)
@@ -2891,6 +2925,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_VIBRADORM,
         BED_TYPE_SLEEPYS_BOX25,
         BED_TYPE_SLEEPSTAR,
+        BED_TYPE_BEDJET_POWERLAYER,
     }
 )
 
@@ -2935,6 +2970,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
         *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_GOODVIBE,
+        BED_TYPE_MOTOMOTION,
         BED_TYPE_HJBED,
         BED_TYPE_GLIDEAWAY_MOTION,
         BED_TYPE_ISLEEP,
@@ -3286,6 +3322,11 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Logicdata: 30ms delay → 10 repeats = 0.3s total
     # Source: at.silvermotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)
     BED_TYPE_LOGICDATA: (10, 30),
+    # BedJet PowerLayer: one write moves for ~1.3s and then self-stops, so writes
+    # every 100ms hold the motor through the repo-standard 1.0s press while the
+    # frame's own watchdog bounds travel after the last write.
+    # Source: measured from PowerLayer status captures in natekspencer/ha-bedjet#49
+    BED_TYPE_BEDJET_POWERLAYER: (10, 100),
 }
 
 

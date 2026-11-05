@@ -14,19 +14,19 @@ guides, the frozen vectors and the issues with their comments.
 ## Summary
 
 Totals count matrix rows: one per bed type, or per route or app profile where
-the evidence differs. There are 110 rows covering all 114 `SUPPORTED_BED_TYPES`.
+the evidence differs. There are 112 rows covering all 116 `SUPPORTED_BED_TYPES`.
 
 | Capability | Supported | Unsupported | Blocked |
 | --- | ---: | ---: | ---: |
-| #483 hold until release | 77 (68 stream, 3 stream without a release frame, 6 latched) | 2 | 31 |
-| #516 concurrent motors | 5 | 71 | 34 |
-| #591 native motor speed | 0 | 78 | 32 |
+| #483 hold until release | 78 (69 stream, 3 stream without a release frame, 6 latched) | 2 | 32 |
+| #516 concurrent motors | 5 | 71 | 36 |
+| #591 native motor speed | 0 | 78 | 34 |
 
 Rolled up by bed type (a bed type counts as supported when any route is, and as
-blocked when no route is supported and any route is blocked): hold 78 supported
-(4 of them also have a blocked route), 6 unsupported, 30 blocked; concurrent 6
-supported (2 of them also have a blocked route), 73 unsupported, 35 blocked;
-speed 0 supported, 79 unsupported, 35 blocked.
+blocked when no route is supported and any route is blocked): hold 79 supported
+(4 of them also have a blocked route), 6 unsupported, 31 blocked; concurrent 6
+supported (2 of them also have a blocked route), 73 unsupported, 37 blocked;
+speed 0 supported, 79 unsupported, 37 blocked.
 
 - **#516 candidates:** the Prodigy CE and U Series profiles of `leggett_okin`
   and `leggett_platt`, `customatic_clarity`, `customatic_jeromes`, `customatic_remedy`, and `svane`
@@ -175,7 +175,9 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
-| `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion (`moto`) is another app |
+| `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
+| `motomotion` | S stream | B | B | motomotion, row113 | held motor keys refresh every 100 ms, first write after 100 ms, then send STOP three times 50 ms after release; memory recall refreshes the same way but stops only on `SOFA` names with index 12 `E`, and the shared Home control ends by stopping its refresh with no release frame. Not declared: the controls need a per-control scope (see [per-control scope](#per-control-hold-scope)) and their own review. #516 and #591 not assessed yet |
+| `bedjet_powerlayer` | B | B | B | none | no accepted app report: the commands and the self-stopping movement come from a community capture and the contributor's hardware, so the hold stays undeclared |
 | `sleep_number` | B | B | B | sleepiq | report PARTIAL |
 | `sleep_number_mcr` | B | B | B | none | no accepted report |
 | `sleepstar` | B | B | B | none | no accepted report |
@@ -290,7 +292,7 @@ motor speed:
 | Linak reference notifications | Reported actuator speed, read only |
 | Limoss queue speed | Transport write-slice classification |
 
-The 32 blocked rows are where a speed command could still appear once their
+The 34 blocked rows are where a speed command could still appear once their
 reports complete, notably `gmmotor`, `sleep_number` and `doublesleep`, or once
 `motosleep`'s complete reports, which were not retained, are available again.
 
@@ -669,7 +671,7 @@ Report workspaces are machine-local under
 | milemont | `com.richmat.milemont` | 1.0.4 | COMPLETE | `com.richmat.milemont-1.0.4-2026-11-03-bulk061-001/work/report-revision-sol-002/` |
 | minghua | `com.okin.minghua.R` | 1.0.1 | COMPLETE | `com.okin.minghua.R-1.0.1-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | motionflex | `com.sealy.motionflex` | 1.0.3 | COMPLETE | `com.sealy.motionflex-1.0.3-20260830/report/` |
-| moto | `com.HHC.MotoMotion` | 3.1.9 | BLOCKED | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/report/` |
+| motomotion | `com.HHC.MotoMotion` | 3.1.9 | COMPLETE | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/work/report-repair-sol-003/` |
 | motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
 | nectar | `com.okin.bedding.nectarmotion` | 1.0.1 | COMPLETE | `com.okin.bedding.nectarmotion-1.0.1-2026-10-26-39bdcafa-003/report/` |
 | octo | `de.octoactuators.octosmartcontrolapp` | 1.03.02 | COMPLETE | `de.octoactuators.octosmartcontrolapp-1.03.02-2026-10-26-39bdcafa-repair-001/report/` |

@@ -54,6 +54,7 @@ from .command_scheduler import (
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
@@ -96,6 +97,8 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
+    BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -1053,8 +1056,12 @@ class AdjustableBedCoordinator(
         if position_key in ("back", "head"):
             if self._bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
                 return REVERIE_BACK_MAX_ANGLE
+            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
+                return BEDJET_POWERLAYER_HEAD_MAX_ANGLE
             return self.back_max_angle
         if position_key in ("legs", "feet"):
+            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
+                return BEDJET_POWERLAYER_FOOT_MAX_ANGLE
             return self.legs_max_angle
         # Unknown motor, return back max as default
         return self.back_max_angle
