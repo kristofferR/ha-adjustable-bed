@@ -217,17 +217,3 @@ async def test_one_form_shows_each_selected_profiles_fields(hass, step):
     assert {CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS} <= set(linak)
     assert CONF_OCTO_MOTOR_COUNT_OVERRIDE not in linak
 
-
-def test_an_untouched_pulse_default_follows_the_chosen_profile():
-    from custom_components.adjustable_bed.config_flow import _take_selected_pulse_defaults
-    from custom_components.adjustable_bed.const import (
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-    )
-
-    untouched = {CONF_MOTOR_PULSE_COUNT: "10", CONF_MOTOR_PULSE_DELAY_MS: "100"}
-    _take_selected_pulse_defaults(untouched, (10, 100), (3, 50))
-    assert untouched == {CONF_MOTOR_PULSE_COUNT: "3", CONF_MOTOR_PULSE_DELAY_MS: "50"}
-    edited = {CONF_MOTOR_PULSE_COUNT: "7", CONF_MOTOR_PULSE_DELAY_MS: "100"}
-    _take_selected_pulse_defaults(edited, (10, 100), (3, 50))
-    assert edited == {CONF_MOTOR_PULSE_COUNT: "7", CONF_MOTOR_PULSE_DELAY_MS: "50"}

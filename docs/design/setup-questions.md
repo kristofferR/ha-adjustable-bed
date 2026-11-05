@@ -78,8 +78,11 @@ a native conditional field on the bed-type field, listing both each row's label
   row, a generic field hinges on the route field instead, which reads as
   absent for other rows. A Svane app row sets its own route.
 
-Defaults cannot follow a changed row, so a pulse field left at the default it
-was drawn with saves the chosen profile's default instead.
+Defaults cannot follow a changed row. A field whose default depends on the bed
+type (motor count, angle sensing, pulse count and delay) that is left at the
+default it was drawn with saves the chosen profile's default instead; a value
+the user changed is kept. Disconnect after each command asks again instead
+when the two defaults differ.
 
 Configure conditions owned generic fields, and the L&P app field, on its route
 field the same way. It still redraws after a bed-type change, and after a route

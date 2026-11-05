@@ -1222,21 +1222,62 @@ def _bed_specific_fields(
     return fields
 
 
-def _take_selected_pulse_defaults(
-    user_input: dict[str, Any], drawn: tuple[int, int] | None, selected: tuple[int, int]
-) -> None:
-    """Give a pulse field left at its drawn default the selected profile's default.
+# Generic setup fields whose default depends on the bed type.
+_PROFILE_DEFAULTED_FIELDS: Final = (
+    CONF_MOTOR_COUNT,
+    CONF_DISABLE_ANGLE_SENSING,
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_MOTOR_PULSE_DELAY_MS,
+)
 
-    The form is drawn once with the shown profile's timing, so an untouched
-    field would otherwise save that profile's value for another one.
+
+def _drawn_defaults(schema: Mapping[vol.Marker, Any]) -> dict[str, Any]:
+    """Return the defaults a setup form shows for its bed-type-dependent fields."""
+    return {
+        marker.schema: marker.default()
+        for marker in schema
+        if marker.schema in _PROFILE_DEFAULTED_FIELDS
+        and isinstance(marker, vol.Optional | vol.Required)
+        and not isinstance(marker.default, vol.Undefined)
+    }
+
+
+def _take_selected_defaults(
+    user_input: dict[str, Any],
+    drawn: tuple[str | None, dict[str, Any]] | None,
+    bed_type: str | None,
+    variant: str | None,
+    *,
+    signals: list[str] | None = None,
+    device_name: str | None = None,
+) -> None:
+    """Give a field left at the default it was drawn with the selected profile's default.
+
+    A setup form is drawn once, with the shown bed type's defaults, and a row
+    change cannot update them. An untouched field would otherwise save that
+    bed type's value for another one. A field the user changed keeps its value.
     """
-    if drawn is None:
+    if drawn is None or bed_type is None:
         return
-    for key, drawn_value, selected_value in zip(
-        (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS), drawn, selected, strict=True
-    ):
-        if drawn_value != selected_value and str(user_input.get(key)) == str(drawn_value):
-            user_input[key] = str(selected_value)
+    drawn_bed_type, shown = drawn
+    pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, variant, signals)
+    selected: dict[str, Any] = {
+        CONF_DISABLE_ANGLE_SENSING: not bed_type_has_position_feedback(bed_type, variant),
+        CONF_MOTOR_PULSE_COUNT: pulse_count,
+        CONF_MOTOR_PULSE_DELAY_MS: pulse_delay,
+    }
+    if bed_type != drawn_bed_type:
+        # The drawn count can come from the advertised remote, so only another
+        # bed type replaces it.
+        selected[CONF_MOTOR_COUNT] = _default_motor_count(bed_type, device_name)
+    for key, value in selected.items():
+        if (
+            key in shown
+            and key in user_input
+            and str(user_input[key]) == str(shown[key])
+            and str(value) != str(shown[key])
+        ):
+            user_input[key] = value
 
 
 def _bed_specific_errors(user_input: Mapping[str, Any], bed_type: str | None) -> dict[str, str]:
@@ -4195,8 +4236,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ) = None
         self._pending_route_bed_type: str | None = None
         self._route_chosen: tuple[str | None, str] | None = None
-        # The pulse defaults the generic setup form was last drawn with.
-        self._drawn_pulse_defaults: tuple[int, int] | None = None
+        # The bed type a generic setup form was last drawn for, and its
+        # bed-type-dependent defaults.
+        self._drawn_defaults: tuple[str | None, dict[str, Any]] | None = None
         self._pending_disconnect_resume_step: str | None = None
         self._pending_disconnect_default: bool = DEFAULT_DISCONNECT_AFTER_COMMAND
         self._disconnect_choice_confirmed: bool = False
@@ -4939,6 +4981,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ):
                 return route
 
+            _take_selected_defaults(
+                user_input,
+                self._drawn_defaults,
+                selected_bed_type,
+                protocol_variant,
+                signals=detection_result.signals,
+                device_name=self._discovery_info.name,
+            )
             motor_count = _normalize_fixed_motor_count(
                 selected_bed_type,
                 protocol_variant,
@@ -4978,7 +5028,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 protocol_variant,
                 detection_result.signals,
             )
-            _take_selected_pulse_defaults(user_input, self._drawn_pulse_defaults, pulse_defaults)
             # Validate motor pulse count
             pulse_count_input = user_input.get(CONF_MOTOR_PULSE_COUNT)
             if pulse_count_input is not None and pulse_count_input != "":
@@ -5110,7 +5159,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             detection_result.signals,
         )
         default_pulse_count, default_pulse_delay = pulse_defaults
-        self._drawn_pulse_defaults = pulse_defaults
 
         # Auto-detect motor count for Richmat beds based on remote code features
         default_motor_count = _default_motor_count(bed_type, self._discovery_info.name)
@@ -5260,6 +5308,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if errors:
             # A refused route is asked again on the next submission.
             self._route_chosen = None
+        self._drawn_defaults = (bed_type, _drawn_defaults(schema_dict))
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
@@ -5837,6 +5886,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ):
                 return route
 
+            _take_selected_defaults(
+                user_input,
+                self._drawn_defaults,
+                bed_type,
+                protocol_variant,
+                signals=detection_result.signals,
+                device_name=self._discovery_info.name,
+            )
             motor_count = _normalize_fixed_motor_count(
                 bed_type,
                 protocol_variant,
@@ -5871,7 +5928,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 protocol_variant,
                 detection_result.signals,
             )
-            _take_selected_pulse_defaults(user_input, self._drawn_pulse_defaults, pulse_defaults)
             motor_pulse_count = pulse_defaults[0]
             motor_pulse_delay_ms = pulse_defaults[1]
             try:
@@ -6003,7 +6059,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             default_disable_angle = DEFAULT_DISABLE_ANGLE_SENSING
             default_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
             default_pulse_delay = DEFAULT_MOTOR_PULSE_DELAY_MS
-        self._drawn_pulse_defaults = (default_pulse_count, default_pulse_delay)
 
         octo_split_note = self._get_octo_split_setup_note(
             address=address,
@@ -6046,6 +6101,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if errors:
             # A refused route is asked again on the next submission.
             self._route_chosen = None
+        self._drawn_defaults = (defaults_bed_type, _drawn_defaults(schema_dict))
         return self.async_show_form(
             step_id="manual_config",
             data_schema=vol.Schema(schema_dict),
@@ -6105,6 +6161,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ):
                     return route
 
+                _take_selected_defaults(
+                    user_input, self._drawn_defaults, bed_type, protocol_variant
+                )
                 motor_count = _normalize_fixed_motor_count(
                     bed_type,
                     protocol_variant,
@@ -6133,9 +6192,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 pulse_defaults = get_motor_pulse_defaults(
                     bed_type,
                     protocol_variant,
-                )
-                _take_selected_pulse_defaults(
-                    user_input, self._drawn_pulse_defaults, pulse_defaults
                 )
                 motor_pulse_count = pulse_defaults[0]
                 motor_pulse_delay_ms = pulse_defaults[1]
@@ -6265,7 +6321,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             default_disable_angle = DEFAULT_DISABLE_ANGLE_SENSING
             default_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
             default_pulse_delay = DEFAULT_MOTOR_PULSE_DELAY_MS
-        self._drawn_pulse_defaults = (default_pulse_count, default_pulse_delay)
 
         # Add remaining fields
         schema_dict.update(
@@ -6300,6 +6355,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if errors:
             # A refused route is asked again on the next submission.
             self._route_chosen = None
+        self._drawn_defaults = (preselected_bed_type, _drawn_defaults(schema_dict))
         return self.async_show_form(
             step_id="manual_entry",
             data_schema=vol.Schema(schema_dict),
