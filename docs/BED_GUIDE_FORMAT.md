@@ -5,9 +5,10 @@ for values. Use this layout for new guides and keep it when you update one.
 [BedTech](beds/bedtech.md) is the canonical example.
 
 Discovery ledgers are a different document. Evidence, row-by-row dispositions,
-reachability arguments and audit wording belong in the ledger
-(`docs/apk-analysis/dispositions/` or `docs/beds/*-disposition.md`). The guide
-links to the ledger and states the results in reference form.
+reachability arguments and audit wording belong in the ledger, which is an
+audit record: it stays machine-local with the APK Protocol Audit report and
+never goes in `docs/`. The implementation PR states its totals and exclusions,
+and the guide states the results in reference form.
 
 ## Skeleton
 
@@ -70,7 +71,7 @@ links to the ledger and states the results in reference form.
 
 ### Analysis provenance
 
-- <package, version, artifact SHA-256, link to the discovery ledger>
+- <package, version, artifact SHA-256, the PR that implemented it>
 ```
 
 ## Rules
