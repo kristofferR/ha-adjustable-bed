@@ -47,7 +47,6 @@ from .const import (
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
-    BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_BEST_MATTRESS,
@@ -580,21 +579,8 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "reverie": {
         "display": "Reverie",
-        "description": "Reverie adjustable bases",
-        "variants": [
-            {
-                "type": BED_TYPE_REVERIE_NIGHTSTAND,
-                "label": "Nightstand (Protocol 110)",
-                "description": "Beds using the Reverie Nightstand app",
-                "hint": "Device name contains 'RV' - try this first",
-            },
-            {
-                "type": BED_TYPE_REVERIE,
-                "label": "Legacy (Protocol 108)",
-                "description": "Older Reverie beds",
-                "hint": "Try 'Nightstand' first, use this if it doesn't work",
-            },
-        ],
+        "description": "Nightstand app, Protocol 110 and Protocol 108 receivers",
+        "variants": None,  # Setup confirms the receiver from its advertised service.
     },
     "richmat": {
         "display": "Richmat",
@@ -659,6 +645,7 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "malouf": BED_TYPE_MALOUF_APP,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,
+    "reverie": BED_TYPE_REVERIE_NIGHTSTAND,
     "richmat": BED_TYPE_RICHMAT,
     "sleepys": BED_TYPE_SLEEPYS_ELITE_APP,
     "solace": BED_TYPE_SOLACE,

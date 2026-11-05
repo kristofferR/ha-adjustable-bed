@@ -546,8 +546,11 @@ listed together below, with links to their profile sections.
 Existing entries keep their selection until you change it. Beds added before
 4.1.0 whose bed type gained app profiles are asked, through a repair, which
 app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
-For a two-address pair, settings belong to each physical bed. If the shared form
-refuses a change, split the pair, configure each side, then combine them again.
+For a two-address pair, settings belong to each physical bed. Each receiver's
+own app settings, such as its motor count, massage or light settings, are under
+**Configure → Change left receiver settings** or **Change right receiver
+settings**. To change a receiver's bed type or app, split the pair, configure
+that side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
@@ -564,6 +567,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | Malouf / Lucid | Answer the [Malouf question](beds/malouf.md#choosing-a-profile) with your app or receiver: the [Malouf Base and Lucid Base apps](beds/malouf.md#malouf-base--lucid-base-family) ask the exact model, primary/secondary role and transport; the Nordic UART and FFE5 receivers ask the [layout and memory positions](#malouflucid-layout-and-memory). Change an existing bed's app with **Reconfigure**. |
 | Customatic / Jordan's | One question per brand: [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family) or [Z-Series](beds/okin-nframe.md#customatic-z-series) with its model; [Serenity](beds/okin-nframe.md#jordans-serenity) or [Tranquil](beds/okin-nframe.md#jordans-tranquil). Change an existing bed's app with **Reconfigure**. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
+| Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Configure lists both receivers. |
 | Remacro | [One question for Slumberland, The Brick or Jerome's](beds/remacro.md#home-assistant-setup), offering the apps that list the advertised model; Configure changes the app's protocol variant. The advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | Answer the [Okin question](beds/okin-nframe.md#home-assistant-setup) with **FurniMove / OKIN Smart Remote app**, then the [exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |
@@ -787,8 +791,8 @@ sides; side-specific controls retain each side's own features.
 
 For two receivers, open **Configure → Change left receiver settings** or
 **Change right receiver settings** to adjust its adapter, connection profile,
-motor pulses, Disconnect After Command, and idle timeout. These changes apply
-only to the selected receiver, without splitting the bed. **Change settings**
+motor pulses, Disconnect After Command, idle timeout and its own app's settings.
+These changes apply only to the selected receiver, without splitting the bed. **Change settings**
 retains the shared form; changed values there apply to both receivers.
 The card's **Both** view also offers each receiver's Connect and Disconnect
 buttons next to its connection status.

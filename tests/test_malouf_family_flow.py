@@ -292,3 +292,30 @@ async def test_the_confirm_step_lists_the_checked_transports_controls(
     assert previewed[const.CONF_MALOUF_APP_TRANSPORT] == "richmat_framed"
     # The entry keeps the automatic choice the user made.
     assert entry.data[const.CONF_MALOUF_APP_TRANSPORT] == "auto"
+
+
+async def test_a_receiver_pair_asks_each_layout_once_on_its_own_step(
+    hass, enable_custom_integrations
+):
+    from tests.test_paired_receiver_questions import child, fields, pair_entry, receiver_form
+
+    receiver = {const.CONF_BED_TYPE: const.BED_TYPE_MALOUF_NEW_OKIN, const.CONF_MOTOR_COUNT: 3}
+    entry = pair_entry(
+        hass,
+        {**receiver, const.CONF_MALOUF_LAYOUT: const.MALOUF_LAYOUT_LUMBAR},
+        {**receiver, const.CONF_MALOUF_LAYOUT: const.MALOUF_LAYOUT_HEAD_TILT},
+    )
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    shared = await flow._async_options_form(None, step_id="settings")
+    assert const.CONF_MALOUF_LAYOUT not in {marker.schema for marker in shared["data_schema"].schema}
+
+    left = await receiver_form(hass, entry, "left")
+    assert fields(left)[const.CONF_MALOUF_LAYOUT].default() == const.MALOUF_LAYOUT_LUMBAR
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        await hass.config_entries.options.async_configure(
+            left["flow_id"],
+            {**left["data_schema"]({}), const.CONF_MALOUF_LAYOUT: const.MALOUF_LAYOUT_HILO},
+        )
+    assert child(entry, "left")[const.CONF_MALOUF_LAYOUT] == const.MALOUF_LAYOUT_HILO
+    assert child(entry, "right")[const.CONF_MALOUF_LAYOUT] == const.MALOUF_LAYOUT_HEAD_TILT
