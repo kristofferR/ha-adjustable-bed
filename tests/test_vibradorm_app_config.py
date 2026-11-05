@@ -85,13 +85,17 @@ async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_se
     })
     assert result["step_id"] == "vibradorm"
     result = await flow.async_step_vibradorm({"app": "caresse"})
-    assert result["step_id"] == "vibradorm_app"
+    assert result["step_id"] == "profile_questions"
     assert result["type"] == FlowResultType.FORM
-    fields = {marker.schema for marker in result["data_schema"].schema}
-    assert const.CONF_VIBRADORM_RESTORED in fields
-    assert const.CONF_VIBRADORM_RGB not in fields
+    fields = {marker.schema: marker for marker in result["data_schema"].schema}
+    assert fields[const.CONF_VIBRADORM_RESTORED].visible is None
+    # Retained features show only once the restored setup is chosen.
+    assert fields[const.CONF_VIBRADORM_RGB].visible == {
+        "field": const.CONF_VIBRADORM_RESTORED,
+        "value": True,
+    }
     with patch.object(flow, f"async_step_{pairing}", new=AsyncMock()) as resume:
-        await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_RESTORED: False})
+        await flow.async_step_profile_questions({const.CONF_VIBRADORM_RESTORED: False})
     resume.assert_awaited_once_with()
     assert flow._manual_data[const.CONF_VIBRADORM_CONTROL_TYPE] == "2"
     assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
@@ -103,11 +107,12 @@ async def test_restored_basic_features_and_no_motor_branch_are_explicit(hass):
     flow.context = {}
     flow.hass = hass
     flow._manual_data = app_data()
-    result = await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_RESTORED: True})
+    result = await flow.async_step_profile_questions()
     assert const.CONF_VIBRADORM_RGB in {key.schema for key in result["data_schema"].schema}
     for control, expected_groups in (("2", 2), ("other", 0)):
         with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as resume:
-            await flow.async_step_vibradorm_app({
+            await flow.async_step_profile_questions({
+                const.CONF_VIBRADORM_RESTORED: True,
                 const.CONF_VIBRADORM_CONTROL_TYPE: control,
                 const.CONF_VIBRADORM_RGB: True,
                 const.CONF_HAS_MASSAGE: True,
@@ -145,7 +150,7 @@ async def test_app_change_in_options_requires_guided_verification(hass):
 
 @pytest.mark.parametrize("options", [False, True])
 @pytest.mark.parametrize("old_app", ["caresse", "werkmeister"])
-async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, options, old_app):
+async def test_app_switch_in_the_family_step_discards_old_app_fields(hass, options, old_app):
     old = app_data(old_app, "2" if old_app == "caresse" else "7", **{
         const.CONF_VIBRADORM_RESTORED: old_app == "caresse",
         const.CONF_VIBRADORM_RGB: old_app == "caresse",
@@ -155,44 +160,28 @@ async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, o
         const.CONF_VIBRADORM_APP_METADATA: {"model": "old metadata"},
     })
     entry = MockConfigEntry(domain=const.DOMAIN, data=old)
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
     if options:
         entry.add_to_hass(hass)
-        flow = AdjustableBedConfigFlow()
         flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
-        flow.hass = hass
         await flow.async_step_reconfigure()
-        await flow.async_step_vibradorm({"app": old_app})
-        step = flow.async_step_vibradorm_app
     else:
-        flow = AdjustableBedConfigFlow()
         flow.context = {}
-        flow._manual_data = old
-        step = flow.async_step_vibradorm_app
-    flow.hass = hass
-    rendered = await step()
-    assert rendered["type"] == FlowResultType.FORM
-    assert rendered["data_schema"] is not None
-    submitted = rendered["data_schema"]({})
-    assert isinstance(submitted, dict)
+        flow._manual_data = dict(old)
     new_app = "werkmeister" if old_app == "caresse" else "caresse"
-    submitted[const.CONF_VIBRADORM_APP_PROFILE] = new_app
-    rebuilt = await step(submitted)
-    assert rebuilt["type"] == FlowResultType.FORM
-    assert not rebuilt["errors"]
-    assert rebuilt["data_schema"] is not None
-    defaults = rebuilt["data_schema"]({})
-    assert isinstance(defaults, dict)
-    assert defaults[const.CONF_VIBRADORM_APP_PROFILE] == new_app
+    rendered = await flow.async_step_vibradorm({"app": new_app})
+    assert rendered["step_id"] == "profile_questions"
+    assert rendered["data_schema"] is not None
+    defaults = rendered["data_schema"]({})
     if new_app == "werkmeister":
         assert defaults[const.CONF_VIBRADORM_CONTROL_TYPE] == "5"
     else:
         assert defaults[const.CONF_VIBRADORM_RESTORED] is False
-    for key in (const.CONF_VIBRADORM_RGB, const.CONF_HAS_MASSAGE,
-                const.CONF_VIBRADORM_LIGHT_EXTENSION, const.CONF_VIBRADORM_FLOOR_DEFAULT):
-        assert key not in defaults
+    with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
+        await flow.async_step_profile_questions(defaults)
+    pairing.assert_awaited_once()
     if options:
-        with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()):
-            await step(defaults)
         assert entry.data == old
         flow._migration_verified = True
         await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
@@ -200,9 +189,6 @@ async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, o
         assert finished["type"] == FlowResultType.ABORT
         updated = entry.data
     else:
-        with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-            await step(defaults)
-        pairing.assert_awaited_once()
         updated = flow._manual_data
     assert updated[const.CONF_VIBRADORM_CONTROL_TYPE] == ("5" if new_app == "werkmeister" else "2")
     assert updated[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 6
@@ -274,19 +260,13 @@ async def test_enabling_restored_form_recomputes_hidden_floor_default(hass, opti
         flow = AdjustableBedConfigFlow()
         flow.context = {}
         flow._manual_data = dict(entry.data)
-        step = flow.async_step_vibradorm_app
+        step = flow.async_step_profile_questions
     flow.hass = hass
     fresh = await step()
     assert fresh["type"] == FlowResultType.FORM
     assert fresh["data_schema"] is not None
-    submitted = fresh["data_schema"]({})
-    assert isinstance(submitted, dict)
-    assert const.CONF_VIBRADORM_FLOOR_DEFAULT not in submitted
-    submitted[const.CONF_VIBRADORM_RESTORED] = True
-    restored = await step(submitted)
-    assert restored["type"] == FlowResultType.FORM
-    assert restored["data_schema"] is not None
-    selected = restored["data_schema"]({})
+    # The restored setup's floor default shows with its own default, 8.
+    selected = fresh["data_schema"]({const.CONF_VIBRADORM_RESTORED: True})
     assert isinstance(selected, dict)
     assert selected[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 8
     selected[const.CONF_VIBRADORM_FLOOR_LIGHT] = True
@@ -726,7 +706,7 @@ async def test_retained_remembered_level_rejects_invalid_raw_inputs(hass, level)
     flow.hass = hass
     flow._manual_data = app_data(**{const.CONF_VIBRADORM_RESTORED: True})
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pair:
-        result = await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_FLOOR_DEFAULT: level})
+        result = await flow.async_step_profile_questions({const.CONF_VIBRADORM_FLOOR_DEFAULT: level})
     assert result["errors"] == {const.CONF_VIBRADORM_FLOOR_DEFAULT: "vibradorm_app_invalid"}
     pair.assert_not_awaited()
 
@@ -781,7 +761,7 @@ async def test_guided_retained_setup_persists_literal_remote_and_independent_fea
     await flow.async_step_reconfigure()
     await flow.async_step_vibradorm({"app": "caresse"})
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-        await flow.async_step_vibradorm_app({
+        await flow.async_step_profile_questions({
             const.CONF_VIBRADORM_CONTROL_TYPE: control,
             const.CONF_VIBRADORM_RGB: True,
             const.CONF_HAS_MASSAGE: True,
@@ -828,7 +808,7 @@ async def test_invalid_profile_remote_cannot_reach_pairing(hass, app, control, f
     flow.hass = hass
     flow._manual_data = app_data(app, control, **{const.CONF_VIBRADORM_RESTORED: app == "caresse"})
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pair:
-        result = await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_CONTROL_TYPE: control})
+        result = await flow.async_step_profile_questions({const.CONF_VIBRADORM_CONTROL_TYPE: control})
     assert result["errors"] == {field: "vibradorm_app_invalid"}
     pair.assert_not_awaited()
 

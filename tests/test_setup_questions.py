@@ -1,6 +1,7 @@
 """Profile-declared setup questions and owned generic fields (#779)."""
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 from custom_components.adjustable_bed import const
@@ -129,10 +130,35 @@ def test_every_profile_with_questions_has_a_setup_step_that_asks_them():
             assert profile_route(key).bed_type in _APP_SETUP_STEPS, key
 
 
-def test_no_declaration_uses_a_condition_until_its_rendering_is_decided():
-    # Conditional fields wait for the minimum Home Assistant version decision.
-    for key, profile in SETUP_PROFILES.items():
-        assert all(question.when is None for question in profile.questions), key
+def test_a_condition_renders_as_a_native_conditional_field():
+    from custom_components.adjustable_bed.config_flow import _profile_question_schema
+
+    data = {
+        const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "caresse",
+    }
+    profile = setup_profile_for(data)
+    assert profile is not None
+    markers = {marker.schema: marker for marker in _profile_question_schema(profile, data)}
+    assert markers[const.CONF_VIBRADORM_RESTORED].visible is None
+    assert markers[const.CONF_VIBRADORM_RGB].visible == {
+        "field": const.CONF_VIBRADORM_RESTORED,
+        "value": True,
+    }
+
+
+def test_a_condition_on_an_answer_the_form_omits_is_settled_by_the_saved_setup():
+    from custom_components.adjustable_bed.config_flow import _profile_question_schema
+
+    profile = SETUP_PROFILES[const.BED_TYPE_VMATBASIC]
+    # Configure leaves the product to the guided change, so its fields are settled here.
+    without_product = replace(profile, questions=profile.questions[1:])
+    cbi = {const.CONF_VMATBASIC_PROFILE: "cbi"}
+    basic = {const.CONF_VMATBASIC_PROFILE: "basic"}
+    shown = {m.schema: m for m in _profile_question_schema(without_product, cbi)}
+    assert const.CONF_VMATBASIC_FLOOR_LEVEL in shown
+    assert shown[const.CONF_VMATBASIC_FLOOR_LEVEL].visible is None
+    assert not _profile_question_schema(without_product, basic)
 
 
 def test_a_profile_cleans_its_answers_before_checking_them():

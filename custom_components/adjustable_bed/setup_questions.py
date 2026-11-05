@@ -12,10 +12,14 @@ specific key that matches a route wins.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any, Final
 from uuid import UUID
+
+import voluptuous as vol
+from homeassistant.helpers.field_visibility import ConditionOperator, FieldCondition
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -77,7 +81,20 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_MOTOR_PULSE_USER_SET,
     CONF_PROTOCOL_VARIANT,
+    CONF_VIBRADORM_APP_METADATA,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_FLOOR_DEFAULT,
+    CONF_VIBRADORM_FLOOR_LIGHT,
+    CONF_VIBRADORM_LIGHT_EXTENSION,
+    CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_RGB,
+    CONF_VIBRADORM_VMAT_REMOTE,
+    CONF_VMATBASIC_FLOOR_LEVEL,
+    CONF_VMATBASIC_FLOOR_MINUTES,
+    CONF_VMATBASIC_PROFILE,
     HAS_LIGHT_DEFAULTS,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
@@ -93,6 +110,9 @@ from .const import (
     RICHMAT_MH_BED_TYPES,
     STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
+    VIBRADORM_RESTORED_CONTROLS,
+    VIBRADORM_WERKMEISTER_CONTROLS,
+    VMATBASIC_PROFILES,
 )
 
 # The generic fields a profile can own.
@@ -204,6 +224,8 @@ class _SetByProfile:
 SET_BY_PROFILE: Final = _SetByProfile()
 # A question without a default: setup cannot finish until it is answered.
 REQUIRED: Final = object()
+# A question without a default that may stay unanswered.
+OPTIONAL: Final = object()
 
 Choices = Mapping[Any, str] | Callable[[Mapping[str, Any]], Mapping[Any, str]]
 
@@ -216,9 +238,12 @@ class Question:
     staged setup; without choices the question is yes or no, or free ``text``.
     ``default`` is a value, a function of the staged setup, or :data:`REQUIRED`.
     An ``advanced`` question sits in a collapsed Advanced section. ``when`` is
-    the condition for asking it. It will render as Home Assistant's native
-    conditional field once the minimum version is 2026.11; until then no
-    declaration uses one.
+    the condition for asking it, a Home Assistant field condition on another
+    answer of the same form, rendered as a native conditional field: a hidden
+    question is neither required nor saved. ``staged_when`` limits when a
+    staged answer is the default, for a value the profile set itself rather than
+    the user. ``validator`` replaces the one the choices imply, for a range or a
+    format.
     """
 
     key: str
@@ -226,7 +251,22 @@ class Question:
     default: Any = REQUIRED
     advanced: bool = False
     text: bool = False
-    when: Callable[[Mapping[str, Any]], bool] | None = None
+    when: FieldCondition | list[FieldCondition] | None = None
+    staged_when: FieldCondition | None = None
+    validator: Any = None
+
+    def asked(self, data: Mapping[str, Any]) -> bool:
+        """Return True when the condition holds for these answers."""
+        from homeassistant.helpers.field_visibility import is_field_visible
+
+        return self.when is None or is_field_visible(self.when, data)
+
+    def condition_fields(self) -> frozenset[str]:
+        """Return the fields the condition reads."""
+        if self.when is None:
+            return frozenset()
+        conditions = self.when if isinstance(self.when, list) else [self.when]
+        return frozenset(condition["field"] for condition in conditions)
 
     def options(self, data: Mapping[str, Any]) -> Mapping[Any, str] | None:
         if self.choices is None or isinstance(self.choices, Mapping):
@@ -235,12 +275,22 @@ class Question:
 
     def default_for(self, data: Mapping[str, Any]) -> Any:
         """Return the staged answer when it is still valid, else the declared default."""
+        from homeassistant.helpers.field_visibility import is_field_visible
+
         options = self.options(data)
         staged = data.get(self.key)
-        if staged is not None and (options is None or staged in options):
+        if (
+            staged is not None
+            and (options is None or staged in options)
+            and (self.staged_when is None or is_field_visible(self.staged_when, data))
+        ):
             return staged
         default = self.default(data) if callable(self.default) else self.default
-        if options is not None and default is not REQUIRED and default not in options:
+        if (
+            options is not None
+            and default not in (REQUIRED, OPTIONAL)
+            and default not in options
+        ):
             return REQUIRED
         return default
 
@@ -466,6 +516,93 @@ _BASE: Final[dict[str, SetupProfile]] = {
 }
 
 
+def _vibradorm_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    """Clear retained settings an answer no longer allows, and the stale app metadata."""
+    from .config_flow import _vibradorm_app_data
+
+    data = _vibradorm_app_data(previous, answers)
+    if any(
+        data.get(key) != previous.get(key)
+        for key in (CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_VMAT_REMOTE)
+    ):
+        data.pop(CONF_VIBRADORM_APP_METADATA, None)
+    return data
+
+
+def _vibradorm_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .config_flow import _vibradorm_app_errors
+
+    return _vibradorm_app_errors(data)
+
+
+def _vibradorm_profile(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """The validated app profile sets the motor groups and massage."""
+    from .beds.vibradorm_app import validate_vibradorm_app_profile
+
+    control = data[CONF_VIBRADORM_CONTROL_TYPE]
+    profile = validate_vibradorm_app_profile(
+        data[CONF_VIBRADORM_APP_PROFILE],
+        "other" if control == "other" else int(control),
+        restored=data[CONF_VIBRADORM_RESTORED],
+        floor_light=data[CONF_VIBRADORM_FLOOR_LIGHT],
+        rgb=data[CONF_VIBRADORM_RGB],
+        massage=data[CONF_HAS_MASSAGE],
+        light_extension=data[CONF_VIBRADORM_LIGHT_EXTENSION],
+        remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
+    )
+    return {
+        CONF_MOTOR_COUNT: max(2, len(profile.groups)),
+        CONF_HAS_MASSAGE: profile.massage,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_MOTOR_PULSE_USER_SET: False,
+    }
+
+
+def _vmat_remotes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .vibradorm_vmat_profiles import VMAT_REMOTES
+
+    return {remote: f"Remote {remote} ({profile.asset})" for remote, profile in VMAT_REMOTES.items()}
+
+
+def _vmatbasic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    from .config_flow import _vmatbasic_data
+
+    return _vmatbasic_data(previous, answers)
+
+
+def _vmatbasic_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .config_flow import _vmatbasic_errors as errors
+
+    return errors(data)
+
+
+def vmatbasic_integer(value: object) -> int:
+    """Keep whole numeric form values without silently truncating fractions."""
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError as error:
+            raise vol.Invalid("Expected a whole number") from error
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise vol.Invalid("Expected a whole number")
+    if not math.isfinite(value) or value != int(value):
+        raise vol.Invalid("Expected a whole number")
+    return int(value)
+
+
+def _whole_number(maximum: int) -> Any:
+    """A whole number up to ``maximum``; the product's own range is checked on save."""
+    return vol.All(vmatbasic_integer, vol.Range(min=0, max=maximum))
+
+
+_RESTORED: Final[FieldCondition] = {"field": CONF_VIBRADORM_RESTORED, "value": True}
+_FLOOR_PRODUCTS: Final[FieldCondition] = {
+    "field": CONF_VMATBASIC_PROFILE,
+    "operator": ConditionOperator.IN,
+    "value": ["cbi", "xtbox"],
+}
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -512,6 +649,79 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_lp_legacy_normalize,
         validate=_lp_legacy_errors,
+    ),
+    # The Vibradorm family step picks the app; each app asks its own controls.
+    f"{BED_TYPE_VIBRADORM_APP}@werkmeister": _asking(
+        BED_TYPE_VIBRADORM_APP,
+        questions=(
+            Question(CONF_VIBRADORM_CONTROL_TYPE, VIBRADORM_WERKMEISTER_CONTROLS, "5"),
+        ),
+        normalize=_vibradorm_normalize,
+        validate=_vibradorm_errors,
+        derive=_vibradorm_profile,
+    ),
+    f"{BED_TYPE_VIBRADORM_APP}@vmat": _asking(
+        BED_TYPE_VIBRADORM_APP,
+        questions=(Question(CONF_VIBRADORM_VMAT_REMOTE, _vmat_remotes),),
+        normalize=_vibradorm_normalize,
+        validate=_vibradorm_errors,
+        derive=_vibradorm_profile,
+    ),
+    # Caresse Diamant asks the retained settings only for a restored setup.
+    f"{BED_TYPE_VIBRADORM_APP}@caresse": _asking(
+        BED_TYPE_VIBRADORM_APP,
+        owns={
+            key: value
+            for key, value in _BASE[BED_TYPE_VIBRADORM_APP].owns.items()
+            if key != CONF_HAS_MASSAGE
+        },
+        questions=(
+            Question(CONF_VIBRADORM_RESTORED, default=False),
+            Question(
+                CONF_VIBRADORM_CONTROL_TYPE, VIBRADORM_RESTORED_CONTROLS, "2", when=_RESTORED
+            ),
+            *(
+                Question(key, default=False, when=_RESTORED)
+                for key in (
+                    CONF_VIBRADORM_FLOOR_LIGHT,
+                    CONF_VIBRADORM_RGB,
+                    CONF_HAS_MASSAGE,
+                    CONF_VIBRADORM_LIGHT_EXTENSION,
+                )
+            ),
+            Question(
+                CONF_VIBRADORM_FLOOR_DEFAULT,
+                default=lambda data: 6 if data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8,
+                when=_RESTORED,
+                # A fresh Caresse stores 6 itself; that is not a retained preference.
+                staged_when=_RESTORED,
+                validator=vol.All(int, vol.Range(min=1, max=8)),
+            ),
+        ),
+        normalize=_vibradorm_normalize,
+        validate=_vibradorm_errors,
+        derive=_vibradorm_profile,
+    ),
+    # The CBI and XT-Box products also ask the floor light level and timer.
+    BED_TYPE_VMATBASIC: _asking(
+        BED_TYPE_VMATBASIC,
+        questions=(
+            Question(CONF_VMATBASIC_PROFILE, VMATBASIC_PROFILES),
+            Question(
+                CONF_VMATBASIC_FLOOR_LEVEL,
+                default=OPTIONAL,
+                when=_FLOOR_PRODUCTS,
+                validator=_whole_number(255),
+            ),
+            Question(
+                CONF_VMATBASIC_FLOOR_MINUTES,
+                default=0,
+                when=_FLOOR_PRODUCTS,
+                validator=_whole_number(1439),
+            ),
+        ),
+        normalize=_vmatbasic_normalize,
+        validate=_vmatbasic_errors,
     ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
