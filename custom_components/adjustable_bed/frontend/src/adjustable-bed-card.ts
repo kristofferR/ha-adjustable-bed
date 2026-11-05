@@ -13,12 +13,18 @@ import {
 } from "lit";
 import { property, state } from "lit/decorators.js";
 import {
+  type BedGraphicPanel,
   type BedGraphicTone,
   type DualBedGraphicSide,
   renderBedGraphic,
   renderDualBedGraphic,
 } from "./bed-graphic";
-import { selectBedGraphicMotors } from "./bed-graphic-state";
+import {
+  bedGraphicMotorOrder,
+  bedGraphicPanel,
+  estimatedGraphicPanel,
+  selectBedGraphicMotors,
+} from "./bed-graphic-state";
 import {
   PLATFORM,
   SECTION_ORDER,
@@ -43,7 +49,7 @@ import {
   registerHoldFocusLoss,
   stopCardMotorHold,
 } from "./hold";
-import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
+import { cardNavigationPath, compactActions, compactStopEntities, fullCardDialogConfig } from "./compact";
 import {
   type MotorEstimate,
   type SavedPosition,
@@ -53,7 +59,6 @@ import {
   estimateAlert,
   estimateChip,
   estimateReadout,
-  estimatedAngle,
   motorEstimate,
   positionScope,
   positionsForPane,
@@ -110,8 +115,10 @@ interface PairedPane {
 }
 
 interface BedGraphicState extends DualBedGraphicSide {
+  showLabels?: boolean;
   upperMotor: MotorEntity;
   lowerMotor: MotorEntity;
+  middleMotor?: MotorEntity;
   estimated?: boolean;
 }
 
@@ -141,6 +148,8 @@ export class AdjustableBedCard extends LitElement {
   @state() private _savedEditFor?: string;
   // Bumped when a tap move starts or ends, so its render is never coalesced away.
   @state() private _tapRevision = 0;
+  @state() private _detailsOpen = false;
+  private _detailsCard?: AdjustableBedCard;
 
   private _watched: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
@@ -204,6 +213,7 @@ export class AdjustableBedCard extends LitElement {
 
   public setConfig(config: AdjustableBedCardConfig): void {
     if (!config) throw new Error("Invalid configuration");
+    if (this._detailsOpen) this._closeDetails();
     if (this._config) {
       if (this._compactStopTargets.size > 0) this._stopCompact();
       else this._hold.abandon();
@@ -248,6 +258,7 @@ export class AdjustableBedCard extends LitElement {
     // Removing the card fires no dialog close event, so a running lower to flat
     // would lose its Stop control. Stop it here too.
     this._closeEstimateDialog();
+    this._closeDetails();
   }
 
   protected override shouldUpdate(changed: PropertyValues): boolean {
@@ -256,6 +267,7 @@ export class AdjustableBedCard extends LitElement {
     // save-mode interaction just because `hass` changed in the same cycle.
     if (
       changed.has("_config") ||
+      changed.has("_detailsOpen") ||
       changed.has("_saveModeFor") ||
       changed.has("_activePairedPane") ||
       changed.has("_synchronizingTo") ||
@@ -540,13 +552,13 @@ export class AdjustableBedCard extends LitElement {
     const sides = paired ? panes.filter((pane) => pane.key !== "both") : panes;
     const canStop = !!bed && compactStopEntities(bed).length > 0;
     const movingControls = actions.length > 0 || motors.length > 0;
-    const nav = cardNavigationPath(c.navigation_path);
+    const nav = c.open_dialog || cardNavigationPath(c.navigation_path);
     return html`
       <ha-card class="compact-card ${!wantsControls ? "compact-glance" : ""} ${c.animate === false ? "no-animation" : ""}">
         ${c.show_header !== false ? html`
           <div class="compact-header">
             <span class="title">${this._title(titleDeviceId)}</span>
-            ${nav ? html`<button class="compact-open" @click=${this._navigate}
+            ${nav ? html`<button class="compact-open" @click=${this._openDetails}
               aria-label=${localize(this.hass, "compact.open")}>
               <ha-icon icon="mdi:open-in-new"></ha-icon>
             </button>` : nothing}
@@ -604,7 +616,16 @@ export class AdjustableBedCard extends LitElement {
         ${!hasControls && c.show_graphic === false && c.compact_labels === "none" &&
             c.show_header === false && c.show_connection !== true
           ? html`<div class="hint">${this._title(titleDeviceId)}</div>` : nothing}
-      </ha-card>`;
+      </ha-card>
+      ${this._detailsOpen ? html`<dialog class="bed-details-dialog" aria-label=${this._title(titleDeviceId)}
+        @close=${this._closeDetails} @click=${this._detailsBackdrop}>
+        <div class="bed-details-heading">
+          <strong>${this._title(titleDeviceId)}</strong>
+          <button class="bed-details-close" @click=${this._closeDetails}
+            aria-label=${localize(this.hass, "action.close")}>✕</button>
+        </div>
+        <div class="bed-details-content">${this._detailsCard}</div>
+      </dialog>` : nothing}`;
   }
 
   private _compactGraphic(sides: PairedPane[]): TemplateResult {
@@ -616,11 +637,11 @@ export class AdjustableBedCard extends LitElement {
       ? this._positionSummary(graphics[i]!) : localize(this.hass, "compact.no_position")}`).join(". ");
     const content = allKnown && left
       ? right ? renderDualBedGraphic({ left, right })
-        : renderBedGraphic({ ...left, upper: { angle: left.upper.angle }, lower: { angle: left.lower.angle } })
+        : renderBedGraphic({ ...left, upper: { ...left.upper, label: left.middle ? left.upper.label : undefined }, lower: { ...left.lower, label: left.middle ? left.lower.label : undefined } })
       : html`<div class="compact-no-position"><ha-icon icon="mdi:bed-outline"></ha-icon>
           <span>${localize(this.hass, "compact.no_position")}</span></div>`;
-    return cardNavigationPath(this._config?.navigation_path)
-      ? html`<button class="compact-graphic" @click=${this._navigate}
+    return this._config?.open_dialog || cardNavigationPath(this._config?.navigation_path)
+      ? html`<button class="compact-graphic" @click=${this._openDetails}
           aria-label="${localize(this.hass, "compact.open")}. ${description}">${content}</button>`
       : html`<div class="compact-graphic" role="img" aria-label=${description}>${content}</div>`;
   }
@@ -638,8 +659,8 @@ export class AdjustableBedCard extends LitElement {
             ? [...pane.label][0] : pane.label}</span>
         </span>
         ${mode === "angles" ? html`<span class="compact-position"
-          title=${pane.bed.motors.map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
-        >${pane.bed.motors
+          title=${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true).map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
+        >${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true)
           .filter((m) => m.angle || m.position || m.cover)
           .map((m) => this._readout(m) ?? "?").join(" / ") ||
           localize(this.hass, "compact.no_position")}</span>` : nothing}
@@ -695,6 +716,38 @@ export class AdjustableBedCard extends LitElement {
     this._hold.abandon();
     history.pushState(null, "", path);
     window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+  };
+
+  private _openDetails = async (): Promise<void> => {
+    if (!this._config?.open_dialog) {
+      this._navigate();
+      return;
+    }
+    this._hold.abandon();
+    if (!this._detailsCard) {
+      this._detailsCard = document.createElement(this.localName) as AdjustableBedCard;
+      this._detailsCard.setConfig(fullCardDialogConfig({ ...this._config, default_target: this._activePairedPane }));
+    }
+    this._detailsCard.hass = this.hass;
+    this._detailsOpen = true;
+    await this.updateComplete;
+    const dialog = this.renderRoot.querySelector<HTMLDialogElement>(".bed-details-dialog");
+    if (dialog && !dialog.open) dialog.showModal();
+  };
+
+  private _closeDetails = (): void => {
+    if (!this._detailsOpen && !this._detailsCard) return;
+    const dialog = this.renderRoot.querySelector<HTMLDialogElement>(".bed-details-dialog");
+    if (dialog?.open) dialog.close();
+    this._detailsOpen = false;
+    this._detailsCard = undefined;
+  };
+
+  private _detailsBackdrop = (event: MouseEvent): void => {
+    if (event.target !== event.currentTarget) return;
+    const bounds = (event.currentTarget as HTMLDialogElement).getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom) this._closeDetails();
   };
 
   private _selectPairedPane(key: string): void {
@@ -887,7 +940,7 @@ export class AdjustableBedCard extends LitElement {
     const motors =
       graphic.upperMotor === graphic.lowerMotor
         ? [graphic.upperMotor]
-        : [graphic.upperMotor, graphic.lowerMotor];
+        : [graphic.upperMotor, ...(graphic.middleMotor ? [graphic.middleMotor] : []), graphic.lowerMotor];
     return motors
       .map((motor) => {
         const value = this._readout(motor);
@@ -1059,34 +1112,46 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _graphicState(bed: BedEntities): BedGraphicState | undefined {
-    const withPosition = bed.motors.filter(
-      (motor) => {
-        const feedbackEntity = motor.angle ?? motor.position;
-        return (
-          feedbackEntity !== undefined &&
-          this._state(feedbackEntity)?.attributes.unit_of_measurement === "°"
-        );
-      },
+    const hass = this.hass;
+    if (!hass) return undefined;
+    const percentage = this._config?.show_percentage_graphic === true;
+    const withPosition = bed.motors.filter((motor) => {
+      const feedbackEntity = motor.angle ?? motor.position;
+      const unit = this._state(feedbackEntity ?? "")?.attributes.unit_of_measurement;
+      return unit === "°" || (percentage && unit === "%");
+    });
+    // Measured feedback wins. A bed without any is drawn from its estimates,
+    // dashed and labeled "≈", never like measured feedback.
+    const estimated = withPosition.length === 0;
+    const panel = (motor: MotorEntity): BedGraphicPanel | undefined => estimated
+      ? estimatedGraphicPanel(motorEstimate(hass, motor), percentage)
+      : bedGraphicPanel(motor, hass, percentage);
+    const graphicMotors = selectBedGraphicMotors(
+      estimated ? bed.motors.filter((motor) => panel(motor) !== undefined) : withPosition,
     );
-    // Registry entries can outlive a configuration change. Do not draw a flat
-    // default graphic from unavailable/unknown entities. Percentage positions
-    // cannot be rendered as angles, and every degree value must be numeric.
-    if (withPosition.length === 0) return this._estimatedGraphicState(bed);
-    if (withPosition.some((motor) => this._angle(motor) === undefined))
-      return undefined;
-    const graphicMotors = selectBedGraphicMotors(withPosition);
     if (!graphicMotors) return undefined;
     const { upper, lower } = graphicMotors;
-    const moving = bed.motors.some((m) => {
+    const middle = this._config?.show_lumbar_graphic === true
+      ? bed.motors.find((motor) => motor.key === "lumbar") : undefined;
+    const upperPanel = panel(upper);
+    const lowerPanel = panel(lower);
+    // Missing data on either required panel must never look like a flat bed.
+    // Unrelated motors (such as lumbar or tilt) do not gate the silhouette.
+    if (!upperPanel || !lowerPanel) return undefined;
+    const moving = !estimated && bed.motors.some((m) => {
       const s = m.cover ? this._state(m.cover)?.state : undefined;
       return s === "opening" || s === "closing";
     });
     return {
       upperMotor: upper,
+      showLabels: this._config?.show_graphic_labels !== false,
       lowerMotor: lower,
-      upper: { label: this._motorName(upper), angle: this._angle(upper) },
-      lower: { label: this._motorName(lower), angle: this._angle(lower) },
+      middleMotor: middle,
+      upper: { label: this._motorName(upper), ...upperPanel },
+      lower: { label: this._motorName(lower), ...lowerPanel },
+      middle: middle ? { label: this._motorName(middle), ...panel(middle) } : undefined,
       moving,
+      ...(estimated ? { estimated: true } : {}),
     };
   }
 
@@ -1097,7 +1162,7 @@ export class AdjustableBedCard extends LitElement {
     estimate?: EstimateContext,
   ): typeof nothing | TemplateResult {
     const routedStopScope = stopScope ?? (bed.stop ? [bed.stop] : []);
-    const motors = bed.motors.filter((m) => m.cover || m.up || m.down);
+    const motors = bedGraphicMotorOrder(bed.motors, this._config?.show_lumbar_graphic === true).filter((m) => m.cover || m.up || m.down);
     // Motors with movement controls open their position setter from the label.
     const positionRows = bed.motors.filter(
       (m) => m.position && !m.cover && !m.up && !m.down,
@@ -1768,6 +1833,8 @@ export class AdjustableBedCard extends LitElement {
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
+    // The full-card dialog uses the same live HA state and services as its card.
+    if (this._detailsCard) this._detailsCard.hass = this.hass;
     const dialog = this.renderRoot?.querySelector?.("dialog.estimate-dialog") as
       | HTMLDialogElement
       | null
@@ -1941,22 +2008,6 @@ export class AdjustableBedCard extends LitElement {
         <button class="dialog-btn primary" ?disabled=${!name}
           @click=${() => run("rename_position", { name, create_button: dialog.button })}>${this._t("estimate.save_confirm")}</button>
       </div>`;
-  }
-
-  private _estimatedGraphicState(bed: BedEntities): BedGraphicState | undefined {
-    const angle = (m: MotorEntity): number | undefined =>
-      estimatedAngle(motorEstimate(this.hass, m));
-    const motors = selectBedGraphicMotors(bed.motors.filter((m) => angle(m) !== undefined));
-    if (!motors) return undefined;
-    const { upper, lower } = motors;
-    return {
-      upperMotor: upper,
-      lowerMotor: lower,
-      upper: { label: this._motorName(upper), angle: angle(upper) },
-      lower: { label: this._motorName(lower), angle: angle(lower) },
-      moving: false,
-      estimated: true,
-    };
   }
 
   // ---- data helpers -------------------------------------------------------
@@ -2286,6 +2337,31 @@ export class AdjustableBedCard extends LitElement {
   }
 
   static override styles = css`
+    .bed-details-dialog {
+      box-sizing: border-box;
+      width: min(560px, calc(100vw - 24px));
+      max-height: calc(100dvh - 32px);
+      padding: 0;
+      overflow: auto;
+      color: var(--primary-text-color);
+      background: var(--card-background-color, #fff);
+      border: 1px solid var(--divider-color);
+      border-radius: 16px;
+      box-shadow: 0 16px 60px #0006;
+    }
+    .bed-details-dialog::backdrop { background: #0009; }
+    .bed-details-heading {
+      position: sticky; top: 0; z-index: 1;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 8px 16px;
+      background: var(--card-background-color, #fff);
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .bed-details-close {
+      border: 0; background: transparent; color: inherit;
+      width: 44px; height: 44px; font-size: 20px; cursor: pointer;
+    }
+    .bed-details-content { padding: 8px; }
     .compact-card { padding: 13px; }
     .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 24px;
       align-items: center; gap: 8px; min-height: 22px; padding: 0 2px 9px; }

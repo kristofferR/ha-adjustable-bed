@@ -205,33 +205,37 @@ async def main():
         assert await page.evaluate(
             "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
         )
-        await page.evaluate("async ()=>{await Promise.resolve();await card.updateComplete;calls=[]}")
+        await page.evaluate(
+            "async ()=>{await Promise.resolve();await card.updateComplete;calls=[]}"
+        )
         await card.locator(".compact-stop").click()
         release_calls = await page.evaluate("calls.map(c=>c.entity_id)")
         assert release_calls == ["button.right_stop"], release_calls
 
-        # Switching to the other side and stopping it must preserve an
-        # independent keyboard hold. Its later keyup still releases the exact
-        # cover captured when the right-side control started.
+        # Moving keyboard focus to a side tab releases the captured hold.
+        # A subsequent side STOP and stale keyup must not stop that cover again.
         await page.evaluate(
             "async ()=>{calls=[];await configure({layout:'full',default_target:'right',show_motors:true})}"
         )
-        await card.get_by_role("button", name="Right", exact=True).click()
+        await card.get_by_role("tab", name="Right", exact=True).click()
         right_up = card.get_by_role("button", name="Up", exact=True).first
         await right_up.focus()
         await page.keyboard.down("Space")
-        await card.get_by_role("button", name="Left", exact=True).click()
+        await card.get_by_role("tab", name="Left", exact=True).click()
         await card.locator(".stop-all").click()
         assert await page.evaluate(
-            "calls.some(c=>c.entity_id==='button.left_stop') && !calls.some(c=>c.entity_id==='cover.right_back' && c.service==='stop_cover')"
+            "calls.some(c=>c.entity_id==='button.left_stop') && calls.filter(c=>c.entity_id==='cover.right_back' && c.service==='stop_cover').length===1"
         )
         await page.keyboard.up("Space")
-        assert await page.evaluate(
-            "calls.some(c=>c.entity_id==='cover.right_back' && c.service==='stop_cover')"
+        assert (
+            await page.evaluate(
+                "calls.filter(c=>c.entity_id==='cover.right_back' && c.service==='stop_cover').length"
+            )
+            == 1
         )
 
-        # A left STOP that overlaps a pending Both pulse cancels further pulses
-        # and releases the remaining right side only after that pulse settles.
+        # Leaving a Both control releases its captured parent STOP immediately,
+        # even with a pending pulse. Its later completion must not resume it.
         await page.evaluate("""async ()=>{
           calls=[];
           hass={...hass,callService:(domain,service,data)=>{
@@ -243,24 +247,24 @@ async def main():
           card.hass=hass;
           await configure({layout:'full',default_target:'both',show_motors:true});
         }""")
-        await card.get_by_role("button", name="Both", exact=True).click()
+        await card.get_by_role("tab", name="Both", exact=True).click()
         pair_up = card.get_by_role("button", name="Up", exact=True).first
         await pair_up.focus()
         await page.keyboard.down("Space")
-        assert await page.evaluate(
-            "calls.some(c=>c.entity_id==='button.pair_back_up')"
-        )
-        await card.get_by_role("button", name="Left", exact=True).click()
+        assert await page.evaluate("calls.some(c=>c.entity_id==='button.pair_back_up')")
+        await card.get_by_role("tab", name="Left", exact=True).click()
         await card.locator(".stop-all").click()
         assert await page.evaluate(
             "calls.map(c=>c.entity_id).filter(id=>id.endsWith('_stop'))"
-        ) == ["button.left_stop"]
+        ) == ["button.pair_stop", "button.left_stop"]
         await page.keyboard.up("Space")
         await page.evaluate("async ()=>{finishPairPulse();await new Promise(r=>setTimeout(r,0))}")
         assert await page.evaluate(
             "calls.map(c=>c.entity_id).filter(id=>id.endsWith('_stop'))"
-        ) == ["button.left_stop", "button.right_stop"]
-        await page.evaluate("async ()=>{hass=stopTestHass;card.hass=hass;await configure()} ")
+        ) == ["button.pair_stop", "button.left_stop"]
+        await page.evaluate(
+            "async ()=>{hass=stopTestHass;card.hass=hass;await configure({default_target:'right',show_motors:true})} "
+        )
 
         # Side-scoped assistive activation also remains stoppable after a tab change.
         await page.evaluate("calls=[]")
@@ -315,6 +319,62 @@ async def main():
         await editor.get_by_role("button", name="C · Compact controls", exact=True).click()
         assert await page.evaluate("edited.show_motors") is True
         assert await card.locator(".compact-motors").count() == 1
+        # Dialog settings use the full editor in a separate view, preserving
+        # compact settings and explicit full-card defaults across re-opening.
+        await page.evaluate("""editor.setConfig({...base,open_dialog:true,show_memory:false,
+          memory_save:false,show_graphic_labels:false,dialog_config:{show_memory:false}})""")
+        await editor.get_by_role("button", name="Configure dialog full card", exact=True).click()
+        assert await editor.get_by_role("button", name="Back to compact configuration").count() == 1
+        assert await editor.get_by_text("Compact appearance", exact=True).count() == 0
+        assert await editor.get_by_text("Full view path (optional)", exact=True).count() == 0
+        assert await editor.get_by_text("Sections", exact=True).count() == 1
+        await (
+            editor.locator(".row")
+            .filter(has_text="Memory")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=true;el.dispatchEvent(new Event('change'))}")
+        )
+        await (
+            editor.locator(".row")
+            .filter(has_text="Allow saving positions")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=true;el.dispatchEvent(new Event('change'))}")
+        )
+        await (
+            editor.locator(".row")
+            .filter(has_text="Show labels beneath the graphic")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=true;el.dispatchEvent(new Event('change'))}")
+        )
+        assert await page.evaluate(
+            "edited.show_memory === false && edited.memory_save === false && edited.show_graphic_labels === false"
+        )
+        assert await page.evaluate(
+            "edited.dialog_config.show_memory === true && edited.dialog_config.memory_save === true && edited.dialog_config.show_graphic_labels === true"
+        )
+        await editor.get_by_role("button", name="Back to compact configuration").click()
+        assert await editor.get_by_text("Compact appearance", exact=True).count() == 1
+        await editor.get_by_role("button", name="Configure dialog full card", exact=True).click()
+        assert (
+            await editor.locator(".row")
+            .filter(has_text="Allow saving positions")
+            .locator("ha-switch")
+            .evaluate("el=>el.checked")
+        )
+        await editor.get_by_role("button", name="Back to compact configuration").click()
+        await (
+            editor.locator(".row")
+            .filter(has_text="Open full card in a dialog")
+            .locator("ha-switch")
+            .evaluate("el=>{el.checked=false;el.dispatchEvent(new Event('change'))}")
+        )
+        assert (
+            await editor.get_by_role(
+                "button", name="Configure dialog full card", exact=True
+            ).count()
+            == 0
+        )
+        assert await page.evaluate("edited.dialog_config.show_memory") is True
         # Full-card settings include memory available only on a side.
         await page.evaluate("""() => {
           const entity_id='button.left_program_memory_3';
@@ -351,6 +411,125 @@ async def main():
           card.hass=hass;await configure({device_id:'left'});}""")
         assert await card.locator(".compact-tabs").count() == 0
         assert await card.locator(".bed-graphic-theme").count() == 1
+        # Percentage beds draw a schematic pose without labeling its rotation
+        # as measured degrees. Unknown lumbar must not gate the two panels.
+        await page.evaluate("""async () => {
+          window.degreeHass=hass;
+          const states={...hass.states},entities={...hass.entities};
+          for(const [key,value] of [['back','50'],['legs','25'],['lumbar','unknown']]) {
+            const entity_id='number.left_'+key+'_position';
+            entities[entity_id]={entity_id,device_id:'left',platform:'adjustable_bed',translation_key:key+'_position'};
+            states[entity_id]={entity_id,state:value,attributes:{unit_of_measurement:'%',friendly_name:key}};
+          }
+          hass={...hass,states,entities};card.hass=hass;await card.updateComplete;
+        }""")
+        # All new presentation features are opt-in. Percentage feedback alone
+        # must not change the default two-panel degree-only graphic.
+        assert await card.locator(".bed-graphic-theme").count() == 0
+        assert await card.locator("button.compact-graphic").count() == 1  # existing navigation
+        await page.evaluate("configure({device_id:'left',navigation_path:undefined})")
+        assert await card.locator("button.compact-graphic").count() == 0
+        await page.evaluate(
+            "configure({device_id:'left',navigation_path:undefined,open_dialog:false})"
+        )
+        assert await card.locator("button.compact-graphic").count() == 0
+        await page.evaluate("configure({device_id:'left',show_percentage_graphic:true})")
+        assert await card.locator(".bed-graphic-label").all_text_contents() == ["50%", "25%"]
+        assert await card.locator(".bed-lumbar-panel").count() == 0
+        await page.evaluate(
+            "configure({device_id:'left',show_percentage_graphic:true,show_lumbar_graphic:true})"
+        )
+        assert await card.locator(".bed-graphic-label").all_text_contents() == [
+            "Back 50%",
+            "Lumbar ?",
+            "Legs 25%",
+        ]
+        assert (
+            await card.locator(".bed-panel[transform]").last.get_attribute("transform")
+            == "rotate(37.5 122 70)"
+        )
+        assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "0.35"
+        await page.evaluate("""async () => {
+          hass={...hass,states:{...hass.states,'number.left_lumbar_position':{...hass.states['number.left_lumbar_position'],state:'100'}}};
+          card.hass=hass;await card.updateComplete;
+        }""")
+        assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "1"
+        assert await card.locator(".bed-graphic-label").nth(1).text_content() == "Lumbar 100%"
+        # Hide only the SVG labels, preserving panels, readouts and full details.
+        readout = await card.locator(".compact-position").inner_text()
+        await page.evaluate(
+            "configure({device_id:'left',show_percentage_graphic:true,show_lumbar_graphic:true,show_graphic_labels:false,open_dialog:true})"
+        )
+        assert await card.locator(".bed-graphic-label").count() == 0
+        assert await card.locator(".bed-lumbar-panel").count() == 1
+        assert await card.locator(".compact-position").inner_text() == readout
+        assert await card.locator(".compact-actions .tile").count() > 0
+        await card.locator(".compact-graphic").click()
+        assert await card.locator("dialog .bed-graphic-label").count() == 0
+        assert await card.locator("dialog .bed-lumbar-panel").count() == 1
+        await card.locator("dialog").get_by_role("button", name="Close", exact=True).click()
+        await card.locator("dialog").wait_for(state="detached")
+        await page.evaluate(
+            "configure({device_id:'left',layout:'full',show_percentage_graphic:true,show_lumbar_graphic:true})"
+        )
+        assert await card.locator(".bed-graphic-label").all_text_contents() == [
+            "Back 50%",
+            "Lumbar 100%",
+            "Legs 25%",
+        ]
+        await page.evaluate("""async () => {
+          hass={...hass,states:{...hass.states,'number.left_back_position':{...hass.states['number.left_back_position'],state:'unknown'}}};
+          card.hass=hass;await configure({device_id:'left',show_percentage_graphic:true,show_lumbar_graphic:true});
+        }""")
+        assert await card.locator(".bed-graphic-theme").count() == 0
+        assert await card.locator(".compact-no-position").count() == 1
+        await page.evaluate("hass=degreeHass;card.hass=hass;")
+        # Full details stay in a modal and opening/closing is read-only.
+        await page.evaluate("configure({device_id:'left',open_dialog:true})")
+        call_count = await page.evaluate("calls.length")
+        original_url = page.url
+        await card.locator(".compact-graphic").click()
+        dialog = card.locator("dialog")
+        assert await dialog.is_visible()
+        assert await dialog.locator(".section-heading").count() > 0
+        assert page.url == original_url
+        assert await page.evaluate("calls.length") == call_count
+        await page.evaluate("""async () => {
+          hass={...hass,states:{...hass.states,'number.left_back_position':{...hass.states['number.left_back_position'],state:'42'}}};
+          card.hass=hass;await card.updateComplete;
+          await card.shadowRoot.querySelector('dialog adjustable-bed-card').updateComplete;
+        }""")
+        assert "Back 42°" in await dialog.locator(".bed-graphic-label").all_text_contents()
+        await dialog.get_by_role("button", name="Close", exact=True).click()
+        await card.locator("dialog").wait_for(state="detached")
+        await card.locator(".compact-graphic").click()
+        await page.keyboard.press("Escape")
+        await card.locator("dialog").wait_for(state="detached")
+        assert await page.evaluate("calls.length") == call_count
+        # Dialog overrides can hide sections without changing the underlying
+        # compact card or navigating to another device.
+        await page.evaluate(
+            "configure({device_id:'left',open_dialog:true,dialog_config:{show_graphic:false,show_memory:false}})"
+        )
+        await card.locator(".compact-graphic").click()
+        assert await card.locator("dialog .bed-graphic").count() == 0
+        assert await card.locator("dialog .section-heading").filter(has_text="Memory").count() == 0
+        await card.locator("dialog").get_by_role("button", name="Close", exact=True).click()
+        await card.locator("dialog").wait_for(state="detached")
+        # Abandoning the dialog mid-hold still sends STOP to the held bed.
+        await page.evaluate("configure({device_id:'left',open_dialog:true})")
+        await card.locator(".compact-graphic").click()
+        await card.locator("dialog").get_by_role("button", name="Up", exact=True).first.focus()
+        await page.keyboard.down("Space")
+        await page.wait_for_function(
+            "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='open_cover')"
+        )
+        await page.keyboard.press("Escape")
+        await page.keyboard.up("Space")
+        await card.locator("dialog").wait_for(state="detached")
+        assert await page.evaluate(
+            "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
+        )
         await page.evaluate(
             "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
         )

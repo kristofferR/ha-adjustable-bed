@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { applyCompactPreset, cardNavigationPath, compactActions,
-  compactActionOptions, compactStopEntities, compactTargets } from "./compact";
+  compactActionOptions, compactStopEntities, compactTargets, fullCardDialogConfig } from "./compact";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant } from "./types";
 
@@ -24,6 +24,34 @@ function fixture(): HomeAssistant {
   }
   return hass;
 }
+
+test("full-card dialog preserves its bed, target and memory safety settings", () => {
+  const config = {type: "custom:adjustable-bed-card", device_id: "bed", default_target: "right", memory_save: false, layout: "compact" as const, open_dialog: true, navigation_path: "/other", show_motors: false, show_lighting: false};
+  const full = fullCardDialogConfig(config);
+  expect(full.device_id).toBe("bed");
+  expect(full.default_target).toBe("right");
+  expect(full.memory_save).toBe(false);
+  expect(full.layout).toBe("full");
+  expect(full.open_dialog).toBe(false);
+  expect(full.navigation_path).toBeUndefined();
+  expect(full.show_motors).toBe(true);
+  expect(full.show_lighting).toBe(true);
+  expect(config.show_motors).toBe(false);
+});
+
+test("dialog sections are configurable without recursion or changing device identity", () => {
+  const full = fullCardDialogConfig({type: "custom:adjustable-bed-card", device_id: "bed", open_dialog: true, show_percentage_graphic: true, show_lumbar_graphic: false, dialog_config: {device_id: "another-bed", type: "another-card", layout: "compact", open_dialog: true, show_motors: false, show_massage: false, show_graphic: false, section_order: ["presets", "memory"]}});
+  expect(full.type).toBe("custom:adjustable-bed-card");
+  expect(full.device_id).toBe("bed");
+  expect(full.layout).toBe("full");
+  expect(full.open_dialog).toBe(false);
+  expect(full.show_motors).toBe(false);
+  expect(full.show_massage).toBe(false);
+  expect(full.show_graphic).toBe(false);
+  expect(full.show_percentage_graphic).toBe(true);
+  expect(full.show_lumbar_graphic).toBe(false);
+  expect(full.section_order).toEqual(["presets", "memory"]);
+});
 
 test("recipes are customizable settings and preserve the configured bed and navigation", () => {
   const config = { type: "custom:adjustable-bed-card", device_id: "pair",

@@ -1,13 +1,14 @@
 import { bedHasGraphicFeedback } from "./bed-graphic-state";
 import { hasLightingControls } from "./discovery";
-import type { BedEntities, HomeAssistant } from "./types";
+import type { AdjustableBedCardConfig, BedEntities, HomeAssistant } from "./types";
 
 export function presentSections(
   bed: BedEntities,
   hass: HomeAssistant,
+  config?: AdjustableBedCardConfig,
 ): Record<string, boolean> {
   return {
-    graphic: bedHasGraphicFeedback(bed, hass),
+    graphic: bedHasGraphicFeedback(bed, hass, config?.show_percentage_graphic === true),
     motors:
       bed.motors.some((motor) => motor.cover || motor.up || motor.down) ||
       !!bed.stop ||
