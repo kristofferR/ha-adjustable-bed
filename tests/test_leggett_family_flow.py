@@ -3,6 +3,7 @@
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
@@ -165,3 +166,36 @@ async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_c
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
     assert result["reason"] == "migration_kept"
     assert {k: v for k, v in entry.data.items() if k in before} == before
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_LEGGETT_LP_LEGACY,
+            const.CONF_LP_LEGACY_MODEL: "6BRM",
+            const.CONF_LP_LEGACY_MODE: "legacy",
+            const.CONF_LP_LEGACY_WRITE_UUID: "0000fff2-0000-1000-8000-00805f9b34fb",
+        },
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT,
+            const.CONF_RICHMAT_REMOTE: const.RICHMAT_REMOTE_LP_QRRM,
+        },
+    ],
+    ids=["legacy_app", "qrrm_app"],
+)
+async def test_an_lp_app_route_on_another_bed_type_changes_through_the_question(
+    hass, enable_custom_integrations, data
+):
+    """The legacy app and the QRRM remote are answers too, so Reconfigure asks them."""
+    entry = entry_for(hass, **data)
+    manager = hass.config_entries.flow
+    result = await reconfigure(hass, entry)
+    assert result["step_id"] == "leggett_family"
+    result = await manager.async_configure(result["flow_id"], {"choice": "lp_app_mlrm"})
+    assert result["step_id"] == "migration_confirm"
+    result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_WILINKE
+    # The previous route's own settings are gone.
+    assert not (set(data) - {const.CONF_BED_TYPE}) & set(entry.data)

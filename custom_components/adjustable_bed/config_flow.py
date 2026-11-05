@@ -427,7 +427,7 @@ from .profile_migration import (
     ManagedFamily,
     MigrationSnapshot,
     async_control_changes,
-    managed_family,
+    reconfigure_family,
 )
 from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
@@ -2181,6 +2181,13 @@ _LEGGETT_ROUTES: Final[dict[str, tuple[str, Mapping[str, str]]]] = {
     "lp_app_qrrm": (BED_TYPE_RICHMAT, {CONF_RICHMAT_REMOTE: RICHMAT_REMOTE_LP_QRRM}),
     "lp_legacy": (BED_TYPE_LEGGETT_LP_LEGACY, {}),
 }
+# The legacy L&P app's own settings.
+_LP_LEGACY_KEYS: Final = (
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_WRITE_UUID,
+    CONF_LP_LEGACY_READ_UUID,
+)
 # The umbrella ID's variant for each route it can run.
 _LEGGETT_ALIAS_VARIANTS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_GEN2: LEGGETT_VARIANT_GEN2,
@@ -2904,7 +2911,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Stage a guided app or layout change without changing the working entry."""
         entry = self._get_reconfigure_entry()
-        family = managed_family(entry.data)
+        family = reconfigure_family(entry.data)
         if family is None:
             return self.async_abort(reason="reconfigure_not_supported")
         if self._migration is None:
@@ -2959,22 +2966,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Choose by app or keep the historical setup, never infer a profile."""
         assert self._manual_data is not None
+        # On a legacy entry the legacy setup is the saved route, so it keeps it.
+        on_legacy = (
+            self._migration is not None
+            and self._migration.data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM
+        )
         choices = {
             "vmat": "VMAT",
             "caresse": "Caresse Diamant",
             "werkmeister": "Werkmeister",
             "vmatbasic": "V-MAT Basic",
-            "legacy": "Keep current setup" if self._migration is not None else "Legacy setup",
+            "legacy": "Keep current setup" if on_legacy else "Legacy setup",
         }
+        if self._migration is not None and not on_legacy:
+            choices["keep"] = "Keep current setup"
         choice = (user_input or {}).get("app")
         if choice in choices:
-            if choice == "legacy":
-                if self._migration is not None:
-                    return await self.async_step_migration_keep()
-                # A form drawn for a detected app or V-MAT Basic set none of the
-                # legacy settings, so the legacy setup asks them before pairing.
-                self._select_family_route(BED_TYPE_VIBRADORM, None)
-                return await self.async_step_profile_questions()
+            if choice == "keep" or (choice == "legacy" and on_legacy):
+                return await self.async_step_migration_keep()
             self._migration_verified = False
             same_profile = (
                 choice == "vmatbasic" and self._manual_data.get(CONF_BED_TYPE) == BED_TYPE_VMATBASIC
@@ -2986,6 +2995,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 for key in (*VIBRADORM_APP_CONFIG_KEYS, *VMATBASIC_CONFIG_KEYS):
                     self._manual_data.pop(key, None)
                 self._manual_data.pop(CONF_VIBRADORM_APP_METADATA, None)
+            if choice == "legacy":
+                # A form drawn for a detected app or V-MAT Basic, or an app
+                # entry, set none of the legacy settings, so they are asked.
+                self._select_family_route(BED_TYPE_VIBRADORM, None)
+                return await self.async_step_profile_questions()
             if choice == "vmatbasic":
                 self._manual_data[CONF_BED_TYPE] = BED_TYPE_VMATBASIC
                 return await self.async_step_profile_questions()
@@ -3031,7 +3045,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             from .controller_factory import require_logicdata_route
 
             require_logicdata_route(client, data)
-        elif self._migration_family is VIBRADORM_FAMILY:
+        elif self._migration_family is VIBRADORM_FAMILY and data[CONF_BED_TYPE] != BED_TYPE_VIBRADORM:
+            # The legacy controller has no app roles; pairing proves its bond.
             _validate_vibradorm_setup_roles(client, data)
         elif self._migration_family is JIECANG_FAMILY:
             from .beds.jiecang_app import require_app_transport
@@ -3757,6 +3772,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if incoming == BED_TYPE_LEGGETT_PLATT and bed_type in _LEGGETT_ALIAS_VARIANTS:
                 # The same route under its saved ID; never rewrite the ID.
                 bed_type, variant = BED_TYPE_LEGGETT_PLATT, _LEGGETT_ALIAS_VARIANTS[bed_type]
+            if bed_type != data[CONF_BED_TYPE]:
+                # The legacy app's and the QRRM remote's own settings mean
+                # nothing on another route.
+                for key in (*_LP_LEGACY_KEYS, CONF_RICHMAT_REMOTE):
+                    data.pop(key, None)
             self._select_family_route(bed_type, variant)
             data.update(extra)
             if CONF_LEGGETT_APP_PROFILE in extra:
@@ -9015,7 +9035,7 @@ class AdjustableBedOptionsFlow(
         """
         menu_options = ["settings"]
         data = self.config_entry.data
-        if managed_family(data) is not None:
+        if reconfigure_family(data) is not None:
             menu_options.append("change_app")
         if is_paired(data):
             if data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS:

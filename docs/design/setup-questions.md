@@ -61,7 +61,9 @@ returns.
   positions. Pulse count and delay keep each route's defaults and stay in
   Configure. `tests/test_family_setup_fields.py` runs every answer of every
   family row and of every route a form can be drawn for, and fails when such a
-  field cannot be set.
+  field cannot be set. It also saves each answer's route as an entry and fails
+  when that entry cannot reach another route of the question: through
+  Reconfigure for a guided family, or Configure's list outside it.
 - Configure asks the questions that are not the managed family's route keys:
   the app, layout and route change only through the guided change. An entry
   that Configure switches into a managed family from another bed type answers

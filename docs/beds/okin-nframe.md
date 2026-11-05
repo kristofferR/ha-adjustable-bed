@@ -179,8 +179,9 @@ RF remote to answer.
 A bed set up as [Okin CST](#okin-cst), from its row or the discovery question,
 is asked the same question with its own apps first: each CST product app, then
 Jordan's Serenity, Jordan's Tranquil and Customatic Z-Series, then the answers
-above. Keep saves Okin CST with its MF900 profile. Okin CST is not part of the
-guided change, so an existing CST entry keeps Configure.
+above. Keep saves Okin CST with its MF900 profile. An existing CST entry keeps
+Configure for its product, and **Reconfigure** asks the same question, so it
+can also move to another Okin route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).

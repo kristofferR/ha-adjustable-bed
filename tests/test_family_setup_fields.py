@@ -1,9 +1,12 @@
-"""Fresh setup reaches every generic field a family route leaves to the user (#676).
+"""Family rows keep what each route's own row offered (#676).
 
 A family row's form is drawn for one route, and the family question can pick
 another one afterwards. Each answer must still let the user set the motor
 count, massage and angle sensing its old row offered, unless its profile sets
 them itself: on the first form, kept through the answer, or on a later step.
+An existing entry on any route must also reach every other route the
+question offers: through Reconfigure for a guided family, or through Configure,
+which lists the routes outside it by name.
 """
 
 from typing import Any
@@ -11,21 +14,30 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import voluptuous as vol
+from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers.field_visibility import get_hidden_fields
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
     _FAMILY_STEPS,
     AdjustableBedConfigFlow,
+    _bed_type_selector,
     _motor_count_options,
 )
+from custom_components.adjustable_bed.const import resolve_explicit_bed_type
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import (
     bed_type_choice,
     get_bed_type_options,
     resolve_bed_type_choice,
+)
+from custom_components.adjustable_bed.profile_id import app_profile_key, resolve_profile_id
+from custom_components.adjustable_bed.profile_migration import (
+    MANAGED_FAMILIES,
+    reconfigure_family,
 )
 from custom_components.adjustable_bed.setup_questions import setup_profile_for
 from custom_components.adjustable_bed.validators import (
@@ -263,3 +275,118 @@ async def test_angle_sensing_the_form_hid_starts_at_the_routes_own_default(hass)
     )
     # The box reports positions, so they are read unless the user says otherwise.
     assert sensing.default() is False
+
+
+def _route(data: dict[str, Any]) -> str:
+    """The route and app an entry runs; the saved ID a family question keeps counts as it."""
+    saved, variant = data[const.CONF_BED_TYPE], data.get(const.CONF_PROTOCOL_VARIANT)
+    bed_type = resolve_explicit_bed_type(saved, variant) or saved
+    if bed_type == const.BED_TYPE_OKIMAT:
+        # Okimat is the Okin UUID route under its older saved ID.
+        bed_type = const.BED_TYPE_OKIN_UUID
+    route = bed_type_choice(bed_type, variant)
+    if (key := app_profile_key(saved, variant)) is not None and isinstance(data.get(key), str):
+        route += f"@{data[key]}"
+    return route
+
+
+async def _family_routes(hass, row: str) -> dict[str, dict[str, Any]]:
+    """The routes the row's family question offers, with the setup each saves.
+
+    Keep saves the drawn route, and an app the review suggests belongs to
+    another family, so neither is a sibling.
+    """
+    routes: dict[str, dict[str, Any]] = {}
+    paths: list[list[Any]] = [[]]
+    with (
+        patch("custom_components.adjustable_bed.profile_review.related_app_choices", return_value=[]),
+        patch("custom_components.adjustable_bed.profile_review.suggested_apps", return_value=[]),
+    ):
+        while paths:
+            path = paths.pop()
+            result = await _run(hass, row, path, 3)
+            if "choices" in result:
+                paths.extend([*path, choice] for choice in result["choices"] if choice != "keep")
+            elif result["saved"] is not None:
+                routes.setdefault(_route(result["saved"]), result["saved"])
+    # The Sleep Smart pump is its own device, never a route a bed changes to.
+    routes.pop(const.BED_TYPE_LOGICDATA_AIR_PUMP, None)
+    return routes
+
+
+def _configure_routes(data: dict[str, Any]) -> set[str]:
+    """The routes Configure lists by name, outside the entry's guided family."""
+    family = next((f for f in MANAGED_FAMILIES if data[const.CONF_BED_TYPE] in f.bed_types), None)
+    routes = set()
+    for choice in _bed_type_selector(_route(data), show_saved_id=True).rows().values():
+        bed_type, variant = resolve_bed_type_choice(choice)
+        if family is not None and bed_type in family.bed_types:
+            # Configure sends a change within a guided family to Reconfigure.
+            continue
+        variants = [variant] if variant else [None, *(get_variants_for_bed_type(bed_type) or {})]
+        routes |= {
+            _route({const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: v}) for v in variants
+        }
+    return routes
+
+
+async def _reconfigure_routes(hass, entry: MockConfigEntry) -> set[str]:
+    """The routes Reconfigure stages from the entry, through every answer."""
+    routes: set[str] = set()
+    paths: list[list[Any]] = [[]]
+    while paths:
+        path = paths.pop()
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+        result = await flow.async_step_reconfigure()
+        answered = 0
+        while True:
+            fields = _fields(result["data_schema"]) if result["type"] == "form" else {}
+            if result["type"] == "form" and not fields:
+                # A note, such as Woosa Sleep's, stages its route when submitted.
+                result = await getattr(flow, f"async_step_{result['step_id']}")({})
+                continue
+            key = _ROUTE_STEPS.get(result.get("step_id", "")) if result["type"] == "form" else None
+            if key is None:
+                if result["type"] != "abort":
+                    routes.add(_route(flow._manual_data or {}))
+                break
+            if answered == len(path):
+                marker = next(m for m in fields if m.schema == key)
+                paths.extend([*path, c] for c in _options(fields[marker]) if c != "keep")
+                break
+            answers = {**_answers(result, 0), key: path[answered]}
+            answered += 1
+            result = await getattr(flow, f"async_step_{result['step_id']}")(answers)
+    return routes
+
+
+@pytest.mark.parametrize(
+    "row",
+    sorted(
+        option["value"]
+        for option in get_bed_type_options()
+        if _APP_SETUP_STEPS.get(resolve_bed_type_choice(option["value"])[0]) in _ROUTE_STEPS
+    ),
+)
+async def test_an_entry_on_any_route_reaches_every_sibling_route(
+    hass, enable_custom_integrations, row
+):
+    """Reconfigure for a guided family, or Configure by name, reaches each sibling."""
+    routes = await _family_routes(hass, row)
+    gaps = {}
+    for route, data in routes.items():
+        entry = MockConfigEntry(
+            domain=const.DOMAIN,
+            unique_id=route,
+            version=5,
+            data={**data, const.CONF_PROFILE_ID: resolve_profile_id(data)},
+        )
+        entry.add_to_hass(hass)
+        reached = {route} | _configure_routes(data)
+        if reconfigure_family(data) is not None:
+            reached |= await _reconfigure_routes(hass, entry)
+        if missing := set(routes) - reached:
+            gaps[route] = sorted(missing)
+    assert not gaps, gaps

@@ -109,7 +109,8 @@ controller until you explicitly reconfigure them. See the
 
 The bed-type list has one **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
 V-MAT Basic** choice. Choose the app you use on your phone, then its remote or
-product. **Legacy setup** remains available inside this choice for fresh setup.
+product. **Legacy setup** remains available inside this choice for fresh setup,
+and in Reconfigure an app or V-MAT Basic entry can move back to it.
 The family choice shares setup navigation, while each selected app keeps its
 existing controller, features and Bluetooth pairing requirements.
 

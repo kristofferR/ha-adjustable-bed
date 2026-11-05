@@ -415,3 +415,35 @@ async def test_a_chosen_cst_app_skips_the_question(hass, variant):
     with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
         await flow.async_step_okin_family()
     finish.assert_awaited_once()
+
+
+async def test_a_cst_entry_changes_to_an_okin_route_after_checking_its_endpoint(
+    hass, enable_custom_integrations
+):
+    """CST keeps Configure for its products; Reconfigure reaches the other Okin routes."""
+    entry = entry_for(
+        hass,
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_OKIN_CST,
+            const.CONF_PROTOCOL_VARIANT: const.OKIN_CST_VARIANT_CAREFREE,
+            const.CONF_MOTOR_COUNT: 2,
+        },
+    )
+    manager = hass.config_entries.flow
+    with ExitStack() as stack:
+        bluetooth_patches(stack, okin_client(DOT))
+        result = await reconfigure(hass, entry)
+        assert result["step_id"] == "okin_family"
+        offered = choices(result)
+        # Its own products come first, and Keep leaves it as it is.
+        assert offered[0].startswith("okin_cst:") and offered[-1] == "keep"
+        assert {"okin_uuid", "okin_dot", "okin_rf_eco_bt"} <= set(offered)
+        result = await manager.async_configure(result["flow_id"], {"choice": "okin_dot"})
+        assert result["step_id"] == "profile_questions"
+        result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
+        result = await finish_check(hass, result)
+        assert result["step_id"] == "migration_confirm"
+        result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_DOT
+    assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)

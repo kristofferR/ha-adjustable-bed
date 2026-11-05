@@ -708,3 +708,36 @@ def test_top_level_family_choice_is_single_and_searchable():
     assert all(
         app in rows[0]["label"] for app in ("VMAT", "Caresse Diamant", "Werkmeister", "V-MAT Basic")
     )
+
+
+async def test_an_app_entry_moves_back_to_the_legacy_setup_through_reconfigure(
+    hass, enable_custom_integrations
+):
+    entry = entry_for(hass, app_data("caresse"))
+    manager = hass.config_entries.flow
+    with ExitStack() as stack:
+        bluetooth_patches(stack, client_for("caresse"))
+        result = await manager.async_init(
+            const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+        )
+        options = [o["value"] for o in result["data_schema"].schema["app"].config["options"]]
+        # The legacy setup is a route here; Keep is its own answer.
+        assert {"legacy", "keep"} <= set(options)
+        result = await manager.async_configure(result["flow_id"], {"app": "legacy"})
+        assert result["step_id"] == "profile_questions"
+        result = await manager.async_configure(
+            result["flow_id"],
+            result["data_schema"]({const.CONF_MOTOR_COUNT: "3", const.CONF_HAS_MASSAGE: True}),
+        )
+        assert result["step_id"] == "manual_pairing"
+        result = await manager.async_configure(result["flow_id"], {"action": "pair_now"})
+        assert result["type"] == FlowResultType.SHOW_PROGRESS
+        await hass.async_block_till_done()
+        result = await manager.async_configure(result["flow_id"])
+        result = await manager.async_configure(result["flow_id"], {})
+        assert result["step_id"] == "migration_confirm"
+        result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
+    assert (entry.data[const.CONF_MOTOR_COUNT], entry.data[const.CONF_HAS_MASSAGE]) == (3, True)
+    assert const.CONF_VIBRADORM_APP_PROFILE not in entry.data
