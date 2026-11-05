@@ -18,20 +18,37 @@ HOMEASSISTANT_REASONS = frozenset(
 _RESULT_METHODS = frozenset(
     {"async_show_form", "async_show_menu", "async_show_progress", "async_external_step"}
 )
+# Helpers whose default reason Home Assistant translates itself.
+_UPDATE_AND_ABORT = frozenset({"async_update_and_abort", "async_update_reload_and_abort"})
 
 
-def test_every_flow_result_names_its_step():
-    """A result without a step id is an error from Home Assistant 2027.5."""
-    missing = []
-    for path in PACKAGE.rglob("*.py"):
+def _calls(names: frozenset[str]) -> list[tuple[str, ast.Call]]:
+    calls = []
+    for path in sorted(PACKAGE.rglob("*.py")):
         for node in ast.walk(ast.parse(path.read_text())):
             if (
                 isinstance(node, ast.Call)
                 and isinstance(node.func, ast.Attribute)
-                and node.func.attr in _RESULT_METHODS
-                and not any(keyword.arg in ("step_id", None) for keyword in node.keywords)
+                and node.func.attr in names
             ):
-                missing.append(f"{path.name}:{node.lineno}")
+                calls.append((f"{path.name}:{node.lineno}", node))
+    return calls
+
+
+def _keyword(call: ast.Call, name: str) -> ast.expr | None:
+    return next((keyword.value for keyword in call.keywords if keyword.arg == name), None)
+
+
+def test_every_flow_result_names_its_step():
+    """A result without a step id is an error from Home Assistant 2027.5."""
+    calls = _calls(_RESULT_METHODS)
+    assert len(calls) > 50
+    missing = [
+        where
+        for where, call in calls
+        if (step_id := _keyword(call, "step_id")) is None
+        or (isinstance(step_id, ast.Constant) and step_id.value is None)
+    ]
     assert not missing
 
 
@@ -40,3 +57,24 @@ def test_standard_abort_reasons_use_home_assistants_strings():
     strings = json.loads((PACKAGE / "strings.json").read_text())
     for flow in ("config", "options"):
         assert not HOMEASSISTANT_REASONS & set(strings[flow].get("abort", {})), flow
+
+
+def test_no_flow_aborts_with_a_standard_reason_under_its_own_domain():
+    """Without Home Assistant's domain the reason would show untranslated."""
+    aborts = _calls(frozenset({"async_abort"}))
+    assert len(aborts) > 20
+    own = [
+        where
+        for where, call in aborts
+        if isinstance(reason := _keyword(call, "reason"), ast.Constant)
+        and reason.value in HOMEASSISTANT_REASONS
+        and _keyword(call, "translation_domain") is None
+    ]
+    # Passing a reason replaces the helper's default and its domain.
+    own += [
+        where
+        for where, call in _calls(_UPDATE_AND_ABORT)
+        if isinstance(reason := _keyword(call, "reason"), ast.Constant)
+        and reason.value in HOMEASSISTANT_REASONS
+    ]
+    assert not own
