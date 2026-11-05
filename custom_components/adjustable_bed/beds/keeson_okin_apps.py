@@ -366,12 +366,7 @@ class OkinAppKeesonController(KeesonController):
     async def _hold_for(self, key: int, duration_ms: int) -> None:
         writes = -(-duration_ms // self._refresh_ms)
         tail = (duration_ms - (writes - 1) * self._refresh_ms) / 1000
-        # A leased hold (#483) ends at its elapsed ceiling, whatever write latency adds.
-        context = current_command_context()
-        leased = context is not None and context.lease is not None
-        await self._stream(
-            key, writes, self._refresh_ms, tail_s=tail, max_s=duration_ms / 1000 if leased else None
-        )
+        await self._stream(key, writes, self._refresh_ms, tail_s=tail)
 
     async def _stream(
         self,

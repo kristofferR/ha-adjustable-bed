@@ -158,6 +158,40 @@ async def test_discovered_bed_keeps_its_route_in_a_collapsed_section(
 
 
 @pytest.mark.parametrize(
+    ("name", "service_uuid", "alias"),
+    [
+        ("Okimat Bed", const.OKIMAT_SERVICE_UUID, const.BED_TYPE_OKIMAT),
+        ("DewertOkin", const.DEWERTOKIN_SERVICE_UUID, const.BED_TYPE_DEWERTOKIN),
+    ],
+)
+async def test_a_discovered_alias_shows_a_friendly_row_and_keeps_its_id(
+    hass, mock_bluetooth_service_info_okimat, enable_custom_integrations, name, service_uuid, alias
+):
+    """Discovery shows a detected compatibility ID by its friendly label only."""
+    info = mock_bluetooth_service_info_okimat
+    info.name, info.service_uuids = name, [service_uuid]
+    result = await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+    schema = result["data_schema"].schema
+    selector = schema[const.CONF_BED_TYPE]
+    labels = {option["label"] for option in selector.config["options"]}
+    assert not labels & set(const.LEGACY_BED_TYPE_MAPPING)
+    shown = next(marker for marker in schema if marker == const.CONF_BED_TYPE).default()
+    # Okimat opens the Okin family row; another alias shows its own label.
+    family_row = next(
+        option["label"]
+        for option in get_bed_type_options()
+        if option["value"] == const.BED_TYPE_FURNIMOVE
+    )
+    assert shown == (family_row if alias == const.BED_TYPE_OKIMAT else bed_type_label(alias))
+    # The friendly row maps back to the detected ID, which is never rewritten.
+    assert selector(shown) == alias
+    hass.config_entries.flow.async_abort(result["flow_id"])
+
+
+@pytest.mark.parametrize(
     ("alias", "target"),
     [
         (const.BED_TYPE_OKIMAT, const.BED_TYPE_OKIN_UUID),

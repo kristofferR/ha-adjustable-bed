@@ -76,8 +76,9 @@ Leggett & Platt beds have four protocol variants with different detection method
 Some L&P bases advertise as `QRRM` and are configured as the **Richmat** bed
 type, rather than one of the three Leggett-specific variants below. QRRM does
 not identify the physical remote layout. If the remote has Flat, Zero G,
-Custom 1, and Custom 2 buttons, select **L&P QRRM** as the Richmat remote in the
-integration options. The current L&P and Richmat apps likewise require a typed,
+Custom 1, and Custom 2 buttons, answer the [L&P question](#home-assistant-setup)
+with **L&P Adjustable Base app with a QRRM remote**, or select **L&P QRRM** as
+the Richmat remote in an existing Richmat entry's options. The current L&P and Richmat apps likewise require a typed,
 scanned, or previously saved physical remote profile because the BLE peripheral
 does not expose one. Flat is confirmed on the issue #504 hardware; the other
 command frames are recovered consistently from the current apps and still need
@@ -198,7 +199,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 - **Device Name:** Starts with "MlRM"
 - Detection: Automatic by device name prefix + WiLinke service UUID
 
-**If your Okin bed is misidentified as Okimat:** in Configure, change the bed type to the Leggett & Platt row, then answer which app you use.
+**If your Okin bed is misidentified as Okimat:** in Configure, change the bed type to the Leggett & Platt row and submit, then choose the app layout it shows. LP Control with an LP BED receiver uses the default Prodigy 4 (Prodigy CE) layout.
 
 See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 

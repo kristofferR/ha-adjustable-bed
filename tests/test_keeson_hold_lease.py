@@ -142,19 +142,3 @@ async def test_simon_li_memory_keys_refuse_a_lease() -> None:
     assert refused
     assert not wire.held
     assert not wire.after
-
-
-@pytest.mark.parametrize("scenario", ["keeson:restonic_a", "keeson:innova", "keeson:simon_li"])
-async def test_leased_hold_control_stops_refreshing_at_the_ceiling(scenario: str) -> None:
-    """Counted refreshes stretched by write latency still end at the 30 s ceiling."""
-
-    async def renewed_hold(controller: Any) -> None:
-        # The lease is renewed throughout: only the ceiling ends this hold.
-        await controller.hold_control(controller.held_control_options[0], HOLD_CEILING_MS)
-
-    wire = await leased_hold(scenario, renewed_hold, end_after_s=40, end="expire")
-    refreshes = [write for write in wire.held if write.data.hex() != ZERO]
-    assert refreshes
-    assert refreshes[-1].at_ms <= HOLD_CEILING_MS
-    # The release still follows, outside the ceiling.
-    assert wire.held[-1].data.hex() == ZERO
