@@ -81,6 +81,7 @@ release is recorded per family below, separately from the code change.
 | Vibradorm, VMAT, Caresse Diamant, Werkmeister, V-MAT Basic | Yes | Endpoint roles, VMAT native bond | Pending user reports after release |
 | Customatic Clarity, Jerome's C, Remedy | Yes | The one command characteristic | Pending user reports after release |
 | Customatic Z-Series, Jordan's Serenity and Tranquil | Yes | The command and notification characteristics | Pending user reports after release |
+| Jensen Adjustable Sleep (JMC400, LinOn), Svane Remote (Svane Bed, JMC400) | Yes | None: the controllers resolve their roles when they write and never refuse a link | Pending user reports after release |
 | Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers | Yes | The app's transport, chosen as the runtime chooses it; the receiver routes need none, since they correct each other from the services | Pending user reports after release |
 | Sleepy's Elite app, BOX15, BOX24, BOX25 | Yes | The control box's setup and response characteristics; each receiver route's command characteristic | Pending user reports after release |
 | LOGICDATA SimplicityFrame (SILVERmotion), MOTIONrelax phone and tablet, Sleep Smart bed base | Yes | SimplicityFrame's command characteristic after its bond; each app's selected transport | Pending user reports after release |

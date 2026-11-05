@@ -345,7 +345,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
 | eShine app (E2000 / E3000 / E3100 / E5000) | `eshine_okin` | 10 | 300 ms |
 | FSM Relax app (explicit chair/bed profile) | `fsm_relax` | 10 | 60 ms |
-| Jensen (JMC400, LinON Entry) | `jensen` | 4 | 300 ms |
+| Jensen Adjustable Sleep app, JMC400 bed (PIN) | `jensen` | 4 | 300 ms |
 | Leggett & Platt WiLinke (MlRM) | `leggett_wilinke` | 10 | 110 ms |
 | Limoss / Stawett (TEA encrypted) | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
@@ -561,7 +561,7 @@ that side, then combine them again.
 | Richmat | [RMControl](beds/richmat.md#rmcontrol): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps): app and model. [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps): app and its four-character layout; the third-service fallback is an explicit opt-in. |
 | Leggett & Platt | Answer the [L&P question](beds/leggett-platt.md#home-assistant-setup) with your app: [Prodigy CE, Prodigy 2, Prodigy 2L or U Series](beds/okin-nframe.md#leggett-okin-family) sets the layout; LP Control and the L&P Adjustable Base app also name the receiver or remote. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
 | Solace / Woosa | Answer the [Solace question](beds/ff_frame.md#home-assistant-setup) with your app: HomeKobo, Sealy MotionFlex or Sweet Night keep name-based Solace routing; [Woosa Sleep](beds/ff_frame.md#woosa-sleep) is variant `woosa`. |
-| Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
+| Jensen / Svane | Answer the [Jensen / Svane question](beds/jensen.md#home-assistant-setup) with your app and bed: the Jensen Adjustable Sleep app with a [JMC400](beds/jensen.md) bed (then its PIN) or a [LinOn](beds/jensen.md#linon) bed, or the [Svane Remote](beds/svane.md) app with a Svane Bed or a JMC400 bed. Change an existing bed's app or bed with **Reconfigure**. |
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout and local light/massage presence, with the transport under **Advanced**. Comfort Motion supports three layouts and G1/G2 only. Layouts, transports and default timing per profile are in the [generated profile tables](beds/jiecang.md#choosing-a-profile). |
 | LOGICDATA | One question for the app ([SILVERmotion / SimplicityFrame](beds/logicdata.md), [MOTIONrelax phone or tablet](beds/jiecang.md#motionrelax-phone-and-tablet), or [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) bed base or [separate air pump](beds/logicdata-sleep-smart.md)), then the app's command family and the layouts that family allows (MOTIONrelax P2 is the middle layout), light and transport. Configure keeps the light; another app or layout goes through Reconfigure. |
 | Malouf / Lucid | Answer the [Malouf question](beds/malouf.md#choosing-a-profile) with your app or receiver: the [Malouf Base and Lucid Base apps](beds/malouf.md#malouf-base--lucid-base-family) ask the exact model, primary/secondary role and transport; the Nordic UART and FFE5 receivers ask the [layout and memory positions](#malouflucid-layout-and-memory). Change an existing bed's app with **Reconfigure**. |
@@ -627,8 +627,11 @@ Jensen JMC400 beds require PIN authentication for BLE control.
 **How to configure:**
 1. Go to **Settings** → **Devices & Services**
 2. Find your Adjustable Bed and click **Configure** (gear icon)
-3. Choose **Change settings** from the menu
+3. Choose **Change settings** from the menu (or a side's own settings, for a
+   two-address pair)
 4. Enter your 4-digit PIN in the "Jensen PIN" field
+
+Setup asks the PIN when you choose the Jensen Adjustable Sleep app with a JMC400 bed.
 
 **Finding your PIN:**
 - Default PIN is `3060` (used if field left empty)

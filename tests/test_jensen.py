@@ -1398,3 +1398,59 @@ class TestJensenEntities:
         assert JensenCommands.fan(5) in frames
         state = hass.states.get(fan)
         assert state is not None and float(state.state) == 5
+
+
+@pytest.mark.parametrize("massage", [True, False])
+async def test_a_jmc400_set_up_through_the_family_row_keeps_its_massage_buttons(
+    hass: HomeAssistant,
+    mock_jensen_config_entry_data: dict,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+    monkeypatch: pytest.MonkeyPatch,
+    massage: bool,
+):
+    """The family row's form is drawn for Svane, so the JMC400 route asks massage itself."""
+    from unittest.mock import AsyncMock as _AsyncMock
+    from unittest.mock import patch as _patch
+
+    from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.const import BED_TYPE_SVANE
+
+    del mock_coordinator_connected, enable_custom_integrations
+
+    async def reported_config(self: JensenController) -> None:
+        self._features = JensenFeatureFlags.MASSAGE_HEAD
+        self._box_type = 1
+        self._config_loaded = True
+
+    monkeypatch.setattr(JensenController, "query_config", reported_config)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    # What the generic form saves for the family row, which Svane's profile owns.
+    flow._manual_data = {
+        **mock_jensen_config_entry_data,
+        CONF_BED_TYPE: BED_TYPE_SVANE,
+        CONF_HAS_MASSAGE: False,
+    }
+    result = await flow.async_step_jensen_family({"choice": "jensen_jmc400"})
+    assert result["step_id"] == "profile_questions"
+    with _patch.object(flow, "_finish_with_verify", new=_AsyncMock()) as finish:
+        await flow.async_step_profile_questions({CONF_HAS_MASSAGE: massage})
+    saved = finish.call_args.args[0]
+    assert saved[CONF_BED_TYPE] == BED_TYPE_JENSEN
+    assert saved[CONF_HAS_MASSAGE] is massage
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="Jensen Test Bed", data=saved, unique_id="AA:BB:CC:DD:EE:FF"
+    )
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    massage_buttons = [
+        item.unique_id
+        for item in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+        if item.domain == "button" and "_massage_" in item.unique_id
+    ]
+    assert bool(massage_buttons) is massage

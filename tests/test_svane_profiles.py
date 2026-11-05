@@ -95,7 +95,8 @@ async def test_all_setup_forms_explicit_profile_without_unproven_layout_or_timin
     flow._async_transport_note = AsyncMock(return_value="")
     form = await getattr(flow, "async_step_" + step)()
     fields = set(shown_markers(form))
-    assert CONF_PROTOCOL_VARIANT in fields
+    # The Jensen / Svane question asks the app profile after this form.
+    assert CONF_PROTOCOL_VARIANT not in fields
     assert not fields.intersection(
         {
             CONF_MOTOR_COUNT,
@@ -126,7 +127,9 @@ async def test_preverification_normalizes_legacy_options_before_probe(hass):
     assert flow._pending_entry[CONF_DISABLE_ANGLE_SENSING] is True
 
 
-async def test_options_explicit_jmc_persists_with_its_own_session(hass):
+async def test_explicit_jmc_change_persists_with_its_own_session(hass, enable_custom_integrations):
+    from tests.test_svane_options_session import change_profile
+
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
@@ -141,19 +144,24 @@ async def test_options_explicit_jmc_persists_with_its_own_session(hass):
     entry.add_to_hass(hass)
     session = get_svane_session(hass, entry.data[CONF_ADDRESS], "multi")
     session.light_on = True
+    await change_profile(hass, entry, SVANE_VARIANT_JMC)
+    assert entry.data[CONF_PROTOCOL_VARIANT] == SVANE_VARIANT_JMC
+    assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "jmc").light_on
+
+
+async def test_configure_sends_a_profile_change_to_reconfigure(hass):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_SVANE},
+    )
+    entry.add_to_hass(hass)
     flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
+    flow.hass, flow.handler = hass, entry.entry_id
     result = await flow._async_options_form(
         {CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC}, step_id="settings"
     )
-    if result["type"] == "form":
-        result = await flow._async_options_form(
-            {CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC}, step_id="settings"
-        )
-    assert result["type"] == "create_entry"
-    assert entry.data[CONF_PROTOCOL_VARIANT] == SVANE_VARIANT_JMC
-    assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "jmc").light_on
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
+    assert CONF_PROTOCOL_VARIANT not in entry.data
 
 
 @pytest.mark.parametrize(
@@ -368,6 +376,7 @@ async def test_another_bed_type_shows_the_generic_choices_svane_hides(hass, step
 async def test_new_explicit_svane_selection_uses_case_sensitive_app_name_rule(hass, name, expected):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
+    flow.context = {}
     info = MagicMock()
     info.name = name
     info.address = "AA:BB:CC:DD:EE:FF"
@@ -378,14 +387,41 @@ async def test_new_explicit_svane_selection_uses_case_sensitive_app_name_rule(ha
     flow._disambiguated_bed_type = BED_TYPE_SVANE
     finish = AsyncMock()
     flow._finish_with_verify = finish
-    await flow.async_step_bluetooth_confirm(
-        {
-            CONF_BED_TYPE: BED_TYPE_SVANE,
-            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-            "disconnect_after_command": False,
-        }
+    result = await flow.async_step_bluetooth_confirm(
+        {CONF_BED_TYPE: BED_TYPE_SVANE, "disconnect_after_command": False}
     )
+    # The Svane Remote app's case-sensitive JMC rule suggests its JMC400 profile.
+    choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
+    answer = {SVANE_VARIANT_JMC: "svane_jmc400", VARIANT_AUTO: "svane_bed"}[expected]
+    assert choice.default() == answer
+    await flow.async_step_jensen_family({"choice": choice.default()})
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
+
+
+@pytest.mark.parametrize("step", ["manual_config", "manual_entry"])
+async def test_every_setup_route_suggests_by_the_same_name_rule(hass, step):
+    """Manual setup reads the scanned name, so it suggests what Bluetooth setup does."""
+    info = MagicMock()
+    info.name = "JMC400"
+    info.address = "AA:BB:CC:DD:EE:FF"
+    info.service_uuids = [HEAD]
+    info.manufacturer_data = {}
+    info.source = "auto"
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._async_transport_note = AsyncMock(return_value="")
+    flow._disconnect_choice_confirmed = True
+    submitted = {CONF_BED_TYPE: BED_TYPE_SVANE, CONF_ADDRESS: info.address, CONF_NAME: "Bed"}
+    if step == "manual_config":
+        flow._discovery_info = info
+    with patch(
+        "custom_components.adjustable_bed.config_flow.bluetooth.async_last_service_info",
+        return_value=info,
+    ):
+        result = await getattr(flow, f"async_step_{step}")(submitted)
+    assert result["step_id"] == "jensen_family"
+    choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
+    assert choice.default() == "svane_jmc400"
 
 
 @pytest.mark.parametrize(
