@@ -489,13 +489,14 @@
           "vibradorm_floor_light": "Retained floor lighting",
           "vibradorm_floor_default": "Remembered floor brightness",
           "vibradorm_rgb": "Retained mood lighting",
-          "has_massage": "Retained massage controls",
+          "has_massage": "Massage controls",
           "vibradorm_light_extension": "Retained lighting extension",
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_profile": "V-MAT Basic product profile",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
-          "product_type": "App layout code"
+          "product_type": "App layout code",
+          "sleepys_elite_selector": "Control box the app lists"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -514,18 +515,22 @@
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout."
+          "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout.",
+          "has_massage": "Show the massage controls. For retained Caresse Diamant settings, match the massage setting saved in the app.",
+          "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box."
         },
         "sections": {
           "advanced": {
             "name": "Advanced",
             "data": {
               "jiecang_app_transport": "BLE transport",
-              "cluster018_third_service": "Allow the app’s third-service fallback"
+              "cluster018_third_service": "Allow the app’s third-service fallback",
+              "protocol_variant": "Packet dialect"
             },
             "data_description": {
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
-              "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes."
+              "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
+              "protocol_variant": "Auto reads the receiver's manufacturer name: text containing star selects StarCode, anything else the legacy CB25 packets. Change it only if Auto picks the wrong one."
             }
           }
         }
@@ -701,16 +706,6 @@
           "ergomotion4_product_name": "Keep the exact app name. Names containing 4194 select the inverted RGB format."
         }
       },
-      "sleepys_elite_app": {
-        "title": "Sleepy's Elite app selector",
-        "description": "Choose the exact control box selector used by the app. It is stored per physical bed and is never inferred from its Bluetooth transport or name.",
-        "data": {
-          "sleepys_elite_selector": "Control box selector"
-        },
-        "data_description": {
-          "sleepys_elite_selector": "Choose the selector shown by the Sleepy's Elite app for this physical bed. Select none only when the app shows no named control box."
-        }
-      },
       "isleep": {
         "title": "ISleep bed",
         "description": "Select the product shown by the ISleep app. Keep the existing numeric room ID to adopt a provisioned bed. For an unprovisioned bed, choose its destination room, then use the explicit enrollment action after setup. HA never resets an existing room. The actuator descriptor is the advertised two-byte value: products 130/143 use separate side controls only when it is not 2.",
@@ -834,6 +829,13 @@
         "description": "Each Leggett & Platt app has its own layout, and the bed's name doesn't tell them apart. Choose the app you use on your phone, or the remote if you don't use one. Current or detected route: **{current}**.",
         "data": {
           "choice": "App or remote"
+        }
+      },
+      "sleepys_family": {
+        "title": "Which app or receiver controls this bed?",
+        "description": "The MFRM Sleepy's Elite app and the older receiver routes send different commands, and a Star name or a lumbar motor doesn't tell them apart. Choose the app you use on your phone, or the receiver whose Bluetooth service the bed advertises. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or receiver"
         }
       },
       "jiecang_legacy": {
@@ -9172,6 +9174,15 @@
         "lp_app_qrrm": "L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2)",
         "lp_legacy": "L&P Adjustable Base legacy app (2.2.1)",
         "keep": "I don't know: keep the current controls"
+      }
+    },
+    "sleepys_family_choice": {
+      "options": {
+        "app": "MFRM Sleepy's Elite app: the control box it lists",
+        "box25": "BOX25 receiver on the Nordic UART service",
+        "box24": "BOX24 receiver on the OKIN 64-bit service",
+        "box15": "BOX15 receiver on the FFE5 service",
+        "keep": "I don't know: keep the detected controls"
       }
     }
   }

@@ -117,6 +117,7 @@ from .const import (
     BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
     CLUSTER033_BED_TYPES,
+    CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
@@ -175,6 +176,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     HAS_LIGHT_DEFAULTS,
     KAIDI_VARIANT_FLOYD,
+    KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -230,6 +232,7 @@ from .const import (
     SBI_VARIANT_BOTH,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
+    SLEEPYS_BOX24_WRITE_CHAR_UUID,
     SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
     SLEEPYS_BOX25_VARIANT_LEGACY,
     SLEEPYS_BOX25_VARIANT_STAR,
@@ -345,9 +348,8 @@ _OKIN_ROUTE_ENDPOINTS: Final[dict[str, frozenset[str]]] = {
 }
 
 
-def require_okin_route_endpoint(client: BleakClient, bed_type: str) -> None:
-    """Raise ConnectionError unless the link has a writable endpoint the route writes."""
-    endpoints = _OKIN_ROUTE_ENDPOINTS[bed_type]
+def _require_write_endpoint(client: BleakClient, endpoints: frozenset[str], bed_type: str) -> None:
+    """Raise ConnectionError unless the link has one of these writable endpoints."""
     for service in client.services or ():
         for characteristic in service.characteristics:
             if str(characteristic.uuid).lower() in endpoints and {
@@ -356,6 +358,34 @@ def require_okin_route_endpoint(client: BleakClient, bed_type: str) -> None:
             } & set(characteristic.properties):
                 return
     raise ConnectionError(f"The bed exposes no command endpoint for {bed_type}")
+
+
+def require_okin_route_endpoint(client: BleakClient, bed_type: str) -> None:
+    """Raise ConnectionError unless the link has a writable endpoint the route writes."""
+    _require_write_endpoint(client, _OKIN_ROUTE_ENDPOINTS[bed_type], bed_type)
+
+
+# The one command endpoint each Sleepy's receiver route's controller writes.
+_SLEEPYS_ROUTE_ENDPOINTS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_SLEEPYS_BOX15: frozenset({KEESON_BASE_WRITE_CHAR_UUID.lower()}),
+    BED_TYPE_SLEEPYS_BOX24: frozenset({SLEEPYS_BOX24_WRITE_CHAR_UUID.lower()}),
+    BED_TYPE_SLEEPYS_BOX25: frozenset({NORDIC_UART_WRITE_CHAR_UUID.lower()}),
+}
+
+
+def require_sleepys_route(client: BleakClient, data: Mapping[str, Any]) -> None:
+    """Raise ConnectionError unless the link exposes what the staged Sleepy's route needs.
+
+    The app's control box selector needs its exact setup and response targets;
+    a receiver route needs the one endpoint its controller writes.
+    """
+    bed_type = data[CONF_BED_TYPE]
+    if bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+        from .beds.sleepys_app import require_selector_route
+
+        require_selector_route(client, data[CONF_SLEEPYS_ELITE_SELECTOR])
+        return
+    _require_write_endpoint(client, _SLEEPYS_ROUTE_ENDPOINTS[bed_type], bed_type)
 
 
 def _is_dewertokin_dot_box(client: BleakClient | None) -> bool:

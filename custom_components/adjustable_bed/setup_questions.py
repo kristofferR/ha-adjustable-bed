@@ -55,6 +55,9 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
+    BED_TYPE_SLEEPYS_BOX15,
+    BED_TYPE_SLEEPYS_BOX24,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -86,6 +89,7 @@ from .const import (
     CONF_MOTOR_PULSE_USER_SET,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -111,6 +115,7 @@ from .const import (
     KEESON_VARIANT_MAXCOIL_UNA,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     RICHMAT_MH_BED_TYPES,
+    SLEEPYS_ELITE_SELECTORS,
     STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
     VIBRADORM_RESTORED_CONTROLS,
@@ -653,6 +658,22 @@ def _classic_title(data: Mapping[str, Any]) -> str:
     return APP_NAMES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), "Classic Richmat app")
 
 
+# The app's control box selectors, named as the app names them.
+_SLEEPYS_SELECTORS: Final[Mapping[Any, str]] = {
+    selector: selector for selector in SLEEPYS_ELITE_SELECTORS
+}
+
+
+def _sleepys_app_features(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """The BOX25 selectors carry the app's massage and position feedback."""
+    box25 = data.get(CONF_SLEEPYS_ELITE_SELECTOR) in ("BOX25", "BOX25_STAR")
+    return {
+        CONF_HAS_MASSAGE: box25,
+        CONF_DISABLE_ANGLE_SENSING: not box25,
+        CONF_MOTOR_PULSE_USER_SET: False,
+    }
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -789,6 +810,31 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         normalize=_classic_normalize,
         validate=_classic_errors,
         title=_classic_title,
+    ),
+    # The Sleepy's family step picks the app or receiver. The app's control box
+    # selector sets its routes; it belongs to one physical bed.
+    BED_TYPE_SLEEPYS_ELITE_APP: _asking(
+        BED_TYPE_SLEEPYS_ELITE_APP,
+        questions=(Question(CONF_SLEEPYS_ELITE_SELECTOR, _SLEEPYS_SELECTORS, "none"),),
+        derive=_sleepys_app_features,
+    ),
+    # The BOX15 and BOX24 receivers size their motor controls from the count.
+    **{
+        bed_type: _asking(
+            bed_type, questions=(Question(CONF_MOTOR_COUNT, _motor_counts(bed_type), 2),)
+        )
+        for bed_type in (BED_TYPE_SLEEPYS_BOX15, BED_TYPE_SLEEPYS_BOX24)
+    },
+    # BOX25 shows massage only when asked; Auto picks the packet dialect from the
+    # receiver's Device Information.
+    BED_TYPE_SLEEPYS_BOX25: _asking(
+        BED_TYPE_SLEEPYS_BOX25,
+        questions=(
+            Question(CONF_HAS_MASSAGE, default=False),
+            Question(
+                CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_SLEEPYS_BOX25), "auto", advanced=True
+            ),
+        ),
     ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
