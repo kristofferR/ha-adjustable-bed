@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.detection import (
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from tests.conftest import make_controller_mock
+from tests.form_helpers import shown_markers
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_okin_bedding_apps import tranquil, written, zseries
@@ -102,7 +103,7 @@ async def test_setup_hides_fixed_layout_and_refresh_delay(hass, bed_type):
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
     form = await flow.async_step_manual_entry()
-    markers = {marker.schema for marker in form["data_schema"].schema}
+    markers = shown_markers(form)
     assert CONF_MOTOR_COUNT not in markers
     assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
@@ -308,7 +309,7 @@ async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(h
     flow.hass = hass
     flow.handler = entry.entry_id
     rebuilt = await flow._async_options_form({CONF_BED_TYPE: bed_type}, step_id="settings")
-    markers = {marker.schema for marker in rebuilt["data_schema"].schema}
+    markers = shown_markers(rebuilt)
     assert CONF_MOTOR_COUNT not in markers and CONF_MOTOR_PULSE_DELAY_MS not in markers
     saved = await flow._async_options_form({CONF_BED_TYPE: bed_type}, step_id="settings")
     assert saved["type"] == "create_entry"

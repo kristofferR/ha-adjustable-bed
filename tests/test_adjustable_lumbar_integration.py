@@ -48,6 +48,7 @@ from custom_components.adjustable_bed.validators import (
     is_valid_variant_for_bed_type,
 )
 from tests.conftest import make_controller_mock
+from tests.form_helpers import shown_markers
 from tests.test_adjustable_lumbar import make_controller
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_malouf_app_entities import configure_entity_runtime
@@ -324,7 +325,7 @@ async def test_options_switch_fixes_the_axes_and_refresh(hass):
     rebuilt = await flow._async_options_form(
         {CONF_BED_TYPE: BED_TYPE_ADJUSTABLE_LUMBAR}, step_id="settings"
     )
-    markers = {marker.schema for marker in rebuilt["data_schema"].schema}
+    markers = shown_markers(rebuilt)
     assert CONF_MOTOR_COUNT not in markers and CONF_MOTOR_PULSE_DELAY_MS not in markers
     saved = await flow._async_options_form(
         {CONF_BED_TYPE: BED_TYPE_ADJUSTABLE_LUMBAR, CONF_PROTOCOL_VARIANT: "adjustable_lumbar_star"},
