@@ -96,7 +96,7 @@ async def test_the_app_question_ends_with_the_brand_list(hass, enable_custom_int
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {const.CONF_BED_TYPE: labels[-1]}
     )
-    assert result["step_id"] == "select_actuator"
+    assert result["step_id"] == "select_family"
 
 
 async def _app_then_address(hass, choice: str):
@@ -198,3 +198,82 @@ async def test_typing_an_address_asks_the_app_first(
     )
     assert result["step_id"] == "manual_entry"
     assert suggested(result, const.CONF_BED_TYPE) == label
+
+
+async def brand_list(hass):
+    result = await app_question(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: "not_listed"}
+    )
+    assert result["step_id"] == "select_family"
+    return result
+
+
+async def test_the_brand_list_names_families_and_their_apps(hass, enable_custom_integrations):
+    rows = app_rows(await brand_list(hass))
+    choices = set(rows.values())
+    # Family rows that ask their question, and brands without one.
+    assert {
+        const.BED_TYPE_FURNIMOVE,
+        const.BED_TYPE_KEESON,
+        const.BED_TYPE_MALOUF_APP,
+        const.BED_TYPE_SVANE,
+        const.BED_TYPE_LINAK,
+    } <= choices
+    # An app's own row and a protocol row stay in the app question's full list.
+    assert "keeson:heal_every_night" not in choices
+    assert const.BED_TYPE_OKIN_HANDLE not in choices
+    assert list(rows)[-1] == _STRINGS["config"]["step"]["select_family"]["data"]["not_sure"]
+
+
+async def test_not_sure_runs_diagnostics(hass, enable_custom_integrations):
+    result = await brand_list(hass)
+    with patch(PATCH_DISCOVERED, return_value=[]):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {const.CONF_BED_TYPE: "not_sure"}
+        )
+    # With nothing in range, diagnostics asks for the address to browse.
+    assert result["step_id"] == "diagnostic_manual"
+
+
+async def test_a_brand_opens_its_familys_question(hass, enable_custom_integrations):
+    result = await brand_list(hass)
+    label = next(label for label, row in app_rows(result).items() if row == const.BED_TYPE_FURNIMOVE)
+    with patch(PATCH_DISCOVERED, return_value=[]):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {const.CONF_BED_TYPE: label}
+        )
+    assert result["step_id"] == "manual_entry"
+    with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_ADDRESS: ADDRESS,
+                const.CONF_BED_TYPE: label,
+                CONF_NAME: "Bed",
+                const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            },
+        )
+    assert result["step_id"] == "okin_family"
+
+
+async def test_a_detected_route_survives_the_brand_list(
+    hass, enable_custom_integrations, mock_bluetooth_service_info
+):
+    """A device picked first keeps its detected route under its family's row."""
+    from unittest.mock import MagicMock
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": SOURCE_USER}
+    flow._discovery_info = mock_bluetooth_service_info
+    flow._app_after_device = "manual_config"
+    with patch(
+        "custom_components.adjustable_bed.config_flow.detect_bed_type_detailed",
+        return_value=MagicMock(),
+    ), patch(
+        "custom_components.adjustable_bed.config_flow._confident_auto_detect",
+        return_value=const.BED_TYPE_OKIN_UUID,
+    ):
+        result = await flow.async_step_select_family()
+    assert const.BED_TYPE_OKIN_UUID in app_rows(result).values()
+    assert const.BED_TYPE_FURNIMOVE not in app_rows(result).values()
