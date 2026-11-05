@@ -11,6 +11,7 @@ from collections.abc import AsyncIterator
 from contextlib import ExitStack
 from dataclasses import dataclass
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
@@ -51,6 +52,7 @@ from custom_components.adjustable_bed.profiles.limoss import (
     LIMOSS_REMOTE,
 )
 from custom_components.adjustable_bed.services import async_register_services
+from tests.hold_lease_wire import virtual_clock
 from tests.limoss_vectors import FROZEN_BODIES
 
 STOP = codec.body(codec.STOP).hex()
@@ -172,6 +174,17 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
     await coordinator.async_shutdown()
 
 
+@pytest.fixture
+async def clock(bed: Bed) -> AsyncIterator[Any]:
+    """Virtual time for the test body: ticks, leases and renewals are exact.
+
+    Entered after ``bed`` is set up, so Home Assistant itself starts on the real
+    loop.
+    """
+    with virtual_clock() as fake:
+        yield fake
+
+
 async def _hold(bed: Bed, generation: int, duration: float = 0.3) -> None:
     control = "motor_1_up" if isinstance(bed.controller, LimossRemoteController) else "command_12"
     await bed.hass.services.async_call(
@@ -199,7 +212,7 @@ def _tick_s(bed: Bed) -> float:
     return profile.tick_ms / 1000
 
 
-async def test_renewals_keep_streaming_then_expiry_sends_the_stop_burst(bed: Bed) -> None:
+async def test_renewals_keep_streaming_then_expiry_sends_the_stop_burst(bed: Bed, clock: Any) -> None:
     start = asyncio.create_task(_hold(bed, 1))
     await _started(bed)
     began = asyncio.get_running_loop().time()
@@ -225,7 +238,7 @@ async def test_renewals_keep_streaming_then_expiry_sends_the_stop_burst(bed: Bed
     assert record.outcome is CommandOutcome.EXPIRED
 
 
-async def test_lease_expiry_without_renewal_releases(bed: Bed) -> None:
+async def test_lease_expiry_without_renewal_releases(bed: Bed, clock: Any) -> None:
     await asyncio.wait_for(_hold(bed, 2, duration=0.15), 2)
     bodies = bed.bodies()
     assert bodies[-5:] == [STOP] * 5
@@ -235,7 +248,7 @@ async def test_lease_expiry_without_renewal_releases(bed: Bed) -> None:
     )
 
 
-async def test_stop_preempts_renewal(bed: Bed) -> None:
+async def test_stop_preempts_renewal(bed: Bed, clock: Any) -> None:
     start = asyncio.create_task(_hold(bed, 3, duration=5))
     await _started(bed)
     await bed.coordinator.async_stop_command()
@@ -265,7 +278,7 @@ async def test_an_undeclared_profile_refuses_a_lease_before_writing(bed: Bed) ->
     assert bed.writes == []
 
 
-async def test_a_renewed_hold_is_one_tracked_movement(bed: Bed) -> None:
+async def test_a_renewed_hold_is_one_tracked_movement(bed: Bed, clock: Any) -> None:
     """Renewals extend the running command, so position estimates see one move."""
     from custom_components.adjustable_bed import limoss_remote_services, services
 
