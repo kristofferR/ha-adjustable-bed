@@ -2600,3 +2600,30 @@ async def test_repair_retries_a_rerouted_stale_cache_verification_once(
         ("proxy", False),
         ("proxy", False),
     ]
+
+
+async def test_combine_repair_keeps_the_pairing_flows_translation_domain(
+    hass: HomeAssistant,
+) -> None:
+    """A reason Home Assistant owns still resolves when Repairs passes it on."""
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Left")
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:02", name="Right")
+    flow = CombineBedsRepairFlow()
+    flow.hass = hass
+    aborted = {
+        "type": FlowResultType.ABORT,
+        "flow_id": "config-flow-id",
+        "handler": DOMAIN,
+        "reason": "already_in_progress",
+        "translation_domain": "homeassistant",
+    }
+    with patch.object(
+        hass.config_entries.flow, "async_init", new=AsyncMock(return_value=aborted)
+    ):
+        result = await flow.async_step_pair_beds({CONF_NAME: "Combined"})
+
+    assert result["type"] is FlowResultType.ABORT
+    assert (result["reason"], result["translation_domain"]) == (
+        "already_in_progress",
+        "homeassistant",
+    )

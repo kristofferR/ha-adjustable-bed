@@ -852,7 +852,6 @@
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
       "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
       "reconfigure_not_supported": "This setup has no guided reconfigure flow. Use Configure to change its settings.",
-      "reconfigure_successful": "The change was saved and the bed reloaded with its new controls. To switch back, open Reconfigure again.",
       "migration_entry_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
       "migration_kept": "Your current setup was kept. You won't be asked again for this setup unless a new app becomes available for it.",
       "migration_unchanged": "Your answer matches the current setup, so nothing was changed.",
