@@ -607,8 +607,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
-    BED_TYPE_SLEEP_NUMBER: "Sleep Number Climate 360 / FlexFit",
-    BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number 360 / i8 FlexFit (BAM/MCR)",
+    BED_TYPE_SLEEP_NUMBER: "Sleep Number Fuzion (Climate 360, FlexFit)",
+    BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number BAM/MCR (older i8, 360 FlexFit 2)",
     BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite BOX15 receiver (FFE5 service)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver (OKIN 64-bit service)",
@@ -721,6 +721,7 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_STARCODE_M5X5,
         BED_TYPE_STARCODE_M1X12,
         BED_TYPE_REVERIE,
+        BED_TYPE_SLEEP_NUMBER_MCR,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -746,6 +747,10 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_REMACRO: "Remacro: Slumberland, The Brick and Jerome's apps",
     BED_TYPE_REVERIE_NIGHTSTAND: (
         "Reverie: Nightstand app, Protocol 110 and Protocol 108 receivers"
+    ),
+    BED_TYPE_SLEEP_NUMBER: (
+        "Sleep Number: SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR "
+        "(i8, 360 FlexFit 2) bases"
     ),
 }
 

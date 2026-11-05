@@ -102,7 +102,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `reverie_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `reverie_family`, `sleep_number_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
@@ -174,6 +174,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `sleepys_box15`, `sleepys_box24` | Motor count. |
 | `sleepys_box25` | Massage, and the packet dialect (Advanced). |
 | `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
+| `sleep_number` | The side this Fuzion entry controls (the protocol variant); BAM/MCR asks nothing, since one entry exposes both sides. |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.

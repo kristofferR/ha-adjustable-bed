@@ -183,7 +183,9 @@ class TestDetectBedTypeByServiceUUID:
 
     def test_sleep_number_has_human_display_name(self):
         """Sleep Number should appear with a readable label in selectors."""
-        assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER] == "Sleep Number Climate 360 / FlexFit"
+        assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER] == (
+            "Sleep Number Fuzion (Climate 360, FlexFit)"
+        )
 
     def test_detect_sleep_number_mcr_by_uuid(self):
         """Older Sleep Number BAM/MCR beds should detect from their UART service UUID."""
@@ -200,7 +202,7 @@ class TestDetectBedTypeByServiceUUID:
         """Older Sleep Number BAM/MCR beds should appear with a readable label."""
         assert (
             BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER_MCR]
-            == "Sleep Number 360 / i8 FlexFit (BAM/MCR)"
+            == "Sleep Number BAM/MCR (older i8, 360 FlexFit 2)"
         )
 
     def test_kaidi_manufacturer_data_alone_is_not_sufficient(self):

@@ -442,7 +442,7 @@
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
-          "protocol_variant": "Remote code or layout",
+          "protocol_variant": "Remote code, layout or side",
           "motor_count": "Number of motors or app screen",
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
@@ -466,7 +466,7 @@
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
           "has_light": "Expose light controls when this bed has under-bed lighting.",
           "furnimove_remote": "The handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label doesn't identify the motor layout.",
-          "protocol_variant": "The code of the remote that controls the bed, or the layout its app shows. Keep Auto-detect if you don't know it.",
+          "protocol_variant": "The code of the remote that controls the bed, the layout or model its app shows, or the side of the bed this entry controls. Keep the default if you don't know it.",
           "motor_count": "How many motors the bed has. For an app with 2M, 3M and 4M screens, the screen you use in the app.",
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
@@ -835,6 +835,13 @@
         "description": "Reverie bases use a Protocol 110 or a Protocol 108 receiver, and the receiver's Bluetooth service, not the app or name, tells them apart. Home Assistant could not see which service this bed advertises. Check it with a Bluetooth scanner app such as nRF Connect: Protocol 110 receivers advertise the Nightstand service `db801000-...`, Protocol 108 receivers the service `1b1d9641-...`.",
         "data": {
           "choice": "Receiver"
+        }
+      },
+      "sleep_number_family": {
+        "title": "Which Sleep Number base is this?",
+        "description": "Sleep Number bases use one of two Bluetooth transports, and the base's advertised service, not the model name, tells them apart. Home Assistant could not see which service this bed advertises. Check it with a Bluetooth scanner app such as nRF Connect: Fuzion bases (Climate 360, FlexFit) advertise `09d23fae-...`, older BAM/MCR bases (i8, 360 FlexFit 2) advertise `ffffd1fd-...`.",
+        "data": {
+          "choice": "Transport"
         }
       },
       "jiecang_legacy": {
@@ -9319,6 +9326,13 @@
         "protocol_110": "Protocol 110 receiver (Nightstand service)",
         "protocol_108": "Protocol 108 receiver (older service)",
         "keep": "I don't know: keep the detected receiver"
+      }
+    },
+    "sleep_number_family_choice": {
+      "options": {
+        "fuzion": "Fuzion base: Climate 360, FlexFit or FlexFit Smart",
+        "mcr": "Older BAM/MCR base: i8 or 360 FlexFit 2",
+        "keep": "I don't know: keep the detected transport"
       }
     }
   }
