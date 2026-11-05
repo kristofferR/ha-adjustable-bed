@@ -327,7 +327,6 @@ CONF_PAIR_ID: Final = "pair_id"
 CONF_PAIR_MODE: Final = "pair_mode"
 CONF_PAIR_CHILDREN: Final = "pair_children"
 CONF_PAIR_MEMBER_ADDRESSES: Final = "pair_member_addresses"
-CONF_PAIR_SCHEMA_VERSION: Final = "pair_schema_version"
 # Per-child descriptor key for which physical side the child drives.
 CONF_SIDE: Final = "side"
 
@@ -381,9 +380,6 @@ TIMED_MOVE_MOTOR_OPTIONS: Final = (
 
 # The two physical sides, in stable order (left first, right second).
 PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
-
-# Internal forward-compat marker for the paired-entry data shape within v4.
-PAIR_SCHEMA_VERSION: Final = 1
 
 # How the two sides' BLE links are driven. ``auto``/``concurrent`` let each
 # independent receiver retain its own connection policy. Explicit ``sequential``

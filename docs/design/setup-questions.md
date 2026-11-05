@@ -92,14 +92,64 @@ defaults and the route list, which a field condition cannot.
 ## Dedicated steps
 
 A dedicated step remains only for what data cannot express, with its reason
-recorded here as each family converts:
+recorded here as each family converts. `tests/test_setup_questions.py` checks
+this section and [Shared steps](#shared-steps) against the setup and Configure
+flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 
 | Step | Why it is not data |
 |---|---|
 | Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
+| `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
+| `verify_octo_pin` | Authentication: setup finishes only after the bed accepts the PIN, or the user corrects it |
+| `starcode_app` | Probes the transport over a live connection when the Bluetooth name cannot settle it |
+| `starcode_m5x5`, `starcode_m1x12` | Their lift groups name other config entries, which a declaration's checks cannot see |
+| `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
+| `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
 | `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
+
+### Not converted yet
+
+These app steps ask plain questions a declaration could express. They stay
+listed so the gap is visible until each converts.
+
+| Step | Questions |
+|---|---|
+| `logicdata_app` | App, command family, layout, transport and light |
+| `malouf_app` | App, model, transport and primary controller |
+| `limoss_remote` | Product, light, massage, reversals and remote theme |
+| `gmmotor` | Catalog product, suggested from the Bluetooth name, and side |
+| `isleep` | Product, room and sofa numbers, after reading the advertised metadata |
+| `doublesleep` | Model and variant, with the model default from the advertisement |
+| `sleeptracker` | Foundation, model, unit, snapshot side, restriction and processor |
+| `motion_bed` | Advertised name, restored setup, preset and movement |
+
+## Shared steps
+
+These steps serve every bed type or route, so no profile owns them.
+
+| Step | Purpose |
+|---|---|
+| `user`, `scan`, `scan_result`, `manual`, `select_actuator`, `select_variant`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its bed type |
+| `bluetooth_confirm`, `manual_config`, `manual_entry` | The generic setup forms |
+| `disconnect_after_command` | The connection-lifetime choice |
+| `profile_questions` | The declared questions |
+| `bluetooth_pairing`, `manual_pairing`, `pairing_replace_confirm`, `pairing_progress`, `pairing_result` | Bonding |
+| `setup_progress`, `verify_connection` | Connection check and capability checklist |
+| `pair_beds` | Combine two beds |
+| `diagnostic`, `diagnostic_confirm`, `diagnostic_manual` | Browse an unsupported device |
+| `reconfigure`, `migration_split`, `migration_keep`, `migration_confirm` | The [guided change](guided-setup-changes.md) |
+
+### Configure
+
+| Step | Purpose |
+|---|---|
+| `init`, `settings`, `left_settings`, `right_settings` | Settings |
+| `change_app` | Points to Reconfigure |
+| `pair_sides`, `revert_sides`, `unpair` | Side controls and splitting a pair |
+| `remove_bond_side`, `remove_bond`, `remove_bond_progress`, `remove_bond_result` | Bond removal |
+| `estimated_positions`, `left_estimated_positions`, `right_estimated_positions`, `estimate_top`, `estimate_bottom`, `estimate_raise`, `estimate_lower`, `estimate_lowering`, `estimate_lowered`, `estimate_flat`, `estimate_flat_lower`, `estimate_flat_confirm`, `estimate_review`, `estimate_retry`, `estimate_retry_again`, `estimate_cancel` | Measuring estimated positions |
 
 ## Converted
 

@@ -75,7 +75,8 @@ so an option that changes the side's variant changes its id.
 ## Migration (4.x to 5.1)
 
 `async_migrate_entry` runs the earlier steps unchanged, then stamps version 5,
-minor version 1. The step derives the ids and writes the record:
+minor version 1, before the [5.2 step](#migration-51-to-52). The step derives
+the ids and writes the record:
 
 ```json
 {
@@ -96,9 +97,19 @@ v4 minor steps now run only for version 4 entries.
 Schema 5 entries do not load on 4.x, because 4.x rejects versions above 4.
 Restoring a Home Assistant backup is the only rollback; there is no downgrade path.
 
-An unpaired side is recreated at the current schema (5.1), so it no longer
-re-runs the 4.x minor steps: its saved fields were already migrated with the
-pair, and the one-time app profile review is not raised for it again.
+An unpaired side is recreated at the pair's schema, so it no longer re-runs
+the 4.x minor steps: its saved fields were already migrated with the pair, and
+the one-time app profile review is not raised for it again.
+
+## Migration (5.1 to 5.2)
+
+The 5.2 step drops the keys the [config key audit](config-keys.md) found
+obsolete, from data, options, each paired side and each side's `origin_data`
+and `origin_options`. It adds `dropped_keys` to the record, by where each key
+was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so
+on), and creates the record for an entry made at 5.1 that has none. Nothing to
+drop leaves the entry's data and options unchanged. Keys the audit does not
+list are never touched.
 
 ### Physical validation
 

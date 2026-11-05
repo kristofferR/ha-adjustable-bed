@@ -129,7 +129,6 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
             const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
             const.CONF_PAIR_ID: "app-offline-pair",
             const.CONF_PAIR_MODE: const.PAIR_MODE_SEPARATE_ADDRESS,
-            const.CONF_PAIR_SCHEMA_VERSION: 1,
             const.CONF_PAIR_MEMBER_ADDRESSES: [left, right],
             const.CONF_PAIR_CHILDREN: [
                 {
