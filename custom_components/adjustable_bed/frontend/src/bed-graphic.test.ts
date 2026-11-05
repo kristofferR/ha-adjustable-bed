@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { bedGraphicMotorOrder, bedGraphicPanel, bedHasGraphicFeedback, selectBedGraphicMotors } from "./bed-graphic-state";
+import { bedGraphicMotorOrder, bedGraphicPanel, bedHasGraphicFeedback, estimatedGraphicPanel,
+  selectBedGraphicMotors } from "./bed-graphic-state";
 import { bedGraphicGeometry, renderBedGraphic, renderDualBedGraphic } from "./bed-graphic";
 import type { BedEntities, HomeAssistant, MotorEntity } from "./types";
 
@@ -131,4 +132,33 @@ test("a paired estimate is drawn dashed per side", async () => {
   ].join("");
   const svg = strings(renderDualBedGraphic({ left: side(true), right: side(false) }) as never);
   expect(svg.match(/is-estimated/g)?.length).toBe(1);
+});
+
+test("estimates use degrees with a maximum angle, otherwise only an opt-in percentage pose", () => {
+  const tracking = { motor: "back", entityId: "number.bed_back_est", state: "tracking" as const, percent: 40 };
+  expect(estimatedGraphicPanel(tracking)).toBeUndefined();
+  expect(estimatedGraphicPanel(tracking, true)).toEqual({ angle: 30, readout: "40%" });
+  expect(estimatedGraphicPanel({ ...tracking, maxAngle: 60 }, true)).toEqual({ angle: 24 });
+  expect(estimatedGraphicPanel({ ...tracking, state: "unconfirmed" }, true)).toBeUndefined();
+
+  const bed = { motors: [
+    { key: "back", estimate: "number.bed_back_est" }, { key: "legs", estimate: "number.bed_legs_est" },
+  ] } as BedEntities;
+  const estimate = { state: "40", attributes: { estimate_state: "tracking" } };
+  const hass = { states: { "number.bed_back_est": estimate, "number.bed_legs_est": estimate } } as unknown as HomeAssistant;
+  expect(bedHasGraphicFeedback(bed, hass)).toBe(false);
+  expect(bedHasGraphicFeedback(bed, hass, true)).toBe(true);
+});
+
+test("an estimated percentage label is marked as an estimate", () => {
+  const template = renderBedGraphic({
+    upper: { label: "Head", angle: 30, readout: "40%" },
+    lower: { label: "Feet", angle: 15, readout: "20%" },
+    moving: false, estimated: true,
+  });
+  const labels = template.values.flatMap(value =>
+    value && typeof value === "object" && "values" in value
+      ? (value as {values: unknown[]}).values : []);
+  expect(labels).toContain("Head ≈ 40%");
+  expect(labels).not.toContain("Head 40%");
 });

@@ -530,6 +530,65 @@ async def main():
         assert await page.evaluate(
             "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
         )
+        # Inside the dialog, a hold renews its lease and tap to move toggles a
+        # motor. Closing the dialog mid-move sends STOP and ends the renewals.
+        await page.evaluate("""async () => {
+          const states={...hass.states};
+          for (const motor of ['back','legs']) {
+            const id='cover.left_'+motor;
+            states[id]={...states[id],attributes:{...states[id].attributes,hold_lease_mode:'stream',hold_lease_motor:motor}};
+          }
+          // The backend keeps a leased movement call open while the hold lasts.
+          hass={...hass,states,callService:(domain,service,data)=>{
+            calls.push({domain,service,...data});
+            return service==='timed_move'?new Promise(()=>{}):Promise.resolve();
+          }};card.hass=hass;calls=[];
+          await configure({device_id:'left',open_dialog:true});
+        }""")
+        leases = (
+            "calls.filter(c=>c.service==='timed_move' && c.motor==='back' && c.direction==='up')"
+        )
+        stopped = "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
+        await card.locator(".compact-graphic").click()
+        await card.locator("dialog").get_by_role("button", name="Up", exact=True).first.focus()
+        await page.keyboard.down("Space")
+        await page.wait_for_function(f"{leases}.length >= 3")
+        await page.keyboard.up("Space")
+        await page.wait_for_function(stopped)
+        assert await page.evaluate(f"new Set({leases}.map(c=>c.hold_owner)).size") == 1
+        await card.locator("dialog").get_by_role("button", name="Close", exact=True).click()
+        await card.locator("dialog").wait_for(state="detached")
+        await page.evaluate(
+            "async () => {calls=[];await configure({device_id:'left',open_dialog:true,tap_to_move:true})}"
+        )
+        await card.locator(".compact-graphic").click()
+        tap_up = card.locator("dialog").get_by_role("button", name="Up", exact=True).first
+        await tap_up.click()
+        await page.wait_for_function(f"{leases}.length >= 3")
+        assert await tap_up.get_attribute("aria-pressed") == "true"
+        await page.keyboard.press("Escape")
+        await card.locator("dialog").wait_for(state="detached")
+        await page.wait_for_function(stopped)
+        renewals = await page.evaluate(f"{leases}.length")
+        await page.wait_for_timeout(600)
+        assert await page.evaluate(f"{leases}.length") == renewals
+        # The percentage graphic labels an estimate it draws as one.
+        await page.evaluate("""async () => {
+          const states={...hass.states},entities={...hass.entities};
+          for (const [key,value] of [['back','40'],['legs','20']]) {
+            delete entities['number.left_'+key+'_position'];
+            const entity_id='number.left_'+key+'_position_estimated';
+            entities[entity_id]={entity_id,device_id:'left',platform:'adjustable_bed',translation_key:key+'_position_estimated'};
+            states[entity_id]={entity_id,state:value,attributes:{estimate_state:'tracking'}};
+          }
+          hass={...hass,states,entities};card.hass=hass;
+          await configure({device_id:'left',layout:'full',show_percentage_graphic:true});
+        }""")
+        assert await card.locator(".bed-graphic.is-estimated").count() == 1
+        assert await card.locator(".bed-graphic-label").all_text_contents() == [
+            "Back ≈ 40%",
+            "Legs ≈ 20%",
+        ]
         await page.evaluate(
             "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
         )

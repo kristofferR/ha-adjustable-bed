@@ -53,6 +53,14 @@ test("dialog sections are configurable without recursion or changing device iden
   expect(full.section_order).toEqual(["presets", "memory"]);
 });
 
+test("the dialog shows saved positions and keeps tap to move unless the dialog sets it", () => {
+  const config = {type: "custom:adjustable-bed-card", device_id: "bed", layout: "compact" as const,
+    open_dialog: true, tap_to_move: true, show_saved_positions: false};
+  expect(fullCardDialogConfig(config).show_saved_positions).toBe(true);
+  expect(fullCardDialogConfig(config).tap_to_move).toBe(true);
+  expect(fullCardDialogConfig({...config, dialog_config: {tap_to_move: false}}).tap_to_move).toBe(false);
+});
+
 test("recipes are customizable settings and preserve the configured bed and navigation", () => {
   const config = { type: "custom:adjustable-bed-card", device_id: "pair",
     name: "My bed", navigation_path: "/dashboard/bed", compact_actions: ["preset_tv"] };
