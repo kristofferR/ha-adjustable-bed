@@ -176,7 +176,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
 | `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
 | `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
-| `richmat` | The RMControl product, or None for the remote controls; the RMControl side when a product is chosen; otherwise the Richmat remote code. The packet dialect stays the route's own field. An RMControl product with a Prefix55 or PrefixAA dialect is refused on save. |
+| `richmat` | The RMControl product, or None for the remote controls; the RMControl side when a product is chosen; otherwise the Richmat remote code; the packet dialect (Advanced). An RMControl product with a Prefix55 or PrefixAA dialect is refused on save. |
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | The app's model (the protocol variant), or Auto from the raw Bluetooth name; a name the app cannot resolve is refused on save. |
 
 The other profiles declare only the generic fields they own, converted from the

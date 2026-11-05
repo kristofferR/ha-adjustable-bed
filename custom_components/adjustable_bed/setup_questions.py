@@ -848,16 +848,13 @@ def _richmat_remotes(data: Mapping[str, Any]) -> Mapping[Any, str]:
 
 
 def _richmat_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    """An RMControl product runs only over the app's Nordic or WiLinke transport.
-
-    The dialect is not one of these questions, so the error is the form's own.
-    """
+    """An RMControl product runs only over the app's Nordic or WiLinke transport."""
     if data.get(CONF_RMCONTROL_PRODUCT) and data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO) not in (
         VARIANT_AUTO,
         RICHMAT_VARIANT_NORDIC,
         RICHMAT_VARIANT_WILINKE,
     ):
-        return {"base": "invalid_variant_for_bed_type"}
+        return {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
     return {}
 
 
@@ -1050,14 +1047,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     # The Richmat question picks RMControl or the remote controls. RMControl
     # names the exact product and the side the app commands; the remote code
     # picks a remote's buttons. Configure asks the same, so an entry can opt in
-    # to RMControl or leave it. The packet dialect stays the route's own field,
-    # which a two-address pair's shared form still changes for both beds.
+    # to RMControl or leave it. The packet dialect belongs to each receiver, as
+    # every answer here does in a two-address pair.
     BED_TYPE_RICHMAT: _asking(
         BED_TYPE_RICHMAT,
         questions=(
             Question(CONF_RMCONTROL_PRODUCT, _rmcontrol_products, _rmcontrol_default),
             Question(CONF_RMCONTROL_SIDE, _RMCONTROL_SIDES, "left", when=_RMCONTROL_CHOSEN),
             Question(CONF_RICHMAT_REMOTE, _richmat_remotes, RICHMAT_REMOTE_AUTO, when=_NO_RMCONTROL),
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_RICHMAT), "auto", advanced=True),
         ),
         validate=_richmat_errors,
     ),

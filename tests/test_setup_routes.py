@@ -161,7 +161,7 @@ async def test_discovered_bed_keeps_its_route_in_a_collapsed_section(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
-            const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT,
+            const.CONF_BED_TYPE: const.BED_TYPE_OCTO,
             "advanced": {const.CONF_PROTOCOL_VARIANT: const.LINAK_VARIANT_PERFORMANCE},
         },
     )
@@ -439,45 +439,40 @@ def test_app_owned_layout_and_cadence_are_not_asked(bed_type):
     assert const.CONF_MOTOR_PULSE_COUNT not in hidden
 
 
-async def test_route_is_collected_before_route_dependent_validation(
+async def test_an_app_model_is_asked_when_its_name_rule_cannot_run(
     hass, enable_custom_integrations
 ):
-    """An app model route can be chosen even when its automatic rule cannot run."""
+    """A manual entry knows no Bluetooth name, so the app's Auto rule is refused."""
     result = await _manual_entry(hass)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT_HARMONY},
+        result["flow_id"], {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT}
     )
-    # No Bluetooth name is known, so the automatic model rule would be refused.
-    assert result["step_id"] == "route"
+    while result["step_id"] == "disconnect_after_command":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {const.CONF_DISCONNECT_AFTER_COMMAND: False}
+        )
+    assert result["step_id"] == "richmat_family"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"choice": "harmony"}
+    )
+    assert result["step_id"] == "profile_questions"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_PROTOCOL_VARIANT: "auto"}
+    )
+    assert result["errors"] == {const.CONF_PROTOCOL_VARIANT: "richmat_mh_no_name"}
     model = next(
-        route for route in _setup_routes(const.BED_TYPE_RICHMAT_HARMONY) if route != "auto"
+        route for route in const.RICHMAT_MH_VARIANTS_BY_APP["harmony"] if route != "auto"
     )
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: model}}
+            result["flow_id"], {const.CONF_PROTOCOL_VARIANT: model}
         )
-        while result["type"] is FlowResultType.FORM and result["step_id"] != "manual_entry":
+        while result["type"] is FlowResultType.FORM:
+            assert not result.get("errors"), result.get("errors")
             result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    assert not result.get("errors"), result.get("errors")
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT_HARMONY
     assert result["data"][const.CONF_PROTOCOL_VARIANT] == model
-
-
-async def test_a_refused_route_is_asked_again(hass, enable_custom_integrations):
-    result = await _manual_entry(hass)
-    choice = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT_HARMONY}
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], choice)
-    assert result["step_id"] == "route"
-    # Auto needs a Bluetooth name this manual entry does not have.
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: "auto"}}
-    )
-    assert result["step_id"] == "manual_entry"
-    assert result["errors"]["base"] == "richmat_mh_no_name"
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], choice)
-    assert result["step_id"] == "route"
-    hass.config_entries.flow.async_abort(result["flow_id"])
 
 
 def test_every_picker_label_maps_back_to_one_choice():

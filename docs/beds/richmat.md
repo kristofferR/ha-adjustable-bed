@@ -117,9 +117,9 @@ Setup then asks which app you use; the bed's name and services never decide it.
    code. A code the Bluetooth name carries is preselected (see
    [Richmat remotes](#richmat-remotes)).
 
-The packet dialect of the Richmat route stays under **Advanced** on the first
-form. An app picked from the **Richmat app profiles** brand list skips the
-question. Existing entries keep their bed type, settings and entity IDs.
+RMControl and the remote controls also offer the packet dialect under
+**Advanced**. An app picked from the **Richmat app profiles** brand list skips
+the question. Existing entries keep their bed type, settings and entity IDs.
 **Configure** changes the same answers: a remote entry can opt in to RMControl
 by choosing a product, and an RMControl entry returns to the remote controls by
 choosing None. Each receiver of a two-address pair answers for itself.

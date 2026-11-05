@@ -413,7 +413,7 @@ def test_initial_product_answer_validates_transport(variant: str) -> None:
         }
     )
     assert errors == (
-        {"base": "invalid_variant_for_bed_type"} if variant.startswith("prefix") else {}
+        {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"} if variant.startswith("prefix") else {}
     )
 
 
@@ -502,8 +502,10 @@ async def test_bluetooth_confirmation_rejects_incompatible_product(
     assert result["step_id"] == "richmat_family"
     result = await flow.async_step_richmat_family({"choice": "rmcontrol"})
     assert result["step_id"] == "profile_questions"
-    result = await flow.async_step_profile_questions({CONF_RMCONTROL_PRODUCT: "A0RM"})
-    assert result["errors"] == {"base": "invalid_variant_for_bed_type"}
+    result = await flow.async_step_profile_questions(
+        {CONF_RMCONTROL_PRODUCT: "A0RM", "advanced": {CONF_PROTOCOL_VARIANT: variant}}
+    )
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
     flow._finish_with_verify.assert_not_awaited()
 
 
@@ -568,59 +570,32 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
 
 
 @pytest.mark.parametrize("variant", ["prefix55", "prefixaa", "wilinke"])
-async def test_paired_options_validate_second_child_product(
-    hass: HomeAssistant, variant: str
+async def test_each_receiver_checks_its_own_product_transport(
+    hass: HomeAssistant, enable_custom_integrations, variant: str
 ) -> None:
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant.common import MockConfigEntry
+    """A receiver's dialect is its own answer, checked against its own product."""
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
+    from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
 
-    from custom_components.adjustable_bed.const import (
-        CONF_BED_TYPE,
-        CONF_MOTOR_COUNT,
-        CONF_PAIR_CHILDREN,
-        CONF_PAIR_ID,
-        CONF_PAIR_MODE,
-        CONF_PROTOCOL_VARIANT,
-        CONF_SIDE,
-        PAIR_MODE_SEPARATE_ADDRESS,
-        SIDE_LEFT,
-        SIDE_RIGHT,
+    richmat = {CONF_BED_TYPE: BED_TYPE_RICHMAT, CONF_PROTOCOL_VARIANT: "auto"}
+    entry = pair_entry(
+        hass,
+        {**richmat, CONF_RMCONTROL_PRODUCT: ""},
+        {**richmat, CONF_RMCONTROL_PRODUCT: "A0RM"},
     )
-
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_PAIR_ID: "rmcontrol_pair",
-        CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-        CONF_BED_TYPE: BED_TYPE_RICHMAT,
-        CONF_PAIR_CHILDREN: [
-            {
-                CONF_SIDE: side,
-                CONF_ADDRESS: address,
-                CONF_BED_TYPE: BED_TYPE_RICHMAT,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: "auto",
-                CONF_RMCONTROL_PRODUCT: product,
-            }
-            for side, address, product in (
-                (SIDE_LEFT, "AA:BB:CC:DD:EE:01", ""),
-                (SIDE_RIGHT, "AA:BB:CC:DD:EE:02", "A0RM"),
-            )
-        ],
-    })
-    entry.add_to_hass(hass)
-    original = dict(entry.data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: variant})
+    right = await receiver_form(hass, entry, "right")
+    result = await hass.config_entries.options.async_configure(
+        right["flow_id"], {**right["data_schema"]({}), CONF_PROTOCOL_VARIANT: variant}
+    )
     if variant.startswith("prefix"):
         assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
-        assert dict(entry.data) == original
+        assert child(entry, "right")[CONF_PROTOCOL_VARIANT] == "auto"
+        hass.config_entries.options.async_abort(right["flow_id"])
     else:
         assert result["type"] == "create_entry"
-        assert all(
-            child[CONF_PROTOCOL_VARIANT] == variant
-            for child in entry.data[CONF_PAIR_CHILDREN]
-        )
+        assert child(entry, "right")[CONF_PROTOCOL_VARIANT] == variant
+    # The other receiver keeps its own route.
+    assert child(entry, "left")[CONF_PROTOCOL_VARIANT] == "auto"
 
 
 @pytest.mark.parametrize("pair_mode", [None, "single_address", "separate_address"])
@@ -673,14 +648,15 @@ async def test_product_options_are_not_shared_between_physical_controllers(
     assert (CONF_RMCONTROL_SIDE in fields) is not shared
     if not shared:
         return
+    # Each receiver's product, side and dialect are its own step's answers.
+    assert CONF_PROTOCOL_VARIANT not in fields
     schema = form["data_schema"]
     assert isinstance(schema, vol.Schema)
     submission = schema({})
     assert isinstance(submission, dict)
-    submission[CONF_PROTOCOL_VARIANT] = "wilinke"
     result = await flow.async_step_settings(submission)
     assert result["type"] == "create_entry"
     children = entry.data[CONF_PAIR_CHILDREN]
     assert [child[CONF_RMCONTROL_PRODUCT] for child in children] == ["A0RM", "A3RM"]
     assert [child[CONF_RMCONTROL_SIDE] for child in children] == ["left", "right"]
-    assert all(child[CONF_PROTOCOL_VARIANT] == "wilinke" for child in children)
+    assert all(child[CONF_PROTOCOL_VARIANT] == "auto" for child in children)
