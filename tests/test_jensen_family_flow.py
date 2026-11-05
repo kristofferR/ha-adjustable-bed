@@ -199,3 +199,36 @@ async def test_a_jmc400_pair_asks_each_pin_on_its_own_step(hass, enable_custom_i
         )
     assert child(entry, "right")[const.CONF_JENSEN_PIN] == "3333"
     assert child(entry, "left")[const.CONF_JENSEN_PIN] == "1111"
+
+
+async def test_an_unnamed_advertisement_leaves_the_stored_name_to_suggest(hass):
+    from types import SimpleNamespace
+
+    flow = setup_flow(hass, const.BED_TYPE_SVANE)
+    flow._manual_data[const.CONF_BLE_DEVICE_NAME] = "Jensen Bed"
+    with patch(
+        "custom_components.adjustable_bed.config_flow.bluetooth.async_last_service_info",
+        return_value=SimpleNamespace(name=ADDRESS),
+    ):
+        result = await flow.async_step_jensen_family()
+    assert suggested(result) == "jensen_linon"
+
+
+async def test_configure_can_switch_another_bed_type_to_the_jmc400_route(hass):
+    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_LINAK, const.CONF_MOTOR_COUNT: 2})
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow._async_options_form(None, step_id="settings")
+    picker = form["data_schema"].schema[
+        next(marker for marker in form["data_schema"].schema if marker == const.CONF_BED_TYPE)
+    ]
+    assert const.BED_TYPE_JENSEN in set(picker.rows().values())
+    form = await flow._async_options_form(
+        {const.CONF_BED_TYPE: const.BED_TYPE_JENSEN}, step_id="settings"
+    )
+    assert const.CONF_JENSEN_PIN in {marker.schema for marker in form["data_schema"].schema}
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow._async_options_form({const.CONF_JENSEN_PIN: "1234"}, step_id="settings")
+    assert result["type"] == "create_entry"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_JENSEN
+    assert entry.data[const.CONF_JENSEN_PIN] == "1234"

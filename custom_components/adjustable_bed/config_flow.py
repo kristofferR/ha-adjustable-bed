@@ -966,11 +966,13 @@ def _bed_type_selector(
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
     if show_saved_id:
-        # The StarCode apps and Reverie receivers have no guided change, so
+        # The StarCode apps and Reverie receivers have no guided change, and
+        # another bed type reaches the Jensen JMC400 route only here, so
         # Configure lists each by its own label; setup asks behind the family row.
         unguided = {
             *(bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()),
             *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
+            BED_TYPE_JENSEN,
         }
         options = sorted(
             [
@@ -4029,18 +4031,25 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if data[CONF_BED_TYPE] == BED_TYPE_JENSEN:
                 return await self.async_step_profile_questions()
             return await self._async_finish_family_route()
-        name = (
-            self._discovery_info.name
+        # An unnamed advertisement reports the address as its name, which no
+        # name rule reads; the next source then names the bed.
+        advertised = (
+            self._discovery_info
             if self._discovery_info is not None
-            else (
-                advertised.name
-                if (
-                    advertised := bluetooth.async_last_service_info(
-                        self.hass, data[CONF_ADDRESS], connectable=False
-                    )
-                )
-                else data.get(CONF_BLE_DEVICE_NAME)
+            else bluetooth.async_last_service_info(
+                self.hass, data[CONF_ADDRESS], connectable=False
             )
+        )
+        name = next(
+            (
+                candidate
+                for candidate in (
+                    advertised.name if advertised is not None else None,
+                    data.get(CONF_BLE_DEVICE_NAME),
+                )
+                if isinstance(candidate, str) and candidate and not is_mac_like_name(candidate)
+            ),
+            None,
         )
         return self.async_show_form(
             step_id="jensen_family",

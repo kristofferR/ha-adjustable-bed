@@ -38,7 +38,8 @@ JMC400 bed. The JMC400 name and the LinonPI services occur with both apps, so
 they never decide the answer; the apps' own name rules suggest it the same way
 in Bluetooth and manual setup. A LinON Entry box is JMC400 hardware, not a
 LinOn bed. **Reconfigure** changes an existing bed's app or bed; existing
-entries keep their route until then.
+entries keep their route until then. Configure lists the JMC400 route by its
+own name, for an entry of another bed type to switch to it.
 
 ## PIN Authentication
 
