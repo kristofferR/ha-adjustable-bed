@@ -134,6 +134,8 @@ class _LeaseRecord:
     member: StreamMember | None = None
     ended: bool = False
     timer: asyncio.TimerHandle | None = None
+    ceiling: float | None = None
+    """Event-loop time no renewal can extend the running hold past."""
 
 
 @dataclass(slots=True, eq=False)
@@ -1357,9 +1359,31 @@ class DeviceCommandScheduler:
         for key in [key for key, record in self._leases.items() if record.ended][:excess]:
             del self._leases[key]
 
+    def bound_hold(self, context: CommandContext, ceiling_s: float) -> None:
+        """Start the running hold's ceiling: it ends ``ceiling_s`` from now at the latest.
+
+        The ceiling is clock time, so per-write latency in the controller's
+        refresh cannot stretch a renewed hold past it (#483). It ends the hold
+        as lease expiry does, and the controller's release still runs.
+        """
+        handle = self._active
+        if handle is None or handle.context is not context:
+            return
+        record = handle.lease_record
+        if record is None or record.ended or record.member is not None or record.ceiling is not None:
+            return
+        record.ceiling = asyncio.get_running_loop().time() + ceiling_s
+        if record.deadline > record.ceiling:
+            record.deadline = record.ceiling
+            self._arm_lease_timer(record)
+
     def _set_lease_deadline(self, record: _LeaseRecord, lease: HoldLease) -> None:
         loop = asyncio.get_running_loop()
-        record.deadline = loop.time() + lease.duration_s
+        record.deadline = _clamp(loop.time() + lease.duration_s, record.ceiling)
+        self._arm_lease_timer(record)
+
+    def _arm_lease_timer(self, record: _LeaseRecord) -> None:
+        loop = asyncio.get_running_loop()
         if record.timer is not None:
             record.timer.cancel()
             record.timer = None

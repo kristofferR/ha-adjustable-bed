@@ -299,3 +299,42 @@ async def test_held_start_binds_to_a_prepared_reservation() -> None:
     await asyncio.wait_for(scheduler.wait_prepared_result(handle), 1)
     assert handle.outcome is CommandOutcome.EXPIRED
     assert fake.frames[-1] == "release"
+
+
+async def test_renewals_never_extend_a_bounded_hold_past_its_ceiling(clock: Any) -> None:
+    scheduler = DeviceCommandScheduler("ceiling")
+    began = clock.now
+
+    async def bounded(context: CommandContext) -> None:
+        # The coordinator starts the ceiling as the controller operation begins.
+        scheduler.bound_hold(context, 0.1)
+        await fake(context)
+
+    fake = FakeHold()
+    task = asyncio.create_task(scheduler.execute(hold_intent(bounded, lease(duration_s=0.05))))
+    await fake.started.wait()
+    for _ in range(3):
+        await asyncio.sleep(0.03)
+        assert scheduler.claim_hold(lease(duration_s=0.05), BACK) is HoldClaim.RENEW
+    await asyncio.wait_for(task, 1)
+
+    # Renewed to 140 ms, the hold still ended at its 100 ms ceiling, as expiry.
+    assert clock.now - began == pytest.approx(0.1)
+    assert scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
+    assert fake.frames[-1] == "release" and fake.frames.count("release") == 1
+    assert scheduler.claim_hold(lease(duration_s=0.05), BACK) is HoldClaim.STALE
+
+
+async def test_a_ceiling_never_lengthens_a_shorter_lease(clock: Any) -> None:
+    scheduler = DeviceCommandScheduler("short")
+    began = clock.now
+
+    async def bounded(context: CommandContext) -> None:
+        scheduler.bound_hold(context, 30)
+        await fake(context)
+
+    fake = FakeHold()
+    await asyncio.wait_for(
+        scheduler.execute(hold_intent(bounded, lease(duration_s=0.05))), 1
+    )
+    assert clock.now - began == pytest.approx(0.05)
