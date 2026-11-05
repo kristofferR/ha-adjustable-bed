@@ -1214,7 +1214,11 @@
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
-          "vmatbasic_profile": "V-MAT Basic product profile"
+          "vmatbasic_profile": "V-MAT Basic product profile",
+          "logicdata_app_profile": "Bed app",
+          "logicdata_app_family": "Command family",
+          "logicdata_app_layout": "Physical actuator layout",
+          "logicdata_app_transport": "BLE transport"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1239,7 +1243,11 @@
           "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls."
+          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
+          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports."
         }
       },
       "right_settings": {
@@ -1280,7 +1288,11 @@
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
-          "vmatbasic_profile": "V-MAT Basic product profile"
+          "vmatbasic_profile": "V-MAT Basic product profile",
+          "logicdata_app_profile": "Bed app",
+          "logicdata_app_family": "Command family",
+          "logicdata_app_layout": "Physical actuator layout",
+          "logicdata_app_transport": "BLE transport"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1305,7 +1317,11 @@
           "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls."
+          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
+          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports."
         }
       },
       "change_app": {
