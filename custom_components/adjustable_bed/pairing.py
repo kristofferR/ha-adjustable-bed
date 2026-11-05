@@ -31,6 +31,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -159,6 +160,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_ISLEEP,
         BED_TYPE_CASPER_BASE,
         BED_TYPE_GMMOTOR,
+        BED_TYPE_MOTOMOTION,
     }
 )
 
@@ -169,10 +171,18 @@ def supports_single_address_pairing(
     *,
     resolved_variant: str | None = None,
     product_type: str | None = None,
+    ble_device_name: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_MOTOMOTION:
+        from .profiles.motomotion import Profile
+
+        try:
+            return Profile(ble_device_name or "").sides
+        except ValueError:
+            return False
     if bed_type == BED_TYPE_KEESON:
         # Auto can resolve to incompatible P2/JSON/OEM frames at connection.
         return protocol_variant in {"base", "ergomotion"}
@@ -700,6 +710,7 @@ def build_single_address_pair_entry_data(
         protocol_variant,
         resolved_variant=resolved_variant,
         product_type=single_data.get(CONF_PRODUCT_TYPE),
+        ble_device_name=single_data.get(CONF_BLE_DEVICE_NAME),
     ):
         raise ValueError(f"{bed_type!r} does not support single-address pairing")
 

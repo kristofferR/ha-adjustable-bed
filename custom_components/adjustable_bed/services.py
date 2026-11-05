@@ -2360,6 +2360,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .logicdata_app_services import async_register_logicdata_app_services
     from .malouf_app_services import async_register_malouf_app_services
     from .motion_bed_services import async_register_motion_bed_services
+    from .motomotion_services import async_register_motomotion_services
     from .octo_services import async_register_octo_services
     from .position_estimate_services import async_register_position_estimate_services
     from .reverie_services import async_register_reverie_services
@@ -2379,6 +2380,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_richmat_mh_services(hass)
     async_register_position_estimate_services(hass)
     async_register_cluster018_services(hass)
+    async_register_motomotion_services(hass)
     async_register_hjbed_services(hass)
     async_register_goodvibe_services(hass)
     async_register_rmcontrol_services(hass)

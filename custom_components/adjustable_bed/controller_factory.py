@@ -16,6 +16,7 @@ from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
@@ -66,6 +67,7 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -485,6 +487,9 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     ),
     BED_TYPE_SUTA: _ControllerSpec("suta", "SutaController"),
     BED_TYPE_TIMOTION_AHF: _ControllerSpec("timotion_ahf", "TiMOTIONAhfController"),
+    BED_TYPE_BEDJET_POWERLAYER: _ControllerSpec(
+        "bedjet_powerlayer", "BedJetPowerLayerController"
+    ),
     BED_TYPE_COMFORT_MOTION: _ControllerSpec("jiecang", "JiecangController"),
     # Ergomotion is the Keeson protocol with position feedback; Serta Motion
     # Perfect is the same protocol with its own variant.
@@ -771,6 +776,11 @@ async def create_controller(
         from .cluster018_profiles import load_catalog
         await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
         return Cluster018Controller(coordinator, app=protocol_variant, device_name=device_name)
+
+    if bed_type == BED_TYPE_MOTOMOTION:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.motomotion", __package__)
+        from .beds.motomotion import MotoMotionController
+        return MotoMotionController(coordinator, device_name=device_name if client is not None else None, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_HJBED:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)

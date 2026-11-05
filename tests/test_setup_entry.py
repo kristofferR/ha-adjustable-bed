@@ -277,3 +277,35 @@ async def test_a_detected_route_survives_the_brand_list(
         result = await flow.async_step_select_family()
     assert const.BED_TYPE_OKIN_UUID in app_rows(result).values()
     assert const.BED_TYPE_FURNIMOVE not in app_rows(result).values()
+
+
+@pytest.mark.parametrize(
+    ("choice", "app"),
+    [
+        (const.BED_TYPE_MOTOMOTION, "MotoMotion"),
+        (const.BED_TYPE_BEDJET_POWERLAYER, "BedJet PowerLayer"),
+    ],
+)
+async def test_the_beds_from_main_are_in_the_app_question(
+    hass, enable_custom_integrations, choice, app
+):
+    result = await app_question(hass)
+    assert any(row == choice and app in label for label, row in app_rows(result).items())
+
+
+async def test_motomotion_from_the_app_question_asks_its_exact_name(
+    hass, enable_custom_integrations
+):
+    result = await _app_then_address(hass, const.BED_TYPE_MOTOMOTION)
+    assert result["step_id"] == "profile_questions"
+    assert const.CONF_BLE_DEVICE_NAME in {str(marker) for marker in result["data_schema"].schema}
+
+
+async def test_bedjet_powerlayer_from_the_app_question_finishes(hass, enable_custom_integrations):
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_setup",
+        new=AsyncMock(return_value=True),
+    ):
+        result = await _app_then_address(hass, const.BED_TYPE_BEDJET_POWERLAYER)
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_BEDJET_POWERLAYER

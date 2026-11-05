@@ -29,11 +29,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_SBI,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_CLUSTER018_THIRD_SERVICE,
     CONF_JIECANG_APP_PROFILE,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_MALOUF_APP_PROFILE,
+    CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
@@ -192,7 +194,7 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         migrated = dict(entry.data)
         profile_id = migrated.pop(CONF_PROFILE_ID)
         record = migrated.pop(CONF_PROFILE_MIGRATION)
-        assert (entry.version, entry.minor_version) == (5, 2)
+        assert (entry.version, entry.minor_version) == (5, 3)
         assert migrated == stored
         assert dict(entry.options) == {"motor_pulse_count": 7}
         assert profile_id == resolve_profile_id(data)
@@ -224,6 +226,33 @@ async def test_classic_richmat_entries_from_4x_keep_their_app_settings(
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == "richmat_classic_apps:fortywinks"
     assert migrated.pop(CONF_PROFILE_MIGRATION)["profile_id"] == "richmat_classic_apps:fortywinks"
+    assert migrated == stored
+
+
+@pytest.mark.parametrize(
+    ("stored", "profile_id"),
+    [
+        # MotoMotion's exact name selects its panel; it is a setting, not the route.
+        (
+            {CONF_BED_TYPE: "motomotion", CONF_BLE_DEVICE_NAME: "SOFA000005S00FM"},
+            "motomotion",
+        ),
+        ({CONF_BED_TYPE: "bedjet_powerlayer", CONF_MOTOR_COUNT: 2}, "bedjet_powerlayer"),
+    ],
+)
+async def test_beds_from_main_migrate_from_4x_with_their_settings(
+    hass: HomeAssistant, stored: dict[str, Any], profile_id: str
+) -> None:
+    """A 4.x MotoMotion or BedJet PowerLayer entry gains its id and keeps its data."""
+    stored = {CONF_ADDRESS: ADDRESS, **stored}
+    entry = MockConfigEntry(domain=DOMAIN, data=dict(stored), version=4, minor_version=3)
+    entry.add_to_hass(hass)
+
+    await async_migrate_entry(hass, entry)
+
+    migrated = dict(entry.data)
+    assert migrated.pop(CONF_PROFILE_ID) == profile_id
+    assert migrated.pop(CONF_PROFILE_MIGRATION)["profile_id"] == profile_id
     assert migrated == stored
 
 
