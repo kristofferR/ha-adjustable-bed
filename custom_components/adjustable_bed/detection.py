@@ -19,6 +19,7 @@ from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
@@ -73,6 +74,7 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -128,6 +130,8 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     # Detection constants
+    BEDJET_ADVERTISED_SERVICE_UUID,
+    BEDJET_POWERLAYER_NAME_PATTERNS,
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
@@ -552,6 +556,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
     BED_TYPE_CLUSTER018: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
+    BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
@@ -618,6 +623,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
+    BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
     BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic",
@@ -1274,7 +1280,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type == BED_TYPE_GOODVIBE and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GOODVIBE, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1379,6 +1385,16 @@ def _detect_bed_type_with_app_candidates(
             if BED_TYPE_CLUSTER018 not in (result.ambiguous_types or ()):
                 result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_CLUSTER018]
         result.signals.append("name:cluster018_app_candidate")
+    # A MotoMotion name rule only adds an app candidate: the app reads the exact
+    # local name, and shared prefixes do not identify its panel.
+    from .motomotion_profile import eligible as motomotion_eligible
+
+    if motomotion_eligible(service_info.name):
+        if result.bed_type is None and not any(signal.startswith("excluded:") for signal in result.signals):
+            return DetectionResult(bed_type=BED_TYPE_MOTOMOTION, confidence=0.3, signals=[*result.signals, "name:motomotion_app_candidate"])
+        if result.bed_type is not None and result.bed_type != BED_TYPE_MOTOMOTION:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MOTOMOTION]))
+            result.signals.append("name:motomotion_app_candidate")
     if first.name(BED_TYPE_HJBED):
         if result.bed_type is None:
             if not any(signal.startswith("excluded:") for signal in result.signals):
@@ -1819,6 +1835,28 @@ def _detect_bed_type_detailed(
                     confidence=0.3,
                     signals=signals,
                 )
+
+    # Check for the BedJet PowerLayer frame. The frame and the BedJet climate
+    # blower both advertise the 1000 service and only the frame exposes 1001
+    # once connected, so the advertised name is the only discovery-time signal
+    # that separates them. Claiming the shared UUID would offer bed setup for
+    # climate units this integration cannot drive.
+    if any(device_name.startswith(pattern) for pattern in BEDJET_POWERLAYER_NAME_PATTERNS):
+        signals.append("name:bedjet_powerlayer")
+        confidence = 0.6
+        if BEDJET_ADVERTISED_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:bedjet_1000")
+            confidence = 0.9
+        _LOGGER.info(
+            "Detected BedJet PowerLayer at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_BEDJET_POWERLAYER,
+            confidence=confidence,
+            signals=signals,
+        )
 
     # Check for Octo Star2 variant before generic Star* matching.
     if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:

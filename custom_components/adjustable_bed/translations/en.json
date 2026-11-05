@@ -497,7 +497,7 @@
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_restricted": "Authentication is the default. Turn this on only for the app's restricted route.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
+          "ble_device_name": "Enter the original case-sensitive Bluetooth name the app reads. The Motion Bed app's shared FFE1 transport cannot identify it, and MotoMotion reads its panel and feature flags from the name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
@@ -926,7 +926,8 @@
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
       "migration_verification_required": "The selected setup could not be verified or its connection could not be released. Retry, or keep your current setup.",
-      "cluster018_layout": "Choose a layout shipped in the selected app."
+      "cluster018_layout": "Choose a layout shipped in the selected app.",
+      "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name."
     }
   },
   "options": {
@@ -1095,7 +1096,7 @@
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed, MotoMotion and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
@@ -1262,7 +1263,7 @@
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
           "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
           "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
-          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed, MotoMotion and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
@@ -1374,7 +1375,7 @@
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
           "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
           "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
-          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed, MotoMotion and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
@@ -3484,6 +3485,12 @@
       },
       "cluster018_release": {
         "name": "Release held action"
+      },
+      "motomotion_action": {
+        "name": "{action}"
+      },
+      "motomotion_release": {
+        "name": "Release"
       }
     },
     "cover": {
@@ -5267,6 +5274,21 @@
       },
       "cluster018_status": {
         "name": "App connection and state"
+      },
+      "motomotion_status": {
+        "name": "MotoMotion status"
+      },
+      "motomotion_heat_left": {
+        "name": "Left heat level"
+      },
+      "motomotion_massage_left": {
+        "name": "Left massage level"
+      },
+      "motomotion_heat_right": {
+        "name": "Right heat level"
+      },
+      "motomotion_massage_right": {
+        "name": "Right massage level"
       }
     },
     "light": {
@@ -5875,6 +5897,45 @@
       },
       "goodvibe_snore_time": {
         "name": "Snore intervention time"
+      },
+      "motomotion_volume": {
+        "name": "Volume"
+      },
+      "motomotion_treble": {
+        "name": "Treble"
+      },
+      "motomotion_bass": {
+        "name": "Bass"
+      },
+      "motomotion_vibration": {
+        "name": "Vibration"
+      },
+      "motomotion_red": {
+        "name": "Red"
+      },
+      "motomotion_green": {
+        "name": "Green"
+      },
+      "motomotion_blue": {
+        "name": "Blue"
+      },
+      "motomotion_timer": {
+        "name": "Light timer (seconds)"
+      },
+      "motomotion_target_head": {
+        "name": "Target head (Hall units)"
+      },
+      "motomotion_target_base": {
+        "name": "Target base (Hall units)"
+      },
+      "motomotion_target_back": {
+        "name": "Target back (Hall units)"
+      },
+      "motomotion_target_lumbar": {
+        "name": "Target lumbar (Hall units)"
+      },
+      "motomotion_target_tilt": {
+        "name": "Target tilt (Hall units)"
       }
     },
     "select": {
@@ -6431,6 +6492,31 @@
         "state": {
           "head": "Head",
           "foot": "Foot"
+        }
+      },
+      "motomotion_side": {
+        "name": "Side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
+      },
+      "motomotion_music_mode": {
+        "name": "Music mode",
+        "state": {
+          "custom": "Custom",
+          "wide": "Wide",
+          "electric": "Electric",
+          "live": "Live"
+        }
+      },
+      "motomotion_posture": {
+        "name": "Posture",
+        "state": {
+          "upright": "Upright",
+          "recline": "Recline",
+          "tv": "Tv",
+          "lay": "Lay"
         }
       }
     },
@@ -8690,6 +8776,40 @@
         "duration_ms": {
           "name": "Desk button duration",
           "description": "Bounded duration in milliseconds."
+        }
+      }
+    },
+    "motomotion": {
+      "name": "MotoMotion posture and users",
+      "description": "Manage local measurements and custom Hall targets for a MotoMotion name with the users tab. Dimensions are height, buttocks height and knee height in centimetres. This does not report measured motor positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "MotoMotion devices with the users tab."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Save, select or delete a user, or recall, save, reset or fine tune a posture."
+        },
+        "user": {
+          "name": "User",
+          "description": "Name of the local user to save or select."
+        },
+        "dimensions": {
+          "name": "Body measurements",
+          "description": "Three finite numbers in order: height, buttocks height and knee height, in centimetres."
+        },
+        "posture": {
+          "name": "Posture",
+          "description": "Upright, recline, TV or lay posture."
+        },
+        "targets": {
+          "name": "Raw Hall targets",
+          "description": "All five keys: head, base, back, lumbar and tilt. Each value must fit its app slider bounds."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side, when supported by this device."
         }
       }
     }
