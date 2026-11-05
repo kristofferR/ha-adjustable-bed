@@ -8929,7 +8929,8 @@ class AdjustableBedOptionsFlow(
                     changes.update(
                         {key: value for key, value in app_data.items() if before.get(key) != value}
                     )
-                    changes.update(questions.settled(app_data))
+                    if not errors:
+                        changes.update(questions.settled(app_data))
                     stale = frozenset(current) - frozenset(app_data)
             if not errors:
                 # Move shared overrides into both receivers before changing

@@ -1,5 +1,6 @@
 """Each receiver of a two-address pair answers its own profile's questions (#779)."""
 
+import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
@@ -94,6 +95,35 @@ async def test_a_conditional_question_is_a_native_conditional_field(
     left = fields(await receiver_form(hass, entry, "left"))
     assert left[const.CONF_VIBRADORM_RESTORED].visible is None
     assert left[const.CONF_VIBRADORM_FLOOR_LIGHT].visible is not None
+
+
+@pytest.mark.parametrize("side", ["left", "right"])
+@pytest.mark.parametrize("room", [-(2**31) - 1, 2**31])
+async def test_invalid_isleep_room_preserves_receivers_and_allows_correction(
+    hass, enable_custom_integrations, side, room
+):
+    isleep = {
+        const.CONF_BED_TYPE: const.BED_TYPE_ISLEEP,
+        const.CONF_PRODUCT_TYPE: 129,
+        const.CONF_KAIDI_ROOM_ID: 10000,
+        const.CONF_KAIDI_SOFA_ACU_NO: 2,
+    }
+    entry = pair_entry(hass, isleep, isleep)
+    before = dict(entry.data)
+    form = await receiver_form(hass, entry, side)
+    answers = {**form["data_schema"]({}), const.CONF_KAIDI_ROOM_ID: room}
+    result = await hass.config_entries.options.async_configure(form["flow_id"], answers)
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "isleep_profile"}
+    assert entry.data == before
+
+    result = await hass.config_entries.options.async_configure(
+        form["flow_id"], {**answers, const.CONF_KAIDI_ROOM_ID: 10001}
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert child(entry, side)[const.CONF_KAIDI_ROOM_ID] == 10001
+    other_side = "right" if side == "left" else "left"
+    assert child(entry, other_side)[const.CONF_KAIDI_ROOM_ID] == 10000
 
 
 def test_every_declared_question_has_a_receiver_label():
