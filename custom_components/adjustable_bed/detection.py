@@ -579,7 +579,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
         "Jiecang: ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps, "
         "Glide and Lierda remotes"
     ),
-    BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
+    BED_TYPE_JENSEN: "Jensen Adjustable Sleep app, JMC400 bed (PIN)",
     BED_TYPE_KEESON: (
         "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
         "some Ergomotion Sync beds)"
@@ -715,6 +715,7 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_SLEEPYS_BOX15,
         BED_TYPE_SLEEPYS_BOX24,
         BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_JENSEN,
         BED_TYPE_MALOUF_NEW_OKIN,
         BED_TYPE_MALOUF_LEGACY_OKIN,
         BED_TYPE_CUSTOMATIC_JEROMES,
@@ -753,6 +754,10 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_LOGICDATA_APP: (
         "LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and "
         "Sleep Smart Air Mattress apps"
+    ),
+    BED_TYPE_SVANE: (
+        "Jensen / Svane: Jensen Adjustable Sleep app (JMC400 and LinOn beds) and "
+        "Svane Remote app"
     ),
     BED_TYPE_STARCODE_ABM5_4: (
         "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
@@ -805,6 +810,10 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B),
         (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230),
         (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
+        # The Svane Remote JMC400 profile and the Jensen app's LinOn profile
+        # are answers of the Jensen / Svane question.
+        (BED_TYPE_SVANE, SVANE_VARIANT_JMC),
+        (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON),
         # The Remacro apps are answers of the Remacro question.
         (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK),
         (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES),

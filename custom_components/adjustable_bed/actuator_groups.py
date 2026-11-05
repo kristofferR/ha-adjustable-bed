@@ -22,7 +22,6 @@ from .const import (
     BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_GMMOTOR_SLEEP_SXB,
     BED_TYPE_ISLEEP,
-    BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
@@ -59,6 +58,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SVANE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
     GLIDEAWAY_MOTION_MODELS,
@@ -227,9 +227,9 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         ],
     },
     "jensen": {
-        "display": "Jensen",
-        "description": "Jensen JMC400, LinON Entry beds",
-        "variants": None,  # Single protocol
+        "display": "Jensen / Svane",
+        "description": "Jensen Adjustable Sleep and Svane Remote apps: JMC400, LinOn and Svane beds",
+        "variants": None,  # The family step asks for the app and bed.
     },
     "jiecang": {
         "display": "Jiecang",
@@ -615,7 +615,7 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "bedtech": BED_TYPE_BEDTECH,
     "comfort_motion": BED_TYPE_COMFORT_MOTION,
     "ergomotion": BED_TYPE_ERGOMOTION,
-    "jensen": BED_TYPE_JENSEN,
+    "jensen": BED_TYPE_SVANE,
     "limoss": BED_TYPE_LIMOSS,
     "linak": BED_TYPE_LINAK,
     "logicdata": BED_TYPE_LOGICDATA_APP,

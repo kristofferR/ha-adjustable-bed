@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KEESON,
@@ -76,6 +77,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
+    BED_TYPE_SVANE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
@@ -291,6 +293,17 @@ LOGICDATA_FAMILY: Final = ManagedFamily(
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _LOGICDATA_ROUTES,
 )
 
+# The Jensen and Svane controllers resolve their GATT roles only when they
+# write, so a link never refuses them on connect and a change has nothing to
+# check; Configure switched these routes unchecked too. The variant picks the
+# Svane Remote profile or the Jensen app's LinOn profile.
+JENSEN_FAMILY: Final = ManagedFamily(
+    key="jensen_family",
+    bed_types=frozenset({BED_TYPE_JENSEN, BED_TYPE_SVANE}),
+    route_keys=(CONF_PROTOCOL_VARIANT,),
+    requires_check=lambda _data: False,
+)
+
 # The Limoss Remote app needs its exact service and notifying command
 # characteristic, so a change to it checks the link first. The generic Limoss
 # route and FSM Relax write the shared command characteristic and switch
@@ -315,6 +328,7 @@ MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     JORDANS_FAMILY,
     MALOUF_FAMILY,
     LOGICDATA_FAMILY,
+    JENSEN_FAMILY,
     LIMOSS_FAMILY,
 )
 

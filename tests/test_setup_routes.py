@@ -61,7 +61,8 @@ def test_routes_are_the_familys_own_and_exclude_its_apps():
     # The Keeson question asks for them itself, so the generic forms do not.
     assert _setup_routes(const.BED_TYPE_KEESON) == {}
     # A bed type with one route, or whose app step asks for its own, has none.
-    assert len(_setup_routes(const.BED_TYPE_SVANE)) == 1
+    # The Jensen / Svane question asks Svane's app profiles itself.
+    assert _setup_routes(const.BED_TYPE_SVANE) == {}
     assert _setup_routes(const.BED_TYPE_DOUBLESLEEP) == {}
     # A bed type that accepts its automatic route lists it first.
     assert list(_setup_routes(const.BED_TYPE_SBI))[0] == const.VARIANT_AUTO
@@ -73,8 +74,8 @@ async def test_fresh_forms_have_no_global_variant_field(hass, enable_custom_inte
     assert result["step_id"] == "manual_entry"
     assert const.CONF_PROTOCOL_VARIANT not in shown_markers(result)
     assert "advanced" not in shown_markers(result)
-    # Svane's app profiles are the one route asked on the form itself.
-    assert const.CONF_PROTOCOL_VARIANT in shown_markers(
+    # The Jensen / Svane question asks Svane's app profiles after the form.
+    assert const.CONF_PROTOCOL_VARIANT not in shown_markers(
         result, **{const.CONF_BED_TYPE: const.BED_TYPE_SVANE}
     )
 

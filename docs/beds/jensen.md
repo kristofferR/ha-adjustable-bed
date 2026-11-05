@@ -28,6 +28,20 @@ drives three bed families:
 
 See the [discovery ledger](jensen-disposition.md).
 
+## Home Assistant setup
+
+Choose **Jensen / Svane** in the bed-type list (a detected JMC400 box is shown
+there too), then answer which app and bed you use: the Jensen Adjustable Sleep
+app with a JMC400 bed (this page; it then asks the PIN, motor count, whether
+massage motors are fitted and whether to read positions) or with a
+[LinOn](#linon) bed, or the [Svane Remote](svane.md) app with a Svane Bed or a
+JMC400 bed. The JMC400 name and the LinonPI services occur with both apps, so
+they never decide the answer; the apps' own name rules suggest it the same way
+in Bluetooth and manual setup. A LinON Entry box is JMC400 hardware, not a
+LinOn bed. **Reconfigure** changes an existing bed's app or bed; existing
+entries keep their route until then. Configure lists the JMC400 route by its
+own name, for an entry of another bed type to switch to it.
+
 ## PIN Authentication
 
 Jensen beds require a 4-digit PIN. The integration uses **3060** as the default
@@ -35,9 +49,12 @@ PIN, which works for most beds.
 
 **If commands don't work or the bed disconnects immediately:**
 1. Go to **Settings** → **Devices & Services** → **Adjustable Bed**
-2. Click the **gear icon** on your Jensen device
+2. Click the **gear icon** on your Jensen device (each side's own settings, for a
+   two-address pair)
 3. Enter your bed's correct PIN in the **Jensen PIN** field
 4. Save and reload the integration
+
+Setup asks the PIN after the app question; leaving it empty uses 3060.
 
 The bed answers the PIN frame; a rejection is logged as a warning.
 
@@ -193,10 +210,10 @@ offers no timers.
 
 LinOn beds expose the LinonPI services that [Svane](svane.md) beds use, but the
 Jensen app writes its own one-byte frames to them. They use the **Svane /
-Jensen LinOn** bed type with protocol variant **`jensen_linon`**. Bluetooth
-setup selects it for new beds whose name contains "Adjustable Bed" or "Jensen
-Bed" (the app's rule); `auto` keeps the Svane app profile, so existing entries
-change only when you select `jensen_linon` in the options. Beds named "Jensen
+Jensen LinOn** bed type with protocol variant **`jensen_linon`**. Setup
+suggests it for new beds whose name contains "Adjustable Bed" or "Jensen Bed"
+(the app's rule); `auto` keeps the Svane app profile, so existing entries
+change only through **Reconfigure**. Beds named "Jensen
 Bed" are discovered by name; "Adjustable Bed" is too generic, so those beds are
 found by their head service UUID.
 
