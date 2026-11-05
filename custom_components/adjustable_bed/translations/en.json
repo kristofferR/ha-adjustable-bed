@@ -460,7 +460,11 @@
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
           "product_type": "App layout code",
-          "sleepys_elite_selector": "Control box the app lists"
+          "sleepys_elite_selector": "Control box the app lists",
+          "malouf_app_model": "Bed model",
+          "malouf_app_primary": "Primary bed in the app",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -481,7 +485,11 @@
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
           "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout.",
           "has_massage": "Show the massage controls. For retained Caresse Diamant settings, match the massage setting saved in the app.",
-          "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box."
+          "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box.",
+          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport. These app profiles come from the Android apps and are not yet verified on hardware.",
+          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
+          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise."
         },
         "sections": {
           "advanced": {
@@ -489,12 +497,14 @@
             "data": {
               "jiecang_app_transport": "BLE transport",
               "cluster018_third_service": "Allow the app’s third-service fallback",
-              "protocol_variant": "Packet dialect"
+              "protocol_variant": "Packet dialect",
+              "malouf_app_transport": "Bluetooth transport"
             },
             "data_description": {
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
               "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
-              "protocol_variant": "Auto reads the receiver's manufacturer name: text containing star selects StarCode, anything else the legacy CB25 packets. Change it only if Auto picks the wrong one."
+              "protocol_variant": "Auto reads the receiver's manufacturer name: text containing star selects StarCode, anything else the legacy CB25 packets. Change it only if Auto picks the wrong one.",
+              "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous."
             }
           }
         }
@@ -517,22 +527,6 @@
           "outcome_required": "The bed requires a PIN. Enter it below and submit to check again.",
           "outcome_rejected": "The bed rejected the PIN. Correct it below and submit to check again.",
           "outcome_inconclusive": "PIN verification could not be completed. This does not mean the PIN is wrong. Wake the bed, close other apps connected to it, and check that your Bluetooth adapter or proxy is available. Submit to retry; the entry has not been saved."
-        }
-      },
-      "malouf_app": {
-        "title": "Malouf Base / Lucid Base profile",
-        "description": "Select the app and exact bed model used by your physical bed. These profiles are derived from the Android apps and have not been verified on hardware.",
-        "data": {
-          "malouf_app_profile": "Android app",
-          "malouf_app_model": "Bed model",
-          "malouf_app_transport": "Bluetooth transport",
-          "malouf_app_primary": "Primary bed in the app"
-        },
-        "data_description": {
-          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
-          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
-          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
-          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
         }
       },
       "starcode_app": {
@@ -828,6 +822,13 @@
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
         "data": {
           "motor_count": "Number of motors"
+        }
+      },
+      "malouf_family": {
+        "title": "Which app or receiver controls this bed?",
+        "description": "The Malouf Base and Lucid Base apps and the older receiver routes send different commands, and neither a retail model name nor the Bluetooth services tell them apart. Choose the app you use on your phone, or the receiver whose Bluetooth service the bed advertises. Current or detected route: **{current}**.",
+        "data": {
+          "choice": "App or receiver"
         }
       }
     },
@@ -9192,6 +9193,15 @@
         "m5x4": "AdjustableM5X4 app",
         "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
         "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed"
+      }
+    },
+    "malouf_family_choice": {
+      "options": {
+        "malouf": "Malouf Base app: the model it lists",
+        "lucid": "Lucid Base app: the model it lists",
+        "nordic_uart": "Malouf or Lucid receiver on the Nordic UART service",
+        "ffe5": "Malouf or Lucid receiver on the FFE5 service",
+        "keep": "I don't know: keep the detected controls"
       }
     }
   }

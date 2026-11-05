@@ -76,6 +76,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
@@ -3099,7 +3100,7 @@ class TestManualFlow:
     async def test_manual_entry_malouf_collects_layout(
         self, hass: HomeAssistant, enable_custom_integrations
     ):
-        """Picking a Malouf protocol on the manual form reveals its layout fields.
+        """A Malouf receiver asks its layout and memory slots after the family question.
 
         Regression: Hi-Lo and four-motor users lost those controls when the
         default layout was saved silently.
@@ -3117,36 +3118,34 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        assert CONF_MALOUF_LAYOUT not in shown_markers(result)
-        assert CONF_MALOUF_LAYOUT in shown_markers(
-            result, **{CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN}
-        )
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             user_input={
                 CONF_ADDRESS: "11:22:33:44:55:66",
-                CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN,
+                CONF_BED_TYPE: BED_TYPE_MALOUF_APP,
                 CONF_NAME: "Malouf Bed",
-                CONF_MOTOR_COUNT: 4,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
-                CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
-                CONF_MALOUF_MEMORY_SLOTS: 2,
+                CONF_DISCONNECT_AFTER_COMMAND: True,
             },
         )
-
-        # The selected protocol's connection default is confirmed last.
-        assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "disconnect_after_command"
+        assert result["step_id"] == "malouf_family"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={"choice": "ffe5"}
+        )
+        assert result["step_id"] == "profile_questions"
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
+                user_input={
+                    CONF_MOTOR_COUNT: "4",
+                    CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
+                    CONF_MALOUF_MEMORY_SLOTS: "2",
+                },
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_MALOUF_LEGACY_OKIN
+        assert result["data"][CONF_MOTOR_COUNT] == 4
         assert result["data"][CONF_MALOUF_LAYOUT] == MALOUF_LAYOUT_HILO
         assert result["data"][CONF_MALOUF_MEMORY_SLOTS] == 2
 

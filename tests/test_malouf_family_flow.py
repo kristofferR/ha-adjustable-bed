@@ -1,0 +1,235 @@
+"""One Malouf / Lucid app-or-receiver question, and guided changes between its routes (#676)."""
+
+from contextlib import ExitStack
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from homeassistant.const import CONF_ADDRESS, CONF_NAME
+
+from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.actuator_groups import SINGLE_TYPE_GROUPS
+from custom_components.adjustable_bed.beds.malouf_app import require_app_transport
+from custom_components.adjustable_bed.config_flow import (
+    AdjustableBedConfigFlow,
+    AdjustableBedOptionsFlow,
+    _bed_type_selector,
+)
+from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.profile_id import resolve_profile_id
+from tests.test_sleepys_family_flow import (
+    entry_for,
+    finish_check,
+    gatt_client,
+    reconfigure,
+)
+from tests.test_vibradorm_family_flow import bluetooth_patches
+
+ADDRESS = "11:22:33:44:55:66"
+# Nordic UART with the Okin notify characteristic: the apps' okin_new transport.
+OKIN_NEW = (
+    "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+)
+OKIN_LEGACY = ("0000ffe5-0000-1000-8000-00805f9b34fb", "0000ffe9-0000-1000-8000-00805f9b34fb")
+OKIN_LEGACY_NOTIFY = (
+    "0000ffe0-0000-1000-8000-00805f9b34fb",
+    "0000ffe4-0000-1000-8000-00805f9b34fb",
+)
+RECEIVERS = (const.BED_TYPE_MALOUF_NEW_OKIN, const.BED_TYPE_MALOUF_LEGACY_OKIN)
+
+
+def choices(result) -> list[str]:
+    return list(result["data_schema"].schema["choice"].config["options"])
+
+
+def setup_flow(hass, bed_type: str) -> AdjustableBedConfigFlow:
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._manual_data = {
+        CONF_ADDRESS: ADDRESS,
+        CONF_NAME: "Bed",
+        const.CONF_BED_TYPE: bed_type,
+        const.CONF_MOTOR_COUNT: 2,
+    }
+    return flow
+
+
+def test_one_row_names_both_apps_and_both_receivers():
+    rows = {option["value"]: option["label"] for option in get_bed_type_options()}
+    label = rows[const.BED_TYPE_MALOUF_APP]
+    for name in ("Malouf Base", "Lucid Base", "Nordic UART", "FFE5"):
+        assert name in label
+    # The receiver routes are answers of the question, not rows of their own.
+    assert not set(RECEIVERS) & set(rows)
+    # The brand path opens the same question instead of a try-this-first list.
+    assert SINGLE_TYPE_GROUPS["malouf"] == const.BED_TYPE_MALOUF_APP
+
+
+@pytest.mark.parametrize("receiver", RECEIVERS)
+def test_a_detected_receiver_is_shown_as_the_family_row(receiver):
+    assert _bed_type_selector(receiver).shown(receiver).startswith("Malouf / Lucid:")
+
+
+async def test_the_family_row_asks_the_app_or_receiver_and_has_nothing_to_keep(hass):
+    result = await setup_flow(hass, const.BED_TYPE_MALOUF_APP).async_step_malouf_family()
+    assert choices(result) == ["malouf", "lucid", "nordic_uart", "ffe5"]
+
+
+async def test_a_detected_receiver_is_kept_with_its_layout(hass):
+    flow = setup_flow(hass, const.BED_TYPE_MALOUF_NEW_OKIN)
+    result = await flow.async_step_malouf_family()
+    assert choices(result)[-1] == "keep"
+    result = await flow.async_step_malouf_family({"choice": "keep"})
+    assert result["step_id"] == "profile_questions"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions(
+            {
+                const.CONF_MOTOR_COUNT: "4",
+                const.CONF_MALOUF_LAYOUT: const.MALOUF_LAYOUT_FOUR_MOTOR,
+                const.CONF_MALOUF_MEMORY_SLOTS: "2",
+            }
+        )
+    saved = finish.call_args.args[0]
+    assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_MALOUF_NEW_OKIN
+    assert saved[const.CONF_MOTOR_COUNT] == 4
+    assert saved[const.CONF_MALOUF_LAYOUT] == const.MALOUF_LAYOUT_FOUR_MOTOR
+    assert saved[const.CONF_MALOUF_MEMORY_SLOTS] == 2
+
+
+async def test_the_app_asks_its_own_models_and_the_receivers_role(hass):
+    flow = setup_flow(hass, const.BED_TYPE_MALOUF_LEGACY_OKIN)
+    result = await flow.async_step_malouf_family({"choice": "lucid"})
+    assert result["step_id"] == "profile_questions"
+    assert result["description_placeholders"]["profile"] == "Lucid Base"
+    fields = {marker.schema for marker in result["data_schema"].schema}
+    assert {const.CONF_MALOUF_APP_MODEL, const.CONF_MALOUF_APP_PRIMARY, "advanced"} <= fields
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions(
+            {const.CONF_MALOUF_APP_MODEL: "L600", const.CONF_MALOUF_APP_PRIMARY: False}
+        )
+    saved = finish.call_args.args[0]
+    assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_MALOUF_APP
+    assert (saved[const.CONF_MALOUF_APP_PROFILE], saved[const.CONF_MALOUF_APP_MODEL]) == (
+        "lucid",
+        "L600",
+    )
+    assert saved[const.CONF_MALOUF_APP_PRIMARY] is False
+    assert saved[const.CONF_MALOUF_APP_TRANSPORT] == "auto"
+
+
+async def test_choosing_the_other_app_drops_the_first_apps_model(hass):
+    flow = setup_flow(hass, const.BED_TYPE_MALOUF_APP)
+    flow._manual_data.update(
+        {const.CONF_MALOUF_APP_PROFILE: "malouf", const.CONF_MALOUF_APP_MODEL: "S755"}
+    )
+    await flow.async_step_malouf_family({"choice": "lucid"})
+    assert const.CONF_MALOUF_APP_MODEL not in flow._manual_data
+
+
+async def test_receiver_entry_changes_to_the_app_after_checking_its_transport(
+    hass, enable_custom_integrations
+):
+    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_MALOUF_NEW_OKIN})
+    before = dict(entry.data)
+    manager = hass.config_entries.flow
+    with ExitStack() as stack:
+        bluetooth_patches(stack, gatt_client(OKIN_NEW))
+        result = await reconfigure(hass, entry)
+        assert result["step_id"] == "malouf_family"
+        assert "keep" in choices(result)
+        result = await manager.async_configure(result["flow_id"], {"choice": "malouf"})
+        result = await manager.async_configure(
+            result["flow_id"], {const.CONF_MALOUF_APP_MODEL: "S755"}
+        )
+        result = await finish_check(hass, result)
+        assert result["step_id"] == "migration_confirm"
+        assert result["description_placeholders"]["selection"] == "Malouf Base: S755"
+        assert entry.data == before
+        result = await manager.async_configure(result["flow_id"], {"confirm": True})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_MALOUF_APP
+    assert entry.data[const.CONF_MALOUF_APP_MODEL] == "S755"
+    assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
+
+
+async def test_app_change_is_refused_when_the_transport_is_ambiguous(
+    hass, enable_custom_integrations
+):
+    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_MALOUF_LEGACY_OKIN})
+    before = dict(entry.data)
+    manager = hass.config_entries.flow
+    with ExitStack() as stack:
+        # Two Okin transports: automatic selection cannot pick one.
+        bluetooth_patches(stack, gatt_client(OKIN_NEW, OKIN_LEGACY, OKIN_LEGACY_NOTIFY))
+        result = await reconfigure(hass, entry)
+        result = await manager.async_configure(result["flow_id"], {"choice": "lucid"})
+        result = await manager.async_configure(
+            result["flow_id"], {const.CONF_MALOUF_APP_MODEL: "Premium"}
+        )
+        result = await finish_check(hass, result)
+        assert result["step_id"] != "migration_confirm"
+        assert result.get("errors")
+        manager.async_abort(result["flow_id"])
+    assert entry.data == before
+
+
+async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_custom_integrations):
+    entry = entry_for(
+        hass,
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_MALOUF_APP,
+            const.CONF_MALOUF_APP_PROFILE: "malouf",
+            const.CONF_MALOUF_APP_MODEL: "Forte",
+        },
+    )
+    before = dict(entry.data)
+    result = await reconfigure(hass, entry)
+    assert choices(result)[-1] == "keep"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+    assert result["reason"] == "migration_kept"
+    assert {k: v for k, v in entry.data.items() if k in before} == before
+
+
+async def test_configure_keeps_a_receivers_layout(hass):
+    entry = entry_for(
+        hass,
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_MALOUF_LEGACY_OKIN,
+            const.CONF_MOTOR_COUNT: 3,
+            const.CONF_MALOUF_LAYOUT: const.MALOUF_LAYOUT_LUMBAR,
+        },
+    )
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow._async_options_form(None, step_id="settings")
+    defaults = {marker.schema: marker.default() for marker in form["data_schema"].schema}
+    assert defaults[const.CONF_MALOUF_LAYOUT] == const.MALOUF_LAYOUT_LUMBAR
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow._async_options_form(
+            {const.CONF_MALOUF_LAYOUT: const.MALOUF_LAYOUT_HILO}, step_id="settings"
+        )
+    assert result["type"] == "create_entry"
+    assert entry.data[const.CONF_MALOUF_LAYOUT] == const.MALOUF_LAYOUT_HILO
+    assert entry.data[const.CONF_MOTOR_COUNT] == 3
+
+
+@pytest.mark.parametrize(
+    ("name", "services", "ok"),
+    [
+        # No name reads as Okin, and one Okin transport answers.
+        (None, (OKIN_NEW,), True),
+        ("OKIN-123456", (OKIN_LEGACY, OKIN_LEGACY_NOTIFY), True),
+        ("OKIN-123456", (OKIN_NEW, OKIN_LEGACY, OKIN_LEGACY_NOTIFY), False),
+        # A Richmat name needs a Richmat transport.
+        ("QRRM123", (OKIN_LEGACY, OKIN_LEGACY_NOTIFY), False),
+    ],
+)
+def test_transport_check_matches_the_apps_own_selection(name, services, ok):
+    data = {const.CONF_MALOUF_APP_PROFILE: "malouf", const.CONF_MALOUF_APP_MODEL: "S755"}
+    client = gatt_client(*services)
+    if ok:
+        require_app_transport(client, data, name)  # type: ignore[arg-type]
+    else:
+        with pytest.raises(ConnectionError):
+            require_app_transport(client, data, name)  # type: ignore[arg-type]
