@@ -35,18 +35,10 @@ Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
 
 BOX15 sends the nine-byte E6 frame of the [Keeson codec](keeson.md#controller-profiles).
 
-**Protocol Selection:**
-
-- If your device name starts with **"Star25"** and advertises Nordic UART, use BOX25. Auto mode reads Device Information `2A29`: text containing `star` selects StarCode; any other/missing value selects legacy CB25. A manual dialect override is available.
-- If your bed has **lumbar control** (but no Star name), use the BOX15 variant
-- If your bed has **OKIN 64-bit service UUID** (62741523-...), use BOX24
-- Octo Star2 beds also use `Star2` names, but they advertise the Octo Star2 UUID and are detected as Octo first
-- When in doubt, try BOX24 first (simplest protocol)
-
 ### Explicit Sleepy's Elite app profile
 
-Choose **Sleepy's Elite app** in manual setup when the bed is operated with the
-`com.okin.bedding.sleepy` app. This is a separate, app-findable profile. It is
+Answer **MFRM Sleepy's Elite app** in the [setup question](#home-assistant-setup)
+when the bed is operated with the `com.okin.bedding.sleepy` app. This is a separate, app-findable profile. It is
 never inferred from a shared BLE service or transport, and it does not replace
 the existing BOX15, BOX24, or BOX25 integrations above. For a paired bed, choose
 the selector independently for each physical receiver. Select `none` only when
@@ -147,6 +139,37 @@ unchanged. Unknown fields are surfaced with neutral raw
 field names instead of inferred physical labels. The protocol is reconstructed
 from accepted canonical v2 app evidence; physical behavior has not been
 verified on a bed.
+
+## Home Assistant setup
+
+The bed-type list has one **Sleepy's Elite: MFRM Sleepy's Elite app, BOX15,
+BOX24 and BOX25 receivers** row, and the **Sleepy's** brand opens the same
+question. The BOX15, BOX24 and BOX25 routes are answers of that question, not
+rows of their own. Setup asks which app or receiver runs the bed:
+
+| Answer | Route |
+|---|---|
+| MFRM Sleepy's Elite app: the control box it lists | The [explicit app profile](#explicit-sleepys-elite-app-profile), then the control box the app shows |
+| BOX25 receiver on the Nordic UART service | [BOX25](#box25-protocol-nordic-uart), then massage and, under **Advanced**, the packet dialect (Auto reads Device Information) |
+| BOX24 receiver on the OKIN 64-bit service | [BOX24](#box24-protocol-7-byte-packets), then the motor count |
+| BOX15 receiver on the FFE5 service | [BOX15](#box15-protocol-9-byte-packets-with-checksum), then the motor count |
+| An app the profile review suggests | That app's own setup, for example [Adjustable bed (Lumbar)](okin-nframe.md#adjustable-bed-lumbar) on a BOX25 receiver |
+| I don't know: keep the detected controls | The detected route and its questions |
+
+Choose a receiver by the Bluetooth service the bed advertises. A `Star` name or
+a lumbar motor does not identify the receiver: other apps use `Star` names, and
+both BOX15 and BOX25 have lumbar. The question has nothing to keep when you
+chose the row yourself, because no route was detected.
+
+For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+**Keep** leaves the entry as it is. A change first checks the link: the app's
+control box needs its setup and response characteristics, and each receiver
+route needs the one characteristic it writes. A review then lists the added and
+removed controls before **Apply this change** saves it. **Configure** keeps
+routine settings, such as the motor count or massage; the app, control box and
+dialect change only through **Reconfigure**. Every saved bed type and control
+box keeps working.
 
 ## Features
 
@@ -481,13 +504,11 @@ Sleepy's Elite beds are auto-detected by name plus BLE services:
   - OKIN 64-bit service (62741523-...) → BOX24
   - FFE5 service (0000FFE5-...) → BOX15
 
-**If auto-detection fails:**
-
-1. Use nRF Connect app to scan your bed
-2. If device name starts with "Star" → manually select BOX25 Star
-3. If you see service `62741523-...` → manually select BOX24
-4. If you only see service `0000FFE5-...` → manually select BOX15
-5. If BOX24 doesn't work and your bed has lumbar → try BOX15
+**If auto-detection fails:** scan the bed with the nRF Connect app and answer
+the [setup question](#home-assistant-setup) with the receiver whose service it
+advertises: Nordic UART `6e400001-...` for BOX25, `62741523-...` for BOX24, or
+`0000FFE5-...` for BOX15. If you use the app, choose the app and the control
+box it lists instead.
 
 ## Related Protocols
 

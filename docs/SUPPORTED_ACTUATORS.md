@@ -181,7 +181,7 @@ These beds have their own dedicated integrations:
    - `Malouf*`, `Structures*` → Malouf
    - `Smart bed *` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit, Fuzion)
    - MAC-address-like name such as `64:DB:A0:07:DD:02` + service `ffffd1fd-...` → [Sleep Number](beds/sleep_number.md) (i8 / 360 FlexFit 2, BAM/MCR)
-   - `Sleepy*` → Sleepy's Elite (try BOX24 first, BOX15 if lumbar needed)
+   - `Sleepy*` or `MFRM*` → [Sleepy's Elite](beds/sleepys.md#home-assistant-setup); setup asks for the app or the receiver the bed advertises
    - `SLEEPSTAR*` + Nordic UART → [SleepSpa S9000AI](beds/sleepstar.md); `SLEEPBT*` is intentionally rejected
    - `VMAT*` → Vibradorm
    - `SUTA-*` → SUTA Smart Home (bed-frame variants)
