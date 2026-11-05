@@ -172,7 +172,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | B | B | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. #516 and #591 not assessed yet |
-| `goodvibe` | S stream | B | B | goodvibe | sustained controls refresh every 100 ms, then release `6e`; not declared, because its held buttons also carry short, long and short-and-long gestures a controller-wide hold would change. #516 and #591 not assessed yet |
+| `goodvibe` | S stream | B | B | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). #516 and #591 not assessed yet |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | B | B | B | moto | report BLOCKED |
 | `sleep_number` | B | B | B | sleepiq | report PARTIAL |
@@ -317,6 +317,8 @@ class ExecutionCapabilities:
     """Measured motion one frame buys. None when unproven (all but CU170)."""
     concurrent: frozenset[str] = frozenset()
     """Motor resources that may run in one window. Empty means serialized."""
+    hold_controls: frozenset[str] | None = None
+    """Held controls the hold is scoped to. None scopes it to the controller."""
     speeds: tuple[str, ...] = ()
     """Native motor speeds, for #591. Empty until evidence exists."""
 ```
@@ -328,6 +330,36 @@ class ExecutionCapabilities:
 - `auto_stops_on_idle` stays as it is, the cleanup question.
 - `speeds` ships empty until a candidate exists. Omit the field entirely if that
   reads as an empty abstraction, and add it with the first real candidate.
+
+### Per-control hold scope
+
+`hold` is normally a fact about the whole controller. `hold_controls` scopes it
+to named `hold_control` controls, for a controller whose held buttons also
+carry gestures a lease would change. `hold_for(control)` returns the mode a
+lease may use on one control, or `None`; a motor route (`timed_move`) is
+outside every scope. Service admission, the button attributes the card reads,
+and paired held-control buttons all ask `hold_for`. A control outside the scope
+is refused exactly as on an undeclared controller ("does not support renewable
+holds"), and the card keeps that control's bounded hold. With `None`, every
+other row behaves as before.
+
+Good Vibe Sleep is the one scoped row. The accepted report (goodvibe,
+`protocols[0].capabilities.gesture`, `timing.held_period_ms`) says a sustained
+press first sends after 100 ms, repeats every 100 ms with no fixed count and,
+once a tick fired, queues the generic STOP (`6e 01 side 6e sum8`, or `6e` on
+the single-byte link). A short press sends at once and releases on up, long
+and short-and-long presses act on a 3-second threshold without that release,
+and local memory mode (`capabilities.memory`) turns an eligible sustained press
+on E3RM, GXRM, JDRM, JFRM or JGRM into one long operand. The controller
+therefore scopes its stream hold to the held controls whose effective gesture
+is a sustained press, recomputed from memory mode on every read, and refuses a
+lease inside `press` when memory mode changed after admission. Each control's
+gesture is its catalog entry; all 1,369 report-backed reachable descriptors
+match the report's per-descriptor `timing.gesture`, and the five Y6RM menu
+controls match the ledger's derived-menu table. The one sustained descriptor
+without a BLE release is the local Mlily menu, which is never a held control.
+A lease reuses the existing press loop: expiry ends the refresh through the
+cancel event, and the release follows with a fresh cleanup write.
 
 ### Scheduler and coordinator
 
@@ -486,16 +518,6 @@ complete.
 PRs 3, 4 and each PR in 5 own disjoint files and run in parallel after 2. PRs 2
 and 6 share the scheduler, so they run in sequence. PR 7 follows 3 because they
 share the Okin N-frame files.
-
-## Open items
-
-- **Per-control hold declarations.** `ExecutionCapabilities.hold` is declared
-  per controller, and the card offers a lease on every button whose spec holds.
-  Good Vibe Sleep's sustained controls stream every 100 ms until release, but
-  the same controller's held buttons also carry short, long and short-and-long
-  gestures whose app semantics a lease would change. Supporting it needs lease
-  admission and hold metadata scoped to the controls whose effective gesture is
-  a sustained press, including the app's memory mode.
 
 ## Observations (not fixed here)
 

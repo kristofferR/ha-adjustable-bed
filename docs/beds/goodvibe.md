@@ -31,7 +31,7 @@
 | Sleep sensors | ✅ Independent type 1/type 2 sessions, live values and direct BLE reports |
 | Paired sides | ✅ Only sides listed by the selected product |
 | Firmware / Wi-Fi / Cloud | ❌ Outside the integration's direct BLE bed boundary |
-| Hold until release | ❌ Not offered yet: held buttons mix sustained, short, long and short-and-long gestures, and a renewable hold would change the non-sustained ones |
+| Hold until release | ✅ Renewable holds on sustained-press controls only; short, long and short-and-long presses, and memory-mode controls while memory mode is on, keep their own gestures |
 
 ## Protocol Details
 
@@ -175,6 +175,7 @@ Use `adjustable_bed.goodvibe` for these settings and queries. The action validat
 ## Command Timing
 
 - Sustained normal controls first send after 100 ms and repeat every 100 ms. Short actions send once and release on completion/cancellation. Long/short-and-long gestures use a 3-second threshold and do not acquire an invented release frame. Releasing a short-and-long card control before that threshold sends its short action; explicit STOP and aborted operations do not.
+- A renewable hold (`hold_control` with `hold_owner` and `hold_generation`, which the card uses for press-and-hold) is offered only on controls whose effective gesture is a sustained press. It keeps the 100 ms refresh while renewals arrive, up to 30 seconds in total, and sends the release once when the lease ends. Other controls refuse a lease, as beds without renewable holds do, and keep their finite gesture. While memory mode is on, its eligible controls refuse a lease too.
 - Source normal queue timing is a 100 ms backlog scheduler, not a universal minimum write gap. Home Assistant serializes commands and owns finite cancellation and release cleanup.
 - Sleep writes await each chunk. Monitoring polls every 2 seconds and retains its user intent through an unexpected disconnect. Manual disconnect, unload and explicit stop end that intent and cancel owned resources.
 - The app's unretained 100 ms timer and active split futures are not firmware guarantees. Home Assistant stops unsent chunks on cancellation and does not recreate the app's timer or callback ownership leaks.

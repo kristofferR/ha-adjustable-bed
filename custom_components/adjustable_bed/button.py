@@ -1378,7 +1378,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
-            attributes.update(hold_lease_attributes([controller]))
+            attributes.update(hold_lease_attributes([controller], control=hold.control))
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
         return attributes
@@ -1539,7 +1539,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 held_control=hold.control,
                 hold_start_delay_ms=hold.start_delay_ms,
                 hold_release_delay_ms=hold.release_delay_ms,
-                **hold_lease_attributes([self._coordinator.capability_controller]),
+                **hold_lease_attributes(
+                    [self._coordinator.capability_controller], control=hold.control
+                ),
             )
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
@@ -1679,13 +1681,14 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
             hold = _paired_motor_hold_spec(self._coordinator, common)
             direction = "up" if action.endswith("_up") else "down"
             if hold is not None:
+                held = hold.up_control if direction == "up" else hold.down_control
                 attributes.update(
                     paired_hold_motor=common,
                     paired_hold_side=SIDE_BOTH,
-                    held_control=(hold.up_control if direction == "up" else hold.down_control),
+                    held_control=held,
                     hold_start_delay_ms=hold.start_delay_ms,
                     hold_release_delay_ms=hold.release_delay_ms,
-                    **_paired_hold_lease_attributes(self._coordinator),
+                    **_paired_hold_lease_attributes(self._coordinator, control=held),
                 )
                 if hold.release_button_key is not None:
                     attributes["hold_release_button_key"] = hold.release_button_key
@@ -1825,7 +1828,10 @@ class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
 
 
 def _paired_hold_lease_attributes(
-    coordinator: PairedBedCoordinator, motor: str | None = None
+    coordinator: PairedBedCoordinator,
+    motor: str | None = None,
+    *,
+    control: str | None = None,
 ) -> dict[str, str]:
     """Offer a combined renewable hold only when both sides can run it together.
 
@@ -1838,7 +1844,9 @@ def _paired_hold_lease_attributes(
     ):
         return {}
     return hold_lease_attributes(
-        (child.capability_controller for child in coordinator.children.values()), motor
+        (child.capability_controller for child in coordinator.children.values()),
+        motor,
+        control=control,
     )
 
 
