@@ -576,9 +576,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
         "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
         "some Ergomotion Sync beds)"
     ),
-    BED_TYPE_ISLEEP: "ISleep (com.kaidi_test4)",
-    BED_TYPE_KAIDI: "Kaidi (Rize, Floyd; legacy ISleep)",
-    BED_TYPE_LINAK: "Linak (Bed Control and Performance Series apps)",
+    BED_TYPE_ISLEEP: "ISleep app (Kaidi, com.kaidi_test4)",
+    BED_TYPE_KAIDI: "Kaidi (Rize Beds and Floyd Home apps; legacy ISleep)",
+    BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
@@ -638,7 +638,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
     **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
-    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (product 139)",
+    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (Kaidi product 139)",
     (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",

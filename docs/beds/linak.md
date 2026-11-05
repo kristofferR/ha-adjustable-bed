@@ -90,7 +90,7 @@ All three have frozen COMPLETE reports; hashes are under
 
 ## Profiles and model variants
 
-Choose **Auto (Bed Control)** unless the bed was controlled by the old Linak
+Choose **Auto (Bed Control or Bed Connect app)** unless the bed was controlled by the old Linak
 Performance Series app. Auto and explicit Bed Control use the modern profile and
 discover its model after connection. Performance Series must be selected
 explicitly because its advertisement does not identify it safely.
