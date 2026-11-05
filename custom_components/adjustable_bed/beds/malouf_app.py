@@ -7,9 +7,10 @@ timing and app gates from ``profiles/malouf.py``. See ``docs/beds/malouf.md``.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, Literal
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
@@ -27,6 +28,8 @@ from .base import (
 )
 
 if TYPE_CHECKING:
+    from bleak import BleakClient
+
     from ..coordinator import AdjustableBedCoordinator
 
 
@@ -832,3 +835,35 @@ class MaloufAppController(BedController):
 
     def get_light_state(self) -> dict[str, object]:
         return {} if self._light_status is None else {"is_on": bool(self._light_status)}
+
+
+def require_app_transport(
+    client: BleakClient, data: Mapping[str, Any], device_name: str | None
+) -> TransportKey:
+    """Return the staged app's GATT transport on this link, or raise ConnectionError.
+
+    A guided change checks a candidate link with the controller's own transport
+    selection, so the check is exactly what the runtime will require.
+    """
+    from ..const import (
+        CONF_MALOUF_APP_MODEL,
+        CONF_MALOUF_APP_PRIMARY,
+        CONF_MALOUF_APP_PROFILE,
+        CONF_MALOUF_APP_TRANSPORT,
+    )
+
+    link = cast(
+        "AdjustableBedCoordinator",
+        SimpleNamespace(client=client, observed_ble_device_name=device_name),
+    )
+    controller = MaloufAppController(
+        link,
+        app_profile=data[CONF_MALOUF_APP_PROFILE],
+        model=data[CONF_MALOUF_APP_MODEL],
+        transport=data.get(CONF_MALOUF_APP_TRANSPORT, "auto"),
+        primary=data.get(CONF_MALOUF_APP_PRIMARY, True),
+    )
+    try:
+        return controller._resolve_transport()  # noqa: SLF001 - the controller's own selection
+    except ValueError as err:
+        raise ConnectionError(str(err)) from err

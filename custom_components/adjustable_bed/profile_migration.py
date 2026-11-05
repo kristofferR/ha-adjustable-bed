@@ -59,6 +59,9 @@ from .const import (
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MALOUF_APP,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
@@ -87,6 +90,7 @@ from .const import (
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
+    CONF_MALOUF_APP_PROFILE,
     CONF_PROTOCOL_VARIANT,
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_PROFILE,
@@ -256,6 +260,19 @@ JORDANS_FAMILY: Final = ManagedFamily(
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _JORDANS_ROUTES,
 )
 
+_MALOUF_ROUTES: Final = frozenset(
+    {BED_TYPE_MALOUF_APP, BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN}
+)
+# The apps pick one GATT transport from the Bluetooth name and services and
+# refuse an ambiguous or missing one, so a change to an app checks the link.
+# The receiver routes correct each other from the services when they connect.
+MALOUF_FAMILY: Final = ManagedFamily(
+    key="malouf_family",
+    bed_types=_MALOUF_ROUTES,
+    route_keys=(CONF_MALOUF_APP_PROFILE,),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_MALOUF_APP,
+)
+
 _LOGICDATA_ROUTES: Final = frozenset({BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_APP})
 # SimplicityFrame writes its one encrypted characteristic after the bond the
 # pairing step proves, and each LOGICDATA app needs its selected transport, so a
@@ -294,6 +311,7 @@ MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     SLEEPYS_FAMILY,
     CUSTOMATIC_FAMILY,
     JORDANS_FAMILY,
+    MALOUF_FAMILY,
     LOGICDATA_FAMILY,
     JENSEN_FAMILY,
 )

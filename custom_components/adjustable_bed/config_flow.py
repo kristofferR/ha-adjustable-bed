@@ -312,10 +312,6 @@ from .const import (
     MALOUF_APP_MODELS,
     MALOUF_APP_PROFILES,
     MALOUF_APP_TRANSPORTS,
-    MALOUF_LAYOUT_AUTO,
-    MALOUF_LAYOUTS,
-    MALOUF_MEMORY_SLOT_OPTIONS,
-    MALOUF_MEMORY_SLOTS_AUTO,
     MOTION_BED_CONFIG_KEYS,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
@@ -430,6 +426,7 @@ from .profile_migration import (
     KEESON_FAMILY,
     LEGGETT_FAMILY,
     LOGICDATA_FAMILY,
+    MALOUF_FAMILY,
     MANAGED_FAMILIES,
     OKIN_FAMILY,
     SLEEPYS_FAMILY,
@@ -996,6 +993,8 @@ def _bed_type_selector(
         else BED_TYPE_SLEEPYS_ELITE_APP
         if default in SLEEPYS_FAMILY.bed_types - {BED_TYPE_SLEEPYS_ELITE_APP}
         and not show_saved_id
+        else BED_TYPE_MALOUF_APP
+        if default in MALOUF_FAMILY.bed_types - {BED_TYPE_MALOUF_APP} and not show_saved_id
         else BED_TYPE_LOGICDATA_APP
         if default in (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_AIR_PUMP) and not show_saved_id
         else BED_TYPE_SVANE
@@ -1219,9 +1218,6 @@ def _bed_specific_fields(
             },
         ),
     ]
-    malouf: dict[vol.Marker, Any] = {}
-    _add_malouf_schema_fields(malouf)
-    groups.append((lambda bed_type, _variant: bed_type in MALOUF_BED_TYPES, malouf))
     cb24: dict[vol.Marker, Any] = {}
     _add_cb24_side_schema_field(cb24)
     groups.append((lambda bed_type, _variant: bed_type == BED_TYPE_OKIN_CB24, cb24))
@@ -1446,7 +1442,6 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_STARCODE_M5X5: "starcode_m5x5",
     BED_TYPE_VIBRADORM_APP: "vibradorm",
     BED_TYPE_VMATBASIC: "vibradorm",
-    BED_TYPE_MALOUF_APP: "malouf_app",
     BED_TYPE_LEGGETT_LP_LEGACY: "profile_questions",
     **dict.fromkeys(CUSTOMATIC_FAMILY.bed_types, "customatic_family"),
     **dict.fromkeys(JORDANS_FAMILY.bed_types, "jordans_family"),
@@ -1455,6 +1450,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_REVERIE_NIGHTSTAND: "reverie_family",
     **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
     **dict.fromkeys(JENSEN_FAMILY.bed_types, "jensen_family"),
+    **dict.fromkeys(MALOUF_FAMILY.bed_types, "malouf_family"),
 }
 
 
@@ -1594,14 +1590,6 @@ CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
 }
 
 MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN})
-
-
-def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
-    """Add physical-layout fields, kept deliberately separate from protocol."""
-    schema[vol.Optional(CONF_MALOUF_LAYOUT, default=MALOUF_LAYOUT_AUTO)] = vol.In(MALOUF_LAYOUTS)
-    schema[vol.Optional(CONF_MALOUF_MEMORY_SLOTS, default=MALOUF_MEMORY_SLOTS_AUTO)] = vol.All(
-        vol.Coerce(int), vol.In(MALOUF_MEMORY_SLOT_OPTIONS)
-    )
 
 
 def _is_leggett_app_type(bed_type: str | None, variant: str | None = None) -> bool:
@@ -2454,6 +2442,16 @@ def _jensen_suggestion(bed_type: str, variant: str, name: str | None) -> str:
     return "svane_bed"
 
 
+# The Malouf question's answers, with the app each stages: the apps first,
+# then the receiver routes.
+_MALOUF_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
+    "malouf": (BED_TYPE_MALOUF_APP, "malouf"),
+    "lucid": (BED_TYPE_MALOUF_APP, "lucid"),
+    "nordic_uart": (BED_TYPE_MALOUF_NEW_OKIN, None),
+    "ffe5": (BED_TYPE_MALOUF_LEGACY_OKIN, None),
+}
+
+
 # The Sleepy's question's answers: the app first, then the receiver routes.
 _SLEEPYS_ROUTES: Final[dict[str, str]] = {
     "app": BED_TYPE_SLEEPYS_ELITE_APP,
@@ -2739,6 +2737,17 @@ def _add_malouf_app_schema_fields(
     ] = bool
 
 
+def _malouf_app_switch_in(bed_type: str | None, saved: Mapping[str, Any]) -> bool:
+    """Return True when Configure moves an entry from another bed type to a Malouf app.
+
+    That change also chooses the app, so Configure asks it with its model; an
+    entry already on the Malouf family changes its app only in Reconfigure.
+    """
+    return bed_type == BED_TYPE_MALOUF_APP and saved.get(CONF_BED_TYPE) not in (
+        MALOUF_FAMILY.bed_types
+    )
+
+
 def _malouf_app_errors(
     data: dict[str, Any], persisted_data: Mapping[str, Any] | None = None
 ) -> dict[str, str]:
@@ -2761,18 +2770,6 @@ def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
             CB24_BED_SELECTION_A: "Side A / Left",
             CB24_BED_SELECTION_B: "Side B / Right",
         }
-    )
-
-
-def _add_malouf_entry_data(
-    entry_data: dict[str, Any], user_input: dict[str, Any], bed_type: str | None
-) -> None:
-    """Persist Malouf physical capabilities without deriving them from a model name."""
-    if bed_type not in MALOUF_BED_TYPES:
-        return
-    entry_data[CONF_MALOUF_LAYOUT] = user_input.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
-    entry_data[CONF_MALOUF_MEMORY_SLOTS] = int(
-        user_input.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
     )
 
 
@@ -2890,14 +2887,20 @@ _FAMILY_STEPS: Final = frozenset(
         "sleepys_family",
         "customatic_family",
         "jordans_family",
+        "malouf_family",
         "remacro_family",
         "jensen_family",
         "reverie_family",
     }
 )
-APP_SETTINGS_BED_TYPES: Final = frozenset(
-    bed_type for bed_type, step in _APP_SETUP_STEPS.items() if step not in _FAMILY_STEPS
-) | frozenset(_OPTIONS_APP_FIELDS)
+APP_SETTINGS_BED_TYPES: Final = (
+    frozenset(
+        bed_type for bed_type, step in _APP_SETUP_STEPS.items() if step not in _FAMILY_STEPS
+    )
+    | frozenset(_OPTIONS_APP_FIELDS)
+    # The Malouf family step stages the app; its model is asked after it.
+    | {BED_TYPE_MALOUF_APP}
+)
 
 
 def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:
@@ -3304,6 +3307,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the migrating family's exact endpoint check on the candidate link."""
+        self._migration_preview = {}
         if self._migration_family is None:
             return
         family = _checked_family(self._migration_family, data)
@@ -3330,6 +3334,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             require_sleepys_route(client, data)
         elif self._migration_family in (CUSTOMATIC_FAMILY, JORDANS_FAMILY):
             _require_app_family_roles(client, data)
+        elif self._migration_family is MALOUF_FAMILY and data[CONF_BED_TYPE] == BED_TYPE_MALOUF_APP:
+            from .beds.malouf_app import require_app_transport
+
+            # Automatic transport reads the advertised device name, as the
+            # runtime does; an unnamed bed has none.
+            advertised = bluetooth.async_last_service_info(
+                self.hass, data[CONF_ADDRESS], connectable=False
+            )
+            transport = require_app_transport(
+                client, data, advertised.device.name if advertised else None
+            )
+            # The confirm step lists this transport's controls; the entry
+            # keeps the user's choice, which may stay automatic.
+            self._migration_preview = {CONF_MALOUF_APP_TRANSPORT: transport}
 
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
@@ -3359,6 +3377,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return _vibradorm_selection_label(data)
         from .profile_review import route_label
 
+        if data.get(CONF_BED_TYPE) == BED_TYPE_MALOUF_APP:
+            # Both apps run one bed type, so name the app and its model.
+            app = MALOUF_APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""), "")
+            return f"{app}: {MALOUF_APP_MODELS.get(data.get(CONF_MALOUF_APP_MODEL, ''), '')}"
         if data.get(CONF_BED_TYPE) == BED_TYPE_SLEEPYS_ELITE_APP:
             # Every selector runs the same bed type, so name the control box.
             return f"{route_label(data)}: {data.get(CONF_SLEEPYS_ELITE_SELECTOR)}"
@@ -3369,7 +3391,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Review the staged change: added, removed and referenced controls."""
         assert self._pending_entry is not None
         entry = self._get_reconfigure_entry()
-        changes = await async_control_changes(self.hass, entry, self._pending_entry)
+        changes = await async_control_changes(
+            self.hass, entry, {**self._pending_entry, **self._migration_preview}
+        )
 
         async def text(key: str, default: str) -> str:
             return await _async_translation(
@@ -3806,6 +3830,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         data = self._manual_data
         self._migration_verified = False
+        self._migration_preview = {}
         if bed_type == data[CONF_BED_TYPE] and variant in (None, data.get(CONF_PROTOCOL_VARIANT)):
             return
         _apply_route_defaults(data, bed_type, variant)
@@ -4602,27 +4627,56 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="motion_bed", data_schema=vol.Schema(schema), errors=errors
         )
 
-    async def async_step_malouf_app(
+    async def async_step_malouf_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Collect the app and model for every setup route."""
+        """Ask which app or receiver runs a Malouf or Lucid bed; never infer it from the bed.
+
+        Shared services and retail names identify neither the app nor the hardware.
+        """
         assert self._manual_data is not None
-        data = {**self._manual_data, **(user_input or {})}
-        errors = _malouf_app_errors(data) if user_input is not None else {}
-        if user_input is not None and data.get(CONF_MALOUF_APP_PROFILE) in MALOUF_APP_PROFILES:
-            self._manual_data[CONF_MALOUF_APP_PROFILE] = data[CONF_MALOUF_APP_PROFILE]
-            if CONF_MALOUF_APP_MODEL not in user_input:
-                errors.pop(CONF_MALOUF_APP_MODEL, None)
-        if user_input is not None and CONF_MALOUF_APP_MODEL in user_input and not errors:
-            self._manual_data.update(user_input)
-            self._manual_data[CONF_DISABLE_ANGLE_SENSING] = True
-            return await self._finish_with_verify(
-                self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
-            )
-        schema: dict[vol.Marker, Any] = {}
-        _add_malouf_app_schema_fields(schema, data)
+        data = self._manual_data
+        if self._malouf_incoming is None:
+            self._malouf_incoming = data[CONF_BED_TYPE]
+        incoming = self._malouf_incoming
+        # Keep saves the receiver detection or the saved setup chose; the family
+        # row alone chose no app to keep.
+        can_keep = self._migration is not None or incoming != BED_TYPE_MALOUF_APP
+        choice = (user_input or {}).get("choice")
+        if choice == "keep" and can_keep:
+            if self._migration is not None:
+                return await self.async_step_migration_keep()
+            return await self.async_step_profile_questions()
+        if isinstance(choice, str) and choice in _MALOUF_ROUTES:
+            bed_type, app = _MALOUF_ROUTES[choice]
+            if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_MALOUF_APP_PROFILE)):
+                # Another app or receiver starts from its own defaults, never
+                # another app's model, role or transport.
+                for key in (
+                    CONF_MALOUF_APP_PROFILE,
+                    CONF_MALOUF_APP_MODEL,
+                    CONF_MALOUF_APP_TRANSPORT,
+                    CONF_MALOUF_APP_PRIMARY,
+                ):
+                    data.pop(key, None)
+            self._select_family_route(bed_type, None)
+            if app is not None:
+                data[CONF_MALOUF_APP_PROFILE] = app
+            return await self.async_step_profile_questions()
         return self.async_show_form(
-            step_id="malouf_app", data_schema=vol.Schema(schema), errors=errors
+            step_id="malouf_family",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[*_MALOUF_ROUTES, *(["keep"] if can_keep else [])],
+                            translation_key="malouf_family_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"current": bed_type_label(incoming)},
         )
 
     @staticmethod
@@ -4651,6 +4705,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._solace_incoming: tuple[str, str] | None = None
         self._leggett_incoming: tuple[str, str] | None = None
         self._sleepys_incoming: str | None = None
+        self._malouf_incoming: str | None = None
+        # What the connection check resolved for the staged route, for the
+        # confirm step's control list only.
+        self._migration_preview: dict[str, Any] = {}
         self._logicdata_incoming: str | None = None
         self._jensen_incoming: tuple[str, str] | None = None
         self._app_family_incoming: str | None = None
@@ -5555,7 +5613,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data, pairing_step="bluetooth_pairing"
                 ):
                     return app_step
-                _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
                 _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
                 _add_bed_specific_entry_data(
                     entry_data, user_input, selected_bed_type, self._discovery_info.name
@@ -6425,7 +6482,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data, pairing_step="manual_pairing"
                 ):
                     return app_step
-                _add_malouf_entry_data(entry_data, user_input, bed_type)
                 _add_cb24_entry_data(entry_data, user_input, bed_type)
                 _add_bed_specific_entry_data(entry_data, user_input, bed_type)
                 # If bed requires pairing, show pairing instructions
@@ -6707,7 +6763,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         entry_data, pairing_step="manual_pairing"
                     ):
                         return app_step
-                    _add_malouf_entry_data(entry_data, user_input, bed_type)
                     _add_cb24_entry_data(entry_data, user_input, bed_type)
                     _add_bed_specific_entry_data(entry_data, user_input, bed_type)
                     # If bed requires pairing, show pairing instructions
@@ -9851,7 +9906,7 @@ class AdjustableBedOptionsFlow(
                 _add_starcode_lift_field(
                     schema_dict, current_data, self.hass, self.config_entry.entry_id
                 )
-            elif bed_type == BED_TYPE_MALOUF_APP:
+            elif _malouf_app_switch_in(bed_type, self.config_entry.data):
                 _add_malouf_app_schema_fields(
                     schema_dict, current_data, persisted_data=self.config_entry.data
                 )
@@ -9879,20 +9934,6 @@ class AdjustableBedOptionsFlow(
             CONF_PROTOCOL_VARIANT,
             keep=asked,
         )
-
-        if bed_type in MALOUF_BED_TYPES:
-            schema_dict[
-                vol.Optional(
-                    CONF_MALOUF_LAYOUT,
-                    default=current_data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO),
-                )
-            ] = vol.In(MALOUF_LAYOUTS)
-            schema_dict[
-                vol.Optional(
-                    CONF_MALOUF_MEMORY_SLOTS,
-                    default=current_data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO),
-                )
-            ] = vol.All(vol.Coerce(int), vol.In(MALOUF_MEMORY_SLOT_OPTIONS))
 
         if bed_type == BED_TYPE_OKIN_CB24:
             schema_dict[
@@ -10228,12 +10269,17 @@ class AdjustableBedOptionsFlow(
                             errors={CONF_LEGGETT_APP_PROFILE: "leggett_app_invalid_profile"},
                         )
                     user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
-            if not separate_address_pair and (
-                declared := _configure_questions(
-                    {**current_data, CONF_BED_TYPE: bed_type},
-                    self.config_entry.data.get(CONF_BED_TYPE),
+            if (
+                not separate_address_pair
+                and not _malouf_app_switch_in(bed_type, self.config_entry.data)
+                and (
+                    declared := _configure_questions(
+                        {**current_data, CONF_BED_TYPE: bed_type},
+                        self.config_entry.data.get(CONF_BED_TYPE),
+                    )
                 )
-            ) is not None:
+                is not None
+            ):
                 answers = _profile_answers(declared, user_input, current_data)
                 before = {**current_data, **user_input}
                 app_data = declared.staged(before, answers)
@@ -10436,7 +10482,9 @@ class AdjustableBedOptionsFlow(
                             CONF_MOTOR_PULSE_USER_SET: False,
                         }
                     )
-            if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
+            if not separate_address_pair and _malouf_app_switch_in(
+                bed_type, self.config_entry.data
+            ):
                 requested_app = user_input.get(CONF_MALOUF_APP_PROFILE)
                 if requested_app in MALOUF_APP_PROFILES and requested_app != current_data.get(
                     CONF_MALOUF_APP_PROFILE

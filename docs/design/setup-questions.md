@@ -72,7 +72,7 @@ a native conditional field on the bed-type field, listing both each row's label
 (what the picker submits) and its choice (what the API may submit):
 
 - a bed type's own settings (Octo PIN and motor count, Jensen PIN, Richmat
-  remote and RMControl product, Malouf layout and memory slots, CB24 side) show
+  remote and RMControl product, CB24 side) show
   only for its rows;
 - a generic field shows except for the rows whose profile owns it, and a
   field every row owns is left out;
@@ -102,7 +102,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `jensen_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `malouf_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `jensen_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
@@ -120,7 +120,6 @@ listed so the gap is visible until each converts.
 
 | Step | Questions |
 |---|---|
-| `malouf_app` | App, model, transport and primary controller |
 | `limoss_remote` | Product, light, massage, reversals and remote theme |
 | `gmmotor` | Catalog product, suggested from the Bluetooth name, and side |
 | `isleep` | Product, room and sofa numbers, after reading the advertised metadata |
@@ -172,6 +171,8 @@ These steps serve every bed type or route, so no profile owns them.
 | `sleepys_elite_app` | Control box selector; the BOX25 selectors derive massage and position feedback. |
 | `sleepys_box15`, `sleepys_box24` | Motor count. |
 | `sleepys_box25` | Massage, and the packet dialect (Advanced). |
+| `malouf_app` | Model (the chosen app's picker, plus a saved model it no longer lists), primary/secondary role and transport (Advanced). Fixes angle sensing off; `normalize` drops a model the picker did not offer. |
+| `malouf_new_okin`, `malouf_legacy_okin` | Motor count, layout and memory positions. |
 | `logicdata_app@phone`, `logicdata_app@tablet` | Command family; the layout for P1 only, since P2 is the middle layout its `normalize` sets; light; transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
 | `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
 | `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
