@@ -67,7 +67,7 @@ recorded here as each family converts:
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 

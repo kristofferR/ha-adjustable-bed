@@ -45,6 +45,15 @@ _APP_PROBE_ROLES = {
 }
 
 
+
+async def _answer_starcode_family(hass, result):
+    """The StarCode apps' row asks which app first; answer AdjustableM5X4."""
+    if result.get("step_id") == "starcode_family":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={"choice": "m5x4"}
+        )
+    return result
+
 def _app_probe_client(selector: str) -> MagicMock:
     service, write, notify = _APP_PROBE_ROLES[selector]
     client = _fake_connected_client()
@@ -102,6 +111,7 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
             const.CONF_DISCONNECT_AFTER_COMMAND: False,
         },
     )
+    result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
     client = _app_probe_client("BOX3633")
     client.pair = AsyncMock(side_effect=BleakError("PAIRING_NOT_SUPPORTED"))
@@ -427,6 +437,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
             const.CONF_DISCONNECT_AFTER_COMMAND: False,
         },
     )
+    result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
     client = _fake_connected_client()
     # A live writable receiver is insufficient when the selected app roles are absent.
@@ -460,6 +471,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
         assert result["type"] == FlowResultType.FORM
+        result = await _answer_starcode_family(hass, result)
         assert result["step_id"] == "starcode_app"
         assert result["errors"] == {const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"}
     client.disconnect.assert_awaited_once()
@@ -639,6 +651,7 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
             const.CONF_DISCONNECT_AFTER_COMMAND: False,
         },
     )
+    result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
     with (
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=True),
@@ -733,6 +746,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
             const.CONF_DISCONNECT_AFTER_COMMAND: False,
         },
     )
+    result = await _answer_starcode_family(hass, result)
     assert result["step_id"] == "starcode_app"
     gate = _patch_gate("nonbonding-proxy", -60, TransportClass.PROXY)
     gate._result[1].name = original
@@ -770,6 +784,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
         if original is None:
+            result = await _answer_starcode_family(hass, result)
             assert result["step_id"] == "starcode_app"
             assert result["errors"] == {
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"
@@ -832,6 +847,7 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
             const.CONF_DISCONNECT_AFTER_COMMAND: False,
         },
     )
+    result = await _answer_starcode_family(hass, result)
     with (
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock()) as connect,

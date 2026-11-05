@@ -834,6 +834,27 @@
           "choice": "App or receiver"
         }
       },
+      "customatic_family": {
+        "title": "Which Customatic app controls this bed?",
+        "description": "The Customatic apps share the bed's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone, and for Z-Series the model chosen on the app's selection screen.",
+        "data": {
+          "choice": "App"
+        }
+      },
+      "jordans_family": {
+        "title": "Which Jordan's app controls this bed?",
+        "description": "Serenity and Tranquil share the bed's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone.",
+        "data": {
+          "choice": "App"
+        }
+      },
+      "starcode_family": {
+        "title": "Which StarCode app controls this bed?",
+        "description": "The StarCode apps share Star names and the Nordic UART service, so neither chooses one. Choose the app you use on your phone; its own settings come next.",
+        "data": {
+          "choice": "App"
+        }
+      },
       "jiecang_legacy": {
         "title": "Motors on this bed",
         "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
@@ -9088,6 +9109,30 @@
         "box24": "BOX24 receiver on the OKIN 64-bit service",
         "box15": "BOX15 receiver on the FFE5 service",
         "keep": "I don't know: keep the detected controls"
+      }
+    },
+    "customatic_family_choice": {
+      "options": {
+        "clarity": "Clarity app: back and legs, memory page and light",
+        "jeromes": "Jerome's C app: back and legs, no memory page or light",
+        "remedy": "Remedy app: back, legs and lumbar, memory page and light",
+        "zseries_z230": "Z-Series app with the Z-230 model",
+        "zseries_z280": "Z-Series app with the Z-280 model",
+        "keep": "Keep the current app"
+      }
+    },
+    "jordans_family_choice": {
+      "options": {
+        "serenity": "Jordan's Serenity app",
+        "tranquil": "Jordan's Tranquil app",
+        "keep": "Keep the current app"
+      }
+    },
+    "starcode_family_choice": {
+      "options": {
+        "m5x4": "AdjustableM5X4 app",
+        "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
+        "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed"
       }
     }
   }

@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.config_flow import (
     _per_side_refusal,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
@@ -24,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
@@ -53,6 +55,8 @@ from custom_components.adjustable_bed.const import (
     ZSERIES_VARIANT_Z280,
 )
 from custom_components.adjustable_bed.detection import (
+    FAMILY_STEP_ROUTES,
+    HIDDEN_APP_CHOICES,
     bed_type_choice,
     get_bed_type_options,
     resolve_bed_type_choice,
@@ -158,17 +162,19 @@ def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
     assert options[innova] == "INNOVA app (Keeson)"
     assert resolve_bed_type_choice(innova) == (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
     assert resolve_bed_type_choice(BED_TYPE_KEESON) == (BED_TYPE_KEESON, None)
-    # Z-Series has no automatic page, so only its app entries are offered.
+    # Z-Series has no automatic page; the Customatic row names it and its
+    # question offers each model.
     assert BED_TYPE_ZSERIES not in options
-    assert bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280) in options
+    assert bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280) in HIDDEN_APP_CHOICES
+    assert "Z-Series" in options[BED_TYPE_CUSTOMATIC_CLARITY]
 
 
 def test_m1x12_main_and_elevate_profiles_are_explicit_and_findable() -> None:
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
     elevate_app = bed_type_choice(BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12)
-    assert options[BED_TYPE_STARCODE_M1X12] == (
-        "Adjustable Comfort M1X12 app (CB25 / F23 / kneading)"
-    )
+    # The StarCode apps' row names the app; its question opens the app's step.
+    assert "Adjustable Comfort M1X12" in options[BED_TYPE_STARCODE_ABM5_4]
+    assert BED_TYPE_STARCODE_M1X12 in FAMILY_STEP_ROUTES
     assert options[elevate_app] == "Adjustable Comfort M1X12 ELEVATE"
     assert resolve_bed_type_choice(elevate_app) == (
         BED_TYPE_STAR_ELEVATE,

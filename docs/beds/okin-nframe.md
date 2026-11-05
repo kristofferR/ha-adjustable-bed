@@ -1266,9 +1266,11 @@ The three apps share one frame, transport and timing; each is its own bed type.
 
 #### Setup
 
-Select **Customatic Clarity app**, **Customatic Jerome's C app** or **Customatic
-Remedy app** (or **Customatic apps** → Clarity / Jerome's C / Remedy) to match
-the Android app supplied with the bed. Detection: none.
+Choose the **Customatic: Clarity, Jerome's C, Remedy and Z-Series apps** row
+(or the **Customatic apps** brand), then the app supplied with the bed: Clarity,
+Jerome's C, Remedy, or Z-Series with its model. Detection: none. For an existing
+bed, use the entry's **Reconfigure**; a change first checks the new app's
+command characteristic, and **Configure** no longer changes the app.
 
 - The apps scan for the case-sensitive name prefixes `OKIN` and `iFlex_Bed`,
   which identify candidates, not the app. They share their service, command
@@ -1286,6 +1288,21 @@ the Android app supplied with the bed. Detection: none.
   implementation choice, not a claim about the app or every physical bed.
 - No notification subscription, position read, massage, pairing or
   authentication, custom settings write, firmware update or MTU negotiation.
+
+#### Home Assistant setup
+
+| Answer | Profile |
+|---|---|
+| Clarity app: back and legs, memory page and light | [Clarity](#customatic-clarity) |
+| Jerome's C app: back and legs, no memory page or light | [Jerome's](#customatic-jeromes) |
+| Remedy app: back, legs and lumbar, memory page and light | [Remedy](#customatic-remedy) |
+| Z-Series app with the Z-230 or Z-280 model | [Z-Series](#customatic-z-series), that model's page |
+
+The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
+[Tranquil](#jordans-tranquil). An app picked from a brand's app list is not
+asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
+characteristic; Z-Series, Serenity and Tranquil check their command and
+notification characteristics.
 
 #### Controls
 
@@ -2821,7 +2838,7 @@ manufacturer result; C is not a transport-readiness barrier.
 
 ##### Home Assistant setup
 
-Choose the AdjustableM5X4 app profile explicitly. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
+Choose the **StarCode apps** row, then **AdjustableM5X4 app**. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
 
 #### Controls
 
@@ -3580,7 +3597,7 @@ secondary field (both big-endian), then four zero bytes
 
 ##### Home Assistant setup
 
-Select **Jordan's Serenity app** explicitly for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenity app**, for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -3852,7 +3869,7 @@ policy.
 
 ##### Home Assistant setup
 
-Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -4058,7 +4075,7 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 
 ##### Home Assistant setup
 
-For `com.okin.bedding.glory` 1.0.4 (5), select **Customatic Z-Series app (Z-230)** or **(Z-280)** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
+For `com.okin.bedding.glory` 1.0.4 (5), choose the **Customatic** row, then **Z-Series app with the Z-230 model** or **Z-280 model** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
 
 #### Controls
 

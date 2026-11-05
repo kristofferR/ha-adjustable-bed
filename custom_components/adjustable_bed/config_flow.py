@@ -373,6 +373,7 @@ from .const import (
 from .detection import (
     APP_VARIANT_CHOICES,
     FAMILY_STEP_ROUTES,
+    HIDDEN_APP_CHOICES,
     bed_type_choice,
     bed_type_label,
     detect_bed_type,
@@ -969,7 +970,9 @@ def _bed_type_selector(
         options.insert(0, SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_detect_label))
     # Configure still accepts a family's route by its ID, as a suggested profile
     # submits it; the picker itself shows only the family row.
-    return _SearchableSelect(options, accepted=FAMILY_STEP_ROUTES if show_saved_id else ())
+    return _SearchableSelect(
+        options, accepted=FAMILY_STEP_ROUTES | HIDDEN_APP_CHOICES if show_saved_id else ()
+    )
 
 
 class _SearchableSelect(SelectSelector):
@@ -3669,14 +3672,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         data = self._manual_data
         row = next(iter(apps.values()))[0]
+        # Another family's guided change can hand over a suggested app.
+        guided = self._migration_family is not None and self._migration_family.key == step_id
         if self._app_family_incoming is None:
             self._app_family_incoming = data[CONF_BED_TYPE]
-            if self._migration is None and self._app_family_incoming != row:
+            # An app picked from a brand's list, or arriving from another
+            # family, already answered.
+            if not guided and (
+                self._app_family_incoming != row
+                or self._selected_bed_type == self._app_family_incoming
+            ):
                 return await self._async_continue_app_family(apps)
         choice = (user_input or {}).get("choice")
-        if choice == "keep" and self._migration is not None:
+        if choice == "keep" and guided:
             return await self.async_step_migration_keep()
-        if choice in apps:
+        if isinstance(choice, str) and choice in apps:
             bed_type, variant, _step = apps[choice]
             self._select_family_route(bed_type, variant)
             return await self._async_continue_app_family(apps)
@@ -3686,7 +3696,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 {
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
-                            options=[*apps, *(["keep"] if self._migration is not None else [])],
+                            options=[*apps, *(["keep"] if guided else [])],
                             translation_key=f"{step_id}_choice",
                             mode=SelectSelectorMode.LIST,
                         )

@@ -770,6 +770,8 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
     }
 )
+# Configure still accepts a hidden app row by its value, as a repair submits it.
+HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 
 
 def get_bed_type_options() -> list[SelectOptionDict]:
