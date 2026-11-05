@@ -545,17 +545,24 @@ async def test_setup_choices_and_factory(hass, coordinator):
     )
     from custom_components.adjustable_bed.const import BED_TYPE_HJBED, CONF_MOTOR_COUNT
     from custom_components.adjustable_bed.controller_factory import create_controller
-    from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
+    from custom_components.adjustable_bed.detection import (
+        APP_VARIANT_CHOICES,
+        bed_type_choice,
+        get_bed_type_options,
+    )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
     from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 
     coordinator.hass = hass
+    # One row asks the product; each product keeps its app entry.
+    rows = {row["value"] for row in get_bed_type_options()}
+    assert BED_TYPE_HJBED in rows
+    assert not any(bed_type_choice(BED_TYPE_HJBED, profile) in rows for profile in PRODUCTS)
+    profile_spec = setup_profile(BED_TYPE_HJBED)
+    assert profile_spec is not None
+    assert set(profile_spec.questions[0].options({})) == set(PRODUCTS)
     for profile in PRODUCTS:
-        assert (
-            "HJBed"
-            in {row["value"]: row["label"] for row in get_bed_type_options()}[
-                bed_type_choice(BED_TYPE_HJBED, profile)
-            ]
-        )
+        assert "HJBed" in APP_VARIANT_CHOICES[BED_TYPE_HJBED, profile]
         assert is_valid_variant_for_bed_type(BED_TYPE_HJBED, profile)
         assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_HJBED, profile)
         assert per_side_profile(BED_TYPE_HJBED, profile).variant_owned

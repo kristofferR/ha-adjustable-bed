@@ -29,7 +29,11 @@ You can configure the integration in two places:
 The first screen lists the discovered beds, each named with its family, then:
 
 - **Set up by app or remote** asks which app controls the bed: one searchable
-  list of the apps, remotes and brands in the bed-type list. Its last answer,
+  list of the apps, remotes and brands in the bed-type list. A row of a family
+  names its family after a dot, such as **Heal Every Night app · Keeson**, and
+  a family's own row lists its apps the same way. Good Vibe Sleep, HJBed,
+  Casper Base and Comfort Enhancements have one row each, which then asks the
+  exact product or layout. Its last answer,
   **My app isn't listed, or I don't know**, asks which brand is on the bed:
   each family, named with its apps, then opens its own question, and **Not
   sure** runs diagnostics.
@@ -435,7 +439,10 @@ Auto-detection usually works, but you can override if needed.
 Setup asks for a route only when the chosen bed type has more than one, and
 lists only that bed type's own labelled routes. An app chosen from the bed-type
 list sets its route itself. The final settings list the routes in a collapsed
-**Advanced: receiver route** section. Configure lists
+**Advanced: receiver route** section. The routes named after an Okin protocol
+(Okin Handle, 7-Byte, Nordic, CB24, CB35, FFE, 64-Bit and ORE) are not rows of
+the app list: a discovered bed shows its detected route, the brand list under
+**My app isn't listed** lists them, and Configure keeps them by name. Configure lists
 the routes of the saved bed type. In a family with a
 [guided change](#changing-the-app-or-layout-of-an-existing-bed), the app question chooses the route and Configure
 refuses a route change; use **Reconfigure**. Additional

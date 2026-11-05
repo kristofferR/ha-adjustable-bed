@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.actuator_groups import get_actuator_group_for_bed_type
+from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as protocol
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
@@ -47,7 +47,7 @@ def test_profile_registration(bed_type: str) -> None:
     assert get_motor_pulse_defaults(bed_type) == (10, 100)
     assert not requires_pairing(bed_type)  # the app has no pairing, PIN or encryption
     assert _motor_count_options(bed_type) == [2]
-    assert get_actuator_group_for_bed_type(bed_type)[0] == "richmat_apps"
+    assert actuator_group_for(bed_type) == "richmat_apps"
     # The app is an answer of the one Richmat row, which names it.
     assert not any(option["value"] == bed_type for option in get_bed_type_options())
     richmat_row = next(o for o in get_bed_type_options() if o["value"] == "richmat")

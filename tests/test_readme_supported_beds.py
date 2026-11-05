@@ -28,7 +28,18 @@ _MEMBERS = re.compile(r",\s+(?:and\s+)?|\s+and\s+")
 _TOKEN = re.compile(r"[\w'&+/.-]+")
 # Words that only say what kind of thing a name is.
 _GENERIC = frozenset(
-    {"app", "apps", "remote", "remotes", "receiver", "receivers", "bases", "controls"}
+    {
+        "app",
+        "apps",
+        "remote",
+        "remotes",
+        "receiver",
+        "receivers",
+        "bases",
+        "controls",
+        "some",
+        "beds",
+    }
 )
 
 
@@ -49,13 +60,14 @@ def _rows() -> list[frozenset[str]]:
 
 
 def _names(label: str) -> list[str]:
-    """The names a setup label gives: its app or bed, its family and its members."""
+    """The names a setup label gives: its apps, its family and a family row's members.
+
+    Labels read "<apps> · <Family>", "<Family>: <apps>" or "<Name> (<qualifier>)".
+    """
     names = []
     for part in _QUALIFIER.sub("", label).split(" · "):
-        head, _, members = part.partition(": ")
-        names.append(head)
-        if members:
-            names.extend(_MEMBERS.split(members))
+        for half in part.split(": ", 1):
+            names.extend(_MEMBERS.split(half))
     return names
 
 

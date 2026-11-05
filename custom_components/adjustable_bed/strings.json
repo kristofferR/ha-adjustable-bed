@@ -3413,6 +3413,9 @@
       },
       "motomotion_release": {
         "name": "Release"
+      },
+      "hush_base_action": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5211,6 +5214,9 @@
       },
       "motomotion_massage_right": {
         "name": "Right massage level"
+      },
+      "hush_sleep_settings": {
+        "name": "Hush sleep settings"
       }
     },
     "light": {
@@ -8732,6 +8738,80 @@
         "side": {
           "name": "Side",
           "description": "Target side, when supported by this device."
+        }
+      }
+    },
+    "hush_base": {
+      "name": "Hush Base controls",
+      "description": "Configure Hush Base bed or independent sleep sensor controls.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Bed, sleep sensor, or remote to control."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Bed, light, alarm, sensor, or remote action to run."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Duration or mode required by the selected operation. See the Casper Base guide for its units and range."
+        },
+        "rgb_color": {
+          "name": "RGB color",
+          "description": "Color for the selected light operation."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the selected function."
+        },
+        "hour": {
+          "name": "Alarm hour",
+          "description": "Alarm hour in 24-hour time."
+        },
+        "minute": {
+          "name": "Alarm minute",
+          "description": "Minute within the selected alarm hour."
+        },
+        "mode": {
+          "name": "Alarm preset",
+          "description": "Position preset recalled by the alarm."
+        },
+        "slot": {
+          "name": "Repeating alarm ID",
+          "description": "Existing or new repeating alarm identifier."
+        },
+        "days": {
+          "name": "Weekdays",
+          "description": "Days on which the repeating alarm runs."
+        },
+        "part": {
+          "name": "Sensor partition",
+          "description": "MM: 1 or 2. SXB: 11 for left, 12 for right, or 13 for both."
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "1 for a daily report; 2 for a monthly report."
+        },
+        "year": {
+          "name": "Report year",
+          "description": "Year of the requested sensor report."
+        },
+        "month": {
+          "name": "Report month",
+          "description": "Month of the requested sensor report."
+        },
+        "day": {
+          "name": "Report day",
+          "description": "Day of month for a daily report. Use 1 for a monthly report."
+        },
+        "source": {
+          "name": "Detector status sensor",
+          "description": "External status sensor used by snore detection."
+        },
+        "side": {
+          "name": "Paired side",
+          "description": "Side of a paired bed to target."
         }
       }
     }

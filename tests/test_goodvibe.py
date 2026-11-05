@@ -56,12 +56,24 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
         disconnect_after_command_default_enabled,
     )
     from custom_components.adjustable_bed.controller_factory import create_controller
-    from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
+    from custom_components.adjustable_bed.detection import (
+        APP_VARIANT_CHOICES,
+        bed_type_choice,
+        get_bed_type_options,
+    )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
     from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 
+    # One row asks the product, searchable by label; each product keeps its app entry.
     choices = {x["value"]: x["label"] for x in get_bed_type_options()}
+    assert BED_TYPE_GOODVIBE in choices
+    assert not any(bed_type_choice(BED_TYPE_GOODVIBE, profile) in choices for profile in PROFILE_CHOICES)
+    profile_spec = setup_profile(BED_TYPE_GOODVIBE)
+    assert profile_spec is not None
+    (product,) = profile_spec.questions
+    assert product.searchable and set(product.options({})) == set(PROFILE_CHOICES)
     for profile in PROFILE_CHOICES:
-        assert "Good Vibe Sleep" in choices[bed_type_choice(BED_TYPE_GOODVIBE, profile)]
+        assert "Good Vibe Sleep" in APP_VARIANT_CHOICES[BED_TYPE_GOODVIBE, profile]
         assert is_valid_variant_for_bed_type(BED_TYPE_GOODVIBE, profile)
         assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_GOODVIBE, profile)
         assert per_side_profile(BED_TYPE_GOODVIBE, profile).variant_owned

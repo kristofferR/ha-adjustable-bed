@@ -446,11 +446,15 @@ async def test_factory_manual_models_and_profile_ownership(hass):
     assert not is_valid_variant_for_bed_type(BED_TYPE_GLIDEAWAY_MOTION, "auto")
     assert not requires_pairing(BED_TYPE_GLIDEAWAY_MOTION)
     assert not bed_type_has_position_feedback(BED_TYPE_GLIDEAWAY_MOTION, "motion_400")
+    from custom_components.adjustable_bed.detection import bed_type_label
+
     choices = {o["value"]: o["label"] for o in get_bed_type_options()}
     assert all(
         "Glideaway" in choices[f"glideaway_motion:{model}"] for model in GLIDEAWAY_MOTION_MODELS
     )
-    assert "Glideaway" not in choices[BED_TYPE_OKIN_ORE]
+    # Okin ORE is a protocol route, off the list, and names no Glideaway app.
+    assert BED_TYPE_OKIN_ORE not in choices
+    assert "Glideaway" not in bed_type_label(BED_TYPE_OKIN_ORE)
     assert hidden_generic_fields(BED_TYPE_GLIDEAWAY_MOTION, "motion_400") == {
         CONF_MOTOR_COUNT,
         CONF_MOTOR_PULSE_DELAY_MS,

@@ -27,6 +27,7 @@ from .const import (
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
+    BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
     BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -144,7 +145,9 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
+    GOODVIBE_PROFILES,
     HAS_LIGHT_DEFAULTS,
+    HJBED_PROFILES,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
@@ -224,6 +227,12 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "casper_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "casper_sleep_mm": GENERIC_FIELDS,
     "casper_sleep_sxb": GENERIC_FIELDS,
+    # The Hush Base product owns every generic field; the sensors and the remote
+    # finder have no motors.
+    "hush_remote": GENERIC_FIELDS,
+    "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
+    "hush_sleep_mm": GENERIC_FIELDS,
+    "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
@@ -319,7 +328,7 @@ class Question:
     question is neither required nor saved. ``staged_when`` limits when a
     staged answer is the default, for a value the profile set itself rather than
     the user. ``validator`` replaces the one the choices imply, for a range or a
-    format.
+    format. A ``searchable`` question's choices are a picker searched by label.
     """
 
     key: str
@@ -330,6 +339,8 @@ class Question:
     when: FieldCondition | list[FieldCondition] | None = None
     staged_when: FieldCondition | None = None
     validator: Any = None
+    # A long list of choices is a picker the user can search by label.
+    searchable: bool = False
 
     def asked(self, data: Mapping[str, Any]) -> bool:
         """Return True when the condition holds for these answers."""
@@ -895,6 +906,18 @@ def _gmmotor_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+def _goodvibe_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """The product the app's own name rule suggests, never over a chosen one."""
+    from .goodvibe_discovery import suggested_profile
+
+    if data.get(CONF_PROTOCOL_VARIANT) in GOODVIBE_PROFILES or discovered is None:
+        return dict(data)
+    suggested = suggested_profile(discovered.name)
+    return {**data, CONF_PROTOCOL_VARIANT: suggested} if suggested else dict(data)
+
+
 def _isleep_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     from .isleep_profile import ISLEEP_PRODUCTS
 
@@ -1269,6 +1292,17 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return errors(dict(data))
 
 
+def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    """The app's own twelve products first, then the profiles it restores."""
+    from .const import HUSH_BASE_VARIANTS
+    from .profiles.hush import PROFILES
+
+    return {
+        key: HUSH_BASE_VARIANTS[key]
+        for key in sorted(PROFILES, key=lambda key: (not PROFILES[key].current, PROFILES[key].index))
+    }
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -1603,11 +1637,36 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
     ),
+    # The app's layout is its route, asked on the app's one row.
+    BED_TYPE_COMFORT_ENHANCEMENTS: _asking(
+        BED_TYPE_COMFORT_ENHANCEMENTS,
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORT_ENHANCEMENTS)),),
+    ),
     # MC3 has no massage page; the other layouts' controllers turn massage on.
     f"{BED_TYPE_COMFORT_ENHANCEMENTS}:mc3": _asking(
         BED_TYPE_COMFORT_ENHANCEMENTS,
         owns={**_BASE[BED_TYPE_COMFORT_ENHANCEMENTS].owns, CONF_HAS_MASSAGE: False},
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORT_ENHANCEMENTS)),),
     ),
+    # The Casper Base app's product is its route, a long list searched by label.
+    BED_TYPE_CASPER_BASE: _asking(
+        BED_TYPE_CASPER_BASE,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_CASPER_BASE), searchable=True),
+        ),
+    ),
+    # The app's product sets every control, so its one row asks it.
+    BED_TYPE_GOODVIBE: _asking(
+        BED_TYPE_GOODVIBE,
+        questions=(Question(CONF_PROTOCOL_VARIANT, GOODVIBE_PROFILES, searchable=True),),
+        seed=_goodvibe_seed,
+    ),
+    BED_TYPE_HJBED: _asking(
+        BED_TYPE_HJBED,
+        questions=(Question(CONF_PROTOCOL_VARIANT, HJBED_PROFILES, searchable=True),),
+    ),
+    # The product the Hush Base app shows sets every control; nothing detects it.
+    "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,

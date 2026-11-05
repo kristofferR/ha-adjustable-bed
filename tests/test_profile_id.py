@@ -242,12 +242,20 @@ async def test_classic_richmat_entries_from_4x_keep_their_app_settings(
             "motomotion",
         ),
         ({CONF_BED_TYPE: "bedjet_powerlayer", CONF_MOTOR_COUNT: 2}, "bedjet_powerlayer"),
+        # A Hush Base product is its variant, a sided product included.
+        (
+            {CONF_BED_TYPE: "hush_base", CONF_PROTOCOL_VARIANT: "hushs575sh"},
+            "hush_base:hushs575sh",
+        ),
+        ({CONF_BED_TYPE: "hush_remote"}, "hush_remote"),
+        ({CONF_BED_TYPE: "hush_sleep_mm"}, "hush_sleep_mm"),
+        ({CONF_BED_TYPE: "hush_sleep_sxb"}, "hush_sleep_sxb"),
     ],
 )
 async def test_beds_from_main_migrate_from_4x_with_their_settings(
     hass: HomeAssistant, stored: dict[str, Any], profile_id: str
 ) -> None:
-    """A 4.x MotoMotion or BedJet PowerLayer entry gains its id and keeps its data."""
+    """A 4.x entry for a bed that arrived on main gains its id and keeps its data."""
     stored = {CONF_ADDRESS: ADDRESS, **stored}
     entry = MockConfigEntry(domain=DOMAIN, data=dict(stored), version=4, minor_version=3)
     entry.add_to_hass(hass)

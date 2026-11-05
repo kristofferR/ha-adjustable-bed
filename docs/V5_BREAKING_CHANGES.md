@@ -112,7 +112,7 @@ bed's own settings come last. Rows that left the top-level list keep their bed
 type and ID, so every saved entry still loads unchanged. **Setup and
 Configure** under [Behavior Changes](#behavior-changes) describes each change.
 
-v5 includes every bed type in 4.3.0. Good Vibe Sleep and the eShine E2000,
+v5 includes every bed type in 4.4.0. Good Vibe Sleep and the eShine E2000,
 E3000/E3100 and E5000 app arrived through
 [#816](https://github.com/kristofferR/ha-adjustable-bed/pull/816), and every
 scripted command on them sends the same bytes as on `main`. The classic Richmat
@@ -124,7 +124,10 @@ setup step. MotoMotion
 BedJet PowerLayer frame
 ([#891](https://github.com/kristofferR/ha-adjustable-bed/pull/891)) arrived the
 same way: MotoMotion's exact Bluetooth name is asked on the profile setup step,
-and the PowerLayer uses the generic setup form.
+and the PowerLayer uses the generic setup form. Hush Base
+([#906](https://github.com/kristofferR/ha-adjustable-bed/pull/906)) arrived in
+4.4.0: the app is one row of the app list, and its product is asked on the
+profile setup step.
 
 ### Removed Massage Buttons
 
@@ -299,6 +302,13 @@ Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pu
 - Fresh setup no longer shows a separate protocol variant field. An app entry
   always sets its own route. A bed type with several receiver routes lists them
   in a collapsed **Advanced: receiver route** section of the final settings.
+- A row of a family names its family after a dot, such as **Heal Every Night
+  app · Keeson**, and a family's own row lists its apps the same way. The
+  routes named after an Okin protocol leave the app list: discovery, the brand
+  list and Configure still offer them. Good Vibe Sleep's 877 product rows and
+  HJBed's 43 become one row each, which asks the exact product in a searchable
+  list. The Casper Base and Comfort Enhancements apps, which no row reached
+  before, get one row each that asks the product or layout. Saved entries keep their bed type, product and ID.
 - The bed type list is searchable by label, including app names such as
   MotoSleep / Power Bob. Compatibility IDs such as `okimat` and `dewertokin`
   show friendly labels, and **Configure** adds "(saved as `<id>`)".
@@ -439,6 +449,10 @@ timings changed, and the other updates only added scenarios:
   three MotoMotion panels and the PowerLayer frame, sending the same bytes as on
   `main` ([#869](https://github.com/kristofferR/ha-adjustable-bed/pull/869),
   [#891](https://github.com/kristofferR/ha-adjustable-bed/pull/891)).
+- `hush_base`, `hush_remote`, `hush_sleep_mm`, `hush_sleep_sxb`: new scenarios
+  for Hush Base from `main`, including the write-mode branches, sending the
+  same bytes as on `main`
+  ([#906](https://github.com/kristofferR/ha-adjustable-bed/pull/906)).
 
 These deliberate changes are outside the scripted commands:
 
@@ -471,7 +485,7 @@ credentials.
 
 **Bluetooth discovery ([#780](https://github.com/kristofferR/ha-adjustable-bed/issues/780)).**
 The manifest's Bluetooth matchers are now generated from per-family hints. The
-generated list holds exactly the 963 matchers that 4.3.0 ships, in a different
+generated list holds exactly the 968 matchers that 4.4.0 ships, in a different
 order, so the same advertisements start discovery. See
 [discovery hints](design/discovery-hints.md).
 

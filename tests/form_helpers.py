@@ -39,9 +39,21 @@ def suggested(result: Mapping[str, Any], key: str) -> Any:
 
 
 async def answer_app(hass: Any, result: Mapping[str, Any], choice: str) -> Any:
-    """Answer the app question with a bed-type row, when the flow asks it."""
+    """Answer the app question with a bed-type row, when the flow asks it.
+
+    A route the app question does not list, such as a protocol-named one, is
+    chosen from the brand list its last answer opens.
+    """
     if result.get("step_id") != "select_app":
         return result
+    marker = next(marker for marker in result["data_schema"].schema if marker == "bed_type")
+    if choice in result["data_schema"].schema[marker].rows().values():
+        return await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type": choice}
+        )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"bed_type": "not_listed"}
+    )
     return await hass.config_entries.flow.async_configure(result["flow_id"], {"bed_type": choice})
 
 

@@ -62,6 +62,7 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
     CONF_SIDE,
+    HUSH_BASE_SIDE_VARIANTS,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
@@ -159,6 +160,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
         BED_TYPE_CASPER_BASE,
+        "hush_base",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
     }
@@ -198,6 +200,8 @@ def supports_single_address_pairing(
             return product_type is not None and 1 in load_profile(product_type).sides
         except ValueError:
             return False
+    if bed_type == "hush_base":
+        return protocol_variant in HUSH_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_CASPER_BASE:
         return protocol_variant in CASPER_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_KAIDI:

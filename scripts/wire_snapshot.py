@@ -1004,6 +1004,9 @@ class Coordinator:
     def get_max_angle(self, position_key: str) -> float:
         return 45.0 if position_key in {"legs", "feet"} else 68.0
 
+    def cache_capability_controller(self) -> None:
+        """No offline capability controller to keep here."""
+
     async def async_execute_controller_command(self, command_fn: Any, *_: Any, **__: Any) -> None:
         await command_fn(self.controller)
 
@@ -1132,6 +1135,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_SBI: const.SBI_VARIANT_BOTH,
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
+        const.BED_TYPE_HUSH_BASE: "hushl400",
         const.BED_TYPE_COMFORT_ENHANCEMENTS: "mc2",
         const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
@@ -1460,6 +1464,8 @@ PROPERTY_ROUTES: tuple[str, ...] = (
     "furnimove",
     "glideaway_motion",
     "hjbed",
+    "hush_base",
+    "hush_sleep_sxb",
     "jensen",
     "kaidi",
     "keeson:adjustable_lite",

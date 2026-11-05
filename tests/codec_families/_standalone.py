@@ -8,7 +8,6 @@ fixed per-key vectors. It is not a profile over a codec family.
 from __future__ import annotations
 
 STANDALONE: dict[str, str] = {
-    "casper_base": "own wire format",
     "casper_remote": "remote without bed commands",
     "casper_sleep_mm": "sleep sensor without bed commands",
     "casper_sleep_sxb": "sleep sensor without bed commands",
@@ -25,6 +24,9 @@ STANDALONE: dict[str, str] = {
     " its settings records send 6E 20 len, which codec/richmat.py's record() does not"
     " build, and its sleep sensors send a JSON envelope; the product catalog stays"
     " controller code",
+    "hush_remote": "remote without bed commands",
+    "hush_sleep_mm": "sleep sensor without bed commands",
+    "hush_sleep_sxb": "sleep sensor without bed commands",
     "isleep": "Kaidi mesh frames",
     "jensen": "own wire format",
     "kaidi": "Kaidi mesh frames",
