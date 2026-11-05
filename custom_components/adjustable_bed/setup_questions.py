@@ -48,6 +48,8 @@ from .const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
@@ -95,6 +97,12 @@ from .const import (
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
     CONF_LP_LEGACY_WRITE_UUID,
+    CONF_MALOUF_APP_MODEL,
+    CONF_MALOUF_APP_PRIMARY,
+    CONF_MALOUF_APP_PROFILE,
+    CONF_MALOUF_APP_TRANSPORT,
+    CONF_MALOUF_LAYOUT,
+    CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTION_BED_MOVEMENT,
     CONF_MOTION_BED_PRESET,
     CONF_MOTION_BED_RESTORED,
@@ -138,6 +146,13 @@ from .const import (
     LOGICDATA_APP_LAYOUTS,
     LOGICDATA_APP_PROFILES,
     LOGICDATA_APP_TRANSPORTS,
+    MALOUF_APP_MODELS,
+    MALOUF_APP_PROFILES,
+    MALOUF_APP_TRANSPORTS,
+    MALOUF_LAYOUT_AUTO,
+    MALOUF_LAYOUTS,
+    MALOUF_MEMORY_SLOT_OPTIONS,
+    MALOUF_MEMORY_SLOTS_AUTO,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     PAIR_MODE_SINGLE_ADDRESS,
     RICHMAT_MH_BED_TYPES,
@@ -1038,6 +1053,37 @@ def _motion_bed_errors(data: Mapping[str, Any]) -> dict[str, str]:
 _NO_PULSE_CHOICE: Final[Mapping[str, Any]] = {CONF_MOTOR_PULSE_USER_SET: False}
 
 
+def _malouf_models(data: Mapping[str, Any]) -> Mapping[Any, str]:
+    """The chosen app's model picker, plus a stored model the picker no longer lists."""
+    from .profiles.malouf import APP_PROFILES
+
+    app = APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""))
+    models = {model: MALOUF_APP_MODELS[model] for model in (app.models if app else ())}
+    stored = data.get(CONF_MALOUF_APP_MODEL)
+    if app is not None and stored in MALOUF_APP_MODELS:
+        models.setdefault(stored, MALOUF_APP_MODELS[stored])
+    return models
+
+
+def _malouf_app_normalize(
+    previous: Mapping[str, Any], answers: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Drop a model the app's picker did not offer, so it reads as unanswered."""
+    data = {**previous, **answers}
+    if answers.get(CONF_MALOUF_APP_MODEL, previous.get(CONF_MALOUF_APP_MODEL)) not in (
+        _malouf_models(previous)
+    ):
+        data.pop(CONF_MALOUF_APP_MODEL, None)
+    return data
+
+
+def _malouf_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Refuse to save without a model instead of guessing one from a retail name."""
+    if data.get(CONF_MALOUF_APP_MODEL) in MALOUF_APP_MODELS:
+        return {}
+    return {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
+
+
 def _reverie_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
 
@@ -1181,6 +1227,36 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_classic_errors,
         title=_classic_title,
     ),
+    # The Malouf family step picks the app. Its model sets the controls, and the
+    # role and transport belong to the one physical receiver; neither the model
+    # nor a retail name identifies the hardware, so the model has no default.
+    BED_TYPE_MALOUF_APP: _asking(
+        BED_TYPE_MALOUF_APP,
+        owns={**_BASE[BED_TYPE_MALOUF_APP].owns, CONF_DISABLE_ANGLE_SENSING: True},
+        title=lambda data: MALOUF_APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""), ""),
+        questions=(
+            Question(CONF_MALOUF_APP_MODEL, _malouf_models),
+            Question(CONF_MALOUF_APP_PRIMARY, default=True),
+            Question(CONF_MALOUF_APP_TRANSPORT, MALOUF_APP_TRANSPORTS, "auto", advanced=True),
+        ),
+        normalize=_malouf_app_normalize,
+        validate=_malouf_app_errors,
+    ),
+    # A receiver route's controls come from the physical remote, which neither
+    # the protocol nor a retail name identifies.
+    **{
+        bed_type: _asking(
+            bed_type,
+            questions=(
+                Question(CONF_MOTOR_COUNT, _motor_counts(bed_type), 2),
+                Question(CONF_MALOUF_LAYOUT, MALOUF_LAYOUTS, MALOUF_LAYOUT_AUTO),
+                Question(
+                    CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOT_OPTIONS, MALOUF_MEMORY_SLOTS_AUTO
+                ),
+            ),
+        )
+        for bed_type in (BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN)
+    },
     # The Sleepy's family step picks the app or receiver. The app's control box
     # selector sets its routes; it belongs to one physical bed.
     BED_TYPE_SLEEPYS_ELITE_APP: _asking(

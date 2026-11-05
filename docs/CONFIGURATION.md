@@ -189,8 +189,8 @@ on the physical remote.
 
 ### Malouf/Lucid Layout and Memory
 
-Malouf and Lucid entries have two additional settings because BLE command
-framing does not reveal the physical remote layout:
+Malouf and Lucid receiver entries (Nordic UART or FFE5) have two additional
+settings because BLE command framing does not reveal the physical remote layout:
 
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
@@ -564,7 +564,7 @@ that side, then combine them again.
 | Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout and local light/massage presence, with the transport under **Advanced**. Comfort Motion supports three layouts and G1/G2 only. Layouts, transports and default timing per profile are in the [generated profile tables](beds/jiecang.md#choosing-a-profile). |
 | LOGICDATA | One question for the app ([SILVERmotion / SimplicityFrame](beds/logicdata.md), [MOTIONrelax phone or tablet](beds/jiecang.md#motionrelax-phone-and-tablet), or [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) bed base or [separate air pump](beds/logicdata-sleep-smart.md)), then the app's command family and the layouts that family allows (MOTIONrelax P2 is the middle layout), light and transport. Configure keeps the light; another app or layout goes through Reconfigure. |
-| Malouf / Lucid | [Base apps](beds/malouf.md#malouf-base--lucid-base-family): app, exact model, transport and primary/secondary role. |
+| Malouf / Lucid | Answer the [Malouf question](beds/malouf.md#choosing-a-profile) with your app or receiver: the [Malouf Base and Lucid Base apps](beds/malouf.md#malouf-base--lucid-base-family) ask the exact model, primary/secondary role and transport; the Nordic UART and FFE5 receivers ask the [layout and memory positions](#malouflucid-layout-and-memory). Change an existing bed's app with **Reconfigure**. |
 | Customatic / Jordan's | One question per brand: [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family) or [Z-Series](beds/okin-nframe.md#customatic-z-series) with its model; [Serenity](beds/okin-nframe.md#jordans-serenity) or [Tranquil](beds/okin-nframe.md#jordans-tranquil). Change an existing bed's app with **Reconfigure**. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
 | Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Configure lists both receivers. |

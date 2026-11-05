@@ -39,7 +39,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `jiecang_app_profile` | Profile | `jiecang_family` | `profile_id.py`, `beds/jiecang_app.py` |
 | `leggett_app_profile` | Profile | `leggett_family`, Configure | `profile_id.py`, `controller_factory.py` |
 | `logicdata_app_profile` | Profile | `logicdata_family`; a question of `logicdata_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
-| `malouf_app_profile` | Profile | `malouf_app` step, Configure | `profile_id.py`, `controller_factory.py` |
+| `malouf_app_profile` | Profile | `malouf_family`; Configure only when another bed type switches to the app | `profile_id.py`, `controller_factory.py` |
 | `vibradorm_app_profile` | Profile | `vibradorm` family step | `profile_id.py`, `controller_factory.py`, `coordinator_bonds.py`, `coordinator_connection.py` |
 | `profile_id` | Internal | `profile_id.with_profile_ids` at migration and every setup | `coordinator.py`, diagnostics |
 | `address` (Home Assistant's `CONF_ADDRESS`) | Internal | Discovery or the typed address | Coordinator, device registry |
@@ -96,11 +96,11 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `logicdata_app_family` | Profile | A question of `logicdata_app` | `controller_factory.py` |
 | `logicdata_app_layout` | Profile | A question of `logicdata_app@phone` and `logicdata_app@tablet` for P1, and of `logicdata_app@sleep_smart`; `normalize` sets the MOTIONrelax P2 middle layout | `controller_factory.py` |
 | `logicdata_app_transport` | Profile | An Advanced question of `logicdata_app` | `controller_factory.py` |
-| `malouf_app_model` | User | `malouf_app` step, Configure | `controller_factory.py` |
-| `malouf_app_transport` | User | `malouf_app` step, Configure | `controller_factory.py` |
-| `malouf_app_primary` | User | `malouf_app` step, Configure | `controller_factory.py` |
-| `malouf_layout` | User | Malouf setup fields, Configure | `coordinator.py` |
-| `malouf_memory_slots` | User | Malouf setup fields, Configure | `coordinator.py` |
+| `malouf_app_model` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
+| `malouf_app_transport` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
+| `malouf_app_primary` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
+| `malouf_layout` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
+| `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
 | `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
 | `jensen_pin` | User | Jensen setup fields, Configure | `coordinator.py` |

@@ -14,13 +14,12 @@ from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_LINAK,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_NEW_OKIN,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISABLE_DISCOVERY,
     CONF_DISCONNECT_AFTER_COMMAND,
-    CONF_HAS_MASSAGE,
     CONF_MALOUF_APP_MODEL,
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
@@ -32,10 +31,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.discovery_settings import (
-    async_is_discovery_disabled,
-    async_set_discovery_disabled,
-)
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
 
 
@@ -50,23 +45,19 @@ async def test_setup_routes_require_app_and_model(hass, mock_bluetooth_service_i
         CONF_ADDRESS: "11:22:33:44:55:66",
         CONF_NAME: "App bed",
         CONF_BED_TYPE: BED_TYPE_MALOUF_APP,
-        CONF_MOTOR_COUNT: 2,
-        CONF_HAS_MASSAGE: True,
-        CONF_DISABLE_ANGLE_SENSING: False,
         CONF_DISCONNECT_AFTER_COMMAND: False,
         CONF_PREFERRED_ADAPTER: "auto",
     })
-    assert result["step_id"] == "malouf_app"
-    schema = result["data_schema"]
-    with pytest.raises(vol.Invalid, match="required key"):
-        schema({})
-    assert {marker.schema for marker in schema.schema} == {CONF_MALOUF_APP_PROFILE}
-    result = await flow.async_step_malouf_app(schema({CONF_MALOUF_APP_PROFILE: "lucid"}))
+    # The family row asks for the app; it chose none to keep.
+    assert result["step_id"] == "malouf_family"
+    result = await flow.async_step_malouf_family({"choice": "lucid"})
+    assert result["step_id"] == "profile_questions"
     schema = result["data_schema"]
     assert schema is not None
-    values = schema({CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "Premium"})
+    with pytest.raises(vol.Invalid, match="required key"):
+        schema({})
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_malouf_app(values)
+        await flow.async_step_profile_questions(schema({CONF_MALOUF_APP_MODEL: "Premium"}))
     saved = finish.call_args.args[0]
     assert saved[CONF_MALOUF_APP_PROFILE] == "lucid"
     assert saved[CONF_MALOUF_APP_MODEL] == "Premium"
@@ -85,8 +76,9 @@ async def test_fresh_model_picker_matches_app_and_rejects_cross_app_input(
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
-    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_MALOUF_APP}
-    result = await flow.async_step_malouf_app({CONF_MALOUF_APP_PROFILE: profile})
+    flow.context = {}
+    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_MALOUF_APP, CONF_MOTOR_COUNT: 2}
+    result = await flow.async_step_malouf_family({"choice": profile})
     schema = result["data_schema"]
     assert schema is not None
     model_choices = next(
@@ -97,12 +89,14 @@ async def test_fresh_model_picker_matches_app_and_rejects_cross_app_input(
     with pytest.raises(vol.Invalid):
         schema({CONF_MALOUF_APP_MODEL: rejected})
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        result = await flow.async_step_malouf_app({CONF_MALOUF_APP_MODEL: rejected})
+        result = await flow.async_step_profile_questions({CONF_MALOUF_APP_MODEL: rejected})
     assert result["errors"] == {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
     finish.assert_not_called()
 
 
-async def test_options_retain_only_stored_persisted_model_and_filter_app_changes(hass):
+async def test_options_retain_only_stored_persisted_model_and_send_app_changes_to_reconfigure(
+    hass,
+):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_BED_TYPE: BED_TYPE_MALOUF_APP, CONF_MOTOR_COUNT: 2,
         CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "GoodLifeProBase",
@@ -113,29 +107,28 @@ async def test_options_retain_only_stored_persisted_model_and_filter_app_changes
     flow.handler = entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings()
+    keys = {marker.schema for marker in result["data_schema"].schema}
+    # The app changes only through Reconfigure.
+    assert CONF_MALOUF_APP_PROFILE not in keys
     choices = next(validator.container for marker, validator in result["data_schema"].schema.items()
                    if marker.schema == CONF_MALOUF_APP_MODEL)
     assert set(choices) == {"L300", "L600", "Premium", "GoodLifeProBase"}
-    result = await flow.async_step_settings({CONF_MALOUF_APP_MODEL: "S755"})
-    assert result["errors"] == {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
-    assert entry.data[CONF_MALOUF_APP_MODEL] == "GoodLifeProBase"
+    # The form offers no other app's model.
+    schema = result["data_schema"]
+    assert schema is not None
+    with pytest.raises(vol.Invalid):
+        schema({CONF_MALOUF_APP_MODEL: "S755"})
     result = await flow.async_step_settings({CONF_MALOUF_APP_PRIMARY: True})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_MALOUF_APP_MODEL] == "GoodLifeProBase"
+    assert entry.data[CONF_MALOUF_APP_PRIMARY] is True
 
     flow = AdjustableBedOptionsFlow(entry)
     flow.handler = entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings({CONF_MALOUF_APP_PROFILE: "malouf"})
-    assert result["type"] == FlowResultType.FORM
-    choices = next(validator.container for marker, validator in result["data_schema"].schema.items()
-                   if marker.schema == CONF_MALOUF_APP_MODEL)
-    assert "Premium" not in choices and "S755" in choices
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[CONF_MALOUF_APP_PROFILE] == "lucid"
-    result = await flow.async_step_settings({CONF_MALOUF_APP_MODEL: "S755"})
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_MALOUF_APP_PROFILE] == "malouf"
-    assert entry.data[CONF_MALOUF_APP_MODEL] == "S755"
 
 
 async def test_options_preserve_explicit_app_and_role(hass):
@@ -158,46 +151,9 @@ async def test_options_preserve_explicit_app_and_role(hass):
     assert entry.data[CONF_MALOUF_APP_PRIMARY] is False
 
 
-@pytest.mark.parametrize("disable_discovery", [True, False])
-async def test_options_app_change_requires_model_from_new_picker(hass, disable_discovery):
-    await async_set_discovery_disabled(hass, not disable_discovery)
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_BED_TYPE: BED_TYPE_MALOUF_APP, CONF_MOTOR_COUNT: 2,
-        CONF_MALOUF_APP_PROFILE: "malouf", CONF_MALOUF_APP_MODEL: "S755",
-    })
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({
-        CONF_MALOUF_APP_PROFILE: "lucid", CONF_DISABLE_DISCOVERY: disable_discovery,
-    })
-    schema = result["data_schema"]
-    assert schema is not None
-    discovery_marker = next(marker for marker in schema.schema
-                            if marker.schema == CONF_DISABLE_DISCOVERY)
-    assert discovery_marker.default() is disable_discovery
-    assert await async_is_discovery_disabled(hass) is not disable_discovery
-    model_marker, validator = next(
-        (marker, validator) for marker, validator in schema.schema.items()
-        if marker.schema == CONF_MALOUF_APP_MODEL
-    )
-    assert set(validator.container) == {"L300", "L600", "Premium"}
-    assert model_marker.default is vol.UNDEFINED
-    result = await flow.async_step_settings({CONF_MALOUF_APP_MODEL: "S755"})
-    assert result["errors"] == {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
-    assert entry.data[CONF_MALOUF_APP_PROFILE] == "malouf"
-    assert await async_is_discovery_disabled(hass) is not disable_discovery
-    result = await flow.async_step_settings({CONF_MALOUF_APP_MODEL: "Premium"})
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_MALOUF_APP_PROFILE] == "lucid"
-    assert entry.data[CONF_MALOUF_APP_MODEL] == "Premium"
-    assert await async_is_discovery_disabled(hass) is disable_discovery
-    assert CONF_DISABLE_DISCOVERY not in entry.data
-
-
-async def test_switching_from_legacy_requires_explicit_profile(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN, CONF_MOTOR_COUNT: 2})
+async def test_switching_another_bed_type_to_the_app_asks_app_and_model(hass):
+    """Only an entry already on the Malouf family leaves the app to Reconfigure."""
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_LINAK, CONF_MOTOR_COUNT: 2})
     entry.add_to_hass(hass)
     flow = AdjustableBedOptionsFlow(entry)
     flow.handler = entry.entry_id
@@ -208,6 +164,17 @@ async def test_switching_from_legacy_requires_explicit_profile(hass):
     assert schema is not None
     with pytest.raises(vol.Invalid, match="required key"):
         schema({})
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+async def test_a_receiver_entry_changes_to_the_app_in_reconfigure(hass):
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN, CONF_MOTOR_COUNT: 2})
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler = entry.entry_id
+    flow.hass = hass
+    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_MALOUF_APP})
+    assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_MALOUF_NEW_OKIN
 
 
