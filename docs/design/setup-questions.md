@@ -56,6 +56,10 @@ returns.
   the app, layout and route change only through the guided change. An entry
   that Configure switches into a managed family from another bed type answers
   that family's route questions there, since it has no guided change yet.
+- A two-address pair's shared Configure form asks no declared questions, since
+  each receiver may run another profile. Each receiver's own step
+  (`left_settings`, `right_settings`) asks its profile's questions instead and
+  saves the answers to that receiver only.
 - `tests/test_setup_questions.py` checks that each declared question has its
   `strings.json` label in the generic step (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
@@ -98,7 +102,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
@@ -144,7 +148,7 @@ These steps serve every bed type or route, so no profile owns them.
 
 | Step | Purpose |
 |---|---|
-| `init`, `settings`, `left_settings`, `right_settings` | Settings |
+| `init`, `settings`, `left_settings`, `right_settings` | Settings; each receiver step also asks that receiver's declared questions |
 | `change_app` | Points to Reconfigure |
 | `pair_sides`, `revert_sides`, `unpair` | Side controls and splitting a pair |
 | `remove_bond_side`, `remove_bond`, `remove_bond_progress`, `remove_bond_result` | Bond removal |
@@ -170,7 +174,8 @@ These steps serve every bed type or route, so no profile owns them.
 | `sleepys_box25` | Massage, and the packet dialect (Advanced). |
 | `logicdata_app@phone`, `logicdata_app@tablet` | Command family; the layout for P1 only, since P2 is the middle layout its `normalize` sets; light; transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
 | `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
-| `logicdata_app` | The app too, for an entry Configure switches in from another bed type (a repair hands Comfort Motion entries over this way); its combinations are checked on save. |
+| `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
+| `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.
