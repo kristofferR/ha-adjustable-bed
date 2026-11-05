@@ -17,7 +17,7 @@ what each beta ships.
 ## Contents
 
 - [Before You Upgrade](#before-you-upgrade)
-- [Config Entry Migration (Schema 5.1)](#config-entry-migration-schema-51)
+- [Config Entry Migration (Schema 5.2)](#config-entry-migration-schema-52)
 - [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities)
 - [New Entities, Attributes and Actions](#new-entities-attributes-and-actions)
 - [Behavior Changes](#behavior-changes)
@@ -48,10 +48,10 @@ entry, migration retry without a restart, and faster Bluetooth wake-up.
 To stop receiving betas, choose **Exclude pre-releases** in the same menu. An
 installed beta stays until a newer stable version is out.
 
-## Config Entry Migration (Schema 5.1)
+## Config Entry Migration (Schema 5.2)
 
 On the first start, every config entry at schema 4 or older migrates to schema
-5, minor version 1. Earlier 4.x steps still run first for entries that missed
+5, minor version 2. Earlier 4.x steps still run first for entries that missed
 them. The schema 5 step stores the profile id each entry runs, which is the one
 name for the route its bed type, protocol variant and app key used to select
 together. The [profile id design note](design/profile-id.md) describes the
@@ -62,17 +62,23 @@ format.
 | `bed_type` | Unchanged |
 | `protocol_variant` | Unchanged |
 | App keys (`jiecang_app_profile`, `leggett_app_profile`, `logicdata_app_profile`, `malouf_app_profile`, `vibradorm_app_profile`) | Unchanged |
+| `pair_schema_version`, and a per-entry copy of `disable_discovery` | **Dropped** by the 5.2 step, from data, options, each paired side and the original settings a side restores on unpair. Nothing reads them: the discovery toggle is saved integration-wide |
 | Every other saved field and option | Unchanged |
-| Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id` |
+| Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id` and loses the dropped keys above |
 | `profile_id` | **Added.** Derived from the saved fields above, for example `keeson:sino` or `jiecang_app@dreamask`. A paired side's id comes from that side's own settings and never from the parent |
-| `profile_migration` | **Added.** A record of the migration: `from_version`, `from_minor_version`, `resolver_version`, the new `profile_id`, the saved `fields` it was derived from and, for a paired entry, the same for each side under `sides` |
-| Schema version | Becomes 5.1 |
+| `profile_migration` | **Added.** A record of the migration: `from_version`, `from_minor_version`, `resolver_version`, the new `profile_id`, the saved `fields` it was derived from and, for a paired entry, the same for each side under `sides`. When the 5.2 step drops a key, `dropped_keys` lists it by where it was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so on) |
+| Schema version | Becomes 5.2 |
 
 The migration changes no entry, device or entity identity, so dashboards,
 automations and actions keep their targets. Entries created on v5 have a
 `profile_id` but no `profile_migration`. Every later setup re-derives the stored
 ids from the saved fields, so **Configure**, **Reconfigure**, Repairs and
 pairing changes keep them current.
+
+A v5 beta entry already at 5.1 runs only the 5.2 step, and gains a
+`profile_migration` record only if that step drops a key. Like the rest of
+schema 5, the 5.2 step is one way. The [config key audit](design/config-keys.md)
+records every saved key and why these two are obsolete.
 
 The migration record appears in two places:
 
@@ -84,10 +90,12 @@ The migration record appears in two places:
 
 ## Removed or Renamed Options, Bed Types and Entities
 
-**None.** No bed type, saved config key, option, action, action field, entity
-or unique ID is removed or renamed in v5. The comparison covered `const.py`,
-`config_flow.py`, `strings.json`, `translations/en.json`, `services.yaml` and
-every entity platform between `main` and `v5`. Byte-identical aliases such as
+**None** that changes behavior. No bed type, option, action, action field,
+entity or unique ID is removed or renamed in v5, and no saved config key a
+setting reads is removed. Schema 5.2 drops two stored keys nothing reads (see
+[the migration](#config-entry-migration-schema-52)). The comparison covered
+`const.py`, `config_flow.py`, `strings.json`, `translations/en.json`,
+`services.yaml` and every entity platform between `main` and `v5`. Byte-identical aliases such as
 `okimat` and `okin_uuid` keep their own bed type and their own profile id; the
 [profile id design note](design/profile-id.md#aliases) records why each pair
 stays separate.

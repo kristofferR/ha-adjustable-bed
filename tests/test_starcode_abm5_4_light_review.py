@@ -193,7 +193,6 @@ async def test_actual_HA_positive_C_feedback_boundary_reloads_exact_child_catalo
             {
                 const.CONF_PAIR_ID: "light-boundary-pair",
                 const.CONF_PAIR_MODE: const.PAIR_MODE_SEPARATE_ADDRESS,
-                const.CONF_PAIR_SCHEMA_VERSION: 1,
                 const.CONF_PAIR_MEMBER_ADDRESSES: [left, right],
                 const.CONF_PAIR_CHILDREN: [
                     {**data, const.CONF_SIDE: "left", CONF_NAME: "Left"},
