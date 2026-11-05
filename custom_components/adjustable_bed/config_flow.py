@@ -931,11 +931,12 @@ def _bed_type_selector(
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
     if show_saved_id:
-        # The StarCode apps and Reverie receivers have no guided change, so
-        # Configure lists each by its own label; setup asks behind the family row.
+        # StarCode and Richmat MH apps and Reverie receivers have no guided
+        # change, so Configure lists each by its own label; setup uses the family row.
         unguided = {
             *(bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()),
             *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
+            *RICHMAT_MH_BED_TYPES,
         }
         options = sorted(
             [
