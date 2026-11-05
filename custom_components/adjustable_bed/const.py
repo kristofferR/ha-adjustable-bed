@@ -154,9 +154,9 @@ CONF_LOGICDATA_APP_FAMILY: Final = "logicdata_app_family"
 CONF_LOGICDATA_APP_LAYOUT: Final = "logicdata_app_layout"
 CONF_LOGICDATA_APP_TRANSPORT: Final = "logicdata_app_transport"
 LOGICDATA_APP_PROFILES: Final = {
-    "phone": "Phone app",
-    "tablet": "Tablet app",
-    "sleep_smart": "Sleep Smart Air Mattress app (bed)",
+    "phone": "MOTIONrelax phone app",
+    "tablet": "MOTIONrelax tablet app",
+    "sleep_smart": "Sleep Smart Air Mattress app (bed base)",
 }
 # Sleep Smart's final movement layout is always two motors; series picks massage zones.
 LOGICDATA_SLEEP_SMART_LAYOUTS: Final = frozenset({"standard_2", "split_series"})

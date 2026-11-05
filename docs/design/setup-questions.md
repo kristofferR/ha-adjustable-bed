@@ -103,7 +103,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `reverie_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
@@ -121,7 +121,6 @@ listed so the gap is visible until each converts.
 
 | Step | Questions |
 |---|---|
-| `logicdata_app` | App, command family, layout, transport and light |
 | `malouf_app` | App, model, transport and primary controller |
 | `limoss_remote` | Product, light, massage, reversals and remote theme |
 
@@ -173,6 +172,9 @@ These steps serve every bed type or route, so no profile owns them.
 | `doublesleep` | Saved app model, seeded from the platform name, and the BLE driver. |
 | `sleeptracker` | Foundation, app layout, unit number, snapshot side, restricted session and processor type; a lumbar layout derives the third motor. |
 | `motion_bed` | Exact Bluetooth name, seeded from the advertisement; restored profile and retained preset and movement layouts. `normalize` stores Auto as no retained layout. |
+| `logicdata_app@phone`, `logicdata_app@tablet` | Command family; the layout for P1 only, since P2 is the middle layout its `normalize` sets; light; transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
+| `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
+| `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
 | `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
 
 The other profiles declare only the generic fields they own, converted from the

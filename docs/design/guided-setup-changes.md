@@ -44,7 +44,10 @@ Vibradorm's role checks and native bond rules stay Vibradorm's.
   families. Home Assistant cannot hand an options flow to a config flow, so
   the item points to Reconfigure.
 - **Repairs** opens the wizard as its next flow, or Configure's settings form
-  with the app selected for an app that needs its own settings.
+  with the app selected for an app that needs its own settings. A suggested
+  app from another guided family, such as the LOGICDATA app for a Comfort
+  Motion bed, is one more answer of the wizard's first question; it continues
+  in that family's questions and runs that family's check.
 
 ## Repairs and Keep
 
@@ -79,3 +82,4 @@ release is recorded per family below, separately from the code change.
 | Customatic Clarity, Jerome's C, Remedy | Yes | The one command characteristic | Pending user reports after release |
 | Customatic Z-Series, Jordan's Serenity and Tranquil | Yes | The command and notification characteristics | Pending user reports after release |
 | Sleepy's Elite app, BOX15, BOX24, BOX25 | Yes | The control box's setup and response characteristics; each receiver route's command characteristic | Pending user reports after release |
+| LOGICDATA SimplicityFrame (SILVERmotion), MOTIONrelax phone and tablet, Sleep Smart bed base | Yes | SimplicityFrame's command characteristic after its bond; each app's selected transport | Pending user reports after release |
