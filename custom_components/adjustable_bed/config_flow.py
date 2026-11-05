@@ -3732,11 +3732,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             return await self._async_finish_family_route()
         model = (
-            MODELS[model_id].name
+            "none seen yet"
+            if model_id is None
+            else MODELS[model_id].name
             if model_id in MODELS
             else f"company ID {model_id}"
-            if model_id is not None
-            else "none seen yet"
         )
         return self.async_show_form(
             step_id="remacro_family",
