@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.vibradorm_app_state import (
     VibradormAppFloorIntent,
     VibradormAppTimerIntent,
 )
+from tests.hold_lease_wire import virtual_clock
 
 
 def make_controller(
@@ -405,13 +406,12 @@ async def test_before_pair_order_five_reads_three_reply_gated_requests_and_clean
 @pytest.mark.asyncio
 async def test_info_unrelated_reply_deadline_and_cancel_cleanup_no_extra_writes():
     c = make_controller(7)
-    result = asyncio.create_task(
-        async_prepare_vibradorm_app_pairing(
+    # On virtual time the deadline ends the wait for the article reply, never the
+    # reads before it.
+    with virtual_clock(), pytest.raises(TimeoutError):
+        await async_prepare_vibradorm_app_pairing(
             c.client, "werkmeister", 7, deadline=asyncio.get_running_loop().time() + 0.03
         )
-    )
-    with pytest.raises(TimeoutError):
-        await result
     assert written(c) == ["01a0c8"]
     c.client.stop_notify.assert_awaited_once()
     c.client.write_gatt_char.reset_mock()
@@ -1733,7 +1733,7 @@ async def test_article_write_failure_cleanup_and_malformed_only_reply_times_out(
 
     c.client.start_notify.side_effect = subscribe
     c.client.write_gatt_char.side_effect = write
-    with pytest.raises(TimeoutError):
+    with virtual_clock(), pytest.raises(TimeoutError):
         await async_prepare_vibradorm_app_pairing(
             c.client, "werkmeister", 7, deadline=asyncio.get_running_loop().time() + 0.03
         )
