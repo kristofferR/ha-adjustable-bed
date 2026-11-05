@@ -63,6 +63,7 @@ from custom_components.adjustable_bed.vibradorm_app_state import (
     mark_vibradorm_app_selection,
 )
 from tests.coordinator_patches import patch_coordinator_global
+from tests.hold_lease_wire import virtual_clock
 
 from .conftest import TEST_ADDRESS, TEST_NAME, make_controller_mock
 
@@ -331,7 +332,6 @@ async def test_runtime_native_probe_keeps_unverified_link_but_repair_cannot_succ
 async def test_one_deadline_bounds_information_and_pair_without_reset(
     coordinator: AdjustableBedCoordinator
 ) -> None:
-    deadline = asyncio.get_running_loop().time() + 0.04
     reached_pair = asyncio.Event()
 
     async def info(*args, **kwargs):
@@ -344,9 +344,12 @@ async def test_one_deadline_bounds_information_and_pair_without_reset(
         await asyncio.Event().wait()
 
     coordinator.client.pair.side_effect = pair
-    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
+    # On virtual time the deadline falls inside the pair, never earlier because
+    # the loop was busy.
+    with virtual_clock(), patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, side_effect=info
     ), pytest.raises(TimeoutError):
+        deadline = asyncio.get_running_loop().time() + 0.04
         await coordinator._async_pair_on_live_link({}, onboarding_deadline=deadline)
     assert reached_pair.is_set()
     assert not coordinator._ble_bond_established
@@ -400,9 +403,11 @@ async def test_connect_and_information_share_deadline_and_expiry_cleans_link(
         assert kwargs["deadline"] == connection_deadline
         await asyncio.Event().wait()
 
-    with patch(f"{_MODULE}.asyncio.timeout_at", wraps=asyncio.timeout_at) as timeout_at, patch_coordinator_global(
-        "VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04
-    ), patch(
+    # Entered first, so the spy wraps the virtual deadline: it expires during the
+    # information read, never during a connect a busy loop delayed.
+    with virtual_clock(), patch(
+        f"{_MODULE}.asyncio.timeout_at", wraps=asyncio.timeout_at
+    ) as timeout_at, patch_coordinator_global("VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04), patch(
         f"{_CONNECTION}.establish_connection", side_effect=connect
     ), patch(f"{_CONNECTION}.client_source", return_value=_LOCAL.source), patch(
         f"{_CONNECTION}.async_path_for_source", return_value=_LOCAL
@@ -958,10 +963,11 @@ async def test_real_information_partial_progress_survives_terminal_failure_in_on
         asyncio.CancelledError if failure.endswith("cancel")
         else BleakError if failure.endswith("error") else TimeoutError
     )
-    deadline = asyncio.get_running_loop().time() + 0.04
-    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch.object(
+    # On virtual time a blocked stage, not a busy loop, decides which stage times out.
+    with virtual_clock(), patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch.object(
         coordinator, "_async_persist_config", wraps=coordinator._async_persist_config
     ) as persist, pytest.raises(expected_exception):
+        deadline = asyncio.get_running_loop().time() + 0.04
         await coordinator._async_pair_on_live_link({}, onboarding_deadline=deadline, force_pairing=True)
     persist.assert_called_once()
     expected = {**old_metadata, "model": "new model", "firmware": ""}
