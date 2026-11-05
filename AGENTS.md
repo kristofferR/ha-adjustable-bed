@@ -382,7 +382,8 @@ under `custom_components/adjustable_bed/frontend/`.
   - `hold.ts` — movement pulse repetition and side-scoped release/STOP handling.
   - `bed-graphic.ts` — theme-aware angle SVG. `localize.ts` + `translations/`
     hold the card's own strings (section headers / editor labels);
-    entity names come from HA's localized `friendly_name`.
+    entity labels come from `hass.formatEntityName` (`names.ts`), never from
+    `friendly_name`.
 - **Build** (requires [bun](https://bun.sh)):
   ```bash
   cd custom_components/adjustable_bed/frontend
