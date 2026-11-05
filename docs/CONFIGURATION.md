@@ -35,9 +35,9 @@ fields of the row you choose.
   choosing its row, or a discovered bed of that family, asks which app or
   remote controls the bed, because a bed's name and Bluetooth services do not
   tell these apps apart. Where offered, the question's keep answer saves the
-  detected route. The Okin CST, Remacro and StarCode rows ask their app the
-  same way, and the Reverie and Sleep Number rows ask only when the bed's
-  advertised service does not settle the receiver.
+  detected route. The Okin CST, Remacro, Richmat and StarCode rows ask their
+  app the same way, and the Reverie and Sleep Number rows ask only when the
+  bed's advertised service does not settle the receiver.
 - An app row sets its own route. A bed type with several receiver routes lists
   them in a collapsed **Advanced: receiver route** section, or in a short
   **Receiver route** step (see [Protocol Variants](#protocol-variants)).
@@ -88,8 +88,9 @@ or from the bed's repair. Today this covers the
 [Sleepy's Elite family](beds/sleepys.md#home-assistant-setup), the
 [Customatic and Jordan's apps](beds/okin-nframe.md#customatic-family), the
 [Malouf / Lucid family](beds/malouf.md#malouf-base--lucid-base-family), the
-[LOGICDATA family](beds/logicdata.md#detection--setup) and the
-[Limoss family](beds/limoss.md#home-assistant-setup); more families follow.
+[LOGICDATA family](beds/logicdata.md#detection--setup), the
+[Jensen / Svane family](beds/jensen.md#home-assistant-setup) and the
+[Limoss family](beds/limoss.md#home-assistant-setup).
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.
@@ -464,6 +465,10 @@ changes its route through the same question.
 
 ### Richmat Variants
 
+Setup asks the packet dialect under **Advanced** after the
+[Richmat question](beds/richmat.md#home-assistant-setup)'s RMControl,
+SleepFunction, SVEN & SON or Richmat remote answer. Configure changes it.
+
 | Variant | Description | Use For |
 |---------|-------------|---------|
 | **Auto** | Auto-detect (recommended) | Most beds |
@@ -482,7 +487,7 @@ changes its route through the same question.
 
 ### Sleep Number Variants
 
-These variants apply to newer Sleep Number Fuzion bases (`Smart bed *`). Older BAM/MCR beds such as some i8 / 360 FlexFit 2 models expose both firmness sides from one entry and do not use this setting.
+These variants apply to newer Sleep Number Fuzion bases (`Smart bed *`). Older BAM/MCR beds such as some i8 / 360 FlexFit 2 models expose both firmness sides from one entry and do not use this setting. Setup asks the side once the [Sleep Number question](beds/sleep_number.md#detection) has settled on a Fuzion base; Configure changes it.
 
 | Variant | Description | Use For |
 |---------|-------------|---------|
@@ -575,7 +580,7 @@ that side, then combine them again.
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
 | Sleep Number | [Setup confirms the transport](beds/sleep_number.md#detection) from its advertised service (Fuzion or BAM/MCR), then a Fuzion entry asks its side. Configure lists both transports. |
 | Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Configure lists both receivers. |
-| Remacro | [One question for Slumberland, The Brick or Jerome's](beds/remacro.md#home-assistant-setup), offering the apps that list the advertised model; Configure changes the app's protocol variant. The advertised company ID selects the model. |
+| Remacro | [One question for Slumberland, The Brick or Jerome's](beds/remacro.md#home-assistant-setup), offering the apps that list the advertised model, or all three when no model is seen or none lists it; Configure changes the app's protocol variant. The advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | Answer the [Okin question](beds/okin-nframe.md#home-assistant-setup) with **FurniMove / OKIN Smart Remote app**, then the [exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/keeson.md#adjustamattress). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
@@ -584,7 +589,7 @@ that side, then combine them again.
 | StarCode apps | One question for the app, then its own settings. Configure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
 | Limoss | [One question](beds/limoss.md#home-assistant-setup) for the Limoss Remote or FSM Relax app, or the older controls. [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. Change an existing bed's app with **Reconfigure**. |
-| FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/limoss.md#fsm-relax). |
+| FSM Relax | Answer the [Limoss question](beds/limoss.md#home-assistant-setup) with the FSM Relax app, then its [bed/chair layout, light/massage, reversal settings and memory names](beds/limoss.md#fsm-relax). |
 | GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |
 | Legacy OKIN CB24 | [Single-address controls](#single-address-left--right-controls): both sides, Side A / Left, or Side B / Right. |
 | Keeson app family | [Tempur Curve, Q-Plus Adjustable Remote, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU](beds/keeson.md#cluster033-app-family): the exact app and the layout it shows; Q-Plus also has a Both/Side A/Side B selector. |
