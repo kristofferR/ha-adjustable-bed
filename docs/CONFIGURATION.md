@@ -117,9 +117,15 @@ another profile works better.
 **Review profile settings** opens Configure. A clear suggestion shows its settings;
 an ambiguous match keeps your current selection so you can check your app, physical
 remote and product. Nothing changes until you submit settings. Closing them keeps
-your profile. Saving this review confirms your selection. Within a family with
-a [guided change](#changing-the-app-or-layout-of-an-existing-bed), Configure refuses an app or route change; make it
-through **Reconfigure**.
+your profile. Saving this review confirms your selection.
+
+When every suggested profile belongs to the bed's family with a
+[guided change](#changing-the-app-or-layout-of-an-existing-bed), **Review
+profile settings** opens that guided change instead, because Configure refuses
+an app or route change within the family. Applying a change there confirms the
+review, and **Keep current setup** there keeps the current profile. Closing it
+leaves the notice open. A suggestion of another bed type still opens Configure,
+which can make that change.
 
 **Keep current profile** (or Ignore) dismisses the assessment across restarts and
 updates. Only a materially different profile or candidate set may ask again.
@@ -397,7 +403,7 @@ controller-specific choices are documented here:
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Explicit control-box selector for each physical bed, asked after the [Sleepy's question](beds/sleepys.md#home-assistant-setup) |
 | [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
-| [Okin CST](beds/okin-nframe.md#okin-cst) | Rize and Support product profiles; Auto retains MF900 behavior |
+| [Okin CST](beds/okin-nframe.md#okin-cst) | Rize and Support product profiles, asked by app name in the Okin question for a new bed; Auto retains MF900 behavior |
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Auto, StarCode, Legacy CB25, under **Advanced** after the Sleepy's question |
 | [SBI](beds/keeson.md#protocol-variants) / [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
 | [OKIN CB24](beds/okin-nframe.md#cb24-preset-safety) | Legacy/CBNew and specific SmartBed profiles |
