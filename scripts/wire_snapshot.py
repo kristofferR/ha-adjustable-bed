@@ -631,6 +631,18 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         def expired(self) -> bool:
             return self._expired
 
+        def when(self) -> float | None:
+            return self._when
+
+        def reschedule(self, when: float | None) -> None:
+            """Move the virtual deadline, as ``asyncio.Timeout.reschedule`` does."""
+            if self._guard is not None:
+                self._guard.cancel()
+                self._guard = None
+            self._when = when
+            if when is not None and self._task is not None:
+                self._guard = asyncio.ensure_future(self._expire(when))
+
         async def _expire(self, deadline: float) -> None:
             await wait_until(deadline, TIMEOUT_SETTLE_YIELDS, lambda: False)
             self._expired = True
@@ -638,8 +650,9 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
             self._task.cancel()
 
         async def __aenter__(self) -> FakeTimeout:
+            # Captured even without a deadline, so a later reschedule can expire it.
+            self._task = asyncio.current_task()
             if self._when is not None:
-                self._task = asyncio.current_task()
                 self._guard = asyncio.ensure_future(self._expire(self._when))
             return self
 
