@@ -703,6 +703,11 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_OKIN_RF_ECO_BT,
         BED_TYPE_LEGGETT_GEN2,
         BED_TYPE_LEGGETT_WILINKE,
+        BED_TYPE_CUSTOMATIC_JEROMES,
+        BED_TYPE_CUSTOMATIC_REMEDY,
+        BED_TYPE_TRANQUIL,
+        BED_TYPE_STARCODE_M5X5,
+        BED_TYPE_STARCODE_M1X12,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -714,6 +719,11 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_OKIN: (
         "Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and "
         "L&P Adjustable Base apps"
+    ),
+    BED_TYPE_CUSTOMATIC_CLARITY: "Customatic: Clarity, Jerome's C, Remedy and Z-Series apps",
+    BED_TYPE_SERENITY: "Jordan's: Serenity and Tranquil apps",
+    BED_TYPE_STARCODE_ABM5_4: (
+        "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
     ),
 }
 
@@ -746,7 +756,14 @@ _COMPATIBILITY_LABELS: Final[dict[str, str]] = {
 _APP_ROW_LABELS: Final[dict[tuple[str, str], str]] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app (Keeson)",
 }
-_HIDDEN_APP_ROWS: Final = frozenset({(BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B)})
+# The Z-Series models are answers of the Customatic question.
+_HIDDEN_APP_ROWS: Final = frozenset(
+    {
+        (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B),
+        (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230),
+        (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
+    }
+)
 
 
 def get_bed_type_options() -> list[SelectOptionDict]:

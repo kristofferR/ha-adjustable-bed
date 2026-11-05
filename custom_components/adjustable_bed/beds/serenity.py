@@ -14,7 +14,8 @@ import asyncio
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import TYPE_CHECKING, Final
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
@@ -302,7 +303,8 @@ class OkinBeddingAppController(OkinCstController):
             return False
         raise ValueError(f"{label} command characteristic is not writable")
 
-    async def async_discover_capabilities(self) -> None:
+    def require_roles(self) -> None:
+        """Raise unless the link has the app's exact command and notification roles."""
         self._write_response()
         client = self.client
         if client is None:
@@ -316,6 +318,9 @@ class OkinBeddingAppController(OkinCstController):
         ]
         if len(matches) != 1:
             raise ValueError(f"{self._app.label} requires its notification characteristic")
+
+    async def async_discover_capabilities(self) -> None:
+        self.require_roles()
 
     async def write_command(
         self,
@@ -715,3 +720,12 @@ class ZSeriesController(OkinBeddingAppController):
         await self.write_command(clock_frame(now))
         await self.write_command(frame)
         await self._query_alarm()
+
+
+def require_app_roles(client: object, app: str) -> None:
+    """Raise unless the link has the roles this OKIN bedding app needs.
+
+    The controller's own check, so a guided change requires what the runtime does.
+    """
+    link = cast("AdjustableBedCoordinator", SimpleNamespace(client=client))
+    OkinBeddingAppController(link, app=app).require_roles()

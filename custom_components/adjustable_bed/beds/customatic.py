@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from itertools import combinations, product
-from typing import TYPE_CHECKING, Final
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 
@@ -450,3 +451,12 @@ class CustomaticController(BedController):
             await self.hold_control(action, CUSTOMATIC_APP_HOLD_MS)
         else:
             raise ValueError(f"Unknown Customatic app action: {action}")
+
+
+def require_command_endpoint(client: object, profile: str) -> None:
+    """Raise unless the link has the one writable command characteristic the app writes.
+
+    The controller's own check, so a guided change requires what the runtime does.
+    """
+    link = cast("AdjustableBedCoordinator", SimpleNamespace(client=client))
+    CustomaticController(link, profile=profile)._write_response()  # noqa: SLF001
