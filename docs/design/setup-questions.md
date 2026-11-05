@@ -71,8 +71,9 @@ a native conditional field on the bed-type field, listing both each row's label
 - a generic field shows except for the rows whose profile owns it;
 - the Advanced route section shows only for the drawn bed type's generic rows.
   Another bed type with several routes asks for them in the `route` step;
-- Svane's app profiles are asked on the form. For Svane rows, a generic field
-  hinges on that route field instead, which reads as absent for other rows.
+- Svane's app profiles are asked on the form for its generic row. For that
+  row, a generic field hinges on the route field instead, which reads as
+  absent for other rows. A Svane app row sets its own route.
 
 Defaults cannot follow a changed row, so a pulse field left at the default it
 was drawn with saves the chosen profile's default instead.

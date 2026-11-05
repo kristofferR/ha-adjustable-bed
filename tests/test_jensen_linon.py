@@ -48,7 +48,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.detection import is_jensen_linon_name
+from custom_components.adjustable_bed.detection import bed_type_choice, is_jensen_linon_name
 from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
 from tests.form_helpers import shown_markers
 
@@ -427,3 +427,16 @@ async def test_svane_light_slider_removed_for_linon(
     await hass.async_block_till_done()
 
     assert registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_light_level") is None
+
+
+async def test_the_linon_app_row_shows_its_generic_fields(hass: HomeAssistant) -> None:
+    """An app row sets its own route; the generic Svane route field stays out of it."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    form = await flow.async_step_manual_entry()
+    linon = bed_type_choice(BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON)
+    shown = shown_markers(form, **{CONF_BED_TYPE: linon})
+    assert CONF_MOTOR_COUNT in shown
+    assert CONF_PROTOCOL_VARIANT not in shown
+    assert CONF_MOTOR_COUNT not in shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_SVANE})

@@ -76,7 +76,8 @@
           "transport_all_busy": "No free Bluetooth connections",
           "transport_actual": "Connected over",
           "transport_actual_differs": "Path differed from the prediction",
-          "cb24_bed_selection": "CB24 bed side"
+          "cb24_bed_selection": "CB24 bed side",
+          "protocol_variant": "Svane app"
         },
         "data_description": {
           "bed_type": "Auto-detected bed type. Change if detection was incorrect. Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
@@ -108,7 +109,8 @@
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "protocol_variant": "The app this Svane bed is used with. Leave it empty to choose from the Bluetooth name."
         },
         "sections": {
           "advanced": {
@@ -161,7 +163,8 @@
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl 21.3.7 product (optional)",
           "rmcontrol_side": "RMControl side",
-          "cb24_bed_selection": "CB24 bed side"
+          "cb24_bed_selection": "CB24 bed side",
+          "protocol_variant": "Svane app"
         },
         "data_description": {
           "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
@@ -180,7 +183,8 @@
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "protocol_variant": "The app this Svane bed is used with. Leave it empty to choose from the Bluetooth name."
         },
         "sections": {
           "advanced": {
@@ -217,7 +221,8 @@
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl 21.3.7 product (optional)",
           "rmcontrol_side": "RMControl side",
-          "cb24_bed_selection": "CB24 bed side"
+          "cb24_bed_selection": "CB24 bed side",
+          "protocol_variant": "Svane app"
         },
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
@@ -237,7 +242,8 @@
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "protocol_variant": "The app this Svane bed is used with. Leave it empty to choose from the Bluetooth name."
         },
         "sections": {
           "advanced": {

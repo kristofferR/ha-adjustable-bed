@@ -1117,8 +1117,8 @@ def _condition_owned_generic_fields(
 
     One form serves every row, so nothing redraws when another row is chosen.
     ``asked_routes`` are the routes of a bed type whose route the form asks
-    itself: its rows are decided by that route field, which reads as absent
-    while another row is chosen.
+    itself: its generic rows are decided by that route field, which reads as
+    absent while another row is chosen.
     """
     asked_bed_type = next(iter(asked_routes.values()))[0] if asked_routes else None
     for marker in tuple(schema):
@@ -1137,7 +1137,8 @@ def _condition_owned_generic_fields(
                 _rows_where(
                     rows,
                     lambda bed_type, variant: (
-                        bed_type != asked_bed_type and owns(bed_type, variant)
+                        (bed_type != asked_bed_type or variant != VARIANT_AUTO)
+                        and owns(bed_type, variant)
                     ),
                     "not_in",
                     field,
@@ -2253,8 +2254,14 @@ def _show_profile_fields(
     whose profile sets it itself; a form for one profile drops them. Fields in
     ``keep`` are the profile's own questions and stay as they are.
     """
+    # An app row sets its own route, so only the generic Svane row asks it.
     svane_rows = (
-        _rows_where(rows, lambda row_bed_type, _variant: row_bed_type == BED_TYPE_SVANE)
+        _rows_where(
+            rows,
+            lambda row_bed_type, row_variant: (
+                row_bed_type == BED_TYPE_SVANE and row_variant == VARIANT_AUTO
+            ),
+        )
         if rows is not None and field == CONF_BED_TYPE
         else None
     )
