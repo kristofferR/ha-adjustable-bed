@@ -716,6 +716,8 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_TRANQUIL,
         BED_TYPE_STARCODE_M5X5,
         BED_TYPE_STARCODE_M1X12,
+        BED_TYPE_LOGICDATA,
+        BED_TYPE_LOGICDATA_AIR_PUMP,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -735,6 +737,10 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
         "Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps"
     ),
     BED_TYPE_SERENITY: "Jordan's: Serenity and Tranquil apps",
+    BED_TYPE_LOGICDATA_APP: (
+        "LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and "
+        "Sleep Smart Air Mattress apps"
+    ),
     BED_TYPE_STARCODE_ABM5_4: (
         "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
     ),
