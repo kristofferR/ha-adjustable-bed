@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.actuator_groups import get_actuator_group_for_bed_type
+from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.config_flow import (
     _default_motor_count,
     _is_valid_motor_count,
@@ -38,12 +38,12 @@ async def test_explicit_profile_builds_fixed_controls_without_live_advertisement
     assert {spec.key for spec in controller.motor_control_specs} == {"head", "feet"}
     assert controller.memory_slot_count == 2
     assert controller.requires_notification_channel
-    assert get_actuator_group_for_bed_type(BED_TYPE_SERENITY) == ("okin", "Jordan's Serenity app")
+    assert actuator_group_for(BED_TYPE_SERENITY) == "okin"
     assert (
         next(option for option in get_bed_type_options() if option["value"] == BED_TYPE_SERENITY)[
             "label"
         ]
-        == "Jordan's: Serenity and Tranquil apps"
+        == "Serenity and Tranquil apps · Jordan's"
     )
     # A saved entry keeps its own app's label.
     assert bed_type_label(BED_TYPE_SERENITY) == "Jordan's Serenity app"

@@ -1199,8 +1199,9 @@ and reports missing inputs instead of failing with a traceback.
 
 #### Setup
 
-Choose **HJBed app** and the exact product shown in HJBed. The picker includes all
-19 current products and 24 conditionally restored products. Shared services and
+Choose the **HJBed app** row, then search its product question for the exact
+product shown in HJBed. It lists all 19 current products and 24 conditionally
+restored products, and nothing is preselected. Shared services and
 Bluetooth names do not identify the layout.
 
 | HA product profile | App label | Remote code | App selector |

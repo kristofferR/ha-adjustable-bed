@@ -577,7 +577,7 @@ async def test_unchanged_rendered_options_keep_internal_family_route(hass, bed_t
     values = schema({})
     assert isinstance(values, dict)
     rows = schema.schema[const.CONF_BED_TYPE].config["options"]
-    assert sum("Vibradorm:" in row["label"] for row in rows) == 1
+    assert sum(row["label"].endswith(" · Vibradorm") for row in rows) == 1
     assert values[const.CONF_BED_TYPE] == bed_type
     result = await flow.async_step_settings(values)
     assert result["type"] == FlowResultType.CREATE_ENTRY

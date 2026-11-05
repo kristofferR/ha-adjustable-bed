@@ -27,6 +27,7 @@ from .const import (
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
+    BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
     BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -144,7 +145,9 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
+    GOODVIBE_PROFILES,
     HAS_LIGHT_DEFAULTS,
+    HJBED_PROFILES,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
@@ -325,7 +328,7 @@ class Question:
     question is neither required nor saved. ``staged_when`` limits when a
     staged answer is the default, for a value the profile set itself rather than
     the user. ``validator`` replaces the one the choices imply, for a range or a
-    format.
+    format. A ``searchable`` question's choices are a picker searched by label.
     """
 
     key: str
@@ -336,6 +339,8 @@ class Question:
     when: FieldCondition | list[FieldCondition] | None = None
     staged_when: FieldCondition | None = None
     validator: Any = None
+    # A long list of choices is a picker the user can search by label.
+    searchable: bool = False
 
     def asked(self, data: Mapping[str, Any]) -> bool:
         """Return True when the condition holds for these answers."""
@@ -899,6 +904,18 @@ def _gmmotor_errors(data: Mapping[str, Any]) -> dict[str, str]:
     if {"left": 0, "right": 1, "both": 2}.get(data.get(CONF_GMMOTOR_SIDE, "left")) not in profile.sides:
         return {CONF_GMMOTOR_SIDE: "gmmotor_side"}
     return {}
+
+
+def _goodvibe_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """The product the app's own name rule suggests, never over a chosen one."""
+    from .goodvibe_discovery import suggested_profile
+
+    if data.get(CONF_PROTOCOL_VARIANT) in GOODVIBE_PROFILES or discovered is None:
+        return dict(data)
+    suggested = suggested_profile(discovered.name)
+    return {**data, CONF_PROTOCOL_VARIANT: suggested} if suggested else dict(data)
 
 
 def _isleep_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
@@ -1620,10 +1637,33 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
     ),
+    # The app's layout is its route, asked on the app's one row.
+    BED_TYPE_COMFORT_ENHANCEMENTS: _asking(
+        BED_TYPE_COMFORT_ENHANCEMENTS,
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORT_ENHANCEMENTS)),),
+    ),
     # MC3 has no massage page; the other layouts' controllers turn massage on.
     f"{BED_TYPE_COMFORT_ENHANCEMENTS}:mc3": _asking(
         BED_TYPE_COMFORT_ENHANCEMENTS,
         owns={**_BASE[BED_TYPE_COMFORT_ENHANCEMENTS].owns, CONF_HAS_MASSAGE: False},
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORT_ENHANCEMENTS)),),
+    ),
+    # The Casper Base app's product is its route, a long list searched by label.
+    BED_TYPE_CASPER_BASE: _asking(
+        BED_TYPE_CASPER_BASE,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_CASPER_BASE), searchable=True),
+        ),
+    ),
+    # The app's product sets every control, so its one row asks it.
+    BED_TYPE_GOODVIBE: _asking(
+        BED_TYPE_GOODVIBE,
+        questions=(Question(CONF_PROTOCOL_VARIANT, GOODVIBE_PROFILES, searchable=True),),
+        seed=_goodvibe_seed,
+    ),
+    BED_TYPE_HJBED: _asking(
+        BED_TYPE_HJBED,
+        questions=(Question(CONF_PROTOCOL_VARIANT, HJBED_PROFILES, searchable=True),),
     ),
     # The product the Hush Base app shows sets every control; nothing detects it.
     "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),

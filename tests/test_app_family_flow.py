@@ -288,15 +288,17 @@ async def test_configure_corrects_an_m5x4_entry_to_m5x5(hass):
         for marker, validator in form["data_schema"].schema.items()
         if marker.schema == const.CONF_BED_TYPE
     )
-    # The StarCode apps have no guided change, so Configure lists each by its label.
+    # The StarCode apps have no guided change, so Configure lists each by its
+    # label, with its family.
     shown = {option["label"] for option in picker.config["options"]}
     for app in (
         const.BED_TYPE_STARCODE_ABM5_4,
         const.BED_TYPE_STARCODE_M5X5,
         const.BED_TYPE_STARCODE_M1X12,
     ):
-        assert bed_type_label(app) in shown
-        assert picker(bed_type_label(app)) == app
+        label = f"{bed_type_label(app)} · StarCode"
+        assert label in shown
+        assert picker(label) == app
     form = await flow._async_options_form(
         {const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_M5X5}, step_id="settings"
     )

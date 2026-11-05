@@ -6,7 +6,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import SINGLE_TYPE_GROUPS
+from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -51,7 +51,7 @@ def test_one_row_names_both_apps_and_their_beds():
     assert const.BED_TYPE_JENSEN not in rows
     for variant in (const.SVANE_VARIANT_JMC, const.SVANE_VARIANT_JENSEN_LINON):
         assert bed_type_choice(const.BED_TYPE_SVANE, variant) not in rows
-    assert SINGLE_TYPE_GROUPS["jensen"] == const.BED_TYPE_SVANE
+    assert ACTUATOR_GROUPS["jensen"] == ((const.BED_TYPE_SVANE, None),)
     # LinON Entry is JMC400 hardware, so the JMC400 route no longer names it.
     from custom_components.adjustable_bed.detection import bed_type_label
 
@@ -60,7 +60,7 @@ def test_one_row_names_both_apps_and_their_beds():
 
 def test_a_detected_jmc400_box_is_shown_as_the_family_row():
     label = _bed_type_selector(const.BED_TYPE_JENSEN).shown(const.BED_TYPE_JENSEN)
-    assert label.startswith("Jensen / Svane:")
+    assert label.endswith(" · Jensen / Svane")
 
 
 @pytest.mark.parametrize(

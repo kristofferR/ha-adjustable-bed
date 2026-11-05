@@ -108,9 +108,15 @@ async def test_device_manufacturer_differs(
     ],
 )
 def test_legacy_bed_types_are_not_offered_in_setup(legacy: str, offered: str) -> None:
-    """Setup offers only the canonical bed type; the legacy one exists only in saved entries."""
+    """Setup offers only the canonical bed type; the legacy one exists only in saved entries.
+
+    A protocol-named route is off the app question, so the brand list offers it.
+    """
+    from custom_components.adjustable_bed.config_flow import _family_rows
+    from custom_components.adjustable_bed.detection import PROTOCOL_ROUTES
+
     assert legacy not in _PICKER
-    assert offered in _PICKER
+    assert offered in ({choice for choice, _label in _family_rows()} if offered in PROTOCOL_ROUTES else _PICKER)
 
 
 @pytest.mark.parametrize(

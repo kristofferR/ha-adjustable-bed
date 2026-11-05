@@ -55,12 +55,11 @@ def test_layout_counts_and_no_invented_feedback_or_pairing(bed_type, profile, mo
 
 
 def test_customatic_group_lists_each_explicit_package_profile():
-    variants = ACTUATOR_GROUPS["customatic"]["variants"]
-    assert variants is not None
-    assert {item["type"] for item in variants} == {item[0] for item in PROFILES} | {
+    routes = ACTUATOR_GROUPS["customatic"]
+    assert {bed_type for bed_type, _variant in routes} == {item[0] for item in PROFILES} | {
         BED_TYPE_ZSERIES
     }
-    assert [item.get("variant") for item in variants if item["type"] == BED_TYPE_ZSERIES] == [
+    assert [variant for bed_type, variant in routes if bed_type == BED_TYPE_ZSERIES] == [
         "z230",
         "z280",
     ]

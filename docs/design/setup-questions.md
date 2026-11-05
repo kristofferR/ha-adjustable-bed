@@ -30,7 +30,8 @@ unanswered). A staged answer the choices no longer offer falls back to the
 default, and `staged_when` limits when a staged answer is the default at all,
 for a value the profile stored itself. `validator` replaces the one the choices
 imply, for a range or a format. An `advanced` question sits in a collapsed
-Advanced section in setup.
+Advanced section in setup. A `searchable` question's choices are a picker the
+user searches by label, for a long list such as a Good Vibe Sleep product.
 
 `when` is the condition for asking a question: a Home Assistant field condition
 on another answer of the same form (`{"field": ..., "value": ...}`, or an
@@ -57,9 +58,16 @@ returns.
   rows of the bed-type list, and a row picked there stages its route: an app's
   own row answers the family question, so it is not asked again, and a family
   row, which names its apps, leads to the question. The
-  brand list shows each brand group's family rows, or the group's own rows
-  when it has no family question; protocol rows stay in the app question's
-  full list.
+  brand list shows each brand group's family rows, brand first, or the group's
+  own rows when it has no family question. The protocol-named routes
+  (`PROTOCOL_ROUTES`) are not rows of the app question, so the brand list
+  lists them, and Configure keeps them by name.
+- A family row reads `<apps> · <family>`, and each row of that family's
+  journey `<app> · <family>`. The family is the one the row's journey asks:
+  `FAMILY_ROWS` names each family row's family, and `_APP_SETUP_STEPS` maps a
+  route to its family's question, so the label cannot name another family. A
+  row outside every family journey is its own brand and names itself. Saved
+  entries keep their own route's label.
 - The final settings come after the app's questions, so every route the
   question can choose reaches the generic fields its profile does not set
   there: motor count when it offers several, massage when its controls depend
@@ -204,6 +212,8 @@ These steps serve every bed type or route, so no profile owns them.
 | `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice), motor count and massage motors; `okin_uuid` and `okimat` also angle sensing. The family row's form is drawn for FurniMove, which sets massage and angle sensing itself. |
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
 | `keeson:ergomotion` | Angle sensing: the one older Keeson remote route that reports positions. |
+| `goodvibe`, `hjbed`, `casper_base` | The exact product, a searchable list, behind one row each. Good Vibe Sleep's own name rule suggests a product from the Bluetooth name. |
+| `comfort_enhancements` | The app's MC2, MC3, MC4 or MC5 layout. |
 | `bedsense` | Layout, or the layout from the Bluetooth name. |
 | `leggett_lp_legacy` | Model code, protocol mode and the confirmed write and notification characteristics (free text). Its `normalize` cleans the code and UUIDs before they are checked. |
 | `vibradorm_app@werkmeister` | Remote (control type). |

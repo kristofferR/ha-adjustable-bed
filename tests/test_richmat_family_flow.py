@@ -100,7 +100,8 @@ def test_configure_lists_each_mh_app_by_its_own_label():
     selector = _bed_type_selector(const.BED_TYPE_RICHMAT, show_saved_id=True)
     rows = selector.rows()
     for bed_type in const.RICHMAT_MH_BED_TYPES:
-        label = bed_type_label(bed_type)
+        # Each names its family, the Richmat question it is an answer of.
+        label = f"{bed_type_label(bed_type).removesuffix(' (Richmat)')} · Richmat"
         assert rows[label] == bed_type
         assert selector(label) == bed_type
 
@@ -262,7 +263,7 @@ async def test_configure_switches_a_remote_entry_to_an_mh_app(hass):
     flow.hass, flow.handler = hass, entry.entry_id
     form = await flow.async_step_settings()
     selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    choice = selector(bed_type_label(const.BED_TYPE_RICHMAT_REVIVE))
+    choice = selector("Revive Control app · Richmat")
     form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
     assert form["type"] is FlowResultType.FORM
     assert const.CONF_PROTOCOL_VARIANT in fields(form)
@@ -342,8 +343,8 @@ async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
     flow.hass, flow.handler = hass, entry.entry_id
     form = await flow.async_step_settings()
     selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    # Each classic app keeps its own label in Configure's list.
-    choice = selector("Forty Winks")
+    # Each classic app keeps its own label in Configure's list, with its family.
+    choice = selector("Forty Winks · Richmat")
     assert choice == "richmat_classic_apps:fortywinks"
     form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
     assert const.CONF_PRODUCT_TYPE in fields(form)

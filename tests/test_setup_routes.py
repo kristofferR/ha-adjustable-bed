@@ -113,9 +113,18 @@ async def test_a_generic_route_offers_only_its_own_routes(hass, enable_custom_in
 
 
 def test_a_choice_without_an_automatic_route_is_shown_open():
-    assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "").options == {"collapsed": False}
+    # Every bed type that runs only on a chosen route asks it as its app's
+    # question now, so a route list without Auto is drawn for one here.
+    with patch(
+        "custom_components.adjustable_bed.config_flow._setup_routes",
+        return_value={"mc2": "MC2", "mc3": "MC3"},
+    ):
+        assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "").options == {
+            "collapsed": False
+        }
     assert _route_section(const.BED_TYPE_OKIN_CB24, "").options == {"collapsed": True}
     assert _route_section(const.BED_TYPE_SOLACE, "") is None
+    assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "") is None
 
 
 def test_okin_cst_asks_its_app_instead_of_a_route_list():
@@ -223,7 +232,9 @@ async def test_aliases_show_friendly_labels_and_keep_their_saved_id(hass, alias,
     flow.handler, flow.hass = entry.entry_id, hass
     result = await flow.async_step_settings()
     selector = result["data_schema"].schema[const.CONF_BED_TYPE]
-    shown = f"{bed_type_label(alias)} (saved as {alias})"
+    # An alias inside a family's journey names that family too.
+    family = " · Okin" if alias == const.BED_TYPE_OKIMAT else ""
+    shown = f"{bed_type_label(alias)}{family} (saved as {alias})"
     assert shown in {option["label"] for option in selector.config["options"]}
     # The shown label maps back to the saved ID, never to the route it runs.
     assert selector(shown) == alias
@@ -461,7 +472,7 @@ def test_every_picker_label_maps_back_to_one_choice():
     assert len(labels) == len(set(labels))
 
 
-@pytest.mark.parametrize("bed_type", [const.BED_TYPE_GOODVIBE, const.BED_TYPE_ESHINE_OKIN])
+@pytest.mark.parametrize("bed_type", [const.BED_TYPE_ESHINE_OKIN])
 def test_product_apps_choose_their_route_from_the_app_entry(bed_type):
     """Each product is its own app entry: no global variant and no route step."""
     assert _setup_routes(bed_type) == {}

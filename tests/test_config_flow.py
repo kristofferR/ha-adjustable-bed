@@ -2458,7 +2458,6 @@ class TestBluetoothDiscoveryFlow:
     ) -> None:
         """The app profile is selectable after ambiguity and skips only app bonding."""
         del enable_custom_integrations
-        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": SOURCE_BLUETOOTH},
@@ -2472,7 +2471,7 @@ class TestBluetoothDiscoveryFlow:
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], {CONF_BED_TYPE: BED_TYPE_DISPLAY_NAMES.get(choice) or "Nectar Move"}
+                result["flow_id"], {CONF_BED_TYPE: "Nectar Move · Okin"}
             )
             result = await _settings(hass, result, {CONF_NAME: "Nectar Move"})
 
@@ -2837,9 +2836,10 @@ class TestManualFlow:
                 result["flow_id"], user_input={CONF_ADDRESS: "select_by_app"}
             )
             picker = result["data_schema"].schema[CONF_BED_TYPE]
-            assert "Nectar Move" in picker.rows()
+            # The row names its family after the app.
+            assert "Nectar Move · Okin" in picker.rows()
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={CONF_BED_TYPE: "Nectar Move"}
+                result["flow_id"], user_input={CONF_BED_TYPE: "Nectar Move · Okin"}
             )
 
         assert result["step_id"] == "manual_entry"
