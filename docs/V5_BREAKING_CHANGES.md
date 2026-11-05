@@ -362,6 +362,11 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
   later release offers an app you were not shown. For a family with a guided
   change, the repair opens the guided change, and so does **A better profile
   may be available** when every suggestion belongs to that family ([#872](https://github.com/kristofferR/ha-adjustable-bed/pull/872)).
+- Existing generic Solace entries are asked once, through **Do you use Woosa
+  Sleep with ...?** under Repairs, whether they use the Woosa Sleep app,
+  which shares their names. The upgrade to v5 raises it, including for
+  entries whose earlier app review ended; it opens the guided change or keeps
+  the current setup.
 - On a two-address pair, **Change left receiver settings** and **Change right
   receiver settings** also ask that receiver's own app questions, such as a
   Sleepy's motor count or a Malouf model, and save them to that receiver only

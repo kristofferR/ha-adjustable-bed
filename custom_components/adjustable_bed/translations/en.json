@@ -9244,6 +9244,25 @@
         }
       }
     },
+    "app_profile_woosa": {
+      "title": "Do you use Woosa Sleep with {name}?",
+      "fix_flow": {
+        "step": {
+          "managed": {
+            "title": "Do you use Woosa Sleep with {name}?",
+            "description": "**{name}** uses {current}. Woosa Sleep has its own Favourite memory, massage levels, lights and alarm, and no HomeKobo hip, lumbar or wave controls. If you control the bed with the Woosa Sleep app, its controls can follow that app.\n\nThe guided change lists the control changes before anything is saved. A paired bed must first be split explicitly. This repair stays open until you apply a change or keep the current setup.",
+            "data": {
+              "choice": "Setup choice"
+            }
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
+          "migration_setup_started": "Continue in the guided change.",
+          "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu."
+        }
+      }
+    },
     "lumbar_star254202_box25": {
       "title": "A better profile may be available for {target}",
       "fix_flow": {
