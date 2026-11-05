@@ -203,6 +203,7 @@ from .const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     LINAK_VARIANT_PERFORMANCE,
+    LOGICDATA_CHAR_UUID,
     MANUFACTURER_ID_OKIN,
     NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
@@ -386,6 +387,19 @@ def require_sleepys_route(client: BleakClient, data: Mapping[str, Any]) -> None:
         require_selector_route(client, data[CONF_SLEEPYS_ELITE_SELECTOR])
         return
     _require_write_endpoint(client, _SLEEPYS_ROUTE_ENDPOINTS[bed_type], bed_type)
+
+
+def require_logicdata_route(client: BleakClient, data: Mapping[str, Any]) -> None:
+    """Raise ConnectionError unless the link exposes what the staged LOGICDATA route needs.
+
+    SimplicityFrame writes its one characteristic; an app needs its own transport.
+    """
+    if data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA_APP:
+        from .beds.logicdata_app import require_app_transport
+
+        require_app_transport(client, data)
+        return
+    _require_write_endpoint(client, frozenset({LOGICDATA_CHAR_UUID.lower()}), BED_TYPE_LOGICDATA)
 
 
 def _is_dewertokin_dot_box(client: BleakClient | None) -> bool:

@@ -9,14 +9,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
-from typing import TYPE_CHECKING, cast
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import jiecang as codec
+from ..const import (
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
+)
 from ..profiles import logicdata as profiles
 from ..profiles.logicdata import (
     APP_PROFILES,
@@ -37,6 +44,7 @@ from .base import (
 )
 
 if TYPE_CHECKING:
+    from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..codec.jiecang import Axis, MassageZone, Transport
@@ -332,6 +340,12 @@ class LogicdataAppController(BedController):
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("Not connected to bed")
+        self._select_transport(client)
+        self._get_characteristic(self.control_characteristic_uuid)
+        self._discovered = True
+
+    def _select_transport(self, client: BleakClient) -> None:
+        """Pick the selected app's transport from the link's GATT, or raise ValueError."""
         candidates = []
         notify_roles = []
         name_roles = set()
@@ -359,12 +373,10 @@ class LogicdataAppController(BedController):
             self._transport_id = candidates[0]
         elif self._transport_choice not in candidates:
             raise ValueError("The selected MOTIONrelax transport is incomplete or absent")
-        self._get_characteristic(self.control_characteristic_uuid)
         self._has_startup_profile = any(key in ("t1", "t3") for key in candidates)
         self._candidates = tuple(candidates)
         self._notify_roles = tuple(notify_roles)
         self._name_roles = frozenset(name_roles)
-        self._discovered = True
 
     async def _pause(self, seconds: float, cancel_event: asyncio.Event | None = None) -> bool:
         cancel = cancel_event or self._coordinator.cancel_command
@@ -864,3 +876,25 @@ class LogicdataAppController(BedController):
 
     async def move_feet_stop(self) -> None:
         await self.stop_all()
+
+
+def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
+    """Raise ConnectionError unless the link exposes the selected app's transport.
+
+    A guided change checks a candidate link with the controller's own transport
+    selection, so the check is exactly what the runtime will require.
+    """
+    link = cast("AdjustableBedCoordinator", SimpleNamespace(client=client, controller_state={}))
+    controller = LogicdataAppController(
+        link,
+        profile=data[CONF_LOGICDATA_APP_PROFILE],
+        command_family=data[CONF_LOGICDATA_APP_FAMILY],
+        layout=data[CONF_LOGICDATA_APP_LAYOUT],
+        transport=data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
+        has_light=False,
+        has_massage=False,
+    )
+    try:
+        controller._select_transport(client)  # noqa: SLF001 - the controller's own selection
+    except ValueError as err:
+        raise ConnectionError(str(err)) from err
