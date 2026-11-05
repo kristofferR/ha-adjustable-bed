@@ -564,7 +564,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/keeson.md#adjustamattress). Four models and seven independent layouts; generic motor/massage settings do not add controls. Each physical side owns its profile. |
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout fixes controls, massage/light and memory capacity; held refresh is 200 ms. Each physical side owns its layout. |
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
-| StarCode apps | One question for the app, then its own settings. [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
+| StarCode apps | One question for the app, then its own settings. Configure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
 | Limoss | [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. |
 | FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/limoss.md#fsm-relax). |
