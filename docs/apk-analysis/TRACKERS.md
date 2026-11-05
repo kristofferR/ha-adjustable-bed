@@ -64,8 +64,8 @@ Never:
 - Copy the same paragraph into several trackers. Link to the owning tracker.
 - Put hashes, review state or CI state in #436. Queue cells are short status
   lines, at most 160 visible characters, with every PR written as a link.
-- Name a formal cluster by its ID alone. Its work-unit cell lists the apps it
-  contains, for example `` `cluster-010` · Customatic Technologies Z-Series, Jordan's Tranquil ``.
+- Name a formal cluster by its ID alone. Its work-unit cell lists its member
+  package IDs, for example `` `cluster-010` · `com.okin.bedding.glory`, `com.okin.bedding.tranquil` ``.
 - Abbreviate or strip spaces to fit a size budget. If a record does not fit,
   it belongs in the owning disposition ledger or the handoff.
 - Post status comments on a tracker issue.

@@ -77,9 +77,9 @@ QUEUE_HEADER = "| Order | Analysis | Work unit | Route | Implementation |"
 ANALYSIS_STATES = frozenset({"ACCEPTED", "IN PROGRESS", "PARTIAL", "QUEUED", "BLOCKED"})
 IMPLEMENTATION_STATES = ("MERGED", "IN REVIEW", "PENDING", "NOT STARTED")
 MAX_QUEUE_CELL = 160
-# A formal cluster's work-unit cell also names its apps, so it may run longer.
-MAX_WORK_CELL = 320
-_CLUSTER_WORK = re.compile(r"`cluster-\d{3}` · \S.*")
+# A formal cluster's work-unit cell also lists its member packages, so it may run longer.
+MAX_WORK_CELL = 400
+_CLUSTER_WORK = re.compile(r"`cluster-\d{3}` · `[\w.]+`(?:, `[\w.]+`)*")
 
 PR_URL = "https://github.com/kristofferR/ha-adjustable-bed/pull/"
 
@@ -168,7 +168,9 @@ def _lint_queue(lines: list[str]) -> list[str]:
         if implementation.startswith(("MERGED", "IN REVIEW")) and not linked:
             problems.append(f"queue row {order}: a MERGED or IN REVIEW row links its PR")
         if work.startswith("`cluster-") and not _CLUSTER_WORK.fullmatch(work):
-            problems.append(f"queue row {order}: write a cluster as `cluster-NNN` · its apps")
+            problems.append(
+                f"queue row {order}: write a cluster as `cluster-NNN` · `package`, `package`"
+            )
         for index, cell in enumerate(cells):
             limit = MAX_WORK_CELL if index == 2 else MAX_QUEUE_CELL
             if len(_visible(cell)) > limit:

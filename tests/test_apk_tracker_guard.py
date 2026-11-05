@@ -16,7 +16,8 @@ sys.modules[_SPEC.name] = guard
 _SPEC.loader.exec_module(guard)
 
 QUEUE_ROW = (
-    "| 066 | ACCEPTED | `cluster-018` · Forty Winks, Milemont | Formal cluster | "
+    "| 066 | ACCEPTED | `cluster-018` · `com.richmat.fortywinks`, `com.richmat.milemont` | "
+    "Formal cluster | "
     f"MERGED · [PR #825]({guard.PR_URL}825) |"
 )
 
@@ -61,7 +62,12 @@ COMPACTED = "Reverie041 PR720 MERGED00:26:37Z;041+1completion.UserPR720-only clo
             "write each PR",
         ),
         (436, lambda b: b.replace(f"[PR #825]({guard.PR_URL}825)", "merged"), "links its PR"),
-        (436, lambda b: b.replace(" · Forty Winks, Milemont", ""), "its apps"),
+        (436, lambda b: b.replace(" · `com.richmat.fortywinks`", " · Forty Winks,"), "`package`"),
+        (
+            436,
+            lambda b: b.replace(" · `com.richmat.fortywinks`, `com.richmat.milemont`", ""),
+            "`package`",
+        ),
     ],
 )
 def test_journal_style_edits_fail(number: int, edit, rule: str) -> None:
@@ -143,7 +149,10 @@ def test_queue_view_mirrors_436_and_keeps_members() -> None:
     page = view.render(body, OLD_VIEW)
     assert f'<a href="{guard.PR_URL}825" target="_blank">PR #825</a>' in page
     assert MEMBERS in page and "1/1 accepted" in page and "79 merged" in page
-    assert '<code>cluster-018</code><span class="apps">Forty Winks, Milemont</span>' in page
+    assert (
+        '<code>cluster-018</code><span class="apps"><code>com.richmat.fortywinks</code>, '
+        "<code>com.richmat.milemont</code></span>"
+    ) in page
     assert "Run journal" not in page and "stale" not in page
 
 
