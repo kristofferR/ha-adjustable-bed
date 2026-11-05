@@ -116,7 +116,6 @@ listed so the gap is visible until each converts.
 
 | Step | Questions |
 |---|---|
-| `logicdata_app` | App, command family, layout, transport and light |
 | `malouf_app` | App, model, transport and primary controller |
 | `limoss_remote` | Product, light, massage, reversals and remote theme |
 | `gmmotor` | Catalog product, suggested from the Bluetooth name, and side |
