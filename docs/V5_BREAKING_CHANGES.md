@@ -130,7 +130,7 @@ These are additions. Existing entities keep their names, states and attributes.
 | `hold_lease_mode` attribute (`stream` or `latched`) | Covers, held buttons and combined paired controls | Only on beds that declare a renewable hold, listed under [Behavior Changes](#behavior-changes). A combined paired control carries it only when both sides declare the same mode |
 | `hold_lease_motor` attribute | Same entities, with the `timed_move` motor they hold | Together with `hold_lease_mode`, where the control maps to a `timed_move` motor |
 | `hold_owner` and `hold_generation` fields | `timed_move` and `hold_control` | Always listed. Beds that declare no renewable hold reject them before anything moves; calls without them behave as before. See [Renewable holds](SERVICES.md#renewable-holds) |
-| **Estimated positions** menu | **Configure**, one entry per side on a paired bed | Only on beds whose protocol supports [estimated positions](ESTIMATED_POSITIONS.md) |
+| **Estimated positions** menu | **Configure**, one entry per side on a paired bed with two addresses | Only on beds whose protocol supports [estimated positions](ESTIMATED_POSITIONS.md). Not on single-address paired beds yet |
 | Estimated position, set-reference, "I used the remote", saved-position and "Saved positions" entities | `number`, `button` and `sensor` | Only after you enable estimated positions for a motor |
 | Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
 | **Tap to start and stop movement** card option (`tap_to_move`) | Dashboard card editor, **Motors** | Off by default. With it on, a tap on a motor arrow starts the motor and the next tap stops it ([#609](https://github.com/kristofferR/ha-adjustable-bed/issues/609)). See [Tap to move](../README.md#tap-to-move) |
@@ -190,7 +190,10 @@ Customatic, whose concurrent motors are still under review. See the
 [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
 
 **Calibrated position estimates ([#601](https://github.com/kristofferR/ha-adjustable-bed/issues/601)).**
-Opt-in, per motor, for OCTO Standard and the Richmat remote-code profiles. Beds
+Opt-in, per motor, for OCTO Standard and the Richmat remote-code profiles. A
+paired bed with two addresses calibrates each side on its own. Single-address
+paired beds do not support estimates yet; see
+[Supported Beds](ESTIMATED_POSITIONS.md#supported-beds) for why. Beds
 where you do not enable it are unaffected. **Configure > Estimated positions**
 calibrates each motor's travel times. With it enabled, the integration times
 the moves it sends and never sends a frame of its own. Presets and memory

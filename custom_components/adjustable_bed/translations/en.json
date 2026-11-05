@@ -1507,6 +1507,7 @@
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
       "single_address_pairing_unsupported": "This bed's current Bluetooth protocol does not expose paired-side controls.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
+      "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
       "logicdata_app_family_layout": "For MOTIONrelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
