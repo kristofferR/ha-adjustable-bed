@@ -352,6 +352,9 @@ show_lighting: false
 show_connection: false        # compact side statuses, not connection buttons
 animate: true
 navigation_path: /dashboard-bedroom/bed  # optional local HA path
+open_dialog: false            # optional, open the full card in a dialog instead
+dialog_config:                # optional, full-card options for the dialog only
+  show_massage: false
 ```
 
 Omit `compact_actions` for Flat plus the first available memory recall (or another
@@ -359,6 +362,9 @@ preset when no memory recall exists). Only actions supported by the selected tar
 appear; entity names and icons are preserved. Compact controls are off by default
 except for these quick actions. The other `show_*` sections and `section_order`
 apply to the full layout. Memory saving and position synchronization stay there.
+
+The optional percentage and lumbar graphics and the full card in a dialog are
+described in [Dashboard Card Graphics and Dialog](docs/CONFIGURATION.md#dashboard-card-graphics-and-dialog).
 
 For frontend development, run `bun run check`, `bun test`, and `bun run test:browser`
 from `custom_components/adjustable_bed/frontend`. The browser checks use synthetic
@@ -401,6 +407,9 @@ section_order: [motors, memory, lighting]  # optional, render order (default ord
 memory_save: true              # optional, show the "Save…" button (default: true)
 memory_slots: [1, 2, 3]        # optional, which memory positions to show (default: all)
 tap_to_move: false             # optional, a tap starts a motor and the next tap stops it (default: false)
+show_percentage_graphic: false # optional, draw percentage positions as a schematic pose (default: false)
+show_lumbar_graphic: false     # optional, draw a separate lumbar section (default: false)
+show_graphic_labels: true      # optional, labels beneath the bed graphic (default: true)
 # Each section defaults to shown; set to false to hide:
 show_graphic: true
 show_motors: true

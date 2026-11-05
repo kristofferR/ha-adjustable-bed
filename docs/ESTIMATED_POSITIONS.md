@@ -126,7 +126,9 @@ estimates tracking. A Home Assistant restart does not.
 The Adjustable Bed card shows estimates in its **Position** rows as "≈ 42%", with
 an **Estimated** chip on the section heading. When you have set a maximum angle
 for the back or legs in the options, the bed graphic draws the estimate dashed
-and translucent, so it never looks like measured feedback.
+and translucent, so it never looks like measured feedback. With the card's
+[percentage graphic](CONFIGURATION.md#dashboard-card-graphics-and-dialog) on,
+it also draws an estimate without a maximum angle, labeled "≈ 42%".
 
 An alert at the top of the card explains when an estimate cannot be trusted:
 
