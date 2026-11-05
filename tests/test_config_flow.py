@@ -3059,17 +3059,9 @@ class TestManualFlow:
     async def test_two_tier_okin_choice_sets_up_nectar_move(
         self, hass: HomeAssistant, enable_custom_integrations
     ) -> None:
-        """The app is findable by name in the Okin two-tier setup path."""
+        """The app is findable by name in the app question."""
         del enable_custom_integrations
-        from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
-
-        variants = ACTUATOR_GROUPS["okin"]["variants"]
-        assert variants is not None
-        nectar_index = next(
-            index
-            for index, variant in enumerate(variants)
-            if variant.get("variant") == OKIN_CST_VARIANT_NECTAR_MOVE
-        )
+        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
@@ -3081,14 +3073,10 @@ class TestManualFlow:
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={CONF_ADDRESS: "select_by_app"}
             )
+            picker = result["data_schema"].schema[CONF_BED_TYPE]
+            assert "Nectar Move" in picker.rows()
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={CONF_BED_TYPE: "not_listed"}
-            )
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={"actuator_brand": "okin"}
-            )
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={"variant": str(nectar_index)}
+                result["flow_id"], user_input={CONF_BED_TYPE: "Nectar Move"}
             )
 
         assert result["step_id"] == "manual_entry"

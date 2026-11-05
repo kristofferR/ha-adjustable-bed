@@ -1065,6 +1065,47 @@ class _SearchableSelect(SelectSelector):
 
 
 _APP_NOT_LISTED: Final = "not_listed"
+_FAMILY_NOT_SURE: Final = "not_sure"
+
+
+def _family_rows() -> list[tuple[str, str]]:
+    """Return the brand list's rows, as (choice, label), from the bed-type list.
+
+    Each brand group gives the rows that open a family question, as the list
+    shows its routes; a group with one bed type gives that row, and a group
+    with no family question gives its own rows.
+    """
+    listed = {choice: label for label, choice in _bed_type_selector(None).rows().items()}
+    by_label = {label: choice for choice, label in listed.items()}
+
+    def row_for(choice: str) -> str | None:
+        if choice in listed:
+            return choice
+        # A family route is reached through its family's row.
+        return by_label.get(str(_bed_type_selector(choice).shown(choice)))
+
+    rows: dict[str, str] = {}
+    for key, group in ACTUATOR_GROUPS.items():
+        variants = group["variants"]
+        if variants is None:
+            picks = [row_for(SINGLE_TYPE_GROUPS[key])]
+        else:
+            routes = [
+                row_for(bed_type_choice(variant["type"], variant.get("variant")))
+                for variant in variants
+            ]
+            families = [
+                route
+                for route in routes
+                if route is not None
+                and route in _APP_SETUP_STEPS
+                and _APP_SETUP_STEPS[route] in _FAMILY_STEPS
+            ]
+            picks = families or routes
+        for choice in picks:
+            if choice is not None:
+                rows.setdefault(choice, listed[choice])
+    return sorted(rows.items(), key=lambda row: row[1].lower())
 
 
 def _family_name(info: BluetoothServiceInfoBleak) -> str:
@@ -3592,11 +3633,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
             )
             incoming, variant = self._keeson_incoming
-            if self._migration is None and (
-                (incoming, variant) in APP_VARIANT_CHOICES or self._brand_named(incoming, variant)
-            ):
-                # An app row, or the exact route a brand list named, already
-                # answered the question.
+            if self._migration is None and (incoming, variant) in APP_VARIANT_CHOICES:
+                # An app row already answered the question.
                 return await self._async_continue_keeson_route()
         incoming, _variant = self._keeson_incoming
         choice = (user_input or {}).get("choice")
@@ -3674,16 +3712,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if bed_type in _APP_SETUP_STEPS and bed_type not in KEESON_FAMILY.bed_types:
             # Its own app step owns the layout.
             return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
-        if variant in _KEESON_RESTONIC and not self._brand_named(bed_type, variant):
+        if variant in _KEESON_RESTONIC:
             return await self.async_step_keeson_restonic()
         return await self._async_ask_keeson_route()
-
-    def _brand_named(self, bed_type: str, variant: str | None) -> bool:
-        """Whether a brand list named exactly this staged route, which answers its question."""
-        return self._brand_app_choice is not None and (bed_type, variant) == (
-            self._selected_bed_type,
-            self._selected_protocol_variant,
-        )
 
     async def _async_ask_keeson_route(self) -> ConfigFlowResult:
         """Ask the staged route's declared questions, such as an app screen's motor count."""
@@ -4256,12 +4287,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         guided = self._migration_family is not None and self._migration_family.key == step_id
         if self._app_family_incoming is None:
             self._app_family_incoming = data[CONF_BED_TYPE]
-            # An app picked from a brand's list, or arriving from another
-            # family, already answered.
-            if not guided and (
-                self._app_family_incoming != row
-                or self._brand_app_choice == self._app_family_incoming
-            ):
+            # An app's own row, or a route arriving from another family,
+            # already answered.
+            if not guided and self._app_family_incoming != row:
                 return await self._async_continue_app_family(apps)
         choice = (user_input or {}).get("choice")
         if choice == "keep" and guided:
@@ -4543,11 +4571,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._jensen_incoming: tuple[str, str] | None = None
         self._app_family_incoming: str | None = None
         # For two-tier actuator selection
-        self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
         # The app the user picked from a brand's app list. A refitted form also
         # sets _selected_bed_type, so only this one means an app was chosen.
-        self._brand_app_choice: str | None = None
         # The step that continues once the app is chosen, when the device came first.
         self._app_after_device: Literal["manual_config", "manual_entry"] | None = None
         self._selected_protocol_variant: str | None = None
@@ -5628,7 +5654,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if address == "manual":
                 _LOGGER.debug("User chose to pick any Bluetooth device")
                 # The device comes first here; the app question follows it.
-                self._selected_actuator = None
                 self._selected_bed_type = None
                 self._selected_protocol_variant = None
                 return await self.async_step_manual()
@@ -5806,7 +5831,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is not None:
             choice = picker(user_input[CONF_BED_TYPE])
             if choice == _APP_NOT_LISTED:
-                return await self.async_step_select_actuator()
+                return await self.async_step_select_family()
             bed_type, variant = resolve_bed_type_choice(choice)
             self._selected_bed_type = bed_type
             self._selected_protocol_variant = variant
@@ -5988,88 +6013,36 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             errors=errors,
         )
 
-    async def async_step_select_actuator(
+    async def async_step_select_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Select actuator brand from label (first tier of two-tier selection)."""
-        if user_input is not None:
-            selected = user_input["actuator_brand"]
-            group = ACTUATOR_GROUPS[selected]
+        """Ask which brand is on the bed, when the app is not listed or not known.
 
-            if group["variants"] is not None:
-                # Has variants - go to variant selection
-                self._selected_actuator = selected
-                return await self.async_step_select_variant()
-            else:
-                # Single protocol - go directly to device selection
-                self._selected_bed_type = SINGLE_TYPE_GROUPS[selected]
-                self._selected_protocol_variant = None
-                return await self._async_after_app_choice()
-
-        # Build options for actuator brand selection
-        options: list[SelectOptionDict] = [
-            SelectOptionDict(
-                value=key,
-                label=f"{group['display']} - {group['description']}",
-            )
-            for key, group in ACTUATOR_GROUPS.items()
-        ]
-
-        return self.async_show_form(
-            step_id="select_actuator",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("actuator_brand"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=options,
-                            mode=SelectSelectorMode.DROPDOWN,
-                        )
-                    )
-                }
-            ),
+        Each row is a bed-type list row: a family row names its apps and asks
+        the family's question, and a brand without one names its own app or bed.
+        """
+        not_sure = await self._get_config_translation(
+            "step.select_family.data.not_sure",
+            "Not sure: run diagnostics or browse unsupported devices",
         )
-
-    async def async_step_select_variant(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Select variant within actuator brand (second tier of two-tier selection)."""
-        assert self._selected_actuator is not None
-        group = ACTUATOR_GROUPS[self._selected_actuator]
-        variants = group["variants"]
-        assert variants is not None
-
+        picker = _SearchableSelect(
+            [
+                *(SelectOptionDict(value=choice, label=label) for choice, label in _family_rows()),
+                SelectOptionDict(value=_FAMILY_NOT_SURE, label=not_sure),
+            ]
+        )
         if user_input is not None:
-            selected_idx = int(user_input["variant"])
-            variant = variants[selected_idx]
-            self._selected_bed_type = variant["type"]
-            self._selected_protocol_variant = variant.get("variant")
-            self._brand_app_choice = variant["type"]
+            choice = picker(user_input[CONF_BED_TYPE])
+            if choice == _FAMILY_NOT_SURE:
+                self._app_after_device = None
+                return await self.async_step_diagnostic()
+            bed_type, variant = resolve_bed_type_choice(choice)
+            self._selected_bed_type = bed_type
+            self._selected_protocol_variant = variant
             return await self._async_after_app_choice()
-
-        # Build options for variant selection
-        options: list[SelectOptionDict] = [
-            SelectOptionDict(
-                value=str(i),
-                label=f"{v['label']} - {v['description']}",
-            )
-            for i, v in enumerate(variants)
-        ]
-
         return self.async_show_form(
-            step_id="select_variant",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("variant"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=options,
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={
-                "actuator": group["display"],
-            },
+            step_id="select_family",
+            data_schema=vol.Schema({vol.Required(CONF_BED_TYPE): picker}),
         )
 
     async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

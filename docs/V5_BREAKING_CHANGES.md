@@ -232,7 +232,9 @@ Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pu
 - The first screen offers **Set up by app or remote** instead of **Select by
   actuator brand**, and **Pick any Bluetooth device** instead of **Show all BLE
   devices**. Both ask which app controls the bed, from the same searchable list
-  as the bed-type field; the brand list is the app question's last answer.
+  as the bed-type field. The app question's last answer asks which brand is
+  on the bed, listing each family with its apps instead of the former brand
+  and variant steps, plus **Not sure** for diagnostics.
   Discovered beds are named with their family.
 
 - Setup is one form for every bed-type row. A bed type's own fields, such as
