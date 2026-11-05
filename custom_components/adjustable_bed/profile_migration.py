@@ -48,6 +48,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -56,6 +57,8 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LIMOSS,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
@@ -288,6 +291,18 @@ LOGICDATA_FAMILY: Final = ManagedFamily(
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _LOGICDATA_ROUTES,
 )
 
+# The Limoss Remote app needs its exact service and notifying command
+# characteristic, so a change to it checks the link first. The generic Limoss
+# route and FSM Relax write the shared command characteristic and switch
+# unchecked, as Configure switched them. Leaving enabled Limoss Remote
+# accessories sends the app's OFF commands before saving (config_flow).
+LIMOSS_FAMILY: Final = ManagedFamily(
+    key="limoss_family",
+    bed_types=frozenset({BED_TYPE_LIMOSS, BED_TYPE_LIMOSS_REMOTE, BED_TYPE_FSM_RELAX}),
+    route_keys=(),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_LIMOSS_REMOTE,
+)
+
 MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     VIBRADORM_FAMILY,
     JIECANG_FAMILY,
@@ -300,6 +315,7 @@ MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     JORDANS_FAMILY,
     MALOUF_FAMILY,
     LOGICDATA_FAMILY,
+    LIMOSS_FAMILY,
 )
 
 

@@ -89,6 +89,7 @@ from .const import (
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
+    CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
@@ -113,6 +114,7 @@ from .const import (
     CONF_PAIR_MODE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_REVERSE_MOTORS,
     CONF_SLEEPTRACKER_FOUNDATION,
     CONF_SLEEPTRACKER_PROCESSOR_TYPE,
     CONF_SLEEPTRACKER_RESTRICTED,
@@ -155,6 +157,7 @@ from .const import (
     MALOUF_MEMORY_SLOTS_AUTO,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     PAIR_MODE_SINGLE_ADDRESS,
+    PRODUCT_TYPES,
     RICHMAT_MH_BED_TYPES,
     SLEEPYS_ELITE_SELECTORS,
     STAR_ELEVATE_VARIANT_M1X12,
@@ -1090,6 +1093,18 @@ def _reverie_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     return REVERIE_MODEL_CHOICES
 
 
+def _limoss_remote_themes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .profiles.limoss import REMOTE_THEMES
+
+    return {theme: theme for theme in REMOTE_THEMES}
+
+
+def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .config_flow import _limoss_remote_errors as errors
+
+    return errors(dict(data))
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -1292,6 +1307,28 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
     },
+    # The Limoss Remote app's bed or chair, its local light and massage choices,
+    # reversals and artwork theme. The connected device supplies the key layout.
+    BED_TYPE_LIMOSS_REMOTE: _asking(
+        BED_TYPE_LIMOSS_REMOTE,
+        owns={
+            **{
+                key: value
+                for key, value in _BASE[BED_TYPE_LIMOSS_REMOTE].owns.items()
+                if key != CONF_HAS_MASSAGE
+            },
+            CONF_DISABLE_ANGLE_SENSING: True,
+        },
+        questions=(
+            Question(CONF_PRODUCT_TYPE, PRODUCT_TYPES),
+            Question(CONF_HAS_LIGHT, default=HAS_LIGHT_DEFAULTS[BED_TYPE_LIMOSS_REMOTE]),
+            Question(CONF_HAS_MASSAGE, default=False),
+            *(Question(key, default=False) for key in CONF_REVERSE_MOTORS),
+            Question(CONF_LIMOSS_REMOTE_THEME, _limoss_remote_themes, OPTIONAL),
+        ),
+        validate=_limoss_remote_errors,
+        derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
+    ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,

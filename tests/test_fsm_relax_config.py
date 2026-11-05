@@ -90,7 +90,9 @@ def test_profile_fields_schema_and_exact_options_validation():
     assert _fsm_relax_errors({**data(), const.CONF_REVERSE_MOTORS[0]: "yes"})
     assert const.BED_TYPE_FSM_RELAX not in const.BEDS_WITH_POSITION_FEEDBACK
     assert const.BED_TYPE_FSM_RELAX in const.BEDS_WITHOUT_ANGLE_FEEDBACK
-    assert const.BED_TYPE_FSM_RELAX in {option["value"] for option in get_bed_type_options()}
+    # The Limoss / Stawett row names the app; its question offers it.
+    rows = {option["value"]: option["label"] for option in get_bed_type_options()}
+    assert "FSM Relax" in rows[const.BED_TYPE_LIMOSS]
 
 
 @pytest.mark.parametrize(
@@ -227,7 +229,10 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
         submitted = {
             CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
             CONF_NAME: "App profile",
-            const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
+            # Typed setup picks the Limoss / Stawett row and answers its question.
+            const.CONF_BED_TYPE: (
+                const.BED_TYPE_LIMOSS if route == "manual" else const.BED_TYPE_FSM_RELAX
+            ),
             const.CONF_MOTOR_COUNT: 2,
             const.CONF_HAS_MASSAGE: False,
             const.CONF_DISABLE_ANGLE_SENSING: True,
@@ -239,6 +244,11 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
             for key in (CONF_ADDRESS, const.CONF_MOTOR_COUNT, const.CONF_HAS_MASSAGE, const.CONF_DISABLE_ANGLE_SENSING):
                 submitted.pop(key)
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input=submitted)
+        if route == "manual":
+            assert result["step_id"] == "limoss_family"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={"choice": "fsm_relax"}
+            )
         assert result["step_id"] == "fsm_relax"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={
             key: value for key, value in data().items() if key != const.CONF_BED_TYPE

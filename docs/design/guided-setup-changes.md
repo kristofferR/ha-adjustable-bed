@@ -82,5 +82,6 @@ release is recorded per family below, separately from the code change.
 | Customatic Clarity, Jerome's C, Remedy | Yes | The one command characteristic | Pending user reports after release |
 | Customatic Z-Series, Jordan's Serenity and Tranquil | Yes | The command and notification characteristics | Pending user reports after release |
 | Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers | Yes | The app's transport, chosen as the runtime chooses it; the receiver routes need none, since they correct each other from the services | Pending user reports after release |
+| Limoss Remote and FSM Relax apps, Stawett / older Limoss controls | Yes | Limoss Remote's service and notifying command characteristic; leaving its enabled light or massage first sends the app's OFF commands | Pending user reports after release |
 | Sleepy's Elite app, BOX15, BOX24, BOX25 | Yes | The control box's setup and response characteristics; each receiver route's command characteristic | Pending user reports after release |
 | LOGICDATA SimplicityFrame (SILVERmotion), MOTIONrelax phone and tablet, Sleep Smart bed base | Yes | SimplicityFrame's command characteristic after its bond; each app's selected transport | Pending user reports after release |

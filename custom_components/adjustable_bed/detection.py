@@ -725,6 +725,8 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_LOGICDATA,
         BED_TYPE_LOGICDATA_AIR_PUMP,
         BED_TYPE_REVERIE,
+        BED_TYPE_LIMOSS_REMOTE,
+        BED_TYPE_FSM_RELAX,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -757,6 +759,9 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_REMACRO: "Remacro: Slumberland, The Brick and Jerome's apps",
     BED_TYPE_REVERIE_NIGHTSTAND: (
         "Reverie: Nightstand app, Protocol 110 and Protocol 108 receivers"
+    ),
+    BED_TYPE_LIMOSS: (
+        "Limoss / Stawett: Limoss Remote and FSM Relax apps, Stawett and older Limoss controls"
     ),
 }
 

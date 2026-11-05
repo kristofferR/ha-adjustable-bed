@@ -21,7 +21,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS,
-    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
     BED_TYPE_OKIN_ORE,
@@ -275,9 +274,8 @@ async def test_switch_applies_the_app_through_the_options_flow(
 @pytest.mark.parametrize(
     ("bed_type", "choice"),
     [
-        # The app has settings only Configure collects.
-        (BED_TYPE_LIMOSS, BED_TYPE_LIMOSS_REMOTE),
         # The options flow refuses: no stored raw name resolves the model.
+        # (A Limoss review now opens the Limoss guided change instead.)
         (BED_TYPE_RICHMAT, BED_TYPE_RICHMAT_REVIVE),
     ],
 )

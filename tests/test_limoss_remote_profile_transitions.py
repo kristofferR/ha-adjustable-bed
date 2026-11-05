@@ -5,6 +5,7 @@ from copy import deepcopy
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.config_entries import SOURCE_RECONFIGURE
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.codec import limoss as codec
@@ -62,7 +63,10 @@ async def test_paired_conversion_away_requires_unpair_before_any_pending_change(
 
 
 @pytest.mark.parametrize("failure", [None, "error", "cancel"])
-async def test_leaving_remote_finishes_old_native_off_transaction_before_save(hass, failure):
+async def test_leaving_remote_finishes_old_native_off_transaction_before_save(
+    hass, enable_custom_integrations, failure
+):
+    """The guided change to the generic controls sends the app's OFF commands first."""
     coordinator = actual_coordinator(
         hass,
         **{
@@ -99,14 +103,20 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
                 await held.wait()
 
     client.write_gatt_char.side_effect = write
-    flow = AdjustableBedOptionsFlow(coordinator.entry)
-    flow.hass, flow.handler = hass, coordinator.entry.entry_id
+    manager = hass.config_entries.flow
     with patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload:
-        first = await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS})
-        assert first["type"] == "form" and coordinator.entry.data == before
+        first = await manager.async_init(
+            const.DOMAIN,
+            context={"source": SOURCE_RECONFIGURE, "entry_id": coordinator.entry.entry_id},
+        )
+        assert first["step_id"] == "limoss_family"
+        first = await manager.async_configure(first["flow_id"], {"choice": "generic"})
+        assert first["step_id"] == "migration_confirm" and coordinator.entry.data == before
         client.write_gatt_char.assert_not_awaited()
         if failure == "cancel":
-            save = asyncio.create_task(flow.async_step_settings({}))
+            save = asyncio.create_task(
+                manager.async_configure(first["flow_id"], {"confirm": True})
+            )
             try:
                 await asyncio.wait_for(entered.wait(), timeout=2)
                 save.cancel()
@@ -117,11 +127,11 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
                 save.cancel()
                 await asyncio.gather(save, return_exceptions=True)
         else:
-            result = await flow.async_step_settings({})
+            result = await manager.async_configure(first["flow_id"], {"confirm": True})
             if failure == "error":
                 assert result.get("errors") == {"base": "limoss_remote_feature_update_failed"}
             else:
-                assert result["type"] == "create_entry"
+                assert result["reason"] == "reconfigure_successful"
         if failure is not None:
             assert coordinator.entry.data == before
             assert controller.underbed_light and controller.massage

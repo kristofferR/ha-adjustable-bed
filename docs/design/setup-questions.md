@@ -103,7 +103,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `malouf_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `malouf_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `limoss_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
@@ -113,15 +113,6 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
 | `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
 | `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
-
-### Not converted yet
-
-These app steps ask plain questions a declaration could express. They stay
-listed so the gap is visible until each converts.
-
-| Step | Questions |
-|---|---|
-| `limoss_remote` | Product, light, massage, reversals and remote theme |
 
 ## Shared steps
 
@@ -177,6 +168,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
 | `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
 | `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
+| `limoss_remote` | Bed or chair, light, massage, the four reversals and the optional artwork theme; the connected device supplies its key layout. |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.

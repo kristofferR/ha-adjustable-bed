@@ -461,7 +461,12 @@
           "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
+          "motion_bed_movement": "Retained movement layout",
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -501,7 +506,8 @@
           "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
+          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
+          "limoss_remote_theme": "Optional: the artwork theme chosen in the Limoss Remote app, kept as a local preference. It changes no controls."
         },
         "sections": {
           "advanced": {
@@ -577,20 +583,6 @@
           "has_light": "Enable light controls",
           "has_massage": "Has massage feature",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "reverse_motor_1": "Reverse motor channel 1",
-          "reverse_motor_2": "Reverse motor channel 2",
-          "reverse_motor_3": "Reverse motor channel 3",
-          "reverse_motor_4": "Reverse motor channel 4"
-        }
-      },
-      "limoss_remote": {
-        "title": "Limoss Remote App Controls",
-        "description": "Select the product and local controls used in the Limoss Remote app. The connected device supplies its key layout and memory capacity. These settings do not measure hardware state.",
-        "data": {
-          "product_type": "Bed or chair",
-          "has_light": "Enable light controls",
-          "has_massage": "Has massage feature",
-          "limoss_remote_theme": "App artwork theme",
           "reverse_motor_1": "Reverse motor channel 1",
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
@@ -791,6 +783,13 @@
         "description": "Reverie bases use a Protocol 110 or a Protocol 108 receiver, and the receiver's Bluetooth service, not the app or name, tells them apart. Home Assistant could not see which service this bed advertises. Check it with a Bluetooth scanner app such as nRF Connect: Protocol 110 receivers advertise the Nightstand service `db801000-...`, Protocol 108 receivers the service `1b1d9641-...`.",
         "data": {
           "choice": "Receiver"
+        }
+      },
+      "limoss_family": {
+        "title": "Which app controls this Limoss receiver?",
+        "description": "Limoss Remote, FSM Relax and the older Limoss controls share the receiver's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone, or the older controls if you use none. Each has its own controls and memory format, and none is translated into another.",
+        "data": {
+          "choice": "App"
         }
       },
       "jiecang_legacy": {
@@ -1196,7 +1195,12 @@
           "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
+          "motion_bed_movement": "Retained movement layout",
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1291,7 +1295,12 @@
           "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout"
+          "motion_bed_movement": "Retained movement layout",
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -9351,6 +9360,14 @@
         "protocol_110": "Protocol 110 receiver (Nightstand service)",
         "protocol_108": "Protocol 108 receiver (older service)",
         "keep": "I don't know: keep the detected receiver"
+      }
+    },
+    "limoss_family_choice": {
+      "options": {
+        "limoss_remote": "Limoss Remote app: bed or chair layouts and eight local memories",
+        "fsm_relax": "FSM Relax app: bed or chair profile with app-labelled controls",
+        "generic": "No app: Stawett or older Limoss controls",
+        "keep": "Keep the current controls"
       }
     },
     "malouf_family_choice": {
