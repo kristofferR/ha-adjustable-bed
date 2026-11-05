@@ -50,6 +50,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import is_jensen_linon_name
 from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
+from tests.form_helpers import shown_markers
 
 HEAD = SVANE_HEAD_SERVICE_UUID
 FOOT = SVANE_FEET_SERVICE_UUID
@@ -312,11 +313,11 @@ async def test_bluetooth_setup_stores_the_app_profile(
         CONF_PROTOCOL_VARIANT: variant,
         CONF_DISCONNECT_AFTER_COMMAND: False,
     }
-    result = await flow.async_step_bluetooth_confirm(dict(submitted))
-    if variant == SVANE_VARIANT_JENSEN_LINON:
-        # Jensen LinOn uses the generic fields the Svane app form hid.
-        assert result["type"] == "form"
-        await flow.async_step_bluetooth_confirm(dict(submitted))
+    form = await flow.async_step_bluetooth_confirm()
+    # Jensen LinOn shows the generic fields the other Svane routes set themselves.
+    shown = shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_SVANE, CONF_PROTOCOL_VARIANT: variant})
+    assert (CONF_MOTOR_COUNT in shown) is (variant == SVANE_VARIANT_JENSEN_LINON)
+    await flow.async_step_bluetooth_confirm(dict(submitted))
 
     assert finish.await_args is not None
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected

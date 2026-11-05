@@ -14,7 +14,7 @@ A `SetupProfile` has:
 
 | Field | Meaning |
 |---|---|
-| `owns` | Each generic field the profile owns (`GENERIC_FIELDS`): a fixed value, applied when setup or Configure saves, or `SET_BY_PROFILE` when the profile derives it. No form shows an owned field. |
+| `owns` | Each generic field the profile owns (`GENERIC_FIELDS`): a fixed value, applied when setup or Configure saves, or `SET_BY_PROFILE` when the profile derives it. No form shows an owned field while that profile is chosen. |
 | `questions` | The `Question`s to ask, in order. |
 | `normalize` | Builds the staged setup from the previous one and the submitted answers, for answers that need cleaning or that clear other settings. |
 | `validate` | Errors by field for the staged setup with the answers applied. |
@@ -58,6 +58,30 @@ returns.
   `strings.json` label in the generic step (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
 
+## Generic forms
+
+The generic setup forms (`bluetooth_confirm`, `manual_config`, `manual_entry`)
+are drawn once for every bed-type row. Each field that belongs to some rows is
+a native conditional field on the bed-type field, listing both each row's label
+(what the picker submits) and its choice (what the API may submit):
+
+- a bed type's own settings (Octo PIN and motor count, Jensen PIN, Richmat
+  remote and RMControl product, Malouf layout and memory slots, CB24 side) show
+  only for its rows;
+- a generic field shows except for the rows whose profile owns it;
+- the Advanced route section shows only for the drawn bed type's generic rows.
+  Another bed type with several routes asks for them in the `route` step;
+- Svane's app profiles are asked on the form. For Svane rows, a generic field
+  hinges on that route field instead, which reads as absent for other rows.
+
+Defaults cannot follow a changed row, so a pulse field left at the default it
+was drawn with saves the chosen profile's default instead.
+
+Configure conditions owned generic fields, and the L&P app field, on its route
+field the same way. It still redraws after a bed-type change, and after a route
+change that alters the motor count choices or position feedback: those change
+defaults and the route list, which a field condition cannot.
+
 ## Dedicated steps
 
 A dedicated step remains only for what data cannot express, with its reason
@@ -68,6 +92,7 @@ recorded here as each family converts:
 | Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
+| `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
 
 ## Converted
 

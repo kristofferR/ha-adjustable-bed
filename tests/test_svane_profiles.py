@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.svane_state import get_svane_session
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.app_state_helpers import stored_app_state
+from tests.form_helpers import shown_markers
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_svane import make_controller, written
 
@@ -91,7 +92,7 @@ async def test_all_setup_forms_explicit_profile_without_unproven_layout_or_timin
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
     form = await getattr(flow, "async_step_" + step)()
-    fields = {m.schema for m in form["data_schema"].schema}
+    fields = set(shown_markers(form))
     assert CONF_PROTOCOL_VARIANT in fields
     assert not fields.intersection(
         {
@@ -334,7 +335,7 @@ async def test_paired_persistence_and_parent_to_standalone_migration_remain_targ
 
 
 @pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_changed_bed_type_rebuilds_hidden_generic_choices_before_entry(hass, step):
+async def test_another_bed_type_shows_the_generic_choices_svane_hides(hass, step):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
@@ -347,14 +348,10 @@ async def test_changed_bed_type_rebuilds_hidden_generic_choices_before_entry(has
     info.source = "auto"
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
-    await getattr(flow, "async_step_" + step)()
-    result = await getattr(flow, "async_step_" + step)(
-        {CONF_BED_TYPE: "okin_cst", CONF_ADDRESS: info.address, CONF_NAME: "Preserved input"}
-    )
-    assert result["type"] == "form"
-    assert CONF_MOTOR_COUNT in {m.schema for m in result["data_schema"].schema}
-    name_marker = next(m for m in result["data_schema"].schema if m.schema == CONF_NAME)
-    assert name_marker.description["suggested_value"] == "Preserved input"
+    form = await getattr(flow, "async_step_" + step)()
+    fields = shown_markers(form, **{CONF_BED_TYPE: "okin_cst"})
+    assert CONF_MOTOR_COUNT in fields
+    assert CONF_PROTOCOL_VARIANT not in fields
 
 
 @pytest.mark.parametrize(

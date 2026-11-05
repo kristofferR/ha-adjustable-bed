@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.config_flow import (
     _setup_routes,
 )
 from custom_components.adjustable_bed.detection import bed_type_label, get_bed_type_options
+from tests.form_helpers import shown_markers
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -59,8 +60,12 @@ def test_routes_are_the_familys_own_and_exclude_its_apps():
 async def test_fresh_forms_have_no_global_variant_field(hass, enable_custom_integrations):
     result = await _manual_entry(hass)
     assert result["step_id"] == "manual_entry"
-    assert const.CONF_PROTOCOL_VARIANT not in _fields(result)
-    assert "advanced" not in _fields(result)
+    assert const.CONF_PROTOCOL_VARIANT not in shown_markers(result)
+    assert "advanced" not in shown_markers(result)
+    # Svane's app profiles are the one route asked on the form itself.
+    assert const.CONF_PROTOCOL_VARIANT in shown_markers(
+        result, **{const.CONF_BED_TYPE: const.BED_TYPE_SVANE}
+    )
 
 
 async def test_generic_choice_asks_only_its_own_routes(hass, enable_custom_integrations):

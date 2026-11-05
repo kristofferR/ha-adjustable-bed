@@ -57,6 +57,7 @@ from custom_components.adjustable_bed.detection import (
     get_bed_type_options,
     resolve_bed_type_choice,
 )
+from tests.form_helpers import shown_markers
 
 
 def test_profiles_that_always_show_massage_hide_the_generic_choice() -> None:
@@ -126,7 +127,7 @@ def test_reverie_protocol_models_and_pairlink_credentials_are_side_owned() -> No
     } <= pairlink.keys
 
 
-async def test_options_redraw_when_a_variant_needs_hidden_fields(hass: HomeAssistant) -> None:
+async def test_options_show_the_fields_a_chosen_variant_needs(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
@@ -142,11 +143,13 @@ async def test_options_redraw_when_a_variant_needs_hidden_fields(hass: HomeAssis
     flow.handler = entry.entry_id
 
     form = await flow.async_step_settings()
-    assert CONF_HAS_MASSAGE not in {marker.schema for marker in form["data_schema"].schema}
-    redrawn = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY})
-    assert redrawn["type"] == "form"
-    assert CONF_HAS_MASSAGE in {marker.schema for marker in redrawn["data_schema"].schema}
-    saved = await flow.async_step_settings({CONF_HAS_MASSAGE: True})
+    assert CONF_HAS_MASSAGE not in shown_markers(form)
+    assert CONF_HAS_MASSAGE in shown_markers(
+        form, **{CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY}
+    )
+    saved = await flow.async_step_settings(
+        {CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY, CONF_HAS_MASSAGE: True}
+    )
     assert saved["type"] == "create_entry"
     assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_SANCTUARY
     assert entry.data[CONF_HAS_MASSAGE] is True

@@ -75,7 +75,8 @@
           "transport_proxy_pairing_warning": "Pairing over a proxy",
           "transport_all_busy": "No free Bluetooth connections",
           "transport_actual": "Connected over",
-          "transport_actual_differs": "Path differed from the prediction"
+          "transport_actual_differs": "Path differed from the prediction",
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "bed_type": "Auto-detected bed type. Change if detection was incorrect. Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
@@ -106,7 +107,8 @@
           "transport_proxy_pairing_warning": "⚠️ This bed needs Bluetooth pairing, and pairing over a proxy stores the bond on the proxy rather than on Home Assistant. If you later move the bed to a different proxy or to a Home Assistant adapter, you will have to pair again. Home Assistant also cannot remove a bond that lives on a proxy.",
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
-          "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted})."
+          "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         },
         "sections": {
           "advanced": {
@@ -152,7 +154,14 @@
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
+          "octo_pin": "Octo PIN",
+          "octo_motor_count_override": "OCTO motor count",
+          "jensen_pin": "Jensen PIN",
+          "richmat_remote": "Richmat remote",
+          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
+          "rmcontrol_side": "RMControl side",
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "bed_type": "Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
@@ -164,7 +173,14 @@
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
+          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         },
         "sections": {
           "advanced": {
@@ -194,7 +210,14 @@
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
+          "octo_pin": "Octo PIN",
+          "octo_motor_count_override": "OCTO motor count",
+          "jensen_pin": "Jensen PIN",
+          "richmat_remote": "Richmat remote",
+          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
+          "rmcontrol_side": "RMControl side",
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
@@ -207,7 +230,14 @@
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
+          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         },
         "sections": {
           "advanced": {
@@ -219,78 +249,6 @@
               "protocol_variant": "Only routes this bed type supports. Auto-detect, where offered, is right for most beds. An app chosen from the bed-type list sets its route itself."
             }
           }
-        }
-      },
-      "manual_octo": {
-        "title": "Octo PIN Configuration",
-        "description": "Enter the PIN for your Octo bed. Leave empty if your bed doesn't require a PIN.",
-        "data": {
-          "octo_pin": "Octo PIN"
-        },
-        "data_description": {
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured."
-        }
-      },
-      "manual_richmat": {
-        "title": "Richmat Remote Configuration",
-        "description": "Select the remote code for your Richmat bed.",
-        "data": {
-          "richmat_remote": "Richmat remote",
-          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
-          "rmcontrol_side": "RMControl side"
-        },
-        "data_description": {
-          "richmat_remote": "Use 'auto' unless you know your remote code.",
-          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
-          "rmcontrol_side": "Use the side selected in RMControl."
-        }
-      },
-      "manual_malouf": {
-        "title": "Malouf/Lucid Actuator Configuration",
-        "description": "Select the physical controls on your Malouf/Lucid remote.",
-        "data": {
-          "malouf_layout": "Malouf/Lucid actuator layout",
-          "malouf_memory_slots": "Malouf/Lucid memory positions"
-        },
-        "data_description": {
-          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
-          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts."
-        }
-      },
-      "bluetooth_octo": {
-        "title": "Octo PIN Configuration",
-        "description": "Enter the PIN for your Octo bed. Leave empty if your bed doesn't require a PIN.",
-        "data": {
-          "octo_pin": "Octo PIN"
-        },
-        "data_description": {
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured."
-        }
-      },
-      "bluetooth_richmat": {
-        "title": "Richmat Remote Configuration",
-        "description": "Select the remote code for your Richmat bed.",
-        "data": {
-          "richmat_remote": "Richmat remote",
-          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
-          "rmcontrol_side": "RMControl side"
-        },
-        "data_description": {
-          "richmat_remote": "Use 'auto' unless you know your remote code.",
-          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
-          "rmcontrol_side": "Use the side selected in RMControl."
-        }
-      },
-      "bluetooth_malouf": {
-        "title": "Malouf/Lucid Actuator Configuration",
-        "description": "Select the physical controls on your Malouf/Lucid remote.",
-        "data": {
-          "malouf_layout": "Malouf/Lucid actuator layout",
-          "malouf_memory_slots": "Malouf/Lucid memory positions"
-        },
-        "data_description": {
-          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
-          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts."
         }
       },
       "bluetooth_pairing": {

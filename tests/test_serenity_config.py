@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import _create_from_registry
 from custom_components.adjustable_bed.detection import detect_bed_type, get_bed_type_options
+from tests.form_helpers import shown_markers
 from tests.test_controller_contract import _FactoryCoordinator
 
 
@@ -85,7 +86,7 @@ async def test_setup_hides_unproven_motor_count_and_fixed_refresh_delay(hass, st
     flow._async_transport_note = AsyncMock(return_value="")
     form = await getattr(flow, f"async_step_{step}")()
     assert form["type"] == "form"
-    markers = {marker.schema for marker in form["data_schema"].schema}
+    markers = shown_markers(form)
     assert CONF_MOTOR_COUNT not in markers
     assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
@@ -181,16 +182,12 @@ async def test_switching_to_the_app_ignores_fields_it_sets_itself(hass, step):
 
 
 @pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-@pytest.mark.parametrize("shown,requested", [(BED_TYPE_SERENITY, BED_TYPE_OCTO)])
-async def test_changing_setup_profile_restores_choices_and_keeps_entered_values(
-    hass, step, shown, requested
-):
+async def test_one_form_shows_each_selected_profiles_fields(hass, step):
     from unittest.mock import AsyncMock
-
-    from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import (
+        BED_TYPE_LINAK,
         CONF_BED_TYPE,
         CONF_MOTOR_COUNT,
         CONF_MOTOR_PULSE_DELAY_MS,
@@ -200,8 +197,8 @@ async def test_changing_setup_profile_restores_choices_and_keeps_entered_values(
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._selected_bed_type = shown
-    flow._disambiguated_bed_type = shown
+    flow._selected_bed_type = BED_TYPE_SERENITY
+    flow._disambiguated_bed_type = BED_TYPE_SERENITY
     info = MagicMock()
     info.name = "OKIN-003444"
     info.address = "AA:BB:CC:DD:EE:FF"
@@ -210,30 +207,27 @@ async def test_changing_setup_profile_restores_choices_and_keeps_entered_values(
     info.source = "auto"
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
-    submitted = {
-        CONF_BED_TYPE: requested,
-        CONF_NAME: "Edited bed",
-        CONF_ADDRESS: "11:22:33:44:55:66",
-    }
-    form = await getattr(flow, f"async_step_{step}")(submitted)
-    assert form["type"] == "form"
-    assert form["step_id"] == step
-    markers = {marker.schema: marker for marker in form["data_schema"].schema}
-    if requested == BED_TYPE_OCTO:
-        assert CONF_MOTOR_COUNT not in markers
-        if step == "bluetooth_confirm":
-            assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
-        else:
-            # Manual entry collects Octo settings in its dedicated follow-up.
-            assert CONF_OCTO_MOTOR_COUNT_OVERRIDE not in markers
-    else:
-        assert (CONF_MOTOR_COUNT in markers) is (requested != BED_TYPE_SERENITY)
-    assert (CONF_MOTOR_PULSE_DELAY_MS in markers) is (requested != BED_TYPE_SERENITY)
-    bed_type = markers[CONF_BED_TYPE]
-    shown = bed_type.description["suggested_value"]
-    assert form["data_schema"].schema[bed_type](shown) == requested
-    assert markers[CONF_NAME].description["suggested_value"] == "Edited bed"
-    if step == "manual_entry":
-        assert markers[CONF_ADDRESS].description["suggested_value"] == "11:22:33:44:55:66"
-    assert flow._manual_data is None
-    assert flow._pending_entry is None
+    form = await getattr(flow, f"async_step_{step}")()
+
+    octo = shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_OCTO})
+    assert CONF_MOTOR_COUNT not in octo
+    assert CONF_OCTO_MOTOR_COUNT_OVERRIDE in octo
+    assert CONF_MOTOR_PULSE_DELAY_MS in octo
+    linak = shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_LINAK})
+    assert {CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS} <= set(linak)
+    assert CONF_OCTO_MOTOR_COUNT_OVERRIDE not in linak
+
+
+def test_an_untouched_pulse_default_follows_the_chosen_profile():
+    from custom_components.adjustable_bed.config_flow import _take_selected_pulse_defaults
+    from custom_components.adjustable_bed.const import (
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+    )
+
+    untouched = {CONF_MOTOR_PULSE_COUNT: "10", CONF_MOTOR_PULSE_DELAY_MS: "100"}
+    _take_selected_pulse_defaults(untouched, (10, 100), (3, 50))
+    assert untouched == {CONF_MOTOR_PULSE_COUNT: "3", CONF_MOTOR_PULSE_DELAY_MS: "50"}
+    edited = {CONF_MOTOR_PULSE_COUNT: "7", CONF_MOTOR_PULSE_DELAY_MS: "100"}
+    _take_selected_pulse_defaults(edited, (10, 100), (3, 50))
+    assert edited == {CONF_MOTOR_PULSE_COUNT: "7", CONF_MOTOR_PULSE_DELAY_MS: "50"}

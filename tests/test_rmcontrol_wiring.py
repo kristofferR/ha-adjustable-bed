@@ -397,26 +397,17 @@ async def test_light_without_reported_color_uses_power_only(
     ctrl.set_light_color.assert_not_awaited()
 
 
-@pytest.mark.parametrize("step", ["manual_richmat", "bluetooth_richmat"])
 @pytest.mark.parametrize("variant", ["prefix55", "prefixaa", "auto", "nordic", "wilinke"])
-async def test_initial_product_followup_validates_transport(
-    hass: HomeAssistant, step: str, variant: str
-) -> None:
-    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
-    from custom_components.adjustable_bed.const import CONF_PROTOCOL_VARIANT
+def test_initial_product_answer_validates_transport(variant: str) -> None:
+    from custom_components.adjustable_bed.config_flow import _bed_specific_errors
+    from custom_components.adjustable_bed.const import BED_TYPE_RICHMAT, CONF_PROTOCOL_VARIANT
 
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow._manual_data = {CONF_PROTOCOL_VARIANT: variant}
-    original = dict(flow._manual_data)
-    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    result = await getattr(flow, "async_step_" + step)({CONF_RMCONTROL_PRODUCT: "A0RM"})
-    if variant.startswith("prefix"):
-        assert result["errors"] == {"base": "invalid_variant_for_bed_type"}
-        assert flow._manual_data == original
-        flow._finish_with_verify.assert_not_awaited()
-    else:
-        flow._finish_with_verify.assert_awaited_once()
+    errors = _bed_specific_errors(
+        {CONF_RMCONTROL_PRODUCT: "A0RM", CONF_PROTOCOL_VARIANT: variant}, BED_TYPE_RICHMAT
+    )
+    assert errors == (
+        {"base": "invalid_variant_for_bed_type"} if variant.startswith("prefix") else {}
+    )
 
 
 @pytest.mark.parametrize("domain", ["sensor", "binary_sensor", "button"])
