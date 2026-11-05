@@ -173,7 +173,7 @@
       "code": [
         "custom_components/adjustable_bed/motomotion_profile.py::Profile",
         "custom_components/adjustable_bed/motomotion_profile.py::eligible",
-        "custom_components/adjustable_bed/config_flow.py::_normalize_motomotion_data",
+        "custom_components/adjustable_bed/setup_questions.py::_motomotion_errors",
         "custom_components/adjustable_bed/controller_factory.py::create_controller",
         "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.memory_slot_count",
         "custom_components/adjustable_bed/pairing.py::supports_single_address_pairing",
@@ -7603,6 +7603,7 @@
       "resolution": "Register only HA-valid SOFA*, BT201*, MOTO* name hints. Exact case-sensitive contains/length/Profile predicates are unchanged. Prefixed names reach automatic discovery through existing advertised service hints, without inferring an app from transport; name-only prefixed devices remain selectable via Show all BLE devices/manual setup with their exact native name. This is an explicit HA host-registration adaptation, not a claim that app contains rules are prefixes.",
       "code": [
         "custom_components/adjustable_bed/manifest.json",
+        "custom_components/adjustable_bed/discovery_hints/motomotion.py",
         "custom_components/adjustable_bed/detection.py::detect_bed_type_detailed",
         "custom_components/adjustable_bed/config_flow.py::async_step_manual"
       ],

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.motomotion import MotoMotionController
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
@@ -299,25 +299,27 @@ async def test_setup_step_and_options_ownership_use_same_identity_validation(has
     )
     from custom_components.adjustable_bed.config_flow import (
         AdjustableBedConfigFlow,
-        _add_motomotion_schema_fields,
         _name_rule_setup_name,
-        _normalize_motomotion_data,
     )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
 
+    # The generic question step asks the exact name and checks it as the app does.
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow._manual_data = {CONF_BED_TYPE: "motomotion", CONF_NAME: "A renamed chair"}
-    result = await flow.async_step_motomotion({CONF_BLE_DEVICE_NAME: "MOTO"})
-    assert result["type"] == "form" and result["errors"] == {"base": "motomotion_profile"}
+    result = await flow.async_step_profile_questions({CONF_BLE_DEVICE_NAME: "MOTO"})
+    assert result["type"] == "form"
+    assert result["errors"] == {CONF_BLE_DEVICE_NAME: "motomotion_profile"}
+    profile = setup_profile("motomotion")
+    assert profile is not None and profile.validate is not None
+    assert {question.key for question in profile.questions} == {CONF_BLE_DEVICE_NAME}
     values = {CONF_BED_TYPE: "motomotion", CONF_BLE_DEVICE_NAME: "SOFA000001S000H"}
-    _normalize_motomotion_data(values)
-    assert values["disable_angle_sensing"] is True and values["has_massage"] is False
+    assert profile.validate(values) == {}
+    settled = profile.settled(values)
+    assert settled["disable_angle_sensing"] is True and settled["has_massage"] is False
     assert _name_rule_setup_name("motomotion", "SOFA000001S000H") == {
         CONF_BLE_DEVICE_NAME: "SOFA000001S000H"
     }
-    schema = {}
-    _add_motomotion_schema_fields(schema, values)
-    assert {marker.schema for marker in schema} == {CONF_BLE_DEVICE_NAME}
     assert CONF_BLE_DEVICE_NAME in per_side_profile("motomotion", None).keys
     assert "has_massage" in hidden_generic_fields("motomotion", None)
 
@@ -714,6 +716,9 @@ async def test_options_single_address_conversion_and_revert_preserve_profile(
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    # Setup migrates the entry to schema 5, which records its profile id.
+    assert entry.data["profile_id"] == "motomotion"
+    original = dict(entry.data)
     options = await hass.config_entries.options.async_init(entry.entry_id)
     assert options["type"] == FlowResultType.MENU
     assert ("pair_sides" in options["menu_options"]) is side_name
