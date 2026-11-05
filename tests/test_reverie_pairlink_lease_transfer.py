@@ -148,7 +148,7 @@ async def test_trusted_absorbed_local_leases_transfer_and_preserve_side_ids(
             assert coordinator.entry.data.get("pairlink_role") == "central"
             return True
         monkeypatch.setattr(AdjustableBedCoordinator, "async_connect", connect_central)
-    assert await async_setup_entry(hass, pair)
+    await async_setup_entry(hass, pair)
     parent = hass.data[DOMAIN][pair.entry_id]
     for i, side in enumerate(("left", "right")):
         child = parent.children[side]
@@ -171,7 +171,7 @@ async def test_trusted_absorbed_local_leases_transfer_and_preserve_side_ids(
         assert hass.data[DOMAIN]["_pairlink_local_profile_leases"][adapter] == f"{pair.entry_id}:{side}:{child.address}"
     for sock in sockets:
         assert _recv(sock) == b""
-    assert await async_unload_entry(hass, pair)
+    await async_unload_entry(hass, pair)
     await pair._async_process_on_unload(hass)
     assert active == {}
     for sock in sockets:
@@ -368,7 +368,7 @@ async def test_partial_registry_refusal_restores_only_its_source_and_keeps_commi
             raise RuntimeError("injected one-side registry refusal")
         return await real_remove(entry_id)
     monkeypatch.setattr(hass.config_entries, "async_remove", remove_one)
-    assert await async_setup_entry(hass, pair)
+    await async_setup_entry(hass, pair)
     parent = hass.data[DOMAIN][pair.entry_id]
     committed_side = "right" if retained_side == "left" else "left"
     assert set(parent.children) == {committed_side}
@@ -383,7 +383,7 @@ async def test_partial_registry_refusal_restores_only_its_source_and_keeps_commi
     assert dr.async_get(hass).async_get(devices[committed].id).config_entry_id == pair.entry_id
     leases = hass.data[DOMAIN]["_pairlink_local_profile_leases"]
     assert leases[SOURCES[retained][1]] == retained_original.entry.entry_id
-    assert await async_unload_entry(hass, pair)
+    await async_unload_entry(hass, pair)
     await pair._async_process_on_unload(hass)
     assert set(active) == {f"/org/bluez/{SOURCES[retained][1]}"}
     assert leases == {SOURCES[retained][1]: retained_original.entry.entry_id}

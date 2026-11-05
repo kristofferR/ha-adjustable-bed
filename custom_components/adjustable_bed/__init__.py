@@ -17,7 +17,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
@@ -316,8 +316,13 @@ def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
     return migrated
 
 
-async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Migrate config entries to newer schema versions."""
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Migrate config entries to newer schema versions.
+
+    Each step upgrades from one schema to the next, so an entry from any older
+    version walks the chain. Home Assistant refuses an entry from a newer major
+    version before calling this.
+    """
     _LOGGER.debug(
         "Migrating config entry %s for %s from version %s",
         entry.entry_id,
@@ -326,15 +331,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     original_version = (entry.version, entry.minor_version)
-    if entry.version > 5:
-        _LOGGER.error(
-            "Cannot migrate config entry %s for %s from unsupported future version %s",
-            entry.entry_id,
-            entry.title,
-            entry.version,
-        )
-        return False
-
     if entry.version <= 2:
         new_data = {**entry.data}
 
@@ -404,7 +400,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.entry_id,
         entry.version,
     )
-    return True
 
 
 def _async_sync_profile_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -551,7 +546,7 @@ async def _async_finish_entry_setup(
     coordinator: AdjustableBedCoordinator,
     *,
     schedule_initial_position_read: bool,
-) -> bool:
+) -> None:
     """Store coordinator, forward platforms, and finish setup."""
     hass.data[DOMAIN][entry.entry_id] = coordinator
     await async_setup_position_estimates(hass, entry.entry_id, [(coordinator.address, None)])
@@ -566,7 +561,6 @@ async def _async_finish_entry_setup(
         coordinator._schedule_position_hydration()
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
-    return True
 
 
 async def _async_setup_offline_diagnostic_entry(
@@ -574,7 +568,7 @@ async def _async_setup_offline_diagnostic_entry(
     entry: ConfigEntry,
     coordinator: AdjustableBedCoordinator,
     reason: str,
-) -> bool:
+) -> None:
     """Load a diagnostic entry even when initial BLE connection fails."""
     from .beds.diagnostic import DiagnosticBedController
 
@@ -586,7 +580,7 @@ async def _async_setup_offline_diagnostic_entry(
         reason,
     )
     coordinator._controller = DiagnosticBedController(coordinator)
-    return await _async_finish_entry_setup(
+    await _async_finish_entry_setup(
         hass,
         entry,
         coordinator,
@@ -599,7 +593,7 @@ async def _async_setup_offline_furnimove_entry(
     entry: ConfigEntry,
     coordinator: AdjustableBedCoordinator,
 ) -> bool:
-    """Expose the selected catalog layout even when the first link fails."""
+    """Expose the selected catalog layout when the first link fails; return whether it loaded."""
     # A failed cleanup must not turn a half-initialized live session into a
     # successfully loaded entry. This path requires a client-free controller.
     if coordinator.client is not None or coordinator.controller is not None:
@@ -614,9 +608,8 @@ async def _async_setup_offline_furnimove_entry(
         entry.title,
     )
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-    return await _async_finish_entry_setup(
-        hass, entry, coordinator, schedule_initial_position_read=False
-    )
+    await _async_finish_entry_setup(hass, entry, coordinator, schedule_initial_position_read=False)
+    return True
 
 
 def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
@@ -772,7 +765,7 @@ async def _async_release_absorbed_singles(
     return tuple(transferring)
 
 
-async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up a paired (Dual Bed 4.0) entry as one logical device."""
     # HA only clears pending flows matching the new entry's unique_id. A pair's
     # synthetic ID does not match its members' existing Bluetooth discovery cards.
@@ -798,11 +791,12 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     _maybe_cache_paired_remacro_models(hass, entry)
     _async_sync_profile_ids(hass, entry)
     if entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
-        return await _async_setup_single_address_paired_entry(hass, entry)
+        await _async_setup_single_address_paired_entry(hass, entry)
+        return
 
     children = _build_paired_children(hass, entry)
     if not children:
-        raise ConfigEntryNotReady("Paired bed has no child sides configured")
+        raise ConfigEntryError(translation_domain=DOMAIN, translation_key="paired_entry_has_no_sides")
 
     # Observe the first connection too: sequential pairing may disconnect one
     # side before platform setup, taking its live controller with it.
@@ -1046,7 +1040,6 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             hass, entry, (side for side in sides if isinstance(side, AdjustableBedCoordinator))
         )
         _LOGGER.info("Paired bed setup complete for %s", entry.title)
-        return True
     except BaseException:
         # Source removal commits registry ownership even if setup is cancelled.
         # Stop the failed pair without reclaiming committed or restored singles.
@@ -1071,7 +1064,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         raise
 
 
-async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up a left/right/both surface over one physical coordinator."""
     inner = AdjustableBedCoordinator(hass, entry)
     coordinator = SingleAddressPairedCoordinator(hass, entry, inner)
@@ -1102,8 +1095,8 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
     controller = inner.controller
     if controller is not None and not getattr(controller, "supports_single_address_pairing", True):
         await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(
-            "The connected protocol has no side selector and cannot expose paired sides"
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="single_address_pair_unsupported"
         )
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -1123,7 +1116,6 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
                 name=f"adjustable_bed_single_address_initial_read_{side}",
             )
     _LOGGER.info("Single-address paired bed setup complete for %s", entry.title)
-    return True
 
 
 def _bond_gated_unbonded(coordinator: AdjustableBedCoordinator) -> bool:
@@ -1208,7 +1200,7 @@ async def _maybe_create_pairing_issue_for(
     )
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     async_track_combine_beds_issue(hass, entry)
@@ -1219,7 +1211,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
     # entries (no pair_id) fall through to the unchanged logic below.
     if is_paired(entry.data):
-        return await _async_setup_paired_entry(hass, entry)
+        await _async_setup_paired_entry(hass, entry)
+        return
 
     await _async_maybe_reclassify_bedtech_qrrm_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)
@@ -1248,7 +1241,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data.get(CONF_BED_TYPE) == BED_TYPE_REVERIE_PAIRLINK
         and selected_pairlink_role == PAIRLINK_ROLE_PERIPHERAL
     ):
-        return await _async_setup_pairlink_local_entry(hass, entry, coordinator)
+        await _async_setup_pairlink_local_entry(hass, entry, coordinator)
+        return
 
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
@@ -1277,7 +1271,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not connected:
         await _maybe_create_pairing_issue_for(hass, coordinator)
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
-            return await _async_setup_offline_diagnostic_entry(
+            await _async_setup_offline_diagnostic_entry(
                 hass,
                 entry,
                 coordinator,
@@ -1287,10 +1281,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     else "device was not reachable during initial setup"
                 ),
             )
+            return
         if coordinator.bed_type == BED_TYPE_FURNIMOVE and await _async_setup_offline_furnimove_entry(
             hass, entry, coordinator
         ):
-            return True
+            return
         if initial_connection_timed_out:
             raise ConfigEntryNotReady(
                 f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
@@ -1323,7 +1318,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Keep the proven layout available to the combine wizard after idle disconnect.
     coordinator.cache_capability_controller()
     async_watch_remacro_fallback(hass, entry, (coordinator,))
-    return await _async_finish_entry_setup(
+    await _async_finish_entry_setup(
         hass,
         entry,
         coordinator,
@@ -1485,7 +1480,7 @@ async def _async_setup_pairlink_local_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     coordinator: AdjustableBedCoordinator,
-) -> bool:
+) -> None:
     """Start an explicitly selected Pairlink local profile without Bleak central."""
     from .beds.reverie_pairlink import ReveriePairlinkController
     from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
@@ -1562,7 +1557,7 @@ async def _async_setup_pairlink_local_entry(
         coordinator.cache_capability_controller()
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
         async_watch_remacro_fallback(hass, entry, (coordinator,))
-        return await _async_finish_entry_setup(
+        await _async_finish_entry_setup(
             hass,
             entry,
             coordinator,
@@ -1792,22 +1787,20 @@ async def _async_maybe_reclassify_bedtech_qrrm_entry(
     )
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Unload a config entry."""
     _LOGGER.info("Unloading Adjustable Bed integration for %s", entry.title)
 
     platforms = PAIRED_PLATFORMS if is_paired(entry.data) else PLATFORMS
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, platforms):
-        coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
-            entry.entry_id
-        )
-        _LOGGER.debug("Disconnecting from bed...")
-        await coordinator.async_shutdown()
-        # After shutdown settled any movement, so its travel is persisted.
-        await async_unload_position_estimates(hass, entry.entry_id)
-        _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
-
-    return unload_ok
+    await hass.config_entries.async_unload_platforms_or_raise(entry, platforms)
+    coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
+        entry.entry_id
+    )
+    _LOGGER.debug("Disconnecting from bed...")
+    await coordinator.async_shutdown()
+    # After shutdown settled any movement, so its travel is persisted.
+    await async_unload_position_estimates(hass, entry.entry_id)
+    _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
