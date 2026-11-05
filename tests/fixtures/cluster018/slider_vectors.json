@@ -1,0 +1,422 @@
+[
+  {
+    "app": "avocadoecobase",
+    "layout": "D1RM",
+    "progress": 0,
+    "resource": "com_msg_off3",
+    "expected": "6e01005ecd"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D1RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D1RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D1RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D1RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D1RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D9RM",
+    "progress": 0,
+    "resource": "msg_cancel_time",
+    "expected": "6e01008bfa"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D9RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D9RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D9RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D9RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "D9RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D1RM",
+    "progress": 0,
+    "resource": "com_msg_off3",
+    "expected": "6e01005ecd"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D1RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D1RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D1RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D1RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D1RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D9RM",
+    "progress": 0,
+    "resource": "msg_cancel_time",
+    "expected": "6e01008bfa"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D9RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D9RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D9RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D9RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "coastersleep",
+    "layout": "D9RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D1RM",
+    "progress": 0,
+    "resource": "com_msg_off3",
+    "expected": "6e01005ecd"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D1RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D1RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D1RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D1RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D1RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D9RM",
+    "progress": 0,
+    "resource": "msg_cancel_time",
+    "expected": "6e01008bfa"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D9RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D9RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D9RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D9RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "fortywinks",
+    "layout": "D9RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "milemont",
+    "layout": "D1RM",
+    "progress": 0,
+    "resource": "com_msg_off3",
+    "expected": "6e01005ecd"
+  },
+  {
+    "app": "milemont",
+    "layout": "D1RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "milemont",
+    "layout": "D1RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "milemont",
+    "layout": "D1RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "milemont",
+    "layout": "D1RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "milemont",
+    "layout": "D1RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "milemont",
+    "layout": "D9RM",
+    "progress": 0,
+    "resource": "msg_cancel_time",
+    "expected": "6e01008bfa"
+  },
+  {
+    "app": "milemont",
+    "layout": "D9RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "milemont",
+    "layout": "D9RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "milemont",
+    "layout": "D9RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "milemont",
+    "layout": "D9RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "milemont",
+    "layout": "D9RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "superior",
+    "layout": "D1RM",
+    "progress": 0,
+    "resource": "com_msg_off3",
+    "expected": "6e01005ecd"
+  },
+  {
+    "app": "superior",
+    "layout": "D1RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "superior",
+    "layout": "D1RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "superior",
+    "layout": "D1RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "superior",
+    "layout": "D1RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "superior",
+    "layout": "D1RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  },
+  {
+    "app": "superior",
+    "layout": "D9RM",
+    "progress": 0,
+    "resource": "msg_cancel_time",
+    "expected": "6e01008bfa"
+  },
+  {
+    "app": "superior",
+    "layout": "D9RM",
+    "progress": 1,
+    "resource": null,
+    "expected": "6e01000170"
+  },
+  {
+    "app": "superior",
+    "layout": "D9RM",
+    "progress": 2,
+    "resource": "com_msg_10min",
+    "expected": "6e01005fce"
+  },
+  {
+    "app": "superior",
+    "layout": "D9RM",
+    "progress": 3,
+    "resource": "com_msg_20min",
+    "expected": "6e010063d2"
+  },
+  {
+    "app": "superior",
+    "layout": "D9RM",
+    "progress": 4,
+    "resource": null,
+    "expected": "6e01000473"
+  },
+  {
+    "app": "superior",
+    "layout": "D9RM",
+    "progress": 5,
+    "resource": "com_msg_30min",
+    "expected": "6e010061d0"
+  }
+]

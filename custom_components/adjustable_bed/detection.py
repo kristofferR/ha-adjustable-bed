@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 from bleak.exc import BleakError
 
+from .cluster018_discovery import matching_apps as cluster018_matching_apps
+from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -28,6 +30,7 @@ from .const import (
     BED_TYPE_CASPER_SLEEP_MM,
     BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_CHERISH,
+    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -547,6 +550,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
+    BED_TYPE_CLUSTER018: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
@@ -635,6 +639,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
+    **{(BED_TYPE_CLUSTER018, app): label for app, label in CLUSTER018_APPS.items()},
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
     **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
@@ -1288,6 +1293,14 @@ def _detect_bed_type_with_app_candidates(
                 *(result.ambiguous_types or ()), BED_TYPE_ESHINE_OKIN,
             ]))
             result.signals.append("name:eshine_okin_app_candidate")
+    # The five classic apps' scan names are package-local layout codes, wider
+    # than any manifest matcher, so they only add an app candidate.
+    name = service_info.name
+    if name and cluster018_matching_apps(name) and name.upper()[:4] not in ("TEST", "RMCS"):
+        if result.bed_type is not None and result.bed_type != BED_TYPE_CLUSTER018:
+            if BED_TYPE_CLUSTER018 not in (result.ambiguous_types or ()):
+                result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_CLUSTER018]
+        result.signals.append("name:cluster018_app_candidate")
     if first.name(BED_TYPE_HJBED):
         if result.bed_type is None:
             if not any(signal.startswith("excluded:") for signal in result.signals):

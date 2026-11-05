@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..casper_base_protocol import Request as CasperBaseRequest
+    from ..cluster018_requests import Request as Cluster018Request
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
     from ..gmmotor_requests import Request as GmmotorRequest
@@ -1558,6 +1559,16 @@ class BedController(ABC):
         report whether one is configured, not its value.
         """
         return {}
+
+    @property
+    def supports_cluster018(self) -> bool:
+        return False
+
+    def validate_cluster018_request(self, request: Cluster018Request) -> None:
+        raise NotImplementedError("This controller does not support these app settings")
+
+    async def async_execute_cluster018_request(self, request: Cluster018Request) -> None:
+        raise NotImplementedError("This controller does not support these app settings")
 
     @property
     def has_dynamic_controller_entities(self) -> bool:

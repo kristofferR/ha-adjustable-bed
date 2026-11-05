@@ -1,0 +1,9732 @@
+[
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "head_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        0
+      ]
+    ],
+    "expected": "6e01002493"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "foot_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "27",
+        0
+      ]
+    ],
+    "expected": "6e01002796"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "release",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6e",
+        0
+      ]
+    ],
+    "expected": "6e01006edd"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "head_up_mode2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        2
+      ]
+    ],
+    "expected": "6e01022495"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "exit_one_minute",
+    "input": [
+      "DIRECT",
+      [
+        2,
+        1,
+        0
+      ]
+    ],
+    "expected": "6e02010071"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_query",
+    "input": [
+      "DIRECT",
+      [
+        8,
+        1,
+        1
+      ]
+    ],
+    "expected": "6e08010178"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "lamp_query",
+    "input": [
+      "DIRECT",
+      [
+        10,
+        0,
+        1
+      ]
+    ],
+    "expected": "6e0a000179"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "aroma_query",
+    "input": [
+      "DIRECT",
+      [
+        26,
+        0,
+        0
+      ]
+    ],
+    "expected": "6e1a000088"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_cancel",
+    "input": [
+      "ALARM",
+      [
+        0,
+        0
+      ]
+    ],
+    "expected": "6e050000736e06000074"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_1440_snore",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        70
+      ]
+    ],
+    "expected": "6e05a000136e060546bf"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "lamp_rgb",
+    "input": [
+      "RGB",
+      [
+        1,
+        221,
+        255
+      ]
+    ],
+    "expected": "6e0cff017a6e0dddff57"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "lamp_5_min_drag",
+    "input": [
+      "LED_SECONDS",
+      [
+        5
+      ]
+    ],
+    "expected": "6e0b012ca6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "lamp_5_min_save",
+    "input": [
+      "LED_SAVE",
+      [
+        5
+      ]
+    ],
+    "expected": "6e0b00057e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "lamp_keep_on",
+    "input": [
+      "LED_SECONDS",
+      [
+        0
+      ]
+    ],
+    "expected": "6e0bffff77"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "table_init",
+    "input": [
+      "DIRECT",
+      [
+        148,
+        0,
+        0
+      ]
+    ],
+    "expected": "6e94000002"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "table_set_100_cm",
+    "input": [
+      "DIRECT",
+      [
+        136,
+        10,
+        0
+      ]
+    ],
+    "expected": "6e880a0000"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "aroma_start_60",
+    "input": [
+      "DIRECT",
+      [
+        27,
+        0,
+        60
+      ]
+    ],
+    "expected": "6e1b003cc5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "aroma_pause_12",
+    "input": [
+      "DIRECT",
+      [
+        29,
+        0,
+        12
+      ]
+    ],
+    "expected": "6e1d000c97"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_tv_all_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        119
+      ]
+    ],
+    "expected": "6e050100746e060077eb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_tv_all_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        119
+      ]
+    ],
+    "expected": "6e05a000136e060577f0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_tv_head_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        122
+      ]
+    ],
+    "expected": "6e050100746e06007aee"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_tv_head_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        122
+      ]
+    ],
+    "expected": "6e05a000136e06057af3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_tv_foot_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        125
+      ]
+    ],
+    "expected": "6e050100746e06007df1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_tv_foot_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        125
+      ]
+    ],
+    "expected": "6e05a000136e06057df6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_snore_all_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        120
+      ]
+    ],
+    "expected": "6e050100746e060078ec"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_snore_all_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        120
+      ]
+    ],
+    "expected": "6e05a000136e060578f1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_snore_head_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        123
+      ]
+    ],
+    "expected": "6e050100746e06007bef"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_snore_head_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        123
+      ]
+    ],
+    "expected": "6e05a000136e06057bf4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_snore_foot_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        126
+      ]
+    ],
+    "expected": "6e050100746e06007ef2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_snore_foot_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        126
+      ]
+    ],
+    "expected": "6e05a000136e06057ef7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_zg_all_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        121
+      ]
+    ],
+    "expected": "6e050100746e060079ed"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_zg_all_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        121
+      ]
+    ],
+    "expected": "6e05a000136e060579f2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_zg_head_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        124
+      ]
+    ],
+    "expected": "6e050100746e06007cf0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_zg_head_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        124
+      ]
+    ],
+    "expected": "6e05a000136e06057cf5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_zg_foot_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        127
+      ]
+    ],
+    "expected": "6e050100746e06007ff3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_zg_foot_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        127
+      ]
+    ],
+    "expected": "6e05a000136e06057ff8"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_buzzer_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        128
+      ]
+    ],
+    "expected": "6e050100746e060080f4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_buzzer_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        128
+      ]
+    ],
+    "expected": "6e05a000136e060580f9"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_lounge_all_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        172
+      ]
+    ],
+    "expected": "6e050100746e0600ac20"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_lounge_all_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        172
+      ]
+    ],
+    "expected": "6e05a000136e0605ac25"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_lounge_head_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        173
+      ]
+    ],
+    "expected": "6e050100746e0600ad21"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_lounge_head_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        173
+      ]
+    ],
+    "expected": "6e05a000136e0605ad26"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_lounge_foot_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        174
+      ]
+    ],
+    "expected": "6e050100746e0600ae22"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_lounge_foot_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        174
+      ]
+    ],
+    "expected": "6e05a000136e0605ae27"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m1_all_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        129
+      ]
+    ],
+    "expected": "6e050100746e060081f5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m1_all_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        129
+      ]
+    ],
+    "expected": "6e05a000136e060581fa"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m1_head_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        130
+      ]
+    ],
+    "expected": "6e050100746e060082f6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m1_head_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        130
+      ]
+    ],
+    "expected": "6e05a000136e060582fb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m1_foot_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        131
+      ]
+    ],
+    "expected": "6e050100746e060083f7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m1_foot_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        131
+      ]
+    ],
+    "expected": "6e05a000136e060583fc"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m2_all_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        166
+      ]
+    ],
+    "expected": "6e050100746e0600a61a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m2_all_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        166
+      ]
+    ],
+    "expected": "6e05a000136e0605a61f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m2_head_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        167
+      ]
+    ],
+    "expected": "6e050100746e0600a71b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m2_head_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        167
+      ]
+    ],
+    "expected": "6e05a000136e0605a720"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m2_foot_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        168
+      ]
+    ],
+    "expected": "6e050100746e0600a81c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_com_m2_foot_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        168
+      ]
+    ],
+    "expected": "6e05a000136e0605a821"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_m3_all_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        169
+      ]
+    ],
+    "expected": "6e050100746e0600a91d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_m3_all_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        169
+      ]
+    ],
+    "expected": "6e05a000136e0605a922"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_m3_head_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        170
+      ]
+    ],
+    "expected": "6e050100746e0600aa1e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_m3_head_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        170
+      ]
+    ],
+    "expected": "6e05a000136e0605aa23"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_m3_foot_on_1",
+    "input": [
+      "ALARM",
+      [
+        1,
+        171
+      ]
+    ],
+    "expected": "6e050100746e0600ab1f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "alarm_m3_foot_on_1440",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        171
+      ]
+    ],
+    "expected": "6e05a000136e0605ab24"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_01",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "01",
+        0
+      ]
+    ],
+    "expected": "01"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_02",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "02",
+        0
+      ]
+    ],
+    "expected": "02"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_21",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "21",
+        0
+      ]
+    ],
+    "expected": "21"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_22",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "22",
+        0
+      ]
+    ],
+    "expected": "22"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_23",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "23",
+        0
+      ]
+    ],
+    "expected": "23"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_24",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "24",
+        0
+      ]
+    ],
+    "expected": "24"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_25",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "25",
+        0
+      ]
+    ],
+    "expected": "25"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_26",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "26",
+        0
+      ]
+    ],
+    "expected": "26"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_27",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "27",
+        0
+      ]
+    ],
+    "expected": "27"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_29",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "29",
+        0
+      ]
+    ],
+    "expected": "29"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_2A",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2A",
+        0
+      ]
+    ],
+    "expected": "2a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_2B",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2B",
+        0
+      ]
+    ],
+    "expected": "2b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_2C",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2C",
+        0
+      ]
+    ],
+    "expected": "2c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_2D",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2D",
+        0
+      ]
+    ],
+    "expected": "2d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_2E",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2E",
+        0
+      ]
+    ],
+    "expected": "2e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_2F",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2F",
+        0
+      ]
+    ],
+    "expected": "2f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_30",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "30",
+        0
+      ]
+    ],
+    "expected": "30"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_31",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "31",
+        0
+      ]
+    ],
+    "expected": "31"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_32",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "32",
+        0
+      ]
+    ],
+    "expected": "32"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_33",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "33",
+        0
+      ]
+    ],
+    "expected": "33"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_34",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "34",
+        0
+      ]
+    ],
+    "expected": "34"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_35",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "35",
+        0
+      ]
+    ],
+    "expected": "35"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_36",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "36",
+        0
+      ]
+    ],
+    "expected": "36"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_37",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "37",
+        0
+      ]
+    ],
+    "expected": "37"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_38",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "38",
+        0
+      ]
+    ],
+    "expected": "38"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_39",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "39",
+        0
+      ]
+    ],
+    "expected": "39"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_3A",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3A",
+        0
+      ]
+    ],
+    "expected": "3a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_3B",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3B",
+        0
+      ]
+    ],
+    "expected": "3b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_3C",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3C",
+        0
+      ]
+    ],
+    "expected": "3c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_3D",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3D",
+        0
+      ]
+    ],
+    "expected": "3d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_3E",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3E",
+        0
+      ]
+    ],
+    "expected": "3e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_3F",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3F",
+        0
+      ]
+    ],
+    "expected": "3f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_40",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "40",
+        0
+      ]
+    ],
+    "expected": "40"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_41",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "41",
+        0
+      ]
+    ],
+    "expected": "41"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_42",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "42",
+        0
+      ]
+    ],
+    "expected": "42"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_43",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "43",
+        0
+      ]
+    ],
+    "expected": "43"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_44",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "44",
+        0
+      ]
+    ],
+    "expected": "44"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_45",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "45",
+        0
+      ]
+    ],
+    "expected": "45"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_46",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "46",
+        0
+      ]
+    ],
+    "expected": "46"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_47",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "47",
+        0
+      ]
+    ],
+    "expected": "47"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_48",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "48",
+        0
+      ]
+    ],
+    "expected": "48"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_49",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "49",
+        0
+      ]
+    ],
+    "expected": "49"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_4A",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4A",
+        0
+      ]
+    ],
+    "expected": "4a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_4B",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4B",
+        0
+      ]
+    ],
+    "expected": "4b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_4C",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4C",
+        0
+      ]
+    ],
+    "expected": "4c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_4D",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4D",
+        0
+      ]
+    ],
+    "expected": "4d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_4E",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4E",
+        0
+      ]
+    ],
+    "expected": "4e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_4F",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4F",
+        0
+      ]
+    ],
+    "expected": "4f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_50",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "50",
+        0
+      ]
+    ],
+    "expected": "50"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_58",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "58",
+        0
+      ]
+    ],
+    "expected": "58"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_59",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "59",
+        0
+      ]
+    ],
+    "expected": "59"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_5A",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5A",
+        0
+      ]
+    ],
+    "expected": "5a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_5B",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5B",
+        0
+      ]
+    ],
+    "expected": "5b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_5C",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5C",
+        0
+      ]
+    ],
+    "expected": "5c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_5D",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5D",
+        0
+      ]
+    ],
+    "expected": "5d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_5E",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5E",
+        0
+      ]
+    ],
+    "expected": "5e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_5F",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5F",
+        0
+      ]
+    ],
+    "expected": "5f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_61",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "61",
+        0
+      ]
+    ],
+    "expected": "61"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_62",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "62",
+        0
+      ]
+    ],
+    "expected": "62"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_63",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "63",
+        0
+      ]
+    ],
+    "expected": "63"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_64",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "64",
+        0
+      ]
+    ],
+    "expected": "64"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_65",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "65",
+        0
+      ]
+    ],
+    "expected": "65"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_66",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "66",
+        0
+      ]
+    ],
+    "expected": "66"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_67",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "67",
+        0
+      ]
+    ],
+    "expected": "67"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_68",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "68",
+        0
+      ]
+    ],
+    "expected": "68"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_69",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "69",
+        0
+      ]
+    ],
+    "expected": "69"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_6A",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6A",
+        0
+      ]
+    ],
+    "expected": "6a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_6B",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6B",
+        0
+      ]
+    ],
+    "expected": "6b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_6C",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6C",
+        0
+      ]
+    ],
+    "expected": "6c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_6F",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6F",
+        0
+      ]
+    ],
+    "expected": "6f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_70",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "70",
+        0
+      ]
+    ],
+    "expected": "70"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_71",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "71",
+        0
+      ]
+    ],
+    "expected": "71"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_72",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "72",
+        0
+      ]
+    ],
+    "expected": "72"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_73",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "73",
+        0
+      ]
+    ],
+    "expected": "73"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_74",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "74",
+        0
+      ]
+    ],
+    "expected": "74"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_75",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "75",
+        0
+      ]
+    ],
+    "expected": "75"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_76",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "76",
+        0
+      ]
+    ],
+    "expected": "76"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_84",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "84",
+        0
+      ]
+    ],
+    "expected": "84"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_85",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "85",
+        0
+      ]
+    ],
+    "expected": "85"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_86",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "86",
+        0
+      ]
+    ],
+    "expected": "86"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_8C",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8C",
+        0
+      ]
+    ],
+    "expected": "8c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_8D",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8D",
+        0
+      ]
+    ],
+    "expected": "8d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_8E",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8E",
+        0
+      ]
+    ],
+    "expected": "8e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_8F",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8F",
+        0
+      ]
+    ],
+    "expected": "8f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_90",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "90",
+        0
+      ]
+    ],
+    "expected": "90"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_91",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "91",
+        0
+      ]
+    ],
+    "expected": "91"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_92",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "92",
+        0
+      ]
+    ],
+    "expected": "92"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_93",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "93",
+        0
+      ]
+    ],
+    "expected": "93"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_94",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "94",
+        0
+      ]
+    ],
+    "expected": "94"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_95",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "95",
+        0
+      ]
+    ],
+    "expected": "95"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_96",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "96",
+        0
+      ]
+    ],
+    "expected": "96"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_97",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "97",
+        0
+      ]
+    ],
+    "expected": "97"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_A1",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "A1",
+        0
+      ]
+    ],
+    "expected": "a1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_A2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "A2",
+        0
+      ]
+    ],
+    "expected": "a2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_A3",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "A3",
+        0
+      ]
+    ],
+    "expected": "a3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_A4",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "A4",
+        0
+      ]
+    ],
+    "expected": "a4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_A5",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "A5",
+        0
+      ]
+    ],
+    "expected": "a5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_B2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "B2",
+        0
+      ]
+    ],
+    "expected": "b2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_B3",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "B3",
+        0
+      ]
+    ],
+    "expected": "b3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_B7",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "B7",
+        0
+      ]
+    ],
+    "expected": "b7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_B8",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "B8",
+        0
+      ]
+    ],
+    "expected": "b8"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_B9",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "B9",
+        0
+      ]
+    ],
+    "expected": "b9"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_BA",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "BA",
+        0
+      ]
+    ],
+    "expected": "ba"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_BB",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "BB",
+        0
+      ]
+    ],
+    "expected": "bb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_BC",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "BC",
+        0
+      ]
+    ],
+    "expected": "bc"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_BD",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "BD",
+        0
+      ]
+    ],
+    "expected": "bd"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_BE",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "BE",
+        0
+      ]
+    ],
+    "expected": "be"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_CB",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "CB",
+        0
+      ]
+    ],
+    "expected": "cb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D0",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D0",
+        0
+      ]
+    ],
+    "expected": "d0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D1",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D1",
+        0
+      ]
+    ],
+    "expected": "d1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D2",
+        0
+      ]
+    ],
+    "expected": "d2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D3",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D3",
+        0
+      ]
+    ],
+    "expected": "d3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D4",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D4",
+        0
+      ]
+    ],
+    "expected": "d4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D5",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D5",
+        0
+      ]
+    ],
+    "expected": "d5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D6",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D6",
+        0
+      ]
+    ],
+    "expected": "d6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D7",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D7",
+        0
+      ]
+    ],
+    "expected": "d7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D8",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D8",
+        0
+      ]
+    ],
+    "expected": "d8"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_D9",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "D9",
+        0
+      ]
+    ],
+    "expected": "d9"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F0",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F0",
+        0
+      ]
+    ],
+    "expected": "f0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F1",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F1",
+        0
+      ]
+    ],
+    "expected": "f1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F2",
+        0
+      ]
+    ],
+    "expected": "f2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F3",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F3",
+        0
+      ]
+    ],
+    "expected": "f3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F4",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F4",
+        0
+      ]
+    ],
+    "expected": "f4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F5",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F5",
+        0
+      ]
+    ],
+    "expected": "f5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F6",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F6",
+        0
+      ]
+    ],
+    "expected": "f6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P1_constant_F7",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "F7",
+        0
+      ]
+    ],
+    "expected": "f7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_01",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "01",
+        0
+      ]
+    ],
+    "expected": "6e01000170"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_02",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "02",
+        0
+      ]
+    ],
+    "expected": "6e01000271"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_21",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "21",
+        0
+      ]
+    ],
+    "expected": "6e01002190"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_22",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "22",
+        0
+      ]
+    ],
+    "expected": "6e01002291"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_23",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "23",
+        0
+      ]
+    ],
+    "expected": "6e01002392"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_24",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        0
+      ]
+    ],
+    "expected": "6e01002493"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_25",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "25",
+        0
+      ]
+    ],
+    "expected": "6e01002594"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_26",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "26",
+        0
+      ]
+    ],
+    "expected": "6e01002695"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_27",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "27",
+        0
+      ]
+    ],
+    "expected": "6e01002796"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_29",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "29",
+        0
+      ]
+    ],
+    "expected": "6e01002998"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_2A",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2A",
+        0
+      ]
+    ],
+    "expected": "6e01002a99"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_2B",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2B",
+        0
+      ]
+    ],
+    "expected": "6e01002b9a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_2C",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2C",
+        0
+      ]
+    ],
+    "expected": "6e01002c9b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_2D",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2D",
+        0
+      ]
+    ],
+    "expected": "6e01002d9c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_2E",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2E",
+        0
+      ]
+    ],
+    "expected": "6e01002e9d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_2F",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2F",
+        0
+      ]
+    ],
+    "expected": "6e01002f9e"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_30",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "30",
+        0
+      ]
+    ],
+    "expected": "6e0100309f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_31",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "31",
+        0
+      ]
+    ],
+    "expected": "6e010031a0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_32",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "32",
+        0
+      ]
+    ],
+    "expected": "6e010032a1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_33",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "33",
+        0
+      ]
+    ],
+    "expected": "6e010033a2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_34",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "34",
+        0
+      ]
+    ],
+    "expected": "6e010034a3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_35",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "35",
+        0
+      ]
+    ],
+    "expected": "6e010035a4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_36",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "36",
+        0
+      ]
+    ],
+    "expected": "6e010036a5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_37",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "37",
+        0
+      ]
+    ],
+    "expected": "6e010037a6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_38",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "38",
+        0
+      ]
+    ],
+    "expected": "6e010038a7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_39",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "39",
+        0
+      ]
+    ],
+    "expected": "6e010039a8"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_3A",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3A",
+        0
+      ]
+    ],
+    "expected": "6e01003aa9"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_3B",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3B",
+        0
+      ]
+    ],
+    "expected": "6e01003baa"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_3C",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3C",
+        0
+      ]
+    ],
+    "expected": "6e01003cab"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_3D",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3D",
+        0
+      ]
+    ],
+    "expected": "6e01003dac"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_3E",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3E",
+        0
+      ]
+    ],
+    "expected": "6e01003ead"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_3F",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3F",
+        0
+      ]
+    ],
+    "expected": "6e01003fae"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_40",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "40",
+        0
+      ]
+    ],
+    "expected": "6e010040af"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_41",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "41",
+        0
+      ]
+    ],
+    "expected": "6e010041b0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_42",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "42",
+        0
+      ]
+    ],
+    "expected": "6e010042b1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_43",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "43",
+        0
+      ]
+    ],
+    "expected": "6e010043b2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_44",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "44",
+        0
+      ]
+    ],
+    "expected": "6e010044b3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_45",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "45",
+        0
+      ]
+    ],
+    "expected": "6e010045b4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_46",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "46",
+        0
+      ]
+    ],
+    "expected": "6e010046b5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_47",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "47",
+        0
+      ]
+    ],
+    "expected": "6e010047b6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_48",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "48",
+        0
+      ]
+    ],
+    "expected": "6e010048b7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_49",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "49",
+        0
+      ]
+    ],
+    "expected": "6e010049b8"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_4A",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4A",
+        0
+      ]
+    ],
+    "expected": "6e01004ab9"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_4B",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4B",
+        0
+      ]
+    ],
+    "expected": "6e01004bba"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_4C",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4C",
+        0
+      ]
+    ],
+    "expected": "6e01004cbb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_4D",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4D",
+        0
+      ]
+    ],
+    "expected": "6e01004dbc"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_4E",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4E",
+        0
+      ]
+    ],
+    "expected": "6e01004ebd"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_4F",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4F",
+        0
+      ]
+    ],
+    "expected": "6e01004fbe"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_58",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "58",
+        0
+      ]
+    ],
+    "expected": "6e010058c7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_59",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "59",
+        0
+      ]
+    ],
+    "expected": "6e010059c8"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_5A",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5A",
+        0
+      ]
+    ],
+    "expected": "6e01005ac9"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_5B",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5B",
+        0
+      ]
+    ],
+    "expected": "6e01005bca"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_5C",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5C",
+        0
+      ]
+    ],
+    "expected": "6e01005ccb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_5D",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5D",
+        0
+      ]
+    ],
+    "expected": "6e01005dcc"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_5E",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5E",
+        0
+      ]
+    ],
+    "expected": "6e01005ecd"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_5F",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5F",
+        0
+      ]
+    ],
+    "expected": "6e01005fce"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_61",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "61",
+        0
+      ]
+    ],
+    "expected": "6e010061d0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_62",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "62",
+        0
+      ]
+    ],
+    "expected": "6e010062d1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_63",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "63",
+        0
+      ]
+    ],
+    "expected": "6e010063d2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_64",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "64",
+        0
+      ]
+    ],
+    "expected": "6e010064d3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_65",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "65",
+        0
+      ]
+    ],
+    "expected": "6e010065d4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_66",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "66",
+        0
+      ]
+    ],
+    "expected": "6e010066d5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_67",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "67",
+        0
+      ]
+    ],
+    "expected": "6e010067d6"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_68",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "68",
+        0
+      ]
+    ],
+    "expected": "6e010068d7"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_69",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "69",
+        0
+      ]
+    ],
+    "expected": "6e010069d8"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_6A",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6A",
+        0
+      ]
+    ],
+    "expected": "6e01006ad9"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_6B",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6B",
+        0
+      ]
+    ],
+    "expected": "6e01006bda"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_6C",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6C",
+        0
+      ]
+    ],
+    "expected": "6e01006cdb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_6F",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6F",
+        0
+      ]
+    ],
+    "expected": "6e01006fde"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_70",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "70",
+        0
+      ]
+    ],
+    "expected": "6e010070df"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_71",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "71",
+        0
+      ]
+    ],
+    "expected": "6e010071e0"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_72",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "72",
+        0
+      ]
+    ],
+    "expected": "6e010072e1"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_73",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "73",
+        0
+      ]
+    ],
+    "expected": "6e010073e2"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_74",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "74",
+        0
+      ]
+    ],
+    "expected": "6e010074e3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_75",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "75",
+        0
+      ]
+    ],
+    "expected": "6e010075e4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_76",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "76",
+        0
+      ]
+    ],
+    "expected": "6e010076e5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_84",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "84",
+        0
+      ]
+    ],
+    "expected": "6e010084f3"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_85",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "85",
+        0
+      ]
+    ],
+    "expected": "6e010085f4"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_86",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "86",
+        0
+      ]
+    ],
+    "expected": "6e010086f5"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_8C",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8C",
+        0
+      ]
+    ],
+    "expected": "6e01008cfb"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_8D",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8D",
+        0
+      ]
+    ],
+    "expected": "6e01008dfc"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_8E",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8E",
+        0
+      ]
+    ],
+    "expected": "6e01008efd"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_8F",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8F",
+        0
+      ]
+    ],
+    "expected": "6e01008ffe"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_90",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "90",
+        0
+      ]
+    ],
+    "expected": "6e010090ff"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_91",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "91",
+        0
+      ]
+    ],
+    "expected": "6e01009100"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_92",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "92",
+        0
+      ]
+    ],
+    "expected": "6e01009201"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_93",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "93",
+        0
+      ]
+    ],
+    "expected": "6e01009302"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_94",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "94",
+        0
+      ]
+    ],
+    "expected": "6e01009403"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_95",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "95",
+        0
+      ]
+    ],
+    "expected": "6e01009504"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_96",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "96",
+        0
+      ]
+    ],
+    "expected": "6e01009605"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_97",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "97",
+        0
+      ]
+    ],
+    "expected": "6e01009706"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_A1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "A1",
+        0
+      ]
+    ],
+    "expected": "6e0100a110"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_A2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "A2",
+        0
+      ]
+    ],
+    "expected": "6e0100a211"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_A3",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "A3",
+        0
+      ]
+    ],
+    "expected": "6e0100a312"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_A4",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "A4",
+        0
+      ]
+    ],
+    "expected": "6e0100a413"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_A5",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "A5",
+        0
+      ]
+    ],
+    "expected": "6e0100a514"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_B2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "B2",
+        0
+      ]
+    ],
+    "expected": "6e0100b221"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_B3",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "B3",
+        0
+      ]
+    ],
+    "expected": "6e0100b322"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_B7",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "B7",
+        0
+      ]
+    ],
+    "expected": "6e0100b726"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_B8",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "B8",
+        0
+      ]
+    ],
+    "expected": "6e0100b827"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_B9",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "B9",
+        0
+      ]
+    ],
+    "expected": "6e0100b928"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_BA",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "BA",
+        0
+      ]
+    ],
+    "expected": "6e0100ba29"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_BB",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "BB",
+        0
+      ]
+    ],
+    "expected": "6e0100bb2a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_BC",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "BC",
+        0
+      ]
+    ],
+    "expected": "6e0100bc2b"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_BD",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "BD",
+        0
+      ]
+    ],
+    "expected": "6e0100bd2c"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_BE",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "BE",
+        0
+      ]
+    ],
+    "expected": "6e0100be2d"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_CB",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "CB",
+        0
+      ]
+    ],
+    "expected": "6e0100cb3a"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D0",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D0",
+        0
+      ]
+    ],
+    "expected": "6e0100d03f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D1",
+        0
+      ]
+    ],
+    "expected": "6e0100d140"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D2",
+        0
+      ]
+    ],
+    "expected": "6e0100d241"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D3",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D3",
+        0
+      ]
+    ],
+    "expected": "6e0100d342"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D4",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D4",
+        0
+      ]
+    ],
+    "expected": "6e0100d443"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D5",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D5",
+        0
+      ]
+    ],
+    "expected": "6e0100d544"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D6",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D6",
+        0
+      ]
+    ],
+    "expected": "6e0100d645"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D7",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D7",
+        0
+      ]
+    ],
+    "expected": "6e0100d746"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D8",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D8",
+        0
+      ]
+    ],
+    "expected": "6e0100d847"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_D9",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "D9",
+        0
+      ]
+    ],
+    "expected": "6e0100d948"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F0",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F0",
+        0
+      ]
+    ],
+    "expected": "6e0100f05f"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F1",
+        0
+      ]
+    ],
+    "expected": "6e0100f160"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F2",
+        0
+      ]
+    ],
+    "expected": "6e0100f261"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F3",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F3",
+        0
+      ]
+    ],
+    "expected": "6e0100f362"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F4",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F4",
+        0
+      ]
+    ],
+    "expected": "6e0100f463"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F5",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F5",
+        0
+      ]
+    ],
+    "expected": "6e0100f564"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F6",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F6",
+        0
+      ]
+    ],
+    "expected": "6e0100f665"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "P2_constant_F7",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "F7",
+        0
+      ]
+    ],
+    "expected": "6e0100f766"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "lamp_rgb_white",
+    "input": [
+      "RGB",
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "expected": "6e0cffff786e0dffff79"
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "lamp_rgb_red",
+    "input": [
+      "RGB",
+      [
+        255,
+        0,
+        0
+      ]
+    ],
+    "expected": "6e0cffff786e0d00007b"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-24",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        0
+      ]
+    ],
+    "expected": "6e01002493"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-3f",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3f",
+        0
+      ]
+    ],
+    "expected": "6e01003fae"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-40",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "40",
+        0
+      ]
+    ],
+    "expected": "6e010040af"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-25",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "25",
+        0
+      ]
+    ],
+    "expected": "6e01002594"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-26",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "26",
+        0
+      ]
+    ],
+    "expected": "6e01002695"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-41",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "41",
+        0
+      ]
+    ],
+    "expected": "6e010041b0"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-42",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "42",
+        0
+      ]
+    ],
+    "expected": "6e010042b1"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-27",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "27",
+        0
+      ]
+    ],
+    "expected": "6e01002796"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-29",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "29",
+        0
+      ]
+    ],
+    "expected": "6e01002998"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "literal-2a",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2a",
+        0
+      ]
+    ],
+    "expected": "6e01002a99"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "raw",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "24",
+        0
+      ]
+    ],
+    "expected": "24"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "release",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6e",
+        0
+      ]
+    ],
+    "expected": "6e01006edd"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "mode2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        2
+      ]
+    ],
+    "expected": "6e01022495"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "init",
+    "input": [
+      "DIRECT",
+      [
+        2,
+        1,
+        0
+      ]
+    ],
+    "expected": "6e02010071"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "alarm-query",
+    "input": [
+      "DIRECT",
+      [
+        8,
+        1,
+        1
+      ]
+    ],
+    "expected": "6e08010178"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "led-query",
+    "input": [
+      "DIRECT",
+      [
+        10,
+        0,
+        1
+      ]
+    ],
+    "expected": "6e0a000179"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "aroma-query",
+    "input": [
+      "DIRECT",
+      [
+        26,
+        0,
+        0
+      ]
+    ],
+    "expected": "6e1a000088"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "rgb",
+    "input": [
+      "RGB",
+      [
+        1,
+        221,
+        255
+      ]
+    ],
+    "expected": "6e0cff017a6e0dddff57"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "rgb2",
+    "input": [
+      "RGB",
+      [
+        152,
+        203,
+        0
+      ]
+    ],
+    "expected": "6e0cff98116e0dcb0046"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "alarm-low",
+    "input": [
+      "DIRECT",
+      [
+        5,
+        160,
+        0
+      ]
+    ],
+    "expected": "6e05a00013"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "alarm-high",
+    "input": [
+      "DIRECT",
+      [
+        6,
+        5,
+        88
+      ]
+    ],
+    "expected": "6e060558d1"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "alarm-cancel1",
+    "input": [
+      "DIRECT",
+      [
+        5,
+        0,
+        0
+      ]
+    ],
+    "expected": "6e05000073"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "alarm-cancel2",
+    "input": [
+      "DIRECT",
+      [
+        6,
+        0,
+        0
+      ]
+    ],
+    "expected": "6e06000074"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "height",
+    "input": [
+      "DESK_TARGET",
+      [
+        100.5
+      ]
+    ],
+    "expected": "6e880a0505"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "height2",
+    "input": [
+      "DESK_TARGET",
+      [
+        60.0
+      ]
+    ],
+    "expected": "6e880600fc"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "unit",
+    "input": [
+      "DIRECT",
+      [
+        145,
+        0,
+        1
+      ]
+    ],
+    "expected": "6e91000100"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "led-time",
+    "input": [
+      "LED_SECONDS",
+      [
+        15
+      ]
+    ],
+    "expected": "6e0b038400"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "led-save",
+    "input": [
+      "LED_SAVE",
+      [
+        15
+      ]
+    ],
+    "expected": "6e0b000f88"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "led-forever",
+    "input": [
+      "LED_SECONDS",
+      [
+        0
+      ]
+    ],
+    "expected": "6e0bffff77"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "aroma",
+    "input": [
+      "DIRECT",
+      [
+        27,
+        0,
+        60
+      ]
+    ],
+    "expected": "6e1b003cc5"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "aroma2",
+    "input": [
+      "DIRECT",
+      [
+        29,
+        0,
+        12
+      ]
+    ],
+    "expected": "6e1d000c97"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "timer-d9-zero",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8b",
+        0
+      ]
+    ],
+    "expected": "6e01008bfa"
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "float32-6e900001004b4a",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e900001004b4a"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "H:41980000:42960000"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "height",
+        "frame": "6e900001004b4a",
+        "values": [
+          19.0,
+          75.0
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "float32-6e90000103191b",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e90000103191b"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "H:42a53333:43a28000"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "height",
+        "frame": "6e90000103191b",
+        "values": [
+          82.5999984741211,
+          325.0
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "raw-head-up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "24",
+        0
+      ]
+    ],
+    "expected": "24"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "raw-release",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6e",
+        0
+      ]
+    ],
+    "expected": "6e"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "led-save",
+    "input": [
+      "LED_SAVE",
+      [
+        5
+      ]
+    ],
+    "expected": "6e0b00057e"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "aroma-mode2",
+    "input": [
+      "DIRECT",
+      [
+        27,
+        0,
+        1
+      ]
+    ],
+    "expected": "6e1b00018a"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "aroma-pause",
+    "input": [
+      "DIRECT",
+      [
+        29,
+        0,
+        12
+      ]
+    ],
+    "expected": "6e1d000c97"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "desk-height",
+    "input": [
+      "DIRECT",
+      [
+        136,
+        6,
+        80
+      ]
+    ],
+    "expected": "6e8806504c"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "head-up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        0
+      ]
+    ],
+    "expected": "6e01002493"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "motor1-down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "25",
+        0
+      ]
+    ],
+    "expected": "6e01002594"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "motor2-up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "26",
+        0
+      ]
+    ],
+    "expected": "6e01002695"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "release",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6e",
+        0
+      ]
+    ],
+    "expected": "6e01006edd"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "init",
+    "input": [
+      "DIRECT",
+      [
+        2,
+        1,
+        0
+      ]
+    ],
+    "expected": "6e02010071"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "alarm-query",
+    "input": [
+      "DIRECT",
+      [
+        8,
+        1,
+        1
+      ]
+    ],
+    "expected": "6e08010178"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "led-query",
+    "input": [
+      "DIRECT",
+      [
+        10,
+        0,
+        1
+      ]
+    ],
+    "expected": "6e0a000179"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "aroma-query",
+    "input": [
+      "DIRECT",
+      [
+        26,
+        0,
+        0
+      ]
+    ],
+    "expected": "6e1a000088"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "rgb",
+    "input": [
+      "RGB",
+      [
+        18,
+        52,
+        86
+      ]
+    ],
+    "expected": "6e0cff128b6e0d345605"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "led-time",
+    "input": [
+      "LED_SECONDS",
+      [
+        5
+      ]
+    ],
+    "expected": "6e0b012ca6"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "led-forever",
+    "input": [
+      "LED_SECONDS",
+      [
+        0
+      ]
+    ],
+    "expected": "6e0bffff77"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "alarm-300",
+    "input": [
+      "ALARM",
+      [
+        300,
+        49
+      ]
+    ],
+    "expected": "6e052c009f6e060131a6"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "mode1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        1
+      ]
+    ],
+    "expected": "6e01012494"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "mode2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        2
+      ]
+    ],
+    "expected": "6e01022495"
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "parser-rounded-6e08020078",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e08020078"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "V:0",
+        "H:44228ccd:43800000"
+      ],
+      "oldPack": "6e08020078",
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "oldheight",
+        "frame": "6e08020078",
+        "values": [
+          650.2000122070312,
+          256.0
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "parser-rounded-6e900000065155",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e900000065155"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "H:42883333:41d66666"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "height",
+        "frame": "6e900000065155",
+        "values": [
+          68.0999984741211,
+          26.799999237060547
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "parser-rounded-6e900001001918",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e900001001918"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "H:40c9999a:41c80000"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "height",
+        "frame": "6e900001001918",
+        "values": [
+          6.300000190734863,
+          25.0
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "decoder-odd-rejection",
+    "input": [
+      "DECODE",
+      [
+        "F"
+      ]
+    ],
+    "expected": null
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "V1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        0
+      ]
+    ],
+    "expected": "6e01002493"
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "V2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "25",
+        0
+      ]
+    ],
+    "expected": "6e01002594"
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "V3",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "35",
+        0
+      ]
+    ],
+    "expected": "35"
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "V4",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6e",
+        0
+      ]
+    ],
+    "expected": "6e01006edd"
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "V5",
+    "input": [
+      "RGB",
+      [
+        1,
+        221,
+        255
+      ]
+    ],
+    "expected": "6e0cff017a6e0dddff57"
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "V6",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        46
+      ]
+    ],
+    "expected": "6e05a000136e06052ea7"
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "V7",
+    "input": [
+      "DESK_TARGET",
+      [
+        75.2
+      ]
+    ],
+    "expected": "6e88073431"
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF2-old",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e08005ad0"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "V:0",
+        "H:42b40000:420d999a"
+      ],
+      "oldPack": "6e08005ad0",
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "oldheight",
+        "frame": "6e08005ad0",
+        "values": [
+          90.0,
+          35.400001525878906
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e01002493",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        0
+      ]
+    ],
+    "expected": "6e01002493"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e01003fae",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3f",
+        0
+      ]
+    ],
+    "expected": "6e01003fae"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e010040af",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "40",
+        0
+      ]
+    ],
+    "expected": "6e010040af"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e01002594",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "25",
+        0
+      ]
+    ],
+    "expected": "6e01002594"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e01002695",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "26",
+        0
+      ]
+    ],
+    "expected": "6e01002695"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e010041b0",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "41",
+        0
+      ]
+    ],
+    "expected": "6e010041b0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e010042b1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "42",
+        0
+      ]
+    ],
+    "expected": "6e010042b1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e01002796",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "27",
+        0
+      ]
+    ],
+    "expected": "6e01002796"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e01002998",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "29",
+        0
+      ]
+    ],
+    "expected": "6e01002998"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "literal-6e01002a99",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2a",
+        0
+      ]
+    ],
+    "expected": "6e01002a99"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "stop",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6e",
+        0
+      ]
+    ],
+    "expected": "6e01006edd"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "init",
+    "input": [
+      "DIRECT",
+      [
+        2,
+        1,
+        0
+      ]
+    ],
+    "expected": "6e02010071"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "rgb",
+    "input": [
+      "RGB",
+      [
+        0,
+        255,
+        0
+      ]
+    ],
+    "expected": "6e0cff00796e0dff007a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "alarm",
+    "input": [
+      "ALARM",
+      [
+        1440,
+        43
+      ]
+    ],
+    "expected": "6e05a000136e06052ba4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-adjust_volume",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "b7",
+        0
+      ]
+    ],
+    "expected": "b7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-adjust_volume",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "b7",
+        0
+      ]
+    ],
+    "expected": "6e0100b726"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_lumbar_back_pos",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "91",
+        0
+      ]
+    ],
+    "expected": "91"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_lumbar_back_pos",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "91",
+        0
+      ]
+    ],
+    "expected": "6e01009100"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_lumbar_set_pos",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "92",
+        0
+      ]
+    ],
+    "expected": "92"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_lumbar_set_pos",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "92",
+        0
+      ]
+    ],
+    "expected": "6e01009201"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_motor_keep_30",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "90",
+        0
+      ]
+    ],
+    "expected": "90"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_motor_keep_30",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "90",
+        0
+      ]
+    ],
+    "expected": "6e010090ff"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg1_intensity_dec",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4d",
+        0
+      ]
+    ],
+    "expected": "4d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg1_intensity_dec",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4d",
+        0
+      ]
+    ],
+    "expected": "6e01004dbc"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg1_intensity_inc",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4c",
+        0
+      ]
+    ],
+    "expected": "4c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg1_intensity_inc",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4c",
+        0
+      ]
+    ],
+    "expected": "6e01004cbb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg2_intensity_dec",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4f",
+        0
+      ]
+    ],
+    "expected": "4f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg2_intensity_dec",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4f",
+        0
+      ]
+    ],
+    "expected": "6e01004fbe"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg2_intensity_inc",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4e",
+        0
+      ]
+    ],
+    "expected": "4e"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg2_intensity_inc",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4e",
+        0
+      ]
+    ],
+    "expected": "6e01004ebd"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_10min",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5f",
+        0
+      ]
+    ],
+    "expected": "5f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_10min",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5f",
+        0
+      ]
+    ],
+    "expected": "6e01005fce"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_10min_new",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "a1",
+        0
+      ]
+    ],
+    "expected": "a1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_10min_new",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "a1",
+        0
+      ]
+    ],
+    "expected": "6e0100a110"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_20min",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "63",
+        0
+      ]
+    ],
+    "expected": "63"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_20min",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "63",
+        0
+      ]
+    ],
+    "expected": "6e010063d2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_20min_new",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "a2",
+        0
+      ]
+    ],
+    "expected": "a2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_20min_new",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "a2",
+        0
+      ]
+    ],
+    "expected": "6e0100a211"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_30min",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "61",
+        0
+      ]
+    ],
+    "expected": "61"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_30min",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "61",
+        0
+      ]
+    ],
+    "expected": "6e010061d0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_30min_new",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "a3",
+        0
+      ]
+    ],
+    "expected": "a3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_30min_new",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "a3",
+        0
+      ]
+    ],
+    "expected": "6e0100a312"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_aroma",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3b",
+        0
+      ]
+    ],
+    "expected": "3b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_aroma",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3b",
+        0
+      ]
+    ],
+    "expected": "6e01003baa"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_constant",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3a",
+        0
+      ]
+    ],
+    "expected": "3a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_constant",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3a",
+        0
+      ]
+    ],
+    "expected": "6e01003aa9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_foot_intensity2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "a5",
+        0
+      ]
+    ],
+    "expected": "a5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_foot_intensity2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "a5",
+        0
+      ]
+    ],
+    "expected": "6e0100a514"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_head_intensity2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "a4",
+        0
+      ]
+    ],
+    "expected": "a4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_head_intensity2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "a4",
+        0
+      ]
+    ],
+    "expected": "6e0100a413"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_intensity_dec",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "35",
+        0
+      ]
+    ],
+    "expected": "35"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_intensity_dec",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "35",
+        0
+      ]
+    ],
+    "expected": "6e010035a4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "47",
+        0
+      ]
+    ],
+    "expected": "47"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "47",
+        0
+      ]
+    ],
+    "expected": "6e010047b6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_off2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5a",
+        0
+      ]
+    ],
+    "expected": "5a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_off2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5a",
+        0
+      ]
+    ],
+    "expected": "6e01005ac9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_off3",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5e",
+        0
+      ]
+    ],
+    "expected": "5e"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_off3",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5e",
+        0
+      ]
+    ],
+    "expected": "6e01005ecd"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_on",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5d",
+        0
+      ]
+    ],
+    "expected": "5d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_on",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5d",
+        0
+      ]
+    ],
+    "expected": "6e01005dcc"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_speed_dec",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "37",
+        0
+      ]
+    ],
+    "expected": "37"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_speed_dec",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "37",
+        0
+      ]
+    ],
+    "expected": "6e010037a6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_speed_inc",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "36",
+        0
+      ]
+    ],
+    "expected": "36"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_speed_inc",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "36",
+        0
+      ]
+    ],
+    "expected": "6e010036a5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_wave1",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "49",
+        0
+      ]
+    ],
+    "expected": "49"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_wave1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "49",
+        0
+      ]
+    ],
+    "expected": "6e010049b8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_wave2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4a",
+        0
+      ]
+    ],
+    "expected": "4a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_wave2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4a",
+        0
+      ]
+    ],
+    "expected": "6e01004ab9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_msg_wave3",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4b",
+        0
+      ]
+    ],
+    "expected": "4b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_msg_wave3",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4b",
+        0
+      ]
+    ],
+    "expected": "6e01004bba"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_relax_set",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "95",
+        0
+      ]
+    ],
+    "expected": "95"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_relax_set",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "95",
+        0
+      ]
+    ],
+    "expected": "6e01009504"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_second_up_once",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3e",
+        0
+      ]
+    ],
+    "expected": "3e"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_second_up_once",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3e",
+        0
+      ]
+    ],
+    "expected": "6e01003ead"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_table_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "02",
+        0
+      ]
+    ],
+    "expected": "02"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_table_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "02",
+        0
+      ]
+    ],
+    "expected": "6e01000271"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_table_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "01",
+        0
+      ]
+    ],
+    "expected": "01"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_table_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "01",
+        0
+      ]
+    ],
+    "expected": "6e01000170"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_unwind_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8c",
+        0
+      ]
+    ],
+    "expected": "8c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_unwind_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8c",
+        0
+      ]
+    ],
+    "expected": "6e01008cfb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_unwind_set",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8d",
+        0
+      ]
+    ],
+    "expected": "8d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_unwind_set",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8d",
+        0
+      ]
+    ],
+    "expected": "6e01008dfc"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_wakeup_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "93",
+        0
+      ]
+    ],
+    "expected": "93"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_wakeup_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "93",
+        0
+      ]
+    ],
+    "expected": "6e01009302"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-com_wakeup_set",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "94",
+        0
+      ]
+    ],
+    "expected": "94"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-com_wakeup_set",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "94",
+        0
+      ]
+    ],
+    "expected": "6e01009403"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_first_second_once_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "23",
+        0
+      ]
+    ],
+    "expected": "23"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_first_second_once_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "23",
+        0
+      ]
+    ],
+    "expected": "6e01002392"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_first_up_once",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3d",
+        0
+      ]
+    ],
+    "expected": "3d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_first_up_once",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3d",
+        0
+      ]
+    ],
+    "expected": "6e01003dac"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_first_up_second_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "21",
+        0
+      ]
+    ],
+    "expected": "21"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_first_up_second_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "21",
+        0
+      ]
+    ],
+    "expected": "6e01002190"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_flat",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "31",
+        0
+      ]
+    ],
+    "expected": "31"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_flat",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "31",
+        0
+      ]
+    ],
+    "expected": "6e010031a0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_flat2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6c",
+        0
+      ]
+    ],
+    "expected": "6c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_flat2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6c",
+        0
+      ]
+    ],
+    "expected": "6e01006cdb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_flat_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "38",
+        0
+      ]
+    ],
+    "expected": "38"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_flat_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "38",
+        0
+      ]
+    ],
+    "expected": "6e010038a7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_flat_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "31",
+        0
+      ]
+    ],
+    "expected": "31"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_flat_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "31",
+        0
+      ]
+    ],
+    "expected": "6e010031a0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_flat_sleep_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f6",
+        0
+      ]
+    ],
+    "expected": "f6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_flat_sleep_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f6",
+        0
+      ]
+    ],
+    "expected": "6e0100f665"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_flat_sleep_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f7",
+        0
+      ]
+    ],
+    "expected": "f7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_flat_sleep_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f7",
+        0
+      ]
+    ],
+    "expected": "6e0100f766"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_lock",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "84",
+        0
+      ]
+    ],
+    "expected": "84"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_lock",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "84",
+        0
+      ]
+    ],
+    "expected": "6e010084f3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_lounge_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "59",
+        0
+      ]
+    ],
+    "expected": "59"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_lounge_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "59",
+        0
+      ]
+    ],
+    "expected": "6e010059c8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_lounge_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "32",
+        0
+      ]
+    ],
+    "expected": "32"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_lounge_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "32",
+        0
+      ]
+    ],
+    "expected": "6e010032a1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_lounge_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "65",
+        0
+      ]
+    ],
+    "expected": "65"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_lounge_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "65",
+        0
+      ]
+    ],
+    "expected": "6e010065d4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m1_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2e",
+        0
+      ]
+    ],
+    "expected": "2e"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m1_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2e",
+        0
+      ]
+    ],
+    "expected": "6e01002e9d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m1_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "42",
+        0
+      ]
+    ],
+    "expected": "42"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m1_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "42",
+        0
+      ]
+    ],
+    "expected": "6e010042b1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m1_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2b",
+        0
+      ]
+    ],
+    "expected": "2b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m1_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2b",
+        0
+      ]
+    ],
+    "expected": "6e01002b9a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m1_set_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "43",
+        0
+      ]
+    ],
+    "expected": "43"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m1_set_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "43",
+        0
+      ]
+    ],
+    "expected": "6e010043b2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m2_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2f",
+        0
+      ]
+    ],
+    "expected": "2f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m2_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2f",
+        0
+      ]
+    ],
+    "expected": "6e01002f9e"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m2_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "44",
+        0
+      ]
+    ],
+    "expected": "44"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m2_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "44",
+        0
+      ]
+    ],
+    "expected": "6e010044b3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m2_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2c",
+        0
+      ]
+    ],
+    "expected": "2c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m2_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2c",
+        0
+      ]
+    ],
+    "expected": "6e01002c9b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m2_set_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "45",
+        0
+      ]
+    ],
+    "expected": "45"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m2_set_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "45",
+        0
+      ]
+    ],
+    "expected": "6e010045b4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m3_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "30",
+        0
+      ]
+    ],
+    "expected": "30"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m3_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "30",
+        0
+      ]
+    ],
+    "expected": "6e0100309f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m3_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2d",
+        0
+      ]
+    ],
+    "expected": "2d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m3_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2d",
+        0
+      ]
+    ],
+    "expected": "6e01002d9c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m4_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "b2",
+        0
+      ]
+    ],
+    "expected": "b2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m4_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "b2",
+        0
+      ]
+    ],
+    "expected": "6e0100b221"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m4_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "b3",
+        0
+      ]
+    ],
+    "expected": "b3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m4_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "b3",
+        0
+      ]
+    ],
+    "expected": "6e0100b322"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m5_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f4",
+        0
+      ]
+    ],
+    "expected": "f4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m5_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f4",
+        0
+      ]
+    ],
+    "expected": "6e0100f463"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_m5_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f5",
+        0
+      ]
+    ],
+    "expected": "f5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_m5_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f5",
+        0
+      ]
+    ],
+    "expected": "6e0100f564"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_2_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "2a",
+        0
+      ]
+    ],
+    "expected": "2a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_2_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "2a",
+        0
+      ]
+    ],
+    "expected": "6e01002a99"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_2_down_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "39",
+        0
+      ]
+    ],
+    "expected": "39"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_2_down_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "39",
+        0
+      ]
+    ],
+    "expected": "6e010039a8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_2_down_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "39",
+        0
+      ]
+    ],
+    "expected": "39"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_2_down_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "39",
+        0
+      ]
+    ],
+    "expected": "6e010039a8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_2_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "29",
+        0
+      ]
+    ],
+    "expected": "29"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_2_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "29",
+        0
+      ]
+    ],
+    "expected": "6e01002998"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_2_up_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "38",
+        0
+      ]
+    ],
+    "expected": "38"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_2_up_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "38",
+        0
+      ]
+    ],
+    "expected": "6e010038a7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_2_up_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "36",
+        0
+      ]
+    ],
+    "expected": "36"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_2_up_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "36",
+        0
+      ]
+    ],
+    "expected": "6e010036a5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "25",
+        0
+      ]
+    ],
+    "expected": "25"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "25",
+        0
+      ]
+    ],
+    "expected": "6e01002594"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_down_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "37",
+        0
+      ]
+    ],
+    "expected": "37"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_down_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "37",
+        0
+      ]
+    ],
+    "expected": "6e010037a6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_down_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "38",
+        0
+      ]
+    ],
+    "expected": "38"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_down_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "38",
+        0
+      ]
+    ],
+    "expected": "6e010038a7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "24",
+        0
+      ]
+    ],
+    "expected": "24"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "24",
+        0
+      ]
+    ],
+    "expected": "6e01002493"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_up_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "34",
+        0
+      ]
+    ],
+    "expected": "34"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_up_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "34",
+        0
+      ]
+    ],
+    "expected": "6e010034a3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor1_up_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "35",
+        0
+      ]
+    ],
+    "expected": "35"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor1_up_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "35",
+        0
+      ]
+    ],
+    "expected": "6e010035a4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_3_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "97",
+        0
+      ]
+    ],
+    "expected": "97"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_3_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "97",
+        0
+      ]
+    ],
+    "expected": "6e01009706"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_3_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "96",
+        0
+      ]
+    ],
+    "expected": "96"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_3_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "96",
+        0
+      ]
+    ],
+    "expected": "6e01009605"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "27",
+        0
+      ]
+    ],
+    "expected": "27"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "27",
+        0
+      ]
+    ],
+    "expected": "6e01002796"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_down_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "41",
+        0
+      ]
+    ],
+    "expected": "41"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_down_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "41",
+        0
+      ]
+    ],
+    "expected": "6e010041b0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_down_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "41",
+        0
+      ]
+    ],
+    "expected": "41"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_down_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "41",
+        0
+      ]
+    ],
+    "expected": "6e010041b0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "26",
+        0
+      ]
+    ],
+    "expected": "26"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "26",
+        0
+      ]
+    ],
+    "expected": "6e01002695"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_up_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "36",
+        0
+      ]
+    ],
+    "expected": "36"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_up_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "36",
+        0
+      ]
+    ],
+    "expected": "6e010036a5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor2_up_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "37",
+        0
+      ]
+    ],
+    "expected": "37"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor2_up_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "37",
+        0
+      ]
+    ],
+    "expected": "6e010037a6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor3_4_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "44",
+        0
+      ]
+    ],
+    "expected": "44"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor3_4_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "44",
+        0
+      ]
+    ],
+    "expected": "6e010044b3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor3_4_tilt_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5c",
+        0
+      ]
+    ],
+    "expected": "5c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor3_4_tilt_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5c",
+        0
+      ]
+    ],
+    "expected": "6e01005ccb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor3_4_tilt_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "5b",
+        0
+      ]
+    ],
+    "expected": "5b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor3_4_tilt_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "5b",
+        0
+      ]
+    ],
+    "expected": "6e01005bca"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor3_4_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "43",
+        0
+      ]
+    ],
+    "expected": "43"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor3_4_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "43",
+        0
+      ]
+    ],
+    "expected": "6e010043b2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor3_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "40",
+        0
+      ]
+    ],
+    "expected": "40"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor3_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "40",
+        0
+      ]
+    ],
+    "expected": "6e010040af"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor3_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3f",
+        0
+      ]
+    ],
+    "expected": "3f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor3_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3f",
+        0
+      ]
+    ],
+    "expected": "6e01003fae"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor4_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "42",
+        0
+      ]
+    ],
+    "expected": "42"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor4_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "42",
+        0
+      ]
+    ],
+    "expected": "6e010042b1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor4_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "41",
+        0
+      ]
+    ],
+    "expected": "41"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor4_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "41",
+        0
+      ]
+    ],
+    "expected": "6e010041b0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor5_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "72",
+        0
+      ]
+    ],
+    "expected": "72"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor5_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "72",
+        0
+      ]
+    ],
+    "expected": "6e010072e1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor5_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "71",
+        0
+      ]
+    ],
+    "expected": "71"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor5_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "71",
+        0
+      ]
+    ],
+    "expected": "6e010071e0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor6_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "74",
+        0
+      ]
+    ],
+    "expected": "74"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor6_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "74",
+        0
+      ]
+    ],
+    "expected": "6e010074e3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor6_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "73",
+        0
+      ]
+    ],
+    "expected": "73"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor6_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "73",
+        0
+      ]
+    ],
+    "expected": "6e010073e2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor7_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d1",
+        0
+      ]
+    ],
+    "expected": "d1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor7_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d1",
+        0
+      ]
+    ],
+    "expected": "6e0100d140"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor7_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d0",
+        0
+      ]
+    ],
+    "expected": "d0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor7_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d0",
+        0
+      ]
+    ],
+    "expected": "6e0100d03f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor_keep_15",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "76",
+        0
+      ]
+    ],
+    "expected": "76"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor_keep_15",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "76",
+        0
+      ]
+    ],
+    "expected": "6e010076e5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_motor_reset",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "be",
+        0
+      ]
+    ],
+    "expected": "be"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_motor_reset",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "be",
+        0
+      ]
+    ],
+    "expected": "6e0100be2d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg1_intensity_dec_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "49",
+        0
+      ]
+    ],
+    "expected": "49"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg1_intensity_dec_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "49",
+        0
+      ]
+    ],
+    "expected": "6e010049b8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg1_intensity_inc_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "46",
+        0
+      ]
+    ],
+    "expected": "46"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg1_intensity_inc_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "46",
+        0
+      ]
+    ],
+    "expected": "6e010046b5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg1_off_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "47",
+        0
+      ]
+    ],
+    "expected": "47"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg1_off_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "47",
+        0
+      ]
+    ],
+    "expected": "6e010047b6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg1_on_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "42",
+        0
+      ]
+    ],
+    "expected": "42"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg1_on_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "42",
+        0
+      ]
+    ],
+    "expected": "6e010042b1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg2_intensity_dec_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4b",
+        0
+      ]
+    ],
+    "expected": "4b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg2_intensity_dec_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4b",
+        0
+      ]
+    ],
+    "expected": "6e01004bba"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg2_intensity_inc_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "48",
+        0
+      ]
+    ],
+    "expected": "48"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg2_intensity_inc_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "48",
+        0
+      ]
+    ],
+    "expected": "6e010048b7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg2_on_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "44",
+        0
+      ]
+    ],
+    "expected": "44"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg2_on_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "44",
+        0
+      ]
+    ],
+    "expected": "6e010044b3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_constant_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "47",
+        0
+      ]
+    ],
+    "expected": "47"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_constant_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "47",
+        0
+      ]
+    ],
+    "expected": "6e010047b6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_first_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "32",
+        0
+      ]
+    ],
+    "expected": "32"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_first_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "32",
+        0
+      ]
+    ],
+    "expected": "6e010032a1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity1_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4c",
+        0
+      ]
+    ],
+    "expected": "4c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity1_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4c",
+        0
+      ]
+    ],
+    "expected": "6e01004cbb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity2_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4d",
+        0
+      ]
+    ],
+    "expected": "4d"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity2_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4d",
+        0
+      ]
+    ],
+    "expected": "6e01004dbc"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity3_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4e",
+        0
+      ]
+    ],
+    "expected": "4e"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity3_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4e",
+        0
+      ]
+    ],
+    "expected": "6e01004ebd"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity_dec_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4b",
+        0
+      ]
+    ],
+    "expected": "4b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity_dec_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4b",
+        0
+      ]
+    ],
+    "expected": "6e01004bba"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity_first",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "67",
+        0
+      ]
+    ],
+    "expected": "67"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity_first",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "67",
+        0
+      ]
+    ],
+    "expected": "6e010067d6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity_inc",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "34",
+        0
+      ]
+    ],
+    "expected": "34"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity_inc",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "34",
+        0
+      ]
+    ],
+    "expected": "6e010034a3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity_inc_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4a",
+        0
+      ]
+    ],
+    "expected": "4a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity_inc_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4a",
+        0
+      ]
+    ],
+    "expected": "6e01004ab9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_intensity_third",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "68",
+        0
+      ]
+    ],
+    "expected": "68"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_intensity_third",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "68",
+        0
+      ]
+    ],
+    "expected": "6e010068d7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_mode",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "48",
+        0
+      ]
+    ],
+    "expected": "48"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_mode",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "48",
+        0
+      ]
+    ],
+    "expected": "6e010048b7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_mode_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4a",
+        0
+      ]
+    ],
+    "expected": "4a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_mode_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4a",
+        0
+      ]
+    ],
+    "expected": "6e01004ab9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "39",
+        0
+      ]
+    ],
+    "expected": "39"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "39",
+        0
+      ]
+    ],
+    "expected": "6e010039a8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_off_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "50",
+        0
+      ]
+    ],
+    "expected": "50"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_off_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "50",
+        0
+      ]
+    ],
+    "expected": "6e010050bf"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6f",
+        0
+      ]
+    ],
+    "expected": "6f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6f",
+        0
+      ]
+    ],
+    "expected": "6e01006fde"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_on_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "4c",
+        0
+      ]
+    ],
+    "expected": "4c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_on_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "4c",
+        0
+      ]
+    ],
+    "expected": "6e01004cbb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_pulse",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "38",
+        0
+      ]
+    ],
+    "expected": "38"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_pulse",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "38",
+        0
+      ]
+    ],
+    "expected": "6e010038a7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_pulse_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "46",
+        0
+      ]
+    ],
+    "expected": "46"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_pulse_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "46",
+        0
+      ]
+    ],
+    "expected": "6e010046b5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_second_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "33",
+        0
+      ]
+    ],
+    "expected": "33"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_second_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "33",
+        0
+      ]
+    ],
+    "expected": "6e010033a2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_speed_dec_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "49",
+        0
+      ]
+    ],
+    "expected": "49"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_speed_dec_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "49",
+        0
+      ]
+    ],
+    "expected": "6e010049b8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_speed_inc_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "48",
+        0
+      ]
+    ],
+    "expected": "48"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_speed_inc_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "48",
+        0
+      ]
+    ],
+    "expected": "6e010048b7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_wave",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "39",
+        0
+      ]
+    ],
+    "expected": "39"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_wave",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "39",
+        0
+      ]
+    ],
+    "expected": "6e010039a8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_msg_wave_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "45",
+        0
+      ]
+    ],
+    "expected": "45"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_msg_wave_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "45",
+        0
+      ]
+    ],
+    "expected": "6e010045b4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_music_lock",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d9",
+        0
+      ]
+    ],
+    "expected": "d9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_music_lock",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d9",
+        0
+      ]
+    ],
+    "expected": "6e0100d948"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_next",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d3",
+        0
+      ]
+    ],
+    "expected": "d3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_next",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d3",
+        0
+      ]
+    ],
+    "expected": "6e0100d342"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d8",
+        0
+      ]
+    ],
+    "expected": "d8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d8",
+        0
+      ]
+    ],
+    "expected": "6e0100d847"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_previous",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d2",
+        0
+      ]
+    ],
+    "expected": "d2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_previous",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d2",
+        0
+      ]
+    ],
+    "expected": "6e0100d241"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_read_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f2",
+        0
+      ]
+    ],
+    "expected": "f2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_read_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f2",
+        0
+      ]
+    ],
+    "expected": "6e0100f261"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_read_set",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f3",
+        0
+      ]
+    ],
+    "expected": "f3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_read_set",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f3",
+        0
+      ]
+    ],
+    "expected": "6e0100f362"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_relax_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "70",
+        0
+      ]
+    ],
+    "expected": "70"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_relax_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "70",
+        0
+      ]
+    ],
+    "expected": "6e010070df"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_reset",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "62",
+        0
+      ]
+    ],
+    "expected": "62"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_reset",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "62",
+        0
+      ]
+    ],
+    "expected": "6e010062d1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_second_up_first_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "22",
+        0
+      ]
+    ],
+    "expected": "22"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_second_up_first_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "22",
+        0
+      ]
+    ],
+    "expected": "6e01002291"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_set_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "35",
+        0
+      ]
+    ],
+    "expected": "35"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_set_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "35",
+        0
+      ]
+    ],
+    "expected": "6e010035a4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_side_sleeper_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "ba",
+        0
+      ]
+    ],
+    "expected": "ba"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_side_sleeper_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "ba",
+        0
+      ]
+    ],
+    "expected": "6e0100ba29"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_side_sleeper_set",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "bb",
+        0
+      ]
+    ],
+    "expected": "bb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_side_sleeper_set",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "bb",
+        0
+      ]
+    ],
+    "expected": "6e0100bb2a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_sleep_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8e",
+        0
+      ]
+    ],
+    "expected": "8e"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_sleep_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8e",
+        0
+      ]
+    ],
+    "expected": "6e01008efd"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_sleep_set",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "8f",
+        0
+      ]
+    ],
+    "expected": "8f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_sleep_set",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "8f",
+        0
+      ]
+    ],
+    "expected": "6e01008ffe"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_snore_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "46",
+        0
+      ]
+    ],
+    "expected": "46"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_snore_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "46",
+        0
+      ]
+    ],
+    "expected": "6e010046b5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_snore_reset",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "cb",
+        0
+      ]
+    ],
+    "expected": "cb"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_snore_reset",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "cb",
+        0
+      ]
+    ],
+    "expected": "6e0100cb3a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_snore_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "69",
+        0
+      ]
+    ],
+    "expected": "69"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_snore_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "69",
+        0
+      ]
+    ],
+    "expected": "6e010069d8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_start_pause",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d7",
+        0
+      ]
+    ],
+    "expected": "d7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_start_pause",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d7",
+        0
+      ]
+    ],
+    "expected": "6e0100d746"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_sync_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "bd",
+        0
+      ]
+    ],
+    "expected": "bd"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_sync_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "bd",
+        0
+      ]
+    ],
+    "expected": "6e0100bd2c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_sync_on",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "bc",
+        0
+      ]
+    ],
+    "expected": "bc"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_sync_on",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "bc",
+        0
+      ]
+    ],
+    "expected": "6e0100bc2b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_tv_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "58",
+        0
+      ]
+    ],
+    "expected": "58"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_tv_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "58",
+        0
+      ]
+    ],
+    "expected": "6e010058c7"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_tv_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "33",
+        0
+      ]
+    ],
+    "expected": "33"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_tv_back_old2",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "33",
+        0
+      ]
+    ],
+    "expected": "6e010033a2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_tv_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "64",
+        0
+      ]
+    ],
+    "expected": "64"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_tv_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "64",
+        0
+      ]
+    ],
+    "expected": "6e010064d3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_ubl_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "75",
+        0
+      ]
+    ],
+    "expected": "75"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_ubl_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "75",
+        0
+      ]
+    ],
+    "expected": "6e010075e4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_ubl_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "3c",
+        0
+      ]
+    ],
+    "expected": "3c"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_ubl_on_off",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "3c",
+        0
+      ]
+    ],
+    "expected": "6e01003cab"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_ubl_on_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "43",
+        0
+      ]
+    ],
+    "expected": "43"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_ubl_on_off_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "43",
+        0
+      ]
+    ],
+    "expected": "6e010043b2"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_vibration",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d6",
+        0
+      ]
+    ],
+    "expected": "d6"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_vibration",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d6",
+        0
+      ]
+    ],
+    "expected": "6e0100d645"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_volume_down",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d5",
+        0
+      ]
+    ],
+    "expected": "d5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_volume_down",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d5",
+        0
+      ]
+    ],
+    "expected": "6e0100d544"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_volume_up",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "d4",
+        0
+      ]
+    ],
+    "expected": "d4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_volume_up",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "d4",
+        0
+      ]
+    ],
+    "expected": "6e0100d443"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_wakeup_mode",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "85",
+        0
+      ]
+    ],
+    "expected": "85"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_wakeup_mode",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "85",
+        0
+      ]
+    ],
+    "expected": "6e010085f4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_yoga_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f0",
+        0
+      ]
+    ],
+    "expected": "f0"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_yoga_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f0",
+        0
+      ]
+    ],
+    "expected": "6e0100f05f"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_yoga_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "f1",
+        0
+      ]
+    ],
+    "expected": "f1"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_yoga_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "f1",
+        0
+      ]
+    ],
+    "expected": "6e0100f160"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_zg2_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6b",
+        0
+      ]
+    ],
+    "expected": "6b"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_zg2_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6b",
+        0
+      ]
+    ],
+    "expected": "6e01006bda"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_zg2_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "6a",
+        0
+      ]
+    ],
+    "expected": "6a"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_zg2_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "6a",
+        0
+      ]
+    ],
+    "expected": "6e01006ad9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_zg_back",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "45",
+        0
+      ]
+    ],
+    "expected": "45"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_zg_back",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "45",
+        0
+      ]
+    ],
+    "expected": "6e010045b4"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_zg_back_old",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "34",
+        0
+      ]
+    ],
+    "expected": "34"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_zg_back_old",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "34",
+        0
+      ]
+    ],
+    "expected": "6e010034a3"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-k_zg_save",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "66",
+        0
+      ]
+    ],
+    "expected": "66"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-k_zg_save",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "66",
+        0
+      ]
+    ],
+    "expected": "6e010066d5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-sleep1",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "86",
+        0
+      ]
+    ],
+    "expected": "86"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-sleep1",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "86",
+        0
+      ]
+    ],
+    "expected": "6e010086f5"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-swtch_music",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "b8",
+        0
+      ]
+    ],
+    "expected": "b8"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-swtch_music",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "b8",
+        0
+      ]
+    ],
+    "expected": "6e0100b827"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P1-turn_off_music",
+    "input": [
+      "CONTROL",
+      [
+        "RAW",
+        "b9",
+        0
+      ]
+    ],
+    "expected": "b9"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "resource-P2-turn_off_music",
+    "input": [
+      "CONTROL",
+      [
+        "FRAMED",
+        "b9",
+        0
+      ]
+    ],
+    "expected": "6e0100b928"
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "height-cm",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e900000060408"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "H:4271999a:41be6666"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "height",
+        "frame": "6e900000060408",
+        "values": [
+          60.400001525878906,
+          23.799999237060547
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "height-inch",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e900001010000"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "H:41cb3333:42c80000"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "height",
+        "frame": "6e900001010000",
+        "values": [
+          25.399999618530273,
+          100.0
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "old-low",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e080064da"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "V:0",
+        "H:42c80000:421d999a"
+      ],
+      "oldPack": "6e080064da",
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "oldheight",
+        "frame": "6e080064da",
+        "values": [
+          100.0,
+          39.400001525878906
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "old-middle",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e0801037a"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "V:0",
+        "H:43a6599a:43030000"
+      ],
+      "oldPack": "6e0801037a",
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "oldheight",
+        "frame": "6e0801037a",
+        "values": [
+          332.70001220703125,
+          131.0
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "old-high",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e0805007b"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "V:0",
+        "H:42800000:41c9999a"
+      ],
+      "oldPack": "6e0805007b",
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "oldheight",
+        "frame": "6e0805007b",
+        "values": [
+          64.0,
+          25.200000762939453
+        ]
+      }
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "table-init",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e94000000000006040c320102060457"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "U:00",
+        "R:4271999a:42fa0000",
+        "I:4271999a:41233333",
+        "V:1"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "init",
+        "frame": "6e94000000000006040c320102060457",
+        "values": {
+          "unit": 0,
+          "min": 60.400001525878906,
+          "max": 125.0,
+          "initial_primary": 60.400001525878906,
+          "initial_secondary": 10.199999809265137
+        }
+      }
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "table-unit",
+    "input": [
+      "PARSER_SINGLE",
+      [
+        "6e92000000000006040c320102060455"
+      ]
+    ],
+    "expected": {
+      "events": [
+        "U:00",
+        "R:4271999a:42fa0000",
+        "I:4271999a:41233333"
+      ],
+      "oldPack": null,
+      "buffer": "",
+      "error": null,
+      "first_dispatch": {
+        "event": "init",
+        "frame": "6e92000000000006040c320102060455",
+        "values": {
+          "unit": 0,
+          "min": 60.400001525878906,
+          "max": 125.0,
+          "initial_primary": 60.400001525878906,
+          "initial_secondary": 10.199999809265137
+        }
+      }
+    }
+  }
+]

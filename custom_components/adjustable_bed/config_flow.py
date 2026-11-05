@@ -466,7 +466,7 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {"richmat_classic_apps", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -1054,6 +1054,7 @@ def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
 
 
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
+    "richmat_classic_apps": "cluster018",
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
     BED_TYPE_VIBRADORM: "vibradorm",
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
@@ -2378,6 +2379,35 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
 _PROBE_ADVERTISEMENT_WAIT_SECONDS = 10.0
 
 
+def _add_cluster018_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+    from .cluster018_profiles import APP_NAMES
+
+    app = str(data.get(CONF_PROTOCOL_VARIANT, "avocadoecobase"))
+    if app not in APP_NAMES:
+        app = "avocadoecobase"
+    schema[vol.Required(CONF_PROTOCOL_VARIANT, default=app if app in APP_NAMES else "avocadoecobase")] = vol.In(APP_NAMES)
+    choices = sorted((set(MODEL_CHOICES.get(app, ())) | set(MANUAL_ALIASES.get(app, {})) | set(LAYOUT_PICKER_CHOICES.get(app, {}))) - {"TEST", "RMCS", "ZRS6"})
+    schema[vol.Required(CONF_PRODUCT_TYPE, **({"default": data[CONF_PRODUCT_TYPE]} if data.get(CONF_PRODUCT_TYPE) else {}))] = vol.In(choices)
+    schema[vol.Optional("cluster018_third_service", default=data.get("cluster018_third_service", False))] = bool
+
+
+def _normalize_cluster018_data(data: dict[str, Any]) -> None:
+    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+
+    app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
+    layout = str(data.get(CONF_PRODUCT_TYPE, "")).strip().upper()
+    layout = MANUAL_ALIASES.get(app, {}).get(layout, layout)
+    layout = LAYOUT_PICKER_CHOICES.get(app, {}).get(layout, layout)
+    if layout in ("TEST", "RMCS", "ZRS6") or layout not in MODEL_CHOICES.get(app, ()):
+        raise ValueError("Choose a layout shipped in the selected app")
+    data[CONF_PRODUCT_TYPE] = layout
+    data[CONF_MOTOR_COUNT] = 2
+    data[CONF_HAS_MASSAGE] = False
+    data[CONF_DISABLE_ANGLE_SENSING] = True
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+
+
 def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
     bed_type = data[CONF_BED_TYPE]
     if bed_type == "ergomotion_4":
@@ -2435,6 +2465,7 @@ def _normalize_cluster033_data(data: dict[str, Any]) -> None:
 
 # Options fields of app profiles whose adder needs only the current data.
 _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]] = {
+    "richmat_classic_apps": _add_cluster018_schema_fields,
     **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, _add_cluster033_schema_fields),
     BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
@@ -3567,6 +3598,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="limoss_remote", data_schema=vol.Schema(schema), errors=errors
         )
+
+    async def async_step_cluster018(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Explicit package and package-local layout, never a shared-service guess."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                _normalize_cluster018_data(data)
+            except ValueError:
+                errors["base"] = "cluster018_layout"
+            else:
+                self._manual_data = data
+                return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_cluster018_schema_fields(schema, data)
+        return self.async_show_form(step_id="cluster018", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_cluster033_app(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Choose a source-owned app layout without guessing from shared adverts."""
@@ -9790,6 +9838,13 @@ class AdjustableBedOptionsFlow(
                         if key in app_data
                     }
                 )
+            if bed_type == "richmat_classic_apps" and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                try:
+                    _normalize_cluster018_data(app_data)
+                except ValueError:
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "cluster018_layout"})
+                user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_USER_SET)})
             if bed_type in CLUSTER033_BED_TYPES | {"ergomotion_4"} and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 try:
