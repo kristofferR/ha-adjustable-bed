@@ -74,7 +74,7 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | C37 | [custom_components/adjustable_bed/beds/serenity.py:350 (OkinBeddingAppController.requires_notification_channel)](../../../custom_components/adjustable_bed/beds/serenity.py#L350) |
 | C38 | [custom_components/adjustable_bed/beds/serenity.py:445 (OkinBeddingAppController.start_notify)](../../../custom_components/adjustable_bed/beds/serenity.py#L445) |
 | C39 | [custom_components/adjustable_bed/beds/serenity.py:428 (OkinBeddingAppController.write_command)](../../../custom_components/adjustable_bed/beds/serenity.py#L428) |
-| C40 | [custom_components/adjustable_bed/config_flow.py:2809 (AdjustableBedConfigFlow._async_fit_setup_form)](../../../custom_components/adjustable_bed/config_flow.py#L2809) |
+| C40 | [custom_components/adjustable_bed/config_flow.py:1126 (_condition_owned_generic_fields)](../../../custom_components/adjustable_bed/config_flow.py#L1126) |
 | C41 | [custom_components/adjustable_bed/config_flow.py:1896 (AdjustableBedConfigFlow.async_step_bluetooth_confirm)](../../../custom_components/adjustable_bed/config_flow.py#L1896) |
 | C42 | [custom_components/adjustable_bed/config_flow.py:2882 (AdjustableBedConfigFlow.async_step_manual_config)](../../../custom_components/adjustable_bed/config_flow.py#L2882) |
 | C43 | [custom_components/adjustable_bed/config_flow.py:3185 (AdjustableBedConfigFlow.async_step_manual_entry)](../../../custom_components/adjustable_bed/config_flow.py#L3185) |

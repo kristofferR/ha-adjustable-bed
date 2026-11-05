@@ -53,7 +53,9 @@ returns.
   [Guided setup changes](guided-setup-changes.md)) chooses the app first, then
   hands the staged route to `profile_questions`.
 - Configure asks the questions that are not the managed family's route keys:
-  the app, layout and route change only through the guided change.
+  the app, layout and route change only through the guided change. An entry
+  that Configure switches into a managed family from another bed type answers
+  that family's route questions there, since it has no guided change yet.
 - `tests/test_setup_questions.py` checks that each declared question has its
   `strings.json` label in the generic step (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
@@ -90,7 +92,7 @@ recorded here as each family converts:
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
@@ -110,6 +112,9 @@ recorded here as each family converts:
 | `vibradorm_app@vmat` | VMAT remote; `normalize` derives its control type and features. |
 | `vibradorm_app@caresse` | Restored setup; when restored, its control type, floor light, RGB, massage, light extension and floor default. `normalize` clears retained settings an answer no longer allows. |
 | `vmatbasic` | Product; for CBI and XT-Box, the floor light level and timer (the exact ranges are checked on save). |
+| `sleepys_elite_app` | Control box selector; the BOX25 selectors derive massage and position feedback. |
+| `sleepys_box15`, `sleepys_box24` | Motor count. |
+| `sleepys_box25` | Massage, and the packet dialect (Advanced). |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.

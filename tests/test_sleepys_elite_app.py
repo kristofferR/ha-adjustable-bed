@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.beds.sleepys_app_routes import (
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
+    CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_PULSE_USER_SET,
@@ -277,11 +278,16 @@ async def test_manual_app_profile_is_findable_and_persists_selector_capabilities
 ) -> None:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
-    flow._manual_data = {CONF_NAME: "Sleepy's test bed"}
+    flow._manual_data = {
+        CONF_NAME: "Sleepy's test bed",
+        CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
+    }
     finish = AsyncMock(return_value={"step_id": "verify_connection"})
 
     with patch.object(flow, "_finish_with_verify", finish):
-        form = await flow.async_step_sleepys_elite_app()
+        # The family row asks the app or receiver first; the app asks its selector.
+        form = await flow.async_step_sleepys_family({"choice": "app"})
+        assert form["step_id"] == "profile_questions"
         marker = next(
             marker
             for marker in form["data_schema"].schema
@@ -289,24 +295,19 @@ async def test_manual_app_profile_is_findable_and_persists_selector_capabilities
         )
         selector = form["data_schema"].schema[marker]
         assert marker.default() == "none"
-        assert {option["value"] for option in selector.config["options"]} == set(
-            SLEEPYS_ELITE_SELECTORS
-        )
+        assert set(selector.container) == set(SLEEPYS_ELITE_SELECTORS)
         assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEPYS_ELITE_APP] == (
-            "Sleepy's Elite app (explicit selector)"
+            "MFRM Sleepy's Elite app (control box selector)"
         )
 
-        result = await flow.async_step_sleepys_elite_app({CONF_SLEEPYS_ELITE_SELECTOR: "BOX25"})
+        result = await flow.async_step_profile_questions({CONF_SLEEPYS_ELITE_SELECTOR: "BOX25"})
 
     assert result == {"step_id": "verify_connection"}
-    assert flow._manual_data == {
-        CONF_NAME: "Sleepy's test bed",
-        CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
-        CONF_HAS_MASSAGE: True,
-        CONF_DISABLE_ANGLE_SENSING: False,
-        CONF_MOTOR_PULSE_USER_SET: False,
-    }
-    finish.assert_awaited_once_with(flow._manual_data, "Sleepy's test bed")
+    saved = finish.call_args.args[0]
+    assert saved[CONF_SLEEPYS_ELITE_SELECTOR] == "BOX25"
+    assert saved[CONF_HAS_MASSAGE] is True
+    assert saved[CONF_DISABLE_ANGLE_SENSING] is False
+    assert saved[CONF_MOTOR_PULSE_USER_SET] is False
 
 
 def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
