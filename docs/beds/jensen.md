@@ -32,7 +32,8 @@ See the [discovery ledger](jensen-disposition.md).
 
 Choose **Jensen / Svane** in the bed-type list (a detected JMC400 box is shown
 there too), then answer which app and bed you use: the Jensen Adjustable Sleep
-app with a JMC400 bed (this page; it then asks the PIN) or with a
+app with a JMC400 bed (this page; it then asks the PIN, motor count, whether
+massage motors are fitted and whether to read positions) or with a
 [LinOn](#linon) bed, or the [Svane Remote](svane.md) app with a Svane Bed or a
 JMC400 bed. The JMC400 name and the LinonPI services occur with both apps, so
 they never decide the answer; the apps' own name rules suggest it the same way

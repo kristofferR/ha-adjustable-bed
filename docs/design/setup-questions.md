@@ -178,7 +178,8 @@ These steps serve every bed type or route, so no profile owns them.
 | `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
 | `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
 | `sleep_number` | The side this Fuzion entry controls (the protocol variant); BAM/MCR asks nothing, since one entry exposes both sides. |
-| `jensen` | The JMC400 box's PIN (free text; empty uses the default). |
+| `jensen` | The JMC400 box's PIN (free text; empty uses the default), motor count, massage motors and angle sensing: the family row's form is drawn for Svane, which sets these itself. |
+| `svane:jensen_linon` | Motor count. |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.

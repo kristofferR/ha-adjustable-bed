@@ -109,8 +109,14 @@ async def test_the_jmc400_route_asks_its_pin(hass):
 async def test_each_svane_answer_saves_its_profile(hass, answer, variant):
     flow = setup_flow(hass, const.BED_TYPE_JENSEN)
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jensen_family({"choice": answer})
+        result = await flow.async_step_jensen_family({"choice": answer})
+        if answer == "jensen_linon":
+            # LinOn asks its motor count; the Svane Remote profiles set theirs.
+            assert result["step_id"] == "profile_questions"
+            await flow.async_step_profile_questions({const.CONF_MOTOR_COUNT: "3"})
     saved = finish.call_args.args[0]
+    if answer == "jensen_linon":
+        assert saved[const.CONF_MOTOR_COUNT] == 3
     assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (
         const.BED_TYPE_SVANE,
         variant,

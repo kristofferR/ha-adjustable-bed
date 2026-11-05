@@ -48,6 +48,9 @@ async def change_profile(hass, entry, variant):
         DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
     result = await manager.async_configure(result["flow_id"], {"choice": answer})
+    if result["step_id"] == "profile_questions":
+        # LinOn asks its motor count; keep the staged one.
+        result = await manager.async_configure(result["flow_id"], {})
     assert result["step_id"] == "migration_confirm", result
     result = await manager.async_configure(result["flow_id"], {"confirm": True})
     assert result["reason"] == "reconfigure_successful", result

@@ -3832,8 +3832,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and self._migration is not None:
             return await self.async_step_migration_keep()
         if isinstance(choice, str) and choice in _JENSEN_ROUTES:
+            from .setup_questions import setup_profile_for
+
             self._select_family_route(*_JENSEN_ROUTES[choice])
-            if data[CONF_BED_TYPE] == BED_TYPE_JENSEN:
+            # The form before this step was drawn for Svane, so a route with
+            # settings of its own asks them now.
+            if (profile := setup_profile_for(data)) is not None and profile.questions:
                 return await self.async_step_profile_questions()
             return await self._async_finish_family_route()
         # An unnamed advertisement reports the address as its name, which no

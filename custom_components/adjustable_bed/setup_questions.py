@@ -1230,10 +1230,27 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_classic_errors,
         title=_classic_title,
     ),
-    # The Jensen / Svane family step picks the app and bed. The JMC400 box asks
-    # for its PIN; empty uses the default PIN.
+    # The Jensen / Svane family step picks the app and bed, and the form before
+    # it was drawn for Svane, which sets these itself. The JMC400 box asks for
+    # its PIN (empty uses the default PIN) and the generic settings its old row
+    # showed: its motors, whether massage motors are fitted, and whether to read
+    # its position reports.
     BED_TYPE_JENSEN: _asking(
-        BED_TYPE_JENSEN, questions=(Question(CONF_JENSEN_PIN, default="", text=True),)
+        BED_TYPE_JENSEN,
+        questions=(
+            Question(CONF_JENSEN_PIN, default="", text=True),
+            Question(CONF_MOTOR_COUNT, _motor_counts(BED_TYPE_JENSEN), 2),
+            Question(CONF_HAS_MASSAGE, default=False),
+            Question(CONF_DISABLE_ANGLE_SENSING, default=False),
+        ),
+    ),
+    # The Jensen app's LinOn profile has no massage and no position reports;
+    # its motor count was the one generic setting its row needed.
+    f"{BED_TYPE_SVANE}:{SVANE_VARIANT_JENSEN_LINON}": _asking(
+        f"{BED_TYPE_SVANE}:{SVANE_VARIANT_JENSEN_LINON}",
+        questions=(
+            Question(CONF_MOTOR_COUNT, _motor_counts(BED_TYPE_SVANE), 2),
+        ),
     ),
     # The Malouf family step picks the app. Its model sets the controls, and the
     # role and transport belong to the one physical receiver; neither the model

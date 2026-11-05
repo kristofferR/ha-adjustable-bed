@@ -317,7 +317,11 @@ async def test_bluetooth_setup_stores_the_app_profile(
     if variant == VARIANT_AUTO:
         # The Jensen app's rule suggests LinOn for its names; Svane Bed stays Svane.
         assert choice.default() == answers[expected]
-    await flow.async_step_jensen_family({"choice": answers[expected]})
+    result = await flow.async_step_jensen_family({"choice": answers[expected]})
+    if expected == SVANE_VARIANT_JENSEN_LINON:
+        # LinOn asks its motor count, the setting its old row showed.
+        assert result["step_id"] == "profile_questions"
+        await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
 
     assert finish.await_args is not None
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
