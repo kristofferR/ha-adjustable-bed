@@ -2985,9 +2985,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
     # version 3 marks older entries for the one-time app profile review. v5
     # stores the profile id each entry runs (profile_id.py); setup derives it
-    # for new entries.
+    # for new entries. Minor version 2 drops the obsolete keys recorded in
+    # docs/design/config-keys.md.
     VERSION = 5
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:

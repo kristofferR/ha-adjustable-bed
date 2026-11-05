@@ -1182,7 +1182,6 @@ def _remacro_pair(hass: HomeAssistant, left_model: int | None, right_model: int 
         CONF_PAIR_ID,
         CONF_PAIR_MEMBER_ADDRESSES,
         CONF_PAIR_MODE,
-        CONF_PAIR_SCHEMA_VERSION,
         CONF_SIDE,
         PAIR_MODE_SEPARATE_ADDRESS,
     )
@@ -1208,7 +1207,6 @@ def _remacro_pair(hass: HomeAssistant, left_model: int | None, right_model: int 
         data={
             CONF_PAIR_ID: "pair_remacro",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-            CONF_PAIR_SCHEMA_VERSION: 1,
             CONF_BED_TYPE: BED_TYPE_REMACRO,
             CONF_NAME: "Remacro Pair",
             CONF_PREFERRED_ADAPTER: "auto",
