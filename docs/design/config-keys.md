@@ -7,7 +7,8 @@ it, and whether it still matters. It contains no protocol values.
 `tests/test_config_keys.py` checks that every `CONF_*` constant in the
 integration has a row here, and that the keys schema 5.2 drops are exactly the
 ones listed under [Dropped by schema 5.2](#dropped-by-schema-52). A new key
-needs a row before it ships.
+needs a row before it ships. [Schema 5.3](#massage-off-in-schema-53) corrects
+one setting and drops no key.
 
 ## Classes
 
@@ -50,7 +51,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | Key | Class | Set by | Read by |
 |---|---|---|---|
 | `motor_count` | User | Setup and Configure; a question of the Keeson ORE apps and INNOVA, the Okin remotes and Sleepy's BOX15 and BOX24; owned by the declarations that fix it | `coordinator.py`, controllers, entity platforms |
-| `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it | Controllers, entity platforms |
+| `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it; turned off by [schema 5.3](#massage-off-in-schema-53) where the profile has no massage | Controllers, entity platforms |
 | `has_light` | User | The chair-and-bed app steps, `cluster033_app` and Configure; a question of `jiecang_app` and `logicdata_app` | `controller_factory.py`, `coordinator.py` |
 | `disable_angle_sensing` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/cluster018.py` |
@@ -178,7 +179,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `profile_review_pending` | Internal | Schema 4.3 migration, `profile_review.py` | `profile_review.py` |
 | `profile_review_kept` | Internal | `profile_review.py` on Keep | `profile_review.py` |
-| `profile_migration` | Internal | Schema 5.1 and 5.2 migrations | Diagnostics, support bundles |
+| `profile_migration` | Internal | Schema 5.1, 5.2 and 5.3 migrations | Diagnostics, support bundles |
 
 ## Flow inputs
 
@@ -205,5 +206,23 @@ list stay untouched.
 | `pair_schema_version` | Written on every pair since 4.0.0 ([#384](https://github.com/kristofferR/ha-adjustable-bed/pull/384)) and never read in any release. The entry's schema version is what versions pair data: schema 4.2 and 5.1 migrated pair data without it. Schema 5.2 removes the constant and its writers. |
 | `disable_discovery` | Integration-wide since it was added in 2.9.11 ([discussion #342](https://github.com/kristofferR/ha-adjustable-bed/discussions/342)): Configure saves it in `discovery_settings.py`, whose Store is its only reader. Configure has removed a per-entry copy on save since 3.4.0, so a stored copy is never read. The form field keeps its key. |
 
-Schema 5 is one way: an entry at 5.2 cannot load on 4.x, and restoring a Home
-Assistant backup is the only way back.
+## Massage off in schema 5.3
+
+`has_massage` stays a user setting, but three layouts have no massage: a
+FurniMove handset without massage rows, `comfort_enhancements:mc3` and a
+`sleepys_elite_app` control box other than BOX25. Their profiles own the field
+and set it off: FurniMove and Sleepy's derive it from the handset or control
+box, and MC3 fixes it. Saved entries could still have it on, which showed
+massage buttons that raise errors or do nothing
+([#787](https://github.com/kristofferR/ha-adjustable-bed/issues/787)).
+
+The 5.3 step (`migrate_v5_3_data` in `__init__.py`) sets it to false wherever
+`profile_massage` in `setup_questions.py` reads off from the saved route: entry
+data, each paired side's effective settings and each side's `origin_data`. That
+is the value setup and Configure save for the same route, so the two cannot
+disagree. The record lists each place under `massage_off`. The step deletes
+the massage buttons those runtimes had from the entity registry, and leaves
+every other layout and key alone.
+
+Schema 5 is one way: an entry at 5.2 or 5.3 cannot load on 4.x, and restoring a
+Home Assistant backup is the only way back.

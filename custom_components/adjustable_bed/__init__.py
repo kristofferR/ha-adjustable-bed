@@ -20,12 +20,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .beds.remacro_protocol import add_remacro_model
 from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_BEDTECH,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_KAIDI,
@@ -34,6 +36,7 @@ from .const import (
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_VIBRADORM,
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
@@ -312,6 +315,22 @@ def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
     return migrated
 
 
+def _with_migration_record(
+    data: dict[str, Any], *, from_version: int, from_minor_version: int, **fields: Any
+) -> dict[str, Any]:
+    """Add ``fields`` to the migration record, starting one if the entry has none."""
+    record = data.get(CONF_PROFILE_MIGRATION)
+    data[CONF_PROFILE_MIGRATION] = {
+        **(
+            record
+            if isinstance(record, Mapping)
+            else {"from_version": from_version, "from_minor_version": from_minor_version}
+        ),
+        **fields,
+    }
+    return data
+
+
 # Keys no code reads on v5; docs/design/config-keys.md records the evidence.
 # Schema 5.2 drops them wherever an entry stores configuration.
 V5_2_OBSOLETE_KEYS: Final = frozenset(
@@ -368,16 +387,101 @@ def migrate_v5_2_entry(
     new_data = _drop_obsolete_keys(data, "data", dropped)
     new_options = _drop_obsolete_keys(options, "options", dropped)
     if dropped:
-        record = new_data.get(CONF_PROFILE_MIGRATION)
-        new_data[CONF_PROFILE_MIGRATION] = {
-            **(
-                record
-                if isinstance(record, Mapping)
-                else {"from_version": from_version, "from_minor_version": from_minor_version}
-            ),
-            "dropped_keys": dropped,
-        }
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            dropped_keys=dropped,
+        )
     return new_data, new_options
+
+
+# Layouts whose massage buttons raise or do nothing (#787). Their profile settles
+# massage off, as setup and Configure already save it for them.
+_V5_3_MASSAGE_BED_TYPES: Final = frozenset(
+    {BED_TYPE_FURNIMOVE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_SLEEPYS_ELITE_APP}
+)
+
+
+def _massage_left_on(view: Mapping[str, Any]) -> bool:
+    """Return True for saved Massage on a layout whose profile settles it off."""
+    from .setup_questions import profile_massage
+
+    return (
+        view.get(CONF_BED_TYPE) in _V5_3_MASSAGE_BED_TYPES
+        and bool(view.get(CONF_HAS_MASSAGE))
+        and profile_massage(view) is False
+    )
+
+
+def migrate_v5_3_data(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], list[str]]:
+    """Return entry data with Massage off on the layouts that have no massage.
+
+    A paired side is judged by the settings it runs with, and the original entry
+    it restores on unpair is corrected too. The migration record lists each
+    place under ``massage_off``, which is also returned. Nothing to correct
+    leaves the data unchanged.
+    """
+    new_data = dict(data)
+    turned_off: list[str] = []
+    if not is_paired(data):
+        if _massage_left_on(data):
+            new_data[CONF_HAS_MASSAGE] = False
+            turned_off.append("data")
+    elif isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if _massage_left_on(effective_child_data(data, side, options)):
+                child[CONF_HAS_MASSAGE] = False
+                turned_off.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and _massage_left_on(origin):
+                child[KEY_ORIGIN_DATA] = {**origin, CONF_HAS_MASSAGE: False}
+                turned_off.append(f"data.{side}.{KEY_ORIGIN_DATA}")
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if turned_off:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            massage_off=turned_off,
+        )
+    return new_data, turned_off
+
+
+def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
+    """Return the unique ids of the massage buttons Massage on gave these runtimes."""
+    from .button import BUTTON_DESCRIPTIONS
+
+    keys = [description.key for description in BUTTON_DESCRIPTIONS if description.requires_massage]
+    unique_ids: set[str] = set()
+    for location in turned_off:
+        if location == "data":
+            unique_ids.update(f"{data[CONF_ADDRESS].upper()}_{key}" for key in keys)
+            continue
+        _data, side, *origin = location.split(".")
+        child = get_child(data, side)
+        address = child.get(CONF_ADDRESS) if child is not None else None
+        if origin or address is None:
+            # An original entry has no entities until an unpair restores it.
+            continue
+        # These layouts never pair on one address, so each side has its own.
+        unique_ids.update(f"{address.upper()}_{key}" for key in keys)
+        # A combined control needs both sides, so it goes with either one.
+        unique_ids.update(f"{data[CONF_PAIR_ID]}_{key}_both" for key in keys)
+    return unique_ids
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -470,6 +574,24 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=2
         )
+
+    if entry.version == 5 and entry.minor_version < 3:
+        # v5.2 -> v5.3: Massage off on layouts whose profile has no massage
+        # (#787), so their dead massage buttons leave with the next setup.
+        data, turned_off = migrate_v5_3_data(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        # The buttons leave the registry now, not at the next successful setup,
+        # so a bed that is out of reach keeps no orphans.
+        registry = er.async_get(hass)
+        for unique_id in _massage_button_unique_ids(data, turned_off):
+            entity_id = registry.async_get_entity_id("button", DOMAIN, unique_id)
+            if entity_id is not None:
+                registry.async_remove(entity_id)
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=3)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
