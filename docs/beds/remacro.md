@@ -31,9 +31,9 @@ screen, and therefore which codes, apply.
 | ✅ | [The Brick](https://play.google.com/store/apps/details?id=com.cheers.brick) 1.0 (3) | `com.cheers.brick` | `the_brick` |
 | ✅ | [Jerome's](https://play.google.com/store/apps/details?id=com.cheers.jewmes) 1.202112141512 (20) | `com.cheers.jewmes` | `jeromes` |
 
-- Nothing in the advertisement identifies the app, so choose the protocol
-  variant that matches the app you use. `auto` is the Slumberland app, as in
-  v4.0.2.
+- Nothing in the advertisement identifies the app, so setup asks which app you
+  use (see [Home Assistant setup](#home-assistant-setup)). `auto` is the
+  Slumberland app, as in v4.0.2.
 - The apps differ in their frame counters, in one OneActivity timing, in
   massage wave cycling, in the models they list and in whether the LED light
   setting is shown.
@@ -127,6 +127,25 @@ Beds are detected by the advertised service `6e403587-b5a3-f393-e0a9-e50e24dcca9
 | 54 | CS-B300M(ASI) | TwelveActivity | Head, Lumbar, Feet (no All motors), Flat, 1 memory, presets, massage, light |
 | 55 | CS-B200M(ASI) | ElevenActivity | Head, Feet, All motors, Flat, 1 memory, presets, massage, light |
 
+### Home Assistant setup
+
+The bed-type list has one **Remacro: Slumberland, The Brick and Jerome's apps**
+row, and a discovered Remacro bed opens the same question. Setup shows the
+model the bed advertises and asks which app you use, offering only the apps
+that list that model:
+
+| Answer | Protocol variant |
+|---|---|
+| Slumberland app | `auto` |
+| The Brick app | `the_brick` |
+| Jerome's app (company IDs 45 to 53 only) | `jeromes` |
+
+When no model has been seen yet, or no app lists it, every app is offered and
+the bed starts on the [fallback controls](#unrecognized-models-fallback). The
+model is remembered as before. **Configure** still changes the app, refusing
+one that does not list the model, and the model repair below still switches an
+unlisted bed to an app that lists it.
+
 ### Unrecognized models (fallback)
 
 A bed whose model the selected app does not recognize still loads, as every
@@ -146,9 +165,9 @@ Remacro bed did up to v4.0.2, with the **fallback** controls described below:
   fallback while the other keeps its model's controls.
 - An observed company ID is remembered even when no app lists it, so the bed
   keeps its warning after a restart while it is out of range.
-- When the chosen app does not list the model, the setup form shows that as an
-  error on the protocol variant field. The options form refuses switching to
-  such an app, but saves other changes while the app stays the same.
+- Setup offers only the apps that list a seen model. The options form refuses
+  switching to an app that does not list it, but saves other changes while the
+  app stays the same.
 - Each side of a combined bed keeps its own app, so the combined options refuse
   any app change; use the side's Repairs fix, or unpair and change each side.
   Removing an entry clears its Repairs issues unless another entry still owns
