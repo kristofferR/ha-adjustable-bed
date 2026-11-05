@@ -61,6 +61,13 @@ function graphicLabels(markup: string): string[] {
   )].map(([, name, value, inline]) => inline ?? `${name} ${value}`);
 }
 
+// The visible text of the bed graphic's container, chip included.
+function graphicText(markup: string): string[] {
+  const start = markup.search(/class="(compact-)?graphic"/);
+  const end = markup.indexOf("</div>", markup.indexOf("</svg>", start));
+  return markup.slice(start, end).split(/<[^>]*>/).slice(1).map((text) => text.trim()).filter(Boolean);
+}
+
 function render(hass: HomeAssistant, config: Partial<AdjustableBedCardConfig>): string {
   const card = new AdjustableBedCard();
   card.setConfig({ type: "custom:adjustable-bed-card", device_id: "bed", ...config });
@@ -108,6 +115,17 @@ test("switched on, measured percentages and lumbar draw a solid pose with stacke
   expect(out).toContain("bed-lumbar-panel");
   expect(out).toContain("is-measured");
   expect(out).not.toMatch(/is-(estimated|unconfirmed|unknown)/);
+});
+
+test("a measured percentage graphic carries no chip or caption, only its labels", () => {
+  const options = { show_percentage_graphic: true, show_lumbar_graphic: true };
+  for (const layout of ["full", "compact"] as const) {
+    const out = render(fixture("%"), { ...options, layout });
+    expect(graphicText(out)).toEqual(["Back", "40%", "Lumbar", "60%", "Legs", "20%"]);
+    expect(out).not.toMatch(/estimate-chip|estimate-footer|Estimated from movement time/);
+  }
+  // An estimate does carry its chip.
+  expect(graphicText(render(fixture("estimate"), { ...options, layout: "compact" }))).toContain("Estimated");
 });
 
 test("the percentage graphic draws each estimate state in its own style", () => {

@@ -900,8 +900,9 @@ compact card shows the matching chip on its graphic:
 | Unconfirmed after a restart | Grey and dashed, at the last estimate | `Was ≈ 40%` |
 | Unknown, or not calibrated | Faint, dotted and flat | `?` |
 
-The lumbar section follows the same rule. Only back, legs, head and feet have
-estimates, so on an estimated bed the lumbar section is unknown.
+A measured position gets no chip or caption, only its labels. The lumbar
+section follows the same rule. Only back, legs, head and feet have estimates,
+so on an estimated bed the lumbar section is unknown.
 
 ### Full card in a dialog
 
