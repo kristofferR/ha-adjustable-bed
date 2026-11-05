@@ -101,6 +101,17 @@ def test_a_choice_without_an_automatic_route_is_shown_open():
     assert _route_section(const.BED_TYPE_SOLACE, "") is None
 
 
+def test_okin_cst_lists_each_app_route_open():
+    """Its Auto is the MF900 profile, so an app found by name needs its own route."""
+    section_ = _route_section(const.BED_TYPE_OKIN_CST, const.VARIANT_AUTO)
+    assert section_ is not None and section_.options == {"collapsed": False}
+    labels = dict(_setup_routes(const.BED_TYPE_OKIN_CST))
+    assert labels[const.OKIN_CST_VARIANT_RESIDENT] == "Rize Resident: Resident Adjustable Bed app"
+    assert all(
+        label.endswith(" app") for variant, label in labels.items() if variant != const.VARIANT_AUTO
+    )
+
+
 async def test_the_app_entry_decides_its_route(hass, enable_custom_integrations):
     result = await _manual_entry(hass)
     choice = f"{const.BED_TYPE_KEESON}:{const.KEESON_VARIANT_INNOVA}"
@@ -228,7 +239,21 @@ _FLOYD = bed_type_choice(const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD)
         ("ISleep", {const.BED_TYPE_KAIDI, const.BED_TYPE_ISLEEP}),
         ("Kaidi", {const.BED_TYPE_KAIDI, _FLOYD, const.BED_TYPE_ISLEEP}),
         ("Bed Connect", {const.BED_TYPE_LINAK}),
-        ("Power Bob", {const.BED_TYPE_MOTOSLEEP}),
+        # POWER BOB ULTRA-O is the app of the Rize Bob product on Okin CST.
+        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, const.BED_TYPE_OKIN_CST}),
+        *(
+            (name, {const.BED_TYPE_OKIN_CST})
+            for name in (
+                "MFirm 900",
+                "Jordan's Sanctuary",
+                "Resident Adjustable Bed",
+                "Rize Aviada",
+                "Rize Contemporary III",
+                "Carefree",
+                "Rize Clarity II",
+                "Support 挺你",
+            )
+        ),
     ],
 )
 def test_an_app_name_finds_only_its_own_rows(name, choices):

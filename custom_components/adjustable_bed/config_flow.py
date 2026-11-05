@@ -902,8 +902,13 @@ def _route_section(bed_type: str | None, default: str) -> section | None:
     )
     return section(
         vol.Schema({vol.Required(CONF_PROTOCOL_VARIANT, default=default): field}),
-        {"collapsed": VARIANT_AUTO in routes},
+        {"collapsed": VARIANT_AUTO in routes and bed_type not in _FIXED_DEFAULT_ROUTES},
     )
+
+
+# Bed types whose Auto route is one fixed profile, not a detection: their apps
+# need their own route, so the list stays open.
+_FIXED_DEFAULT_ROUTES: Final = frozenset({BED_TYPE_OKIN_CST})
 
 
 def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
@@ -2838,9 +2843,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Leave the saved entry untouched and record the explicit Keep."""
         if not self._migration_unchanged():
             return self.async_abort(reason="migration_entry_changed")
+        from .profile_recommendations import async_keep_reviewed_profile
         from .profile_review import async_keep_current_profile
 
-        async_keep_current_profile(self.hass, self._get_reconfigure_entry())
+        entry = self._get_reconfigure_entry()
+        async_keep_current_profile(self.hass, entry)
+        await async_keep_reviewed_profile(self.hass, entry, self.flow_id)
         return self.async_abort(reason="migration_kept")
 
     async def async_step_vibradorm(
@@ -3054,9 +3062,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_abort(reason="migration_unchanged")
         self._record_selected_app_intent(data)
         result = self.async_update_and_abort(entry, data=data, options=options)
+        from .profile_recommendations import (
+            async_complete_profile_review,
+            async_confirm_profile_review,
+        )
         from .profile_review import async_clear_profile_review_issue
 
         async_clear_profile_review_issue(self.hass, entry.entry_id)
+        # A profile recommendation that opened this change is answered by it.
+        await async_confirm_profile_review(self.hass, entry, self.flow_id, {**data, **options})
+        async_complete_profile_review(self.hass, entry, self.flow_id)
         if entry.state in (ConfigEntryState.SETUP_ERROR, ConfigEntryState.SETUP_RETRY):
             self.hass.config_entries.async_schedule_reload(entry.entry_id)
         return result

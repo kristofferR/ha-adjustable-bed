@@ -1792,15 +1792,16 @@ OKIN_CST_VARIANT_SUPPORT: Final = "cst_support"
 OKIN_CST_VARIANT_NECTAR_MOVE: Final = "cst_nectar_move"
 OKIN_CST_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (MF900 profile)",
-    OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary",
-    OKIN_CST_VARIANT_RESIDENT: "Rize Resident",
-    OKIN_CST_VARIANT_AVIADA: "Rize Aviada",
-    OKIN_CST_VARIANT_BOB: "Rize Bob",
-    OKIN_CST_VARIANT_CONTEMPO: "Rize Contempo",
-    OKIN_CST_VARIANT_CAREFREE: "Rize II Carefree",
-    OKIN_CST_VARIANT_CLARITY: "Rize II Clarity",
-    OKIN_CST_VARIANT_MF900: "Rize MF900 / Mattress Firm 900-O",
-    OKIN_CST_VARIANT_SUPPORT: "Support",
+    # Each product is named with the app its accepted report identifies.
+    OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary: Jordan's Sanctuary - O app",
+    OKIN_CST_VARIANT_RESIDENT: "Rize Resident: Resident Adjustable Bed app",
+    OKIN_CST_VARIANT_AVIADA: "Rize Aviada: Rize Aviada - O app",
+    OKIN_CST_VARIANT_BOB: "Rize Bob: POWER BOB ULTRA-O app",
+    OKIN_CST_VARIANT_CONTEMPO: "Rize Contempo: Rize Contemporary III - O app",
+    OKIN_CST_VARIANT_CAREFREE: "Rize II Carefree: Carefree app",
+    OKIN_CST_VARIANT_CLARITY: "Rize II Clarity: Rize Clarity II - O app",
+    OKIN_CST_VARIANT_MF900: "Rize MF900 / Mattress Firm 900-O: MFirm 900 - O app",
+    OKIN_CST_VARIANT_SUPPORT: "Support: Support 挺你 app",
     OKIN_CST_VARIANT_NECTAR_MOVE: "Nectar Move",
 }
 OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(

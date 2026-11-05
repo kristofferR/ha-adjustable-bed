@@ -75,6 +75,7 @@ from .profile_decisions import (
     decision_timestamp,
     profile_selection,
 )
+from .profile_migration import managed_family, reconfigure_context
 from .profile_review import (
     async_clear_profile_review_issue,
     async_refresh_profile_review_issue,
@@ -690,6 +691,23 @@ async def async_confirm_profile_review(
         )
 
 
+async def async_keep_reviewed_profile(hass: HomeAssistant, entry: ConfigEntry, flow_id: str) -> None:
+    """A Keep answered in the guided change a review opened keeps the current profile."""
+    for watch in tuple(_watches(hass).values()):
+        if watch.entry is not entry or watch.review_flow_id != flow_id:
+            continue
+        recommendation = watch.review_recommendation
+        watch.review_flow_id = None
+        watch.review_recommendation = None
+        watch.review_profile = None
+        if recommendation is not None and recommendation == watch.recommendation:
+            try:
+                await watch.async_keep(recommendation)
+            except OSError:
+                # The notice stays, so Keep in the repair can retry.
+                _LOGGER.warning("Unable to save the kept profile recommendation", exc_info=True)
+
+
 @callback
 def async_complete_profile_review(hass: HomeAssistant, entry: ConfigEntry, flow_id: str) -> None:
     """Retire the notice even when an unchanged save fires no update listener."""
@@ -722,6 +740,12 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
             return self.async_abort(reason="recommendation_changed")
         action = (user_input or {}).get("action")
         errors: dict[str, str] = {}
+        # Configure refuses an app or route change within a guided family, so
+        # its review runs the guided change instead, as the app review does.
+        guided = (
+            recommendation.rule != _TEMPUR_PROCESSOR_RULE
+            and managed_family(watch.entry.data) is not None
+        )
         if action == "keep":
             try:
                 await watch.async_keep(recommendation)
@@ -735,6 +759,8 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     step_id="processor",
                     description_placeholders=watch.placeholders(),
                 )
+            if guided:
+                return await self._async_start_guided_change(watch, recommendation)
             if is_paired(watch.entry.data):
                 # Existing per-side profile restrictions require an explicit split.
                 # Open the menu; never split or change either side from this repair.
@@ -779,7 +805,7 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                 )
             return self.async_abort(reason="recommendation_changed")
         return self.async_show_form(
-            step_id="paired" if is_paired(watch.entry.data) else "init",
+            step_id="managed" if guided else "paired" if is_paired(watch.entry.data) else "init",
             description_placeholders=watch.placeholders(),
             errors=errors,
             data_schema=vol.Schema(
@@ -803,6 +829,27 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> RepairsFlowResult:
         return await self.async_step_init(user_input)
+
+    async def async_step_managed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        return await self.async_step_init(user_input)
+
+    async def _async_start_guided_change(
+        self, watch: ProfileRecommendationWatch, recommendation: Recommendation
+    ) -> RepairsFlowResult:
+        """Open Reconfigure; the notice stays until it saves a change or keeps the profile."""
+        result = await self.hass.config_entries.flow.async_init(
+            DOMAIN, context=reconfigure_context(watch.entry)
+        )
+        if result.get("type") is not FlowResultType.FORM:
+            return self.async_abort(reason="recommendation_changed")
+        watch.review_flow_id = result["flow_id"]
+        watch.review_recommendation = recommendation
+        watch.review_profile = profile_selection(watch.profile_data)
+        return self.async_abort(
+            reason="guided_change_started", next_flow=(FlowType.CONFIG_FLOW, result["flow_id"])
+        )
 
     async def async_step_processor(
         self, user_input: dict[str, Any] | None = None

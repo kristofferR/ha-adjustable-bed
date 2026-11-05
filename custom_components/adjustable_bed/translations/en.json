@@ -8966,6 +8966,13 @@
               "action": "Profile choice"
             }
           },
+          "managed": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep current profile, here or in the guided change, dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
           "paired": {
             "title": "Review the profile for {target}",
             "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
@@ -8979,7 +8986,8 @@
         },
         "abort": {
           "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
-          "review_started": "Continue in settings. Nothing changes until you submit them."
+          "review_started": "Continue in settings. Nothing changes until you submit them.",
+          "guided_change_started": "Continue in the guided change. Nothing changes until you apply it."
         }
       }
     },
@@ -8990,6 +8998,13 @@
           "init": {
             "title": "Review the profile for {name}",
             "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "managed": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep current profile, here or in the guided change, dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
@@ -9007,7 +9022,8 @@
         },
         "abort": {
           "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
-          "review_started": "Continue in settings. Nothing changes until you submit them."
+          "review_started": "Continue in settings. Nothing changes until you submit them.",
+          "guided_change_started": "Continue in the guided change. Nothing changes until you apply it."
         }
       }
     },

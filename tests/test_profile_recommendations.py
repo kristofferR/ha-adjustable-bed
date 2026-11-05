@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_KEESON,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
@@ -1121,9 +1122,9 @@ def test_generic_decision_survives_name_changes_but_not_changed_profile():
 async def test_non_lumbar_observer_and_ambiguous_handoff_do_not_save_or_preselect(
     hass, enable_custom_integrations
 ):
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     coord = coordinator()
-    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.bed_type = BED_TYPE_OKIN_CB35
     coord.controller.protocol_diagnostics = {}
     target = await watch(hass, config_entry, coord)
     assert issue(hass, target).translation_key == "profile_ambiguous"
@@ -1410,7 +1411,7 @@ async def test_expired_history_keeps_upgrade_review_confirmation(
         profile_review_mark,
     )
 
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     hass.config_entries.async_update_entry(
         config_entry,
         data={
@@ -1455,7 +1456,7 @@ async def test_same_mac_with_different_case_keeps_the_recommendation(hass):
     assert issue(hass, target) is not None
 
 
-@pytest.mark.parametrize("selected", [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_ADJUSTABLE_LUMBAR])
+@pytest.mark.parametrize("selected", [BED_TYPE_OKIN_CB35, BED_TYPE_ADJUSTABLE_LUMBAR])
 async def test_single_address_pair_has_one_physical_notice(
     hass, enable_custom_integrations, selected
 ):
@@ -1499,7 +1500,7 @@ async def test_single_address_pair_has_one_physical_notice(
 
 
 async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custom_integrations):
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     # Populate defaults without starting BLE setup before the unchanged-save check.
     initial = await hass.config_entries.options.async_init(config_entry.entry_id)
     await hass.config_entries.options.async_configure(
@@ -1508,7 +1509,7 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     with patch.object(hass.config_entries, "async_schedule_reload"):
         await hass.config_entries.options.async_configure(initial["flow_id"], {})
     coord = coordinator()
-    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.bed_type = BED_TYPE_OKIN_CB35
     coord.controller.protocol_diagnostics = {}
     target = await watch(hass, config_entry, coord)
     config_entry.mock_state(hass, ConfigEntryState.LOADED)
@@ -1521,7 +1522,7 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     config_entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
     assert result["type"] == "create_entry"
     assert config_entry.data == before
-    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     assert issue(hass, target) is None
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions["history"][0]["decision"] == "dismissed"
@@ -1585,7 +1586,7 @@ async def test_options_save_does_not_confirm_new_advertisement_assessment(
 ):
     from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
 
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     coord = coordinator()
     coord.controller.protocol_diagnostics = {}
     target = await watch(hass, config_entry, coord)
@@ -1602,7 +1603,7 @@ async def test_options_save_does_not_confirm_new_advertisement_assessment(
         with patch.object(hass.config_entries, "async_schedule_reload"):
             result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
     assert result["type"] == "create_entry"
-    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions[original.rule] is True
     assert unseen.rule not in decisions
@@ -1694,3 +1695,79 @@ def test_eshine_search_hint_does_not_question_an_already_matching_receiver():
         {CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN, CONF_PROTOCOL_VARIANT: "auto"},
         observed, {},
     ) is None
+
+
+KSBT_NAME = "KSBT03C123456789"
+
+
+async def keeson_review(hass):
+    """A Keeson Base entry whose KSBT name questions its explicit variant."""
+    config_entry = entry(
+        hass, **{CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "base", CONF_MOTOR_COUNT: 2}
+    )
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement(KSBT_NAME, [NORDIC_UART_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+    assert issue(hass, target).translation_key == "profile_ambiguous"
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=observed):
+        form = await flow.async_step_init({"issue_id": target.issue_id})
+        result = await flow.async_step_init({"action": "review"})
+    # Configure refuses an in-family route change, so the review runs the guided change.
+    assert form["step_id"] == "managed"
+    assert result["type"] == "abort" and result["reason"] == "guided_change_started"
+    kind, flow_id = result["next_flow"]
+    assert kind == "config_flow"
+    step = hass.config_entries.flow.async_get(flow_id)
+    assert step["step_id"] == "keeson_family"
+    return target, observed, flow_id
+
+
+async def test_guided_review_stays_pending_when_the_change_is_closed(
+    hass, enable_custom_integrations
+):
+    target, observed, flow_id = await keeson_review(hass)
+    before = dict(target.entry.data)
+    hass.config_entries.flow.async_abort(flow_id)
+    with patch(HISTORY, return_value=observed):
+        target.refresh()
+    assert target.entry.data == before
+    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
+    assert issue(hass, target) is not None
+
+
+async def test_keep_in_the_guided_change_keeps_the_profile(hass, enable_custom_integrations):
+    target, observed, flow_id = await keeson_review(hass)
+    result = await hass.config_entries.flow.async_configure(flow_id, {"choice": "keep"})
+    assert result["type"] == "abort" and result["reason"] == "migration_kept"
+    assert (target.entry.data[CONF_BED_TYPE], target.entry.data[CONF_PROTOCOL_VARIANT]) == (
+        BED_TYPE_KEESON,
+        "base",
+    )
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    record = decisions["history"][0]
+    assert record["decision"] == "dismissed" and record["source"] == "keep"
+    with patch(HISTORY, return_value=observed):
+        target.refresh()
+    assert issue(hass, target) is None
+
+
+async def test_a_saved_guided_change_answers_the_review(hass, enable_custom_integrations):
+    target, observed, flow_id = await keeson_review(hass)
+    result = await hass.config_entries.flow.async_configure(flow_id, {"choice": "other_route"})
+    assert result["step_id"] == "keeson_route"
+    result = await hass.config_entries.flow.async_configure(
+        flow_id, {CONF_PROTOCOL_VARIANT: "ksbt", CONF_MOTOR_COUNT: "2"}
+    )
+    assert result["step_id"] == "migration_confirm"
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await hass.config_entries.flow.async_configure(flow_id, {"confirm": True})
+    assert result["type"] == "abort"
+    assert target.entry.data[CONF_PROTOCOL_VARIANT] == "ksbt"
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    record = decisions["history"][0]
+    assert record["decision"] == "accepted" and record["source"] == "configure"
+    assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == "ksbt"
