@@ -1341,29 +1341,39 @@ def _limoss_remote_features_left(
 
 
 async def _async_turn_off_limoss_remote_features(
-    runtime: object, light: bool, massage: bool
+    runtime: object, light: bool, massage: bool, *, side: str | None = None
 ) -> bool:
     """Send the Limoss Remote OFF commands through the live runtime; True once done.
 
+    ``side`` names one receiver of a separate-address pair. Its commands run
+    through the pair, so they take the pair's command lanes like its entities.
     A cancelled, replaced or failed command returns False, so the caller keeps
     the saved setup.
     """
     from .beds.limoss_remote import apply_limoss_remote_features
     from .coordinator import AdjustableBedCoordinator
+    from .paired_coordinator import PairedBedCoordinator
 
-    if not isinstance(runtime, AdjustableBedCoordinator):
+    pair = runtime if side is not None and isinstance(runtime, PairedBedCoordinator) else None
+    receiver = pair.child_for_side(side) if pair is not None and side is not None else runtime
+    if (side is not None and pair is None) or not isinstance(receiver, AdjustableBedCoordinator):
         return False
     completed = False
 
     async def disable_features(controller: BedController) -> None:
         nonlocal completed
         await apply_limoss_remote_features(controller, light, massage, persist=False)
-        if runtime.cancel_command.is_set():
+        if receiver.cancel_command.is_set():
             raise asyncio.CancelledError
         completed = True
 
     try:
-        await runtime.async_execute_controller_command(disable_features, cancel_running=True)
+        if pair is not None and side is not None:
+            await pair.async_execute_controller_command(
+                disable_features, side=side, cancel_running=True
+            )
+        else:
+            await receiver.async_execute_controller_command(disable_features, cancel_running=True)
         # Replaced scheduler tickets return normally without completing their
         # callback. They cannot commit a change.
         if not completed:
@@ -9249,6 +9259,25 @@ class AdjustableBedOptionsFlow(
                         )
                         changes.update(questions.settled(app_data))
                         stale = frozenset(current) - frozenset(app_data)
+            if not errors:
+                staged = {
+                    key: value
+                    for key, value in {**current, **changes}.items()
+                    if key not in stale
+                }
+                kept = _limoss_remote_features_left(current, staged)
+                if kept is not None:
+                    # Light or massage turned off on this receiver: its OFF
+                    # commands run first, and a failure keeps the saved setup.
+                    if await _async_turn_off_limoss_remote_features(
+                        self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id),
+                        *kept,
+                        side=side,
+                    ):
+                        # Keep anything saved while the commands ran.
+                        data = self.config_entry.data
+                    else:
+                        errors["base"] = "limoss_remote_feature_update_failed"
             if not errors:
                 # Move shared overrides into both receivers before changing
                 # one side, keeping unrelated entry-level options intact.
