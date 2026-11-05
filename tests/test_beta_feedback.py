@@ -80,6 +80,11 @@ def _stored(hass_storage: dict[str, Any]) -> dict[str, Any]:
     return hass_storage[STORAGE_KEY]["data"]
 
 
+async def _dismiss(hass: HomeAssistant) -> None:
+    pn.async_dismiss(hass, NOTIFICATION_ID)
+    await hass.async_block_till_done()
+
+
 async def test_beta_asks_once_a_day_after_install(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
@@ -99,7 +104,7 @@ async def test_beta_asks_once_a_day_after_install(
     assert asked[0]["title"] == "How is the Adjustable Bed beta working?"
     assert "v5 beta" in asked[0]["message"]
     assert FEEDBACK_ISSUE in asked[0]["message"]
-    assert _stored(hass_storage)["5"]["asked"] is True
+    assert _stored(hass_storage) == {"5": {"installed_at": installed.isoformat()}}
 
     await _advance(hass, freezer, timedelta(days=3))
     assert len(asked) == 1
@@ -126,10 +131,9 @@ async def test_restart_before_the_day_keeps_the_install_time(
 async def test_restart_after_the_day_asks_on_startup(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
-    hass_storage: dict[str, Any],
     asked: list[pn.Notification],
 ) -> None:
-    """A day that passed while Home Assistant was stopped asks once at start."""
+    """A day that passed while Home Assistant was stopped asks at start."""
     await _start(hass, "5.0.0b1")
     await _stop(hass)
     await _advance(hass, freezer, timedelta(days=2))
@@ -139,11 +143,47 @@ async def test_restart_after_the_day_asks_on_startup(
     # The overdue timer is due at once: run the loop's due timers without moving the clock.
     await _advance(hass, freezer, timedelta())
     assert len(asked) == 1
-    assert _stored(hass_storage)["5"]["asked"] is True
+
+
+async def test_undismissed_request_shows_again_after_restart(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    hass_storage: dict[str, Any],
+    asked: list[pn.Notification],
+) -> None:
+    """Notifications do not survive a restart, so an unanswered one comes back."""
+    await _start(hass, "5.0.0b1")
+    await _advance(hass, freezer, timedelta(hours=24))
+    assert len(asked) == 1
+    stored = _stored(hass_storage)
 
     await _stop(hass)
     await _start(hass, "5.0.0b1")
-    await _advance(hass, freezer, timedelta(days=2))
+    await _advance(hass, freezer, timedelta())
+    assert len(asked) == 2
+    assert _stored(hass_storage) == stored
+
+
+async def test_dismissed_request_stays_answered_after_restart(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    hass_storage: dict[str, Any],
+    asked: list[pn.Notification],
+) -> None:
+    """Dismissing the notification answers the request; other notifications do not."""
+    await _start(hass, "5.0.0b1")
+    await _advance(hass, freezer, timedelta(hours=24))
+    pn.async_create(hass, "Unrelated", notification_id="unrelated")
+    pn.async_dismiss(hass, "unrelated")
+    await hass.async_block_till_done()
+    assert "dismissed" not in _stored(hass_storage)["5"]
+
+    await _dismiss(hass)
+    assert _stored(hass_storage)["5"]["dismissed"] is True
+
+    await _stop(hass)
+    await _start(hass, "5.0.0b1")
+    await _advance(hass, freezer, timedelta(days=3))
     assert len(asked) == 1
 
 
@@ -153,9 +193,10 @@ async def test_later_beta_of_the_same_major_never_asks_again(
     hass_storage: dict[str, Any],
     asked: list[pn.Notification],
 ) -> None:
-    """Once v5 has asked, b2 and later v5 betas stay quiet."""
+    """Once the v5 request is dismissed, b2 and later v5 betas stay quiet."""
     await _start(hass, "5.0.0b1")
     await _advance(hass, freezer, timedelta(hours=24))
+    await _dismiss(hass)
     assert len(asked) == 1
     stored = _stored(hass_storage)
 
@@ -176,11 +217,12 @@ async def test_new_major_beta_asks_once_more(
     """A new major's first beta starts its own day, linking the bug form without an issue."""
     await _start(hass, "5.0.0b1")
     await _advance(hass, freezer, timedelta(hours=24))
+    await _dismiss(hass)
     await _stop(hass)
 
     await _start(hass, "6.0.0b1")
-    assert _stored(hass_storage)["5"]["asked"] is True
-    assert "asked" not in _stored(hass_storage)["6"]
+    assert _stored(hass_storage)["5"]["dismissed"] is True
+    assert "dismissed" not in _stored(hass_storage)["6"]
     await _advance(hass, freezer, timedelta(hours=23))
     assert len(asked) == 1
 

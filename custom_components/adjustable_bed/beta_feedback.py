@@ -1,12 +1,12 @@
 """Ask beta testers for feedback once per major version, a day after install.
 
 The first time Home Assistant loads a pre-release of major version N, its time
-is stored. Twenty-four hours later one persistent notification asks for
-feedback, and major N is marked as asked, so later betas of the same major stay
-quiet. A restart re-arms the timer from the stored time, or asks right away once
-that time has passed. The running version only changes with a restart, and a
-stable version never arms the timer, so moving to a stable release before the
-day is up means the request is never made.
+is stored. Twenty-four hours later a persistent notification asks for feedback.
+Home Assistant keeps notifications in memory only, so major N counts as
+answered once the user dismisses it; until then each start shows it again once
+the day has passed. Later betas of an answered major stay quiet. The running
+version only changes with a restart, and a stable version never arms the
+timer, so moving to a stable release before the day is up means no request.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ class _MajorRecord(TypedDict, total=False):
     """What is stored for one major version, keyed by its number."""
 
     installed_at: str
-    asked: bool
+    dismissed: bool
 
 
 def is_prerelease(version: AwesomeVersion) -> bool:
@@ -81,7 +81,7 @@ async def async_setup_beta_feedback(hass: HomeAssistant) -> None:
     record = data.get(key)
     if not isinstance(record, dict):
         record = _MajorRecord()
-    if record.get("asked"):
+    if record.get("dismissed"):
         return
 
     stored_at = record.get("installed_at")
@@ -91,11 +91,25 @@ async def async_setup_beta_feedback(hass: HomeAssistant) -> None:
         record = _MajorRecord(installed_at=installed_at.isoformat())
         await store.async_save({**data, key: record})
 
-    asked: _MajorRecord = {**record, "asked": True}
+    dismissed: _MajorRecord = {**record, "dismissed": True}
 
-    async def _async_ask(_now: datetime) -> None:
-        # Record first: a failed save leaves the request for the next start.
-        await store.async_save({**data, key: asked})
+    @callback
+    def _async_on_update(
+        update_type: persistent_notification.UpdateType,
+        notifications: dict[str, persistent_notification.Notification],
+    ) -> None:
+        # Only this module creates the notification id, so its removal is a dismissal.
+        if (
+            update_type is persistent_notification.UpdateType.REMOVED
+            and NOTIFICATION_ID in notifications
+        ):
+            unsubscribe()
+            hass.async_create_task(
+                store.async_save({**data, key: dismissed}), "adjustable_bed beta feedback dismissed"
+            )
+
+    @callback
+    def _async_ask(_now: datetime) -> None:
         persistent_notification.async_create(
             hass,
             feedback_message(major),
@@ -105,10 +119,12 @@ async def async_setup_beta_feedback(hass: HomeAssistant) -> None:
 
     due = installed_at + FEEDBACK_DELAY
     _LOGGER.debug("Asking for v%s beta feedback at %s", major, due)
+    unsubscribe = persistent_notification.async_register_callback(hass, _async_on_update)
     cancel = async_track_point_in_utc_time(hass, _async_ask, due)
 
     @callback
-    def _async_cancel(_event: Event) -> None:
+    def _async_stop(_event: Event) -> None:
         cancel()
+        unsubscribe()
 
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_cancel)
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_stop)
