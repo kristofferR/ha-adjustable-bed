@@ -10,8 +10,8 @@ as two entries:
 
 | Device | Bed type | Setup choice |
 |---|---|---|
-| Bed base | `logicdata_app`, app profile `sleep_smart` | **Logicdata → MotionRelax / Sleep Smart bed apps**, then **Sleep Smart Air Mattress app (bed)** |
-| Air pump | `logicdata_air_pump` | **Logicdata → Sleep Smart air mattress pump** |
+| Bed base | `logicdata_app`, app profile `sleep_smart` | **LOGICDATA**, then **Sleep Smart Air Mattress app: bed base** |
+| Air pump | `logicdata_air_pump` | **LOGICDATA**, then **Sleep Smart Air Mattress app: air mattress pump** |
 
 The bed base is a profile over the Jiecang codec and is documented in the
 [Jiecang codec guide](jiecang.md#sleep-smart-air-mattress-bed). This guide covers

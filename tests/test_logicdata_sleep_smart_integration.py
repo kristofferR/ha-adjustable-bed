@@ -58,15 +58,14 @@ async def test_setup_accepts_only_the_two_motor_layouts(hass, family, layout, er
     flow.context = {}
     flow.hass = hass
     flow._manual_data = {CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP}
+    result = await flow.async_step_logicdata_family({"choice": "sleep_smart"})
+    assert result["step_id"] == "profile_questions"
+    assert flow._manual_data[CONF_LOGICDATA_APP_PROFILE] == "sleep_smart"
     with patch.object(
         flow, "_finish_with_verify", AsyncMock(return_value={"type": "create_entry"})
     ):
-        result = await flow.async_step_logicdata_app(
-            {
-                CONF_LOGICDATA_APP_PROFILE: "sleep_smart",
-                CONF_LOGICDATA_APP_FAMILY: family,
-                CONF_LOGICDATA_APP_LAYOUT: layout,
-            }
+        result = await flow.async_step_profile_questions(
+            {CONF_LOGICDATA_APP_FAMILY: family, CONF_LOGICDATA_APP_LAYOUT: layout}
         )
     assert result.get("errors", {}) == errors
     assert (CONF_LOGICDATA_APP_FAMILY in flow._manual_data) is not bool(errors)

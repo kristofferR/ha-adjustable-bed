@@ -38,7 +38,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `protocol_variant` | Profile | Route choice in setup (`route` step), a family step, Configure; a question of `bedsense`, `okin_uuid`, `okimat`, `okin_dot` and `sleepys_box25`; owned by the declarations that fix it | `profile_id.py`, controllers |
 | `jiecang_app_profile` | Profile | `jiecang_family` | `profile_id.py`, `beds/jiecang_app.py` |
 | `leggett_app_profile` | Profile | `leggett_family`, Configure | `profile_id.py`, `controller_factory.py` |
-| `logicdata_app_profile` | Profile | `logicdata_app` step, Configure | `profile_id.py`, `controller_factory.py` |
+| `logicdata_app_profile` | Profile | `logicdata_family`; a question of `logicdata_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
 | `malouf_app_profile` | Profile | `malouf_app` step, Configure | `profile_id.py`, `controller_factory.py` |
 | `vibradorm_app_profile` | Profile | `vibradorm` family step | `profile_id.py`, `controller_factory.py`, `coordinator_bonds.py`, `coordinator_connection.py` |
 | `profile_id` | Internal | `profile_id.with_profile_ids` at migration and every setup | `coordinator.py`, diagnostics |
@@ -51,7 +51,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `motor_count` | User | Setup and Configure; a question of the Keeson ORE apps and INNOVA, the Okin remotes and Sleepy's BOX15 and BOX24; owned by the declarations that fix it | `coordinator.py`, controllers, entity platforms |
 | `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it | Controllers, entity platforms |
-| `has_light` | User | The chair-and-bed app steps, `logicdata_app`, `cluster033_app` and Configure; a question of `jiecang_app` | `controller_factory.py`, `coordinator.py` |
+| `has_light` | User | The chair-and-bed app steps, `cluster033_app` and Configure; a question of `jiecang_app` and `logicdata_app` | `controller_factory.py`, `coordinator.py` |
 | `disable_angle_sensing` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/cluster018.py` |
 | `motor_pulse_delay_ms` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
@@ -93,9 +93,9 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `vmatbasic_profile` | Profile | A question of `vmatbasic` | `controller_factory.py`, `coordinator.py` |
 | `vmatbasic_floor_level` | Profile | A question of `vmatbasic`; `coordinator.py` saves a level set on the bed's controls | `controller_factory.py` |
 | `vmatbasic_floor_minutes` | Profile | A question of `vmatbasic`; `coordinator.py` saves a timer set on the bed's controls | `controller_factory.py` |
-| `logicdata_app_family` | User | `logicdata_app` step, Configure | `controller_factory.py` |
-| `logicdata_app_layout` | User | `logicdata_app` step, Configure | `controller_factory.py` |
-| `logicdata_app_transport` | User | `logicdata_app` step, Configure | `controller_factory.py` |
+| `logicdata_app_family` | Profile | A question of `logicdata_app` | `controller_factory.py` |
+| `logicdata_app_layout` | Profile | A question of `logicdata_app@phone` and `logicdata_app@tablet` for P1, and of `logicdata_app@sleep_smart`; `normalize` sets the MOTIONrelax P2 middle layout | `controller_factory.py` |
+| `logicdata_app_transport` | Profile | An Advanced question of `logicdata_app` | `controller_factory.py` |
 | `malouf_app_model` | User | `malouf_app` step, Configure | `controller_factory.py` |
 | `malouf_app_transport` | User | `malouf_app` step, Configure | `controller_factory.py` |
 | `malouf_app_primary` | User | `malouf_app` step, Configure | `controller_factory.py` |
