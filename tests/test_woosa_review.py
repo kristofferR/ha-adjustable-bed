@@ -125,11 +125,35 @@ async def test_choosing_woosa_continues_in_the_guided_change(
         assert result["step_id"] == "solace_woosa"
         result = await manager.async_configure(flow_id, {})
         assert result["step_id"] == "migration_confirm"
-        manager.async_abort(flow_id)
-    # The repair stays open until a saved change or Keep.
-    assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "solace:auto"
+        # Handing off alone leaves the repair open until a saved change or Keep.
+        assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "solace:auto"
+        assert _issue(hass, entry) is not None
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+        assert result["reason"] == "migration_applied"
+        async_refresh_profile_review_issue(hass, entry)
+    assert entry.data[CONF_PROTOCOL_VARIANT] == SOLACE_VARIANT_WOOSA
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    assert _issue(hass, entry) is None
+
+
+async def test_keep_on_the_guided_review_answers_the_woosa_repair(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    entry = await migrated(hass)
+    manager = hass.config_entries.flow
+    with patch(_HISTORY, return_value=None):
+        async_refresh_profile_review_issue(hass, entry)
+        flow, _form = await _open(hass, entry)
+        handoff = await flow.async_step_init({"choice": "configure"})
+        flow_id = handoff["next_flow"][1]
+        await manager.async_configure(flow_id, {"choice": "woosa"})
+        await manager.async_configure(flow_id, {})
+        result = await manager.async_configure(flow_id, {"action": "keep"})
+        assert result["reason"] == "migration_kept"
+        async_refresh_profile_review_issue(hass, entry)
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_SOLACE
-    assert _issue(hass, entry) is not None
+    assert WOOSA in entry.data[CONF_PROFILE_REVIEW_KEPT]["apps"]
+    assert _issue(hass, entry) is None
 
 
 async def test_the_woosa_repair_opens_and_keeps_through_the_repairs_manager(
