@@ -15,7 +15,11 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.motomotion import MotoMotionController
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motomotion_protocol import binary_command, posture
+from custom_components.adjustable_bed.motomotion_protocol import (
+    ascii_command,
+    binary_command,
+    posture,
+)
 
 
 def runtime(hass, name="SOFA000001A000H", address="AA:BB:CC:DD:EE:13"):
@@ -89,28 +93,44 @@ async def test_dynamic_number_select_sensor_use_real_command_serialization(hass,
     await c.async_shutdown()
 
 
-async def test_selected_side_survives_disconnect_and_controller_replacement(hass):
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+@pytest.mark.parametrize(
+    ("name", "key", "value", "action", "expected"),
+    [
+        ("SOFA000001SB00H", "side", "right", "light_toggle", ascii_command(262, 10000)),
+        *[
+            (
+                "SOFA000001A000H",
+                "posture",
+                value,
+                "posture_recall",
+                posture(value, 170, 100, 55).to_bytes(),
+            )
+            for value in ("tv", "recline", "lay")
+        ],
+    ],
+)
+async def test_selection_survives_disconnect_and_controller_replacement(
+    hass, name, key, value, action, expected
+):
     from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 
-    c = runtime(hass, "SOFA000001SB00H")
+    c = runtime(hass, name)
     await c.async_prime_offline_controller()
     ctrl = c._controller = MotoMotionController(c)
     await c._async_restore_app_state(ctrl)
+    ctrl.restore_persisted_app_state({"dimensions": {"height": 170, "buttocks": 100, "knee": 55}})
     c._client = MagicMock()
     c._client.is_connected = True
     c._client.stop_notify = AsyncMock()
-    c._client.disconnect = AsyncMock(
-        side_effect=lambda: setattr(c._client, "is_connected", False)
-    )
-    side = AdjustableBedControllerSelect(
-        c, next(s for s in ctrl.controller_select_specs if s.key == "motomotion_side")
+    c._client.disconnect = AsyncMock(side_effect=lambda: setattr(c._client, "is_connected", False))
+    selection = AdjustableBedControllerSelect(
+        c, next(s for s in ctrl.controller_select_specs if s.key == "motomotion_" + key)
     )
     with (
         patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
     ):
-        await side.async_select_option("right")
+        await selection.async_select_option(value)
     await c.async_disconnect("idle_timeout")
     assert c.controller is None
 
@@ -128,10 +148,10 @@ async def test_selected_side_survives_disconnect_and_controller_replacement(hass
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
     ):
         await c.async_execute_controller_command(
-            lambda controller: controller.async_execute_motomotion_action("motomotion_light_toggle")
+            lambda controller: controller.async_execute_motomotion_action("motomotion_" + action)
         )
-    assert side.current_option == "right"
-    assert c._client.write_gatt_char.await_args.args[1] == ascii_command(262, 10000)
+    assert selection.current_option == value
+    assert c._client.write_gatt_char.await_args.args[1] == expected
     c._client.is_connected = False
     await c.async_shutdown()
 
@@ -212,7 +232,7 @@ async def test_public_posture_request_and_restore_have_one_physical_owner(hass):
     replacement = MotoMotionController(c)
     replacement.restore_persisted_app_state(saved)
     assert replacement.persisted_app_state == saved
-    assert replacement._position() == posture("upright", 170, 100, 55)
+    assert replacement._position() == posture("tv", 170, 100, 55)
     c._client.is_connected = False
     await c.async_shutdown()
 

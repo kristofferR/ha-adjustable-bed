@@ -199,6 +199,7 @@ class MotoMotionController(BedController):
         return {
             "bind_code": self._bind_code,
             "side": self._side,
+            "posture": self._posture,
             "custom_eq": self._custom_eq.copy(),
             "rgb": self._rgb.copy(),
             "dimensions": self._dimensions.copy(),
@@ -216,6 +217,15 @@ class MotoMotionController(BedController):
         if not isinstance(side, str) or side not in ("left", "right"):
             raise ValueError("Invalid MotoMotion selected side")
         self._side = side
+        selected_posture = state.get("posture", "upright")
+        if not isinstance(selected_posture, str) or selected_posture not in (
+            "upright",
+            "recline",
+            "tv",
+            "lay",
+        ):
+            raise ValueError("Invalid MotoMotion selected posture")
+        self._select_posture(selected_posture)
         bind = state.get("bind_code", "")
         if not isinstance(bind, str) or (
             bind and (len(bind) != 16 or any(c not in "0123456789abcdef" for c in bind))

@@ -299,6 +299,20 @@ def test_restore_rejects_invalid_side(coordinator, side):
         c.restore_persisted_app_state({"side": side})
 
 
+def test_restore_posture_defaults_for_existing_state(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    c.restore_persisted_app_state({"posture": "tv"})
+    c.restore_persisted_app_state({})
+    assert c.persisted_app_state["posture"] == "upright"
+
+
+@pytest.mark.parametrize("value", ["unknown", "", None, 1, ["tv"]])
+def test_restore_rejects_invalid_posture(coordinator, value):
+    c = controller(coordinator, "SOFA000001A000H")
+    with pytest.raises(ValueError, match="selected posture"):
+        c.restore_persisted_app_state({"posture": value})
+
+
 async def test_number_and_select_callbacks_are_callable(coordinator, instant):
     c = controller(coordinator, "BT2010000")
     spec = next(s for s in c.controller_number_specs if s.key == "motomotion_treble")
