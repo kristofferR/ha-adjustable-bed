@@ -495,3 +495,29 @@ for (const key of ["Enter", " "]) {
     expect(calls.length).toBe(count);
   });
 }
+
+test("tap to move: a click starts the motor, the next click on any arrow stops it", () => {
+  const { card, api, hass } = fixture();
+  card.setConfig({ type: "custom:adjustable-bed-card", device_id: "pair", tap_to_move: true });
+  const back: MotorEntity = { key: "back", cover: "cover.back", holdLease: { deviceId: "pair", motor: "back" } };
+  const legs: MotorEntity = { key: "legs", cover: "cover.legs" };
+  const pressed = (template: TemplateResult) =>
+    template.values[template.strings.findIndex((part) => part.endsWith("aria-pressed="))];
+  const up = api._motorDirection(back, "up", "button.pair_stop");
+  // A click, so a scroll that starts on the arrow never moves the bed.
+  expect(up.strings.join("")).not.toContain("@pointerdown");
+  expect(pressed(up)).toBe("false");
+  handler(up, "@click")(new Event("click"));
+  expect(calls).toEqual([{ domain: "adjustable_bed", service: "timed_move", data: {
+    device_id: "pair", motor: "back", direction: "up", duration_ms: 750,
+    hold_owner: expect.any(String), hold_generation: expect.any(Number),
+  } }]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("true");
+  expect(pressed(api._motorDirection(back, "down", "button.pair_stop"))).toBe("false");
+  handler(api._motorDirection(legs, "down", "button.pair_stop"), "@click")(new Event("click"));
+  expect(calls.slice(1)).toEqual([{ domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } }]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
+
+  // A held control without a lease keeps press-and-hold in tap mode.
+  expect(row(api, hass, "left").template.strings.join("")).toContain("@pointerdown");
+});

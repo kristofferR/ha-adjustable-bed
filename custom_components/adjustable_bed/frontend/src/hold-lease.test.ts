@@ -6,6 +6,7 @@ import { bedEntitiesForDevice } from "./discovery";
 import {
   attachHoldLifecycle,
   type Direction,
+  canTapMove,
   HOLD_LEASE_MS,
   HOLD_LEASE_RENEW_MS,
   type HoldActions,
@@ -14,6 +15,7 @@ import {
   type HoldTimers,
   MotorHold,
   movementLease,
+  TAP_MOVE_MAX_MS,
 } from "./hold";
 import type { EntityRegistryDisplayEntry, HomeAssistant, MotorEntity } from "./types";
 
@@ -89,6 +91,7 @@ interface Rig {
   hold: MotorHold;
   events: string[];
   pulses: string[];
+  changes: { count: number };
 }
 
 function rig(withLease = true): Rig {
@@ -96,6 +99,7 @@ function rig(withLease = true): Rig {
   const bed = new FakeLeaseBed(timers);
   const events: string[] = [];
   const pulses: string[] = [];
+  const changes = { count: 0 };
   const actions: HoldActions = {
     pulse: (motor, dir) => {
       pulses.push(`${motor.key}:${dir}`);
@@ -114,8 +118,9 @@ function rig(withLease = true): Rig {
       events.push(`stop:${stop ?? ""}`);
       bed.stop();
     },
+    changed: () => { changes.count++; },
   };
-  return { bed, timers, hold: new MotorHold(actions, timers), events, pulses };
+  return { bed, timers, hold: new MotorHold(actions, timers), events, pulses, changes };
 }
 
 const leasedCover: MotorEntity = {
@@ -361,6 +366,104 @@ test("discovery reads the advertised hold from covers and combined motors", () =
     delete paired.states[id].attributes.hold_lease_mode;
   }
   expect(bedEntitiesForDevice(paired, "pair").motors[0].holdLease).toBeUndefined();
+});
+
+// Tap to move (#609): a tap starts a motor, the next tap stops it.
+
+test("a tap leases the motor until the next tap, which stops it and starts nothing", () => {
+  const { bed, timers, hold, events, changes } = rig();
+  hold.tap(leasedCover, "up");
+  expect(hold.tapDirection({ ...leasedCover })).toBe("up");
+  timers.advance(5000);
+  // One call at 0 ms and a renewal every 250 ms, as for a held press.
+  expect(bed.calls).toHaveLength(21);
+  expect(bed.moving).toBe(true);
+  // Any arrow stops the running motor; it does not start the tapped one.
+  hold.tap({ key: "legs", cover: "cover.legs" }, "down");
+  expect(events).toEqual(["cover-stop:cover.back"]);
+  expect(bed.moving).toBe(false);
+  expect(hold.tapMoving).toBe(false);
+  timers.advance(1000);
+  expect(bed.calls).toHaveLength(21);
+  expect(changes.count).toBe(2);
+});
+
+test("a tap move stops after 30 s however long its renewals succeed", () => {
+  const { bed, timers, hold, events } = rig();
+  hold.tap(leasedCover, "up");
+  timers.advance(TAP_MOVE_MAX_MS - 1);
+  expect(hold.tapMoving).toBe(true);
+  timers.advance(1);
+  expect(events).toEqual(["cover-stop:cover.back"]);
+  expect(bed.moving).toBe(false);
+  expect(hold.tapMoving).toBe(false);
+});
+
+test("a tap move ends when the bed ends or refuses its hold", async () => {
+  // The backend's ceiling, a STOP from elsewhere, or a lost connection.
+  const ended = rig();
+  ended.hold.tap(leasedCover, "up");
+  ended.timers.advance(250);
+  ended.bed.end();
+  await tick();
+  expect(ended.hold.tapMoving).toBe(false);
+  expect(ended.events).toEqual(["cover-stop:cover.back"]);
+
+  const refused = rig();
+  refused.bed.refuseRenewals = true;
+  refused.hold.tap(leasedCover, "up");
+  refused.timers.advance(250);
+  await tick();
+  expect(refused.hold.tapMoving).toBe(false);
+  refused.timers.advance(1000);
+  expect(refused.bed.calls).toHaveLength(2);
+});
+
+test("a key or pointer release does not end a tap move", () => {
+  const { bed, hold } = rig();
+  hold.tap(leasedCover, "up");
+  // Enter and Space activate the arrow, so their release reaches the window.
+  hold.endKeyboard(undefined, undefined, "Enter");
+  hold.endKeyboard(leasedCover);
+  hold.endActiveFromPointer(1, true);
+  expect(hold.tapMoving).toBe(true);
+  expect(bed.moving).toBe(true);
+});
+
+test("a tap without a declared hold repeats pulses until one fails", async () => {
+  const timers = new FakeTimers();
+  const events: string[] = [];
+  let sent = 0;
+  const hold = new MotorHold({
+    pulse: (motor, dir) => {
+      events.push(`pulse:${motor.key}:${dir}`);
+      return ++sent < 3 ? Promise.resolve() : Promise.reject(new Error("link lost"));
+    },
+    stopCover: (cover) => events.push(`stop:${cover}`),
+    stopBed: () => undefined,
+  }, timers);
+  hold.tap({ key: "legs", cover: "cover.legs" }, "up");
+  await tick();
+  expect(events).toEqual(["pulse:legs:up", "pulse:legs:up", "pulse:legs:up", "stop:cover.legs"]);
+  expect(hold.tapMoving).toBe(false);
+});
+
+test("a held control without a lease keeps press-and-hold", () => {
+  const { hold, events, bed } = rig();
+  const windowed: MotorEntity = {
+    key: "head",
+    holdEntityId: "button.head_up",
+    deviceId: "bed",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 0 },
+  };
+  // Its 60 s window ends only on release, so a vanished card would not stop it.
+  expect(canTapMove(windowed, "up")).toBe(false);
+  expect(canTapMove({ ...windowed, holdLease: { deviceId: "bed" } }, "up")).toBe(true);
+  expect(canTapMove({ key: "legs", cover: "cover.legs" }, "up")).toBe(true);
+  hold.tap(windowed, "up");
+  expect(hold.tapMoving).toBe(false);
+  expect(events).toEqual([]);
+  expect(bed.calls).toEqual([]);
 });
 
 class FakeDocument implements HoldLifecycleTarget {
