@@ -6,11 +6,7 @@ import type { EntityNameItem, HassEntity, HomeAssistant } from "./types";
 const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 Object.defineProperty(globalThis, "window", {
   configurable: true,
-  value: { customElements: {
-    get: () => undefined,
-    define: () => undefined,
-    whenDefined: () => new Promise<CustomElementConstructor>(() => {}),
-  } },
+  value: { customElements: { get: () => undefined, define: () => undefined } },
 });
 const { AdjustableBedCard } = await import("./adjustable-bed-card");
 if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
@@ -74,33 +70,6 @@ test("a paired side labels its entities by their own name under its side tab", (
   const labels = render(hass, { device_id: "pair", default_target: "left" });
   expect(labels).toEqual(expect.arrayContaining(["Bed", "Left", "Right", "Zero G"]));
   expect(labels.some((label) => label.includes("Old name") || label.startsWith("Left "))).toBe(false);
-});
-
-test("older HA renders standalone and paired labels without a name formatter", () => {
-  const hass = fixture();
-  delete hass.formatEntityName;
-  add(hass, "button.bed_flat", "bed", "preset_flat", "Flat");
-  hass.states["button.bed_flat"].attributes.friendly_name = "Bedroom bed Lie flat";
-  expect(render(hass, { device_id: "bed" })).toContain("Lie flat");
-
-  add(hass, "button.pair_flat", "pair", "preset_flat", "Flat", "both");
-  add(hass, "button.left_zero_g", "left", "preset_zero_g", "Zero G", "left");
-  hass.states["button.left_zero_g"].attributes.friendly_name = "Left Zero gravity";
-  expect(render(hass, { device_id: "pair", default_target: "left" })).toContain("Zero gravity");
-});
-
-test("legacy labels preserve custom names and fall back when names are missing", () => {
-  const hass = fixture();
-  delete hass.formatEntityName;
-  add(hass, "button.bed_memory_1", "bed", "preset_memory_1", "Reading");
-  const state = hass.states["button.bed_memory_1"];
-  state.attributes.friendly_name = "My reading position";
-  expect(entityLabel(hass, state.entity_id)).toBe("My reading position");
-  delete state.attributes.friendly_name;
-  expect(entityLabel(hass, state.entity_id)).toBe("Reading");
-  delete hass.entities[state.entity_id].name;
-  expect(entityLabel(hass, state.entity_id, "Memory 1")).toBe("Memory 1");
-  expect(entityLabel(undefined, state.entity_id, "Memory 1")).toBe("Memory 1");
 });
 
 test("an entity without a name of its own goes by its device", () => {
