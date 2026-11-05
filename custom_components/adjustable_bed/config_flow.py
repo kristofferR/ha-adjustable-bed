@@ -3688,7 +3688,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # family, already answered.
             if not guided and (
                 self._app_family_incoming != row
-                or self._selected_bed_type == self._app_family_incoming
+                or self._brand_app_choice == self._app_family_incoming
             ):
                 return await self._async_continue_app_family(apps)
         choice = (user_input or {}).get("choice")
@@ -4058,6 +4058,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
+        # The app the user picked from a brand's app list. A refitted form also
+        # sets _selected_bed_type, so only this one means an app was chosen.
+        self._brand_app_choice: str | None = None
         self._selected_protocol_variant: str | None = None
         # For disambiguation UI when BLE detection is ambiguous
         self._disambiguation_types: list[str] | None = None
@@ -5649,6 +5652,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             variant = variants[selected_idx]
             self._selected_bed_type = variant["type"]
             self._selected_protocol_variant = variant.get("variant")
+            self._brand_app_choice = variant["type"]
             return await self.async_step_manual()
 
         # Build options for variant selection

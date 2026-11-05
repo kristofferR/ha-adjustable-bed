@@ -1,7 +1,7 @@
 """One app question each for Customatic, Jordan's and the StarCode apps (#676)."""
 
 from contextlib import ExitStack
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -156,10 +156,35 @@ async def test_choosing_the_rows_own_app_keeps_the_settings_the_form_collected(
 async def test_an_app_already_chosen_is_not_asked_again(hass, bed_type, step):
     flow = setup_flow(hass, bed_type)
     # Chosen from the brand's app list, or arriving as the app itself.
-    flow._selected_bed_type = bed_type
+    flow._brand_app_choice = bed_type
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await getattr(flow, f"async_step_{step}")()
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == bed_type
+
+
+async def test_a_form_drawn_again_for_the_jordans_row_still_asks_the_app(hass):
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    # The form was drawn for AdjustableM5X4, which hides fields Serenity shows.
+    flow._selected_bed_type = const.BED_TYPE_STARCODE_ABM5_4
+    info = MagicMock()
+    info.name = "OKIN-003444"
+    info.address = ADDRESS
+    info.service_uuids = [const.OKIMAT_SERVICE_UUID]
+    info.manufacturer_data = {}
+    info.source = "auto"
+    flow._discovery_info = info
+    flow._async_transport_note = AsyncMock(return_value="")
+    flow._disconnect_choice_confirmed = True
+    submitted = {CONF_ADDRESS: ADDRESS, CONF_NAME: "Bed", const.CONF_BED_TYPE: const.BED_TYPE_SERENITY}
+    result = await flow.async_step_manual_entry(dict(submitted))
+    if result["step_id"] == "manual_entry":
+        # Drawn again for the chosen row; submitting it is not choosing an app.
+        result = await flow.async_step_manual_entry(dict(submitted))
+    assert result["step_id"] == "jordans_family"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_jordans_family({"choice": "tranquil"})
+    assert finish.call_args.args[0][const.CONF_BED_TYPE] == const.BED_TYPE_TRANQUIL
 
 
 async def test_another_familys_guided_change_never_offers_keep_here(hass):
