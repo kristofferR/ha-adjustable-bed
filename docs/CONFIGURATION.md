@@ -26,7 +26,8 @@ You can configure the integration in two places:
 ### Initial Setup
 
 During initial setup you choose the bed type, then the options that bed type
-asks for, such as motor count and massage support.
+asks for, such as motor count and massage support. The form shows only the
+fields of the row you choose.
 
 - The bed-type list is searchable: type part of an app, brand or controller
   name. A discovered bed starts on the detected row.
@@ -34,7 +35,9 @@ asks for, such as motor count and massage support.
   choosing its row, or a discovered bed of that family, asks which app or
   remote controls the bed, because a bed's name and Bluetooth services do not
   tell these apps apart. Where offered, the question's keep answer saves the
-  detected route.
+  detected route. The Okin CST, Remacro and StarCode rows ask their app the
+  same way, and the Reverie and Sleep Number rows ask only when the bed's
+  advertised service does not settle the receiver.
 - An app row sets its own route. A bed type with several receiver routes lists
   them in a collapsed **Advanced: receiver route** section, or in a short
   **Receiver route** step (see [Protocol Variants](#protocol-variants)).
@@ -83,7 +86,9 @@ or from the bed's repair. Today this covers the
 [Solace family](beds/ff_frame.md#home-assistant-setup), the
 [Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup), the
 [Sleepy's Elite family](beds/sleepys.md#home-assistant-setup), the
-[Customatic and Jordan's apps](beds/okin-nframe.md#customatic-family) and the
+[Customatic and Jordan's apps](beds/okin-nframe.md#customatic-family), the
+[Malouf / Lucid family](beds/malouf.md#malouf-base--lucid-base-family), the
+[LOGICDATA family](beds/logicdata.md#detection--setup) and the
 [Limoss family](beds/limoss.md#home-assistant-setup); more families follow.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
@@ -559,7 +564,7 @@ that side, then combine them again.
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/okin-nframe.md#okin-sleepease): select the saved app model independently of the advertisement-selected P1/P2/P3 driver. Keep each physical receiver's settings separate. Sensor sides do not select motor halves. |
 | Keeson | Answer the [Keeson question](beds/keeson.md#home-assistant-setup) with your app: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/keeson.md#ore-comfort-bed-profiles), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). It then asks the app's 2M, 3M or 4M screen, or the Restonic remote style, where the app has one. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
-| Richmat | [RMControl](beds/richmat.md#rmcontrol): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps): app and model. [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps): app and its four-character layout; the third-service fallback is an explicit opt-in. |
+| Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or Auto from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps) the app's four-character layout, with the third-service fallback an explicit opt-in. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Configure changes the same answers and lists each app by name, so an entry can switch apps or opt in to RMControl and out of it. |
 | Leggett & Platt | Answer the [L&P question](beds/leggett-platt.md#home-assistant-setup) with your app: [Prodigy CE, Prodigy 2, Prodigy 2L or U Series](beds/okin-nframe.md#leggett-okin-family) sets the layout; LP Control and the L&P Adjustable Base app also name the receiver or remote. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
 | Solace / Woosa | Answer the [Solace question](beds/ff_frame.md#home-assistant-setup) with your app: HomeKobo, Sealy MotionFlex or Sweet Night keep name-based Solace routing; [Woosa Sleep](beds/ff_frame.md#woosa-sleep) is variant `woosa`. |
 | Jensen / Svane | Answer the [Jensen / Svane question](beds/jensen.md#home-assistant-setup) with your app and bed: the Jensen Adjustable Sleep app with a [JMC400](beds/jensen.md) bed (then its PIN) or a [LinOn](beds/jensen.md#linon) bed, or the [Svane Remote](beds/svane.md) app with a Svane Bed or a JMC400 bed. Change an existing bed's app or bed with **Reconfigure**. |

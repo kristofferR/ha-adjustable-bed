@@ -48,9 +48,8 @@ that bed type:
   checks as **Configure**. The bed reloads with that app's controls and keeps
   its device and matching entity IDs.
 - Apps with their own settings (FSM Relax, Limoss Remote, Motion Bed,
-  AdjustableM5X4, AdjustableM5X5, LOGICDATA Sleep Smart), or a change
-  **Configure** would refuse, are not applied here. The repair opens
-  **Configure** with the app selected.
+  AdjustableM5X4, AdjustableM5X5), or a change **Configure** would refuse, are
+  not applied here. The repair opens **Configure** with the app selected.
 - A family with a
   [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
   is offered that guided change or **Keep current configuration** instead,

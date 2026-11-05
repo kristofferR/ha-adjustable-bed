@@ -412,7 +412,7 @@
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
-          "protocol_variant": "Remote code, layout, side or BLE driver",
+          "protocol_variant": "Remote code, model, layout, side or BLE driver",
           "motor_count": "Number of motors or app screen",
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
@@ -452,6 +452,10 @@
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
           "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app",
+          "rmcontrol_product": "RMControl product",
+          "rmcontrol_side": "RMControl side",
+          "richmat_remote": "Richmat remote",
           "reverse_motor_1": "Reverse motor channel 1",
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
@@ -499,6 +503,10 @@
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
+          "rmcontrol_product": "The exact product code RMControl shows for this bed. A similar-looking code doesn't unlock its controls. Choose None to use the Richmat remote controls instead.",
+          "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
+          "richmat_remote": "The Richmat remote code, which picks the remote's buttons, presets and lights. A code the Bluetooth name carries is preselected; use Auto if you don't know it.",
           "limoss_remote_theme": "Optional: the artwork theme chosen in the Limoss Remote app, kept as a local preference. It changes no controls."
         },
         "sections": {
@@ -514,7 +522,7 @@
             "data_description": {
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
               "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
-              "protocol_variant": "Auto reads the receiver's manufacturer name: text containing star selects StarCode, anything else the legacy CB25 packets. Change it only if Auto picks the wrong one.",
+              "protocol_variant": "Auto picks the packet dialect from what the bed reports: a BOX25 receiver's manufacturer name (text containing star selects StarCode, anything else the legacy CB25 packets), or a Richmat bed's services. Change it only if Auto picks the wrong one.",
               "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
               "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous."
             }
@@ -811,6 +819,13 @@
         "data": {
           "choice": "App and bed"
         }
+      },
+      "richmat_family": {
+        "title": "Which Richmat app controls this bed?",
+        "description": "Richmat apps share the bed's Bluetooth names and services, so the name doesn't choose one. Choose the app you use on your phone. Without one of these apps, choose the Richmat remote controls.",
+        "data": {
+          "choice": "App"
+        }
       }
     },
     "progress": {
@@ -951,7 +966,7 @@
           "cb24_bed_selection": "CB24 bed side",
           "protocol_variant": "Protocol variant",
           "richmat_remote": "Richmat remote",
-          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
+          "rmcontrol_product": "RMControl 21.3.7 product",
           "rmcontrol_side": "RMControl side",
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
@@ -1039,7 +1054,7 @@
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
           "protocol_variant": "Change the protocol variant if the bed isn't responding correctly. If Configure refuses the change, change the app or route through Reconfigure in the entry's three-dot menu.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
-          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
@@ -1204,6 +1219,10 @@
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
           "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app",
+          "rmcontrol_product": "RMControl 21.3.7 product",
+          "rmcontrol_side": "RMControl side",
+          "richmat_remote": "Richmat remote",
           "reverse_motor_1": "Reverse motor channel 1",
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
@@ -1248,7 +1267,11 @@
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
+          "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure)."
         }
       },
       "right_settings": {
@@ -1308,6 +1331,10 @@
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
           "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app",
+          "rmcontrol_product": "RMControl 21.3.7 product",
+          "rmcontrol_side": "RMControl side",
+          "richmat_remote": "Richmat remote",
           "reverse_motor_1": "Reverse motor channel 1",
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
@@ -1352,7 +1379,11 @@
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
+          "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure)."
         }
       },
       "change_app": {
@@ -9407,6 +9438,22 @@
         "svane_bed": "Svane Remote app with a Svane Bed",
         "svane_jmc400": "Svane Remote app with a JMC400 bed",
         "keep": "Keep the current controls"
+      }
+    },
+    "richmat_family_choice": {
+      "options": {
+        "rmcontrol": "RMControl app: the exact product and side the app uses",
+        "revive": "Revive Control app",
+        "best_mattress": "Best Mattress app",
+        "blvd_home": "Blvd Home app",
+        "harmony": "HARMONY app",
+        "idealbed": "Idealbed app",
+        "avocadoecobase": "Avocado Eco Base app",
+        "coastersleep": "CoasterSleep app",
+        "fortywinks": "Forty Winks app",
+        "milemont": "Milemont app",
+        "superior": "Superior app",
+        "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code"
       }
     }
   }

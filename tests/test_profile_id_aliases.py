@@ -27,7 +27,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.detection import bed_type_label, get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_review import related_app_choices
 
@@ -160,8 +160,8 @@ def test_ore_app_routes_differ_in_setup_fields() -> None:
 
 def test_richmat_bfrm_model_belongs_to_two_apps() -> None:
     assert RICHMAT_MH_APPS["richmat_best_mattress"] != RICHMAT_MH_APPS["richmat_blvd_home"]
-    labels = {option["value"]: option["label"] for option in get_bed_type_options()}
-    assert labels["richmat_best_mattress"] != labels["richmat_blvd_home"]
+    # Each app keeps its own label: the Richmat question names them separately.
+    assert bed_type_label("richmat_best_mattress") != bed_type_label("richmat_blvd_home")
 
 
 def test_fsm_relax_flags_are_settings_of_one_profile() -> None:
