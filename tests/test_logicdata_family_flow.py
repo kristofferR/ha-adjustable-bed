@@ -34,6 +34,8 @@ LOGICLINK = (const.LOGICDATA_SERVICE_UUID, const.LOGICDATA_CHAR_UUID)
 
 def choices(result) -> list[str]:
     return list(result["data_schema"].schema["choice"].config["options"])
+
+
 APP_KEYS = (
     const.CONF_LOGICDATA_APP_PROFILE,
     const.CONF_LOGICDATA_APP_FAMILY,
@@ -148,7 +150,9 @@ async def test_phone_entry_changes_to_the_tablet_after_checking_its_transport(
 async def test_app_change_is_refused_when_the_link_lacks_its_transport(
     hass, enable_custom_integrations
 ):
-    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_LOGICDATA, const.CONF_MOTOR_COUNT: 2})
+    entry = entry_for(
+        hass, {const.CONF_BED_TYPE: const.BED_TYPE_LOGICDATA, const.CONF_MOTOR_COUNT: 2}
+    )
     before = dict(entry.data)
     manager = hass.config_entries.flow
     with ExitStack() as stack:
@@ -178,7 +182,7 @@ async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_c
 
 
 async def test_configure_into_the_app_from_another_family_asks_the_app_and_layout(hass):
-    """A repair can hand a Comfort Motion entry to the Sleep Smart app through Configure."""
+    """Configure's bed-type list can switch a Comfort Motion entry to the Sleep Smart app."""
     entry = entry_for(
         hass, {const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_MOTION, const.CONF_MOTOR_COUNT: 2}
     )
@@ -225,3 +229,70 @@ def test_route_check_matches_what_each_route_needs(data, services, ok):
     else:
         with pytest.raises(ConnectionError):
             require_logicdata_route(client, {CONF_ADDRESS: "x", **data})  # type: ignore[arg-type]
+
+
+async def test_the_comfort_motion_review_continues_into_the_logicdata_question(
+    hass, enable_custom_integrations
+):
+    """The review's LOGICDATA suggestion runs the guided change, never a combined form."""
+    from custom_components.adjustable_bed.profile_review import async_refresh_profile_review_issue
+    from tests.test_profile_review import _entry, _issue, _open
+
+    entry = _entry(hass, const.BED_TYPE_COMFORT_MOTION, variant=None)
+    manager = hass.config_entries.flow
+    with ExitStack() as stack:
+        bluetooth_patches(stack, gatt_client(T1))
+        async_refresh_profile_review_issue(hass, entry)
+        review, form = await _open(hass, entry)
+        assert form["step_id"] == "managed"
+        handoff = await review.async_step_init({"choice": "configure"})
+        assert handoff["reason"] == "migration_setup_started"
+        flow_id = handoff["next_flow"][1]
+        result = manager.async_get(flow_id)
+        assert result["step_id"] == "jiecang_family"
+        result = await manager.async_configure(flow_id, {"choice": const.BED_TYPE_LOGICDATA_APP})
+        assert result["step_id"] == "logicdata_family"
+        assert "sleep_smart_pump" not in choices(result)
+        result = await manager.async_configure(flow_id, {"choice": "sleep_smart"})
+        assert result["step_id"] == "profile_questions"
+        result = await manager.async_configure(
+            flow_id,
+            {const.CONF_LOGICDATA_APP_FAMILY: "p1", const.CONF_LOGICDATA_APP_LAYOUT: "standard_2"},
+        )
+        # The LOGICDATA check runs, though the change started as a Jiecang one.
+        result = await finish_check(hass, result)
+        assert result["step_id"] == "migration_confirm"
+        # Nothing is answered before the change is confirmed.
+        assert _issue(hass, entry) is not None
+        result = await manager.async_configure(flow_id, {"confirm": True})
+        assert result["reason"] == "reconfigure_successful"
+        async_refresh_profile_review_issue(hass, entry)
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LOGICDATA_APP
+    assert entry.data[const.CONF_LOGICDATA_APP_PROFILE] == "sleep_smart"
+    assert _issue(hass, entry) is None
+
+
+async def test_the_comfort_motion_review_stays_until_keep(hass, enable_custom_integrations):
+    from custom_components.adjustable_bed.profile_review import async_refresh_profile_review_issue
+    from tests.test_profile_review import _entry, _issue, _open
+
+    entry = _entry(hass, const.BED_TYPE_COMFORT_MOTION, variant=None)
+    before = dict(entry.data)
+    manager = hass.config_entries.flow
+    async_refresh_profile_review_issue(hass, entry)
+    review, _form = await _open(hass, entry)
+    handoff = await review.async_step_init({"choice": "configure"})
+    flow_id = handoff["next_flow"][1]
+    result = await manager.async_configure(flow_id, {"choice": const.BED_TYPE_LOGICDATA_APP})
+    # Leaving the guided change open answers nothing.
+    assert _issue(hass, entry) is not None
+    result = await manager.async_configure(flow_id, {"choice": "keep"})
+    assert result["reason"] == "migration_kept"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_COMFORT_MOTION
+    assert {
+        k: v
+        for k, v in entry.data.items()
+        if k in before and k != const.CONF_PROFILE_REVIEW_PENDING
+    } == {k: v for k, v in before.items() if k != const.CONF_PROFILE_REVIEW_PENDING}
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None

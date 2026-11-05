@@ -44,7 +44,10 @@ Vibradorm's role checks and native bond rules stay Vibradorm's.
   families. Home Assistant cannot hand an options flow to a config flow, so
   the item points to Reconfigure.
 - **Repairs** opens the wizard as its next flow, or Configure's settings form
-  with the app selected for an app that needs its own settings.
+  with the app selected for an app that needs its own settings. A suggested
+  app from another guided family, such as the LOGICDATA app for a Comfort
+  Motion bed, is one more answer of the wizard's first question; it continues
+  in that family's questions and runs that family's check.
 
 ## Repairs and Keep
 

@@ -1014,6 +1014,11 @@ configurations retain their previous behavior.
   goes through **Reconfigure**, which checks that the link has the chosen app's
   transport before it saves and lists the controls that change. A bed entry
   never changes into the pump.
+- A Comfort Motion entry's profile review suggests this family. Its Repairs
+  issue opens the Reconfigure question with **LOGICDATA app: MOTIONrelax, or the
+  Sleep Smart Air Mattress bed base** as one more answer; that answer continues
+  with these questions and the LOGICDATA transport check. The issue stays open
+  until a change is saved or you choose **Keep**.
 
 - Detection: none. The Bluetooth service alone cannot identify those choices; the
   `ff12` and `fe60` services are shared with other Jiecang/Lierda-based apps, and

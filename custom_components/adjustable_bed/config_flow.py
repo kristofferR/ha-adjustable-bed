@@ -1384,6 +1384,17 @@ def _validate_vibradorm_setup_roles(client: BleakClient, data: dict[str, Any]) -
     validate_app_roles(client, profile)
 
 
+def _checked_family(migrating: ManagedFamily, staged: Mapping[str, Any]) -> ManagedFamily:
+    """The family whose check a staged route needs.
+
+    A LOGICDATA route reached from another family's change, as the Comfort Motion
+    review suggests one, still needs its own link check.
+    """
+    if staged.get(CONF_BED_TYPE) in LOGICDATA_FAMILY.bed_types:
+        return LOGICDATA_FAMILY
+    return migrating
+
+
 def _require_app_family_roles(client: BleakClient, data: Mapping[str, Any]) -> None:
     """Run the staged Customatic or Jordan's app's own GATT role check."""
     bed_type = data[CONF_BED_TYPE]
@@ -3281,13 +3292,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        return self._migration_family is not None and self._migration_family.requires_check(
-            staged or {}
-        )
+        if self._migration_family is None:
+            return False
+        return _checked_family(self._migration_family, staged or {}).requires_check(staged or {})
 
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the migrating family's exact endpoint check on the candidate link."""
-        if self._migration_family is VIBRADORM_FAMILY:
+        if self._migration_family is None:
+            return
+        family = _checked_family(self._migration_family, data)
+        if family is LOGICDATA_FAMILY:
+            from .controller_factory import require_logicdata_route
+
+            require_logicdata_route(client, data)
+        elif self._migration_family is VIBRADORM_FAMILY:
             _validate_vibradorm_setup_roles(client, data)
         elif self._migration_family is JIECANG_FAMILY:
             from .beds.jiecang_app import require_app_transport
@@ -3306,13 +3324,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             require_sleepys_route(client, data)
         elif self._migration_family in (CUSTOMATIC_FAMILY, JORDANS_FAMILY):
             _require_app_family_roles(client, data)
-        elif (
-            self._migration_family is LOGICDATA_FAMILY
-            and data[CONF_BED_TYPE] in LOGICDATA_FAMILY.bed_types
-        ):
-            from .controller_factory import require_logicdata_route
-
-            require_logicdata_route(client, data)
 
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
@@ -3515,6 +3526,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote controls the bed; never infer it from the bed's name."""
+        from .profile_review import suggested_apps
+
         assert self._manual_data is not None
         if self._jiecang_incoming is None:
             self._jiecang_incoming = self._manual_data.get(CONF_BED_TYPE)
@@ -3523,7 +3536,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # row alone chose no route to keep.
         can_keep = self._migration is not None or incoming in _JIECANG_LEGACY_ROUTES.values()
         choices = [*JIECANG_APP_PROFILES, *_JIECANG_LEGACY_ROUTES, *(["keep"] if can_keep else [])]
+        # Another family's app the review suggests for this route, such as the
+        # LOGICDATA app for a Comfort Motion bed, continues in that family's question.
+        apps = [
+            app
+            for app in suggested_apps(self.hass, self._manual_data)
+            if resolve_bed_type_choice(app)[0] not in JIECANG_FAMILY.bed_types
+        ]
         choice = (user_input or {}).get("choice")
+        if choice in apps:
+            data = self._manual_data
+            for key in JIECANG_FAMILY.route_keys:
+                data.pop(key, None)
+            bed_type, variant = resolve_bed_type_choice(choice)
+            self._select_family_route(bed_type, variant)
+            if (step := _APP_SETUP_STEPS.get(bed_type)) is not None:
+                return await getattr(self, f"async_step_{step}")()
+            return await self._async_finish_family_route()
         if choice in choices:
             data = self._manual_data
             if choice == "keep":
@@ -3554,7 +3583,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 {
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
-                            options=choices,
+                            # Each suggested app is translated as a choice of its own.
+                            options=[
+                                *(key for key in choices if key != "keep"),
+                                *apps,
+                                *(["keep"] if can_keep else []),
+                            ],
                             translation_key="jiecang_family_choice",
                             mode=SelectSelectorMode.LIST,
                         )

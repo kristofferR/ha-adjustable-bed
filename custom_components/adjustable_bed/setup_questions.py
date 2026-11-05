@@ -485,8 +485,8 @@ _DECLARED: Final[dict[str, SetupProfile]] = {
         validate=_jiecang_errors,
         title=_jiecang_title,
     ),
-    # The family step asks the app. An entry switching in from another bed type,
-    # as a repair hands it to Configure, answers the app here too.
+    # The family step asks the app. An entry switched in from another bed type
+    # with Configure's bed-type list answers the app here too.
     BED_TYPE_LOGICDATA_APP: SetupProfile(
         owns=_LOGICDATA_OWNS,
         questions=_logicdata_questions(app=True),
