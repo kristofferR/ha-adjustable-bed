@@ -129,7 +129,8 @@ for the back or legs in the options, the bed graphic draws the estimate dashed
 and translucent, so it never looks like measured feedback. With the card's
 [percentage graphic](CONFIGURATION.md#dashboard-card-graphics-and-dialog) on,
 it draws every estimate as a percentage pose: "≈ 42%" while tracking, grey with
-"Was ≈ 42%" when unconfirmed, and faint, flat and "?" when unknown.
+"Was ≈ 42%" when unconfirmed, and faint, flat and "?" when unknown. A compact
+card's readouts label estimates the same way, with or without the graphic.
 
 An alert at the top of the card explains when an estimate cannot be trusted:
 

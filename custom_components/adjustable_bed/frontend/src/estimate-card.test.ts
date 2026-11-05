@@ -172,3 +172,43 @@ test("saving names the current position and keeps the button choice", () => {
     service: "save_position", data: { device_id: "bed", name: "Reading", create_button: false },
   }]);
 });
+
+test("compact readouts show estimate-only motors as the graphic labels them", () => {
+  const entity = (id: string, key: string) => ({
+    entity_id: id, platform: "adjustable_bed", device_id: "bed", translation_key: key,
+  });
+  const estimate = (id: string, state: string, attributes: Record<string, unknown>) =>
+    ({ entity_id: id, state, attributes });
+  const hass = {
+    entities: Object.fromEntries(["back_up", "back_down", "legs_up", "legs_down"]
+      .map((key) => [`button.bed_${key}`, entity(`button.bed_${key}`, key)])),
+    states: {} as Record<string, unknown>,
+    devices: {}, themes: {}, language: "en", locale: { language: "en" },
+    callService: async () => undefined,
+  } as unknown as HomeAssistant;
+  for (const motor of ["back", "legs"])
+    hass.entities[`number.bed_${motor}_est`] = entity(`number.bed_${motor}_est`, `${motor}_position_estimated`);
+  const card = new AdjustableBedCard() as unknown as {
+    hass: HomeAssistant; _config: unknown; _compactReadouts(sides: unknown[]): TemplateResult;
+  };
+  card.hass = hass;
+  card._config = { type: "custom:adjustable-bed-card", device_id: "bed", layout: "compact" };
+  const readout = (back: unknown, legs: unknown): string => {
+    hass.states["number.bed_back_est"] = back as never;
+    hass.states["number.bed_legs_est"] = legs as never;
+    const bed = bedEntitiesForDevice(hass, "bed");
+    expect(bed.motors.every((m) => m.estimate && !m.cover)).toBe(true);
+    return text(card._compactReadouts([{ key: "both", label: "Bed", bed }]));
+  };
+  expect(readout(
+    estimate("number.bed_back_est", "42", { estimate_state: "tracking" }),
+    estimate("number.bed_legs_est", "unknown", { estimate_state: "unconfirmed", last_estimate: 20 }),
+  )).toContain("≈ 42% / Was ≈ 20%");
+  // Unknown, and not calibrated (unavailable), read "?" as on the graphic.
+  const unknown = readout(
+    estimate("number.bed_back_est", "unknown", { estimate_state: "unknown" }),
+    estimate("number.bed_legs_est", "unavailable", {}),
+  );
+  expect(unknown).toContain("? / ?");
+  expect(unknown).not.toContain("Position feedback unavailable");
+});
