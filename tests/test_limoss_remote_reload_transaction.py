@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from bleak.backends.device import BLEDevice
 from homeassistant.exceptions import HomeAssistantError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const, limoss_remote_services, services
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult

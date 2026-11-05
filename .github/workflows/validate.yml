@@ -122,7 +122,7 @@ jobs:
       - name: Install exact minimum HA and matching test helper
         run: |
           uv sync --extra dev
-          uv pip install 'homeassistant==2026.9.0' 'pytest-homeassistant-custom-component==0.13.363'
+          uv pip install 'homeassistant==2026.11.0' 'pytest-homeassistant[bluetooth] @ https://github.com/home-assistant/core/archive/refs/tags/2026.11.0.tar.gz#subdirectory=packages/pytest-homeassistant'
           uv run --no-sync python scripts/ha_bluetooth_test_requirements.py > /tmp/ha-bluetooth-requirements.txt
           uv pip install -r /tmp/ha-bluetooth-requirements.txt
       - name: Pyright against minimum HA

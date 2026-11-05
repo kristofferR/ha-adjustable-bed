@@ -205,8 +205,6 @@ def get_available_adapters(hass: HomeAssistant) -> dict[str, str]:
                         adapters[source] = f"Local Adapter ({source})"
                     else:
                         adapters[source] = f"Bluetooth Adapter ({source})"
-    except ImportError:
-        _LOGGER.debug("async_current_scanners not available")
     except Exception as err:
         _LOGGER.debug("Could not get scanner names: %s", err)
 

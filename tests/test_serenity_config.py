@@ -92,7 +92,7 @@ async def test_setup_hides_unproven_motor_count_and_fixed_refresh_delay(hass, st
 
 async def test_options_switch_from_generic_profile_preserves_explicit_serenity_defaults(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import (

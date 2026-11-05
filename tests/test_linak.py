@@ -1092,7 +1092,7 @@ class TestLinakCorpusProfiles:
         stored: dict,
         expected_axes: tuple[str, ...],
     ) -> None:
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         from custom_components.adjustable_bed.const import CONF_MOTOR_COUNT, DOMAIN
 

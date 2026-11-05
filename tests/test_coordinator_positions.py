@@ -9,7 +9,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.command_scheduler import (
     CommandKind,
@@ -434,11 +434,11 @@ class TestCoordinatorPositionSeek:
     async def test_connect_uses_persisted_bond_marker_to_skip_pairing(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         mock_bleak_client: MagicMock,
     ):
         """Persisted bond state should suppress re-pairing after restart."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -549,11 +549,11 @@ class TestCoordinatorPositionSeek:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         mock_bleak_client: MagicMock,
     ):
         """Auto mode should pass a callback that refreshes device from selected source."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         adapter_result = MagicMock()
         adapter_result.device = MagicMock()
@@ -607,11 +607,11 @@ class TestCoordinatorPositionSeek:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         mock_bleak_client: MagicMock,
     ):
         """Auto mode callback should fall back to default lookup if selected source disappears."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         adapter_result = MagicMock()
         adapter_result.device = MagicMock()
@@ -670,10 +670,10 @@ class TestCoordinatorPositionSeek:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
     ):
         """A failed connect should identify the source returned by its callback."""
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
 
         selected_device = MagicMock(
             address=TEST_ADDRESS,

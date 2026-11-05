@@ -101,7 +101,7 @@ async def test_telemetry_retirement_preserves_active_customization_and_other_run
     hass, platform, replacement
 ):
     from homeassistant.helpers import entity_registry as er
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.solace import SolaceController
     from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for

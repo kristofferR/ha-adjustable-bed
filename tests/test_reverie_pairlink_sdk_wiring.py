@@ -711,7 +711,7 @@ async def test_receive_lane_serializes_native_seed_changes_across_persistence_aw
 async def test_coordinator_shutdown_disconnects_central_even_when_exit_persistence_fails(
     hass, monkeypatch, mock_coordinator_connected, mock_bleak_client
 ) -> None:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
         PAIRLINK_NOTIFY_UUID,

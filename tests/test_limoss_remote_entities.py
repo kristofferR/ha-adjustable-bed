@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.button import (
     AdjustableBedButton,

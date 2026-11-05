@@ -33,7 +33,7 @@ For every current and future bed integration, implement direct BLE bed features 
 
 **Current status:** Dozens of bed protocols implemented. The README's "Supported Beds" table is the single source of truth for which protocols exist and which are confirmed working — don't duplicate that list here.
 
-**Baseline:** Work from `main`. It requires Home Assistant 2026.9.0+
+**Baseline:** Work from `main`. It requires Home Assistant 2026.11.0+
 and Python 3.14.2+. Start with the [documentation index](docs/README.md).
 
 ## GitHub Comment Approval

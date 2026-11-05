@@ -250,7 +250,7 @@ async def test_options_reject_incompatible_product_transport_before_save(
     hass: HomeAssistant, variant: str, existing_product: str
 ) -> None:
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,
@@ -278,7 +278,7 @@ async def test_options_reject_incompatible_product_transport_before_save(
 
 async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssistant) -> None:
     from homeassistant.helpers import entity_registry as er
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
     from custom_components.adjustable_bed.rmcontrol_protocol import Notification
@@ -320,7 +320,7 @@ async def test_light_registry_retains_only_possible_profile_capabilities(
     hass: HomeAssistant, product: str, keep_light: bool, keep_timer: bool
 ) -> None:
     from homeassistant.helpers import entity_registry as er
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
     from custom_components.adjustable_bed.light import _light_entities_for
@@ -425,7 +425,7 @@ async def test_retired_rmcontrol_cleanup_is_scoped_to_current_bed_and_side(
     hass: HomeAssistant, domain: str, side: str | None
 ) -> None:
     from homeassistant.helpers import entity_registry as er
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.entity_discovery import (
@@ -509,7 +509,7 @@ async def test_bluetooth_confirmation_rejects_incompatible_product(
 @pytest.mark.parametrize("domain", ["sensor", "binary_sensor"])
 async def test_rmcontrol_restart_retains_event_driven_registry_rows(hass, domain) -> None:
     from homeassistant.helpers import entity_registry as er
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
     from custom_components.adjustable_bed.entity_discovery import (
@@ -571,7 +571,7 @@ async def test_paired_options_validate_second_child_product(
     hass: HomeAssistant, variant: str
 ) -> None:
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,
@@ -627,7 +627,7 @@ async def test_product_options_are_not_shared_between_physical_controllers(
     hass: HomeAssistant, pair_mode: str | None
 ) -> None:
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,

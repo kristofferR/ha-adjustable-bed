@@ -1,7 +1,6 @@
 """Real local edits and guarded entity reloads at standalone/paired boundaries."""
 
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from unittest.mock import AsyncMock, patch
@@ -9,8 +8,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers.entity_component import EntityComponent
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_update_listener, _build_paired_children, const
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
@@ -30,6 +28,7 @@ from custom_components.adjustable_bed.paired_coordinator import (
 from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.services import async_register_services
 from tests.app_state_helpers import stored_app_state
+from tests.entry_entities import async_add_entry_entities
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
@@ -138,8 +137,7 @@ async def test_local_rename_offline_updates_real_button_states_without_reconnect
         for entity in _button_entities_for(hass, coordinator)
         if isinstance(entity, AdjustableBedButton) and entity.entity_description.memory_slot == 8
     ]
-    component = EntityComponent(logging.getLogger(__name__), "button", hass)
-    await component.async_add_entities(buttons)
+    await async_add_entry_entities(hass, target.entry, "button", buttons)
     client = coordinator.client
     coordinator._controller = coordinator._client = None
     with patch.object(

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
 from custom_components.adjustable_bed.const import (

@@ -9,7 +9,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bluetooth_transport import (
     ConnectionPath,
@@ -154,7 +154,7 @@ class TestBondMarkerReliability:
     async def test_unpaired_compatibility_fallback_reports_itself_as_unpaired(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         mock_bleak_client: MagicMock,
     ):
         """An adapter without pair= support must not look like a paired connect.
@@ -164,7 +164,7 @@ class TestBondMarkerReliability:
         kept its planned value the bond probe would judge that link as paired,
         and the unreliable-marker latch could never release on such an adapter.
         """
-        del mock_bluetooth_adapters
+        del mock_bluetooth_api
         coordinator = self._make_bonded_coordinator(
             hass,
             **{CONF_BLE_BOND_MARKER_UNRELIABLE: True, CONF_BLE_BOND_ESTABLISHED: False},

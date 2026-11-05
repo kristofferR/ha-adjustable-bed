@@ -9,26 +9,30 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "homeassistant>=2026.9.0",
+    "homeassistant>=2026.11.0",
     "pytest>=7.4.0",
     "pytest-asyncio>=0.23.5",
-    "pytest-homeassistant-custom-component>=0.13.206",
+    "pytest-homeassistant[bluetooth]",
     "pytest-cov>=4.1.0",
     "pytest-split>=0.10.0",
     "pytest-xdist>=3.5.0",
-    "pyserial>=3.5",
-    "serialx>=1.0.0",
     "aioesphomeapi>=42.0.0",
-    "aiousbwatcher>=1.1.1",
     "mypy>=1.19.1",
 ]
+
+[tool.uv.sources]
+# PyPI lacks pytest-homeassistant 2026.11.0 (home-assistant/core#190470), so build
+# it from the release tag. Switch to `pytest-homeassistant[bluetooth]>=2026.11.0`
+# from PyPI once it is published.
+pytest-homeassistant = { url = "https://github.com/home-assistant/core/archive/refs/tags/2026.11.0.tar.gz", subdirectory = "packages/pytest-homeassistant" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["."]
-addopts = "-n auto --dist loadgroup"
+# Let Home Assistant install its httpx alias before respx is imported.
+addopts = "-p no:respx -n auto --dist loadgroup"
 markers = [
     "integration: marks tests as integration tests (require full HA setup)",
     "real_connect_delays: keep the connection profile's retry and settle delays in tests",

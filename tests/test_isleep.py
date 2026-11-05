@@ -491,7 +491,7 @@ async def test_failed_ack_is_retried_on_the_established_session():
 
 async def test_setup_and_options_preserve_explicit_profile(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import (
         AdjustableBedConfigFlow,
@@ -610,7 +610,7 @@ async def test_old_notification_callback_cannot_poison_reconnected_session():
 @pytest.mark.parametrize("product,descriptor", [(130, 2), (129, 1)])
 async def test_single_address_options_reject_losing_split_controls(hass, product, descriptor):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import (
@@ -645,7 +645,7 @@ async def test_single_address_options_reject_losing_split_controls(hass, product
 
 async def test_massage_entity_state_survives_idle_disconnect_and_reconnect_per_side(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_HAS_MASSAGE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
