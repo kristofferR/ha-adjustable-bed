@@ -17,6 +17,7 @@ from homeassistant.util import dt as dt_util
 from .. import goodvibe_protocol as p
 from ..app_session import app_session
 from ..command_scheduler import CommandContext, current_command_context
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..goodvibe_catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
 from ..goodvibe_receive import Notifications
 from ..goodvibe_sleep import Realtime, Receiver
@@ -719,6 +720,36 @@ class GoodVibeController(BedController):
             else ()
         )
 
+    def _effective_gesture(self, action: Action) -> tuple[str, bool]:
+        """The gesture a press runs, and whether local memory mode applies (row116).
+
+        Memory mode replaces an eligible sustained press with one long operand.
+        """
+        assert self.product is not None
+        memory = self.choices.memory and p.memory_eligible(self.product.label, action.label)
+        if memory and action.gesture == "sustainPress":
+            return "shortPress", memory
+        return action.gesture, memory
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """Renewable holds on the held controls that run a sustained press (#483).
+
+        Row116: a sustained press first sends after 100 ms, repeats every 100 ms
+        with no fixed count and, once a tick fired, releases with the generic
+        STOP. Short, long and short-and-long gestures, and sustained controls
+        local memory mode turns into one long operand, keep their gestures.
+        """
+        controls = frozenset(
+            control
+            for control in self.held_control_options
+            if self._effective_gesture(ACTIONS[control.removeprefix("goodvibe_")])[0]
+            == "sustainPress"
+        )
+        if not controls:
+            return NO_EXECUTION_CAPABILITIES
+        return ExecutionCapabilities(hold="stream", hold_controls=controls)
+
     async def hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options:
             raise ValueError("Control is unavailable for this product")
@@ -751,12 +782,14 @@ class GoodVibeController(BedController):
         action = ACTIONS[detail]
         if action.local:
             raise ValueError("Use the configuration action for this local menu")
+        gesture, memory = self._effective_gesture(action)
+        context = current_command_context()
+        leased = context is not None and context.lease is not None
+        if leased and gesture != "sustainPress":
+            # Admission checks the scope too; memory mode may change after it.
+            raise ValueError("This control does not support renewable holds")
         side, link = self._side(), self._current_link()
         cancel = self._coordinator.cancel_command
-        gesture = action.gesture
-        memory = self.choices.memory and p.memory_eligible(self.product.label, action.label)
-        if memory and gesture == "sustainPress":
-            gesture = "shortPress"
         long = action.force_long or memory
         # The artifact replaces flagged items with the None descriptor while its local release mode is off.
         substituted = (
@@ -801,7 +834,12 @@ class GoodVibeController(BedController):
             try:
                 if gesture == "sustainPress":
                     remaining = duration
+                    # A lease's ceiling is clock time, however long each write takes.
+                    loop = asyncio.get_running_loop()
+                    ceiling = loop.time() + duration / 1000 if leased else None
                     while remaining >= 100 and await self._delay(100):
+                        if ceiling is not None and loop.time() > ceiling:
+                            break
                         await send()
                         remaining -= 100
                 elif gesture in ("longPress", "shortAndLongPress"):
