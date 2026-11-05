@@ -35,12 +35,15 @@ class CodecGuide:
       must be in ``frozen``.
     - ``variant``: the protocol variant that reaches a profile key on a bed type,
       for checking the guide's bed types against the factory.
+    - ``entry_data``: settings a bed type needs before the factory can build it,
+      by bed type.
     """
 
     path: str
     spelled: Callable[[str], set[str]]
     frozen: frozenset[str]
     variant: Callable[[str, str], str | None] = _no_variant
+    entry_data: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, kw_only=True)

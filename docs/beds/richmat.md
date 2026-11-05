@@ -1,12 +1,12 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH and HJBed app profiles are APK-verified with hardware unverified
+**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed and classic app profiles are APK-verified with hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
 One wire codec (`6E` frames ending in an additive `sum8`, over seven GATT
 transports) serves the Richmat remote routes, BedTech, Leggett & Platt MlRM
-beds and three families of catalog apps. This guide covers the codec first, then
+beds and four families of catalog apps. This guide covers the codec first, then
 one section per profile. See [Protocol codecs and app profiles](../design/protocol-codecs.md)
 for the architecture.
 
@@ -39,14 +39,15 @@ Brands using Richmat actuators:
 - Dynasty DM9000
 - Thomas Cole Sleep
 - Forty Winks ActivFlex
+- Superior
 - Richmat HJA5 series
 - Saatva
 - Lucid L300
 - Classic Brands
 
 The catalog apps name their layouts themselves: an RMControl product code, a
-Richmat MH model (the first four characters of the Bluetooth name) or an HJBed
-product. Shared services and Bluetooth names do not identify a layout, so each
+Richmat MH model (the first four characters of the Bluetooth name), an HJBed
+product or a classic app's four-character layout. Shared services and Bluetooth names do not identify a layout, so each
 is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 
 ## Apps
@@ -66,30 +67,36 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [HARMONY](https://play.google.com/store/apps/details?id=com.richmat.harmony) 1.0.0 | `com.richmat.harmony` | [Richmat MH](#richmat-mh-apps), bed type `richmat_harmony` |
 | ✅ | [Idealbed](https://play.google.com/store/apps/details?id=com.richmat.idealbed) 2.4.2 | `com.richmat.idealbed` | [Richmat MH](#richmat-mh-apps), bed type `richmat_idealbed` |
 | ✅ | [HJBed](https://play.google.com/store/apps/details?id=com.richmat.hjbed) 2.1.2 (code 21200) | `com.richmat.hjbed` | [HJBed](#hjbed) |
+| ✅ | [Avocado Eco Base](https://play.google.com/store/apps/details?id=com.richmat.avocadoecobase) 1.0.4 (5) | `com.richmat.avocadoecobase` | [Classic apps](#classic-richmat-apps) |
+| ✅ | [CoasterSleep](https://play.google.com/store/apps/details?id=com.richmat.coastersleep) 1.0.10 (10) | `com.richmat.coastersleep` | [Classic apps](#classic-richmat-apps) |
+| ✅ | [Forty Winks](https://play.google.com/store/apps/details?id=com.richmat.fortywinks) 1.0.1 | `com.richmat.fortywinks` | [Classic apps](#classic-richmat-apps) |
+| ✅ | [Milemont](https://play.google.com/store/apps/details?id=com.richmat.milemont) 1.0.4 | `com.richmat.milemont` | [Classic apps](#classic-richmat-apps) |
+| ✅ | [Superior](https://play.google.com/store/apps/details?id=com.richmat.superior) 1.0.9 | `com.richmat.superior` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | Own guide, [Good Vibe Sleep](goodvibe.md): its command frames match this codec, but its settings records put `20` before the length byte |
 
 ## Features
 
-| Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed |
-|---------|-----------------|---------|----------|-----------|------------|-------|
-| Motor Control | ✅ (up to 7 motors) | ✅ Head, Foot, Leg/Pillow | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product |
-| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) |
-| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units |
-| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected |
-| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific |
-| Massage | ✅ | ✅ (5 modes, timer) | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons |
-| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ (toggle and off) | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement |
-| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected |
-| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.rmcontrol_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit |
-| Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides |
+| Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed | Classic apps |
+|---------|-----------------|---------|----------|-----------|------------|-------|------------|
+| Motor Control | ✅ (up to 7 motors) | ✅ Head, Foot, Leg/Pillow | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ❌ (bounded held buttons; not declared, see [execution capabilities](../design/execution-capabilities.md)) |
+| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks |
+| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates |
+| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them |
+| Massage | ✅ | ✅ (5 modes, timer) | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices |
+| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ (toggle and off) | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings |
+| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected | ✅ Where the layout has it |
+| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.rmcontrol_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time |
+| Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button |
 
 ## Choosing a profile
 
 Detection suggests the [Richmat remotes](#richmat-remotes) route for Richmat
 services and names, and [BedTech](#bedtech) or [L&P MlRM](#lp-mlrm) where their
 signals are present. The catalog apps are opt-in: choose RMControl with its
-product code, a Richmat MH app bed type, or HJBed with its product.
+product code, a Richmat MH app bed type, HJBed with its product, or a classic
+app with its layout.
 
 <!-- generated:richmat-profiles -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -121,6 +128,11 @@ sends STOP.
 | Richmat MH Blvd Home | `richmat_blvd_home` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH HARMONY | `richmat_harmony` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Idealbed | `richmat_idealbed` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Classic Avocado Eco Base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
+| Classic CoasterSleep | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
+| Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
+| Classic Milemont | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
+| Classic Superior | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | no |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -143,6 +155,15 @@ sends STOP.
 | HJBed | Write spacing | at least 100 ms between attempts |
 | HJBed | Menu probes at connect | 300 ms apart |
 | HJBed | BJRN preset save | waits 3 s |
+| Classic apps | Worker tick | 150 ms; 110 ms for TWRM and MLRM names |
+| Classic apps | Release after a held control | 50 ms |
+| Classic apps | Once or short press | payload, then release 150 ms later |
+| Classic apps | Long press | 3000 ms, or the node's own threshold |
+| Classic apps | FRAMED startup frame | 300 ms after notifications start |
+| Classic apps | Alarm frames | 300 ms apart |
+| Classic apps | Settings queries | 500 ms apart |
+| Classic apps | Aroma frames, RGB busy interval | 150 ms |
+| Classic apps | Desk button refresh | every 200 ms, with no release frame |
 <!-- /generated -->
 
 ### Aliases
@@ -167,12 +188,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -1521,6 +1542,366 @@ effects, ATT behavior and firmware acceptance are for real users to validate aft
 a beta or release. See the [disposition summary](../apk-analysis/dispositions/row121-hjbed.md)
 and [complete ledger](../apk-analysis/dispositions/row121-hjbed.json).
 
+### Classic Richmat apps
+
+**App:** Avocado Eco Base 1.0.4 (5), CoasterSleep 1.0.10 (10), Forty Winks 1.0.1, Milemont 1.0.4 and Superior 1.0.9 (see [Apps](#apps))
+
+**Status:** ❓ Needs testing (accepted static APK evidence; hardware unverified)
+
+These older resource-driven apps have an independent profile per app. Existing
+Richmat and RMControl entries retain their own behavior, and no capability is
+inherited from the Richmat remote routes.
+
+#### Setup
+
+Each app selects one of its own four-character remote layouts from a
+package-local catalog. A compiled layout is not hardware confirmation.
+
+| App | Layouts |
+|---|---:|
+| Avocado Eco Base | 704 |
+| CoasterSleep | 715 |
+| Forty Winks | 725 |
+| Milemont | 700 |
+| Superior | 725 |
+
+1. Choose the exact app by name in the bed-type list (for example **Forty
+   Winks**). The app is the protocol variant, so its profile id is
+   `richmat_classic_apps:<app>`.
+2. Choose the four-character layout the app shows. The list is the chosen app's
+   own; choose the layout explicitly even when the Bluetooth name looks like one.
+   Four-character app aliases resolve to their package-local layouts, and the
+   diagnostic TEST and RMCS layouts are excluded.
+3. Forty Winks and Superior `ZRS6` is a layout picker: choose `ZRS6:CORN` or
+   `ZRS6:CPRN` to use the `CORN` or `CPRN` controls. The picker itself sends no
+   bed command.
+4. Under **Advanced**, allow the app's third-service fallback only when the bed
+   uses that app path.
+
+- `FWRM` and `WFRM` select the separate desk controls.
+- Motor count, massage and angle sensing are fixed by the profile, and the app
+  sets its own refresh. The pulse count bounds a native held control.
+- Configure asks the same layout and fallback, and checks the layout against
+  the chosen app.
+- Detection: none. Advertisement aliases and four-character names are
+  package-local, so a matching name only adds the five apps as candidates beside
+  the detected Richmat route. A shared service UUID does not identify the app,
+  its axes or a physical side.
+- One-address Left/Right pairing is unavailable: the app's mode labels do not
+  establish physical side roles.
+
+The first present fixed service wins, in the order W1, W2, N1, W4 (see
+[Transports](#transports)). N1 sends the decoded resource bytes unchanged (RAW);
+the others are framed. An incomplete first match fails; it does not silently
+choose a lower-priority service. The app also has an index-2 service fallback,
+which Home Assistant uses only with the explicit option: it selects the last
+writable and receive-capable characteristics in that service and sends RAW
+bytes. A final read-only receive role still permits RAW controls, with no
+invented reads, notification subscription or startup frame. Home Assistant
+always uses current-session objects, and Bleak manages notification
+subscription and descriptors. The app never explicitly sets Android writeType;
+Home Assistant uses write-with-response when supported, otherwise
+write-without-response. That ATT choice is not a claim about the app's
+effective platform write type.
+
+`U3RM` remembers its third, fourth or fifth selector. The hardware meaning of a
+motor slot or Mode 1/2/3 is not inferred from a layout name.
+
+#### Controls
+
+Native buttons carry each node's app label. A node's tag, selector,
+visibility, current mode and short or long gesture decide what it sends. Local
+mode, head/foot, memory-arm and Hold/Release selectors appear where the layout
+has them.
+
+| Path | Frame |
+|---|---|
+| RAW (N1, fallback) | The selected decoded resource bytes, unchanged |
+| FRAMED | `6E 01 M C sum8` (`codec.command`), `M` the current app mode |
+| Settings | `6E OP A B sum8` (`codec.frame`), independent of the ordinary encoding |
+| RGB | Two settings frames in one 10-byte write (`codec.rgb`) |
+| Ordinary release | RAW `6E`; FRAMED `6E 01 M 6E sum8` |
+
+`M` is an actually available app mode; RAW ignores it. The ordinary FRAMED
+sender uses only the first selected operand byte. Legacy short operands can
+differ from current ones. All five shipped constructors leave the legacy long
+getter null, and the integration does not use that ignored XML attribute.
+`GVRM` foot selection reaches that null getter, so it cannot invent a movement
+packet. Raw SelectView armed-save DOWN has no handler; it does not become a
+working save by copying another profile's bytes.
+
+##### Resource-selected controls
+
+This indexes the operands stored in the five shipped catalogs. Values are sets
+across the exact layouts that bind each resource, not universal capabilities.
+FRAMED values are wrapped as above. The complete node tables ship in
+`cluster018_data/`.
+
+| Bound resource | RAW short operand(s) | Current short operand(s) | Long operand(s) |
+|---|---|---|---|
+| `adjust_volume` | `b7` | `b7` | None |
+| `com_first_up_once` | `3d` | `3d` | None |
+| `com_lumbar_back_pos` | `91` | `91` | `92` |
+| `com_lumbar_set_pos` | `91` | `91` | `92` |
+| `com_motor1_2_down` | `2a`, `39` | `2a` | None |
+| `com_motor1_2_up` | `29`, `36`, `38` | `29` | None |
+| `com_motor2_down` | `27`, `41` | `27` | None |
+| `com_motor_keep_30` | `90` | `90` | None |
+| `com_msg1_intensity_dec` | `49`, `4a`, `4d` | `4d` | None |
+| `com_msg1_intensity_inc` | `42`, `46`, `49`, `4c` | `4c` | None |
+| `com_msg2_intensity_dec` | `4b`, `4f` | `4f` | None |
+| `com_msg2_intensity_inc` | `44`, `48`, `4e` | `4e` | None |
+| `com_msg_10min` | `39`, `47`, `49`, `4c`, `50`, `5f` | `5f` | None |
+| `com_msg_10min_new` | `a1` | `a1` | None |
+| `com_msg_20min` | `63` | `63` | None |
+| `com_msg_20min_new` | `a2` | `a2` | None |
+| `com_msg_30min` | `61` | `61` | None |
+| `com_msg_30min_new` | `a3` | `a3` | None |
+| `com_msg_aroma` | `3b` | `3b` | None |
+| `com_msg_constant` | `3a`, `47` | `3a` | None |
+| `com_msg_foot_intensity2` | `a5` | `a5` | None |
+| `com_msg_head_intensity2` | `a4` | `a4` | None |
+| `com_msg_intensity_dec` | `35`, `4b` | `35` | None |
+| `com_msg_off` | `39`, `47`, `48`, `5d` | `39`, `47`, `48`, `5d` | `47` |
+| `com_msg_off2` | `5a` | `5a` | None |
+| `com_msg_off3` | `48`, `5e` | `48`, `5e` | `5e` |
+| `com_msg_on` | `5d` | `5d` | `47` |
+| `com_msg_speed_dec` | `37`, `49` | `37` | None |
+| `com_msg_speed_inc` | `36`, `48` | `36` | None |
+| `com_msg_wave1` | `49` | `49` | None |
+| `com_msg_wave2` | `4a` | `4a` | None |
+| `com_msg_wave3` | `4b` | `4b` | None |
+| `com_relax_set` | `70` | `70` | `95` |
+| `com_second_up_once` | `3e` | `3e` | None |
+| `com_table_down` | `02` | `02` | None |
+| `com_table_up` | `01` | `01` | None |
+| `com_unwind_back` | `8c` | `8c` | `8d` |
+| `com_unwind_set` | `8c` | `8c` | `8d` |
+| `com_wakeup_back` | `93` | `93` | `94` |
+| `com_wakeup_set` | `93` | `93` | `94` |
+| `k_first_second_once_up` | `23` | `23` | None |
+| `k_first_up_once` | `3d` | `3d` | None |
+| `k_first_up_second_down` | `21` | `21` | None |
+| `k_flat` | `31`, `32`, `38` | `31` | `84` |
+| `k_flat2` | `6c` | `6c` | None |
+| `k_flat_old` | `38` | `31` | None |
+| `k_flat_old2` | `31` | None | None |
+| `k_flat_sleep_back` | `f6`, `f7` | `f6`, `f7` | `f6`, `f7` |
+| `k_flat_sleep_save` | `f6`, `f7` | `f6`, `f7` | `f6`, `f7` |
+| `k_lock` | `31`, `84`, `d9` | `31`, `84`, `d9` | `84` |
+| `k_lounge_back` | `32`, `59` | `59` | `65` |
+| `k_lounge_back_old2` | `32` | `31`, `59` | None |
+| `k_lounge_save` | `59` | `59` | `65` |
+| `k_m1_back` | `2e`, `42` | `2e` | `2b` |
+| `k_m1_back_old2` | `42` | `2e`, `3f` | `2b` |
+| `k_m1_save` | `2b`, `2e`, `42`, `43` | `2b`, `2e` | `2b` |
+| `k_m1_set_old2` | `42`, `43` | `2b`, `2e`, `40` | `2b` |
+| `k_m2_back` | `2f`, `44` | `2f` | `2c` |
+| `k_m2_back_old2` | `44` | `2f`, `44` | `2c` |
+| `k_m2_save` | `2c`, `2f`, `44`, `45` | `2c`, `2f` | `2c` |
+| `k_m2_set_old2` | `44`, `45` | `2c`, `2f`, `42` | `2c` |
+| `k_m3_back` | `30` | `30` | `2d` |
+| `k_m3_save` | `2d`, `30` | `2d`, `30` | `2d` |
+| `k_m4_back` | `b2` | `b2` | `b3` |
+| `k_m4_save` | `b2` | `b2` | `b3` |
+| `k_m5_back` | `f4` | `f4` | `f5` |
+| `k_m5_save` | `f4` | `f4` | `f5` |
+| `k_motor1_2_down` | `2a`, `39` | `2a` | None |
+| `k_motor1_2_down_old` | `39` | `2a` | None |
+| `k_motor1_2_down_old2` | `37`, `39` | `2a` | None |
+| `k_motor1_2_up` | `29`, `36`, `38` | `29` | None |
+| `k_motor1_2_up_old` | `38` | `29` | None |
+| `k_motor1_2_up_old2` | `36` | `29`, `3c` | None |
+| `k_motor1_down` | `25`, `37`, `38` | `25` | None |
+| `k_motor1_down_old` | `37` | `25` | None |
+| `k_motor1_down_old2` | `38` | `25` | None |
+| `k_motor1_up` | `24`, `34`, `35` | `24` | None |
+| `k_motor1_up_old` | `34` | `24` | None |
+| `k_motor1_up_old2` | `35` | `24` | None |
+| `k_motor2_3_down` | `97` | `97` | None |
+| `k_motor2_3_up` | `96` | `96` | None |
+| `k_motor2_down` | `27`, `41` | `27` | None |
+| `k_motor2_down_old` | `38`, `41` | `27` | None |
+| `k_motor2_down_old2` | `41` | `27` | None |
+| `k_motor2_up` | `26`, `36`, `37` | `26` | None |
+| `k_motor2_up_old` | `35`, `36` | `26` | None |
+| `k_motor2_up_old2` | `37` | `26` | None |
+| `k_motor3_4_down` | `44` | `44` | None |
+| `k_motor3_4_tilt_down` | `5c` | `5c` | None |
+| `k_motor3_4_tilt_up` | `5b` | `5b` | None |
+| `k_motor3_4_up` | `43` | `43` | None |
+| `k_motor3_down` | `40`, `43` | `40` | None |
+| `k_motor3_up` | `3f`, `42` | `3f` | None |
+| `k_motor4_down` | `42`, `45` | `42` | None |
+| `k_motor4_up` | `41` | `41` | None |
+| `k_motor5_down` | `72` | `72` | None |
+| `k_motor5_up` | `71` | `71` | None |
+| `k_motor6_down` | `74` | `74` | None |
+| `k_motor6_up` | `73` | `73` | None |
+| `k_motor7_down` | `d1` | `d1` | None |
+| `k_motor7_up` | `d0` | `d0` | None |
+| `k_motor_keep_15` | `76` | `76` | None |
+| `k_motor_reset` | `be` | `be` | None |
+| `k_msg1_intensity_dec_old2` | `49` | `4d`, `5f` | None |
+| `k_msg1_intensity_inc_old2` | `46` | `3c`, `4c` | None |
+| `k_msg1_off_old2` | `47` | `47`, `5f` | None |
+| `k_msg1_on_off_old` | `42` | `4c` | None |
+| `k_msg2_intensity_dec_old2` | `4b` | `35`, `4f` | None |
+| `k_msg2_intensity_inc_old2` | `48` | `34`, `4e` | None |
+| `k_msg2_on_off_old` | `44` | `4e` | None |
+| `k_msg_constant_old` | `47` | `3a` | None |
+| `k_msg_first_on_off` | `32` | `32` | None |
+| `k_msg_intensity1_old` | `4c` | `67` | None |
+| `k_msg_intensity2_old` | `4d` | `4d` | None |
+| `k_msg_intensity3_old` | `4e` | `68` | None |
+| `k_msg_intensity_dec_old` | `4b` | `35`, `4f` | None |
+| `k_msg_intensity_first` | `4c`, `67` | `67` | None |
+| `k_msg_intensity_inc` | `34`, `48`, `4a` | `34` | None |
+| `k_msg_intensity_inc_old` | `4a` | `34`, `4d` | None |
+| `k_msg_intensity_third` | `4e`, `68` | `68` | None |
+| `k_msg_mode` | `48`, `4a` | `48` | `47`, `5e` |
+| `k_msg_mode_old2` | `4a` | `48` | None |
+| `k_msg_off_old` | `39` | `5f` | None |
+| `k_msg_off_old2` | `50` | `5f` | None |
+| `k_msg_on_off` | `6f` | `6f` | None |
+| `k_msg_on_old2` | `4c` | `5f` | None |
+| `k_msg_pulse` | `38`, `46` | `38` | None |
+| `k_msg_pulse_old` | `46` | `38`, `3c` | None |
+| `k_msg_second_on_off` | `33` | `33` | None |
+| `k_msg_speed_dec_old` | `49` | `37`, `4c` | None |
+| `k_msg_speed_inc_old` | `48` | `36`, `4e` | None |
+| `k_msg_wave` | `39`, `45` | `39` | `47` |
+| `k_msg_wave_old` | `45` | `39` | None |
+| `k_music_lock` | `d9` | `d9` | `84` |
+| `k_next` | `d3` | `d3` | None |
+| `k_on_off` | `d8` | `d8` | None |
+| `k_previous` | `d2` | `d2` | None |
+| `k_read_back` | `f2`, `f3` | `f2`, `f3` | `f2`, `f3` |
+| `k_read_set` | `f2`, `f3` | `f2`, `f3` | `f2`, `f3` |
+| `k_relax_back` | `70` | `70` | `95` |
+| `k_reset` | `62` | `62` | None |
+| `k_second_up_first_down` | `22` | `22` | None |
+| `k_set_old` | `35` | `45` | None |
+| `k_side_sleeper_back` | `ba` | `ba` | `bb` |
+| `k_side_sleeper_set` | `ba` | `ba` | `bb` |
+| `k_sleep_back` | `8e` | `8e` | `8f` |
+| `k_sleep_set` | `8e` | `8e` | `8f` |
+| `k_snore_back` | `46` | `46` | `69` |
+| `k_snore_reset` | `cb` | `cb` | None |
+| `k_snore_save` | `46`, `69` | `46`, `69` | `69` |
+| `k_start_pause` | `d7` | `d7` | None |
+| `k_sync_off` | `bd` | `bd` | `bd` |
+| `k_sync_on` | `bc` | `bc` | `bc` |
+| `k_tv_back` | `33`, `58` | `58` | `64` |
+| `k_tv_back_old2` | `31`, `33` | `58` | None |
+| `k_tv_save` | `58`, `64` | `58`, `64` | `64` |
+| `k_ubl_off` | `3c`, `75` | `3c`, `75` | `75` |
+| `k_ubl_on_off` | `36`, `3c`, `43`, `46` | `3c` | `75` |
+| `k_ubl_on_off_old` | `43` | `3c` | None |
+| `k_vibration` | `d6` | `d6` | None |
+| `k_volume_down` | `d5` | `d5` | None |
+| `k_volume_up` | `d4` | `d4` | `d4` |
+| `k_wakeup_mode` | `85` | `85` | None |
+| `k_yoga_back` | `f0` | `f0` | `f1` |
+| `k_yoga_save` | `f0` | `f0` | `f1` |
+| `k_zg2_back` | `6b` | `6b` | `6a` |
+| `k_zg2_return` | `6b` | `6b` | `6a` |
+| `k_zg2_save` | `6b` | `6b` | `6a` |
+| `k_zg2_set` | `6b` | `6b` | `6a` |
+| `k_zg_back` | `34`, `35`, `45` | `45` | `66` |
+| `k_zg_back_old` | `32`, `34` | `45` | `66` |
+| `k_zg_save` | `34`, `45`, `66` | `45`, `66` | `66` |
+| `sleep1` | `86` | `86` | None |
+| `swtch_music` | `b8` | `b8` | None |
+| `turn_off_music` | `b9` | `b9` | None |
+
+##### Auxiliary settings
+
+`A(op,a,b)` is the settings frame `6E op a b sum8`.
+
+| Operation | Exact bytes or formula |
+|---|---|
+| Framed initialization | `6e02010071`, after the startup delay |
+| Desk layout initialization or query | `6e94000002` immediately; the FRAMED notification startup repeats it after the startup delay |
+| Alarm query | `6e08010178`, only if the current alarm metadata list is nonempty |
+| Lamp query | `6e0a000179` |
+| Aroma query | `6e1a000088` |
+| Alarm schedule | `A(05,delay low,00)`, then `A(06,delay high,action)` |
+| Alarm cancel | `6e05000073`, then `6e06000074` |
+| RGB | `A(0c,ff,R) \|\| A(0d,G,B)` |
+| Lamp slider | `A(0b,(minutes*60) high,(minutes*60) low)`; zero is `6e0bffff77` |
+| Lamp Save | `A(0b,minutes high,minutes low)`; zero minutes saves zero |
+| Aroma | `A(1b,00,mode2 minutes)`, `A(1c,00,mode3 minutes)`, `A(1d,00,pause hours)` |
+| Massage popup | 15/30/45/toggle: `6e01005fce` / `6e010063d2` / `6e010061d0` / `6e01005ecd` |
+| D1RM slider | 0/2/3/5 map to `5e`/`5f`/`63`/`61`; 1/4 pass through, using `A(01,00,value)` |
+| D9RM slider | Same, except zero maps to `8b` |
+| Desk units | `6e910000ff` cm / `6e91000100` inches |
+| Desk target | `A(88,int(float32(display*10))/100,int(float32(display*10))%100)` with Java truncation |
+| Desk buttons 1/2/3 | `6e96000408` / `6e9600080c` / `6e96001014` |
+| Desk fourth button, newly reported error confirmation | `6e95000003` |
+
+Alarms select one actual layout checkbox action. The delay is the minutes until
+the next chosen local time; an equal or unset time means 1440 minutes. There are
+no weekday, date or combined preset-plus-massage packets. The lamp slider and
+Save keep their different source units. Aroma ranges are 1-60 minutes, 1-60
+minutes and 1-12 hours; the source's uppercase consumer and two-byte getInt
+defect prevent reliable aroma-save feedback.
+
+#### Timing
+
+See [Catalog app timing](#catalog-app-timing). Mode 0 resets the long-press
+counter but keeps the long-fired latch; mode 4 releases and resets both. A new
+DOWN resets neither. Home Assistant cancellation ends pending commands, always
+performs the protocol cleanup and does not resume a held movement after a
+disconnect or a lost UI owner. The app's unsafe queued or pending continuations
+and stale cached-characteristic reuse are not reproduced. A bounded desk button
+hold ends its refresh, with no invented release frame.
+
+#### Notifications
+
+| Prefix | Consumer |
+|---|---|
+| `6e08` | Legacy desk height, base 128; oldPack duplicate suppression |
+| `6e90` | Modern desk height, base 100, unit-dependent float32 arithmetic |
+| `6e94` / `6e92` | Desk unit, range and initial values; only `94` reveals the modern controls |
+| `6e97` | Desk error callback |
+| `6e09010078` | Alarm capability |
+| `6e0e00017d` / `6e0e00037f` | Lamp capability and state flags |
+| `6e1a000189` | Aroma capability |
+| `6e07010177` / `6e07010278` | Alarm set / cancel state |
+
+The checksum, ordered prefix search and the source's 5, 7 and 16-byte length
+branches apply. The app can discard coalesced packets or throw on an empty
+short-buffer match; Home Assistant reports malformed input without crashing the
+Bluetooth callback. Numeric rounding preserves binary32 operations and
+promoted-float BigDecimal HALF_EVEN. The Avocado URRM settings observer can
+starve the lamp and aroma rows after its suppressed alarm row; that
+package-specific gate is not applied to the other apps.
+
+No bed angle, general command acknowledgement, general massage state, firmware,
+memory count or authentication API is inferred from dormant constants.
+
+#### Services
+
+`adjustable_bed.richmat_classic` sends the app's typed settings: `operation:
+query` requests the settings capabilities, then alarm and alarm cancel, RGB,
+lamp slider and Save timers, aroma, massage popup and slider, and the desk
+target, unit, recall buttons and reset. The layout's available alarm action IDs
+and the received state are in diagnostics. Wi-Fi, cloud and account,
+group and network administration, and the diagnostic endurance and
+motor-mapping configuration stay outside the supported surface. See
+[Actions](../SERVICES.md#classic-richmat-app-settings).
+
+#### Evidence
+
+The classic apps send only frames frozen from their five accepted row066
+reports. The accepted versions and all five artifact and report hashes are in
+the [discovery ledger](../apk-analysis/dispositions/row066-classic-richmat-apps.md),
+with the accepted authority, exact member differences, exclusions, safety
+divergences, implementation status and deferred hardware validation.
+Coaster's indivisible accepted aggregate and its historical six-cache-file FAIL
+remain explicit there. Static acceptance is not hardware confirmation.
+
 ## Notes
 
 ### Analysis provenance
@@ -1529,5 +1910,6 @@ and [complete ledger](../apk-analysis/dispositions/row121-hjbed.json).
   and [specialized evidence record](../apk-analysis/row018-rmcontrol-specialized-evidence.md).
 - Richmat MH: [row055 disposition ledger](../apk-analysis/dispositions/row055-richmat-cluster.md).
 - HJBed: [row121 disposition summary](../apk-analysis/dispositions/row121-hjbed.md).
+- Classic apps: [row066 discovery ledger](../apk-analysis/dispositions/row066-classic-richmat-apps.md).
 - The Richmat remotes, BedTech and L&P MlRM routes have no accepted report of
   their own; their frames are the pre-v5 controllers'.

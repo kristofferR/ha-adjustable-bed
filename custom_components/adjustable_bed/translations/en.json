@@ -495,6 +495,7 @@
           "vmatbasic_profile": "V-MAT Basic product profile",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
+          "product_type": "App layout code",
           "sleepys_elite_selector": "Control box the app lists"
         },
         "data_description": {
@@ -514,6 +515,7 @@
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
+          "product_type": "The four-character layout code the app shows. Each app has its own list; the Bluetooth name and shared services don't identify the layout.",
           "has_massage": "Show the massage controls. For retained Caresse Diamant settings, match the massage setting saved in the app.",
           "sleepys_elite_selector": "Choose the control box the MFRM Sleepy's Elite app shows for this bed. It belongs to this physical bed and is never inferred from its Bluetooth name or service. Choose none only when the app names no control box."
         },
@@ -522,10 +524,12 @@
             "name": "Advanced",
             "data": {
               "jiecang_app_transport": "BLE transport",
+              "cluster018_third_service": "Allow the app’s third-service fallback",
               "protocol_variant": "Packet dialect"
             },
             "data_description": {
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
+              "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
               "protocol_variant": "Auto reads the receiver's manufacturer name: text containing star selects StarCode, anything else the legacy CB25 packets. Change it only if Auto picks the wrong one."
             }
           }
@@ -940,7 +944,8 @@
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
-      "migration_verification_required": "The selected setup could not be verified or its connection could not be released. Retry, or keep your current setup."
+      "migration_verification_required": "The selected setup could not be verified or its connection could not be released. Retry, or keep your current setup.",
+      "cluster018_layout": "Choose a layout shipped in the selected app."
     }
   },
   "options": {
@@ -1051,7 +1056,8 @@
           "ergomotion4_model_keys": "Other product: ordered model keys",
           "ergomotion4_massage_keys": "Other product: massage keys",
           "ergomotion4_rgb": "Other product: RGB lighting",
-          "ergomotion4_product_name": "Other product: exact app product name"
+          "ergomotion4_product_name": "Other product: exact app product name",
+          "cluster018_third_service": "Allow the app’s third-service fallback"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1117,7 +1123,8 @@
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently."
+          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
+          "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes."
         }
       },
       "remove_bond": {
@@ -1382,7 +1389,8 @@
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
       "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
-      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving."
+      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
+      "cluster018_layout": "Choose a layout shipped in the selected app."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -3313,6 +3321,12 @@
       },
       "eshine_okin_massage_timer": {
         "name": "Massage timer"
+      },
+      "cluster018_action": {
+        "name": "{action}"
+      },
+      "cluster018_release": {
+        "name": "Release held action"
       }
     },
     "cover": {
@@ -5093,6 +5107,9 @@
       },
       "eshine_okin_alarm": {
         "name": "Alarm state"
+      },
+      "cluster018_status": {
+        "name": "App connection and state"
       }
     },
     "light": {
@@ -6228,6 +6245,35 @@
           "10": "10 minutes",
           "20": "20 minutes",
           "30": "30 minutes"
+        }
+      },
+      "cluster018_mode": {
+        "name": "App mode",
+        "state": {
+          "0": "Mode 1",
+          "1": "Mode 2",
+          "2": "Mode 3"
+        }
+      },
+      "cluster018_program": {
+        "name": "Memory selection",
+        "state": {
+          "recall": "Recall",
+          "armed": "Save next action"
+        }
+      },
+      "cluster018_hold": {
+        "name": "Press behavior",
+        "state": {
+          "release": "Release",
+          "hold": "Hold"
+        }
+      },
+      "cluster018_head_foot": {
+        "name": "Selected control",
+        "state": {
+          "head": "Head",
+          "foot": "Foot"
         }
       }
     },
@@ -8438,6 +8484,55 @@
         },
         "wake_mode": {
           "name": "Wake action"
+        }
+      }
+    },
+    "richmat_classic": {
+      "name": "Classic Richmat app settings",
+      "description": "Direct BLE settings for the selected Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior app and layout.",
+      "fields": {
+        "operation": {
+          "name": "Operation"
+        },
+        "action": {
+          "name": "Layout alarm action"
+        },
+        "time": {
+          "name": "Alarm time"
+        },
+        "minutes": {
+          "name": "Lamp minutes"
+        },
+        "rgb_color": {
+          "name": "RGB color"
+        },
+        "aroma_times": {
+          "name": "Aroma times"
+        },
+        "progress": {
+          "name": "Massage timer slider"
+        },
+        "height": {
+          "name": "Desk target"
+        },
+        "unit": {
+          "name": "Desk unit"
+        },
+        "slot": {
+          "name": "Desk button"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "device_id": {
+          "name": "Bed"
+        },
+        "popup": {
+          "name": "Massage popup choice"
+        },
+        "duration_ms": {
+          "name": "Desk button duration",
+          "description": "Bounded duration in milliseconds."
         }
       }
     }

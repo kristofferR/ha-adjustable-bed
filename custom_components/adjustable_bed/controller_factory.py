@@ -22,6 +22,7 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
+    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -748,6 +749,14 @@ async def create_controller(
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.eshine_okin", __package__)
         from .beds.eshine_okin import EshineOkinController
         return EshineOkinController(coordinator, profile=protocol_variant or "")
+
+    if bed_type == BED_TYPE_CLUSTER018:
+        # The app's catalog is a gzip file: load it off the event loop first.
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.cluster018", __package__)
+        from .beds.cluster018 import Cluster018Controller
+        from .cluster018_profiles import load_catalog
+        await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
+        return Cluster018Controller(coordinator, app=protocol_variant, device_name=device_name)
 
     if bed_type == BED_TYPE_HJBED:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)

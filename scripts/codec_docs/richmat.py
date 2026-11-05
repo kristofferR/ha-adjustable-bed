@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from custom_components.adjustable_bed import cluster018_protocol as classic_frames
 from custom_components.adjustable_bed import const as _const
 from custom_components.adjustable_bed import hjbed_catalog
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames
@@ -10,6 +11,7 @@ from custom_components.adjustable_bed.beds import hjbed as hjbed_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label
+from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES as CLASSIC_APPS
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
@@ -31,6 +33,10 @@ _RICHMAT_NAMES = {
             ("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
             strict=True,
         )
+    },
+    **{
+        profile.key: f"Classic {CLASSIC_APPS[app]}"
+        for app, profile in richmat_profiles.RICHMAT_CLASSIC.items()
     },
 }
 _FIXED_ROUTES = (
@@ -84,6 +90,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             *_FIXED_ROUTES,
             richmat_profiles.HJBED,
             *richmat_profiles.RICHMAT_MH.values(),
+            *richmat_profiles.RICHMAT_CLASSIC.values(),
         )
     }
 
@@ -102,7 +109,19 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (mh_types[profile.key.removeprefix("richmat_mh_")],)
             for profile in richmat_profiles.RICHMAT_MH.values()
         },
+        **{
+            profile.key: (_const.BED_TYPE_CLUSTER018,)
+            for profile in richmat_profiles.RICHMAT_CLASSIC.values()
+        },
     }
+
+
+def _catalog_kind(key: str) -> str:
+    if key == "hjbed":
+        return "per-product catalog"
+    if key.startswith("richmat_classic_"):
+        return "per-layout catalog"
+    return "per-model catalog"
 
 
 def _code_hex(code: int) -> str:
@@ -153,7 +172,7 @@ def render_richmat_profiles() -> str:
                 _RICHMAT_NAMES[key],
                 ", ".join(f"`{bed_type}`" for bed_type in types[key]),
                 ", ".join(transport.upper() for transport in profile.transports),
-                "per-product catalog" if key == "hjbed" else "per-model catalog",
+                _catalog_kind(key),
                 _lease(profile),
             )
             for key, profile in _richmat_profiles().items()
@@ -525,6 +544,45 @@ def render_richmat_catalog_timing() -> str:
                 ("HJBed", "Write spacing", f"at least {hjbed_bed.TICK_MS} ms between attempts"),
                 ("HJBed", "Menu probes at connect", f"{_ms(hjbed_bed.MENU_PROBE_S)} apart"),
                 ("HJBed", "BJRN preset save", f"waits {hjbed_bed.BJRN_SAVE_WAIT_S} s"),
+                (
+                    "Classic apps",
+                    "Worker tick",
+                    f"{classic_frames.TICK_MS} ms; {classic_frames.FAST_TICK_MS} ms for "
+                    + " and ".join(classic_frames.FAST_TICK_NAMES)
+                    + " names",
+                ),
+                (
+                    "Classic apps",
+                    "Release after a held control",
+                    f"{classic_frames.HELD_RELEASE_MS} ms",
+                ),
+                (
+                    "Classic apps",
+                    "Once or short press",
+                    f"payload, then release {classic_frames.TAP_RELEASE_MS} ms later",
+                ),
+                (
+                    "Classic apps",
+                    "Long press",
+                    f"{classic_frames.LONG_PRESS_MS} ms, or the node's own threshold",
+                ),
+                (
+                    "Classic apps",
+                    "FRAMED startup frame",
+                    f"{classic_frames.STARTUP_MS} ms after notifications start",
+                ),
+                ("Classic apps", "Alarm frames", f"{classic_frames.ALARM_SPACING_MS} ms apart"),
+                ("Classic apps", "Settings queries", f"{classic_frames.QUERY_SPACING_MS} ms apart"),
+                (
+                    "Classic apps",
+                    "Aroma frames, RGB busy interval",
+                    f"{classic_frames.SETTINGS_SPACING_MS} ms",
+                ),
+                (
+                    "Classic apps",
+                    "Desk button refresh",
+                    f"every {classic_frames.DESK_REFRESH_MS} ms, with no release frame",
+                ),
             ),
         )
     )

@@ -78,6 +78,8 @@ async def test_guide_bed_types_match_the_factory(name: str) -> None:
             coordinator.entry.entry_id = f"codec-docs-{bed_type}"
             for config_key, _ in family.app_routes.values():
                 coordinator.entry.data[config_key] = key
+            if family.guide:
+                coordinator.entry.data.update(family.guide.entry_data.get(bed_type, {}))
             variant = family.guide.variant(key, bed_type) if family.guide else None
             controller = await create_controller(
                 coordinator, bed_type, variant, _make_connected_client()
