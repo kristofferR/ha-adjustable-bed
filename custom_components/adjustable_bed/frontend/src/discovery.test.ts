@@ -1636,3 +1636,11 @@ test("MotoMotion Home hold resolves its source-specific release on the same devi
   delete hass.entities["button.mm_release"];
   expect(heldButtonMotor(hass, "button.mm_home")).toBeUndefined();
 });
+
+test("Hush product actions remain scoped to their physical device", () => {
+  const hass = hassWith([
+    entry("button.hush_memory", "hush_base_action", "bed"),
+    entry("button.other_memory", "hush_base_action", "other"),
+  ]);
+  expect(bedEntitiesForDevice(hass, "bed").utility).toEqual(["button.hush_memory"]);
+});

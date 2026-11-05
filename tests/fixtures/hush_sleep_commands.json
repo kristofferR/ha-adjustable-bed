@@ -1,0 +1,104 @@
+[
+  {
+    "protocol": "P1",
+    "action": "s_time",
+    "example_json": "{\"id\":1,\"cmd\":\"s_time\",\"val\":{\"ts\":1700000000,\"tz\":\"Europe/Oslo\"}}",
+    "example_hex": "00010100490000110343554442007b226964223a312c22636d64223a22735f74696d65222c2276616c223a7b227473223a313730303030303030302c22747a223a224575726f70652f4f736c6f227d7d"
+  },
+  {
+    "protocol": "P1",
+    "action": "q_part",
+    "example_json": "{\"id\":1,\"cmd\":\"s_part\",\"val\":null}",
+    "example_hex": "00010100290000110343554422007b226964223a312c22636d64223a22735f70617274222c2276616c223a6e756c6c7d"
+  },
+  {
+    "protocol": "P1",
+    "action": "s_part",
+    "example_json": "{\"id\":1,\"cmd\":\"s_part\",\"val\":1}",
+    "example_hex": "0001010026000011034355441f007b226964223a312c22636d64223a22735f70617274222c2276616c223a317d"
+  },
+  {
+    "protocol": "P1",
+    "action": "q_realtime",
+    "example_json": "{\"id\":1,\"cmd\":\"q_realtime\",\"val\":{\"type\":0,\"time\":1}}",
+    "example_hex": "000101003c0000110343554435007b226964223a312c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274797065223a302c2274696d65223a317d7d"
+  },
+  {
+    "protocol": "P1",
+    "action": "q_report",
+    "example_json": "{\"id\":1,\"cmd\":\"q_report\",\"val\":{\"part\":1,\"type\":1,\"y\":2026,\"m\":11,\"d\":3}}",
+    "example_hex": "00010100500000110343554449007b226964223a312c22636d64223a22715f7265706f7274222c2276616c223a7b2270617274223a312c2274797065223a312c2279223a323032362c226d223a31312c2264223a337d7d"
+  },
+  {
+    "protocol": "P1",
+    "action": "q_report_allow",
+    "example_json": "{\"id\":1,\"cmd\":\"q_report\",\"val\":{\"part\":2,\"type\":2,\"y\":2026,\"m\":11,\"d\":1,\"allow\":1}}",
+    "example_hex": "000101005a0000110343554453007b226964223a312c22636d64223a22715f7265706f7274222c2276616c223a7b2270617274223a322c2274797065223a322c2279223a323032362c226d223a31312c2264223a312c22616c6c6f77223a317d7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "s_time",
+    "example_json": "{\"id\":1,\"cmd\":\"s_time\",\"val\":{\"ts\":1700000000,\"utc\":1}}",
+    "example_hex": "000101003e0000110343554437007b226964223a312c22636d64223a22735f74696d65222c2276616c223a7b227473223a313730303030303030302c22757463223a317d7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "q_time",
+    "example_json": "{\"id\":1,\"cmd\":\"q_time\",\"val\":null}",
+    "example_hex": "00010100290000110343554422007b226964223a312c22636d64223a22715f74696d65222c2276616c223a6e756c6c7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "q_part",
+    "example_json": "{\"id\":1,\"cmd\":\"q_part\",\"val\":null}",
+    "example_hex": "00010100290000110343554422007b226964223a312c22636d64223a22715f70617274222c2276616c223a6e756c6c7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "s_part",
+    "example_json": "{\"id\":1,\"cmd\":\"s_part\",\"val\":11}",
+    "example_hex": "00010100270000110343554420007b226964223a312c22636d64223a22735f70617274222c2276616c223a31317d"
+  },
+  {
+    "protocol": "P2",
+    "action": "q_realtime",
+    "example_json": "{\"id\":1,\"cmd\":\"q_realtime\",\"val\":{\"type\":0,\"time\":1}}",
+    "example_hex": "000101003c0000110343554435007b226964223a312c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274797065223a302c2274696d65223a317d7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "q_report",
+    "example_json": "{\"id\":1,\"cmd\":\"q_report\",\"val\":{\"part\":1,\"type\":1,\"y\":2026,\"m\":11,\"d\":3}}",
+    "example_hex": "00010100500000110343554449007b226964223a312c22636d64223a22715f7265706f7274222c2276616c223a7b2270617274223a312c2274797065223a312c2279223a323032362c226d223a31312c2264223a337d7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "q_report_allow",
+    "example_json": "{\"id\":1,\"cmd\":\"q_report\",\"val\":{\"allow\":1}}",
+    "example_hex": "0001010032000011034355442b007b226964223a312c22636d64223a22715f7265706f7274222c2276616c223a7b22616c6c6f77223a317d7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "s_init",
+    "example_json": "{\"id\":1,\"cmd\":\"s_init\",\"val\":0}",
+    "example_hex": "0001010026000011034355441f007b226964223a312c22636d64223a22735f696e6974222c2276616c223a307d"
+  },
+  {
+    "protocol": "P2",
+    "action": "q_sens",
+    "example_json": "{\"id\":1,\"cmd\":\"q_sens\",\"val\":null}",
+    "example_hex": "00010100290000110343554422007b226964223a312c22636d64223a22715f73656e73222c2276616c223a6e756c6c7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "q_antiSnore",
+    "example_json": "{\"id\":1,\"cmd\":\"q_antiSnore\",\"val\":null}",
+    "example_hex": "000101002e0000110343554427007b226964223a312c22636d64223a22715f616e7469536e6f7265222c2276616c223a6e756c6c7d"
+  },
+  {
+    "protocol": "P2",
+    "action": "s_antiSnore",
+    "example_json": "{\"id\":1,\"cmd\":\"s_antiSnore\",\"val\":{\"L\":[0,8,4],\"R\":[0,8,4]}}",
+    "example_hex": "0001010043000011034355443c007b226964223a312c22636d64223a22735f616e7469536e6f7265222c2276616c223a7b224c223a5b302c382c345d2c2252223a5b302c382c345d7d7d"
+  }
+]

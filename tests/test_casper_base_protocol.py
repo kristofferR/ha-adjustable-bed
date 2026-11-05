@@ -10,6 +10,7 @@ import pytest
 
 from custom_components.adjustable_bed import casper_base_protocol as bed
 from custom_components.adjustable_bed import casper_sleep_protocol as sleep
+from custom_components.adjustable_bed.codec import casper as codec
 
 FIXTURES = Path(__file__).parent / "fixtures/casper_base"
 
@@ -22,16 +23,16 @@ def fixtures(name):
 def test_builders(v):
     inputs = v["inputs"]
     if "opcode" in inputs:
-        actual = bed.control(
+        actual = codec.control(
             inputs["opcode"], single=inputs.get("transport") == 0, side=inputs.get("side", 0)
         )
     elif v.get("builder") == "special":
         name = inputs["name"].removeprefix("query_")
-        actual = bed.special(name, single=inputs.get("transport") == 0)
+        actual = codec.special(name, single=inputs.get("transport") == 0)
     elif v.get("builder") == "light_seconds":
-        actual = bed.light_seconds(inputs["seconds"])
+        actual = codec.light_seconds(inputs["seconds"])
     elif v.get("builder") == "light_rgb":
-        actual = bed.light_rgb((inputs["red"], inputs["green"], inputs["blue"]))
+        actual = codec.light_rgb((inputs["red"], inputs["green"], inputs["blue"]))
     elif v["protocol"] in ("P3", "P4"):
         r = bed.Request(
             "sensor",
@@ -51,12 +52,12 @@ def test_builders(v):
         )
     else:
         advanced = {
-            "continuation-0": bed.extra(4, 2, (0, 1, 44)),
-            "continuation-1": bed.extra(4, 4, (0, 1)),
-            "continuation-2": bed.extra(4, 1, (0, 1, 2, 3)),
-            "continuation-3": bed.extra(5, 1, (1, 0, 7, 30, 0x45, 0x81)),
-            "continuation-4": bed.extra(5, 1, (0,), operation=0),
-            "continuation-5": bed.extra(6, 3, (0,), operation=0),
+            "continuation-0": codec.extra(4, 2, (0, 1, 44)),
+            "continuation-1": codec.extra(4, 4, (0, 1)),
+            "continuation-2": codec.extra(4, 1, (0, 1, 2, 3)),
+            "continuation-3": codec.extra(5, 1, (1, 0, 7, 30, 0x45, 0x81)),
+            "continuation-4": codec.extra(5, 1, (0,), operation=0),
+            "continuation-5": codec.extra(6, 3, (0,), operation=0),
         }
         if v["id"] in advanced:
             assert advanced[v["id"]].hex() == v["expected_bytes"]

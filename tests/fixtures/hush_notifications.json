@@ -1,0 +1,1464 @@
+[
+  {
+    "id": "white-on",
+    "inputs": {
+      "frame": "6e200903010200019e"
+    },
+    "expected_state": [
+      [
+        "ae7261",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "white-other",
+    "inputs": {
+      "frame": "6e200903010200029f"
+    },
+    "expected_state": [
+      [
+        "ae7261",
+        false
+      ]
+    ]
+  },
+  {
+    "id": "rgb-color",
+    "inputs": {
+      "frame": "6e200b04010200ff00ff9e"
+    },
+    "expected_state": [
+      [
+        "ae6aa1",
+        {
+          "alpha": 1.0,
+          "red": 1.0,
+          "green": 0.0,
+          "blue": 1.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "rgb-timer",
+    "inputs": {
+      "frame": "6e200a040202000207a9"
+    },
+    "expected_state": [
+      [
+        "ae6a81",
+        127
+      ]
+    ]
+  },
+  {
+    "id": "rgb-bool3",
+    "inputs": {
+      "frame": "6e20090403020001a1"
+    },
+    "expected_state": [
+      [
+        "ae7241",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "rgb-bool4",
+    "inputs": {
+      "frame": "6e20090404020001a2"
+    },
+    "expected_state": [
+      [
+        "ae6a61",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "rgb-unhandled5",
+    "inputs": {
+      "frame": "6e20090405020001a3"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "motor-height-short",
+    "inputs": {
+      "frame": "6e200b01020200010203a4"
+    },
+    "expected_state": [
+      [
+        "ae6f01",
+        {
+          "height": 25.8,
+          "type": 3,
+          "angle": -1,
+          "monitorHeight": 0.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "motor-height-full",
+    "inputs": {
+      "frame": "6e200e010202000102032d02582e"
+    },
+    "expected_state": [
+      [
+        "ae6f01",
+        {
+          "height": 25.8,
+          "type": 3,
+          "angle": 45,
+          "monitorHeight": 60.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "motor-angle-unused-b7",
+    "inputs": {
+      "frame": "6e200a01030202632d30"
+    },
+    "expected_state": [
+      [
+        "ae6ca1",
+        {
+          "position": 2,
+          "angle": 45
+        }
+      ]
+    ]
+  },
+  {
+    "id": "massage-strength-pairs",
+    "inputs": {
+      "frame": "6e200d020102010402050306b5"
+    },
+    "expected_state": [
+      [
+        "ae7301",
+        4
+      ],
+      [
+        "ae72e1",
+        5
+      ]
+    ]
+  },
+  {
+    "id": "massage-odd-ignored",
+    "inputs": {
+      "frame": "6e200a020102010402a4"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "massage-sub2",
+    "inputs": {
+      "frame": "6e200902020200019e"
+    },
+    "expected_state": [
+      [
+        "ae72c1",
+        1
+      ]
+    ]
+  },
+  {
+    "id": "massage-sub4",
+    "inputs": {
+      "frame": "6e20090204020001a0"
+    },
+    "expected_state": [
+      [
+        "ae72a1",
+        1
+      ]
+    ]
+  },
+  {
+    "id": "massage-sub5",
+    "inputs": {
+      "frame": "6e20090205020001a1"
+    },
+    "expected_state": [
+      [
+        "ae6c21",
+        1
+      ]
+    ]
+  },
+  {
+    "id": "massage-sub6",
+    "inputs": {
+      "frame": "6e20090206020001a2"
+    },
+    "expected_state": [
+      [
+        "ae7281",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "alarm-typ2",
+    "inputs": {
+      "frame": "6e200d050102077f061e010957"
+    },
+    "expected_state": [
+      [
+        "ae7221",
+        {
+          "field7": 7,
+          "fieldf": 127,
+          "field17": 6,
+          "field1f": 30,
+          "field27": 1,
+          "field2f": 9
+        }
+      ]
+    ]
+  },
+  {
+    "id": "alarm-typ3",
+    "inputs": {
+      "frame": "6e200d050103077f061e010958"
+    },
+    "expected_state": [
+      [
+        "ae7201",
+        {
+          "field7": 7,
+          "fieldf": 127,
+          "field17": 6,
+          "field1f": 30,
+          "field27": 1,
+          "field2f": 9
+        }
+      ]
+    ]
+  },
+  {
+    "id": "snore-bool1",
+    "inputs": {
+      "frame": "6e20090601020001a1"
+    },
+    "expected_state": [
+      [
+        "ae71e1",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "snore-bool2",
+    "inputs": {
+      "frame": "6e20090602020001a2"
+    },
+    "expected_state": [
+      [
+        "ae71c1",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "snore-name-raw",
+    "inputs": {
+      "frame": "6e200b060302004100ffe4"
+    },
+    "expected_state": [
+      [
+        "ae71a1",
+        [
+          65,
+          0,
+          255
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "snore-stop-music",
+    "inputs": {
+      "frame": "6e200a060402000101a6"
+    },
+    "expected_state": [
+      [
+        "ae6d01",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "snore-config1",
+    "inputs": {
+      "frame": "6e200a060502000113b9"
+    },
+    "expected_state": [
+      [
+        "ae7181",
+        19
+      ]
+    ]
+  },
+  {
+    "id": "snore-config2",
+    "inputs": {
+      "frame": "6e200a060502000213ba"
+    },
+    "expected_state": [
+      [
+        "ae7161",
+        19
+      ]
+    ]
+  },
+  {
+    "id": "lock1",
+    "inputs": {
+      "frame": "6e20090702020001a3"
+    },
+    "expected_state": [
+      [
+        "ae6d41",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "lock0",
+    "inputs": {
+      "frame": "6e20090702020000a2"
+    },
+    "expected_state": [
+      [
+        "ae6d21",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "lock2",
+    "inputs": {
+      "frame": "6e20090702020002a4"
+    },
+    "expected_state": [
+      [
+        "ae6d21",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "music10",
+    "inputs": {
+      "frame": "6e20090901020001a4"
+    },
+    "expected_state": [
+      [
+        "ae6c41",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "music22",
+    "inputs": {
+      "frame": "6e20090902020201a7"
+    },
+    "expected_state": [
+      [
+        "ae6ba1",
+        1
+      ]
+    ]
+  },
+  {
+    "id": "music23",
+    "inputs": {
+      "frame": "6e20090902020301a8"
+    },
+    "expected_state": [
+      [
+        "ae7141",
+        1
+      ]
+    ]
+  },
+  {
+    "id": "music30",
+    "inputs": {
+      "frame": "6e20090903020001a6"
+    },
+    "expected_state": [
+      [
+        "ae6c01",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "music40",
+    "inputs": {
+      "frame": "6e20090904020001a7"
+    },
+    "expected_state": [
+      [
+        "ae6c61",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "press1",
+    "inputs": {
+      "frame": "6e20090b01020002a7"
+    },
+    "expected_state": [
+      [
+        "ae6f61",
+        2
+      ]
+    ]
+  },
+  {
+    "id": "press2",
+    "inputs": {
+      "frame": "6e20090b02020002a8"
+    },
+    "expected_state": [
+      [
+        "ae6f41",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "press4",
+    "inputs": {
+      "frame": "6e20090b04020002aa"
+    },
+    "expected_state": [
+      [
+        "ae6f21",
+        2
+      ]
+    ]
+  },
+  {
+    "id": "blanket-empty1",
+    "inputs": {
+      "frame": "6e20160d0102000102030405060708090a0b0c0d0e1d"
+    },
+    "expected_state": [
+      [
+        "ae7041",
+        {
+          "class": "RMDeviceBlacketDetailsModel",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "blanket-empty2",
+    "inputs": {
+      "frame": "6e20160d0202000102030405060708090a0b0c0d0e1e"
+    },
+    "expected_state": [
+      [
+        "ae7021",
+        {
+          "class": "RMDeviceBlacketDetailsModel",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "blanket-empty5",
+    "inputs": {
+      "frame": "6e20160d0502000102030405060708090a0b0c0d0e21"
+    },
+    "expected_state": [
+      [
+        "ae7001",
+        {
+          "class": "RMDeviceBlacketDetailsModel",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "blanket-empty6",
+    "inputs": {
+      "frame": "6e20160d0602000102030405060708090a0b0c0d0e22"
+    },
+    "expected_state": [
+      [
+        "ae6fe1",
+        {
+          "class": "RMDeviceBlacketDetailsModel",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "blanket-empty7",
+    "inputs": {
+      "frame": "6e20160d0702000102030405060708090a0b0c0d0e23"
+    },
+    "expected_state": [
+      [
+        "ae6fc1",
+        {
+          "class": "RMDeviceBlacketDetailsModel",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "blanket-empty8",
+    "inputs": {
+      "frame": "6e20160d0802000102030405060708090a0b0c0d0e24"
+    },
+    "expected_state": [
+      [
+        "ae6fa1",
+        {
+          "class": "RMDeviceBlacketDetailsModel",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "blanket-empty9",
+    "inputs": {
+      "frame": "6e20160d0902000102030405060708090a0b0c0d0e25"
+    },
+    "expected_state": [
+      [
+        "ae6f81",
+        {
+          "class": "RMDeviceBlacketDetailsModel",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "fan",
+    "inputs": {
+      "frame": "6e20090e01020004ac"
+    },
+    "expected_state": [
+      [
+        "ae7121",
+        4
+      ]
+    ]
+  },
+  {
+    "id": "atomization-power",
+    "inputs": {
+      "frame": "6e20091001020007b1"
+    },
+    "expected_state": [
+      [
+        "ae7101",
+        7
+      ]
+    ]
+  },
+  {
+    "id": "atomization-time",
+    "inputs": {
+      "frame": "6e200a10020200630817"
+    },
+    "expected_state": [
+      [
+        "ae70e1",
+        8
+      ]
+    ]
+  },
+  {
+    "id": "heat-sentinel",
+    "inputs": {
+      "frame": "6e200a11020202ffffad"
+    },
+    "expected_state": [
+      [
+        "ae70c1",
+        {
+          "position": 2,
+          "type": 1,
+          "timeSum": 0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "heat-time",
+    "inputs": {
+      "frame": "6e200a110202010102b1"
+    },
+    "expected_state": [
+      [
+        "ae70c1",
+        {
+          "position": 1,
+          "type": 2,
+          "timeSum": 258
+        }
+      ]
+    ]
+  },
+  {
+    "id": "heat-temperature",
+    "inputs": {
+      "frame": "6e200a11030201632d3f"
+    },
+    "expected_state": [
+      [
+        "ae70a1",
+        {
+          "position": 1,
+          "temperature": 45
+        }
+      ]
+    ]
+  },
+  {
+    "id": "heat-mode",
+    "inputs": {
+      "frame": "6e200811050203b1"
+    },
+    "expected_state": [
+      [
+        "ae7081",
+        3
+      ]
+    ]
+  },
+  {
+    "id": "check-no-type-gate1",
+    "inputs": {
+      "frame": "6e200a0a0101010203aa"
+    },
+    "expected_state": [
+      [
+        "ae7061",
+        [
+          1,
+          [
+            110,
+            32,
+            10,
+            10,
+            1,
+            1,
+            1,
+            2,
+            3,
+            170
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "check-no-type-gate2",
+    "inputs": {
+      "frame": "6e200a0a0201010203ab"
+    },
+    "expected_state": [
+      [
+        "ae7061",
+        [
+          2,
+          [
+            110,
+            32,
+            10,
+            10,
+            2,
+            1,
+            1,
+            2,
+            3,
+            171
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "check-no-type-gate3",
+    "inputs": {
+      "frame": "6e200a0a0301010203ac"
+    },
+    "expected_state": [
+      [
+        "ae7061",
+        [
+          3,
+          [
+            110,
+            32,
+            10,
+            10,
+            3,
+            1,
+            1,
+            2,
+            3,
+            172
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "check-no-type-gate4",
+    "inputs": {
+      "frame": "6e200a0a0401010203ad"
+    },
+    "expected_state": [
+      [
+        "ae7061",
+        [
+          4,
+          [
+            110,
+            32,
+            10,
+            10,
+            4,
+            1,
+            1,
+            2,
+            3,
+            173
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "check-no-type-gate5",
+    "inputs": {
+      "frame": "6e200a0a0501010203ae"
+    },
+    "expected_state": [
+      [
+        "ae7061",
+        [
+          5,
+          [
+            110,
+            32,
+            10,
+            10,
+            5,
+            1,
+            1,
+            2,
+            3,
+            174
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "check-no-type-gate6",
+    "inputs": {
+      "frame": "6e200a0a0601010203af"
+    },
+    "expected_state": [
+      [
+        "ae7061",
+        [
+          6,
+          [
+            110,
+            32,
+            10,
+            10,
+            6,
+            1,
+            1,
+            2,
+            3,
+            175
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6e41",
+    "inputs": {
+      "frame": "6e09010078"
+    },
+    "expected_state": [
+      [
+        "ae6e41",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6e21",
+    "inputs": {
+      "frame": "6e0e00037f"
+    },
+    "expected_state": [
+      [
+        "ae6e21",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6e01",
+    "inputs": {
+      "frame": "6e1a000189"
+    },
+    "expected_state": [
+      [
+        "ae6e01",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6de1",
+    "inputs": {
+      "frame": "6e07010177"
+    },
+    "expected_state": [
+      [
+        "ae6de1",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6dc1",
+    "inputs": {
+      "frame": "6e07010278"
+    },
+    "expected_state": [
+      [
+        "ae6dc1",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6da1",
+    "inputs": {
+      "frame": "6e16010186"
+    },
+    "expected_state": [
+      [
+        "ae6da1",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6d81",
+    "inputs": {
+      "frame": "6e90c101c0"
+    },
+    "expected_state": [
+      [
+        "ae6d81",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6d61",
+    "inputs": {
+      "frame": "6e2100008f"
+    },
+    "expected_state": [
+      [
+        "ae6d61",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6d41",
+    "inputs": {
+      "frame": "6e23018416"
+    },
+    "expected_state": [
+      [
+        "ae6d41",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6d21",
+    "inputs": {
+      "frame": "6e23008415"
+    },
+    "expected_state": [
+      [
+        "ae6d21",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-exact-ae6d01",
+    "inputs": {
+      "frame": "6e23a06e9f"
+    },
+    "expected_state": [
+      [
+        "ae6d01",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "legacy-version",
+    "inputs": {
+      "frame": "6e90000300"
+    },
+    "expected_state": [
+      [
+        "ae6ce1",
+        3
+      ]
+    ]
+  },
+  {
+    "id": "legacy-mode",
+    "inputs": {
+      "frame": "6e90170000"
+    },
+    "expected_state": [
+      [
+        "ae6cc1",
+        7
+      ]
+    ]
+  },
+  {
+    "id": "legacy-angle",
+    "inputs": {
+      "frame": "6e90392d00"
+    },
+    "expected_state": [
+      [
+        "ae6ca1",
+        {
+          "no": 2,
+          "status": 1,
+          "angle": 45
+        }
+      ]
+    ]
+  },
+  {
+    "id": "legacy-massage",
+    "inputs": {
+      "frame": "6e90a5c700"
+    },
+    "expected_state": [
+      [
+        "ae6c81",
+        {
+          "mode": 2,
+          "massage1": 7,
+          "massage2": 0,
+          "massage3": 7
+        }
+      ]
+    ]
+  },
+  {
+    "id": "legacy-music-flags",
+    "inputs": {
+      "frame": "6e90b1a000"
+    },
+    "expected_state": [
+      [
+        "ae6c61",
+        true
+      ],
+      [
+        "ae6c41",
+        true
+      ],
+      [
+        "ae6c21",
+        false
+      ],
+      [
+        "ae6c01",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "legacy-diagnostics-status",
+    "inputs": {
+      "frame": "6e90c23000"
+    },
+    "expected_state": [
+      [
+        "ae6be1",
+        "aeafb1"
+      ]
+    ]
+  },
+  {
+    "id": "legacy-diagnostics-empty3",
+    "inputs": {
+      "frame": "6e90c32100"
+    },
+    "expected_state": [
+      [
+        "ae6bc1",
+        {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "legacy-diagnostics-empty4",
+    "inputs": {
+      "frame": "6e90c42100"
+    },
+    "expected_state": [
+      [
+        "ae6bc1",
+        {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "legacy-diagnostics-empty5",
+    "inputs": {
+      "frame": "6e90c52100"
+    },
+    "expected_state": [
+      [
+        "ae6bc1",
+        {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "legacy-diagnostics-empty6",
+    "inputs": {
+      "frame": "6e90c62100"
+    },
+    "expected_state": [
+      [
+        "ae6bc1",
+        {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      ]
+    ]
+  },
+  {
+    "id": "legacy-music-value1",
+    "inputs": {
+      "frame": "6e90d16300"
+    },
+    "expected_state": [
+      [
+        "ae6ba1",
+        99
+      ]
+    ]
+  },
+  {
+    "id": "legacy-music-value2",
+    "inputs": {
+      "frame": "6e90d26300"
+    },
+    "expected_state": [
+      [
+        "ae6b81",
+        99
+      ]
+    ]
+  },
+  {
+    "id": "desk20",
+    "inputs": {
+      "frame": "6e20140f6302190117043807590a0b0116012131"
+    },
+    "expected_state": [
+      [
+        "ae6b41",
+        {
+          "unit": "Inch",
+          "mode": "longPress",
+          "reset": true,
+          "minInch": 12.3,
+          "maxInch": 45.6,
+          "minCm": 78.9,
+          "maxCm": 101.1,
+          "currentInch": 12.2,
+          "currentCm": 13.3,
+          "minAngle": 0,
+          "maxAngle": 10,
+          "currentAngle": 0,
+          "monitorInch": 0.0,
+          "monitorCm": 0.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "desk23",
+    "inputs": {
+      "frame": "6e20170f6302190117043807590a0b0116012102502db3"
+    },
+    "expected_state": [
+      [
+        "ae6b41",
+        {
+          "unit": "Inch",
+          "mode": "longPress",
+          "reset": true,
+          "minInch": 12.3,
+          "maxInch": 45.6,
+          "minCm": 78.9,
+          "maxCm": 101.1,
+          "currentInch": 12.2,
+          "currentCm": 13.3,
+          "minAngle": 2,
+          "maxAngle": 80,
+          "currentAngle": 45,
+          "monitorInch": 0.0,
+          "monitorCm": 0.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "desk27",
+    "inputs": {
+      "frame": "6e201b0f6302190117043807590a0b0116012102502d0f19103221"
+    },
+    "expected_state": [
+      [
+        "ae6b41",
+        {
+          "unit": "Inch",
+          "mode": "longPress",
+          "reset": true,
+          "minInch": 12.3,
+          "maxInch": 45.6,
+          "minCm": 78.9,
+          "maxCm": 101.1,
+          "currentInch": 12.2,
+          "currentCm": 13.3,
+          "minAngle": 2,
+          "maxAngle": 80,
+          "currentAngle": 45,
+          "monitorInch": 152.5,
+          "monitorCm": 165.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "desk19-no-event",
+    "inputs": {
+      "frame": "6e20130f0102190117043807590a0b011601ad"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "desk-typ1-ignored",
+    "inputs": {
+      "frame": "6e20140f0101190117043807590a0b01160121ce"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "legacy-desk7",
+    "inputs": {
+      "frame": "6e900001027500"
+    },
+    "expected_state": [
+      [
+        "ae6b61",
+        {
+          "unit": "Inch",
+          "mode": "shortPress",
+          "reset": false,
+          "maxInch": 49.21,
+          "minInch": 23.6,
+          "minCm": 60.0,
+          "maxCm": 125.0,
+          "currentInch": 31.7,
+          "currentCm": 31.7,
+          "maxAngle": 10,
+          "minAngle": 0,
+          "currentAngle": 0,
+          "monitorInch": 0.0,
+          "monitorCm": 0.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "legacy-desk16-any-opcode",
+    "inputs": {
+      "frame": "6e63000117043807590a0b0116012100"
+    },
+    "expected_state": [
+      [
+        "ae6b41",
+        {
+          "unit": "CM",
+          "mode": "shortPress",
+          "reset": false,
+          "minInch": 12.3,
+          "maxInch": 45.6,
+          "minCm": 78.9,
+          "maxCm": 101.1,
+          "currentInch": 12.2,
+          "currentCm": 13.3,
+          "minAngle": 0,
+          "maxAngle": 10,
+          "currentAngle": 0,
+          "monitorInch": 0.0,
+          "monitorCm": 0.0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "desk-6e21",
+    "inputs": {
+      "frame": "6e210a0f0102010200ae"
+    },
+    "expected_state": [
+      [
+        "ae6f01",
+        {
+          "height": 25.8,
+          "type": 2
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ota-control-raw",
+    "inputs": {
+      "frame": "6e40000c0101024100ff49a5"
+    },
+    "expected_state": [
+      [
+        "ae6ee1",
+        [
+          65,
+          0,
+          255
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "ota-trigger",
+    "inputs": {
+      "frame": "6e40000a010202438efa"
+    },
+    "expected_state": [
+      [
+        "ae6ec1",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "ota-trigger-other",
+    "inputs": {
+      "frame": "6e40000a01020244fe1d"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "ota-status3",
+    "inputs": {
+      "frame": "6e40000a01030207b18a"
+    },
+    "expected_state": [
+      [
+        "ae6ea1",
+        7
+      ]
+    ]
+  },
+  {
+    "id": "ota-status4",
+    "inputs": {
+      "frame": "6e40000a01040207341a"
+    },
+    "expected_state": [
+      [
+        "ae6e81",
+        7
+      ]
+    ]
+  },
+  {
+    "id": "ota-status5",
+    "inputs": {
+      "frame": "6e40000a01050207032a"
+    },
+    "expected_state": [
+      [
+        "ae6e61",
+        7
+      ]
+    ]
+  },
+  {
+    "id": "ota-wrong-type",
+    "inputs": {
+      "frame": "6e40000a01030107e4d9"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "ota-wrong-domain",
+    "inputs": {
+      "frame": "6e40000a020302072a56"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain1",
+    "inputs": {
+      "frame": "6e201c010101000102030405060708090a0b0c0d0e0f10111213147f"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain2",
+    "inputs": {
+      "frame": "6e201c020101000102030405060708090a0b0c0d0e0f101112131480"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain3",
+    "inputs": {
+      "frame": "6e201c030101000102030405060708090a0b0c0d0e0f101112131481"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain4",
+    "inputs": {
+      "frame": "6e201c040101000102030405060708090a0b0c0d0e0f101112131482"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain5",
+    "inputs": {
+      "frame": "6e201c050101000102030405060708090a0b0c0d0e0f101112131483"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain6",
+    "inputs": {
+      "frame": "6e201c060101000102030405060708090a0b0c0d0e0f101112131484"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain7",
+    "inputs": {
+      "frame": "6e201c070101000102030405060708090a0b0c0d0e0f101112131485"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain9",
+    "inputs": {
+      "frame": "6e201c090101000102030405060708090a0b0c0d0e0f101112131487"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain11",
+    "inputs": {
+      "frame": "6e201c0b0101000102030405060708090a0b0c0d0e0f101112131489"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain13",
+    "inputs": {
+      "frame": "6e201c0d0101000102030405060708090a0b0c0d0e0f10111213148b"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain14",
+    "inputs": {
+      "frame": "6e201c0e0101000102030405060708090a0b0c0d0e0f10111213148c"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain15",
+    "inputs": {
+      "frame": "6e201c0f0101000102030405060708090a0b0c0d0e0f10111213148d"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain16",
+    "inputs": {
+      "frame": "6e201c100101000102030405060708090a0b0c0d0e0f10111213148e"
+    },
+    "expected_state": []
+  },
+  {
+    "id": "nonresponse-domain17",
+    "inputs": {
+      "frame": "6e201c110101000102030405060708090a0b0c0d0e0f10111213148f"
+    },
+    "expected_state": []
+  }
+]

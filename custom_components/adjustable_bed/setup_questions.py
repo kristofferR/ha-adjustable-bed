@@ -224,6 +224,12 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "casper_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "casper_sleep_mm": GENERIC_FIELDS,
     "casper_sleep_sxb": GENERIC_FIELDS,
+    # The Hush Base product owns every generic field; the sensors and the remote
+    # finder have no motors.
+    "hush_remote": GENERIC_FIELDS,
+    "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
+    "hush_sleep_mm": GENERIC_FIELDS,
+    "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
@@ -1269,6 +1275,17 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return errors(dict(data))
 
 
+def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    """The app's own twelve products first, then the profiles it restores."""
+    from .const import HUSH_BASE_VARIANTS
+    from .profiles.hush import PROFILES
+
+    return {
+        key: HUSH_BASE_VARIANTS[key]
+        for key in sorted(PROFILES, key=lambda key: (not PROFILES[key].current, PROFILES[key].index))
+    }
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -1608,6 +1625,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_COMFORT_ENHANCEMENTS,
         owns={**_BASE[BED_TYPE_COMFORT_ENHANCEMENTS].owns, CONF_HAS_MASSAGE: False},
     ),
+    # The product the Hush Base app shows sets every control; nothing detects it.
+    "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,

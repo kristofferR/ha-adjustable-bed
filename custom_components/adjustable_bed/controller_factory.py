@@ -612,6 +612,24 @@ async def create_controller(
             device_name=device_name if client is not None else None,
         )
 
+    if bed_type == "hush_remote":
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hush_sleep", __package__)
+        from .beds.hush_sleep import HushRemoteController
+
+        return HushRemoteController(coordinator)
+
+    if bed_type == "hush_base":
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hush_base", __package__)
+        from .beds.hush_base import HushBaseController
+
+        return HushBaseController(coordinator, product=protocol_variant or "")
+
+    if bed_type in {"hush_sleep_mm", "hush_sleep_sxb"}:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hush_sleep", __package__)
+        from .beds.hush_sleep import HushSleepController
+
+        return HushSleepController(coordinator, kind="mm" if bed_type == "hush_sleep_mm" else "sxb")
+
     if bed_type == BED_TYPE_CASPER_BASE:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.casper_base", __package__

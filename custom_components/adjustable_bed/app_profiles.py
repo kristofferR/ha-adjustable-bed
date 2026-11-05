@@ -150,8 +150,11 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     'ergo_slim': SideProfile('Ergo Slim', frozenset({CONF_PRODUCT_TYPE})),
     'tempur_au': SideProfile('TEMPUR AU', frozenset({CONF_PRODUCT_TYPE})),
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
+    "hush_base": SideProfile("Hush Base product", variant_owned=True),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
+    "hush_sleep_mm": SideProfile("Hush Base MM sensor"),
+    "hush_sleep_sxb": SideProfile("Hush Base SXB sensor"),
     # The layout, handset or control box decides one side's massage (#787).
     BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile(
         "Comfort Enhancements", frozenset({CONF_HAS_MASSAGE}), variant_owned=True

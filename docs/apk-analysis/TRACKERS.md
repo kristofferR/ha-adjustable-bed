@@ -63,8 +63,9 @@ Change only what moved, in place:
 - A report or cluster is accepted: add one row to the matching evidence table
   (#443 for scheduled rows, #447 for early or post-cutoff work). Give the
   package, exact version, seals and a short note in plain words.
-- An implementation PR opens or merges: follow the final step above. The
-  disposition ledger in `docs/apk-analysis/dispositions/` holds the detail.
+- An implementation PR opens or merges: follow the final step above. The PR
+  body holds the ledger totals and exclusions; the ledger itself stays
+  machine-local with the audit report.
 
 Never:
 
@@ -76,7 +77,7 @@ Never:
 - Name a formal cluster by its ID alone. Its work-unit cell lists its member
   package IDs, for example `` `cluster-010` · `com.okin.bedding.glory`, `com.okin.bedding.tranquil` ``.
 - Abbreviate or strip spaces to fit a size budget. If a record does not fit,
-  it belongs in the owning disposition ledger or the handoff.
+  it belongs in the implementation PR body or the handoff.
 - Post status comments on a tracker issue.
 
 ## Guard

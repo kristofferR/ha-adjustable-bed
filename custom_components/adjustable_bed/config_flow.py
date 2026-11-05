@@ -1405,6 +1405,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
             BED_TYPE_ISLEEP,
             BED_TYPE_GMMOTOR,
             BED_TYPE_MOTOMOTION,
+            "hush_base",
         ),
         "profile_questions",
     ),
@@ -8957,7 +8958,7 @@ class AdjustableBedOptionsFlow(
         """Enable the reversible left/right/both surface on one BLE address."""
         runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
         controller = getattr(runtime, "capability_controller", None)
-        needs_casper_transport_proof = self.config_entry.data.get(CONF_BED_TYPE) == "casper_base"
+        needs_casper_transport_proof = self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base"}
         casper_not_connected = needs_casper_transport_proof and (
             runtime is None or not runtime.is_connected
         )

@@ -14,19 +14,19 @@ guides, the frozen vectors and the issues with their comments.
 ## Summary
 
 Totals count matrix rows: one per bed type, or per route or app profile where
-the evidence differs. There are 112 rows covering all 116 `SUPPORTED_BED_TYPES`.
+the evidence differs. There are 113 rows covering all 120 `SUPPORTED_BED_TYPES`.
 
 | Capability | Supported | Unsupported | Blocked |
 | --- | ---: | ---: | ---: |
-| #483 hold until release | 78 (69 stream, 3 stream without a release frame, 6 latched) | 2 | 32 |
-| #516 concurrent motors | 5 | 71 | 36 |
-| #591 native motor speed | 0 | 78 | 34 |
+| #483 hold until release | 79 (70 stream, 3 stream without a release frame, 6 latched) | 2 | 32 |
+| #516 concurrent motors | 5 | 71 | 37 |
+| #591 native motor speed | 0 | 78 | 35 |
 
 Rolled up by bed type (a bed type counts as supported when any route is, and as
-blocked when no route is supported and any route is blocked): hold 79 supported
-(4 of them also have a blocked route), 6 unsupported, 31 blocked; concurrent 6
-supported (2 of them also have a blocked route), 73 unsupported, 37 blocked;
-speed 0 supported, 79 unsupported, 37 blocked.
+blocked when no route is supported and any route is blocked): hold 80 supported
+(4 of them also have a blocked route), 9 unsupported, 31 blocked; concurrent 6
+supported (2 of them also have a blocked route), 76 unsupported, 38 blocked;
+speed 0 supported, 82 unsupported, 38 blocked.
 
 - **#516 candidates:** the Prodigy CE and U Series profiles of `leggett_okin`
   and `leggett_platt`, `customatic_clarity`, `customatic_jeromes`, `customatic_remedy`, and `svane`
@@ -140,6 +140,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bedtech` | B | B | B | bedtech | report PARTIAL |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
+| `hush_base` | S stream | B | B | hush, row126 | movement refreshes every 100 ms, first write after 100 ms, until release, then sends STOP `6e` on the same side; massage strength sends once on press and STOP on release; text controls send their short or long gesture with no release. #516 and #591: no shard assesses two held axes or a motor-speed selection. Not declared: the mixed gestures need a per-control scope (see [per-control scope](#per-control-hold-scope)), and Hush runs on the shared Casper Base controller, whose own hold is blocked |
 | **Jiecang F1 (J1)** | | | | | |
 | `jiecang_app` (Dreamask, Dreamotion, Dream Motion HD) | S stream | U | U | dreamask, dreamotion, dreamhd | combined sections are fixed opcodes |
 | `jiecang_app` (Comfort Motion), `jiecang`, `comfort_motion` | B | B | B | jcbed | report PARTIAL; legacy route has no report |
@@ -188,7 +189,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `sleeptracker` | B | B | B | none | addenda only, no complete report |
 | **No motor axis** | | | | | |
 | `logicdata_air_pump` | U | U | U | ld-mattress | air-pump firmness, not a motor |
-| `casper_remote`, `casper_sleep_mm`, `casper_sleep_sxb`, `gmmotor_sleep_mm`, `gmmotor_sleep_sxb` | U | U | U | casper, gm | remote or sleep sensor |
+| `casper_remote`, `casper_sleep_mm`, `casper_sleep_sxb`, `hush_remote`, `hush_sleep_mm`, `hush_sleep_sxb`, `gmmotor_sleep_mm`, `gmmotor_sleep_sxb` | U | U | U | casper, hush, gm | remote or sleep sensor |
 
 ## Specific checks
 
@@ -661,6 +662,7 @@ Report workspaces are machine-local under
 | harmony | `com.richmat.harmony` | 1.0.0 | COMPLETE | `com.richmat.harmony-1.0.0-2026-10-02-queue-e0bb6807-20261001-055-006/report/` |
 | heal | `com.okin.healeverynight` | 1.0 | COMPLETE | `com.okin.healeverynight-1.0-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | homekobo | `com.ly.homekobo` | 1.4 | COMPLETE | `com.ly.homekobo-1.4-20260830/report/` |
+| hush | `com.richmat.hushbase` | 1.0.5 | PARTIAL | `com.richmat.hushbase-1.0.5-2026-11-03-afk-003/report/`; the shards freeze `PARTIAL`, and the root acceptance in the row126 ledger covers all ten |
 | hump | `com.sfd.hump` | 3.7 | COMPLETE | `com.sfd.hump-3.7-2026-11-03-issue558-20261103-006/report/` |
 | ideal | `com.richmat.idealbed` | 2.4.2 | COMPLETE | `com.richmat.idealbed-2.4.2-2026-10-02-queue-e0bb6807-20261001-055-003/report/` |
 | iiclarity | `com.okin.bedding.rizeiiclarity` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeiiclarity-1.0.1-2026-08-30/report/` |
@@ -752,4 +754,5 @@ Ledgers, guides and issues:
 | row066 | [row066-classic-richmat-apps.md](../apk-analysis/dispositions/row066-classic-richmat-apps.md) |
 | row067 | [row067-adjustamattress.md](../apk-analysis/dispositions/row067-adjustamattress.md) |
 | row121 | [row121-hjbed.md](../apk-analysis/dispositions/row121-hjbed.md) |
+| row126 | [row126-hush-base.md](../apk-analysis/dispositions/row126-hush-base.md) |
 | svane-guide | [svane.md](../beds/svane.md) |

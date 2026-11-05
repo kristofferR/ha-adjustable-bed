@@ -1,29 +1,15 @@
-"""Casper Base 1.0.8 direct BLE frames, independently accepted row101 evidence.
+"""Casper Base 1.0.8 requests and notifications, independently accepted row101 evidence.
 
-These specifications belong to this package. Shared UUIDs do not identify an app.
+The frames are built by ``codec/casper.py``. These specifications belong to this
+package. Shared UUIDs do not identify an app.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
 
-GATT: Final = (
-    ("6e400001-b5a3-f393-e0a9-e50e24dcca9e", "6e400002-b5a3-f393-e0a9-e50e24dcca9e"),
-    ("0000fee9-0000-1000-8000-00805f9b34fb", "d44bc439-abfd-45a2-b575-925416129600"),
-    ("0000fee9-0000-1000-8000-00805f9b34bb", "d44bc439-abfd-45a2-b575-925416129622"),
-    ("0000ffe0-0000-1000-8000-00805f9b34fb", "0000ffe2-0000-1000-8000-00805f9b34fb"),
-    ("0000fff0-0000-1000-8000-00805f9b34fb", "0000fff2-0000-1000-8000-00805f9b34fb"),
-    ("0000e0ff-3c17-d293-8e48-14fe2e4da212", "00000002-3c17-d293-8e48-14fe2e4da212"),
-)
-SPECIAL: Final = {
-    "exit_limit": (0x6E, 2, 1, 0),
-    "clock": (0x6E, 8, 1, 1),
-    "light": (0x6E, 10, 0, 1),
-    "music": (0x6E, 21, 1, 1),
-}
 RGB_TIMERS: Final = (5, 8, 10, 13, 15, 18, 21, 24, 27, 30, 120, 210, 300, 390, 480)
 ALARM_MODES: Final = {
     "tv": "TVPosition",
@@ -58,51 +44,12 @@ class Request:
     source: str = ""
 
 
-def frame(values: Sequence[int]) -> bytes:
-    return bytes((*[value & 255 for value in values], sum(values) & 255))
-
-
-def control(opcode: int, *, single: bool = False, side: int = 0) -> bytes:
-    return bytes((opcode,)) if single else frame((0x6E, 1, side, opcode))
-
-
-def special(name: str, *, single: bool = False) -> bytes:
-    values = SPECIAL[name]
-    return bytes((values[-1],)) if single else frame(values)
-
-
-def extra(category: int, subtype: int, values: Sequence[int], operation: int = 1) -> bytes:
-    return frame((0x6E, 0x20, 7 + len(values), category, subtype, operation, *values))
-
-
-def light_seconds(seconds: int) -> bytes:
-    # The app slices a padded hexadecimal string, including its zero sentinel.
-    text = format(seconds, "x").rjust(4, "0")
-    high, low = int(text[:2], 16), int(text[2:4], 16)
-    if high == low == 0:
-        high = low = 255
-    return frame((0x6E, 11, high, low))
-
-
-def light_rgb(rgb: tuple[int, int, int]) -> bytes:
-    red, green, blue = rgb
-    return frame((0x6E, 12, 255, red)) + frame((0x6E, 13, green, blue))
-
-
-def alarm_pair(minutes: int, mode: int) -> tuple[bytes, bytes]:
-    return frame((0x6E, 6, minutes // 256, mode)), frame((0x6E, 5, minutes & 255, 0))
-
-
 def alarm_countdown(hour: int, minute: int, now: datetime) -> int:
     """App DateTime epoch difference, including local offset transitions."""
     current = now.replace(second=0, microsecond=0)
     target = current.replace(hour=hour, minute=minute)
     seconds = int(target.timestamp()) - int(current.timestamp())
     return int((seconds + 86400 if seconds <= 0 else seconds) / 60)
-
-
-def time_sync(now: datetime) -> bytes:
-    return extra(8, 3, (now.year - 1970, now.month, now.day, now.hour, now.minute, now.second))
 
 
 class MainReceive:

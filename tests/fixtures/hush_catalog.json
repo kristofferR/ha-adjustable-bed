@@ -1,0 +1,3504 @@
+{
+  "artifact_set_sha256": "d24ad2c95ea839969a5406fa8219f62048386598152608554641586041293cd7",
+  "products": [
+    {
+      "index": 0,
+      "id": "enum:CasperBaseDeviceProductType@aeaec1",
+      "name": "productNone",
+      "groups": [
+        [],
+        [],
+        [],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 1,
+      "id": "enum:CasperBaseDeviceProductType@aeae71",
+      "name": "productCasperPro",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac7a11",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac7591",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac6b11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 2,
+      "id": "enum:CasperBaseDeviceProductType@aeae21",
+      "name": "productCasperMax",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac7411",
+          "ac7391",
+          "ac7511",
+          "ac7491",
+          "ac6d91",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac6b11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 3,
+      "id": "enum:CasperBaseDeviceProductType@aeadd1",
+      "name": "productNiscoNUP210",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6d91",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f11",
+          "ac6b11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 4,
+      "id": "enum:CasperBaseDeviceProductType@aead81",
+      "name": "productNiscoNUP300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 5,
+      "id": "enum:CasperBaseDeviceProductType@aead31",
+      "name": "productNiscoNUP355B",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 6,
+      "id": "enum:CasperBaseDeviceProductType@aeace1",
+      "name": "productNiscoNUP503B",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 7,
+      "id": "enum:CasperBaseDeviceProductType@aeac91",
+      "name": "productNiscoNXC210",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6d91",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 8,
+      "id": "enum:CasperBaseDeviceProductType@aeac41",
+      "name": "productNiscoNXC300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 9,
+      "id": "enum:CasperBaseDeviceProductType@aeabf1",
+      "name": "productNiscoNXC303",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6811",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        true,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 10,
+      "id": "enum:CasperBaseDeviceProductType@aeaba1",
+      "name": "productNiscoNXC310",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6d91",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 11,
+      "id": "enum:CasperBaseDeviceProductType@aeab51",
+      "name": "productNiscoNXC450",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91"
+        ],
+        [
+          "ac6011",
+          "ac5f91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 12,
+      "id": "enum:CasperBaseDeviceProductType@aeab01",
+      "name": "productNiscoNXC455B",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5e91"
+        ],
+        [
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 13,
+      "id": "enum:CasperBaseDeviceProductType@aeaab1",
+      "name": "productNiscoNXC513M",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6d91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 14,
+      "id": "enum:CasperBaseDeviceProductType@aeaa61",
+      "name": "productNiscoTTB01",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 15,
+      "id": "enum:CasperBaseDeviceProductType@aeaa11",
+      "name": "productNiscoNSF550",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6e91",
+          "ac6e11",
+          "ac6911",
+          "ac6891",
+          "ac6d91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 16,
+      "id": "enum:CasperBaseDeviceProductType@aea9c1",
+      "name": "productNiscoBAFD200",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 17,
+      "id": "enum:CasperBaseDeviceProductType@aea971",
+      "name": "productNiscoBAFD300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 18,
+      "id": "enum:CasperBaseDeviceProductType@aea921",
+      "name": "productNiscoNLP200",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 19,
+      "id": "enum:CasperBaseDeviceProductType@aea8d1",
+      "name": "productNiscoNLP300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 20,
+      "id": "enum:CasperBaseDeviceProductType@aea881",
+      "name": "productNiscoNEB300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 21,
+      "id": "enum:CasperBaseDeviceProductType@aea831",
+      "name": "productNiscoNEF450",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac7411",
+          "ac7391",
+          "ac7511",
+          "ac7491",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6291",
+          "ac6311",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f91",
+          "ac6011",
+          "ac5f11",
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 22,
+      "id": "enum:CasperBaseDeviceProductType@aea7e1",
+      "name": "productNiscoNXZ200",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 23,
+      "id": "enum:CasperBaseDeviceProductType@aea791",
+      "name": "productNiscoNJ200",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5e91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 24,
+      "id": "enum:CasperBaseDeviceProductType@aea741",
+      "name": "productNiscoAFD200",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f91",
+          "ac6011",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91"
+        ],
+        [
+          "ac5f91",
+          "ac6011",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 25,
+      "id": "enum:CasperBaseDeviceProductType@aea6f1",
+      "name": "productNiscoAFD300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 26,
+      "id": "enum:CasperBaseDeviceProductType@aea6a1",
+      "name": "productNiscoNXC450G",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6d91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 27,
+      "id": "enum:CasperBaseDeviceProductType@aea651",
+      "name": "productNiscoBasePlus",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac7291",
+          "ac7211",
+          "ac7091",
+          "ac7991",
+          "ac7911",
+          "ac7891",
+          "ac7811",
+          "ac7791",
+          "ac7711"
+        ]
+      ],
+      "flags": [
+        true,
+        false,
+        true,
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 28,
+      "id": "enum:CasperBaseDeviceProductType@aea601",
+      "name": "productNiscoBaseBNXE300Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491",
+          "ac6a91"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac7291",
+          "ac7211",
+          "ac7191",
+          "ac7111",
+          "ac7091",
+          "ac7011",
+          "ac6f91",
+          "ac6f11"
+        ]
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 29,
+      "id": "enum:CasperBaseDeviceProductType@aea5b1",
+      "name": "productNiscoBaseBNXE450Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac7291",
+          "ac7211",
+          "ac7191",
+          "ac7111",
+          "ac7091",
+          "ac7011",
+          "ac6f91",
+          "ac6f11"
+        ]
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 30,
+      "id": "enum:CasperBaseDeviceProductType@aea561",
+      "name": "productNiscoBaseBAFE200Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 31,
+      "id": "enum:CasperBaseDeviceProductType@aea511",
+      "name": "productNiscoBaseBAFE300Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac7691",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 32,
+      "id": "enum:CasperBaseDeviceProductType@aea4c1",
+      "name": "productNiscoBaseBAFE350Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac7691",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 33,
+      "id": "enum:CasperBaseDeviceProductType@aea471",
+      "name": "productNiscoBaseBAFE400Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6d91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac7691",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 34,
+      "id": "enum:CasperBaseDeviceProductType@aea421",
+      "name": "productNiscoBaseBAFE450Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac7691",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 35,
+      "id": "enum:CasperBaseDeviceProductType@aea3d1",
+      "name": "productNiscoBaseBAFE300F",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac7691",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 36,
+      "id": "enum:CasperBaseDeviceProductType@aea381",
+      "name": "productNiscoBaseNH200Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491",
+          "ac6a91"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac7611"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 37,
+      "id": "enum:CasperBaseDeviceProductType@aea331",
+      "name": "productNiscoBaseLAS2601NSF550",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6e91",
+          "ac6e11",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6d91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6d11",
+          "ac6c91",
+          "ac6c11",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac6b11",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac6b11",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 38,
+      "id": "enum:CasperBaseDeviceProductType@aea2e1",
+      "name": "productNiscoBaseBNLP500SH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 39,
+      "id": "enum:CasperBaseDeviceProductType@aea291",
+      "name": "productNiscoBaseBNXC300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 40,
+      "id": "enum:CasperBaseDeviceProductType@aea241",
+      "name": "productNiscoBaseBNXC390",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491",
+          "ac6a91",
+          "ac6811"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 41,
+      "id": "enum:CasperBaseDeviceProductType@aea1f1",
+      "name": "productNiscoBaseBNHC300Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 42,
+      "id": "enum:CasperBaseDeviceProductType@aea1a1",
+      "name": "productNiscoBaseBNHC655Q",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 43,
+      "id": "enum:CasperBaseDeviceProductType@aea151",
+      "name": "productSlikCore",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 44,
+      "id": "enum:CasperBaseDeviceProductType@aea101",
+      "name": "productSlikEnhanced",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 45,
+      "id": "enum:CasperBaseDeviceProductType@aea0b1",
+      "name": "productSlikPremier",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac7411",
+          "ac7391",
+          "ac7511",
+          "ac7491",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 46,
+      "id": "enum:CasperBaseDeviceProductType@aea061",
+      "name": "productHushL400",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6911",
+          "ac6891",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 47,
+      "id": "enum:CasperBaseDeviceProductType@aea011",
+      "name": "productHushL400SH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6911",
+          "ac6891",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "index": 48,
+      "id": "enum:CasperBaseDeviceProductType@ae9fc1",
+      "name": "productHushL500",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6e91",
+          "ac6e11",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 49,
+      "id": "enum:CasperBaseDeviceProductType@ae9f71",
+      "name": "productHushL200",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 50,
+      "id": "enum:CasperBaseDeviceProductType@ae9f21",
+      "name": "productHushL300",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 51,
+      "id": "enum:CasperBaseDeviceProductType@ae9ed1",
+      "name": "productHushL300SH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a91",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "index": 52,
+      "id": "enum:CasperBaseDeviceProductType@ae9e81",
+      "name": "productHushS175",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 53,
+      "id": "enum:CasperBaseDeviceProductType@ae9e31",
+      "name": "productHushS175SH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "index": 54,
+      "id": "enum:CasperBaseDeviceProductType@ae9de1",
+      "name": "productHushS375",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac7591",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 55,
+      "id": "enum:CasperBaseDeviceProductType@ae9d91",
+      "name": "productHushS375SH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "index": 56,
+      "id": "enum:CasperBaseDeviceProductType@ae9d41",
+      "name": "productHushS575",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac7511",
+          "ac7491",
+          "ac7411",
+          "ac7391",
+          "ac6491",
+          "ac6a91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 57,
+      "id": "enum:CasperBaseDeviceProductType@ae9cf1",
+      "name": "productHushS575SH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac7311"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac5f91",
+          "ac6b11",
+          "ac6011",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "index": 58,
+      "id": "enum:CasperBaseDeviceProductType@ae9ca1",
+      "name": "productJeromeElevate",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 59,
+      "id": "enum:CasperBaseDeviceProductType@ae9c51",
+      "name": "productJeromeElevateSH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac5f91",
+          "ac5e91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 60,
+      "id": "enum:CasperBaseDeviceProductType@ae9c01",
+      "name": "productJeromeWave",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac6b11",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac6b11",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 61,
+      "id": "enum:CasperBaseDeviceProductType@ae9bb1",
+      "name": "productJeromeWaveSH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac6b11",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac5f11",
+          "ac6011",
+          "ac6b11",
+          "ac5f91",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 62,
+      "id": "enum:CasperBaseDeviceProductType@ae9b61",
+      "name": "productThriveSleepCoolFlow",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac7291",
+          "ac7211",
+          "ac7191",
+          "ac7111",
+          "ac7091",
+          "ac7011",
+          "ac6f91",
+          "ac6f11"
+        ]
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 63,
+      "id": "enum:CasperBaseDeviceProductType@ae9b11",
+      "name": "productThriveSleepLevel5",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6e91",
+          "ac6e11",
+          "ac6491",
+          "ac6d91"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6d11",
+          "ac6c91",
+          "ac6c11",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91",
+          "ac6b91"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac6b11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 64,
+      "id": "enum:CasperBaseDeviceProductType@ae9ac1",
+      "name": "productPowerBobElite",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6491",
+          "ac6a91"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 65,
+      "id": "enum:CasperBaseDeviceProductType@ae9a71",
+      "name": "productPowerBobEliteSH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6491",
+          "ac6a91"
+        ],
+        [],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 66,
+      "id": "enum:CasperBaseDeviceProductType@ae9a21",
+      "name": "productPowerBobUltra",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6811"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 67,
+      "id": "enum:CasperBaseDeviceProductType@ae99d1",
+      "name": "productPowerBobUltraSH",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6a11",
+          "ac6991",
+          "ac6911",
+          "ac6891",
+          "ac6491",
+          "ac6811"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11"
+        ],
+        []
+      ],
+      "flags": [
+        true,
+        false,
+        false,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 68,
+      "id": "enum:CasperBaseDeviceProductType@ae9981",
+      "name": "productPowerMySideDeepRelaxSmart",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5e91",
+          "ac5e11"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 69,
+      "id": "enum:CasperBaseDeviceProductType@ae9931",
+      "name": "productPowerMySideDeepRelaxSmartWithSleep",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6491"
+        ],
+        [],
+        [
+          "ac5e91",
+          "ac5e11"
+        ],
+        [],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "index": 70,
+      "id": "enum:CasperBaseDeviceProductType@ae98e1",
+      "name": "productPowerMySideDeepRelaxSmartWithCoaxing",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91",
+          "ac6091"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "index": 71,
+      "id": "enum:CasperBaseDeviceProductType@ae9891",
+      "name": "productPowerMySideDeepRelaxSmartWithCoaxingAndSleep",
+      "groups": [
+        [
+          "ac6791",
+          "ac6711",
+          "ac6691",
+          "ac6611",
+          "ac6591",
+          "ac6511",
+          "ac6491"
+        ],
+        [
+          "ac6411",
+          "ac6391",
+          "ac6311",
+          "ac6291",
+          "ac6211",
+          "ac6191",
+          "ac6111"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91",
+          "ac6091"
+        ],
+        [
+          "ac6011",
+          "ac5f91",
+          "ac5f11",
+          "ac5e91",
+          "ac5e11",
+          "ac5d91"
+        ],
+        []
+      ],
+      "flags": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false
+      ]
+    }
+  ],
+  "descriptors": {
+    "ac6791": [
+      "HeadUp",
+      36,
+      null
+    ],
+    "ac6711": [
+      "HeadDown",
+      37,
+      null
+    ],
+    "ac6691": [
+      "FootUp",
+      38,
+      null
+    ],
+    "ac6611": [
+      "FootDown",
+      39,
+      null
+    ],
+    "ac6a11": [
+      "LumberUp",
+      63,
+      null
+    ],
+    "ac6991": [
+      "LumberDown",
+      64,
+      null
+    ],
+    "ac7a11": [
+      "LightBoard",
+      60,
+      null
+    ],
+    "ac6491": [
+      "MotorReset",
+      49,
+      null
+    ],
+    "ac6411": [
+      "MassageHeadInstensityStrengthen",
+      76,
+      null
+    ],
+    "ac6391": [
+      "MassageFootInstensityStrengthen",
+      78,
+      null
+    ],
+    "ac6311": [
+      "MassageModeChange",
+      72,
+      null
+    ],
+    "ac7591": [
+      "MassageModeAllOff",
+      71,
+      null
+    ],
+    "ac6211": [
+      "Massage10MinuteTimer",
+      95,
+      null
+    ],
+    "ac6191": [
+      "Massage20MinuteTimer",
+      99,
+      null
+    ],
+    "ac6111": [
+      "Massage30MinuteTimer",
+      97,
+      null
+    ],
+    "ac5f11": [
+      "TVPosition",
+      88,
+      100
+    ],
+    "ac6b11": [
+      "LoungePosition",
+      89,
+      101
+    ],
+    "ac6011": [
+      "AntiSnoring",
+      70,
+      105
+    ],
+    "ac5f91": [
+      "ZeroGravity",
+      69,
+      102
+    ],
+    "ac5e91": [
+      "MemoryPosition1",
+      46,
+      43
+    ],
+    "ac7411": [
+      "PillowUp",
+      63,
+      null
+    ],
+    "ac7391": [
+      "PillowDown",
+      64,
+      null
+    ],
+    "ac7511": [
+      "LumberUp",
+      65,
+      null
+    ],
+    "ac7491": [
+      "LumberDown",
+      66,
+      null
+    ],
+    "ac6d91": [
+      "LightBoard",
+      80,
+      null
+    ],
+    "ac6a91": [
+      "BedLight",
+      60,
+      null
+    ],
+    "ac6291": [
+      "MassageModeAllOff",
+      94,
+      null
+    ],
+    "ac6591": [
+      "HeadAndFootUp",
+      41,
+      null
+    ],
+    "ac6511": [
+      "HeadAndFootDown",
+      42,
+      null
+    ],
+    "ac6911": [
+      "PillowUp",
+      65,
+      null
+    ],
+    "ac6891": [
+      "PillowDown",
+      66,
+      null
+    ],
+    "ac6811": [
+      "MusicBlueToothSwitch",
+      216,
+      null
+    ],
+    "ac5e11": [
+      "MemoryPosition2",
+      47,
+      44
+    ],
+    "ac6e91": [
+      "Motor3Up",
+      113,
+      null
+    ],
+    "ac6e11": [
+      "Motor3Down",
+      114,
+      null
+    ],
+    "ac5d91": [
+      "MemoryPosition3",
+      48,
+      45
+    ],
+    "ac6b91": [
+      "CoaxingSleepMode",
+      134,
+      137
+    ],
+    "ac7291": [
+      "Fan1InstensityStrengthen",
+      138,
+      null
+    ],
+    "ac7211": [
+      "Fan2InstensityStrengthen",
+      139,
+      null
+    ],
+    "ac7091": [
+      "FanAllOff",
+      161,
+      null
+    ],
+    "ac7991": [
+      "FanConstantMode",
+      163,
+      null
+    ],
+    "ac7911": [
+      "FanPulseMode",
+      164,
+      null
+    ],
+    "ac7891": [
+      "FanWaveMode",
+      165,
+      null
+    ],
+    "ac7811": [
+      "HeatingLowGear",
+      120,
+      null
+    ],
+    "ac7791": [
+      "HeatingHighGear",
+      121,
+      null
+    ],
+    "ac7711": [
+      "HeatingOff",
+      119,
+      null
+    ],
+    "ac7191": [
+      "FanChangeMode",
+      162,
+      null
+    ],
+    "ac7111": [
+      "FanForwardAndBackwardChange",
+      140,
+      null
+    ],
+    "ac7011": [
+      "FanTimer2Hour",
+      166,
+      null
+    ],
+    "ac6f91": [
+      "FanTimer3Hour",
+      167,
+      null
+    ],
+    "ac6f11": [
+      "FanTimer5Hour",
+      168,
+      null
+    ],
+    "ac7691": [
+      "MassageModeAllOff",
+      220,
+      null
+    ],
+    "ac7611": [
+      "ReleasePressurPosition",
+      197,
+      null
+    ],
+    "ac6d11": [
+      "MassageModeConstant",
+      58,
+      null
+    ],
+    "ac6c91": [
+      "MassageModePulse",
+      56,
+      null
+    ],
+    "ac6c11": [
+      "MassageModeWave",
+      57,
+      null
+    ],
+    "ac6091": [
+      "CoaxingSleepMode",
+      118,
+      137
+    ],
+    "ac7311": [
+      "PhoneLight",
+      0,
+      null
+    ]
+  }
+}
