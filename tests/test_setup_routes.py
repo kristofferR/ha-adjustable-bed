@@ -352,7 +352,9 @@ async def test_kaidi_brand_lists_each_app(
             const.DOMAIN, context={"source": SOURCE_USER}
         )
         for step_input in (
-            {CONF_ADDRESS: "select_by_brand"},
+            {CONF_ADDRESS: "select_by_app"},
+            # The brand list is the fallback of the app question.
+            {const.CONF_BED_TYPE: "not_listed"},
             {"actuator_brand": "kaidi"},
             {"variant": str(index)},
         ):

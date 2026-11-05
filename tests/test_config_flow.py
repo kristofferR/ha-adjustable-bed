@@ -174,7 +174,7 @@ from custom_components.adjustable_bed.setup_operation import (
     OperationResult,
     SetupAction,
 )
-from tests.form_helpers import shown_markers
+from tests.form_helpers import select_options, shown_markers, suggested
 
 
 def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
@@ -2902,6 +2902,12 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: mock_bluetooth_service_info_octo_rc2.address},
             )
+            # The app question follows the device and suggests the detected bed.
+            assert result["step_id"] == "select_app"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_BED_TYPE: suggested(result, CONF_BED_TYPE)},
+            )
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual_config"
@@ -3072,7 +3078,10 @@ class TestManualFlow:
                 context={"source": SOURCE_USER},
             )
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={CONF_ADDRESS: "select_by_brand"}
+                result["flow_id"], user_input={CONF_ADDRESS: "select_by_app"}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_BED_TYPE: "not_listed"}
             )
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={"actuator_brand": "okin"}
@@ -3444,7 +3453,7 @@ class TestUserFlow:
                 DOMAIN,
                 context={"source": SOURCE_USER},
             )
-            selector_options = next(iter(result["data_schema"].schema.values())).container
+            selector_options = select_options(result, CONF_ADDRESS)
             assert mock_bluetooth_service_info.address in selector_options
 
             result = await hass.config_entries.flow.async_configure(
@@ -3551,7 +3560,7 @@ class TestUserFlow:
             )
             retrying_option = f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
             assert result["type"] == FlowResultType.FORM
-            selector_options = next(iter(result["data_schema"].schema.values())).container
+            selector_options = select_options(result, CONF_ADDRESS)
             assert retrying_option in selector_options
             assert selector_options[retrying_option].startswith("Retrying Bed")
 

@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.form_helpers import suggested
 from tests.test_config_flow import _advance_only_progress, _fake_connected_client, _patch_gate
 
 _APP_PROBE_ROLES = {
@@ -301,6 +302,12 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
             )
+            # The app question suggests the confidently detected receiver.
+            assert result["step_id"] == "select_app"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={const.CONF_BED_TYPE: suggested(result, const.CONF_BED_TYPE)},
+            )
             assert result["step_id"] == "manual_config"
         else:
             # Preserve a full-list choice while the scanner gains the private service.
@@ -333,7 +340,11 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
                 user_input={
-                    const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                    # The manual route answered the app question with the detected
+                    # Octo row; the full list leaves it to Auto-detect.
+                    const.CONF_BED_TYPE: (
+                        const.BED_TYPE_OCTO if route == "manual" else BED_TYPE_AUTO_DETECT
+                    ),
                     "advanced": {const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2},
                     const.CONF_DISCONNECT_AFTER_COMMAND: False,
                 },
@@ -363,17 +374,10 @@ async def test_shared_star_uart_manual_auto_requires_explicit_choice(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
         )
-    assert result["step_id"] == "manual_config"
-    schema = result["data_schema"]
-    assert schema is not None
-    defaults = schema({})
-    assert isinstance(defaults, dict)
-    assert defaults[const.CONF_BED_TYPE] == BED_TYPE_AUTO_DETECT
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT}
-    )
-    assert result["step_id"] == "manual_config"
-    assert result["errors"] == {"base": "auto_detect_failed"}
+    # The shared Star UART is ambiguous, so the app question suggests nothing
+    # and the user has to choose.
+    assert result["step_id"] == "select_app"
+    assert suggested(result, const.CONF_BED_TYPE) is None
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 

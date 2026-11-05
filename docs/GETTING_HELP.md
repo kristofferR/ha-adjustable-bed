@@ -199,7 +199,7 @@ You don't need to configure anything first — the support bundle action works d
 5. A notification will appear with a **download link** — click it to save the file. The same JSON file is also written to your Home Assistant config folder as `adjustable_bed_support_bundle_*.json`.
 6. Attach the JSON file to your issue
 
-**Alternative — add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Show all BLE devices"**, select your bed, and set **Bed type** to **"Diagnostic (unknown bed)"**. You can then run `generate_support_bundle` with that device selected in the **Device** field. "Diagnostic (unknown bed)" appears in every bed type dropdown, including the confirm dialog for an auto-detected bed; only the "Select by actuator brand" list does not offer it.
+**Alternative — add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Pick any Bluetooth device"**, select your bed, and choose **"Diagnostic (unknown bed)"** as its app or remote. You can then run `generate_support_bundle` with that device selected in the **Device** field. "Diagnostic (unknown bed)" appears in every bed type dropdown, including the confirm dialog for an auto-detected bed; only the motor brand list does not offer it.
 
 Then fill in the rest of the template with your bed manufacturer/model, remote model number, and any other details.
 
