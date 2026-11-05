@@ -129,7 +129,7 @@ These are additions. Existing entities keep their names, states and attributes.
 | Estimated position, set-reference, "I used the remote", saved-position and "Saved positions" entities | `number`, `button` and `sensor` | Only after you enable estimated positions for a motor |
 | Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
 | **Tap to start and stop movement** card option (`tap_to_move`) | Dashboard card editor, **Motors** | Off by default. With it on, a tap on a motor arrow starts the motor and the next tap stops it ([#609](https://github.com/kristofferR/ha-adjustable-bed/issues/609)). See [Tap to move](../README.md#tap-to-move) |
-| **Change app or layout** menu item | **Configure** | On entries of a family with a guided change: Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite, Customatic, Jordan's, Malouf / Lucid and LOGICDATA. It replaces Vibradorm's **Choose Vibradorm app and remote** item and points to **Reconfigure** |
+| **Change app or layout** menu item | **Configure** | On entries of a family with a guided change: Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite, Customatic, Jordan's, Malouf / Lucid, LOGICDATA, Jensen / Svane and Limoss. It replaces Vibradorm's **Choose Vibradorm app and remote** item and points to **Reconfigure** |
 | Profile id and migration record | Diagnostics and support bundles | Diagnostics: `profile` for a standalone entry, `profile_migration` and each side's `profile_id` for a paired entry. Support bundles of a configured bed: `profile` (empty for a raw-address capture). The support bundle's `report_version` is now 2.6 |
 
 ## Behavior Changes
@@ -217,7 +217,10 @@ and keep their bed type and ID, and a saved entry shows its own route's label.
 | Reverie ([#876](https://github.com/kristofferR/ha-adjustable-bed/pull/876)) | One row for the Nightstand app and the Protocol 110 and Protocol 108 receivers. The advertised service picks the receiver; setup asks only when it sees neither or both. The model is a question whose default is the app's Other fallback, never Auto. Pairlink keeps its own row |
 | Sleep Number ([#880](https://github.com/kristofferR/ha-adjustable-bed/pull/880)) | One row for the Fuzion (Climate 360, FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases. The advertised service picks the transport; setup asks only when it sees neither or both. A Fuzion entry then asks its side |
 | LOGICDATA ([#878](https://github.com/kristofferR/ha-adjustable-bed/pull/878)) | One row for SILVERmotion / SimplicityFrame, the MOTIONrelax phone and tablet apps and the Sleep Smart Air Mattress app. The bed apps ask the packet family, the layout the app offers, the light and, under Advanced, the transport. The Sleep Smart pump is added as its own device, and the pulse count stays a setting you choose |
-| Malouf / Lucid ([#879](https://github.com/kristofferR/ha-adjustable-bed/pull/879)) | One row for the Malouf Base and Lucid Base apps and the receivers on the Nordic UART and FFE5 services. An app asks its exact model, the primary or secondary role and, under Advanced, the transport. A receiver asks the motor count, layout and memory positions |
+| Malouf / Lucid ([#879](https://github.com/kristofferR/ha-adjustable-bed/pull/879)) | One row for the Malouf Base and Lucid Base apps and the receivers on the Nordic UART and FFE5 services. An app asks its exact model, the primary or secondary role and, under Advanced, the transport. A receiver asks the motor count, layout and memory positions. **Configure** switching an entry in from another bed type asks the app, the model from every app's picker, the role and the transport on one form, and checks on save that the chosen app lists the chosen model ([#885](https://github.com/kristofferR/ha-adjustable-bed/pull/885)) |
+| Jensen / Svane ([#881](https://github.com/kristofferR/ha-adjustable-bed/pull/881)) | One row for the Jensen Adjustable Sleep app with a JMC400 or LinOn bed, and the Svane Remote app with a Svane Bed or a JMC400 bed. The apps' own name rules suggest an answer but never decide it. The JMC400 route asks its PIN, motor count, massage motors and angle sensing; LinOn asks its motor count |
+| Richmat ([#883](https://github.com/kristofferR/ha-adjustable-bed/pull/883)) | One row for RMControl, the Richmat MH apps (Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed), the classic apps (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior), SleepFunction, SVEN & SON and Richmat remotes. RMControl asks its product code and side; an MH app its model, or Auto from the Bluetooth name; a classic app its layout; the others the remote code. RMControl and the remote answers also ask the packet dialect under Advanced. Richmat has no guided change: **Configure** keeps changing these answers |
+| Limoss ([#886](https://github.com/kristofferR/ha-adjustable-bed/pull/886)) | One row for the Limoss Remote and FSM Relax apps, Stawett and the older Limoss controls. Limoss Remote asks bed or chair, light, massage, the four reversals and the optional artwork theme on the profile step; FSM Relax keeps its own step for its eight memory names |
 | Kaidi and Linak ([#861](https://github.com/kristofferR/ha-adjustable-bed/pull/861)) | The labels name the Rize Beds, Floyd Home and ISleep apps and Linak's Bed Connect, so a search finds them. Routing is unchanged |
 
 Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pull/826), [#863](https://github.com/kristofferR/ha-adjustable-bed/pull/863)):
@@ -238,8 +241,8 @@ Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pu
   [#858](https://github.com/kristofferR/ha-adjustable-bed/pull/858), [#877](https://github.com/kristofferR/ha-adjustable-bed/pull/877)). The answers keep their saved keys. A few apps keep a
   step of their own for what a question cannot ask: AdjustableM5X4 probes its
   transport on a live link, AdjustableM5X5 and Adjustable Comfort M1X12 group
-  lifts across entries, Ergomotion 4.0 custom products and FSM Relax memory
-  names take several values, and the Limoss Remote app has not converted yet.
+  lifts across entries, and Ergomotion 4.0 custom products and FSM Relax memory
+  names take several values.
 - Motor count and pulse delay are no longer asked for the Jiecang, Malouf and
   LOGICDATA apps, whose layout or model sets them.
 
@@ -248,12 +251,19 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
 - **Configure** on an entry of a family with a guided change keeps routine
   settings but refuses an app, layout, handset or route change and points to
   **Reconfigure**. These families are Vibradorm, Jiecang, Okin, Keeson, Solace,
-  Leggett & Platt, Sleepy's Elite, Customatic, Jordan's, Malouf / Lucid and
-  LOGICDATA. Malouf / Lucid protects only the app choice: the model, role,
-  transport and a receiver's layout and memory positions stay editable in
-  **Configure**. In 4.x, Configure saved these changes directly for every
-  family except Vibradorm. Okin CST, Remacro, Reverie, Sleep Number and the
-  StarCode apps still change their app or route in **Configure**.
+  Leggett & Platt, Sleepy's Elite, Customatic, Jordan's, Malouf / Lucid,
+  LOGICDATA, Jensen / Svane and Limoss. Malouf / Lucid and Limoss protect only
+  the app choice: the Malouf model, role, transport and a receiver's layout and
+  memory positions, and the Limoss bed or chair layout and accessory settings,
+  stay editable in **Configure**. In 4.x, Configure saved these changes
+  directly for every family except Vibradorm. Okin CST, Remacro, Reverie, Sleep Number, Richmat
+  and the StarCode apps still change their app or route in **Configure**.
+- A change that turns off Limoss Remote light or massage controls enabled in
+  the saved setup, including a change to another app, sends the app's OFF
+  commands before it is saved, in **Configure** and in the guided change. A
+  failure or cancellation keeps the saved setup. Switching to another
+  app in a family question drops the old app's own settings, as **Configure**
+  does ([#886](https://github.com/kristofferR/ha-adjustable-bed/pull/886)).
 - **Reconfigure** asks the family question, checks the chosen setup on a
   released link where the family has endpoint or pairing requirements, and
   lists the controls that are added and removed, with the automations and
@@ -429,17 +439,8 @@ return 404.
 
 ## Still Landing Before 5.0.0
 
-These are planned for v5 but are not in every beta yet. This list shrinks as
-they land.
-
-- One app question for the last families of
-  [#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676): Jensen
-  and Svane, with a guided change
-  ([#881](https://github.com/kristofferR/ha-adjustable-bed/pull/881)), Richmat
-  and RMControl ([#883](https://github.com/kristofferR/ha-adjustable-bed/pull/883)),
-  and Limoss, whose Limoss Remote app settings then move to the profile step.
-- A Malouf / Lucid follow-up for entries switched in from another bed type in
-  **Configure**.
+Nothing planned for v5 is still landing: every change listed on this page is
+in the beta.
 
 ## Rollback
 
