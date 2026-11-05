@@ -97,4 +97,5 @@ def test_configure_lists_both_transports_by_their_own_labels():
     picker = _bed_type_selector(const.BED_TYPE_SLEEP_NUMBER, show_saved_id=True)
     shown = {option["label"] for option in picker.config["options"]}
     for bed_type in (const.BED_TYPE_SLEEP_NUMBER, const.BED_TYPE_SLEEP_NUMBER_MCR):
-        assert bed_type_label(bed_type) in shown
+        # Each by its own label, with its family.
+        assert f"{bed_type_label(bed_type)} · Sleep Number" in shown

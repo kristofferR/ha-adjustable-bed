@@ -376,6 +376,7 @@ from .detection import (
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
+    family_row_label,
     get_bed_type_options,
     is_jensen_linon_name,
     is_mac_like_name,
@@ -896,11 +897,11 @@ def _bed_type_selector(
                     if option["value"] not in unguided and option["value"] not in unguided_apps
                 ),
                 *(
-                    SelectOptionDict(value=bed_type, label=bed_type_label(bed_type))
+                    _with_family(SelectOptionDict(value=bed_type, label=bed_type_label(bed_type)))
                     for bed_type in unguided
                 ),
                 *(
-                    SelectOptionDict(value=value, label=label)
+                    _with_family(SelectOptionDict(value=value, label=label))
                     for value, label in unguided_apps.items()
                 ),
             ],
@@ -941,11 +942,16 @@ def _bed_type_selector(
         # variant are not listed, but stay selectable for an existing choice.
         bed_type, variant = resolve_bed_type_choice(default)
         # A hidden app row keeps its own label, never its bed type's.
-        label = (
-            APP_VARIANT_CHOICES[bed_type, variant]
-            if variant is not None
-            else bed_type_label(bed_type)
-        )
+        label = _with_family(
+            SelectOptionDict(
+                value=default,
+                label=(
+                    APP_VARIANT_CHOICES[bed_type, variant]
+                    if variant is not None
+                    else bed_type_label(bed_type)
+                ),
+            )
+        )["label"]
         if show_saved_id and label != bed_type:
             # Configure names the saved ID beside its friendly label.
             label = f"{label} (saved as {bed_type})"
@@ -1093,14 +1099,27 @@ def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
         ]
         for choice in families or choices:
             if choice is not None:
-                # The brand comes first: "<family>: <apps>".
-                family, apps = FAMILY_ROWS.get(choice, (None, ""))
-                rows.setdefault(choice, f"{family}: {apps}" if family else listed[choice])
+                rows.setdefault(choice, _brand_first(choice, listed[choice]))
         # The protocol-named routes are off the app question; the brand list keeps them.
         for bed_type, _variant in routes:
             if bed_type in PROTOCOL_ROUTES:
                 rows.setdefault(bed_type, bed_type_label(bed_type))
     return sorted(rows.items(), key=lambda row: row[1].lower())
+
+
+def _brand_first(choice: str, label: str) -> str:
+    """Name a family row by its brand first, "<family>: <apps>", for the brand list.
+
+    A detected route takes its family row's value, so the row is found by label.
+    """
+    row = next(
+        (row for row, _names in FAMILY_ROWS.items() if row == choice or family_row_label(row) == label),
+        None,
+    )
+    if row is None:
+        return label
+    family, apps = FAMILY_ROWS[row]
+    return f"{family}: {apps}"
 
 
 def _family_name(info: BluetoothServiceInfoBleak) -> str:
@@ -2270,6 +2289,14 @@ _LIMOSS_APPS: Final[dict[str, _AppAnswer]] = {
     "fsm_relax": (BED_TYPE_FSM_RELAX, None, "fsm_relax"),
     "generic": (BED_TYPE_LIMOSS, None, None),
 }
+# The family question each app answer belongs to.
+_ANSWER_STEPS: Final[dict[tuple[str, str | None], str]] = {
+    **{answer[:2]: "customatic_family" for answer in _CUSTOMATIC_APPS.values()},
+    **{answer[:2]: "jordans_family" for answer in _JORDANS_APPS.values()},
+    **{answer[:2]: "starcode_family" for answer in _STARCODE_APPS.values()},
+    **{answer[:2]: "limoss_family" for answer in _LIMOSS_APPS.values()},
+    **dict.fromkeys(_RICHMAT_APPS.values(), "richmat_family"),
+}
 # Each app family's picker row, by the routes behind it. The first answer is the row.
 _APP_FAMILY_ROWS: Final[dict[str, str]] = {
     **{
@@ -2604,15 +2631,24 @@ _FAMILY_NAMES: Final[dict[str, str]] = {
 
 
 def _row_family(choice: str) -> str | None:
-    """Return the family of a bed-type list row: the family its journey asks."""
-    bed_type, _variant = resolve_bed_type_choice(choice)
-    step = _APP_SETUP_STEPS.get(bed_type)
+    """Return the family of a bed-type list row: the family its journey asks.
+
+    An answer of a family's question belongs to it, such as a classic Richmat
+    app or AdjustableM5X5, though its own bed type opens only its own step.
+    """
+    bed_type, variant = resolve_bed_type_choice(choice)
+    step = _ANSWER_STEPS.get((bed_type, variant)) or _APP_SETUP_STEPS.get(bed_type)
     return _FAMILY_NAMES.get(step) if step is not None else None
 
 
 def _with_family(option: SelectOptionDict) -> SelectOptionDict:
-    """Label a family member's row "<app> · <family>"; a family row already is."""
-    if option["value"] in FAMILY_ROWS or (family := _row_family(option["value"])) is None:
+    """Label a family member's row "<app> · <family>"; a family row already is.
+
+    Configure lists a family row's own route by its own label, as a member.
+    """
+    if option["label"] == family_row_label(option["value"]) or (
+        family := _row_family(option["value"])
+    ) is None:
         return option
     app = option["label"].removesuffix(f" ({family})")
     return SelectOptionDict(value=option["value"], label=f"{app}{FAMILY_ROW_SEPARATOR}{family}")

@@ -223,7 +223,9 @@ async def test_aliases_show_friendly_labels_and_keep_their_saved_id(hass, alias,
     flow.handler, flow.hass = entry.entry_id, hass
     result = await flow.async_step_settings()
     selector = result["data_schema"].schema[const.CONF_BED_TYPE]
-    shown = f"{bed_type_label(alias)} (saved as {alias})"
+    # An alias inside a family's journey names that family too.
+    family = " · Okin" if alias == const.BED_TYPE_OKIMAT else ""
+    shown = f"{bed_type_label(alias)}{family} (saved as {alias})"
     assert shown in {option["label"] for option in selector.config["options"]}
     # The shown label maps back to the saved ID, never to the route it runs.
     assert selector(shown) == alias

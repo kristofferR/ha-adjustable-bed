@@ -2,6 +2,7 @@
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
@@ -32,13 +33,21 @@ def test_every_family_question_has_one_family_row():
     assert set(steps) == _APP_QUESTION_STEPS
 
 
-def test_a_rows_family_is_the_family_its_journey_asks():
-    """Each row of a family's journey reads "<app> · <family>"; other rows name themselves."""
+@pytest.mark.parametrize("show_saved_id", [False, True], ids=["setup", "configure"])
+def test_a_rows_family_is_the_family_its_journey_asks(show_saved_id):
+    """Each row of a family's journey reads "<app> · <family>"; other rows name themselves.
+
+    Configure lists more rows by name, such as the Richmat apps, and they follow
+    the same rule.
+    """
+    from custom_components.adjustable_bed.config_flow import _ANSWER_STEPS
+
     names = {_APP_SETUP_STEPS[bed_type]: family for bed_type, (family, _apps) in FAMILY_ROWS.items()}
-    rows = _bed_type_selector(None).rows()
+    rows = _bed_type_selector(const.BED_TYPE_LINAK, show_saved_id=show_saved_id).rows()
     for label, choice in rows.items():
-        bed_type, _variant = resolve_bed_type_choice(choice)
-        family = names.get(_APP_SETUP_STEPS.get(bed_type, ""))
+        bed_type, variant = resolve_bed_type_choice(choice)
+        step = _ANSWER_STEPS.get((bed_type, variant)) or _APP_SETUP_STEPS.get(bed_type, "")
+        family = names.get(step)
         if family is None:
             assert " · " not in label, label
         else:
@@ -48,6 +57,15 @@ def test_a_rows_family_is_the_family_its_journey_asks():
             assert not app.endswith(f"({family})"), label
     assert rows["Heal Every Night app · Keeson"] == "keeson:heal_every_night"
     assert rows["Woosa Sleep app · Solace"] == "solace:woosa"
+    if show_saved_id:
+        assert rows["Revive Control app · Richmat"] == const.BED_TYPE_RICHMAT_REVIVE
+
+
+def test_the_brand_list_names_a_detected_routes_family_first():
+    """A detected route takes its family row's value, and the row still reads brand first."""
+    rows = dict(_family_rows(const.BED_TYPE_OKIN_UUID))
+    assert rows[const.BED_TYPE_OKIN_UUID].startswith("Okin: ")
+    assert const.BED_TYPE_FURNIMOVE not in rows
 
 
 def test_protocol_routes_are_off_the_list_but_reachable():

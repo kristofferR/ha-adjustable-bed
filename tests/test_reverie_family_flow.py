@@ -102,7 +102,8 @@ def test_configure_lists_both_receivers_by_their_own_labels():
     picker = _bed_type_selector(const.BED_TYPE_REVERIE_NIGHTSTAND, show_saved_id=True)
     shown = {option["label"] for option in picker.config["options"]}
     for bed_type in (const.BED_TYPE_REVERIE, const.BED_TYPE_REVERIE_NIGHTSTAND):
-        assert bed_type_label(bed_type) in shown
+        # Each by its own label, with its family.
+        assert f"{bed_type_label(bed_type)} · Reverie" in shown
 
 
 async def test_the_model_question_offers_the_apps_models_with_its_other_fallback(hass):
