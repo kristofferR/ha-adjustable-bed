@@ -85,8 +85,8 @@ Then:
    `input/runtime-catalog/`, with the prior attempt mounted read-only. Launch a
    visible scoped-repair worker that checks the response's provenance against
    the artifact and reconciles every catalog row without network access.
-3. Record the acquisition in the unit's handoff and in the #447 entry with the
-   report.
+3. Record the acquisition in the unit's handoff and in its evidence row with the
+   report (#443 for scheduled rows, #447 for early work).
 
 ## Prepare useful evidence before audit
 
@@ -164,8 +164,21 @@ demonstrated repetition in the next work unit, and keep its scope tied to that n
 
 ## Publish milestones
 
-After acceptance, reopening or implementation changes, update #436, #443, #447
-and the published queue together, including arithmetic, PR links and target
-branches. Distinguish historical acceptance from currently usable evidence.
-Issue closures marked superseded/deferred do not mean their former gates passed.
-Keep #542/#550 status current without turning them into competing work queues.
+After acceptance, reopening or implementation changes, update the trackers and the
+published queue in the same task, following [the tracker rules](TRACKERS.md):
+change the affected #436 queue row and counts in place and add one evidence row
+to #443 or #447. Publish transitions only, never progress. Run windows, worker
+launches, review rounds, CI results, receipts and handoffs stay in the
+machine-local handoff and on the live status page, so a tracker edit never needs
+a size budget, compaction or a publication bundle. Check each draft with
+`.github/scripts/apk_tracker_guard.py` before editing the issue.
+
+The last step of every unit, and the one that matters most, is recording its
+implementation PR: link it in the #436 row and the evidence row when it opens
+and again when it merges, regenerate the queue view with
+`.github/scripts/apk_queue_view.py`, and update the live status page. The unit
+is not finished until they all show the PR.
+
+Distinguish historical acceptance from currently usable evidence. Issue closures
+marked superseded/deferred do not mean their former gates passed. Keep #542/#550
+status current without turning them into competing work queues.

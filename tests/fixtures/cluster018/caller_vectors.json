@@ -1,0 +1,8153 @@
+[
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "desk_init_parse_unit0",
+    "input": [
+      "INIT_PARSE",
+      [
+        "6e94000001000206000c3204000a0057"
+      ]
+    ],
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.avocadoecobase",
+    "id": "desk_init_parse_unit1",
+    "input": [
+      "INIT_PARSE",
+      [
+        "6e94010001000206000c3204000a0058"
+      ]
+    ],
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "unit": 1,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "unit": 1,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "unit": 1,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "unit": 1,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "unit": 1,
+          "discarded": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 40.0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.coastersleep",
+    "id": "desk-init-response",
+    "input": [
+      "INIT_PARSE",
+      [
+        "6e94000102030406000c32035a0a00b7"
+      ]
+    ],
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            10.199999809265137,
+            30.399999618530273
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 39.0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            10.199999809265137,
+            30.399999618530273
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 39.0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            10.199999809265137,
+            30.399999618530273
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 39.0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            10.199999809265137,
+            30.399999618530273
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 39.0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "unit": 0,
+          "discarded": [
+            10.199999809265137,
+            30.399999618530273
+          ],
+          "min": 60.0,
+          "max": 125.0,
+          "initial_primary": 100.0,
+          "initial_secondary": 39.0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P1-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P1-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P1-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P1-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P1-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P1-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P2-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002e9d",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002e9d",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002e9d",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002e9d",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002e9d",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P2-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012e9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012e9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012e9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012e9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012e9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P2-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022e9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022e9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022e9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022e9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022e9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P2-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P2-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-1-P2-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P1-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P1-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P1-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P1-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P1-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P1-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P2-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002f9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002f9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002f9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002f9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002f9e",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P2-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012f9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012f9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012f9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012f9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012f9f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P2-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022fa0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022fa0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022fa0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022fa0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022fa0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P2-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P2-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-2-P2-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P1-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P1-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P1-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "30",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P1-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P1-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P1-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "2d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P2-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0100309f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0100309f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0100309f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0100309f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0100309f",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P2-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010130a0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010130a0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010130a0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010130a0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010130a0",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P2-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010230a1",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010230a1",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010230a1",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010230a1",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010230a1",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P2-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P2-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-3-P2-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P1-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P1-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P1-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "b2",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P1-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P1-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P1-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "b3",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P2-0-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0100b221",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0100b221",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0100b221",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0100b221",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0100b221",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P2-0-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0101b222",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0101b222",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0101b222",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0101b222",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0101b222",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P2-0-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0102b223",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0102b223",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0102b223",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0102b223",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0102b223",
+          "final": {
+            "mode": 1,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 1,
+          "count_ms": 150
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P2-1-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P2-1-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "memory-4-P2-1-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 3,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 3,
+          "count_ms": 0
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-4-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-4-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-4-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-5-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 5,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-5-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 5,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-5-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 5,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-6-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 6,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-6-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 6,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-GXRM-6-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 6,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-3-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-3-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 3,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-3-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 3,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-4-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-4-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-4-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-11-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 11,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-11-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 11,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-11-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 11,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-14-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 14,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-14-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 14,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-14-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 14,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-15-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 15,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002d9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-15-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 15,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012d9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-15-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 15,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022d9e",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-18-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 18,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0100b322",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-18-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 18,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0101b323",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JDRM-18-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JDRM",
+      "node": 18,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e0102b324",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-3-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010069d8",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-3-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 3,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010169d9",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-3-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 3,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010269da",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-4-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010066d5",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-4-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010166d6",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-4-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e010266d7",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-11-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 11,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-11-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 11,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-11-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 11,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-14-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 14,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-14-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 14,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JFRM-14-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JFRM",
+      "node": 14,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 2,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 2,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JGRM-7-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JGRM",
+      "node": 7,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002b9a",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JGRM-7-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JGRM",
+      "node": 7,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012b9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JGRM-7-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JGRM",
+      "node": 7,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022b9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JGRM-9-0",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JGRM",
+      "node": 9,
+      "armed": true,
+      "curMode": 0,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01002c9b",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JGRM-9-1",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JGRM",
+      "node": 9,
+      "armed": true,
+      "curMode": 1,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01012c9c",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  },
+  {
+    "member": "com.richmat.fortywinks",
+    "id": "selected-JGRM-9-2",
+    "input": {
+      "kind": "CALLER",
+      "wire": "FRAMED",
+      "layout": "JGRM",
+      "node": 9,
+      "armed": true,
+      "curMode": 2,
+      "event": "DOWN"
+    },
+    "results": [
+      {
+        "member": "com.richmat.avocadoecobase",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.coastersleep",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.fortywinks",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.milemont",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      },
+      {
+        "member": "com.richmat.superior",
+        "expected": {
+          "selected_frame": "6e01022c9d",
+          "final": {
+            "mode": 4,
+            "i": 0,
+            "z": false,
+            "arm": "UNARMED_LITERAL0"
+          },
+          "mode": 4,
+          "count_ms": 3000
+        }
+      }
+    ]
+  }
+]

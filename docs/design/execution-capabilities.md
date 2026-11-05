@@ -136,6 +136,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | S stream | U | U | revive, best, blvd, harmony, ideal, row055 | KEEP rows repeat until removed, STOP after 120 ms; speed rows are massage |
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
 | `hjbed` | S stream | U | U | row121 | per-action recovered release |
+| `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | B | B | row066 | held buttons refresh every 150 ms (110 ms for TWRM and MLRM names), then the mode's release 50 ms later; not declared yet: the same buttons also carry short, long and memory-arm gestures, and the Hold/Release selector changes a button's effective gesture, so a [per-control scope](#per-control-hold-scope) needs its own review against row066. #516 and #591 not assessed yet |
 | `bedtech` | B | B | B | bedtech | report PARTIAL |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
@@ -666,6 +667,7 @@ Ledgers, guides and issues:
 | row042 | [row042-nectar-motion.md](../apk-analysis/dispositions/row042-nectar-motion.md) |
 | row050 | [row050-remacro.md](../apk-analysis/dispositions/row050-remacro.md) |
 | row055 | [row055-richmat-cluster.md](../apk-analysis/dispositions/row055-richmat-cluster.md) |
+| row066 | [row066-classic-richmat-apps.md](../apk-analysis/dispositions/row066-classic-richmat-apps.md) |
 | row067 | [row067-adjustamattress.md](../apk-analysis/dispositions/row067-adjustamattress.md) |
 | row121 | [row121-hjbed.md](../apk-analysis/dispositions/row121-hjbed.md) |
 | svane-guide | [svane.md](../beds/svane.md) |

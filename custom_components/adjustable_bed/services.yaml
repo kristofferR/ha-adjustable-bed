@@ -2989,3 +2989,71 @@ eshine_set_alarm:
             - zero_g
             - flat
             - massage
+
+richmat_classic:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [query, alarm, cancel_alarm, rgb, lamp_slider, lamp_save, aroma, massage_timer, massage_popup, desk_target, desk_unit, desk_recall, desk_reset]
+    action:
+      selector:
+        text:
+    time:
+      selector:
+        time:
+    minutes:
+      selector:
+        number:
+          min: 0
+          max: 15
+          mode: box
+    rgb_color:
+      selector:
+        color_rgb:
+    aroma_times:
+      selector:
+        object:
+    progress:
+      selector:
+        number:
+          min: 0
+          max: 5
+    height:
+      selector:
+        number:
+          min: 0
+          max: 6553
+          step: 0.1
+          mode: box
+    unit:
+      selector:
+        select:
+          options: [cm, inches]
+    slot:
+      selector:
+        number:
+          min: 1
+          max: 4
+          mode: box
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    popup:
+      selector:
+        select:
+          options: ["15", "30", "45", toggle]
+    duration_ms:
+      selector:
+        number:
+          min: 1
+          max: 60000
+          mode: box
