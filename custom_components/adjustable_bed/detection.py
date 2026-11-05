@@ -602,10 +602,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Climate 360 / FlexFit",
     BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number 360 / i8 FlexFit (BAM/MCR)",
     BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
-    BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
-    BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
-    BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
-    BED_TYPE_SLEEPYS_ELITE_APP: "Sleepy's Elite app (explicit selector)",
+    BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite BOX15 receiver (FFE5 service)",
+    BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver (OKIN 64-bit service)",
+    BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite BOX25 receiver (Nordic UART)",
+    BED_TYPE_SLEEPYS_ELITE_APP: "MFRM Sleepy's Elite app (control box selector)",
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
@@ -703,6 +703,9 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_OKIN_RF_ECO_BT,
         BED_TYPE_LEGGETT_GEN2,
         BED_TYPE_LEGGETT_WILINKE,
+        BED_TYPE_SLEEPYS_BOX15,
+        BED_TYPE_SLEEPYS_BOX24,
+        BED_TYPE_SLEEPYS_BOX25,
         BED_TYPE_CUSTOMATIC_JEROMES,
         BED_TYPE_CUSTOMATIC_REMEDY,
         BED_TYPE_TRANQUIL,
@@ -719,6 +722,9 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_OKIN: (
         "Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and "
         "L&P Adjustable Base apps"
+    ),
+    BED_TYPE_SLEEPYS_ELITE_APP: (
+        "Sleepy's Elite: MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers"
     ),
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic: Clarity, Jerome's C, Remedy and Z-Series apps",
     BED_TYPE_SERENITY: "Jordan's: Serenity and Tranquil apps",

@@ -135,7 +135,7 @@
       "code": [
         "custom_components/adjustable_bed/detection.py::BED_TYPE_DISPLAY_NAMES",
         "custom_components/adjustable_bed/detection.py::detect_bed_type",
-        "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_sleepys_elite_app"
+        "custom_components/adjustable_bed/setup_questions.py::SETUP_PROFILES"
       ],
       "tests": [
         "tests/test_sleepys_elite_app.py::test_manual_app_profile_is_findable_and_persists_selector_capabilities",
@@ -147,7 +147,7 @@
     },
     "configuration::IMPLEMENTED": {
       "code": [
-        "custom_components/adjustable_bed/config_flow.py::AdjustableBedConfigFlow.async_step_sleepys_elite_app",
+        "custom_components/adjustable_bed/setup_questions.py::SETUP_PROFILES",
         "custom_components/adjustable_bed/app_profiles.py::per_side_profile"
       ],
       "tests": [

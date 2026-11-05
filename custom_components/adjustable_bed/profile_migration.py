@@ -63,6 +63,10 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEPYS_BOX15,
+    BED_TYPE_SLEEPYS_BOX24,
+    BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
@@ -76,6 +80,7 @@ from .const import (
     CONF_JIECANG_APP_TRANSPORT,
     CONF_LEGGETT_APP_PROFILE,
     CONF_PROTOCOL_VARIANT,
+    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
     CONF_VIBRADORM_VMAT_REMOTE,
@@ -198,6 +203,24 @@ LEGGETT_FAMILY: Final = ManagedFamily(
     ),
 )
 
+_SLEEPYS_ROUTES: Final = frozenset(
+    {
+        BED_TYPE_SLEEPYS_ELITE_APP,
+        BED_TYPE_SLEEPYS_BOX15,
+        BED_TYPE_SLEEPYS_BOX24,
+        BED_TYPE_SLEEPYS_BOX25,
+    }
+)
+# The app's control box selector picks exact GATT routes, and each receiver
+# route writes one exact command endpoint, so a change checks the link first.
+# An app the review suggests switches unchecked, as Configure switched it.
+SLEEPYS_FAMILY: Final = ManagedFamily(
+    key="sleepys_family",
+    bed_types=_SLEEPYS_ROUTES,
+    route_keys=(CONF_SLEEPYS_ELITE_SELECTOR, CONF_PROTOCOL_VARIANT),
+    requires_check=lambda data: data.get(CONF_BED_TYPE) in _SLEEPYS_ROUTES,
+)
+
 _CUSTOMATIC_ROUTES: Final = frozenset(
     {
         BED_TYPE_CUSTOMATIC_CLARITY,
@@ -232,6 +255,7 @@ MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
     KEESON_FAMILY,
     SOLACE_FAMILY,
     LEGGETT_FAMILY,
+    SLEEPYS_FAMILY,
     CUSTOMATIC_FAMILY,
     JORDANS_FAMILY,
 )

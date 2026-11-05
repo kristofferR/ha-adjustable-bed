@@ -66,8 +66,9 @@ or from the bed's repair. Today this covers the
 [Jiecang family](beds/jiecang.md#home-assistant-setup), the
 [Okin family](beds/okin-nframe.md#home-assistant-setup), the
 [Keeson family](beds/keeson.md#home-assistant-setup), the
-[Solace family](beds/ff_frame.md#home-assistant-setup) and the
-[Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup); more families follow.
+[Solace family](beds/ff_frame.md#home-assistant-setup), the
+[Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup) and the
+[Sleepy's Elite family](beds/sleepys.md#home-assistant-setup); more families follow.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.
@@ -375,11 +376,11 @@ documented here:
 
 | Bed type | Choices covered by its guide |
 |----------|-----------------------------|
-| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Explicit control-box selector for each physical bed |
+| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Explicit control-box selector for each physical bed, asked after the [Sleepy's question](beds/sleepys.md#home-assistant-setup) |
 | [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-nframe.md#okin-cst) | Rize and Support product profiles; Auto retains MF900 behavior |
-| [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Auto, StarCode, Legacy CB25 |
+| [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Auto, StarCode, Legacy CB25, under **Advanced** after the Sleepy's question |
 | [SBI](beds/keeson.md#protocol-variants) / [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
 | [OKIN CB24](beds/okin-nframe.md#cb24-preset-safety) | Legacy/CBNew and specific SmartBed profiles |
 | [Okin DOT](beds/okin-nframe.md#okin-dot) / [Okin 64-bit](beds/okin-nframe.md#okin-64-bit) | Handset or transport-specific selection |
@@ -510,7 +511,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
-| Sleepy's Elite app | [Explicit app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile): select the app's control-box selector independently for each physical receiver. The existing BOX15, BOX24 and BOX25 profiles remain available. |
+| Sleepy's Elite | [One question](beds/sleepys.md#home-assistant-setup) for the MFRM Sleepy's Elite app or the BOX15, BOX24 or BOX25 receiver. The [app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) asks the control box the app lists, for each physical receiver. Change an existing bed's app, control box or BOX25 dialect with **Reconfigure**. |
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/okin-nframe.md#okin-sleepease): select the saved app model independently of the advertisement-selected P1/P2/P3 driver. Keep each physical receiver's settings separate. Sensor sides do not select motor halves. |
 | Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/keeson.md#ore-comfort-bed-profiles), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
