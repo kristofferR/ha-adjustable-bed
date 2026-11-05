@@ -5279,15 +5279,15 @@
 "stop_all": {"status":"no_writes"}
 }},
 "hush_sleep_sxb": {
-"info": {"bed_type": "hush_sleep_sxb", "connect_error": "AttributeError", "controller": "HushSleepController", "module": "hush_sleep", "pulse": [10, 100]},
+"info": {"bed_type": "hush_sleep_sxb", "controller": "HushSleepController", "module": "hush_sleep", "pulse": [10, 100]},
 "commands": {
-"connect": {"error":"AttributeError","status":"error","writes":[[0,"00000003","notify","",1,0],[100,"00000002",true,"000101003e0000110343554437007b226964223a312c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]},
+"connect": {"status":"ok","writes":[[0,"00000003","notify","",1,0],[100,"00000002",true,"000101003e0000110343554437007b226964223a312c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]},
 "stop_all": {"status":"no_writes"}
 }},
 "hush_sleep_sxb:props_write": {
-"info": {"bed_type": "hush_sleep_sxb", "connect_error": "AttributeError", "controller": "HushSleepController", "module": "hush_sleep", "pulse": [10, 100]},
+"info": {"bed_type": "hush_sleep_sxb", "controller": "HushSleepController", "module": "hush_sleep", "pulse": [10, 100]},
 "commands": {
-"connect": {"error":"AttributeError","status":"error","writes":[[0,"00000003","notify","",1,0],[100,"00000002",true,"000101003e0000110343554437007b226964223a312c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]},
+"connect": {"status":"ok","writes":[[0,"00000003","notify","",1,0],[100,"00000002",true,"000101003e0000110343554437007b226964223a312c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]},
 "stop_all": {"status":"no_writes"}
 }},
 "hush_sleep_sxb:props_wwr": {

@@ -1004,6 +1004,9 @@ class Coordinator:
     def get_max_angle(self, position_key: str) -> float:
         return 45.0 if position_key in {"legs", "feet"} else 68.0
 
+    def cache_capability_controller(self) -> None:
+        """No offline capability controller to keep here."""
+
     async def async_execute_controller_command(self, command_fn: Any, *_: Any, **__: Any) -> None:
         await command_fn(self.controller)
 
