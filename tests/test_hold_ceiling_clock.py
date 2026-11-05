@@ -141,6 +141,8 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
         "keeson:restonic_a",
         "keeson:innova",
         "keeson:simon_li",
+        # Good Vibe Sleep's sustained press counts 100 ms ticks (#860).
+        "goodvibe:selector-0004",
     ],
     indirect=True,
 )
